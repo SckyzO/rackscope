@@ -1,0 +1,28 @@
+# Private architecture and internal notes (DO NOT COMMIT)
+ARCHITECTURE/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+*.pkl
+*.egg-info/
+.venv/
+.uv/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / frontend (if applicable later)
+node_modules/
+dist/
+.build/
+.next/
+.vite/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
