@@ -62,22 +62,31 @@ def get_room_layout(room_id: str):
     
     raise HTTPException(status_code=404, detail=f"Room {room_id} not found")
 
+import random
+
 # Telemetry v0 (Stub)
 @app.get("/api/rooms/{room_id}/state")
 def get_room_state(room_id: str):
-    # Dummy implementation: OK/WARN/CRIT/UNKNOWN
-    # For now, return OK for everything to satisfy the vertical slice
-    return {"room_id": room_id, "state": "OK"}
+    # Aggregated state: if any rack is CRIT, room is CRIT
+    # For now, return a random but biased state
+    states = ["OK", "OK", "OK", "WARN", "OK"]
+    return {"room_id": room_id, "state": random.choice(states)}
 
 @app.get("/api/racks/{rack_id}/state")
 def get_rack_state(rack_id: str):
-    # Dummy implementation: return different states based on ID for testing
-    state = "OK"
-    if "crit" in rack_id.lower():
-        state = "CRIT"
-    elif "warn" in rack_id.lower():
-        state = "WARN"
-    elif "unknown" in rack_id.lower():
-        state = "UNKNOWN"
+    # Return different states to test UI colors
+    # We use the rack_id to keep some consistency but add a bit of randomness
+    random.seed(rack_id)
     
+    # Small chance of being CRIT or WARN
+    roll = random.random()
+    if roll > 0.95:
+        state = "CRIT"
+    elif roll > 0.85:
+        state = "WARN"
+    elif roll > 0.80:
+        state = "UNKNOWN"
+    else:
+        state = "OK"
+        
     return {"rack_id": rack_id, "state": state}

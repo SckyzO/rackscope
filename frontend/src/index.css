@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  /* Sci-Fi / Dark Mode Palette Idea */
+  --color-rack-dark: #0a0a0a;
+  --color-rack-panel: #1a1a1a;
+  --color-rack-border: #333333;
+  --color-status-ok: #10b981;
+  --color-status-warn: #f59e0b;
+  --color-status-crit: #ef4444;
+  --color-status-unknown: #6b7280;
+}
+
+body {
+  background-color: var(--color-rack-dark);
+  color: #e5e5e5;
+  font-family: var(--font-sans);
+}

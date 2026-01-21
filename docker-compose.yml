@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: src/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+      - ./config-examples:/app/config-examples
+    environment:
+      - RACKSCOPE_CONFIG=config-examples/topology.yaml
+    # Reload flag for FastAPI dev
+    command: uvicorn rackscope.api.app:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Avoid overwriting container node_modules with local (empty) ones if they differ
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
