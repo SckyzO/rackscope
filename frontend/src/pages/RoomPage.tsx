@@ -2,16 +2,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import type { Room, Rack } from '../types';
-import { Server, Box, Activity, Zap, Thermometer, Router as RouterIcon, HardDrive, Cpu } from 'lucide-react';
+import { Server, Box, Zap, Thermometer, Router as RouterIcon, HardDrive } from 'lucide-react';
 
-// --- Types locaux pour la démo UI (seront déplacés dans types.ts plus tard) ---
+// --- Types locaux pour la démo UI ---
 type DeviceType = 'server' | 'switch' | 'storage' | 'pdu';
 
 interface Device {
   id: string;
   name: string;
   type: DeviceType;
-  uPosition: number; // Position du bas (1 à 42)
+  uPosition: number;
   uHeight: number;
   status: 'ok' | 'warn' | 'crit';
 }
@@ -22,7 +22,6 @@ const generateMockDevices = (rackId: string, totalU: number): Device[] => {
   let currentU = 1;
 
   while (currentU <= totalU) {
-    // 30% chance of empty space
     if (Math.random() > 0.7) {
       currentU++;
       continue;
@@ -37,7 +36,6 @@ const generateMockDevices = (rackId: string, totalU: number): Device[] => {
     else if (typeRoll > 0.6) { type = 'server'; height = 2; }
     else { type = 'server'; height = 1; }
 
-    // Don't overflow top of rack
     if (currentU + height - 1 > totalU) break;
 
     devices.push({
@@ -60,9 +58,7 @@ export const RoomPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedRack, setSelectedRack] = useState<Rack | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
-  // Health states storage: { rackId: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN' }
-  const [healthMap, setHealthMap] = useState<Record<string, string>>({});
+  const [healthMap, setHealthMap] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (!roomId) return;
@@ -73,14 +69,11 @@ export const RoomPage = () => {
       .finally(() => setLoading(false));
   }, [roomId]);
 
-  // Health Polling
   useEffect(() => {
     if (!room) return;
 
     const fetchHealth = async () => {
-      const newHealth: Record<string, string> = {};
-      
-      // Fetch all racks health in parallel
+      const newHealth: Record<string, any> = {};
       const rackIds = [
         ...room.aisles.flatMap(a => a.racks.map(r => r.id)),
         ...room.standalone_racks.map(r => r.id)
@@ -88,10 +81,10 @@ export const RoomPage = () => {
 
       await Promise.all(rackIds.map(async (id) => {
         try {
-          const state = await api.getRackState(id);
-          newHealth[id] = state.state;
+          const data = await api.getRackState(id);
+          newHealth[id] = data;
         } catch (e) {
-          newHealth[id] = 'UNKNOWN';
+          newHealth[id] = { state: 'UNKNOWN' };
         }
       }));
 
@@ -99,9 +92,11 @@ export const RoomPage = () => {
     };
 
     fetchHealth();
-    const interval = setInterval(fetchHealth, 10000); // Poll every 10s
+    const interval = setInterval(fetchHealth, 5000);
     return () => clearInterval(interval);
   }, [room]);
+
+  const selectedMetrics = selectedRack ? healthMap[selectedRack.id]?.metrics : null;
 
   if (loading) return <div className="p-8 font-mono animate-pulse text-blue-500">LDR :: LOADING_ROOM_{roomId?.toUpperCase()}...</div>;
   if (error) return <div className="p-8 text-status-crit font-mono">ERR :: {error}</div>;
@@ -128,8 +123,8 @@ export const RoomPage = () => {
         
         <div className="flex gap-2">
           <div className="flex flex-col items-end">
-            <span className="text-[10px] text-gray-500 font-mono uppercase">Room Status</span>
-            <span className="text-2xl font-mono text-status-ok tracking-tighter">OPTIMAL</span>
+            <span className="text-[10px] text-gray-500 font-mono uppercase">Health Index</span>
+            <span className="text-2xl font-mono text-status-ok tracking-tighter">LIVE</span>
           </div>
         </div>
       </header>
@@ -137,7 +132,6 @@ export const RoomPage = () => {
       <div className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden">
         {/* Main Floor Plan / Grid */}
         <div className="col-span-12 lg:col-span-8 bg-rack-panel border border-rack-border rounded-xl p-6 overflow-auto relative custom-scrollbar shadow-inner">
-           
            <div className="space-y-12">
             {room.aisles.map(aisle => (
               <div key={aisle.id}>
@@ -150,7 +144,7 @@ export const RoomPage = () => {
                     <RackThumbnail 
                       key={rack.id} 
                       rack={rack} 
-                      health={healthMap[rack.id] || 'UNKNOWN'}
+                      health={healthMap[rack.id]?.state || 'UNKNOWN'}
                       isSelected={selectedRack?.id === rack.id}
                       onClick={() => setSelectedRack(rack)} 
                     />
@@ -162,10 +156,14 @@ export const RoomPage = () => {
         </div>
 
         {/* Info Panel / Rack Detail Preview */}
-        <div className="col-span-12 lg:col-span-4 flex flex-col gap-4 h-full overflow-hidden">
+        <div className="col-span-12 lg:col-span-4 flex flex-col h-full overflow-hidden">
           <div className="bg-rack-panel border border-rack-border rounded-xl flex-1 flex flex-col overflow-hidden shadow-2xl relative">
             {selectedRack ? (
-              <RackDetailView rack={selectedRack} health={healthMap[selectedRack.id] || 'UNKNOWN'} />
+              <RackDetailView 
+                rack={selectedRack} 
+                health={healthMap[selectedRack.id]?.state || 'UNKNOWN'} 
+                metrics={selectedMetrics}
+              />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 opacity-50">
                 <Box className="w-16 h-16 text-gray-800 mb-4 stroke-[1px]" />
@@ -198,7 +196,6 @@ const RackThumbnail = ({ rack, health, isSelected, onClick }: { rack: Rack, heal
         <span className="text-[7px] text-gray-600 font-mono tracking-tighter">{rack.u_height}U</span>
       </div>
       
-      {/* Abstract Rack Visual */}
       <div className="flex-1 w-full my-2 flex flex-col gap-[2px] px-2 opacity-50 group-hover:opacity-80 transition-opacity">
          {Array.from({length: 6}).map((_, i) => (
              <div key={i} className={`h-[2px] w-full rounded-full ${isCrit && i % 2 === 0 ? 'bg-status-crit/50' : 'bg-gray-700'}`}></div>
@@ -212,7 +209,7 @@ const RackThumbnail = ({ rack, health, isSelected, onClick }: { rack: Rack, heal
   );
 };
 
-const RackDetailView = ({ rack, health }: { rack: Rack, health: string }) => {
+const RackDetailView = ({ rack, health, metrics }: { rack: Rack, health: string, metrics: any }) => {
   const devices = useMemo(() => generateMockDevices(rack.id, rack.u_height), [rack.id, rack.u_height]);
   const uMap = new Map<number, Device>();
   devices.forEach(d => {
@@ -223,14 +220,27 @@ const RackDetailView = ({ rack, health }: { rack: Rack, health: string }) => {
 
   return (
     <div className="h-full flex flex-col animate-in fade-in slide-in-from-right-4 duration-300">
-      <div className="p-4 border-b border-rack-border bg-black/20 flex justify-between items-center shrink-0">
-         <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">{rack.name}</h2>
-            <div className="text-[9px] font-mono text-gray-500 uppercase">ID: {rack.id}</div>
-         </div>
-         <div className="text-right">
-             <div className="text-[10px] font-mono text-blue-400">{devices.length} ASSETS</div>
-             <div className="text-[10px] font-mono text-gray-500">{rack.u_height} U TOTAL</div>
+      <div className="p-4 border-b border-rack-border bg-black/20 flex flex-col gap-4 shrink-0">
+         <div className="flex justify-between items-start">
+             <div>
+                <h2 className="text-xl font-bold text-white tracking-tight uppercase">{rack.name}</h2>
+                <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] font-mono text-gray-500 uppercase px-1.5 py-0.5 border border-white/10 rounded">ID: {rack.id}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${health === 'OK' ? 'bg-status-ok/20 text-status-ok' : health === 'CRIT' ? 'bg-status-crit/20 text-status-crit' : 'bg-gray-800 text-gray-400'}`}>{health}</span>
+                </div>
+             </div>
+             
+             {/* Integrated Metrics Widget */}
+             <div className="flex gap-2">
+                 <div className="px-3 py-1.5 bg-white/5 rounded border border-white/10 flex flex-col items-center min-w-[60px]">
+                    <div className="flex items-center gap-1 text-gray-500 mb-0.5"><Thermometer className="w-3 h-3" /><span className="text-[8px] uppercase">Temp</span></div>
+                    <div className="text-sm font-mono text-white">{metrics?.temperature ? metrics.temperature.toFixed(1) : '--'}<span className="text-[9px] text-gray-500 ml-0.5">°C</span></div>
+                 </div>
+                 <div className="px-3 py-1.5 bg-white/5 rounded border border-white/10 flex flex-col items-center min-w-[60px]">
+                    <div className="flex items-center gap-1 text-gray-500 mb-0.5"><Zap className="w-3 h-3" /><span className="text-[8px] uppercase">Pwr</span></div>
+                    <div className="text-sm font-mono text-white">{metrics?.power ? (metrics.power / 1000).toFixed(1) : '--'}<span className="text-[9px] text-gray-500 ml-0.5">kW</span></div>
+                 </div>
+             </div>
          </div>
       </div>
 

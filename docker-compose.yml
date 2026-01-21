@@ -10,7 +10,6 @@ services:
       - ./config-examples:/app/config-examples
     environment:
       - RACKSCOPE_CONFIG=config-examples/topology.yaml
-    # Reload flag for FastAPI dev
     command: uvicorn rackscope.api.app:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
@@ -21,7 +20,21 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app
-      # Avoid overwriting container node_modules with local (empty) ones if they differ
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+
+  simulator:
+    build:
+      context: ./tools/simulator
+    volumes:
+      - ./config-examples/topology.yaml:/app/config/topology.yaml:ro
+    environment:
+      - TOPOLOGY_FILE=/app/config/topology.yaml
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./tools/simulator/prometheus.yml:/etc/prometheus/prometheus.yml:ro

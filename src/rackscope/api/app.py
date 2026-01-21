@@ -2,30 +2,27 @@ from __future__ import annotations
 
 import os
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
 
 from rackscope.model.domain import Room, Site, Topology
 from rackscope.model.loader import load_topology
+from rackscope.telemetry.prometheus import client as prom_client
 
-# Global state for Phase 1
+# Global state
 TOPOLOGY: Optional[Topology] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global TOPOLOGY
-    # Use config-examples/topology.yaml as default for now if not specified
     config_path = os.getenv("RACKSCOPE_CONFIG", "config-examples/topology.yaml")
     try:
         TOPOLOGY = load_topology(config_path)
     except Exception as e:
-        # In production, we might want to crash or log and continue
         print(f"Failed to load topology: {e}")
         TOPOLOGY = Topology()
     yield
-    # Clean up if needed
 
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
 
@@ -62,31 +59,59 @@ def get_room_layout(room_id: str):
     
     raise HTTPException(status_code=404, detail=f"Room {room_id} not found")
 
-import random
-
-# Telemetry v0 (Stub)
 @app.get("/api/rooms/{room_id}/state")
-def get_room_state(room_id: str):
-    # Aggregated state: if any rack is CRIT, room is CRIT
-    # For now, return a random but biased state
-    states = ["OK", "OK", "OK", "WARN", "OK"]
-    return {"room_id": room_id, "state": random.choice(states)}
+async def get_room_state(room_id: str):
+    # Retrieve all rack temps to aggregate room health
+    # This is naive (N queries) but okay for MVP. 
+    # Better approach: fetch vector once and map in memory.
+    temps = await prom_client.get_rack_temperatures()
+    
+    # Filter for this room (we assume we know rack IDs for this room)
+    # Since we don't have a quick reverse map yet, we'll iterate
+    room_status = "OK"
+    
+    # In a real app, we would cache the list of racks per room
+    rack_ids = []
+    if TOPOLOGY:
+        for site in TOPOLOGY.sites:
+            for room in site.rooms:
+                if room.id == room_id:
+                    for aisle in room.aisles:
+                        rack_ids.extend([r.id for r in aisle.racks])
+                    rack_ids.extend([r.id for r in room.standalone_racks])
+    
+    for rid in rack_ids:
+        temp = temps.get(rid, 0)
+        if temp > 35:
+            room_status = "CRIT"
+            break # Worst case wins
+        if temp > 30 and room_status != "CRIT":
+            room_status = "WARN"
+
+    return {"room_id": room_id, "state": room_status}
 
 @app.get("/api/racks/{rack_id}/state")
-def get_rack_state(rack_id: str):
-    # Return different states to test UI colors
-    # We use the rack_id to keep some consistency but add a bit of randomness
-    random.seed(rack_id)
+async def get_rack_state(rack_id: str):
+    temps = await prom_client.get_rack_temperatures()
+    power = await prom_client.get_rack_power()
     
-    # Small chance of being CRIT or WARN
-    roll = random.random()
-    if roll > 0.95:
-        state = "CRIT"
-    elif roll > 0.85:
-        state = "WARN"
-    elif roll > 0.80:
-        state = "UNKNOWN"
-    else:
-        state = "OK"
-        
-    return {"rack_id": rack_id, "state": state}
+    temp = temps.get(rack_id)
+    pwr = power.get(rack_id)
+    
+    state = "UNKNOWN"
+    if temp is not None:
+        if temp > 35:
+            state = "CRIT"
+        elif temp > 30:
+            state = "WARN"
+        else:
+            state = "OK"
+            
+    return {
+        "rack_id": rack_id, 
+        "state": state,
+        "metrics": {
+            "temperature": temp,
+            "power": pwr
+        }
+    }
