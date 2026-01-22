@@ -1,15 +1,34 @@
-import { useState, useEffect } from 'react';
-import { Link, useParams, useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { api } from '../services/api';
-import type { RoomSummary, AisleSummary, RackSummary } from '../types';
-import { LayoutDashboard, Database, Server, ChevronRight, ChevronDown, Activity, Map } from 'lucide-react';
+import type { RoomSummary, AisleSummary, DeviceTemplate } from '../types';
+import { LayoutDashboard, Server, ChevronRight, ChevronDown, Activity, Map, Component, Box, Folder } from 'lucide-react';
 
 export const Sidebar = () => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
+  const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
+  const [rackTemplates, setRackTemplates] = useState<any[]>([]); 
   
   useEffect(() => {
-    api.getRooms().then(setRooms).catch(console.error);
+    Promise.all([
+        api.getRooms(),
+        api.getCatalog()
+    ]).then(([roomsData, catalogData]) => {
+        setRooms(roomsData);
+        setDeviceTemplates(catalogData.device_templates || []);
+        setRackTemplates(catalogData.rack_templates || []);
+    }).catch(console.error);
   }, []);
+
+  // Group devices by their dynamic type
+  const groupedDevices = useMemo(() => {
+    return deviceTemplates.reduce((acc, t) => {
+      const type = t.type || 'other';
+      if (!acc[type]) acc[type] = [];
+      acc[type].push(t);
+      return acc;
+    }, {} as Record<string, DeviceTemplate[]>);
+  }, [deviceTemplates]);
 
   return (
     <div className="w-64 h-screen bg-[#0f0f0f] border-r border-rack-border flex flex-col overflow-hidden shrink-0">
@@ -24,6 +43,7 @@ export const Sidebar = () => {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar">
+        {/* Navigation Section */}
         <div className="px-4 mb-6">
           <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">Main</h2>
           <Link to="/" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
@@ -32,13 +52,49 @@ export const Sidebar = () => {
           </Link>
         </div>
 
-        <div className="px-4">
+        {/* Topology Section */}
+        <div className="px-4 mb-6">
           <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">Topology</h2>
           <div className="space-y-4">
             {rooms.map(room => (
               <RoomTreeItem key={room.id} room={room} />
             ))}
           </div>
+        </div>
+
+        {/* Library Section */}
+        <div className="px-4 border-t border-white/5 pt-4">
+          <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4 px-2 italic">Gabarit Library</h2>
+          
+          {/* Device Templates grouped by type */}
+          <div className="space-y-4">
+             {Object.entries(groupedDevices).map(([type, templates]) => (
+                 <div key={type} className="space-y-1">
+                    <div className="px-2 py-1 text-[10px] font-bold text-blue-500/50 uppercase flex items-center gap-2">
+                        <Folder className="w-3 h-3" /> {type}s
+                    </div>
+                    {templates.map(t => (
+                        <div key={t.id} className="px-6 py-1 text-[10px] text-gray-400 hover:text-white truncate cursor-help border-l border-white/5 ml-3" title={t.name}>
+                            {t.name}
+                        </div>
+                    ))}
+                 </div>
+             ))}
+          </div>
+
+          {/* Rack Templates */}
+          {rackTemplates.length > 0 && (
+            <div className="space-y-1 mt-6">
+                <div className="px-2 py-1 text-[10px] font-bold text-purple-500/50 uppercase flex items-center gap-2">
+                    <Server className="w-3 h-3" /> Racks
+                </div>
+                {rackTemplates.map(t => (
+                    <div key={t.id} className="px-6 py-1 text-[10px] text-gray-400 hover:text-white truncate cursor-help border-l border-white/5 ml-3" title={t.name}>
+                        {t.name}
+                    </div>
+                ))}
+            </div>
+          )}
         </div>
       </nav>
 
@@ -54,7 +110,7 @@ export const Sidebar = () => {
 
 const RoomTreeItem = ({ room }: { room: RoomSummary }) => {
   const { roomId } = useParams();
-  const isOpen = roomId === room.id; // Auto-open if active
+  const isOpen = roomId === room.id; 
 
   return (
     <div>
@@ -70,7 +126,6 @@ const RoomTreeItem = ({ room }: { room: RoomSummary }) => {
         </div>
       </Link>
       
-      {/* Aisles Tree */}
       <div className="pl-3 space-y-1 relative">
         <div className="absolute left-4 top-0 bottom-0 w-[1px] bg-white/5"></div>
         {room.aisles?.map(aisle => (
@@ -100,10 +155,10 @@ const AisleTreeItem = ({ aisle, roomId }: { aisle: AisleSummary, roomId: string 
           {aisle.racks.map(rack => (
             <Link 
               key={rack.id}
-              to={`/room/${roomId}?rack=${rack.id}`} // We'll handle query param selection later or direct link
+              to={`/rack/${rack.id}`} 
               className="flex items-center gap-2 py-1 text-xs text-gray-400 hover:text-blue-400 transition-colors block"
             >
-              <Server className="w-3 h-3 opacity-50" />
+              <Component className="w-3 h-3 opacity-50" />
               <span>{rack.name}</span>
             </Link>
           ))}

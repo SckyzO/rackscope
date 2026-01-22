@@ -1,6 +1,7 @@
 templates:
   - id: storage-2u-24disk
     name: "Flash Array 2U (24 SFF)"
+    type: storage
     u_height: 2
     layout:
       type: grid
@@ -12,6 +13,7 @@ templates:
 
   - id: storage-4u-60disk
     name: "High Density Drawer 4U (60 LFF)"
+    type: storage
     u_height: 4
     layout:
       type: grid

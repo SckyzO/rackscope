@@ -9,6 +9,7 @@ export interface Device {
 export interface Rack {
   id: string;
   name: string;
+  template_id?: string;
   u_height: number;
   aisle_id?: string;
   x?: number;
@@ -69,4 +70,24 @@ export interface DeviceTemplate {
   name: string;
   u_height: number;
   layout: LayoutConfig;
+}
+
+export interface InfrastructureComponent {
+  id: string;
+  name: string;
+  type: 'power' | 'cooling' | 'management' | 'network' | 'other';
+  model?: string;
+  role?: string;
+  location: 'u-mount' | 'side-left' | 'side-right' | 'top' | 'bottom';
+  u_position?: number;
+  u_height?: number;
+}
+
+export interface RackTemplate {
+  id: string;
+  name: string;
+  u_height: number;
+  infrastructure: {
+    components: InfrastructureComponent[];
+  };
 }

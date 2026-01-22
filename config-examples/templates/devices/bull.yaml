@@ -2,6 +2,7 @@
 templates:
   - id: bs-x430-a5
     name: "BullSequana X430-A5 (2U 1-Node)"
+    type: server
     u_height: 2
     layout:
       type: grid
@@ -12,6 +13,7 @@ templates:
 
   - id: bs-x440-a5
     name: "BullSequana X440-A5 (2U 4-Node)"
+    type: server
     u_height: 2
     layout:
       type: grid
@@ -26,6 +28,7 @@ templates:
 
   - id: generic-switch-1u
     name: "Generic Top of Rack Switch"
+    type: network
     u_height: 1
     layout:
       type: grid

@@ -1,12 +1,17 @@
-import type { Site, Room, RoomSummary, DeviceTemplate } from '../types';
+import type { Site, Room, RoomSummary, DeviceTemplate, Rack } from '../types';
 
 export const api = {
   getSites: async (): Promise<Site[]> => {
     const res = await fetch('/api/sites');
     return res.json();
   },
-  getCatalog: async (): Promise<DeviceTemplate[]> => {
+  getCatalog: async (): Promise<{ device_templates: DeviceTemplate[], rack_templates: any[] }> => {
     const res = await fetch('/api/catalog');
+    return res.json();
+  },
+  getRack: async (rackId: string): Promise<Rack> => {
+    const res = await fetch(`/api/racks/${rackId}`);
+    if (!res.ok) throw new Error('Rack not found');
     return res.json();
   },
   getRooms: async (): Promise<RoomSummary[]> => {

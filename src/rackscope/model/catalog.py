@@ -13,6 +13,7 @@ class LayoutConfig(BaseModel):
 class DeviceTemplate(BaseModel):
     id: str
     name: str
+    type: str = "server"
     u_height: int
     layout: LayoutConfig
 

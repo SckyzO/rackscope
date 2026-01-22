@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
 
-from rackscope.model.domain import Room, Site, Topology
+from rackscope.model.domain import Room, Site, Topology, Rack
 from rackscope.model.catalog import Catalog
 from rackscope.model.loader import load_topology, load_catalog
 from rackscope.telemetry.prometheus import client as prom_client
@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
         TOPOLOGY = load_topology(config_path)
         CATALOG = load_catalog(templates_dir)
         print(f"Loaded topology with {len(TOPOLOGY.sites)} sites")
-        print(f"Loaded catalog with {len(CATALOG.templates)} templates")
+        print(f"Loaded catalog with {len(CATALOG.device_templates)} devices and {len(CATALOG.rack_templates)} racks")
     except Exception as e:
         print(f"Failed to load configuration: {e}")
         TOPOLOGY = Topology()
@@ -88,6 +88,27 @@ def get_room_layout(room_id: str):
                 return room
     
     raise HTTPException(status_code=404, detail=f"Room {room_id} not found")
+
+@app.get("/api/racks/{rack_id}", response_model=Rack)
+def get_rack_details(rack_id: str):
+    if not TOPOLOGY:
+        raise HTTPException(status_code=500, detail="Topology not loaded")
+    
+    # Linear search (slow but ok for MVP)
+    # In production, we would index racks by ID on load
+    for site in TOPOLOGY.sites:
+        for room in site.rooms:
+            # Check aisles
+            for aisle in room.aisles:
+                for rack in aisle.racks:
+                    if rack.id == rack_id:
+                        return rack
+            # Check standalone
+            for rack in room.standalone_racks:
+                if rack.id == rack_id:
+                    return rack
+    
+    raise HTTPException(status_code=404, detail=f"Rack {rack_id} not found")
 
 @app.get("/api/rooms/{room_id}/state")
 async def get_room_state(room_id: str):
