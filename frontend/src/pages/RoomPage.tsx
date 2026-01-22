@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import type { Room, Rack, Device, DeviceTemplate } from '../types';
-import { Server, Box, Zap, Thermometer, Router as RouterIcon } from 'lucide-react';
+import { Server, Box, Zap, Thermometer, Router as RouterIcon, Maximize2 } from 'lucide-react';
 
 // --- Helpers ---
 
@@ -190,7 +190,10 @@ const RackDetailView = ({ rack, catalog, health, metrics, nodesData }: { rack: R
       <div className="p-4 border-b border-rack-border bg-black/20 flex flex-col gap-4 shrink-0">
          <div className="flex justify-between items-start">
              <div>
-                <h2 className="text-xl font-bold text-white tracking-tighter uppercase">{rack.name}</h2>
+                <Link to={`/rack/${rack.id}`} className="group flex items-center gap-3 hover:text-blue-400 transition-colors">
+                    <h2 className="text-xl font-bold text-white tracking-tighter uppercase group-hover:text-blue-400">{rack.name}</h2>
+                    <Maximize2 className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
+                </Link>
                 <div className="flex items-center gap-2 mt-1">
                     <span className="text-[10px] font-mono text-gray-500 uppercase px-1.5 py-0.5 border border-white/10 rounded">ID: {rack.id}</span>
                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${health === 'OK' ? 'bg-status-ok/20 text-status-ok' : health === 'CRIT' ? 'bg-status-crit/20 text-status-crit' : 'bg-gray-800 text-gray-400'}`}>{health}</span>
@@ -219,6 +222,7 @@ const RackDetailView = ({ rack, catalog, health, metrics, nodesData }: { rack: R
 
             return (
               <div key={u} className="relative flex items-center border-b border-white/5 min-h-0 w-full flex-1">
+                {/* Labels are ALWAYS rendered now */}
                 <div className="absolute -left-6 w-4 text-right text-[8px] font-mono text-gray-600 select-none flex items-center justify-end h-full z-10">{u}</div>
                 <div className="absolute -right-6 w-4 text-left text-[8px] font-mono text-gray-600 select-none flex items-center justify-start h-full z-10">{u}</div>
                 

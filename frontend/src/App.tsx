@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { RoomPage } from './pages/RoomPage';
+import { RackPage } from './pages/RackPage';
 
 // Layout global
 const Layout = ({ children }: { children: ReactNode }) => (
@@ -62,6 +63,7 @@ function App() {
         <Routes>
            <Route path="/" element={<Dashboard />} />
            <Route path="/room/:roomId" element={<RoomPage />} />
+           <Route path="/rack/:rackId" element={<RackPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>

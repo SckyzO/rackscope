@@ -37,10 +37,22 @@ export interface Site {
   rooms: Room[];
 }
 
+export interface RackSummary {
+  id: string;
+  name: string;
+}
+
+export interface AisleSummary {
+  id: string;
+  name: string;
+  racks: RackSummary[];
+}
+
 export interface RoomSummary {
   id: string;
   name: string;
   site_id: string;
+  aisles?: AisleSummary[];
 }
 
 // --- Catalog Types ---

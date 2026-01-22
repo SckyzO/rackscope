@@ -52,10 +52,28 @@ def get_rooms():
     if TOPOLOGY:
         for site in TOPOLOGY.sites:
             for room in site.rooms:
+                # Build hierarchy for sidebar
+                aisles_summary = []
+                for aisle in room.aisles:
+                    aisles_summary.append({
+                        "id": aisle.id,
+                        "name": aisle.name,
+                        "racks": [{"id": r.id, "name": r.name} for r in aisle.racks]
+                    })
+                
+                # Include standalone racks as a virtual aisle if needed
+                if room.standalone_racks:
+                    aisles_summary.append({
+                        "id": f"{room.id}-standalone",
+                        "name": "Standalone",
+                        "racks": [{"id": r.id, "name": r.name} for r in room.standalone_racks]
+                    })
+
                 rooms.append({
                     "id": room.id,
                     "name": room.name,
-                    "site_id": site.id
+                    "site_id": site.id,
+                    "aisles": aisles_summary
                 })
     return rooms
 
