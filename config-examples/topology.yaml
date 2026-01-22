@@ -10,15 +10,29 @@ sites:
             racks:
               - id: dc1-ra-a4-r11
                 name: "Rack 11"
-                u_height: 48
+                u_height: 42
+                devices:
+                  - id: rack11-sw01
+                    name: "ToR Switch"
+                    template_id: generic-switch-1u
+                    u_position: 42
+                  - id: rack11-ch01
+                    name: "Compute Chassis 01"
+                    template_id: bs-x440-a5
+                    u_position: 10
+                    nodes: "compute[001-004]"
+                  - id: rack11-ch02
+                    name: "Compute Chassis 02"
+                    template_id: bs-x440-a5
+                    u_position: 12
+                    nodes: "compute[005-008]"
               - id: dc1-ra-a4-r12
                 name: "Rack 12"
-          - id: aisle-5
-            name: "Aisle 5"
-            racks:
-              - id: dc1-ra-a5-r11
-                name: "Rack 11"
-                u_height: 48
-        standalone_racks:
-          - id: dc1-ra-extra
-            name: "Extra Rack"
+                u_height: 42
+                devices:
+                  - id: rack12-ch01
+                    name: "Fat Node"
+                    template_id: bs-x430-a5
+                    u_position: 1
+                    nodes:
+                      1: "storage-node-01"

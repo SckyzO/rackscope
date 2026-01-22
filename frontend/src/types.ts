@@ -1,3 +1,11 @@
+export interface Device {
+  id: string;
+  name: string;
+  template_id: string;
+  u_position: number;
+  nodes: Record<number, string> | string;
+}
+
 export interface Rack {
   id: string;
   name: string;
@@ -6,6 +14,7 @@ export interface Rack {
   x?: number;
   y?: number;
   rotation: number;
+  devices: Device[];
 }
 
 export interface Aisle {
@@ -32,4 +41,20 @@ export interface RoomSummary {
   id: string;
   name: string;
   site_id: string;
+}
+
+// --- Catalog Types ---
+
+export interface LayoutConfig {
+  type: 'grid' | 'vertical';
+  rows: number;
+  cols: number;
+  matrix: number[][];
+}
+
+export interface DeviceTemplate {
+  id: string;
+  name: string;
+  u_height: number;
+  layout: LayoutConfig;
 }

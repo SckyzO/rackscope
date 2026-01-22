@@ -7,21 +7,29 @@ from typing import List, Optional
 from fastapi import FastAPI, HTTPException
 
 from rackscope.model.domain import Room, Site, Topology
-from rackscope.model.loader import load_topology
+from rackscope.model.catalog import Catalog
+from rackscope.model.loader import load_topology, load_catalog
 from rackscope.telemetry.prometheus import client as prom_client
 
 # Global state
 TOPOLOGY: Optional[Topology] = None
+CATALOG: Optional[Catalog] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global TOPOLOGY
+    global TOPOLOGY, CATALOG
     config_path = os.getenv("RACKSCOPE_CONFIG", "config-examples/topology.yaml")
+    templates_dir = os.path.dirname(config_path) + "/templates"
+    
     try:
         TOPOLOGY = load_topology(config_path)
+        CATALOG = load_catalog(templates_dir)
+        print(f"Loaded topology with {len(TOPOLOGY.sites)} sites")
+        print(f"Loaded catalog with {len(CATALOG.templates)} templates")
     except Exception as e:
-        print(f"Failed to load topology: {e}")
+        print(f"Failed to load configuration: {e}")
         TOPOLOGY = Topology()
+        CATALOG = Catalog()
     yield
 
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
@@ -29,6 +37,10 @@ app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
+
+@app.get("/api/catalog")
+def get_catalog():
+    return CATALOG.templates if CATALOG else []
 
 @app.get("/api/sites", response_model=List[Site])
 def get_sites():

@@ -1,0 +1,34 @@
+# BullSequana X Series Templates
+templates:
+  - id: bs-x430-a5
+    name: "BullSequana X430-A5 (2U 1-Node)"
+    u_height: 2
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      # Simple 1x1, slot 1
+      matrix: [[1]]
+
+  - id: bs-x440-a5
+    name: "BullSequana X440-A5 (2U 4-Node)"
+    u_height: 2
+    layout:
+      type: grid
+      rows: 2
+      cols: 2
+      # Visual physical layout (Front View)
+      # [ Slot 3 | Slot 4 ]  (Top Row)
+      # [ Slot 1 | Slot 2 ]  (Bottom Row)
+      matrix: 
+        - [3, 4]
+        - [1, 2]
+
+  - id: generic-switch-1u
+    name: "Generic Top of Rack Switch"
+    u_height: 1
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix: [[1]]

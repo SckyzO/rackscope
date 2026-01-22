@@ -27,6 +27,8 @@ services:
   simulator:
     build:
       context: ./tools/simulator
+    ports:
+      - "9000:9000"
     volumes:
       - ./config-examples/topology.yaml:/app/config/topology.yaml:ro
     environment:

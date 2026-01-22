@@ -1,8 +1,12 @@
-import type { Site, Room, RoomSummary } from '../types';
+import type { Site, Room, RoomSummary, DeviceTemplate } from '../types';
 
 export const api = {
   getSites: async (): Promise<Site[]> => {
     const res = await fetch('/api/sites');
+    return res.json();
+  },
+  getCatalog: async (): Promise<DeviceTemplate[]> => {
+    const res = await fetch('/api/catalog');
     return res.json();
   },
   getRooms: async (): Promise<RoomSummary[]> => {
