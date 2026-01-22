@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { Server, Box, Zap, Thermometer, Router as RouterIcon, HardDrive, Fan, Power, Cpu, Info } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Server, Box, Zap, Thermometer, Router as RouterIcon, HardDrive, Fan, Power, Cpu, Activity } from 'lucide-react';
 import type { Device, DeviceTemplate, Rack } from '../types';
 
 // --- Helpers ---
@@ -33,10 +34,6 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
 
   return (
     <div className="flex-1 bg-[var(--color-rack-interior)] p-4 flex items-center justify-center h-full transition-colors duration-500 rounded-lg">
-      {/* 
-          RACK FRAME 
-          - border-x-[24px]: Creates the side rails for the unit numbers
-      */}
       <div className="flex flex-col-reverse w-full max-w-[380px] h-full border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-frame)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative transition-colors duration-500 rounded-sm">
         {Array.from({ length: rack.u_height }).map((_, idx) => {
           const u = idx + 1;
@@ -46,8 +43,6 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
 
           return (
             <div key={u} className="relative flex items-center border-b border-[var(--color-border)]/10 min-h-0 w-full flex-1 transition-colors duration-300">
-              
-              {/* Unit Labels - Centered on the 24px rails */}
               <div className="absolute -left-[20px] w-4 text-center text-[10px] font-mono text-[var(--color-text-base)] font-black opacity-40 select-none flex items-center justify-center h-full z-10">{u}</div>
               <div className="absolute -right-[20px] w-4 text-center text-[10px] font-mono text-[var(--color-text-base)] font-black opacity-40 select-none flex items-center justify-center h-full z-10">{u}</div>
               
@@ -160,8 +155,8 @@ const RearModuleUnit = ({ type }: { type: 'psu' | 'fan' }) => {
                 <Fan className="w-5 h-5 text-gray-600 animate-[spin_2s_linear_infinite]" />
             ) : (
                 <div className="flex flex-col items-center gap-1">
-                    <Power className="w-3 h-3 text-gray-400" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-status-ok shadow-[0_0_5px_var(--color-status-ok)]"></div>
+                    <Power className="w-4 h-4 text-gray-400" />
+                    <div className="w-2 h-2 rounded-full bg-status-ok shadow-[0_0_5px_var(--color-status-ok)]"></div>
                 </div>
             )}
         </div>
@@ -192,82 +187,125 @@ const RowSummaryUnit = ({ rowNodes, nodesData, label }: { rowNodes: (string|unde
 };
 
 export const NodeUnit = ({ nodeName, slotNum, nodeHealth, type, uHeight, uPosition, chassisName, nodeMetrics }: { nodeName?: string, slotNum: number, nodeHealth: string, type?: string, uHeight: number, uPosition: number, chassisName: string, nodeMetrics?: any }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
     const isOk = nodeHealth === 'OK';
     let Icon = type === 'network' ? RouterIcon : Server;
     const hideText = uHeight === 1;
 
+    const statusColor = nodeHealth === 'OK' ? 'bg-status-ok' 
+                      : nodeHealth === 'CRIT' ? 'bg-status-crit' 
+                      : nodeHealth === 'WARN' ? 'bg-status-warn' 
+                      : 'bg-gray-600';
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        setMousePos({ x: e.clientX, y: e.clientY });
+    };
+
     return (
-        <div className={`relative flex items-center justify-center bg-[var(--color-node-surface)] border border-[var(--color-border)]/20 group hover:bg-[var(--color-accent-primary)]/20 transition-all cursor-help h-full`}>
-            {nodeName ? (
-                <div className="flex flex-col items-center">
-                    <div className={`w-1.5 h-1.5 rounded-full mb-1 ${isOk ? 'bg-status-ok shadow-[0_0_8px_var(--color-status-ok)]' : nodeHealth === 'CRIT' ? 'bg-status-crit animate-pulse shadow-[0_0_10px_var(--color-status-crit)]' : 'bg-status-warn shadow-[0_0_8px_var(--color-status-warn)]'}`}></div>
-                    {!hideText && (
-                        <div className="flex items-center gap-1.5">
-                            <Icon className="w-3 h-3 text-gray-400 opacity-50 group-hover:text-[var(--color-accent-primary)] transition-colors" />
-                            <span className="text-[9px] font-mono text-[var(--color-text-base)] opacity-50 group-hover:opacity-100 transition-colors truncate px-1 max-w-full font-black uppercase">
+        <>
+            <div 
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={() => setIsHovered(false)}
+                className={`relative flex items-center justify-center bg-[var(--color-node-surface)] border border-[var(--color-border)]/20 group hover:bg-[var(--color-accent-primary)]/20 transition-all cursor-help h-full`}
+            >
+                {nodeName ? (
+                    <div className="flex flex-col items-center w-full h-full justify-center px-1">
+                        <div className={`w-1.5 h-1.5 rounded-full mb-1 shrink-0 ${statusColor} ${nodeHealth === 'CRIT' ? 'animate-pulse shadow-[0_0_8px_var(--color-status-crit)]' : ''}`}></div>
+                        {!hideText && (
+                            <div className="flex items-center gap-1.5 w-full justify-center overflow-hidden">
+                                <Icon className="w-3 h-3 text-gray-400 opacity-50 shrink-0" />
+                                <span className="text-[10px] font-mono text-[var(--color-text-base)] opacity-50 group-hover:opacity-100 truncate font-black uppercase tracking-tight">
+                                    {nodeName}
+                                </span>
+                            </div>
+                        )}
+                        {hideText && (
+                            <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-[var(--color-accent-primary)] opacity-0 group-hover:opacity-100 bg-[var(--color-node-surface)] transition-opacity z-10 px-1 truncate uppercase">
                                 {nodeName}
                             </span>
-                        </div>
-                    )}
-                    {hideText && (
-                        <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-[var(--color-accent-primary)] opacity-0 group-hover:opacity-100 bg-[var(--color-node-surface)] transition-opacity z-10 px-1 truncate uppercase">
-                            {nodeName}
-                        </span>
-                    )}
-                </div>
-            ) : (
-                <div className="text-[8px] text-gray-400 font-mono italic opacity-20 uppercase">U{slotNum}</div>
-            )}
-
-            {/* HIGH-END TOOLTIP BUBBLE */}
-            <div className="absolute z-[999] bottom-full left-1/2 -translate-x-1/2 mb-3 w-72 p-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                <div className="bg-[var(--color-bg-panel)] border border-[var(--color-accent-primary)]/40 rounded-2xl overflow-hidden backdrop-blur-2xl">
-                    {/* Tooltip Header */}
-                    <div className="bg-[var(--color-accent-primary)] p-4 flex justify-between items-center shadow-lg">
-                        <div className="flex items-center gap-3">
-                            <Cpu className="w-5 h-5 text-white" />
-                            <span className="text-sm font-black text-white uppercase tracking-tighter">{nodeName || 'Empty Slot'}</span>
-                        </div>
-                        <div className="px-2 py-1 bg-black/20 rounded-lg text-[10px] font-black text-white uppercase tracking-wider border border-white/10">{nodeHealth}</div>
+                        )}
                     </div>
-                    
-                    {/* Tooltip Body */}
-                    <div className="p-5 grid grid-cols-2 gap-6 bg-[var(--color-bg-panel)]/90">
-                        <div className="space-y-1">
-                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block opacity-60">Chassis Model</span>
-                            <span className="text-xs text-[var(--color-text-base)] font-bold truncate block">{chassisName}</span>
-                        </div>
-                        <div className="space-y-1 text-right">
-                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block opacity-60">Location</span>
-                            <span className="text-xs text-[var(--color-text-base)] font-mono font-black block">RACK U{uPosition}</span>
-                        </div>
-                        
-                        <div className="col-span-2 pt-4 border-t border-[var(--color-border)]/20 flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <div className="p-1.5 rounded-lg bg-status-warn/10">
-                                    <Thermometer className="w-4 h-4 text-status-warn" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-[9px] font-black text-gray-500 uppercase">Temp</span>
-                                    <span className="text-xs font-mono font-bold text-[var(--color-text-base)]">{nodeMetrics?.temperature ? `${nodeMetrics.temperature.toFixed(1)}°C` : '--'}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="p-1.5 rounded-lg bg-status-ok/10">
-                                    <Zap className="w-4 h-4 text-status-ok" />
-                                </div>
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[9px] font-black text-gray-500 uppercase">Power</span>
-                                    <span className="text-xs font-mono font-black text-[var(--color-text-base)]">{nodeMetrics?.power ? `${(nodeMetrics.power).toFixed(0)}W` : '--'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {/* Tooltip Footer Arrow */}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-[var(--color-bg-panel)]"></div>
-                </div>
+                ) : (
+                    <div className="text-[8px] text-gray-400 font-mono italic opacity-20 uppercase">U{slotNum}</div>
+                )}
             </div>
-        </div>
+
+            {/* PORTAL HUD TOOLTIP */}
+            {isHovered && createPortal(
+                <div 
+                    style={{ 
+                        position: 'fixed', 
+                        top: `${mousePos.y - 20}px`, 
+                        left: `${mousePos.x}px`,
+                        transform: 'translate(-50%, -100%)',
+                        zIndex: 999999,
+                        pointerEvents: 'none'
+                    }}
+                    className="w-80 animate-in fade-in zoom-in-95 duration-200"
+                >
+                    <div className="relative bg-[var(--color-bg-panel)]/95 backdrop-blur-3xl border border-[var(--color-accent-primary)]/40 rounded-2xl shadow-[0_40px_100px_rgba(0,0,0,0.8)] overflow-hidden">
+                        <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${statusColor} ${nodeHealth === 'CRIT' ? 'animate-pulse' : ''}`}></div>
+                        <div className="p-6 pl-8 text-left">
+                            <div className="flex justify-between items-start mb-6">
+                                <div className="space-y-1">
+                                    <h4 className="text-[10px] font-black text-[var(--color-accent-primary)] uppercase tracking-[0.3em] opacity-80">Node Identity</h4>
+                                    <div className="text-2xl font-black text-[var(--color-text-base)] tracking-tighter uppercase leading-none">
+                                        {nodeName || 'UNASSIGNED'}
+                                    </div>
+                                </div>
+                                <div className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border ${statusColor.replace('bg-', 'border-')}/30 ${statusColor.replace('bg-', 'text-')} bg-current/10`}>
+                                    {nodeHealth}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-8 mb-6 border-y border-[var(--color-border)]/10 py-4">
+                                <div className="space-y-1">
+                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block opacity-60">Enclosure</span>
+                                    <span className="text-[12px] text-[var(--color-text-base)] font-bold truncate block text-left">{chassisName}</span>
+                                </div>
+                                <div className="space-y-1 text-right border-l border-[var(--color-border)]/10 pl-4">
+                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block opacity-60">Location</span>
+                                    <div className="flex items-center justify-end gap-2">
+                                        <span className="text-[12px] text-[var(--color-text-base)] font-mono font-black italic">U{uPosition}</span>
+                                        <div className="px-1.5 py-0.5 bg-gray-500/20 rounded text-[9px] font-black text-[var(--color-text-base)] opacity-70">S{slotNum}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="flex-1 flex items-center gap-3 p-3 rounded-2xl bg-[var(--color-accent-primary)]/5 border border-[var(--color-accent-primary)]/10">
+                                    <div className="p-2 rounded-xl bg-status-warn/10 text-status-warn">
+                                        <Thermometer className="w-5 h-5" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Thermal</span>
+                                        <span className="text-lg font-mono font-black text-[var(--color-text-base)] mt-1">
+                                            {nodeMetrics?.temperature ? `${nodeMetrics.temperature.toFixed(1)}°C` : '--'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex-1 flex items-center gap-3 p-3 rounded-2xl bg-[var(--color-accent-primary)]/5 border border-[var(--color-accent-primary)]/10">
+                                    <div className="p-2 rounded-xl bg-status-ok/10 text-status-ok">
+                                        <Zap className="w-5 h-5" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Power</span>
+                                        <span className="text-lg font-mono font-black text-[var(--color-text-base)] mt-1">
+                                            {nodeMetrics?.power ? `${(nodeMetrics.power).toFixed(0)}W` : '--'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="absolute top-0 right-0 p-3 opacity-[0.03] pointer-events-none">
+                            <Activity className="w-20 h-20 rotate-12 text-[var(--color-accent-primary)]" />
+                        </div>
+                    </div>
+                    <div className="mx-auto w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[12px] border-t-[var(--color-bg-panel)]/95 drop-shadow-2xl"></div>
+                </div>,
+                document.getElementById('tooltip-root')!
+            )}
+        </>
     );
 };

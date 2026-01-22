@@ -76,7 +76,7 @@ export const RackPage = () => {
   if (error || !rack) return <div className="p-12 text-status-crit font-mono">ERR :: {error || 'RACK_NOT_FOUND'}</div>;
 
   return (
-    <div className="h-full flex flex-col p-6 overflow-hidden">
+    <div className="h-full flex flex-col p-8 bg-[var(--color-bg-base)]">
       {/* Top Navigation & Title */}
       <header className="flex justify-between items-end mb-6 shrink-0">
         <div>
