@@ -1,0 +1,17 @@
+rack_templates:
+  - id: standard-42u-air
+    name: "Standard 42U Air Cooled"
+    u_height: 42
+    infrastructure:
+      components:
+        # Zero-U PDUs
+        - id: pdu-left
+          name: "PDU A (Left)"
+          type: power
+          model: "APC Metered"
+          location: side-left
+        - id: pdu-right
+          name: "PDU B (Right)"
+          type: power
+          model: "APC Metered"
+          location: side-right

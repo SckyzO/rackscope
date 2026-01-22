@@ -40,7 +40,7 @@ def healthz() -> dict[str, str]:
 
 @app.get("/api/catalog")
 def get_catalog():
-    return CATALOG.templates if CATALOG else []
+    return CATALOG if CATALOG else {"device_templates": [], "rack_templates": []}
 
 @app.get("/api/sites", response_model=List[Site])
 def get_sites():

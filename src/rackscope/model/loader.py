@@ -7,37 +7,35 @@ import yaml
 from pydantic import ValidationError
 
 from rackscope.model.domain import Topology
-from rackscope.model.catalog import Catalog, DeviceTemplate
+from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
 
-
-class LoaderError(Exception):
-    """Base class for loader errors."""
-    pass
-
-class FileNotFoundError(LoaderError):
-    """Raised when the topology file is missing."""
-    pass
-
-class InvalidFormatError(LoaderError):
-    """Raised when the file content is not valid YAML or doesn't match the schema."""
-    pass
+# ... (keep exceptions)
 
 def load_catalog(templates_dir: Union[str, Path]) -> Catalog:
-    """Load all template files from a directory into a single Catalog."""
+    """Load all template files from a directory recursively into a single Catalog."""
     path = Path(templates_dir)
     catalog = Catalog()
     
     if not path.exists() or not path.is_dir():
-        # Return empty if dir doesn't exist, strictly speaking optional
         return catalog
 
-    for yaml_file in path.glob("*.yaml"):
+    # Recursive glob to catch subdirectories like devices/ and racks/
+    for yaml_file in path.rglob("*.yaml"):
         try:
             with yaml_file.open("r") as f:
                 data = yaml.safe_load(f)
-                if data and "templates" in data:
+                if not data: continue
+                
+                # Load Device Templates
+                if "templates" in data:
                     for t_data in data["templates"]:
-                        catalog.templates.append(DeviceTemplate(**t_data))
+                        catalog.device_templates.append(DeviceTemplate(**t_data))
+                
+                # Load Rack Templates
+                if "rack_templates" in data:
+                    for t_data in data["rack_templates"]:
+                        catalog.rack_templates.append(RackTemplate(**t_data))
+                        
         except Exception as e:
             print(f"Warning: Failed to load template file {yaml_file}: {e}")
             

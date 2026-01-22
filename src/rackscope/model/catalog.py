@@ -2,12 +2,12 @@ from __future__ import annotations
 from typing import List, Optional, Literal, Union
 from pydantic import BaseModel, Field
 
+# --- Device Templates ---
+
 class LayoutConfig(BaseModel):
     type: Literal["grid", "vertical"] = "grid"
     rows: int = 1
     cols: int = 1
-    # Matrix represents visual rows from top to bottom
-    # Each inner list is a row, containing slot numbers
     matrix: List[List[int]]
 
 class DeviceTemplate(BaseModel):
@@ -16,11 +16,41 @@ class DeviceTemplate(BaseModel):
     u_height: int
     layout: LayoutConfig
 
-class Catalog(BaseModel):
-    templates: List[DeviceTemplate] = Field(default_factory=list)
+# --- Rack Infrastructure Templates ---
+
+class InfrastructureComponent(BaseModel):
+    id: str
+    name: str
+    type: Literal["power", "cooling", "management", "network", "other"]
+    model: Optional[str] = None
+    role: Optional[str] = None # primary, backup, etc.
     
-    def get_template(self, template_id: str) -> Optional[DeviceTemplate]:
-        for t in self.templates:
+    # Positioning
+    location: Literal["u-mount", "side-left", "side-right", "top", "bottom"] = "u-mount"
+    u_position: Optional[int] = None
+    u_height: Optional[int] = None
+
+class RackInfrastructure(BaseModel):
+    components: List[InfrastructureComponent] = Field(default_factory=list)
+
+class RackTemplate(BaseModel):
+    id: str
+    name: str
+    u_height: int = 42
+    infrastructure: RackInfrastructure = Field(default_factory=RackInfrastructure)
+
+class Catalog(BaseModel):
+    device_templates: List[DeviceTemplate] = Field(default_factory=list)
+    rack_templates: List[RackTemplate] = Field(default_factory=list)
+    
+    def get_device_template(self, template_id: str) -> Optional[DeviceTemplate]:
+        for t in self.device_templates:
+            if t.id == template_id:
+                return t
+        return None
+
+    def get_rack_template(self, template_id: str) -> Optional[RackTemplate]:
+        for t in self.rack_templates:
             if t.id == template_id:
                 return t
         return None

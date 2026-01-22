@@ -11,12 +11,14 @@ sites:
             racks:
               - id: r4-01
                 name: "Rack 4-01"
-                u_height: 42
+                template_id: bull-xh3000
+                u_height: 48
                 devices:
                   - id: r4-01-sw
                     name: "ToR InfiniBand"
                     template_id: generic-switch-1u
                     u_position: 42
+                  # Filling the rack with Quad Nodes
                   - id: r4-01-c01
                     name: "Compute Encl 01"
                     template_id: bs-x440-a5

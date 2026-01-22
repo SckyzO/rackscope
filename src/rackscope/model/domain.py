@@ -19,6 +19,7 @@ class Device(BaseModel):
 class Rack(BaseModel):
     id: str = Field(..., description="Unique technical identifier for the rack")
     name: str = Field(..., description="Human-readable name (e.g., 'Rack 11')")
+    template_id: Optional[str] = Field(None, description="Reference to a rack template (defines infrastructure)")
     u_height: int = Field(42, ge=1, le=60, description="Height in rack units")
     aisle_id: Optional[str] = Field(None, description="ID of the aisle this rack belongs to")
     

@@ -1,0 +1,41 @@
+rack_templates:
+  - id: bull-xh3000
+    name: "BullSequana XH3000 DLC"
+    u_height: 48
+    infrastructure:
+      components:
+        # Hydraulic Management
+        - id: hmc-primary
+          name: "HMC Primary"
+          type: cooling
+          model: "DLC Manifold Gen3"
+          role: "active"
+          location: u-mount
+          u_position: 1
+          u_height: 2
+        - id: hmc-backup
+          name: "HMC Backup"
+          type: cooling
+          model: "DLC Manifold Gen3"
+          role: "backup"
+          location: u-mount
+          u_position: 3
+          u_height: 2
+        
+        # Power Management
+        - id: pmc-01
+          name: "PMC Main"
+          type: power
+          model: "PMC 3-Phase 63A"
+          location: u-mount
+          u_position: 48
+          u_height: 1
+        
+        # Rack Management
+        - id: rmc-01
+          name: "RMC Master"
+          type: management
+          model: "RMC V2"
+          location: u-mount
+          u_position: 47
+          u_height: 1
