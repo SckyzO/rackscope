@@ -2,13 +2,15 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import type { RoomSummary, AisleSummary, DeviceTemplate } from '../types';
-import { LayoutDashboard, Server, ChevronRight, ChevronDown, Activity, Map, Component, Box, Folder } from 'lucide-react';
+import { LayoutDashboard, Server, ChevronRight, ChevronDown, Activity, Map, Component, Box, Folder, Settings } from 'lucide-react';
 
 export const Sidebar = () => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
   const [rackTemplates, setRackTemplates] = useState<any[]>([]); 
   
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
   useEffect(() => {
     Promise.all([
         api.getRooms(),
@@ -20,7 +22,6 @@ export const Sidebar = () => {
     }).catch(console.error);
   }, []);
 
-  // Group devices by their dynamic type
   const groupedDevices = useMemo(() => {
     return deviceTemplates.reduce((acc, t) => {
       const type = t.type || 'other';
@@ -29,6 +30,10 @@ export const Sidebar = () => {
       return acc;
     }, {} as Record<string, DeviceTemplate[]>);
   }, [deviceTemplates]);
+
+  const toggleCategory = (cat: string) => {
+    setExpandedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
+  };
 
   return (
     <div className="w-64 h-screen bg-[#0f0f0f] border-r border-rack-border flex flex-col overflow-hidden shrink-0">
@@ -46,16 +51,22 @@ export const Sidebar = () => {
         {/* Navigation Section */}
         <div className="px-4 mb-6">
           <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">Main</h2>
-          <Link to="/" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
-            <LayoutDashboard className="w-4 h-4" />
-            Overview
-          </Link>
+          <div className="space-y-1">
+            <Link to="/" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                <LayoutDashboard className="w-4 h-4 opacity-70" />
+                Overview
+            </Link>
+            <Link to="/settings" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+                <Settings className="w-4 h-4 opacity-70" />
+                Settings
+            </Link>
+          </div>
         </div>
 
         {/* Topology Section */}
         <div className="px-4 mb-6">
           <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">Topology</h2>
-          <div className="space-y-4">
+          <div className="space-y-1">
             {rooms.map(room => (
               <RoomTreeItem key={room.id} room={room} />
             ))}
@@ -64,35 +75,57 @@ export const Sidebar = () => {
 
         {/* Library Section */}
         <div className="px-4 border-t border-white/5 pt-4">
-          <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4 px-2 italic">Gabarit Library</h2>
+          <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4 px-2 italic text-gray-600">Gabarit Library</h2>
           
-          {/* Device Templates grouped by type */}
-          <div className="space-y-4">
+          <div className="space-y-2">
              {Object.entries(groupedDevices).map(([type, templates]) => (
                  <div key={type} className="space-y-1">
-                    <div className="px-2 py-1 text-[10px] font-bold text-blue-500/50 uppercase flex items-center gap-2">
-                        <Folder className="w-3 h-3" /> {type}s
-                    </div>
-                    {templates.map(t => (
-                        <div key={t.id} className="px-6 py-1 text-[10px] text-gray-400 hover:text-white truncate cursor-help border-l border-white/5 ml-3" title={t.name}>
-                            {t.name}
+                    <button 
+                        onClick={() => toggleCategory(type)}
+                        className="w-full px-2 py-1.5 text-[10px] font-bold text-blue-500/50 hover:text-blue-400 uppercase flex items-center justify-between group transition-colors rounded hover:bg-white/5"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Folder className={`w-3 h-3 ${expandedCategories[type] ? 'text-blue-400' : ''}`} /> 
+                            {type}s
                         </div>
-                    ))}
+                        {expandedCategories[type] ? <ChevronDown className="w-3 h-3 opacity-50" /> : <ChevronRight className="w-3 h-3 opacity-50" />}
+                    </button>
+                    
+                    {expandedCategories[type] && (
+                        <div className="space-y-1 animate-in slide-in-from-top-1 duration-200">
+                            {templates.map(t => (
+                                <div key={t.id} className="px-6 py-1 text-[10px] text-gray-500 hover:text-white truncate cursor-help border-l border-white/5 ml-3" title={t.name}>
+                                    {t.name}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                  </div>
              ))}
           </div>
 
-          {/* Rack Templates */}
           {rackTemplates.length > 0 && (
-            <div className="space-y-1 mt-6">
-                <div className="px-2 py-1 text-[10px] font-bold text-purple-500/50 uppercase flex items-center gap-2">
-                    <Server className="w-3 h-3" /> Racks
-                </div>
-                {rackTemplates.map(t => (
-                    <div key={t.id} className="px-6 py-1 text-[10px] text-gray-400 hover:text-white truncate cursor-help border-l border-white/5 ml-3" title={t.name}>
-                        {t.name}
+            <div className="space-y-1 mt-2">
+                <button 
+                    onClick={() => toggleCategory('racks')}
+                    className="w-full px-2 py-1.5 text-[10px] font-bold text-purple-500/50 hover:text-purple-400 uppercase flex items-center justify-between group transition-colors rounded hover:bg-white/5"
+                >
+                    <div className="flex items-center gap-2">
+                        <Server className={`w-3 h-3 ${expandedCategories['racks'] ? 'text-purple-400' : ''}`} /> 
+                        Racks
                     </div>
-                ))}
+                    {expandedCategories['racks'] ? <ChevronDown className="w-3 h-3 opacity-50" /> : <ChevronRight className="w-3 h-3 opacity-50" />}
+                </button>
+                
+                {expandedCategories['racks'] && (
+                    <div className="space-y-1 animate-in slide-in-from-top-1 duration-200">
+                        {rackTemplates.map(t => (
+                            <div key={t.id} className="px-6 py-1 text-[10px] text-gray-500 hover:text-white truncate cursor-help border-l border-white/5 ml-3" title={t.name}>
+                                {t.name}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
           )}
         </div>
@@ -110,56 +143,65 @@ export const Sidebar = () => {
 
 const RoomTreeItem = ({ room }: { room: RoomSummary }) => {
   const { roomId } = useParams();
-  const isOpen = roomId === room.id; 
+  // Expanded by default for Phase 3 exploration
+  const [isExpanded, setIsExpanded] = useState(true);
 
   return (
-    <div>
-      <Link 
-        to={`/room/${room.id}`}
-        className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors mb-1 group ${
-          isOpen ? 'bg-blue-600/10 text-blue-400 border border-blue-600/20' : 'text-gray-300 hover:bg-white/5 hover:text-white'
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          <Map className="w-4 h-4 opacity-70" />
-          <span className="font-bold">{room.name}</span>
-        </div>
-      </Link>
-      
-      <div className="pl-3 space-y-1 relative">
-        <div className="absolute left-4 top-0 bottom-0 w-[1px] bg-white/5"></div>
-        {room.aisles?.map(aisle => (
-          <AisleTreeItem key={aisle.id} aisle={aisle} roomId={room.id} />
-        ))}
+    <div className="space-y-1">
+      <div className="flex items-center justify-between group">
+          <Link 
+            to={`/room/${room.id}`}
+            className={`flex-1 flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
+              roomId === room.id ? 'text-white font-bold' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Map className={`w-3 h-3 ${roomId === room.id ? 'text-blue-500' : 'opacity-50'}`} />
+            <span className="truncate">{room.name}</span>
+          </Link>
+          <button 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="p-1.5 hover:bg-white/5 rounded text-gray-500 hover:text-white"
+          >
+             {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          </button>
       </div>
+      
+      {isExpanded && (
+        <div className="pl-3 space-y-1 relative">
+          <div className="absolute left-4 top-0 bottom-0 w-[1px] bg-white/5"></div>
+          {room.aisles?.map(aisle => (
+            <AisleTreeItem key={aisle.id} aisle={aisle} roomId={room.id} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
 
 const AisleTreeItem = ({ aisle, roomId }: { aisle: AisleSummary, roomId: string }) => {
+  // Collapsed by default to hide rack list
   const [isExpanded, setIsExpanded] = useState(false);
   
   return (
     <div className="relative pl-4">
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 w-full text-left py-1 text-xs text-gray-500 hover:text-gray-300 transition-colors group"
+        className="w-full px-2 py-1 text-[10px] font-bold text-gray-500 hover:text-gray-300 uppercase flex items-center justify-between group transition-colors rounded hover:bg-white/5"
       >
-        <div className="w-2 h-[1px] bg-white/10 absolute left-0 top-1/2"></div>
-        {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-        <span className="uppercase tracking-wider font-mono text-[10px]">{aisle.name}</span>
+        <span className="tracking-wider">{aisle.name}</span>
+        {isExpanded ? <ChevronDown className="w-3 h-3 opacity-50" /> : <ChevronRight className="w-3 h-3 opacity-50" />}
       </button>
 
       {isExpanded && (
-        <div className="pl-4 border-l border-white/5 ml-1.5 mt-1 space-y-1">
+        <div className="pl-3 border-l border-white/5 ml-3 mt-1 space-y-1">
           {aisle.racks.map(rack => (
             <Link 
               key={rack.id}
               to={`/rack/${rack.id}`} 
-              className="flex items-center gap-2 py-1 text-xs text-gray-400 hover:text-blue-400 transition-colors block"
+              className="flex items-center gap-2 py-1 px-2 text-xs text-gray-500 hover:text-blue-400 hover:bg-white/5 rounded transition-colors block group/rack"
             >
-              <Component className="w-3 h-3 opacity-50" />
-              <span>{rack.name}</span>
+              <Component className="w-3 h-3 opacity-30 group-hover/rack:opacity-100" />
+              <span className="truncate">{rack.name}</span>
             </Link>
           ))}
         </div>

@@ -4,18 +4,22 @@
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   
-  /* Sci-Fi / Dark Mode Palette Idea */
-  --color-rack-dark: #0a0a0a;
-  --color-rack-panel: #1a1a1a;
-  --color-rack-border: #333333;
+  /* Status Colors (Semantic) */
   --color-status-ok: #10b981;
   --color-status-warn: #f59e0b;
   --color-status-crit: #ef4444;
   --color-status-unknown: #6b7280;
+
+  /* Theme Variables (Mapped by JS) */
+  --color-rack-dark: var(--color-bg-base);
+  --color-rack-panel: var(--color-bg-panel);
+  --color-rack-border: var(--color-border);
+  --color-accent-primary: var(--color-accent);
 }
 
 body {
   background-color: var(--color-rack-dark);
-  color: #e5e5e5;
+  color: var(--color-text-base);
   font-family: var(--font-sans);
+  transition: background-color 0.3s, color 0.3s;
 }
