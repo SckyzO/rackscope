@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Server, Box, Zap, Thermometer, Router as RouterIcon, HardDrive } from 'lucide-react';
+import { Server, Box, Zap, Thermometer, Router as RouterIcon, HardDrive, Fan, Power } from 'lucide-react';
 import type { Device, DeviceTemplate, Rack } from '../types';
 
 // --- Helpers ---
@@ -72,7 +72,10 @@ export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearV
     const nodeMap = useMemo(() => parseNodeset(device.nodes), [device.nodes]);
     const chassisHealth = rackHealth; 
     
-    const isHighDensity = template.layout.cols > 8;
+    // Choose layout based on view
+    const layout = (isRearView && template.rear_layout) ? template.rear_layout : template.layout;
+    
+    const isHighDensity = layout.cols > 8;
 
     let borderColor = 'border-white/10';
     let bgColor = 'bg-gray-900/50';
@@ -85,41 +88,33 @@ export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearV
                       : chassisHealth === 'WARN' ? 'bg-status-warn' 
                       : 'bg-gray-600';
 
-    if (isRearView) {
-        // Placeholder Rear View: Darker, Fan/PSU aesthetic
-        return (
-            <div className={`w-full h-full border ${borderColor} bg-black rounded-sm overflow-hidden flex relative group`}>
-                 <div className="flex-1 grid grid-cols-2 gap-1 p-1 items-center justify-items-center opacity-50">
-                    <div className="w-4 h-4 rounded-full border border-gray-700 animate-[spin_3s_linear_infinite] border-t-transparent"></div>
-                    <div className="w-4 h-4 rounded-full border border-gray-700 animate-[spin_4s_linear_infinite] border-t-transparent"></div>
-                 </div>
-                 {/* Power Connector Stub */}
-                 <div className="absolute bottom-1 right-1 w-2 h-3 bg-gray-700 rounded-sm"></div>
-            </div>
-        );
-    }
-
     return (
         <div className={`w-full h-full border ${borderColor} ${bgColor} rounded-sm overflow-hidden flex relative group`}>
+            {/* Health Bar (Left for Front, Right for Rear to simulate mirroring?) - Keep Left for consistency */}
             <div className={`w-1.5 h-full ${statusColor} shrink-0 opacity-70 group-hover:opacity-100 transition-opacity`} title={`Chassis Status: ${chassisHealth}`}></div>
             
             <div 
                 className="flex-1 grid gap-[1px] p-[1px] bg-transparent"
                 style={{ 
-                    gridTemplateRows: `repeat(${template.layout.rows}, 1fr)`,
-                    gridTemplateColumns: isHighDensity ? '1fr' : `repeat(${template.layout.cols}, 1fr)` 
+                    gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
+                    gridTemplateColumns: isHighDensity ? '1fr' : `repeat(${layout.cols}, 1fr)` 
                 }}
             >
-                {template.layout.matrix.map((row, rIdx) => (
+                {layout.matrix.map((row, rIdx) => (
                     isHighDensity ? (
                         <RowSummaryUnit 
                             key={rIdx} 
                             rowNodes={row.map(slot => nodeMap[slot])} 
                             nodesData={nodesData || {}}
-                            label={template.layout.rows > 1 ? `DRAWER ${rIdx + 1}` : 'STORAGE ARRAY'}
+                            label={layout.rows > 1 ? `DRAWER ${rIdx + 1}` : 'STORAGE ARRAY'}
                         />
                     ) : (
                         row.map((slotNum, cIdx) => {
+                            // If isRearView and slotNum > 900, it's an infrastructure component (PSU/Fan)
+                            if (isRearView && slotNum > 900) {
+                                return <RearModuleUnit key={`${rIdx}-${cIdx}`} type={slotNum % 2 === 0 ? 'psu' : 'fan'} />;
+                            }
+
                             const nodeId = nodeMap[slotNum];
                             const nodeHealth = nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].state : 'UNKNOWN';
                             const nodeTemp = nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].temperature : null;
@@ -131,12 +126,28 @@ export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearV
                                     slotNum={slotNum}
                                     nodeHealth={nodeHealth}
                                     nodeTemp={nodeTemp}
+                                    isRearView={isRearView}
                                 />
                             );
                         })
                     )
                 ))}
             </div>
+        </div>
+    );
+};
+
+const RearModuleUnit = ({ type }: { type: 'psu' | 'fan' }) => {
+    return (
+        <div className="relative flex items-center justify-center bg-[#151515] border border-white/5 group hover:bg-white/10 transition-colors">
+            {type === 'fan' ? (
+                <Fan className="w-4 h-4 text-gray-600 animate-[spin_3s_linear_infinite]" />
+            ) : (
+                <div className="flex flex-col items-center gap-1">
+                    <Power className="w-3 h-3 text-gray-500" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-status-ok shadow-[0_0_5px_var(--color-status-ok)]"></div>
+                </div>
+            )}
         </div>
     );
 };
@@ -172,8 +183,18 @@ const RowSummaryUnit = ({ rowNodes, nodesData, label }: { rowNodes: (string|unde
     );
 };
 
-export const NodeUnit = ({ nodeName, slotNum, nodeHealth, nodeTemp }: { nodeName?: string, slotNum: number, nodeHealth: string, nodeTemp?: number }) => {
+export const NodeUnit = ({ nodeName, slotNum, nodeHealth, nodeTemp, isRearView }: { nodeName?: string, slotNum: number, nodeHealth: string, nodeTemp?: number, isRearView?: boolean }) => {
     const isOk = nodeHealth === 'OK';
+    
+    // In Rear View, if no specific rear layout is defined, we show a generic backplate
+    if (isRearView && !nodeName) {
+         return (
+            <div className="relative flex items-center justify-center bg-[#0a0a0a] border border-white/5">
+                <div className="w-full h-full bg-[repeating-linear-gradient(90deg,transparent,transparent_2px,#1a1a1a_2px,#1a1a1a_4px)] opacity-30"></div>
+            </div>
+         );
+    }
+
     return (
         <div className={`relative flex items-center justify-center bg-[#0a0a0a] group hover:bg-white/5 transition-colors cursor-help`}>
             {nodeName ? (

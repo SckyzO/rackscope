@@ -16,6 +16,7 @@ class DeviceTemplate(BaseModel):
     type: str = "server"
     u_height: int
     layout: LayoutConfig
+    rear_layout: Optional[LayoutConfig] = None
 
 # --- Rack Infrastructure Templates ---
 

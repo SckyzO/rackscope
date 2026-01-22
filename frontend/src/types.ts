@@ -68,8 +68,10 @@ export interface LayoutConfig {
 export interface DeviceTemplate {
   id: string;
   name: string;
+  type: string;
   u_height: number;
   layout: LayoutConfig;
+  rear_layout?: LayoutConfig;
 }
 
 export interface InfrastructureComponent {

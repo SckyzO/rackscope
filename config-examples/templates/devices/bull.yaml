@@ -25,6 +25,15 @@ templates:
       matrix: 
         - [3, 4]
         - [1, 2]
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 4
+      # Rear View: [ PSU L | FAN A | FAN B | PSU R ]
+      # Using negative numbers or specific IDs to denote infrastructure components?
+      # For visualization only, we'll use specific slot IDs that we won't map to nodes for now.
+      matrix:
+        - [901, 902, 903, 904]
 
   - id: generic-switch-1u
     name: "Generic Top of Rack Switch"
@@ -35,3 +44,9 @@ templates:
       rows: 1
       cols: 1
       matrix: [[1]]
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 2
+      # [ Power | Management ]
+      matrix: [[901, 902]]
