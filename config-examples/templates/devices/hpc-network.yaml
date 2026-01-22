@@ -1,0 +1,47 @@
+templates:
+  # --- INFINIBAND ---
+  - id: ib-switch-l1
+    name: "InfiniBand L1 (NDR 40p)"
+    type: network
+    u_height: 1
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix: [[1]] # Simplified: one block for the whole switch
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 2
+      matrix: [[901, 902]] # PSUs
+
+  - id: ib-switch-l2
+    name: "InfiniBand L2 (Director 2U)"
+    type: network
+    u_height: 2
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix: [[1]] 
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 4
+      matrix: [[901, 902, 903, 904]] # 4 Fans
+
+  # --- ETHERNET ---
+  - id: eth-switch-tor
+    name: "Ethernet Mgmt Switch"
+    type: network
+    u_height: 1
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix: [[1]] # Simplified: one block
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 2
+      matrix: [[901, 902]]

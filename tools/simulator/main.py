@@ -86,23 +86,35 @@ def simulate():
         for target in targets:
             labels = {k: v for k, v in target.items()}
             node_id = target['node_id']
+            aisle_id = target['room_id'] # Simplified lookup
             
-            random.seed(node_id + str(tick))
+            random.seed(node_id + str(tick // 2)) # Slower changes
             
-            # Temp simulation
-            base_temp = 22 + (math.sin(tick / 20.0) * 2) 
-            noise = random.uniform(-1.0, 1.5)
-            temp = base_temp + noise
+            # Base temperature (20-23°C)
+            temp = 21 + (math.sin(tick / 50.0) * 2) + random.uniform(-0.5, 0.5)
             
-            # Random "Bad Day" for some nodes
-            if "003" in node_id or (random.random() > 0.97):
-                temp += 15 # Overheat!
+            # Aisle Bias: Compute aisle (01) is naturally warmer
+            if "aisle-01" in target.get('rack_id', ''):
+                temp += 3
+            
+            # Realistic "Load" simulation: only a few nodes are actually working
+            # 1% chance of being under high load (WARN level)
+            if random.random() > 0.99:
+                temp += 8 
+            
+            # 0.1% chance of a real physical issue (CRIT level)
+            if random.random() > 0.999:
+                temp += 20
+            
+            # Ensure "003" nodes aren't ALWAYS failing, maybe just 10% of them
+            if "003" in node_id and random.random() > 0.90:
+                temp += 15
             
             NODE_TEMP.labels(**labels).set(round(temp, 1))
             
-            # Power simulation
-            power = 250 + random.uniform(-50, 150) # Per node power
-            if "switch" in node_id: power = 100
+            # Power: proportional to temp (Fans + CPU load)
+            power = 150 + ((temp - 20) * 20) + random.uniform(-10, 10)
+            if "switch" in node_id: power = 80
             
             NODE_POWER.labels(**labels).set(round(power, 0))
             

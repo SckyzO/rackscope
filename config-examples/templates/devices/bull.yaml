@@ -1,52 +1,64 @@
 # BullSequana X Series Templates
 templates:
-  - id: bs-x430-a5
-    name: "BullSequana X430-A5 (2U 1-Node)"
+  # --- CPU NODES ---
+  - id: bs-1u-twin-cpu
+    name: "BullSequana X410 (1U Twin)"
     type: server
-    u_height: 2
+    u_height: 1
     layout:
       type: grid
       rows: 1
-      cols: 1
-      # Simple 1x1, slot 1
-      matrix: [[1]]
+      cols: 2
+      matrix: [[1, 2]]
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 2
+      matrix: [[901, 902]]
 
-  - id: bs-x440-a5
-    name: "BullSequana X440-A5 (2U 4-Node)"
+  # --- GPU NODES ---
+  - id: bs-4u-quad-gpu
+    name: "BullSequana X2415 (4U Quad GPU)"
     type: server
-    u_height: 2
+    u_height: 4
     layout:
       type: grid
       rows: 2
       cols: 2
-      # Visual physical layout (Front View)
-      # [ Slot 3 | Slot 4 ]  (Top Row)
-      # [ Slot 1 | Slot 2 ]  (Bottom Row)
-      matrix: 
-        - [3, 4]
+      # Big quadrants
+      matrix:
         - [1, 2]
+        - [3, 4]
     rear_layout:
       type: grid
       rows: 1
       cols: 4
-      # Rear View: [ PSU L | FAN A | FAN B | PSU R ]
-      # Using negative numbers or specific IDs to denote infrastructure components?
-      # For visualization only, we'll use specific slot IDs that we won't map to nodes for now.
-      matrix:
-        - [901, 902, 903, 904]
+      matrix: [[901, 902, 903, 904]]
 
-  - id: generic-switch-1u
-    name: "Generic Top of Rack Switch"
-    type: network
+  # --- VISU NODES ---
+  - id: bs-2u-twin-visu
+    name: "BullSequana Visu Node (2U)"
+    type: server
+    u_height: 2
+    layout:
+      type: grid
+      rows: 1
+      cols: 2
+      matrix: [[1, 2]]
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 2
+      # GPU outputs visible on rear
+      matrix: [[901, 902]]
+
+  # --- GENERIC SERVERS ---
+  - id: srv-1u-mgmt
+    name: "Management Server 1U"
+    type: server
     u_height: 1
     layout:
       type: grid
       rows: 1
       cols: 1
       matrix: [[1]]
-    rear_layout:
-      type: grid
-      rows: 1
-      cols: 2
-      # [ Power | Management ]
-      matrix: [[901, 902]]

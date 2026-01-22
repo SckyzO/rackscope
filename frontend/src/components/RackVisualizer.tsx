@@ -42,7 +42,6 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
 
           return (
             <div key={u} className="relative flex items-center border-b border-white/5 min-h-0 w-full flex-1">
-              {/* Labels */}
               <div className="absolute -left-6 w-4 text-right text-[8px] font-mono text-gray-600 select-none flex items-center justify-end h-full z-10">{u}</div>
               <div className="absolute -right-6 w-4 text-left text-[8px] font-mono text-gray-600 select-none flex items-center justify-start h-full z-10">{u}</div>
               
@@ -72,14 +71,15 @@ export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearV
     const nodeMap = useMemo(() => parseNodeset(device.nodes), [device.nodes]);
     const chassisHealth = rackHealth; 
     
-    // Choose layout based on view
+    // Use the appropriate layout (Front or Rear)
     const layout = (isRearView && template.rear_layout) ? template.rear_layout : template.layout;
     
-    const isHighDensity = layout.cols > 8;
+    // Density detection: if too many columns, we simplify the view (except for networks)
+    const isHighDensity = layout.cols > 8 && template.type !== 'network';
 
     let borderColor = 'border-white/10';
     let bgColor = 'bg-gray-900/50';
-    if (template.id.includes('switch')) {
+    if (template.type === 'network') {
         borderColor = 'border-blue-500/30';
         bgColor = 'bg-blue-900/10';
     }
@@ -89,9 +89,9 @@ export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearV
                       : 'bg-gray-600';
 
     return (
-        <div className={`w-full h-full border ${borderColor} ${bgColor} rounded-sm overflow-hidden flex relative group`}>
-            {/* Health Bar (Left for Front, Right for Rear to simulate mirroring?) - Keep Left for consistency */}
-            <div className={`w-1.5 h-full ${statusColor} shrink-0 opacity-70 group-hover:opacity-100 transition-opacity`} title={`Chassis Status: ${chassisHealth}`}></div>
+        <div className={`w-full h-full border ${borderColor} ${bgColor} rounded-sm overflow-hidden flex relative group shadow-inner`}>
+            {/* Chassis Health Strip */}
+            <div className={`w-1.5 h-full ${statusColor} shrink-0 opacity-70 group-hover:opacity-100 transition-opacity`}></div>
             
             <div 
                 className="flex-1 grid gap-[1px] p-[1px] bg-transparent"
@@ -106,11 +106,10 @@ export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearV
                             key={rIdx} 
                             rowNodes={row.map(slot => nodeMap[slot])} 
                             nodesData={nodesData || {}}
-                            label={layout.rows > 1 ? `DRAWER ${rIdx + 1}` : 'STORAGE ARRAY'}
+                            label={template.type === 'storage' ? (template.layout.rows > 1 ? `DRAWER ${rIdx + 1}` : 'STORAGE ARRAY') : template.name}
                         />
                     ) : (
                         row.map((slotNum, cIdx) => {
-                            // If isRearView and slotNum > 900, it's an infrastructure component (PSU/Fan)
                             if (isRearView && slotNum > 900) {
                                 return <RearModuleUnit key={`${rIdx}-${cIdx}`} type={slotNum % 2 === 0 ? 'psu' : 'fan'} />;
                             }
@@ -127,6 +126,7 @@ export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearV
                                     nodeHealth={nodeHealth}
                                     nodeTemp={nodeTemp}
                                     isRearView={isRearView}
+                                    type={template.type}
                                 />
                             );
                         })
@@ -183,10 +183,9 @@ const RowSummaryUnit = ({ rowNodes, nodesData, label }: { rowNodes: (string|unde
     );
 };
 
-export const NodeUnit = ({ nodeName, slotNum, nodeHealth, nodeTemp, isRearView }: { nodeName?: string, slotNum: number, nodeHealth: string, nodeTemp?: number, isRearView?: boolean }) => {
+export const NodeUnit = ({ nodeName, slotNum, nodeHealth, nodeTemp, isRearView, type }: { nodeName?: string, slotNum: number, nodeHealth: string, nodeTemp?: number, isRearView?: boolean, type?: string }) => {
     const isOk = nodeHealth === 'OK';
     
-    // In Rear View, if no specific rear layout is defined, we show a generic backplate
     if (isRearView && !nodeName) {
          return (
             <div className="relative flex items-center justify-center bg-[#0a0a0a] border border-white/5">
@@ -195,20 +194,26 @@ export const NodeUnit = ({ nodeName, slotNum, nodeHealth, nodeTemp, isRearView }
          );
     }
 
+    // Specific Icon for Network
+    let Icon = type === 'network' ? RouterIcon : Server;
+
     return (
         <div className={`relative flex items-center justify-center bg-[#0a0a0a] group hover:bg-white/5 transition-colors cursor-help`}>
             {nodeName ? (
                 <div className="flex flex-col items-center">
                     <div className={`w-1.5 h-1.5 rounded-full mb-1 ${isOk ? 'bg-status-ok shadow-[0_0_5px_var(--color-status-ok)]' : nodeHealth === 'CRIT' ? 'bg-status-crit animate-pulse' : nodeHealth === 'WARN' ? 'bg-status-warn' : 'bg-status-unknown'}`}></div>
-                    <span className="text-[7px] font-mono text-gray-400 group-hover:text-white transition-colors truncate px-1 max-w-full italic">
-                        {nodeName}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                        <Icon className="w-2.5 h-2.5 text-gray-600 opacity-50" />
+                        <span className="text-[7px] font-mono text-gray-400 group-hover:text-white transition-colors truncate px-1 max-w-full italic">
+                            {nodeName}
+                        </span>
+                    </div>
                 </div>
             ) : (
-                <div className="text-[6px] text-gray-800 font-mono">SLOT {slotNum}</div>
+                <div className="text-[6px] text-gray-800 font-mono italic">SLOT {slotNum}</div>
             )}
             <div className="absolute z-50 bg-black border border-white/20 px-2 py-1 rounded text-[8px] text-white opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap">
-                Slot {slotNum} {nodeName ? `: ${nodeName} (${nodeHealth}${nodeTemp ? ` ${nodeTemp.toFixed(1)}°C` : ''})` : '(Empty)'}
+                {nodeName ? `${nodeName} (${nodeHealth}${nodeTemp ? ` ${nodeTemp.toFixed(1)}°C` : ''})` : `Empty Slot ${slotNum}`}
             </div>
         </div>
     );
