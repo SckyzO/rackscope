@@ -1,16 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", system-ui, sans-serif;
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   
-  /* Status Colors (Semantic) */
+  /* Status Colors */
   --color-status-ok: #10b981;
   --color-status-warn: #f59e0b;
   --color-status-crit: #ef4444;
   --color-status-unknown: #6b7280;
 
-  /* Theme Variables (Mapped by JS) */
+  /* Theme Variables */
   --color-rack-dark: var(--color-bg-base);
   --color-rack-panel: var(--color-bg-panel);
   --color-rack-border: var(--color-border);
@@ -22,4 +23,21 @@ body {
   color: var(--color-text-base);
   font-family: var(--font-sans);
   transition: background-color 0.3s, color 0.3s;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Thin Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
 }

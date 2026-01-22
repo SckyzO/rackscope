@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Server, Box, Zap, Thermometer, Router as RouterIcon, HardDrive, Fan, Power } from 'lucide-react';
+import { Server, Box, Zap, Thermometer, Router as RouterIcon, HardDrive, Fan, Power, Cpu, Info } from 'lucide-react';
 import type { Device, DeviceTemplate, Rack } from '../types';
 
 // --- Helpers ---
@@ -32,8 +32,12 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
   });
 
   return (
-    <div className="flex-1 bg-[#0f0f0f] p-4 overflow-hidden flex items-center justify-center h-full">
-      <div className="flex flex-col-reverse w-full max-w-[300px] h-full border-x-2 border-gray-800 bg-[#0a0a0a] shadow-2xl relative">
+    <div className="flex-1 bg-[var(--color-rack-interior)] p-4 flex items-center justify-center h-full transition-colors duration-500 rounded-lg">
+      {/* 
+          RACK FRAME 
+          - border-x-[24px]: Creates the side rails for the unit numbers
+      */}
+      <div className="flex flex-col-reverse w-full max-w-[380px] h-full border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-frame)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative transition-colors duration-500 rounded-sm">
         {Array.from({ length: rack.u_height }).map((_, idx) => {
           const u = idx + 1;
           const device = uMap.get(u);
@@ -41,9 +45,11 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
           const isDeviceStart = device && device.u_position === u;
 
           return (
-            <div key={u} className="relative flex items-center border-b border-white/5 min-h-0 w-full flex-1">
-              <div className="absolute -left-6 w-4 text-right text-[8px] font-mono text-gray-600 select-none flex items-center justify-end h-full z-10">{u}</div>
-              <div className="absolute -right-6 w-4 text-left text-[8px] font-mono text-gray-600 select-none flex items-center justify-start h-full z-10">{u}</div>
+            <div key={u} className="relative flex items-center border-b border-[var(--color-border)]/10 min-h-0 w-full flex-1 transition-colors duration-300">
+              
+              {/* Unit Labels - Centered on the 24px rails */}
+              <div className="absolute -left-[20px] w-4 text-center text-[10px] font-mono text-[var(--color-text-base)] font-black opacity-40 select-none flex items-center justify-center h-full z-10">{u}</div>
+              <div className="absolute -right-[20px] w-4 text-center text-[10px] font-mono text-[var(--color-text-base)] font-black opacity-40 select-none flex items-center justify-center h-full z-10">{u}</div>
               
               <div className="w-full px-0.5 py-[1px] h-full relative">
                   {isDeviceStart && template && (
@@ -51,12 +57,12 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
                         className="absolute bottom-0 left-0.5 right-0.5 z-20" 
                         style={{ height: `calc(${template.u_height} * 100%)` }}
                       >
-                          <DeviceChassis device={device} template={template} rackHealth={health || 'UNKNOWN'} nodesData={nodesData} isRearView={isRearView} />
+                          <DeviceChassis device={device} template={template} rackHealth={health || 'UNKNOWN'} nodesData={nodesData} isRearView={isRearView} uPosition={u} />
                       </div>
                   )}
                   
                   {!device && (
-                      <div className="w-full h-full bg-[repeating-linear-gradient(45deg,transparent,transparent_2px,#1a1a1a_2px,#1a1a1a_4px)] opacity-20"></div>
+                      <div className="w-full h-full bg-[var(--color-empty-slot)] opacity-40"></div>
                   )}
               </div>
             </div>
@@ -67,54 +73,44 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
   );
 };
 
-export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearView }: { device: Device, template: DeviceTemplate, rackHealth: string, nodesData?: Record<string, any>, isRearView?: boolean }) => {
+export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearView, uPosition }: { device: Device, template: DeviceTemplate, rackHealth: string, nodesData?: Record<string, any>, isRearView?: boolean, uPosition: number }) => {
     const nodeMap = useMemo(() => parseNodeset(device.nodes), [device.nodes]);
     
-    // --- Custom HPC Health Aggregation Logic ---
     const chassisHealth = useMemo(() => {
         if (!nodesData) return rackHealth;
-        
         const nodeIds = Object.values(nodeMap);
         const states = nodeIds.map(id => nodesData[id]?.state).filter(Boolean);
-        
         if (states.length === 0) return rackHealth;
-
         const critCount = states.filter(s => s === 'CRIT').length;
         const warnCount = states.filter(s => s === 'WARN').length;
-
-        if (critCount === states.length && states.length > 0) {
-            return 'CRIT'; // 100% Critical -> Red
-        }
-        if (critCount > 0 || warnCount > 0) {
-            return 'WARN'; // Partially failing -> Orange
-        }
+        if (critCount === states.length && states.length > 0) return 'CRIT';
+        if (critCount > 0 || warnCount > 0) return 'WARN';
         return 'OK';
     }, [nodesData, nodeMap, rackHealth]);
     
-    // Use the appropriate layout (Front or Rear)
     const layout = (isRearView && template.rear_layout) ? template.rear_layout : template.layout;
-    
-    // Density detection: if too many columns, we simplify the view (except for networks)
     const isHighDensity = layout.cols > 8 && template.type !== 'network';
 
-    let borderColor = 'border-white/10';
-    let bgColor = 'bg-gray-900/50';
+    let borderColor = 'border-[var(--color-border)]/30';
+    let bgColor = 'bg-[var(--color-device-surface)]';
     if (template.type === 'network') {
-        borderColor = 'border-blue-500/30';
-        bgColor = 'bg-blue-900/10';
+        borderColor = 'border-blue-500/40';
+        bgColor = 'bg-blue-500/5';
     }
+    
     const statusColor = chassisHealth === 'OK' ? 'bg-status-ok' 
                       : chassisHealth === 'CRIT' ? 'bg-status-crit' 
                       : chassisHealth === 'WARN' ? 'bg-status-warn' 
                       : 'bg-gray-600';
 
     return (
-        <div className={`w-full h-full border ${borderColor} ${bgColor} rounded-sm overflow-hidden flex relative group shadow-inner`}>
-            {/* Chassis Health Strip */}
-            <div className={`w-1.5 h-full ${statusColor} shrink-0 opacity-70 group-hover:opacity-100 transition-opacity`}></div>
+        <div className={`w-full h-full border ${borderColor} ${bgColor} rounded-[2px] flex relative group transition-all duration-200 hover:scale-[1.03] hover:z-[100] hover:shadow-2xl`}>
+            <div className={`w-1.5 h-full ${statusColor} shrink-0 opacity-90 relative`}>
+                <div className={`absolute inset-0 blur-[4px] ${statusColor} opacity-40`}></div>
+            </div>
             
             <div 
-                className="flex-1 grid gap-[1px] p-[1px] bg-transparent"
+                className="flex-1 grid gap-[1px] p-[1px] bg-[var(--color-border)]/5"
                 style={{ 
                     gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
                     gridTemplateColumns: isHighDensity ? '1fr' : `repeat(${layout.cols}, 1fr)` 
@@ -133,20 +129,20 @@ export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearV
                             if (isRearView && slotNum > 900) {
                                 return <RearModuleUnit key={`${rIdx}-${cIdx}`} type={slotNum % 2 === 0 ? 'psu' : 'fan'} />;
                             }
-
                             const nodeId = nodeMap[slotNum];
                             const nodeHealth = nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].state : 'UNKNOWN';
-                            const nodeTemp = nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].temperature : null;
-                            
+                            const nodeMetrics = nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId] : null;
                             return (
                                 <NodeUnit 
                                     key={`${rIdx}-${cIdx}`} 
                                     nodeName={nodeId} 
                                     slotNum={slotNum}
                                     nodeHealth={nodeHealth}
-                                    nodeTemp={nodeTemp}
-                                    isRearView={isRearView}
+                                    nodeMetrics={nodeMetrics}
                                     type={template.type}
+                                    uHeight={template.u_height}
+                                    uPosition={uPosition}
+                                    chassisName={template.name}
                                 />
                             );
                         })
@@ -159,12 +155,12 @@ export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearV
 
 const RearModuleUnit = ({ type }: { type: 'psu' | 'fan' }) => {
     return (
-        <div className="relative flex items-center justify-center bg-[#151515] border border-white/5 group hover:bg-white/10 transition-colors">
+        <div className="relative flex items-center justify-center bg-[var(--color-node-surface)] border border-[var(--color-border)]/20 group hover:bg-white/10 transition-colors h-full">
             {type === 'fan' ? (
-                <Fan className="w-4 h-4 text-gray-600 animate-[spin_3s_linear_infinite]" />
+                <Fan className="w-5 h-5 text-gray-600 animate-[spin_2s_linear_infinite]" />
             ) : (
                 <div className="flex flex-col items-center gap-1">
-                    <Power className="w-3 h-3 text-gray-500" />
+                    <Power className="w-3 h-3 text-gray-400" />
                     <div className="w-1.5 h-1.5 rounded-full bg-status-ok shadow-[0_0_5px_var(--color-status-ok)]"></div>
                 </div>
             )}
@@ -175,65 +171,102 @@ const RearModuleUnit = ({ type }: { type: 'psu' | 'fan' }) => {
 const RowSummaryUnit = ({ rowNodes, nodesData, label }: { rowNodes: (string|undefined)[], nodesData: Record<string, any>, label: string }) => {
     let worstState = 'OK';
     let critCount = 0;
-    let warnCount = 0;
-    let okCount = 0;
-
     rowNodes.forEach(nodeId => {
         if (!nodeId || !nodesData[nodeId]) return;
         const state = nodesData[nodeId].state;
         if (state === 'CRIT') { worstState = 'CRIT'; critCount++; }
-        else if (state === 'WARN') { warnCount++; if (worstState !== 'CRIT') worstState = 'WARN'; }
-        else if (state === 'OK') okCount++;
+        else if (state === 'WARN' && worstState !== 'CRIT') { worstState = 'WARN'; }
     });
-
     const statusColor = worstState === 'CRIT' ? 'bg-status-crit' : worstState === 'WARN' ? 'bg-status-warn' : 'bg-status-ok';
-
     return (
-        <div className={`relative flex items-center justify-between px-3 bg-[#0a0a0a] group hover:bg-white/5 transition-colors cursor-help border-b border-white/5 last:border-0`}>
+        <div className={`relative flex items-center justify-between px-4 bg-[var(--color-node-surface)] group hover:bg-[var(--color-accent-primary)]/10 transition-colors cursor-help border-b border-[var(--color-border)]/10 last:border-0 h-full`}>
             <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${statusColor} ${worstState === 'CRIT' ? 'animate-pulse shadow-[0_0_8px_var(--color-status-crit)]' : ''}`}></div>
-                <span className="text-[8px] font-bold font-mono text-gray-400 group-hover:text-white uppercase tracking-wider">{label}</span>
+                <div className={`w-2.5 h-2.5 rounded-full ${statusColor} ${worstState === 'CRIT' ? 'animate-pulse shadow-[0_0_10px_var(--color-status-crit)]' : ''}`}></div>
+                <span className="text-[11px] font-black font-mono text-[var(--color-text-base)] opacity-50 group-hover:opacity-100 uppercase tracking-widest">{label}</span>
             </div>
-            <div className="flex gap-1.5 opacity-40 group-hover:opacity-100">
-                {critCount > 0 && <span className="text-[7px] font-mono text-status-crit">{critCount} ERR</span>}
-                {warnCount > 0 && <span className="text-[7px] font-mono text-status-warn">{warnCount} WRN</span>}
-                <span className="text-[7px] font-mono text-gray-600">{rowNodes.length} DISKS</span>
+            <div className="flex gap-3 opacity-30 group-hover:opacity-100">
+                <span className="text-[9px] font-mono text-gray-500 uppercase font-bold">{rowNodes.length} UNITS</span>
             </div>
         </div>
     );
 };
 
-export const NodeUnit = ({ nodeName, slotNum, nodeHealth, nodeTemp, isRearView, type }: { nodeName?: string, slotNum: number, nodeHealth: string, nodeTemp?: number, isRearView?: boolean, type?: string }) => {
+export const NodeUnit = ({ nodeName, slotNum, nodeHealth, type, uHeight, uPosition, chassisName, nodeMetrics }: { nodeName?: string, slotNum: number, nodeHealth: string, type?: string, uHeight: number, uPosition: number, chassisName: string, nodeMetrics?: any }) => {
     const isOk = nodeHealth === 'OK';
-    
-    if (isRearView && !nodeName) {
-         return (
-            <div className="relative flex items-center justify-center bg-[#0a0a0a] border border-white/5">
-                <div className="w-full h-full bg-[repeating-linear-gradient(90deg,transparent,transparent_2px,#1a1a1a_2px,#1a1a1a_4px)] opacity-30"></div>
-            </div>
-         );
-    }
-
-    // Specific Icon for Network
     let Icon = type === 'network' ? RouterIcon : Server;
+    const hideText = uHeight === 1;
 
     return (
-        <div className={`relative flex items-center justify-center bg-[#0a0a0a] group hover:bg-white/5 transition-colors cursor-help`}>
+        <div className={`relative flex items-center justify-center bg-[var(--color-node-surface)] border border-[var(--color-border)]/20 group hover:bg-[var(--color-accent-primary)]/20 transition-all cursor-help h-full`}>
             {nodeName ? (
                 <div className="flex flex-col items-center">
-                    <div className={`w-1.5 h-1.5 rounded-full mb-1 ${isOk ? 'bg-status-ok shadow-[0_0_5px_var(--color-status-ok)]' : nodeHealth === 'CRIT' ? 'bg-status-crit animate-pulse' : nodeHealth === 'WARN' ? 'bg-status-warn' : 'bg-status-unknown'}`}></div>
-                    <div className="flex items-center gap-1.5">
-                        <Icon className="w-2.5 h-2.5 text-gray-600 opacity-50" />
-                        <span className="text-[7px] font-mono text-gray-400 group-hover:text-white transition-colors truncate px-1 max-w-full italic">
+                    <div className={`w-1.5 h-1.5 rounded-full mb-1 ${isOk ? 'bg-status-ok shadow-[0_0_8px_var(--color-status-ok)]' : nodeHealth === 'CRIT' ? 'bg-status-crit animate-pulse shadow-[0_0_10px_var(--color-status-crit)]' : 'bg-status-warn shadow-[0_0_8px_var(--color-status-warn)]'}`}></div>
+                    {!hideText && (
+                        <div className="flex items-center gap-1.5">
+                            <Icon className="w-3 h-3 text-gray-400 opacity-50 group-hover:text-[var(--color-accent-primary)] transition-colors" />
+                            <span className="text-[9px] font-mono text-[var(--color-text-base)] opacity-50 group-hover:opacity-100 transition-colors truncate px-1 max-w-full font-black uppercase">
+                                {nodeName}
+                            </span>
+                        </div>
+                    )}
+                    {hideText && (
+                        <span className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-[var(--color-accent-primary)] opacity-0 group-hover:opacity-100 bg-[var(--color-node-surface)] transition-opacity z-10 px-1 truncate uppercase">
                             {nodeName}
                         </span>
-                    </div>
+                    )}
                 </div>
             ) : (
-                <div className="text-[6px] text-gray-800 font-mono italic">SLOT {slotNum}</div>
+                <div className="text-[8px] text-gray-400 font-mono italic opacity-20 uppercase">U{slotNum}</div>
             )}
-            <div className="absolute z-50 bg-black border border-white/20 px-2 py-1 rounded text-[8px] text-white opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap">
-                {nodeName ? `${nodeName} (${nodeHealth}${nodeTemp ? ` ${nodeTemp.toFixed(1)}°C` : ''})` : `Empty Slot ${slotNum}`}
+
+            {/* HIGH-END TOOLTIP BUBBLE */}
+            <div className="absolute z-[999] bottom-full left-1/2 -translate-x-1/2 mb-3 w-72 p-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-2 group-hover:translate-y-0 drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                <div className="bg-[var(--color-bg-panel)] border border-[var(--color-accent-primary)]/40 rounded-2xl overflow-hidden backdrop-blur-2xl">
+                    {/* Tooltip Header */}
+                    <div className="bg-[var(--color-accent-primary)] p-4 flex justify-between items-center shadow-lg">
+                        <div className="flex items-center gap-3">
+                            <Cpu className="w-5 h-5 text-white" />
+                            <span className="text-sm font-black text-white uppercase tracking-tighter">{nodeName || 'Empty Slot'}</span>
+                        </div>
+                        <div className="px-2 py-1 bg-black/20 rounded-lg text-[10px] font-black text-white uppercase tracking-wider border border-white/10">{nodeHealth}</div>
+                    </div>
+                    
+                    {/* Tooltip Body */}
+                    <div className="p-5 grid grid-cols-2 gap-6 bg-[var(--color-bg-panel)]/90">
+                        <div className="space-y-1">
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block opacity-60">Chassis Model</span>
+                            <span className="text-xs text-[var(--color-text-base)] font-bold truncate block">{chassisName}</span>
+                        </div>
+                        <div className="space-y-1 text-right">
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block opacity-60">Location</span>
+                            <span className="text-xs text-[var(--color-text-base)] font-mono font-black block">RACK U{uPosition}</span>
+                        </div>
+                        
+                        <div className="col-span-2 pt-4 border-t border-[var(--color-border)]/20 flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="p-1.5 rounded-lg bg-status-warn/10">
+                                    <Thermometer className="w-4 h-4 text-status-warn" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-black text-gray-500 uppercase">Temp</span>
+                                    <span className="text-xs font-mono font-bold text-[var(--color-text-base)]">{nodeMetrics?.temperature ? `${nodeMetrics.temperature.toFixed(1)}°C` : '--'}</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="p-1.5 rounded-lg bg-status-ok/10">
+                                    <Zap className="w-4 h-4 text-status-ok" />
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[9px] font-black text-gray-500 uppercase">Power</span>
+                                    <span className="text-xs font-mono font-black text-[var(--color-text-base)]">{nodeMetrics?.power ? `${(nodeMetrics.power).toFixed(0)}W` : '--'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Tooltip Footer Arrow */}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-[var(--color-bg-panel)]"></div>
+                </div>
             </div>
         </div>
     );

@@ -26,12 +26,26 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       root.style.setProperty('--color-bg-panel', '#121212');
       root.style.setProperty('--color-text-base', '#e5e5e5');
       root.style.setProperty('--color-border', '#333333');
+      
+      // Rack Specifics (Dark) - Better contrast
+      root.style.setProperty('--color-rack-interior', '#141414'); 
+      root.style.setProperty('--color-rack-frame', '#2a2a2a');    
+      root.style.setProperty('--color-device-surface', '#1f2937'); // gray-800
+      root.style.setProperty('--color-node-surface', '#0d0d0d');
+      root.style.setProperty('--color-empty-slot', 'rgba(255, 255, 255, 0.03)');
     } else {
       root.classList.remove('dark');
-      root.style.setProperty('--color-bg-base', '#f3f4f6');
+      root.style.setProperty('--color-bg-base', '#f8fafc'); // slate-50
       root.style.setProperty('--color-bg-panel', '#ffffff');
-      root.style.setProperty('--color-text-base', '#111827');
-      root.style.setProperty('--color-border', '#e5e7eb');
+      root.style.setProperty('--color-text-base', '#0f172a'); // slate-900
+      root.style.setProperty('--color-border', '#e2e8f0'); // slate-200
+      
+      // Rack Specifics (Light) - Soft metallic look
+      root.style.setProperty('--color-rack-interior', '#f1f5f9'); 
+      root.style.setProperty('--color-rack-frame', '#cbd5e1');    // slate-300
+      root.style.setProperty('--color-device-surface', '#ffffff');
+      root.style.setProperty('--color-node-surface', '#f8fafc');
+      root.style.setProperty('--color-empty-slot', 'rgba(0, 0, 0, 0.02)');
     }
 
     // Apply Accent

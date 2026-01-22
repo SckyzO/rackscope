@@ -122,21 +122,21 @@ export const RackPage = () => {
         </div>
 
         {/* CENTER: Front View */}
-        <div className="col-span-5 flex flex-col overflow-hidden bg-black/20 border border-rack-border rounded-xl shadow-inner">
-            <div className="p-2 border-b border-rack-border bg-black/40 text-center text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
-                Front View
+        <div className="col-span-5 flex flex-col bg-[var(--color-bg-panel)] border border-[var(--color-border)] rounded-3xl shadow-2xl relative">
+            <div className="p-3 border-b border-[var(--color-border)] bg-[var(--color-bg-base)]/50 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] rounded-t-3xl">
+                Front Orientation
             </div>
-            <div className="flex-1 overflow-hidden p-4">
+            <div className="flex-1 p-6">
                 <RackElevation rack={rack} catalog={deviceCatalog} health={healthData?.state} nodesData={healthData?.nodes} />
             </div>
         </div>
 
         {/* RIGHT: Rear View */}
-        <div className="col-span-5 flex flex-col overflow-hidden bg-black/20 border border-rack-border rounded-xl shadow-inner">
-            <div className="p-2 border-b border-rack-border bg-black/40 text-center text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
-                Rear View
+        <div className="col-span-5 flex flex-col bg-[var(--color-bg-panel)] border border-[var(--color-border)] rounded-3xl shadow-2xl relative">
+            <div className="p-3 border-b border-[var(--color-border)] bg-[var(--color-bg-base)]/50 text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] rounded-t-3xl">
+                Rear Orientation
             </div>
-            <div className="flex-1 overflow-hidden p-4 opacity-80">
+            <div className="flex-1 p-6 opacity-90">
                 <RackElevation rack={rack} catalog={deviceCatalog} health={healthData?.state} nodesData={healthData?.nodes} isRearView={true} />
             </div>
         </div>

@@ -8,18 +8,15 @@ export const Sidebar = () => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
   const [rackTemplates, setRackTemplates] = useState<any[]>([]); 
-  
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    Promise.all([
-        api.getRooms(),
-        api.getCatalog()
-    ]).then(([roomsData, catalogData]) => {
+    Promise.all([api.getRooms(), api.getCatalog()])
+      .then(([roomsData, catalogData]) => {
         setRooms(roomsData);
         setDeviceTemplates(catalogData.device_templates || []);
         setRackTemplates(catalogData.rack_templates || []);
-    }).catch(console.error);
+      }).catch(console.error);
   }, []);
 
   const groupedDevices = useMemo(() => {
@@ -36,36 +33,33 @@ export const Sidebar = () => {
   };
 
   return (
-    <div className="w-64 h-screen bg-[#0f0f0f] border-r border-rack-border flex flex-col overflow-hidden shrink-0">
-      <div className="p-6 border-b border-rack-border bg-black/20">
-        <div className="flex items-center gap-2 mb-1">
-          <Activity className="w-5 h-5 text-blue-500" />
-          <h1 className="text-xl font-bold tracking-tight text-white">
-            RACK<span className="text-blue-500">SCOPE</span>
+    <div className="w-64 h-screen bg-[var(--color-bg-panel)] border-r border-[var(--color-border)] flex flex-col overflow-hidden shrink-0 z-50 backdrop-blur-md">
+      {/* Branding */}
+      <div className="p-6 border-b border-[var(--color-border)] bg-[var(--color-bg-base)]/50">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="p-1.5 rounded-lg bg-[var(--color-accent)] shadow-[0_0_15px_var(--color-accent)]/30">
+            <Activity className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="text-xl font-black tracking-tighter text-[var(--color-text-base)] uppercase">
+            RACK<span className="text-[var(--color-accent)]">SCOPE</span>
           </h1>
         </div>
-        <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Physical Infrastructure</p>
+        <p className="text-[9px] text-gray-500 font-mono uppercase tracking-[0.3em] pl-11">Physical Intelligence</p>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar">
-        {/* Navigation Section */}
-        <div className="px-4 mb-6">
-          <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">Main</h2>
+      <nav className="flex-1 overflow-y-auto py-6 custom-scrollbar px-3">
+        {/* Main Section */}
+        <div className="mb-8">
+          <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 px-3 opacity-50">Main Control</h2>
           <div className="space-y-1">
-            <Link to="/" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
-                <LayoutDashboard className="w-4 h-4 opacity-70" />
-                Overview
-            </Link>
-            <Link to="/settings" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
-                <Settings className="w-4 h-4 opacity-70" />
-                Settings
-            </Link>
+            <SidebarLink to="/" icon={LayoutDashboard} label="Overview" />
+            <SidebarLink to="/settings" icon={Settings} label="Settings" />
           </div>
         </div>
 
         {/* Topology Section */}
-        <div className="px-4 mb-6">
-          <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">Topology</h2>
+        <div className="mb-8">
+          <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 px-3 opacity-50">Topology</h2>
           <div className="space-y-1">
             {rooms.map(room => (
               <RoomTreeItem key={room.id} room={room} />
@@ -74,27 +68,27 @@ export const Sidebar = () => {
         </div>
 
         {/* Library Section */}
-        <div className="px-4 border-t border-white/5 pt-4">
-          <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-4 px-2 italic text-gray-600">Gabarit Library</h2>
+        <div className="border-t border-[var(--color-border)] pt-6 mt-6">
+          <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4 px-3 italic opacity-50">Library</h2>
           
           <div className="space-y-2">
              {Object.entries(groupedDevices).map(([type, templates]) => (
                  <div key={type} className="space-y-1">
                     <button 
                         onClick={() => toggleCategory(type)}
-                        className="w-full px-2 py-1.5 text-[10px] font-bold text-blue-500/50 hover:text-blue-400 uppercase flex items-center justify-between group transition-colors rounded hover:bg-white/5"
+                        className="w-full px-3 py-2 text-[11px] font-bold text-gray-400 hover:text-[var(--color-accent)] uppercase flex items-center justify-between group transition-all rounded-lg hover:bg-[var(--color-accent)]/5"
                     >
                         <div className="flex items-center gap-2">
-                            <Folder className={`w-3 h-3 ${expandedCategories[type] ? 'text-blue-400' : ''}`} /> 
+                            <Folder className={`w-3.5 h-3.5 ${expandedCategories[type] ? 'text-[var(--color-accent)]' : 'opacity-50'}`} /> 
                             {type}s
                         </div>
-                        {expandedCategories[type] ? <ChevronDown className="w-3 h-3 opacity-50" /> : <ChevronRight className="w-3 h-3 opacity-50" />}
+                        {expandedCategories[type] ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                     </button>
                     
                     {expandedCategories[type] && (
-                        <div className="space-y-1 animate-in slide-in-from-top-1 duration-200">
+                        <div className="space-y-1 animate-in slide-in-from-top-1 duration-200 ml-4 border-l border-[var(--color-border)]">
                             {templates.map(t => (
-                                <div key={t.id} className="px-6 py-1 text-[10px] text-gray-500 hover:text-white truncate cursor-help border-l border-white/5 ml-3" title={t.name}>
+                                <div key={t.id} className="px-6 py-1.5 text-[10px] text-gray-500 hover:text-[var(--color-text-base)] truncate cursor-help hover:bg-white/5 rounded-r-lg transition-colors" title={t.name}>
                                     {t.name}
                                 </div>
                             ))}
@@ -103,72 +97,68 @@ export const Sidebar = () => {
                  </div>
              ))}
           </div>
-
-          {rackTemplates.length > 0 && (
-            <div className="space-y-1 mt-2">
-                <button 
-                    onClick={() => toggleCategory('racks')}
-                    className="w-full px-2 py-1.5 text-[10px] font-bold text-purple-500/50 hover:text-purple-400 uppercase flex items-center justify-between group transition-colors rounded hover:bg-white/5"
-                >
-                    <div className="flex items-center gap-2">
-                        <Server className={`w-3 h-3 ${expandedCategories['racks'] ? 'text-purple-400' : ''}`} /> 
-                        Racks
-                    </div>
-                    {expandedCategories['racks'] ? <ChevronDown className="w-3 h-3 opacity-50" /> : <ChevronRight className="w-3 h-3 opacity-50" />}
-                </button>
-                
-                {expandedCategories['racks'] && (
-                    <div className="space-y-1 animate-in slide-in-from-top-1 duration-200">
-                        {rackTemplates.map(t => (
-                            <div key={t.id} className="px-6 py-1 text-[10px] text-gray-500 hover:text-white truncate cursor-help border-l border-white/5 ml-3" title={t.name}>
-                                {t.name}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-          )}
         </div>
       </nav>
 
-      <div className="p-4 border-t border-rack-border bg-black/20">
-        <div className="flex items-center gap-3 px-2">
+      {/* Footer Status */}
+      <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-bg-base)]/50">
+        <div className="flex items-center gap-3 px-2 py-1 rounded-full bg-[var(--color-accent)]/5 border border-[var(--color-accent)]/10">
           <div className="w-2 h-2 rounded-full bg-status-ok animate-pulse shadow-[0_0_8px_var(--color-status-ok)]"></div>
-          <span className="text-[10px] font-mono text-gray-500 uppercase tracking-tighter">System Live</span>
+          <span className="text-[9px] font-mono font-bold text-[var(--color-accent)] uppercase tracking-tighter">System Online</span>
         </div>
       </div>
     </div>
   );
 };
 
+const SidebarLink = ({ to, icon: Icon, label }: { to: string, icon: any, label: string }) => {
+    const { pathname } = useParams(); // Note: logic might vary based on how you handle active state
+    const isActive = window.location.pathname === to;
+
+    return (
+        <Link 
+            to={to} 
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive 
+                ? 'bg-[var(--color-accent)] text-white shadow-lg shadow-[var(--color-accent)]/20' 
+                : 'text-gray-400 hover:bg-[var(--color-accent)]/10 hover:text-[var(--color-accent)]'
+            }`}
+        >
+            <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'opacity-70'}`} />
+            {label}
+        </Link>
+    );
+};
+
 const RoomTreeItem = ({ room }: { room: RoomSummary }) => {
   const { roomId } = useParams();
-  // Expanded by default for Phase 3 exploration
   const [isExpanded, setIsExpanded] = useState(true);
+  const isActive = roomId === room.id;
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between group">
+      <div className="flex items-center gap-1 group">
           <Link 
             to={`/room/${room.id}`}
-            className={`flex-1 flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${
-              roomId === room.id ? 'text-white font-bold' : 'text-gray-400 hover:text-white'
+            className={`flex-1 flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
+              isActive 
+              ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20' 
+              : 'text-gray-400 hover:text-[var(--color-text-base)]'
             }`}
           >
-            <Map className={`w-3 h-3 ${roomId === room.id ? 'text-blue-500' : 'opacity-50'}`} />
-            <span className="truncate">{room.name}</span>
+            <Map className={`w-4 h-4 ${isActive ? 'text-[var(--color-accent)]' : 'opacity-50'}`} />
+            <span className="truncate uppercase tracking-tight">{room.name}</span>
           </Link>
           <button 
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1.5 hover:bg-white/5 rounded text-gray-500 hover:text-white"
+            className="p-2 hover:bg-white/5 rounded-lg text-gray-500 hover:text-[var(--color-text-base)] transition-colors"
           >
-             {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+             {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </button>
       </div>
       
       {isExpanded && (
-        <div className="pl-3 space-y-1 relative">
-          <div className="absolute left-4 top-0 bottom-0 w-[1px] bg-white/5"></div>
+        <div className="pl-4 space-y-1 mt-1">
           {room.aisles?.map(aisle => (
             <AisleTreeItem key={aisle.id} aisle={aisle} roomId={room.id} />
           ))}
@@ -179,26 +169,25 @@ const RoomTreeItem = ({ room }: { room: RoomSummary }) => {
 };
 
 const AisleTreeItem = ({ aisle, roomId }: { aisle: AisleSummary, roomId: string }) => {
-  // Collapsed by default to hide rack list
   const [isExpanded, setIsExpanded] = useState(false);
   
   return (
-    <div className="relative pl-4">
+    <div className="relative">
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-2 py-1 text-[10px] font-bold text-gray-500 hover:text-gray-300 uppercase flex items-center justify-between group transition-colors rounded hover:bg-white/5"
+        className="w-full px-3 py-1.5 text-[10px] font-bold text-gray-500 hover:text-[var(--color-accent)] uppercase flex items-center justify-between group transition-all rounded-lg hover:bg-white/5"
       >
-        <span className="tracking-wider">{aisle.name}</span>
+        <span className="tracking-[0.1em]">{aisle.name}</span>
         {isExpanded ? <ChevronDown className="w-3 h-3 opacity-50" /> : <ChevronRight className="w-3 h-3 opacity-50" />}
       </button>
 
       {isExpanded && (
-        <div className="pl-3 border-l border-white/5 ml-3 mt-1 space-y-1">
+        <div className="pl-3 border-l border-[var(--color-border)] ml-3 mt-1 space-y-0.5 animate-in slide-in-from-top-1 duration-200">
           {aisle.racks.map(rack => (
             <Link 
               key={rack.id}
               to={`/rack/${rack.id}`} 
-              className="flex items-center gap-2 py-1 px-2 text-xs text-gray-500 hover:text-blue-400 hover:bg-white/5 rounded transition-colors block group/rack"
+              className="flex items-center gap-2 py-1.5 px-3 text-[11px] font-medium text-gray-500 hover:text-[var(--color-accent)] hover:bg-[var(--color-accent)]/5 rounded-lg transition-all block group/rack"
             >
               <Component className="w-3 h-3 opacity-30 group-hover/rack:opacity-100" />
               <span className="truncate">{rack.name}</span>
