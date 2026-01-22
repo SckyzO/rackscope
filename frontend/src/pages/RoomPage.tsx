@@ -76,6 +76,7 @@ export const RoomPage = () => {
   }, [room]);
 
   const selectedMetrics = selectedRack ? healthMap[selectedRack.id]?.metrics : null;
+  const selectedNodesData = selectedRack ? healthMap[selectedRack.id]?.nodes : null;
 
   if (loading) return <div className="p-8 font-mono animate-pulse text-blue-500">LDR :: INITIALIZING_ENVIRONMENT...</div>;
   if (error) return <div className="p-8 text-status-crit font-mono uppercase">ERR :: {error}</div>;
@@ -138,6 +139,7 @@ export const RoomPage = () => {
                 catalog={catalog}
                 health={healthMap[selectedRack.id]?.state || 'UNKNOWN'} 
                 metrics={selectedMetrics}
+                nodesData={selectedNodesData}
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 opacity-50">
@@ -173,7 +175,7 @@ const RackThumbnail = ({ rack, health, isSelected, onClick }: { rack: Rack, heal
   );
 };
 
-const RackDetailView = ({ rack, catalog, health, metrics }: { rack: Rack, catalog: Record<string, DeviceTemplate>, health: string, metrics: any }) => {
+const RackDetailView = ({ rack, catalog, health, metrics, nodesData }: { rack: Rack, catalog: Record<string, DeviceTemplate>, health: string, metrics: any, nodesData: Record<string, any> }) => {
   const uMap = new Map<number, Device>();
   rack.devices.forEach(d => {
       const template = catalog[d.template_id];
@@ -217,7 +219,6 @@ const RackDetailView = ({ rack, catalog, health, metrics }: { rack: Rack, catalo
 
             return (
               <div key={u} className="relative flex items-center border-b border-white/5 min-h-0 w-full flex-1">
-                {/* Labels are ALWAYS rendered now */}
                 <div className="absolute -left-6 w-4 text-right text-[8px] font-mono text-gray-600 select-none flex items-center justify-end h-full z-10">{u}</div>
                 <div className="absolute -right-6 w-4 text-left text-[8px] font-mono text-gray-600 select-none flex items-center justify-start h-full z-10">{u}</div>
                 
@@ -227,7 +228,7 @@ const RackDetailView = ({ rack, catalog, health, metrics }: { rack: Rack, catalo
                           className="absolute bottom-0 left-0.5 right-0.5 z-20" 
                           style={{ height: `calc(${template.u_height} * 100%)` }}
                         >
-                            <DeviceChassis device={device} template={template} rackHealth={health} />
+                            <DeviceChassis device={device} template={template} rackHealth={health} nodesData={nodesData} />
                         </div>
                     )}
                     
@@ -244,7 +245,7 @@ const RackDetailView = ({ rack, catalog, health, metrics }: { rack: Rack, catalo
   );
 };
 
-const DeviceChassis = ({ device, template, rackHealth }: { device: Device, template: DeviceTemplate, rackHealth: string }) => {
+const DeviceChassis = ({ device, template, rackHealth, nodesData }: { device: Device, template: DeviceTemplate, rackHealth: string, nodesData: Record<string, any> }) => {
     const nodeMap = useMemo(() => parseNodeset(device.nodes), [device.nodes]);
     const chassisHealth = rackHealth; 
     let borderColor = 'border-white/10';
@@ -269,27 +270,34 @@ const DeviceChassis = ({ device, template, rackHealth }: { device: Device, templ
                 }}
             >
                 {template.layout.matrix.map((row, rIdx) => (
-                    row.map((slotNum, cIdx) => (
-                        <NodeUnit 
-                            key={`${rIdx}-${cIdx}`} 
-                            nodeName={nodeMap[slotNum]} 
-                            slotNum={slotNum}
-                            rackHealth={rackHealth}
-                        />
-                    ))
+                    row.map((slotNum, cIdx) => {
+                        const nodeId = nodeMap[slotNum];
+                        const nodeHealth = nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].state : 'UNKNOWN';
+                        const nodeTemp = nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].temperature : null;
+                        
+                        return (
+                            <NodeUnit 
+                                key={`${rIdx}-${cIdx}`} 
+                                nodeName={nodeId} 
+                                slotNum={slotNum}
+                                nodeHealth={nodeHealth}
+                                nodeTemp={nodeTemp}
+                            />
+                        );
+                    })
                 ))}
             </div>
         </div>
     );
 };
 
-const NodeUnit = ({ nodeName, slotNum, rackHealth }: { nodeName?: string, slotNum: number, rackHealth: string }) => {
-    const isOk = rackHealth === 'OK';
+const NodeUnit = ({ nodeName, slotNum, nodeHealth, nodeTemp }: { nodeName?: string, slotNum: number, nodeHealth: string, nodeTemp?: number }) => {
+    const isOk = nodeHealth === 'OK';
     return (
         <div className={`relative flex items-center justify-center bg-[#0a0a0a] group hover:bg-white/5 transition-colors cursor-help`}>
             {nodeName ? (
                 <div className="flex flex-col items-center">
-                    <div className={`w-1.5 h-1.5 rounded-full mb-1 ${isOk ? 'bg-status-ok shadow-[0_0_5px_var(--color-status-ok)]' : rackHealth === 'CRIT' ? 'bg-status-crit animate-pulse' : 'bg-status-warn'}`}></div>
+                    <div className={`w-1.5 h-1.5 rounded-full mb-1 ${isOk ? 'bg-status-ok shadow-[0_0_5px_var(--color-status-ok)]' : nodeHealth === 'CRIT' ? 'bg-status-crit animate-pulse' : nodeHealth === 'WARN' ? 'bg-status-warn' : 'bg-status-unknown'}`}></div>
                     <span className="text-[7px] font-mono text-gray-400 group-hover:text-white transition-colors truncate px-1 max-w-full italic">
                         {nodeName}
                     </span>
@@ -298,7 +306,7 @@ const NodeUnit = ({ nodeName, slotNum, rackHealth }: { nodeName?: string, slotNu
                 <div className="text-[6px] text-gray-800 font-mono">SLOT {slotNum}</div>
             )}
             <div className="absolute z-50 bg-black border border-white/20 px-2 py-1 rounded text-[8px] text-white opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap">
-                Slot {slotNum} {nodeName ? `: ${nodeName}` : '(Empty)'}
+                Slot {slotNum} {nodeName ? `: ${nodeName} (${nodeHealth}${nodeTemp ? ` ${nodeTemp.toFixed(1)}°C` : ''})` : '(Empty)'}
             </div>
         </div>
     );

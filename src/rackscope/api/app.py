@@ -73,16 +73,10 @@ def get_room_layout(room_id: str):
 
 @app.get("/api/rooms/{room_id}/state")
 async def get_room_state(room_id: str):
-    # Retrieve all rack temps to aggregate room health
-    # This is naive (N queries) but okay for MVP. 
-    # Better approach: fetch vector once and map in memory.
-    temps = await prom_client.get_rack_temperatures()
+    # Get aggregated health for all racks (efficient query)
+    rack_healths = await prom_client.get_rack_health_summary()
     
-    # Filter for this room (we assume we know rack IDs for this room)
-    # Since we don't have a quick reverse map yet, we'll iterate
     room_status = "OK"
-    
-    # In a real app, we would cache the list of racks per room
     rack_ids = []
     if TOPOLOGY:
         for site in TOPOLOGY.sites:
@@ -93,37 +87,60 @@ async def get_room_state(room_id: str):
                     rack_ids.extend([r.id for r in room.standalone_racks])
     
     for rid in rack_ids:
-        temp = temps.get(rid, 0)
-        if temp > 35:
+        h = rack_healths.get(rid, "OK")
+        if h == "CRIT":
             room_status = "CRIT"
-            break # Worst case wins
-        if temp > 30 and room_status != "CRIT":
+            break
+        if h == "WARN" and room_status != "CRIT":
             room_status = "WARN"
 
     return {"room_id": room_id, "state": room_status}
 
 @app.get("/api/racks/{rack_id}/state")
 async def get_rack_state(rack_id: str):
-    temps = await prom_client.get_rack_temperatures()
-    power = await prom_client.get_rack_power()
+    # Fetch all node metrics for this rack
+    nodes_metrics = await prom_client.get_node_metrics(rack_id)
     
-    temp = temps.get(rack_id)
-    pwr = power.get(rack_id)
+    # Calculate Node States and Aggregate Rack State
+    rack_state = "OK"
+    processed_nodes = {}
     
-    state = "UNKNOWN"
-    if temp is not None:
+    total_power = 0.0
+    total_temp = 0.0
+    temp_count = 0
+    
+    for node_id, m in nodes_metrics.items():
+        temp = m.get("temperature", 0)
+        power = m.get("power", 0)
+        
+        total_power += power
+        if temp > 0:
+            total_temp += temp
+            temp_count += 1
+        
+        state = "OK"
         if temp > 35:
             state = "CRIT"
+            rack_state = "CRIT"
         elif temp > 30:
             state = "WARN"
-        else:
-            state = "OK"
-            
+            if rack_state != "CRIT":
+                rack_state = "WARN"
+                
+        processed_nodes[node_id] = {
+            "state": state,
+            "temperature": temp,
+            "power": power
+        }
+    
+    avg_temp = total_temp / temp_count if temp_count > 0 else 0
+
     return {
         "rack_id": rack_id, 
-        "state": state,
+        "state": rack_state,
         "metrics": {
-            "temperature": temp,
-            "power": pwr
-        }
+            "temperature": avg_temp,
+            "power": total_power
+        },
+        "nodes": processed_nodes
     }

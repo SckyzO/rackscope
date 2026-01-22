@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import os
 import httpx
-from typing import Dict, Any, Optional
-from datetime import datetime
+from typing import Dict, Any, List
 
 # Default to internal docker network hostname if not set
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
@@ -26,35 +25,70 @@ class PrometheusClient:
             print(f"Prometheus query error: {e}")
             return {"status": "error", "error": str(e)}
 
-    async def get_rack_temperatures(self) -> Dict[str, float]:
-        """Fetch average temperature per rack."""
-        # Query: average temperature by rack_id
-        # We group by rack_id to match our topology model
-        q = "avg(rack_temperature_celsius) by (rack_id)"
-        result = await self.query(q)
+    async def get_node_metrics(self, rack_id: str) -> Dict[str, Any]:
+        """Fetch metrics for all nodes in a specific rack."""
+        # We fetch temperature for all nodes in this rack
+        q_temp = f'node_temperature_celsius{{rack_id="{rack_id}"}}'
+        q_power = f'node_power_watts{{rack_id="{rack_id}"}}'
         
-        temps = {}
-        if result.get("status") == "success":
-            for item in result["data"]["result"]:
-                rack_id = item["metric"].get("rack_id")
-                value = float(item["value"][1])
-                if rack_id:
-                    temps[rack_id] = value
-        return temps
+        # Parallel fetch
+        results = {}
+        try:
+            # Note: httpx usage here should be optimized with gather in real prod
+            res_temp = await self.query(q_temp)
+            res_power = await self.query(q_power)
+            
+            # Parse Temperatures
+            if res_temp.get("status") == "success":
+                for item in res_temp["data"]["result"]:
+                    node_id = item["metric"].get("node_id")
+                    val = float(item["value"][1])
+                    if node_id:
+                        if node_id not in results: results[node_id] = {}
+                        results[node_id]["temperature"] = val
 
-    async def get_rack_power(self) -> Dict[str, float]:
-        """Fetch power consumption per rack."""
-        q = "sum(rack_power_watts) by (rack_id)"
-        result = await self.query(q)
+            # Parse Power
+            if res_power.get("status") == "success":
+                for item in res_power["data"]["result"]:
+                    node_id = item["metric"].get("node_id")
+                    val = float(item["value"][1])
+                    if node_id:
+                        if node_id not in results: results[node_id] = {}
+                        results[node_id]["power"] = val
+                        
+        except Exception as e:
+            print(f"Error fetching node metrics: {e}")
+            
+        return results
+
+    async def get_rack_health_summary(self) -> Dict[str, str]:
+        """Get aggregated health status per rack based on nodes."""
+        # If any node is > 35°C, rack is CRIT. If > 30°C, WARN.
+        # We do this aggregation in PromQL for efficiency.
         
-        power = {}
-        if result.get("status") == "success":
-            for item in result["data"]["result"]:
+        # Count critical nodes per rack
+        q_crit = 'count(node_temperature_celsius > 35) by (rack_id)'
+        q_warn = 'count(node_temperature_celsius > 30) by (rack_id)'
+        
+        health_map = {}
+        
+        # Initialize default OK (we assume all known racks are OK unless proven otherwise)
+        # In a real app we'd merge with topology list
+        
+        res_crit = await self.query(q_crit)
+        res_warn = await self.query(q_warn)
+        
+        if res_warn.get("status") == "success":
+            for item in res_warn["data"]["result"]:
                 rack_id = item["metric"].get("rack_id")
-                value = float(item["value"][1])
-                if rack_id:
-                    power[rack_id] = value
-        return power
+                if rack_id: health_map[rack_id] = "WARN"
+
+        if res_crit.get("status") == "success":
+            for item in res_crit["data"]["result"]:
+                rack_id = item["metric"].get("rack_id")
+                if rack_id: health_map[rack_id] = "CRIT"
+                
+        return health_map
 
 # Global instance
 client = PrometheusClient()
