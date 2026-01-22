@@ -109,11 +109,33 @@ export const RackPage = () => {
         {/* LEFT: Infrastructure Column (HMC, PMC, RMC) */}
         <div className="col-span-2 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
             <h3 className="text-[10px] font-bold text-gray-600 uppercase tracking-widest border-b border-white/5 pb-2">Infrastructure</h3>
-            
-            {rackTemplate?.infrastructure.components.map(comp => (
-                <InfraComponentCard key={comp.id} component={comp} />
-            ))}
-            
+
+            {rackTemplate && (
+                <div className="flex flex-col gap-4">
+                    {rackTemplate.infrastructure.front_components && rackTemplate.infrastructure.front_components.length > 0 && (
+                        <div className="space-y-2">
+                            <div className="text-[9px] font-mono uppercase text-gray-500">Front</div>
+                            {rackTemplate.infrastructure.front_components.map(comp => (
+                                <InfraComponentCard key={comp.id} component={comp} />
+                            ))}
+                        </div>
+                    )}
+
+                    {rackTemplate.infrastructure.rear_components && rackTemplate.infrastructure.rear_components.length > 0 ? (
+                        <div className="space-y-2">
+                            <div className="text-[9px] font-mono uppercase text-gray-500">Rear</div>
+                            {rackTemplate.infrastructure.rear_components.map(comp => (
+                                <InfraComponentCard key={comp.id} component={comp} />
+                            ))}
+                        </div>
+                    ) : (
+                        rackTemplate.infrastructure.components.map(comp => (
+                            <InfraComponentCard key={comp.id} component={comp} />
+                        ))
+                    )}
+                </div>
+            )}
+
             {!rackTemplate && (
                 <div className="p-4 border border-dashed border-gray-800 rounded text-[10px] text-gray-600 text-center uppercase font-mono">
                     No Template Assigned

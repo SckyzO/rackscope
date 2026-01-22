@@ -1,1825 +1,790 @@
 sites:
-- id: dc1
-  name: Main Datacenter
-  rooms:
-  - id: room-a
-    name: HPC Cluster Room A
-    aisles:
-    - id: aisle-01
-      name: Aisle 01 (Compute)
-      racks:
-      - id: r01-01
-        name: Rack CPU 01
-        template_id: bull-xh3000
-        u_height: 48
-        devices:
-        - id: r01-01-isw
-          name: isw-l1-01
-          template_id: ib-switch-l1
-          u_position: 42
-        - id: r01-01-esw
-          name: esw-01
-          template_id: eth-switch-tor
-          u_position: 41
-        - id: r01-01-c01
-          name: Compute Encl 01
-          template_id: bs-1u-twin-cpu
-          u_position: 1
-          nodes: compute[001-002]
-        - id: r01-01-c02
-          name: Compute Encl 02
-          template_id: bs-1u-twin-cpu
-          u_position: 2
-          nodes: compute[003-004]
-        - id: r01-01-c03
-          name: Compute Encl 03
-          template_id: bs-1u-twin-cpu
-          u_position: 3
-          nodes: compute[005-006]
-        - id: r01-01-c04
-          name: Compute Encl 04
-          template_id: bs-1u-twin-cpu
-          u_position: 4
-          nodes: compute[007-008]
-        - id: r01-01-c05
-          name: Compute Encl 05
-          template_id: bs-1u-twin-cpu
-          u_position: 5
-          nodes: compute[009-010]
-        - id: r01-01-c06
-          name: Compute Encl 06
-          template_id: bs-1u-twin-cpu
-          u_position: 6
-          nodes: compute[011-012]
-        - id: r01-01-c07
-          name: Compute Encl 07
-          template_id: bs-1u-twin-cpu
-          u_position: 7
-          nodes: compute[013-014]
-        - id: r01-01-c08
-          name: Compute Encl 08
-          template_id: bs-1u-twin-cpu
-          u_position: 8
-          nodes: compute[015-016]
-        - id: r01-01-c09
-          name: Compute Encl 09
-          template_id: bs-1u-twin-cpu
-          u_position: 9
-          nodes: compute[017-018]
-        - id: r01-01-c10
-          name: Compute Encl 10
-          template_id: bs-1u-twin-cpu
-          u_position: 10
-          nodes: compute[019-020]
-        - id: r01-01-c11
-          name: Compute Encl 11
-          template_id: bs-1u-twin-cpu
-          u_position: 11
-          nodes: compute[021-022]
-        - id: r01-01-c12
-          name: Compute Encl 12
-          template_id: bs-1u-twin-cpu
-          u_position: 12
-          nodes: compute[023-024]
-        - id: r01-01-c13
-          name: Compute Encl 13
-          template_id: bs-1u-twin-cpu
-          u_position: 13
-          nodes: compute[025-026]
-        - id: r01-01-c14
-          name: Compute Encl 14
-          template_id: bs-1u-twin-cpu
-          u_position: 14
-          nodes: compute[027-028]
-        - id: r01-01-c15
-          name: Compute Encl 15
-          template_id: bs-1u-twin-cpu
-          u_position: 15
-          nodes: compute[029-030]
-        - id: r01-01-c16
-          name: Compute Encl 16
-          template_id: bs-1u-twin-cpu
-          u_position: 16
-          nodes: compute[031-032]
-        - id: r01-01-c17
-          name: Compute Encl 17
-          template_id: bs-1u-twin-cpu
-          u_position: 17
-          nodes: compute[033-034]
-        - id: r01-01-c18
-          name: Compute Encl 18
-          template_id: bs-1u-twin-cpu
-          u_position: 18
-          nodes: compute[035-036]
-        - id: r01-01-c19
-          name: Compute Encl 19
-          template_id: bs-1u-twin-cpu
-          u_position: 19
-          nodes: compute[037-038]
-        - id: r01-01-c20
-          name: Compute Encl 20
-          template_id: bs-1u-twin-cpu
-          u_position: 20
-          nodes: compute[039-040]
-        - id: r01-01-c21
-          name: Compute Encl 21
-          template_id: bs-1u-twin-cpu
-          u_position: 21
-          nodes: compute[041-042]
-        - id: r01-01-c22
-          name: Compute Encl 22
-          template_id: bs-1u-twin-cpu
-          u_position: 22
-          nodes: compute[043-044]
-        - id: r01-01-c23
-          name: Compute Encl 23
-          template_id: bs-1u-twin-cpu
-          u_position: 23
-          nodes: compute[045-046]
-        - id: r01-01-c24
-          name: Compute Encl 24
-          template_id: bs-1u-twin-cpu
-          u_position: 24
-          nodes: compute[047-048]
-        - id: r01-01-c25
-          name: Compute Encl 25
-          template_id: bs-1u-twin-cpu
-          u_position: 25
-          nodes: compute[049-050]
-        - id: r01-01-c26
-          name: Compute Encl 26
-          template_id: bs-1u-twin-cpu
-          u_position: 26
-          nodes: compute[051-052]
-        - id: r01-01-c27
-          name: Compute Encl 27
-          template_id: bs-1u-twin-cpu
-          u_position: 27
-          nodes: compute[053-054]
-        - id: r01-01-c28
-          name: Compute Encl 28
-          template_id: bs-1u-twin-cpu
-          u_position: 28
-          nodes: compute[055-056]
-        - id: r01-01-c29
-          name: Compute Encl 29
-          template_id: bs-1u-twin-cpu
-          u_position: 29
-          nodes: compute[057-058]
-        - id: r01-01-c30
-          name: Compute Encl 30
-          template_id: bs-1u-twin-cpu
-          u_position: 30
-          nodes: compute[059-060]
-        - id: r01-01-c31
-          name: Compute Encl 31
-          template_id: bs-1u-twin-cpu
-          u_position: 31
-          nodes: compute[061-062]
-        - id: r01-01-c32
-          name: Compute Encl 32
-          template_id: bs-1u-twin-cpu
-          u_position: 32
-          nodes: compute[063-064]
-        - id: r01-01-c33
-          name: Compute Encl 33
-          template_id: bs-1u-twin-cpu
-          u_position: 33
-          nodes: compute[065-066]
-        - id: r01-01-c34
-          name: Compute Encl 34
-          template_id: bs-1u-twin-cpu
-          u_position: 34
-          nodes: compute[067-068]
-        - id: r01-01-c35
-          name: Compute Encl 35
-          template_id: bs-1u-twin-cpu
-          u_position: 35
-          nodes: compute[069-070]
-        - id: r01-01-c36
-          name: Compute Encl 36
-          template_id: bs-1u-twin-cpu
-          u_position: 36
-          nodes: compute[071-072]
-        - id: r01-01-c37
-          name: Compute Encl 37
-          template_id: bs-1u-twin-cpu
-          u_position: 37
-          nodes: compute[073-074]
-        - id: r01-01-c38
-          name: Compute Encl 38
-          template_id: bs-1u-twin-cpu
-          u_position: 38
-          nodes: compute[075-076]
-        - id: r01-01-c39
-          name: Compute Encl 39
-          template_id: bs-1u-twin-cpu
-          u_position: 39
-          nodes: compute[077-078]
-        - id: r01-01-c40
-          name: Compute Encl 40
-          template_id: bs-1u-twin-cpu
-          u_position: 40
-          nodes: compute[079-080]
-      - id: r01-02
-        name: Rack CPU 02
-        template_id: bull-xh3000
-        u_height: 48
-        devices:
-        - id: r01-02-isw
-          name: isw-l1-02
-          template_id: ib-switch-l1
-          u_position: 42
-        - id: r01-02-esw
-          name: esw-02
-          template_id: eth-switch-tor
-          u_position: 41
-        - id: r01-02-c01
-          name: Compute Encl 01
-          template_id: bs-1u-twin-cpu
-          u_position: 1
-          nodes: compute[081-082]
-        - id: r01-02-c02
-          name: Compute Encl 02
-          template_id: bs-1u-twin-cpu
-          u_position: 2
-          nodes: compute[083-084]
-        - id: r01-02-c03
-          name: Compute Encl 03
-          template_id: bs-1u-twin-cpu
-          u_position: 3
-          nodes: compute[085-086]
-        - id: r01-02-c04
-          name: Compute Encl 04
-          template_id: bs-1u-twin-cpu
-          u_position: 4
-          nodes: compute[087-088]
-        - id: r01-02-c05
-          name: Compute Encl 05
-          template_id: bs-1u-twin-cpu
-          u_position: 5
-          nodes: compute[089-090]
-        - id: r01-02-c06
-          name: Compute Encl 06
-          template_id: bs-1u-twin-cpu
-          u_position: 6
-          nodes: compute[091-092]
-        - id: r01-02-c07
-          name: Compute Encl 07
-          template_id: bs-1u-twin-cpu
-          u_position: 7
-          nodes: compute[093-094]
-        - id: r01-02-c08
-          name: Compute Encl 08
-          template_id: bs-1u-twin-cpu
-          u_position: 8
-          nodes: compute[095-096]
-        - id: r01-02-c09
-          name: Compute Encl 09
-          template_id: bs-1u-twin-cpu
-          u_position: 9
-          nodes: compute[097-098]
-        - id: r01-02-c10
-          name: Compute Encl 10
-          template_id: bs-1u-twin-cpu
-          u_position: 10
-          nodes: compute[099-100]
-        - id: r01-02-c11
-          name: Compute Encl 11
-          template_id: bs-1u-twin-cpu
-          u_position: 11
-          nodes: compute[101-102]
-        - id: r01-02-c12
-          name: Compute Encl 12
-          template_id: bs-1u-twin-cpu
-          u_position: 12
-          nodes: compute[103-104]
-        - id: r01-02-c13
-          name: Compute Encl 13
-          template_id: bs-1u-twin-cpu
-          u_position: 13
-          nodes: compute[105-106]
-        - id: r01-02-c14
-          name: Compute Encl 14
-          template_id: bs-1u-twin-cpu
-          u_position: 14
-          nodes: compute[107-108]
-        - id: r01-02-c15
-          name: Compute Encl 15
-          template_id: bs-1u-twin-cpu
-          u_position: 15
-          nodes: compute[109-110]
-        - id: r01-02-c16
-          name: Compute Encl 16
-          template_id: bs-1u-twin-cpu
-          u_position: 16
-          nodes: compute[111-112]
-        - id: r01-02-c17
-          name: Compute Encl 17
-          template_id: bs-1u-twin-cpu
-          u_position: 17
-          nodes: compute[113-114]
-        - id: r01-02-c18
-          name: Compute Encl 18
-          template_id: bs-1u-twin-cpu
-          u_position: 18
-          nodes: compute[115-116]
-        - id: r01-02-c19
-          name: Compute Encl 19
-          template_id: bs-1u-twin-cpu
-          u_position: 19
-          nodes: compute[117-118]
-        - id: r01-02-c20
-          name: Compute Encl 20
-          template_id: bs-1u-twin-cpu
-          u_position: 20
-          nodes: compute[119-120]
-        - id: r01-02-c21
-          name: Compute Encl 21
-          template_id: bs-1u-twin-cpu
-          u_position: 21
-          nodes: compute[121-122]
-        - id: r01-02-c22
-          name: Compute Encl 22
-          template_id: bs-1u-twin-cpu
-          u_position: 22
-          nodes: compute[123-124]
-        - id: r01-02-c23
-          name: Compute Encl 23
-          template_id: bs-1u-twin-cpu
-          u_position: 23
-          nodes: compute[125-126]
-        - id: r01-02-c24
-          name: Compute Encl 24
-          template_id: bs-1u-twin-cpu
-          u_position: 24
-          nodes: compute[127-128]
-        - id: r01-02-c25
-          name: Compute Encl 25
-          template_id: bs-1u-twin-cpu
-          u_position: 25
-          nodes: compute[129-130]
-        - id: r01-02-c26
-          name: Compute Encl 26
-          template_id: bs-1u-twin-cpu
-          u_position: 26
-          nodes: compute[131-132]
-        - id: r01-02-c27
-          name: Compute Encl 27
-          template_id: bs-1u-twin-cpu
-          u_position: 27
-          nodes: compute[133-134]
-        - id: r01-02-c28
-          name: Compute Encl 28
-          template_id: bs-1u-twin-cpu
-          u_position: 28
-          nodes: compute[135-136]
-        - id: r01-02-c29
-          name: Compute Encl 29
-          template_id: bs-1u-twin-cpu
-          u_position: 29
-          nodes: compute[137-138]
-        - id: r01-02-c30
-          name: Compute Encl 30
-          template_id: bs-1u-twin-cpu
-          u_position: 30
-          nodes: compute[139-140]
-        - id: r01-02-c31
-          name: Compute Encl 31
-          template_id: bs-1u-twin-cpu
-          u_position: 31
-          nodes: compute[141-142]
-        - id: r01-02-c32
-          name: Compute Encl 32
-          template_id: bs-1u-twin-cpu
-          u_position: 32
-          nodes: compute[143-144]
-        - id: r01-02-c33
-          name: Compute Encl 33
-          template_id: bs-1u-twin-cpu
-          u_position: 33
-          nodes: compute[145-146]
-        - id: r01-02-c34
-          name: Compute Encl 34
-          template_id: bs-1u-twin-cpu
-          u_position: 34
-          nodes: compute[147-148]
-        - id: r01-02-c35
-          name: Compute Encl 35
-          template_id: bs-1u-twin-cpu
-          u_position: 35
-          nodes: compute[149-150]
-        - id: r01-02-c36
-          name: Compute Encl 36
-          template_id: bs-1u-twin-cpu
-          u_position: 36
-          nodes: compute[151-152]
-        - id: r01-02-c37
-          name: Compute Encl 37
-          template_id: bs-1u-twin-cpu
-          u_position: 37
-          nodes: compute[153-154]
-        - id: r01-02-c38
-          name: Compute Encl 38
-          template_id: bs-1u-twin-cpu
-          u_position: 38
-          nodes: compute[155-156]
-        - id: r01-02-c39
-          name: Compute Encl 39
-          template_id: bs-1u-twin-cpu
-          u_position: 39
-          nodes: compute[157-158]
-        - id: r01-02-c40
-          name: Compute Encl 40
-          template_id: bs-1u-twin-cpu
-          u_position: 40
-          nodes: compute[159-160]
-      - id: r01-03
-        name: Rack CPU 03
-        template_id: bull-xh3000
-        u_height: 48
-        devices:
-        - id: r01-03-isw
-          name: isw-l1-03
-          template_id: ib-switch-l1
-          u_position: 42
-        - id: r01-03-esw
-          name: esw-03
-          template_id: eth-switch-tor
-          u_position: 41
-        - id: r01-03-c01
-          name: Compute Encl 01
-          template_id: bs-1u-twin-cpu
-          u_position: 1
-          nodes: compute[161-162]
-        - id: r01-03-c02
-          name: Compute Encl 02
-          template_id: bs-1u-twin-cpu
-          u_position: 2
-          nodes: compute[163-164]
-        - id: r01-03-c03
-          name: Compute Encl 03
-          template_id: bs-1u-twin-cpu
-          u_position: 3
-          nodes: compute[165-166]
-        - id: r01-03-c04
-          name: Compute Encl 04
-          template_id: bs-1u-twin-cpu
-          u_position: 4
-          nodes: compute[167-168]
-        - id: r01-03-c05
-          name: Compute Encl 05
-          template_id: bs-1u-twin-cpu
-          u_position: 5
-          nodes: compute[169-170]
-        - id: r01-03-c06
-          name: Compute Encl 06
-          template_id: bs-1u-twin-cpu
-          u_position: 6
-          nodes: compute[171-172]
-        - id: r01-03-c07
-          name: Compute Encl 07
-          template_id: bs-1u-twin-cpu
-          u_position: 7
-          nodes: compute[173-174]
-        - id: r01-03-c08
-          name: Compute Encl 08
-          template_id: bs-1u-twin-cpu
-          u_position: 8
-          nodes: compute[175-176]
-        - id: r01-03-c09
-          name: Compute Encl 09
-          template_id: bs-1u-twin-cpu
-          u_position: 9
-          nodes: compute[177-178]
-        - id: r01-03-c10
-          name: Compute Encl 10
-          template_id: bs-1u-twin-cpu
-          u_position: 10
-          nodes: compute[179-180]
-        - id: r01-03-c11
-          name: Compute Encl 11
-          template_id: bs-1u-twin-cpu
-          u_position: 11
-          nodes: compute[181-182]
-        - id: r01-03-c12
-          name: Compute Encl 12
-          template_id: bs-1u-twin-cpu
-          u_position: 12
-          nodes: compute[183-184]
-        - id: r01-03-c13
-          name: Compute Encl 13
-          template_id: bs-1u-twin-cpu
-          u_position: 13
-          nodes: compute[185-186]
-        - id: r01-03-c14
-          name: Compute Encl 14
-          template_id: bs-1u-twin-cpu
-          u_position: 14
-          nodes: compute[187-188]
-        - id: r01-03-c15
-          name: Compute Encl 15
-          template_id: bs-1u-twin-cpu
-          u_position: 15
-          nodes: compute[189-190]
-        - id: r01-03-c16
-          name: Compute Encl 16
-          template_id: bs-1u-twin-cpu
-          u_position: 16
-          nodes: compute[191-192]
-        - id: r01-03-c17
-          name: Compute Encl 17
-          template_id: bs-1u-twin-cpu
-          u_position: 17
-          nodes: compute[193-194]
-        - id: r01-03-c18
-          name: Compute Encl 18
-          template_id: bs-1u-twin-cpu
-          u_position: 18
-          nodes: compute[195-196]
-        - id: r01-03-c19
-          name: Compute Encl 19
-          template_id: bs-1u-twin-cpu
-          u_position: 19
-          nodes: compute[197-198]
-        - id: r01-03-c20
-          name: Compute Encl 20
-          template_id: bs-1u-twin-cpu
-          u_position: 20
-          nodes: compute[199-200]
-        - id: r01-03-c21
-          name: Compute Encl 21
-          template_id: bs-1u-twin-cpu
-          u_position: 21
-          nodes: compute[201-202]
-        - id: r01-03-c22
-          name: Compute Encl 22
-          template_id: bs-1u-twin-cpu
-          u_position: 22
-          nodes: compute[203-204]
-        - id: r01-03-c23
-          name: Compute Encl 23
-          template_id: bs-1u-twin-cpu
-          u_position: 23
-          nodes: compute[205-206]
-        - id: r01-03-c24
-          name: Compute Encl 24
-          template_id: bs-1u-twin-cpu
-          u_position: 24
-          nodes: compute[207-208]
-        - id: r01-03-c25
-          name: Compute Encl 25
-          template_id: bs-1u-twin-cpu
-          u_position: 25
-          nodes: compute[209-210]
-        - id: r01-03-c26
-          name: Compute Encl 26
-          template_id: bs-1u-twin-cpu
-          u_position: 26
-          nodes: compute[211-212]
-        - id: r01-03-c27
-          name: Compute Encl 27
-          template_id: bs-1u-twin-cpu
-          u_position: 27
-          nodes: compute[213-214]
-        - id: r01-03-c28
-          name: Compute Encl 28
-          template_id: bs-1u-twin-cpu
-          u_position: 28
-          nodes: compute[215-216]
-        - id: r01-03-c29
-          name: Compute Encl 29
-          template_id: bs-1u-twin-cpu
-          u_position: 29
-          nodes: compute[217-218]
-        - id: r01-03-c30
-          name: Compute Encl 30
-          template_id: bs-1u-twin-cpu
-          u_position: 30
-          nodes: compute[219-220]
-        - id: r01-03-c31
-          name: Compute Encl 31
-          template_id: bs-1u-twin-cpu
-          u_position: 31
-          nodes: compute[221-222]
-        - id: r01-03-c32
-          name: Compute Encl 32
-          template_id: bs-1u-twin-cpu
-          u_position: 32
-          nodes: compute[223-224]
-        - id: r01-03-c33
-          name: Compute Encl 33
-          template_id: bs-1u-twin-cpu
-          u_position: 33
-          nodes: compute[225-226]
-        - id: r01-03-c34
-          name: Compute Encl 34
-          template_id: bs-1u-twin-cpu
-          u_position: 34
-          nodes: compute[227-228]
-        - id: r01-03-c35
-          name: Compute Encl 35
-          template_id: bs-1u-twin-cpu
-          u_position: 35
-          nodes: compute[229-230]
-        - id: r01-03-c36
-          name: Compute Encl 36
-          template_id: bs-1u-twin-cpu
-          u_position: 36
-          nodes: compute[231-232]
-        - id: r01-03-c37
-          name: Compute Encl 37
-          template_id: bs-1u-twin-cpu
-          u_position: 37
-          nodes: compute[233-234]
-        - id: r01-03-c38
-          name: Compute Encl 38
-          template_id: bs-1u-twin-cpu
-          u_position: 38
-          nodes: compute[235-236]
-        - id: r01-03-c39
-          name: Compute Encl 39
-          template_id: bs-1u-twin-cpu
-          u_position: 39
-          nodes: compute[237-238]
-        - id: r01-03-c40
-          name: Compute Encl 40
-          template_id: bs-1u-twin-cpu
-          u_position: 40
-          nodes: compute[239-240]
-      - id: r01-04
-        name: Rack CPU 04
-        template_id: bull-xh3000
-        u_height: 48
-        devices:
-        - id: r01-04-isw
-          name: isw-l1-04
-          template_id: ib-switch-l1
-          u_position: 42
-        - id: r01-04-esw
-          name: esw-04
-          template_id: eth-switch-tor
-          u_position: 41
-        - id: r01-04-c01
-          name: Compute Encl 01
-          template_id: bs-1u-twin-cpu
-          u_position: 1
-          nodes: compute[241-242]
-        - id: r01-04-c02
-          name: Compute Encl 02
-          template_id: bs-1u-twin-cpu
-          u_position: 2
-          nodes: compute[243-244]
-        - id: r01-04-c03
-          name: Compute Encl 03
-          template_id: bs-1u-twin-cpu
-          u_position: 3
-          nodes: compute[245-246]
-        - id: r01-04-c04
-          name: Compute Encl 04
-          template_id: bs-1u-twin-cpu
-          u_position: 4
-          nodes: compute[247-248]
-        - id: r01-04-c05
-          name: Compute Encl 05
-          template_id: bs-1u-twin-cpu
-          u_position: 5
-          nodes: compute[249-250]
-        - id: r01-04-c06
-          name: Compute Encl 06
-          template_id: bs-1u-twin-cpu
-          u_position: 6
-          nodes: compute[251-252]
-        - id: r01-04-c07
-          name: Compute Encl 07
-          template_id: bs-1u-twin-cpu
-          u_position: 7
-          nodes: compute[253-254]
-        - id: r01-04-c08
-          name: Compute Encl 08
-          template_id: bs-1u-twin-cpu
-          u_position: 8
-          nodes: compute[255-256]
-        - id: r01-04-c09
-          name: Compute Encl 09
-          template_id: bs-1u-twin-cpu
-          u_position: 9
-          nodes: compute[257-258]
-        - id: r01-04-c10
-          name: Compute Encl 10
-          template_id: bs-1u-twin-cpu
-          u_position: 10
-          nodes: compute[259-260]
-        - id: r01-04-c11
-          name: Compute Encl 11
-          template_id: bs-1u-twin-cpu
-          u_position: 11
-          nodes: compute[261-262]
-        - id: r01-04-c12
-          name: Compute Encl 12
-          template_id: bs-1u-twin-cpu
-          u_position: 12
-          nodes: compute[263-264]
-        - id: r01-04-c13
-          name: Compute Encl 13
-          template_id: bs-1u-twin-cpu
-          u_position: 13
-          nodes: compute[265-266]
-        - id: r01-04-c14
-          name: Compute Encl 14
-          template_id: bs-1u-twin-cpu
-          u_position: 14
-          nodes: compute[267-268]
-        - id: r01-04-c15
-          name: Compute Encl 15
-          template_id: bs-1u-twin-cpu
-          u_position: 15
-          nodes: compute[269-270]
-        - id: r01-04-c16
-          name: Compute Encl 16
-          template_id: bs-1u-twin-cpu
-          u_position: 16
-          nodes: compute[271-272]
-        - id: r01-04-c17
-          name: Compute Encl 17
-          template_id: bs-1u-twin-cpu
-          u_position: 17
-          nodes: compute[273-274]
-        - id: r01-04-c18
-          name: Compute Encl 18
-          template_id: bs-1u-twin-cpu
-          u_position: 18
-          nodes: compute[275-276]
-        - id: r01-04-c19
-          name: Compute Encl 19
-          template_id: bs-1u-twin-cpu
-          u_position: 19
-          nodes: compute[277-278]
-        - id: r01-04-c20
-          name: Compute Encl 20
-          template_id: bs-1u-twin-cpu
-          u_position: 20
-          nodes: compute[279-280]
-        - id: r01-04-c21
-          name: Compute Encl 21
-          template_id: bs-1u-twin-cpu
-          u_position: 21
-          nodes: compute[281-282]
-        - id: r01-04-c22
-          name: Compute Encl 22
-          template_id: bs-1u-twin-cpu
-          u_position: 22
-          nodes: compute[283-284]
-        - id: r01-04-c23
-          name: Compute Encl 23
-          template_id: bs-1u-twin-cpu
-          u_position: 23
-          nodes: compute[285-286]
-        - id: r01-04-c24
-          name: Compute Encl 24
-          template_id: bs-1u-twin-cpu
-          u_position: 24
-          nodes: compute[287-288]
-        - id: r01-04-c25
-          name: Compute Encl 25
-          template_id: bs-1u-twin-cpu
-          u_position: 25
-          nodes: compute[289-290]
-        - id: r01-04-c26
-          name: Compute Encl 26
-          template_id: bs-1u-twin-cpu
-          u_position: 26
-          nodes: compute[291-292]
-        - id: r01-04-c27
-          name: Compute Encl 27
-          template_id: bs-1u-twin-cpu
-          u_position: 27
-          nodes: compute[293-294]
-        - id: r01-04-c28
-          name: Compute Encl 28
-          template_id: bs-1u-twin-cpu
-          u_position: 28
-          nodes: compute[295-296]
-        - id: r01-04-c29
-          name: Compute Encl 29
-          template_id: bs-1u-twin-cpu
-          u_position: 29
-          nodes: compute[297-298]
-        - id: r01-04-c30
-          name: Compute Encl 30
-          template_id: bs-1u-twin-cpu
-          u_position: 30
-          nodes: compute[299-300]
-        - id: r01-04-c31
-          name: Compute Encl 31
-          template_id: bs-1u-twin-cpu
-          u_position: 31
-          nodes: compute[301-302]
-        - id: r01-04-c32
-          name: Compute Encl 32
-          template_id: bs-1u-twin-cpu
-          u_position: 32
-          nodes: compute[303-304]
-        - id: r01-04-c33
-          name: Compute Encl 33
-          template_id: bs-1u-twin-cpu
-          u_position: 33
-          nodes: compute[305-306]
-        - id: r01-04-c34
-          name: Compute Encl 34
-          template_id: bs-1u-twin-cpu
-          u_position: 34
-          nodes: compute[307-308]
-        - id: r01-04-c35
-          name: Compute Encl 35
-          template_id: bs-1u-twin-cpu
-          u_position: 35
-          nodes: compute[309-310]
-        - id: r01-04-c36
-          name: Compute Encl 36
-          template_id: bs-1u-twin-cpu
-          u_position: 36
-          nodes: compute[311-312]
-        - id: r01-04-c37
-          name: Compute Encl 37
-          template_id: bs-1u-twin-cpu
-          u_position: 37
-          nodes: compute[313-314]
-        - id: r01-04-c38
-          name: Compute Encl 38
-          template_id: bs-1u-twin-cpu
-          u_position: 38
-          nodes: compute[315-316]
-        - id: r01-04-c39
-          name: Compute Encl 39
-          template_id: bs-1u-twin-cpu
-          u_position: 39
-          nodes: compute[317-318]
-        - id: r01-04-c40
-          name: Compute Encl 40
-          template_id: bs-1u-twin-cpu
-          u_position: 40
-          nodes: compute[319-320]
-      - id: r01-05
-        name: Rack CPU 05
-        template_id: bull-xh3000
-        u_height: 48
-        devices:
-        - id: r01-05-isw
-          name: isw-l1-05
-          template_id: ib-switch-l1
-          u_position: 42
-        - id: r01-05-esw
-          name: esw-05
-          template_id: eth-switch-tor
-          u_position: 41
-        - id: r01-05-c01
-          name: Compute Encl 01
-          template_id: bs-1u-twin-cpu
-          u_position: 1
-          nodes: compute[321-322]
-        - id: r01-05-c02
-          name: Compute Encl 02
-          template_id: bs-1u-twin-cpu
-          u_position: 2
-          nodes: compute[323-324]
-        - id: r01-05-c03
-          name: Compute Encl 03
-          template_id: bs-1u-twin-cpu
-          u_position: 3
-          nodes: compute[325-326]
-        - id: r01-05-c04
-          name: Compute Encl 04
-          template_id: bs-1u-twin-cpu
-          u_position: 4
-          nodes: compute[327-328]
-        - id: r01-05-c05
-          name: Compute Encl 05
-          template_id: bs-1u-twin-cpu
-          u_position: 5
-          nodes: compute[329-330]
-        - id: r01-05-c06
-          name: Compute Encl 06
-          template_id: bs-1u-twin-cpu
-          u_position: 6
-          nodes: compute[331-332]
-        - id: r01-05-c07
-          name: Compute Encl 07
-          template_id: bs-1u-twin-cpu
-          u_position: 7
-          nodes: compute[333-334]
-        - id: r01-05-c08
-          name: Compute Encl 08
-          template_id: bs-1u-twin-cpu
-          u_position: 8
-          nodes: compute[335-336]
-        - id: r01-05-c09
-          name: Compute Encl 09
-          template_id: bs-1u-twin-cpu
-          u_position: 9
-          nodes: compute[337-338]
-        - id: r01-05-c10
-          name: Compute Encl 10
-          template_id: bs-1u-twin-cpu
-          u_position: 10
-          nodes: compute[339-340]
-        - id: r01-05-c11
-          name: Compute Encl 11
-          template_id: bs-1u-twin-cpu
-          u_position: 11
-          nodes: compute[341-342]
-        - id: r01-05-c12
-          name: Compute Encl 12
-          template_id: bs-1u-twin-cpu
-          u_position: 12
-          nodes: compute[343-344]
-        - id: r01-05-c13
-          name: Compute Encl 13
-          template_id: bs-1u-twin-cpu
-          u_position: 13
-          nodes: compute[345-346]
-        - id: r01-05-c14
-          name: Compute Encl 14
-          template_id: bs-1u-twin-cpu
-          u_position: 14
-          nodes: compute[347-348]
-        - id: r01-05-c15
-          name: Compute Encl 15
-          template_id: bs-1u-twin-cpu
-          u_position: 15
-          nodes: compute[349-350]
-        - id: r01-05-c16
-          name: Compute Encl 16
-          template_id: bs-1u-twin-cpu
-          u_position: 16
-          nodes: compute[351-352]
-        - id: r01-05-c17
-          name: Compute Encl 17
-          template_id: bs-1u-twin-cpu
-          u_position: 17
-          nodes: compute[353-354]
-        - id: r01-05-c18
-          name: Compute Encl 18
-          template_id: bs-1u-twin-cpu
-          u_position: 18
-          nodes: compute[355-356]
-        - id: r01-05-c19
-          name: Compute Encl 19
-          template_id: bs-1u-twin-cpu
-          u_position: 19
-          nodes: compute[357-358]
-        - id: r01-05-c20
-          name: Compute Encl 20
-          template_id: bs-1u-twin-cpu
-          u_position: 20
-          nodes: compute[359-360]
-        - id: r01-05-c21
-          name: Compute Encl 21
-          template_id: bs-1u-twin-cpu
-          u_position: 21
-          nodes: compute[361-362]
-        - id: r01-05-c22
-          name: Compute Encl 22
-          template_id: bs-1u-twin-cpu
-          u_position: 22
-          nodes: compute[363-364]
-        - id: r01-05-c23
-          name: Compute Encl 23
-          template_id: bs-1u-twin-cpu
-          u_position: 23
-          nodes: compute[365-366]
-        - id: r01-05-c24
-          name: Compute Encl 24
-          template_id: bs-1u-twin-cpu
-          u_position: 24
-          nodes: compute[367-368]
-        - id: r01-05-c25
-          name: Compute Encl 25
-          template_id: bs-1u-twin-cpu
-          u_position: 25
-          nodes: compute[369-370]
-        - id: r01-05-c26
-          name: Compute Encl 26
-          template_id: bs-1u-twin-cpu
-          u_position: 26
-          nodes: compute[371-372]
-        - id: r01-05-c27
-          name: Compute Encl 27
-          template_id: bs-1u-twin-cpu
-          u_position: 27
-          nodes: compute[373-374]
-        - id: r01-05-c28
-          name: Compute Encl 28
-          template_id: bs-1u-twin-cpu
-          u_position: 28
-          nodes: compute[375-376]
-        - id: r01-05-c29
-          name: Compute Encl 29
-          template_id: bs-1u-twin-cpu
-          u_position: 29
-          nodes: compute[377-378]
-        - id: r01-05-c30
-          name: Compute Encl 30
-          template_id: bs-1u-twin-cpu
-          u_position: 30
-          nodes: compute[379-380]
-        - id: r01-05-c31
-          name: Compute Encl 31
-          template_id: bs-1u-twin-cpu
-          u_position: 31
-          nodes: compute[381-382]
-        - id: r01-05-c32
-          name: Compute Encl 32
-          template_id: bs-1u-twin-cpu
-          u_position: 32
-          nodes: compute[383-384]
-        - id: r01-05-c33
-          name: Compute Encl 33
-          template_id: bs-1u-twin-cpu
-          u_position: 33
-          nodes: compute[385-386]
-        - id: r01-05-c34
-          name: Compute Encl 34
-          template_id: bs-1u-twin-cpu
-          u_position: 34
-          nodes: compute[387-388]
-        - id: r01-05-c35
-          name: Compute Encl 35
-          template_id: bs-1u-twin-cpu
-          u_position: 35
-          nodes: compute[389-390]
-        - id: r01-05-c36
-          name: Compute Encl 36
-          template_id: bs-1u-twin-cpu
-          u_position: 36
-          nodes: compute[391-392]
-        - id: r01-05-c37
-          name: Compute Encl 37
-          template_id: bs-1u-twin-cpu
-          u_position: 37
-          nodes: compute[393-394]
-        - id: r01-05-c38
-          name: Compute Encl 38
-          template_id: bs-1u-twin-cpu
-          u_position: 38
-          nodes: compute[395-396]
-        - id: r01-05-c39
-          name: Compute Encl 39
-          template_id: bs-1u-twin-cpu
-          u_position: 39
-          nodes: compute[397-398]
-        - id: r01-05-c40
-          name: Compute Encl 40
-          template_id: bs-1u-twin-cpu
-          u_position: 40
-          nodes: compute[399-400]
-      - id: r01-06
-        name: Rack CPU 06
-        template_id: bull-xh3000
-        u_height: 48
-        devices:
-        - id: r01-06-isw
-          name: isw-l1-06
-          template_id: ib-switch-l1
-          u_position: 42
-        - id: r01-06-esw
-          name: esw-06
-          template_id: eth-switch-tor
-          u_position: 41
-        - id: r01-06-c01
-          name: Compute Encl 01
-          template_id: bs-1u-twin-cpu
-          u_position: 1
-          nodes: compute[401-402]
-        - id: r01-06-c02
-          name: Compute Encl 02
-          template_id: bs-1u-twin-cpu
-          u_position: 2
-          nodes: compute[403-404]
-        - id: r01-06-c03
-          name: Compute Encl 03
-          template_id: bs-1u-twin-cpu
-          u_position: 3
-          nodes: compute[405-406]
-        - id: r01-06-c04
-          name: Compute Encl 04
-          template_id: bs-1u-twin-cpu
-          u_position: 4
-          nodes: compute[407-408]
-        - id: r01-06-c05
-          name: Compute Encl 05
-          template_id: bs-1u-twin-cpu
-          u_position: 5
-          nodes: compute[409-410]
-        - id: r01-06-c06
-          name: Compute Encl 06
-          template_id: bs-1u-twin-cpu
-          u_position: 6
-          nodes: compute[411-412]
-        - id: r01-06-c07
-          name: Compute Encl 07
-          template_id: bs-1u-twin-cpu
-          u_position: 7
-          nodes: compute[413-414]
-        - id: r01-06-c08
-          name: Compute Encl 08
-          template_id: bs-1u-twin-cpu
-          u_position: 8
-          nodes: compute[415-416]
-        - id: r01-06-c09
-          name: Compute Encl 09
-          template_id: bs-1u-twin-cpu
-          u_position: 9
-          nodes: compute[417-418]
-        - id: r01-06-c10
-          name: Compute Encl 10
-          template_id: bs-1u-twin-cpu
-          u_position: 10
-          nodes: compute[419-420]
-        - id: r01-06-c11
-          name: Compute Encl 11
-          template_id: bs-1u-twin-cpu
-          u_position: 11
-          nodes: compute[421-422]
-        - id: r01-06-c12
-          name: Compute Encl 12
-          template_id: bs-1u-twin-cpu
-          u_position: 12
-          nodes: compute[423-424]
-        - id: r01-06-c13
-          name: Compute Encl 13
-          template_id: bs-1u-twin-cpu
-          u_position: 13
-          nodes: compute[425-426]
-        - id: r01-06-c14
-          name: Compute Encl 14
-          template_id: bs-1u-twin-cpu
-          u_position: 14
-          nodes: compute[427-428]
-        - id: r01-06-c15
-          name: Compute Encl 15
-          template_id: bs-1u-twin-cpu
-          u_position: 15
-          nodes: compute[429-430]
-        - id: r01-06-c16
-          name: Compute Encl 16
-          template_id: bs-1u-twin-cpu
-          u_position: 16
-          nodes: compute[431-432]
-        - id: r01-06-c17
-          name: Compute Encl 17
-          template_id: bs-1u-twin-cpu
-          u_position: 17
-          nodes: compute[433-434]
-        - id: r01-06-c18
-          name: Compute Encl 18
-          template_id: bs-1u-twin-cpu
-          u_position: 18
-          nodes: compute[435-436]
-        - id: r01-06-c19
-          name: Compute Encl 19
-          template_id: bs-1u-twin-cpu
-          u_position: 19
-          nodes: compute[437-438]
-        - id: r01-06-c20
-          name: Compute Encl 20
-          template_id: bs-1u-twin-cpu
-          u_position: 20
-          nodes: compute[439-440]
-        - id: r01-06-c21
-          name: Compute Encl 21
-          template_id: bs-1u-twin-cpu
-          u_position: 21
-          nodes: compute[441-442]
-        - id: r01-06-c22
-          name: Compute Encl 22
-          template_id: bs-1u-twin-cpu
-          u_position: 22
-          nodes: compute[443-444]
-        - id: r01-06-c23
-          name: Compute Encl 23
-          template_id: bs-1u-twin-cpu
-          u_position: 23
-          nodes: compute[445-446]
-        - id: r01-06-c24
-          name: Compute Encl 24
-          template_id: bs-1u-twin-cpu
-          u_position: 24
-          nodes: compute[447-448]
-        - id: r01-06-c25
-          name: Compute Encl 25
-          template_id: bs-1u-twin-cpu
-          u_position: 25
-          nodes: compute[449-450]
-        - id: r01-06-c26
-          name: Compute Encl 26
-          template_id: bs-1u-twin-cpu
-          u_position: 26
-          nodes: compute[451-452]
-        - id: r01-06-c27
-          name: Compute Encl 27
-          template_id: bs-1u-twin-cpu
-          u_position: 27
-          nodes: compute[453-454]
-        - id: r01-06-c28
-          name: Compute Encl 28
-          template_id: bs-1u-twin-cpu
-          u_position: 28
-          nodes: compute[455-456]
-        - id: r01-06-c29
-          name: Compute Encl 29
-          template_id: bs-1u-twin-cpu
-          u_position: 29
-          nodes: compute[457-458]
-        - id: r01-06-c30
-          name: Compute Encl 30
-          template_id: bs-1u-twin-cpu
-          u_position: 30
-          nodes: compute[459-460]
-        - id: r01-06-c31
-          name: Compute Encl 31
-          template_id: bs-1u-twin-cpu
-          u_position: 31
-          nodes: compute[461-462]
-        - id: r01-06-c32
-          name: Compute Encl 32
-          template_id: bs-1u-twin-cpu
-          u_position: 32
-          nodes: compute[463-464]
-        - id: r01-06-c33
-          name: Compute Encl 33
-          template_id: bs-1u-twin-cpu
-          u_position: 33
-          nodes: compute[465-466]
-        - id: r01-06-c34
-          name: Compute Encl 34
-          template_id: bs-1u-twin-cpu
-          u_position: 34
-          nodes: compute[467-468]
-        - id: r01-06-c35
-          name: Compute Encl 35
-          template_id: bs-1u-twin-cpu
-          u_position: 35
-          nodes: compute[469-470]
-        - id: r01-06-c36
-          name: Compute Encl 36
-          template_id: bs-1u-twin-cpu
-          u_position: 36
-          nodes: compute[471-472]
-        - id: r01-06-c37
-          name: Compute Encl 37
-          template_id: bs-1u-twin-cpu
-          u_position: 37
-          nodes: compute[473-474]
-        - id: r01-06-c38
-          name: Compute Encl 38
-          template_id: bs-1u-twin-cpu
-          u_position: 38
-          nodes: compute[475-476]
-        - id: r01-06-c39
-          name: Compute Encl 39
-          template_id: bs-1u-twin-cpu
-          u_position: 39
-          nodes: compute[477-478]
-        - id: r01-06-c40
-          name: Compute Encl 40
-          template_id: bs-1u-twin-cpu
-          u_position: 40
-          nodes: compute[479-480]
-      - id: r01-07
-        name: Rack GPU 07
-        template_id: bull-xh3000
-        u_height: 48
-        devices:
-        - id: r01-07-isw
-          name: isw-l1-07
-          template_id: ib-switch-l1
-          u_position: 42
-        - id: r01-07-esw
-          name: esw-07
-          template_id: eth-switch-tor
-          u_position: 41
-        - id: r01-07-g01
-          name: GPU Encl 01
-          template_id: bs-4u-quad-gpu
-          u_position: 1
-          nodes: gpu[001-004]
-        - id: r01-07-g02
-          name: GPU Encl 02
-          template_id: bs-4u-quad-gpu
-          u_position: 5
-          nodes: gpu[005-008]
-        - id: r01-07-g03
-          name: GPU Encl 03
-          template_id: bs-4u-quad-gpu
-          u_position: 9
-          nodes: gpu[009-012]
-        - id: r01-07-g04
-          name: GPU Encl 04
-          template_id: bs-4u-quad-gpu
-          u_position: 13
-          nodes: gpu[013-016]
-        - id: r01-07-g05
-          name: GPU Encl 05
-          template_id: bs-4u-quad-gpu
-          u_position: 17
-          nodes: gpu[017-020]
-        - id: r01-07-g06
-          name: GPU Encl 06
-          template_id: bs-4u-quad-gpu
-          u_position: 21
-          nodes: gpu[021-024]
-        - id: r01-07-g07
-          name: GPU Encl 07
-          template_id: bs-4u-quad-gpu
-          u_position: 25
-          nodes: gpu[025-028]
-        - id: r01-07-g08
-          name: GPU Encl 08
-          template_id: bs-4u-quad-gpu
-          u_position: 29
-          nodes: gpu[029-032]
-        - id: r01-07-g09
-          name: GPU Encl 09
-          template_id: bs-4u-quad-gpu
-          u_position: 33
-          nodes: gpu[033-036]
-        - id: r01-07-g10
-          name: GPU Encl 10
-          template_id: bs-4u-quad-gpu
-          u_position: 37
-          nodes: gpu[037-040]
-      - id: r01-08
-        name: Rack GPU 08
-        template_id: bull-xh3000
-        u_height: 48
-        devices:
-        - id: r01-08-isw
-          name: isw-l1-08
-          template_id: ib-switch-l1
-          u_position: 42
-        - id: r01-08-esw
-          name: esw-08
-          template_id: eth-switch-tor
-          u_position: 41
-        - id: r01-08-g01
-          name: GPU Encl 01
-          template_id: bs-4u-quad-gpu
-          u_position: 1
-          nodes: gpu[041-044]
-        - id: r01-08-g02
-          name: GPU Encl 02
-          template_id: bs-4u-quad-gpu
-          u_position: 5
-          nodes: gpu[045-048]
-        - id: r01-08-g03
-          name: GPU Encl 03
-          template_id: bs-4u-quad-gpu
-          u_position: 9
-          nodes: gpu[049-052]
-        - id: r01-08-g04
-          name: GPU Encl 04
-          template_id: bs-4u-quad-gpu
-          u_position: 13
-          nodes: gpu[053-056]
-        - id: r01-08-g05
-          name: GPU Encl 05
-          template_id: bs-4u-quad-gpu
-          u_position: 17
-          nodes: gpu[057-060]
-        - id: r01-08-g06
-          name: GPU Encl 06
-          template_id: bs-4u-quad-gpu
-          u_position: 21
-          nodes: gpu[061-064]
-        - id: r01-08-g07
-          name: GPU Encl 07
-          template_id: bs-4u-quad-gpu
-          u_position: 25
-          nodes: gpu[065-068]
-        - id: r01-08-g08
-          name: GPU Encl 08
-          template_id: bs-4u-quad-gpu
-          u_position: 29
-          nodes: gpu[069-072]
-        - id: r01-08-g09
-          name: GPU Encl 09
-          template_id: bs-4u-quad-gpu
-          u_position: 33
-          nodes: gpu[073-076]
-        - id: r01-08-g10
-          name: GPU Encl 10
-          template_id: bs-4u-quad-gpu
-          u_position: 37
-          nodes: gpu[077-080]
-      - id: r01-09
-        name: Rack GPU 09
-        template_id: bull-xh3000
-        u_height: 48
-        devices:
-        - id: r01-09-isw
-          name: isw-l1-09
-          template_id: ib-switch-l1
-          u_position: 42
-        - id: r01-09-esw
-          name: esw-09
-          template_id: eth-switch-tor
-          u_position: 41
-        - id: r01-09-g01
-          name: GPU Encl 01
-          template_id: bs-4u-quad-gpu
-          u_position: 1
-          nodes: gpu[081-084]
-        - id: r01-09-g02
-          name: GPU Encl 02
-          template_id: bs-4u-quad-gpu
-          u_position: 5
-          nodes: gpu[085-088]
-        - id: r01-09-g03
-          name: GPU Encl 03
-          template_id: bs-4u-quad-gpu
-          u_position: 9
-          nodes: gpu[089-092]
-        - id: r01-09-g04
-          name: GPU Encl 04
-          template_id: bs-4u-quad-gpu
-          u_position: 13
-          nodes: gpu[093-096]
-        - id: r01-09-g05
-          name: GPU Encl 05
-          template_id: bs-4u-quad-gpu
-          u_position: 17
-          nodes: gpu[097-100]
-        - id: r01-09-g06
-          name: GPU Encl 06
-          template_id: bs-4u-quad-gpu
-          u_position: 21
-          nodes: gpu[101-104]
-        - id: r01-09-g07
-          name: GPU Encl 07
-          template_id: bs-4u-quad-gpu
-          u_position: 25
-          nodes: gpu[105-108]
-        - id: r01-09-g08
-          name: GPU Encl 08
-          template_id: bs-4u-quad-gpu
-          u_position: 29
-          nodes: gpu[109-112]
-        - id: r01-09-g09
-          name: GPU Encl 09
-          template_id: bs-4u-quad-gpu
-          u_position: 33
-          nodes: gpu[113-116]
-        - id: r01-09-g10
-          name: GPU Encl 10
-          template_id: bs-4u-quad-gpu
-          u_position: 37
-          nodes: gpu[117-120]
-      - id: r01-10
-        name: Rack GPU 10
-        template_id: bull-xh3000
-        u_height: 48
-        devices:
-        - id: r01-10-isw
-          name: isw-l1-10
-          template_id: ib-switch-l1
-          u_position: 42
-        - id: r01-10-esw
-          name: esw-10
-          template_id: eth-switch-tor
-          u_position: 41
-        - id: r01-10-g01
-          name: GPU Encl 01
-          template_id: bs-4u-quad-gpu
-          u_position: 1
-          nodes: gpu[121-124]
-        - id: r01-10-g02
-          name: GPU Encl 02
-          template_id: bs-4u-quad-gpu
-          u_position: 5
-          nodes: gpu[125-128]
-        - id: r01-10-g03
-          name: GPU Encl 03
-          template_id: bs-4u-quad-gpu
-          u_position: 9
-          nodes: gpu[129-132]
-        - id: r01-10-g04
-          name: GPU Encl 04
-          template_id: bs-4u-quad-gpu
-          u_position: 13
-          nodes: gpu[133-136]
-        - id: r01-10-g05
-          name: GPU Encl 05
-          template_id: bs-4u-quad-gpu
-          u_position: 17
-          nodes: gpu[137-140]
-        - id: r01-10-g06
-          name: GPU Encl 06
-          template_id: bs-4u-quad-gpu
-          u_position: 21
-          nodes: gpu[141-144]
-        - id: r01-10-g07
-          name: GPU Encl 07
-          template_id: bs-4u-quad-gpu
-          u_position: 25
-          nodes: gpu[145-148]
-        - id: r01-10-g08
-          name: GPU Encl 08
-          template_id: bs-4u-quad-gpu
-          u_position: 29
-          nodes: gpu[149-152]
-        - id: r01-10-g09
-          name: GPU Encl 09
-          template_id: bs-4u-quad-gpu
-          u_position: 33
-          nodes: gpu[153-156]
-        - id: r01-10-g10
-          name: GPU Encl 10
-          template_id: bs-4u-quad-gpu
-          u_position: 37
-          nodes: gpu[157-160]
-    - id: aisle-02
-      name: Aisle 02 (Storage)
-      racks:
-      - id: r02-01
-        name: Rack Storage 01
-        template_id: standard-42u-air
-        u_height: 42
-        devices:
-        - id: r02-01-esw
-          name: esw-stor-01
-          template_id: eth-switch-tor
-          u_position: 42
-        - id: r02-01-gw1
-          name: io-node-1-a
-          template_id: srv-1u-mgmt
-          u_position: 25
-          nodes:
-            1: io1a
-        - id: r02-01-gw2
-          name: io-node-1-b
-          template_id: srv-1u-mgmt
-          u_position: 26
-          nodes:
-            1: io1b
-        - id: r02-01-netapp
-          name: NetApp Controller
-          template_id: storage-2u-24disk
-          u_position: 23
-          nodes: ssd-r1[01-24]
-        - id: r02-01-da1
-          name: Disk Array 1
-          template_id: storage-4u-60disk
-          u_position: 1
-          nodes: hdd-r1-d1[01-60]
-        - id: r02-01-da2
-          name: Disk Array 2
-          template_id: storage-4u-60disk
-          u_position: 5
-          nodes: hdd-r1-d2[01-60]
-        - id: r02-01-da3
-          name: Disk Array 3
-          template_id: storage-4u-60disk
-          u_position: 9
-          nodes: hdd-r1-d3[01-60]
-        - id: r02-01-da4
-          name: Disk Array 4
-          template_id: storage-4u-60disk
-          u_position: 13
-          nodes: hdd-r1-d4[01-60]
-        - id: r02-01-da5
-          name: Disk Array 5
-          template_id: storage-4u-60disk
-          u_position: 17
-          nodes: hdd-r1-d5[01-60]
-      - id: r02-02
-        name: Rack Storage 02
-        template_id: standard-42u-air
-        u_height: 42
-        devices:
-        - id: r02-02-esw
-          name: esw-stor-02
-          template_id: eth-switch-tor
-          u_position: 42
-        - id: r02-02-gw1
-          name: io-node-2-a
-          template_id: srv-1u-mgmt
-          u_position: 25
-          nodes:
-            1: io2a
-        - id: r02-02-gw2
-          name: io-node-2-b
-          template_id: srv-1u-mgmt
-          u_position: 26
-          nodes:
-            1: io2b
-        - id: r02-02-netapp
-          name: NetApp Controller
-          template_id: storage-2u-24disk
-          u_position: 23
-          nodes: ssd-r2[01-24]
-        - id: r02-02-da1
-          name: Disk Array 1
-          template_id: storage-4u-60disk
-          u_position: 1
-          nodes: hdd-r2-d1[01-60]
-        - id: r02-02-da2
-          name: Disk Array 2
-          template_id: storage-4u-60disk
-          u_position: 5
-          nodes: hdd-r2-d2[01-60]
-        - id: r02-02-da3
-          name: Disk Array 3
-          template_id: storage-4u-60disk
-          u_position: 9
-          nodes: hdd-r2-d3[01-60]
-        - id: r02-02-da4
-          name: Disk Array 4
-          template_id: storage-4u-60disk
-          u_position: 13
-          nodes: hdd-r2-d4[01-60]
-        - id: r02-02-da5
-          name: Disk Array 5
-          template_id: storage-4u-60disk
-          u_position: 17
-          nodes: hdd-r2-d5[01-60]
-      - id: r02-03
-        name: Rack Storage 03
-        template_id: standard-42u-air
-        u_height: 42
-        devices:
-        - id: r02-03-esw
-          name: esw-stor-03
-          template_id: eth-switch-tor
-          u_position: 42
-        - id: r02-03-gw1
-          name: io-node-3-a
-          template_id: srv-1u-mgmt
-          u_position: 25
-          nodes:
-            1: io3a
-        - id: r02-03-gw2
-          name: io-node-3-b
-          template_id: srv-1u-mgmt
-          u_position: 26
-          nodes:
-            1: io3b
-        - id: r02-03-netapp
-          name: NetApp Controller
-          template_id: storage-2u-24disk
-          u_position: 23
-          nodes: ssd-r3[01-24]
-        - id: r02-03-da1
-          name: Disk Array 1
-          template_id: storage-4u-60disk
-          u_position: 1
-          nodes: hdd-r3-d1[01-60]
-        - id: r02-03-da2
-          name: Disk Array 2
-          template_id: storage-4u-60disk
-          u_position: 5
-          nodes: hdd-r3-d2[01-60]
-        - id: r02-03-da3
-          name: Disk Array 3
-          template_id: storage-4u-60disk
-          u_position: 9
-          nodes: hdd-r3-d3[01-60]
-        - id: r02-03-da4
-          name: Disk Array 4
-          template_id: storage-4u-60disk
-          u_position: 13
-          nodes: hdd-r3-d4[01-60]
-        - id: r02-03-da5
-          name: Disk Array 5
-          template_id: storage-4u-60disk
-          u_position: 17
-          nodes: hdd-r3-d5[01-60]
-      - id: r02-04
-        name: Rack Storage 04
-        template_id: standard-42u-air
-        u_height: 42
-        devices:
-        - id: r02-04-esw
-          name: esw-stor-04
-          template_id: eth-switch-tor
-          u_position: 42
-        - id: r02-04-gw1
-          name: io-node-4-a
-          template_id: srv-1u-mgmt
-          u_position: 25
-          nodes:
-            1: io4a
-        - id: r02-04-gw2
-          name: io-node-4-b
-          template_id: srv-1u-mgmt
-          u_position: 26
-          nodes:
-            1: io4b
-        - id: r02-04-netapp
-          name: NetApp Controller
-          template_id: storage-2u-24disk
-          u_position: 23
-          nodes: ssd-r4[01-24]
-        - id: r02-04-da1
-          name: Disk Array 1
-          template_id: storage-4u-60disk
-          u_position: 1
-          nodes: hdd-r4-d1[01-60]
-        - id: r02-04-da2
-          name: Disk Array 2
-          template_id: storage-4u-60disk
-          u_position: 5
-          nodes: hdd-r4-d2[01-60]
-        - id: r02-04-da3
-          name: Disk Array 3
-          template_id: storage-4u-60disk
-          u_position: 9
-          nodes: hdd-r4-d3[01-60]
-        - id: r02-04-da4
-          name: Disk Array 4
-          template_id: storage-4u-60disk
-          u_position: 13
-          nodes: hdd-r4-d4[01-60]
-        - id: r02-04-da5
-          name: Disk Array 5
-          template_id: storage-4u-60disk
-          u_position: 17
-          nodes: hdd-r4-d5[01-60]
-    - id: aisle-03
-      name: Aisle 03 (Services)
-      racks:
-      - id: r03-01
-        name: Rack Mgmt 01
-        template_id: standard-42u-air
-        u_height: 42
-        devices:
-        - id: r03-01-isw-l2
-          name: isw-l2-01 (Core)
-          template_id: ib-switch-l2
-          u_position: 41
-        - id: mngt01
-          name: mngt01
-          template_id: srv-1u-mgmt
-          u_position: 20
-          nodes:
-            1: mngt01
-        - id: mngt02
-          name: mngt02
-          template_id: srv-1u-mgmt
-          u_position: 21
-          nodes:
-            1: mngt02
-        - id: login01
-          name: login01
-          template_id: srv-1u-mgmt
-          u_position: 16
-          nodes:
-            1: login01
-        - id: login02
-          name: login02
-          template_id: srv-1u-mgmt
-          u_position: 17
-          nodes:
-            1: login02
-        - id: login03
-          name: login03
-          template_id: srv-1u-mgmt
-          u_position: 18
-          nodes:
-            1: login03
-        - id: login04
-          name: login04
-          template_id: srv-1u-mgmt
-          u_position: 19
-          nodes:
-            1: login04
-        - id: visu-ch-1
-          name: Visu Chassis 1
-          template_id: bs-2u-twin-visu
-          u_position: 4
-          nodes: visu[01-02]
-        - id: visu-ch-2
-          name: Visu Chassis 2
-          template_id: bs-2u-twin-visu
-          u_position: 6
-          nodes: visu[03-04]
-        - id: visu-ch-3
-          name: Visu Chassis 3
-          template_id: bs-2u-twin-visu
-          u_position: 8
-          nodes: visu[05-06]
-        - id: visu-ch-4
-          name: Visu Chassis 4
-          template_id: bs-2u-twin-visu
-          u_position: 10
-          nodes: visu[07-08]
-        - id: visu-ch-5
-          name: Visu Chassis 5
-          template_id: bs-2u-twin-visu
-          u_position: 12
-          nodes: visu[09-10]
-        - id: visu-ch-6
-          name: Visu Chassis 6
-          template_id: bs-2u-twin-visu
-          u_position: 14
-          nodes: visu[11-12]
+  - id: dc1
+    name: Main Datacenter
+    rooms:
+      - id: room-a
+        name: Room A
+        aisles:
+          - id: aisle-01
+            name: Aisle 01 (Compute)
+            racks:
+              - id: r01-01
+                name: Rack XH3000 Compute 01
+                template_id: bull-xh3000
+                aisle_id: aisle-01
+                u_height: 42
+                devices:
+                  - id: r01-01-ib
+                    name: IB Switch XH35MQ
+                    template_id: bs-xh35mq-ib-1u
+                    u_position: 12
+                  - id: r01-01-c01
+                    name: XH3140 Trio 01
+                    template_id: bs-xh3140-trio-1u-3n
+                    u_position: 1
+                    nodes: compute[001-003]
+                  - id: r01-01-c02
+                    name: XH3140 Trio 02
+                    template_id: bs-xh3140-trio-1u-3n
+                    u_position: 2
+                    nodes: compute[004-006]
+                  - id: r01-01-c03
+                    name: XH3140 Trio 03
+                    template_id: bs-xh3140-trio-1u-3n
+                    u_position: 3
+                    nodes: compute[007-009]
+                  - id: r01-01-c04
+                    name: XH3140 Trio 04
+                    template_id: bs-xh3140-trio-1u-3n
+                    u_position: 4
+                    nodes: compute[010-012]
+                  - id: r01-01-c05
+                    name: XH3140 Trio 05
+                    template_id: bs-xh3140-trio-1u-3n
+                    u_position: 5
+                    nodes: compute[013-015]
+                  - id: r01-01-c06
+                    name: XH3140 Trio 06
+                    template_id: bs-xh3140-trio-1u-3n
+                    u_position: 6
+                    nodes: compute[016-018]
+                  - id: r01-01-c07
+                    name: XH3140 Trio 07
+                    template_id: bs-xh3140-trio-1u-3n
+                    u_position: 7
+                    nodes: compute[019-021]
+                  - id: r01-01-c08
+                    name: XH3140 Trio 08
+                    template_id: bs-xh3140-trio-1u-3n
+                    u_position: 8
+                    nodes: compute[022-024]
+                  - id: r01-01-c09
+                    name: XH3140 Trio 09
+                    template_id: bs-xh3140-trio-1u-3n
+                    u_position: 9
+                    nodes: compute[025-027]
+                  - id: r01-01-c10
+                    name: XH3140 Trio 10
+                    template_id: bs-xh3140-trio-1u-3n
+                    u_position: 10
+                    nodes: compute[028-030]
+
+              - id: r01-02
+                name: Rack XH3000 Compute 02
+                template_id: bull-xh3000
+                aisle_id: aisle-01
+                u_height: 42
+                devices:
+                  - id: r01-02-ib
+                    name: IB Switch XH35MQ
+                    template_id: bs-xh35mq-ib-1u
+                    u_position: 12
+                  - id: r01-02-c01
+                    name: XH3145 Tiya 01
+                    template_id: bs-xh3145-tiya-1u-2n
+                    u_position: 1
+                    nodes: compute[031-032]
+                  - id: r01-02-c02
+                    name: XH3145 Tiya 02
+                    template_id: bs-xh3145-tiya-1u-2n
+                    u_position: 2
+                    nodes: compute[033-034]
+                  - id: r01-02-c03
+                    name: XH3145 Tiya 03
+                    template_id: bs-xh3145-tiya-1u-2n
+                    u_position: 3
+                    nodes: compute[035-036]
+                  - id: r01-02-c04
+                    name: XH3145 Tiya 04
+                    template_id: bs-xh3145-tiya-1u-2n
+                    u_position: 4
+                    nodes: compute[037-038]
+                  - id: r01-02-c05
+                    name: XH3145 Tiya 05
+                    template_id: bs-xh3145-tiya-1u-2n
+                    u_position: 5
+                    nodes: compute[039-040]
+                  - id: r01-02-c06
+                    name: XH3145 Tiya 06
+                    template_id: bs-xh3145-tiya-1u-2n
+                    u_position: 6
+                    nodes: compute[041-042]
+                  - id: r01-02-c07
+                    name: XH3145 Tiya 07
+                    template_id: bs-xh3145-tiya-1u-2n
+                    u_position: 7
+                    nodes: compute[043-044]
+                  - id: r01-02-c08
+                    name: XH3145 Tiya 08
+                    template_id: bs-xh3145-tiya-1u-2n
+                    u_position: 8
+                    nodes: compute[045-046]
+                  - id: r01-02-c09
+                    name: XH3145 Tiya 09
+                    template_id: bs-xh3145-tiya-1u-2n
+                    u_position: 9
+                    nodes: compute[047-048]
+                  - id: r01-02-c10
+                    name: XH3145 Tiya 10
+                    template_id: bs-xh3145-tiya-1u-2n
+                    u_position: 10
+                    nodes: compute[049-050]
+
+              - id: r01-03
+                name: Rack XH3000 Compute 03
+                template_id: bull-xh3000
+                aisle_id: aisle-01
+                u_height: 42
+                devices:
+                  - id: r01-03-ib
+                    name: IB Switch XH35MQ
+                    template_id: bs-xh35mq-ib-1u
+                    u_position: 12
+                  - id: r01-03-c01
+                    name: XH3150 Tino 01
+                    template_id: bs-xh3150-tino-1u-3n
+                    u_position: 1
+                    nodes: compute[051-053]
+                  - id: r01-03-c02
+                    name: XH3150 Tino 02
+                    template_id: bs-xh3150-tino-1u-3n
+                    u_position: 2
+                    nodes: compute[054-056]
+                  - id: r01-03-c03
+                    name: XH3150 Tino 03
+                    template_id: bs-xh3150-tino-1u-3n
+                    u_position: 3
+                    nodes: compute[057-059]
+                  - id: r01-03-c04
+                    name: XH3150 Tino 04
+                    template_id: bs-xh3150-tino-1u-3n
+                    u_position: 4
+                    nodes: compute[060-062]
+                  - id: r01-03-c05
+                    name: XH3150 Tino 05
+                    template_id: bs-xh3150-tino-1u-3n
+                    u_position: 5
+                    nodes: compute[063-065]
+                  - id: r01-03-c06
+                    name: XH3150 Tino 06
+                    template_id: bs-xh3150-tino-1u-3n
+                    u_position: 6
+                    nodes: compute[066-068]
+                  - id: r01-03-c07
+                    name: XH3150 Tino 07
+                    template_id: bs-xh3150-tino-1u-3n
+                    u_position: 7
+                    nodes: compute[069-071]
+                  - id: r01-03-c08
+                    name: XH3150 Tino 08
+                    template_id: bs-xh3150-tino-1u-3n
+                    u_position: 8
+                    nodes: compute[072-074]
+                  - id: r01-03-c09
+                    name: XH3150 Tino 09
+                    template_id: bs-xh3150-tino-1u-3n
+                    u_position: 9
+                    nodes: compute[075-077]
+                  - id: r01-03-c10
+                    name: XH3150 Tino 10
+                    template_id: bs-xh3150-tino-1u-3n
+                    u_position: 10
+                    nodes: compute[078-080]
+
+              - id: r01-04
+                name: Rack XH3000 Compute 04
+                template_id: bull-xh3000
+                aisle_id: aisle-01
+                u_height: 42
+                devices:
+                  - id: r01-04-ib
+                    name: IB Switch XH35MQ
+                    template_id: bs-xh35mq-ib-1u
+                    u_position: 12
+                  - id: r01-04-c01
+                    name: XH3406 Mana 01
+                    template_id: bs-xh3406-mana-1u-3n
+                    u_position: 1
+                    nodes: compute[081-083]
+                  - id: r01-04-c02
+                    name: XH3406 Mana 02
+                    template_id: bs-xh3406-mana-1u-3n
+                    u_position: 2
+                    nodes: compute[084-086]
+                  - id: r01-04-c03
+                    name: XH3406 Mana 03
+                    template_id: bs-xh3406-mana-1u-3n
+                    u_position: 3
+                    nodes: compute[087-089]
+                  - id: r01-04-c04
+                    name: XH3406 Mana 04
+                    template_id: bs-xh3406-mana-1u-3n
+                    u_position: 4
+                    nodes: compute[090-092]
+                  - id: r01-04-c05
+                    name: XH3406 Mana 05
+                    template_id: bs-xh3406-mana-1u-3n
+                    u_position: 5
+                    nodes: compute[093-095]
+                  - id: r01-04-c06
+                    name: XH3406 Mana 06
+                    template_id: bs-xh3406-mana-1u-3n
+                    u_position: 6
+                    nodes: compute[096-098]
+                  - id: r01-04-c07
+                    name: XH3406 Mana 07
+                    template_id: bs-xh3406-mana-1u-3n
+                    u_position: 7
+                    nodes: compute[099-101]
+                  - id: r01-04-c08
+                    name: XH3406 Mana 08
+                    template_id: bs-xh3406-mana-1u-3n
+                    u_position: 8
+                    nodes: compute[102-104]
+                  - id: r01-04-c09
+                    name: XH3406 Mana 09
+                    template_id: bs-xh3406-mana-1u-3n
+                    u_position: 9
+                    nodes: compute[105-107]
+                  - id: r01-04-c10
+                    name: XH3406 Mana 10
+                    template_id: bs-xh3406-mana-1u-3n
+                    u_position: 10
+                    nodes: compute[108-110]
+
+              - id: r01-05
+                name: Rack XH3000 Compute 05
+                template_id: bull-xh3000
+                aisle_id: aisle-01
+                u_height: 42
+                devices:
+                  - id: r01-05-ib
+                    name: IB Switch XH35MQ
+                    template_id: bs-xh35mq-ib-1u
+                    u_position: 12
+                  - id: r01-05-c01
+                    name: XH3420 Mato 01
+                    template_id: bs-xh3420-mato-1u-3n
+                    u_position: 1
+                    nodes: compute[111-113]
+                  - id: r01-05-c02
+                    name: XH3420 Mato 02
+                    template_id: bs-xh3420-mato-1u-3n
+                    u_position: 2
+                    nodes: compute[114-116]
+                  - id: r01-05-c03
+                    name: XH3420 Mato 03
+                    template_id: bs-xh3420-mato-1u-3n
+                    u_position: 3
+                    nodes: compute[117-119]
+                  - id: r01-05-c04
+                    name: XH3420 Mato 04
+                    template_id: bs-xh3420-mato-1u-3n
+                    u_position: 4
+                    nodes: compute[120-122]
+                  - id: r01-05-c05
+                    name: XH3420 Mato 05
+                    template_id: bs-xh3420-mato-1u-3n
+                    u_position: 5
+                    nodes: compute[123-125]
+                  - id: r01-05-c06
+                    name: XH3420 Mato 06
+                    template_id: bs-xh3420-mato-1u-3n
+                    u_position: 6
+                    nodes: compute[126-128]
+                  - id: r01-05-c07
+                    name: XH3420 Mato 07
+                    template_id: bs-xh3420-mato-1u-3n
+                    u_position: 7
+                    nodes: compute[129-131]
+                  - id: r01-05-c08
+                    name: XH3420 Mato 08
+                    template_id: bs-xh3420-mato-1u-3n
+                    u_position: 8
+                    nodes: compute[132-134]
+                  - id: r01-05-c09
+                    name: XH3420 Mato 09
+                    template_id: bs-xh3420-mato-1u-3n
+                    u_position: 9
+                    nodes: compute[135-137]
+                  - id: r01-05-c10
+                    name: XH3420 Mato 10
+                    template_id: bs-xh3420-mato-1u-3n
+                    u_position: 10
+                    nodes: compute[138-140]
+
+              - id: r01-06
+                name: Rack XH3000 Compute 06
+                template_id: bull-xh3000
+                aisle_id: aisle-01
+                u_height: 42
+                devices:
+                  - id: r01-06-ib
+                    name: IB Switch XH35MQ
+                    template_id: bs-xh35mq-ib-1u
+                    u_position: 12
+                  - id: r01-06-c01
+                    name: XH3515 Neba 01
+                    template_id: bs-xh3515-neba-1u-2n
+                    u_position: 1
+                    nodes: compute[141-142]
+                  - id: r01-06-c02
+                    name: XH3515 Neba 02
+                    template_id: bs-xh3515-neba-1u-2n
+                    u_position: 2
+                    nodes: compute[143-144]
+                  - id: r01-06-c03
+                    name: XH3515 Neba 03
+                    template_id: bs-xh3515-neba-1u-2n
+                    u_position: 3
+                    nodes: compute[145-146]
+                  - id: r01-06-c04
+                    name: XH3515 Neba 04
+                    template_id: bs-xh3515-neba-1u-2n
+                    u_position: 4
+                    nodes: compute[147-148]
+                  - id: r01-06-c05
+                    name: XH3515 Neba 05
+                    template_id: bs-xh3515-neba-1u-2n
+                    u_position: 5
+                    nodes: compute[149-150]
+                  - id: r01-06-c06
+                    name: XH3515 Neba 06
+                    template_id: bs-xh3515-neba-1u-2n
+                    u_position: 6
+                    nodes: compute[151-152]
+                  - id: r01-06-c07
+                    name: XH3515 Neba 07
+                    template_id: bs-xh3515-neba-1u-2n
+                    u_position: 7
+                    nodes: compute[153-154]
+                  - id: r01-06-c08
+                    name: XH3515 Neba 08
+                    template_id: bs-xh3515-neba-1u-2n
+                    u_position: 8
+                    nodes: compute[155-156]
+                  - id: r01-06-c09
+                    name: XH3515 Neba 09
+                    template_id: bs-xh3515-neba-1u-2n
+                    u_position: 9
+                    nodes: compute[157-158]
+                  - id: r01-06-c10
+                    name: XH3515 Neba 10
+                    template_id: bs-xh3515-neba-1u-2n
+                    u_position: 10
+                    nodes: compute[159-160]
+
+              - id: r01-07
+                name: Rack XH3000 Compute 07
+                template_id: bull-xh3000
+                aisle_id: aisle-01
+                u_height: 42
+                devices:
+                  - id: r01-07-ib
+                    name: IB Switch XH35MQ
+                    template_id: bs-xh35mq-ib-1u
+                    u_position: 12
+                  - id: r01-07-c01
+                    name: XH3610 Milo 01
+                    template_id: bs-xh3610-milo-1u-3n
+                    u_position: 1
+                    nodes: compute[161-163]
+                  - id: r01-07-c02
+                    name: XH3610 Milo 02
+                    template_id: bs-xh3610-milo-1u-3n
+                    u_position: 2
+                    nodes: compute[164-166]
+                  - id: r01-07-c03
+                    name: XH3610 Milo 03
+                    template_id: bs-xh3610-milo-1u-3n
+                    u_position: 3
+                    nodes: compute[167-169]
+                  - id: r01-07-c04
+                    name: XH3610 Milo 04
+                    template_id: bs-xh3610-milo-1u-3n
+                    u_position: 4
+                    nodes: compute[170-172]
+                  - id: r01-07-c05
+                    name: XH3610 Milo 05
+                    template_id: bs-xh3610-milo-1u-3n
+                    u_position: 5
+                    nodes: compute[173-175]
+                  - id: r01-07-c06
+                    name: XH3610 Milo 06
+                    template_id: bs-xh3610-milo-1u-3n
+                    u_position: 6
+                    nodes: compute[176-178]
+                  - id: r01-07-c07
+                    name: XH3610 Milo 07
+                    template_id: bs-xh3610-milo-1u-3n
+                    u_position: 7
+                    nodes: compute[179-181]
+                  - id: r01-07-c08
+                    name: XH3610 Milo 08
+                    template_id: bs-xh3610-milo-1u-3n
+                    u_position: 8
+                    nodes: compute[182-184]
+                  - id: r01-07-c09
+                    name: XH3610 Milo 09
+                    template_id: bs-xh3610-milo-1u-3n
+                    u_position: 9
+                    nodes: compute[185-187]
+                  - id: r01-07-c10
+                    name: XH3610 Milo 10
+                    template_id: bs-xh3610-milo-1u-3n
+                    u_position: 10
+                    nodes: compute[188-190]
+
+          - id: aisle-02
+            name: Aisle 02 (Storage)
+            racks:
+              - id: r02-01
+                name: Rack Storage 01
+                template_id: standard-42u-air
+                aisle_id: aisle-02
+                u_height: 42
+                devices:
+                  - id: r02-01-ib
+                    name: IB Switch
+                    template_id: ib-switch-l1
+                    u_position: 42
+                  - id: r02-01-esw
+                    name: Ethernet Switch
+                    template_id: eth-switch-tor
+                    u_position: 40
+                  - id: r02-01-da01
+                    name: Disk Array 01
+                    template_id: storage-4u-60disk
+                    u_position: 1
+                    nodes: hdd-r02-01-d1[01-60]
+                  - id: r02-01-da02
+                    name: Disk Array 02
+                    template_id: storage-4u-60disk
+                    u_position: 5
+                    nodes: hdd-r02-01-d2[01-60]
+                  - id: r02-01-da03
+                    name: Disk Array 03
+                    template_id: storage-4u-60disk
+                    u_position: 9
+                    nodes: hdd-r02-01-d3[01-60]
+                  - id: r02-01-da04
+                    name: Disk Array 04
+                    template_id: storage-4u-60disk
+                    u_position: 13
+                    nodes: hdd-r02-01-d4[01-60]
+                  - id: r02-01-da05
+                    name: Disk Array 05
+                    template_id: storage-4u-60disk
+                    u_position: 17
+                    nodes: hdd-r02-01-d5[01-60]
+                  - id: r02-01-da06
+                    name: Disk Array 06
+                    template_id: storage-4u-60disk
+                    u_position: 21
+                    nodes: hdd-r02-01-d6[01-60]
+                  - id: r02-01-s01
+                    name: Service 01
+                    template_id: bs-x430-service-2u
+                    u_position: 25
+                    nodes:
+                      1: service001
+                  - id: r02-01-s02
+                    name: Service 02
+                    template_id: bs-x430-service-2u
+                    u_position: 27
+                    nodes:
+                      1: service002
+
+              - id: r02-02
+                name: Rack Storage 02
+                template_id: standard-42u-air
+                aisle_id: aisle-02
+                u_height: 42
+                devices:
+                  - id: r02-02-ib
+                    name: IB Switch
+                    template_id: ib-switch-l1
+                    u_position: 42
+                  - id: r02-02-esw
+                    name: Ethernet Switch
+                    template_id: eth-switch-tor
+                    u_position: 40
+                  - id: r02-02-da01
+                    name: Disk Array 01
+                    template_id: storage-4u-60disk
+                    u_position: 1
+                    nodes: hdd-r02-02-d1[01-60]
+                  - id: r02-02-da02
+                    name: Disk Array 02
+                    template_id: storage-4u-60disk
+                    u_position: 5
+                    nodes: hdd-r02-02-d2[01-60]
+                  - id: r02-02-da03
+                    name: Disk Array 03
+                    template_id: storage-4u-60disk
+                    u_position: 9
+                    nodes: hdd-r02-02-d3[01-60]
+                  - id: r02-02-da04
+                    name: Disk Array 04
+                    template_id: storage-4u-60disk
+                    u_position: 13
+                    nodes: hdd-r02-02-d4[01-60]
+                  - id: r02-02-da05
+                    name: Disk Array 05
+                    template_id: storage-4u-60disk
+                    u_position: 17
+                    nodes: hdd-r02-02-d5[01-60]
+                  - id: r02-02-da06
+                    name: Disk Array 06
+                    template_id: storage-4u-60disk
+                    u_position: 21
+                    nodes: hdd-r02-02-d6[01-60]
+                  - id: r02-02-s01
+                    name: Service 01
+                    template_id: bs-x430-service-2u
+                    u_position: 25
+                    nodes:
+                      1: service003
+                  - id: r02-02-s02
+                    name: Service 02
+                    template_id: bs-x430-service-2u
+                    u_position: 27
+                    nodes:
+                      1: service004
+
+              - id: r02-03
+                name: Rack Storage 03
+                template_id: standard-42u-air
+                aisle_id: aisle-02
+                u_height: 42
+                devices:
+                  - id: r02-03-ib
+                    name: IB Switch
+                    template_id: ib-switch-l1
+                    u_position: 42
+                  - id: r02-03-esw
+                    name: Ethernet Switch
+                    template_id: eth-switch-tor
+                    u_position: 40
+                  - id: r02-03-da01
+                    name: Disk Array 01
+                    template_id: storage-4u-60disk
+                    u_position: 1
+                    nodes: hdd-r02-03-d1[01-60]
+                  - id: r02-03-da02
+                    name: Disk Array 02
+                    template_id: storage-4u-60disk
+                    u_position: 5
+                    nodes: hdd-r02-03-d2[01-60]
+                  - id: r02-03-da03
+                    name: Disk Array 03
+                    template_id: storage-4u-60disk
+                    u_position: 9
+                    nodes: hdd-r02-03-d3[01-60]
+                  - id: r02-03-da04
+                    name: Disk Array 04
+                    template_id: storage-4u-60disk
+                    u_position: 13
+                    nodes: hdd-r02-03-d4[01-60]
+                  - id: r02-03-da05
+                    name: Disk Array 05
+                    template_id: storage-4u-60disk
+                    u_position: 17
+                    nodes: hdd-r02-03-d5[01-60]
+                  - id: r02-03-da06
+                    name: Disk Array 06
+                    template_id: storage-4u-60disk
+                    u_position: 21
+                    nodes: hdd-r02-03-d6[01-60]
+                  - id: r02-03-s01
+                    name: Service 01
+                    template_id: bs-x430-service-2u
+                    u_position: 25
+                    nodes:
+                      1: service005
+                  - id: r02-03-s02
+                    name: Service 02
+                    template_id: bs-x430-service-2u
+                    u_position: 27
+                    nodes:
+                      1: service006
+
+              - id: r02-04
+                name: Rack Storage 04
+                template_id: standard-42u-air
+                aisle_id: aisle-02
+                u_height: 42
+                devices:
+                  - id: r02-04-ib
+                    name: IB Switch
+                    template_id: ib-switch-l1
+                    u_position: 42
+                  - id: r02-04-esw
+                    name: Ethernet Switch
+                    template_id: eth-switch-tor
+                    u_position: 40
+                  - id: r02-04-da01
+                    name: Disk Array 01
+                    template_id: storage-4u-60disk
+                    u_position: 1
+                    nodes: hdd-r02-04-d1[01-60]
+                  - id: r02-04-da02
+                    name: Disk Array 02
+                    template_id: storage-4u-60disk
+                    u_position: 5
+                    nodes: hdd-r02-04-d2[01-60]
+                  - id: r02-04-da03
+                    name: Disk Array 03
+                    template_id: storage-4u-60disk
+                    u_position: 9
+                    nodes: hdd-r02-04-d3[01-60]
+                  - id: r02-04-da04
+                    name: Disk Array 04
+                    template_id: storage-4u-60disk
+                    u_position: 13
+                    nodes: hdd-r02-04-d4[01-60]
+                  - id: r02-04-da05
+                    name: Disk Array 05
+                    template_id: storage-4u-60disk
+                    u_position: 17
+                    nodes: hdd-r02-04-d5[01-60]
+                  - id: r02-04-da06
+                    name: Disk Array 06
+                    template_id: storage-4u-60disk
+                    u_position: 21
+                    nodes: hdd-r02-04-d6[01-60]
+                  - id: r02-04-s01
+                    name: Service 01
+                    template_id: bs-x430-service-2u
+                    u_position: 25
+                    nodes:
+                      1: service007
+                  - id: r02-04-s02
+                    name: Service 02
+                    template_id: bs-x430-service-2u
+                    u_position: 27
+                    nodes:
+                      1: service008
+
+          - id: aisle-03
+            name: Aisle 03 (Management)
+            racks:
+              - id: r03-01
+                name: Rack Mgmt + Login
+                template_id: standard-42u-air
+                aisle_id: aisle-03
+                u_height: 42
+                devices:
+                  - id: r03-01-ib
+                    name: IB Switch
+                    template_id: ib-switch-l1
+                    u_position: 42
+                  - id: r03-01-esw
+                    name: Ethernet Switch
+                    template_id: eth-switch-tor
+                    u_position: 40
+                  - id: r03-01-m01
+                    name: Mgmt 01
+                    template_id: bs-x430-service-2u
+                    u_position: 1
+                    nodes:
+                      1: mngt0
+                  - id: r03-01-m02
+                    name: Mgmt 02
+                    template_id: bs-x430-service-2u
+                    u_position: 3
+                    nodes:
+                      1: mngt1
+                  - id: r03-01-s01
+                    name: Service 01
+                    template_id: bs-x430-service-2u
+                    u_position: 5
+                    nodes:
+                      1: service0
+                  - id: r03-01-s02
+                    name: Service 02
+                    template_id: bs-x430-service-2u
+                    u_position: 7
+                    nodes:
+                      1: service1
+                  - id: r03-01-l01
+                    name: Login 01
+                    template_id: bs-x430-service-2u
+                    u_position: 9
+                    nodes:
+                      1: login0
+                  - id: r03-01-l02
+                    name: Login 02
+                    template_id: bs-x430-service-2u
+                    u_position: 11
+                    nodes:
+                      1: login1
+                  - id: r03-01-l03
+                    name: Login 03
+                    template_id: bs-x430-service-2u
+                    u_position: 13
+                    nodes:
+                      1: login2
+                  - id: r03-01-l04
+                    name: Login 04
+                    template_id: bs-x430-service-2u
+                    u_position: 15
+                    nodes:
+                      1: login3
+                  - id: r03-01-l05
+                    name: Login 05
+                    template_id: bs-x430-service-2u
+                    u_position: 17
+                    nodes:
+                      1: login4
+
+              - id: r03-02
+                name: Rack Visu
+                template_id: standard-42u-air
+                aisle_id: aisle-03
+                u_height: 42
+                devices:
+                  - id: r03-02-ib
+                    name: IB Switch
+                    template_id: ib-switch-l1
+                    u_position: 42
+                  - id: r03-02-esw
+                    name: Ethernet Switch
+                    template_id: eth-switch-tor
+                    u_position: 40
+                  - id: r03-02-v01
+                    name: Visu 01
+                    template_id: bs-x450-visu-4u
+                    u_position: 1
+                    nodes:
+                      1: visu0
+                  - id: r03-02-v02
+                    name: Visu 02
+                    template_id: bs-x450-visu-4u
+                    u_position: 5
+                    nodes:
+                      1: visu1
+                  - id: r03-02-v03
+                    name: Visu 03
+                    template_id: bs-x450-visu-4u
+                    u_position: 9
+                    nodes:
+                      1: visu2
+                  - id: r03-02-v04
+                    name: Visu 04
+                    template_id: bs-x450-visu-4u
+                    u_position: 13
+                    nodes:
+                      1: visu3
+                  - id: r03-02-v05
+                    name: Visu 05
+                    template_id: bs-x450-visu-4u
+                    u_position: 17
+                    nodes:
+                      1: visu4
+                  - id: r03-02-v06
+                    name: Visu 06
+                    template_id: bs-x450-visu-4u
+                    u_position: 21
+                    nodes:
+                      1: visu5

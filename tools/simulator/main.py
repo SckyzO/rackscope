@@ -26,7 +26,7 @@ def load_yaml(path):
 
 def parse_nodeset(pattern):
     if not isinstance(pattern, str): return pattern or {}
-    match = re.match(r"(.+)[(\d+)-(\d+)]", pattern)
+    match = re.match(r"(.+)\[(\d+)-(\d+)\]", pattern)
     if not match: return {1: pattern}
     prefix, start_str, end_str = match.groups()
     start, end = int(start_str), int(end_str)

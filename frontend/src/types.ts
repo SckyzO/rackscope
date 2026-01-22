@@ -91,5 +91,7 @@ export interface RackTemplate {
   u_height: number;
   infrastructure: {
     components: InfrastructureComponent[];
+    front_components?: InfrastructureComponent[];
+    rear_components?: InfrastructureComponent[];
   };
 }

@@ -5,13 +5,23 @@ rack_templates:
     infrastructure:
       components:
         # Zero-U PDUs
-        - id: pdu-left
-          name: "PDU A (Left)"
+        - id: pdu-left-1
+          name: "PDU A1 (Left)"
           type: power
           model: "APC Metered"
           location: side-left
-        - id: pdu-right
-          name: "PDU B (Right)"
+        - id: pdu-left-2
+          name: "PDU A2 (Left)"
+          type: power
+          model: "APC Metered"
+          location: side-left
+        - id: pdu-right-1
+          name: "PDU B1 (Right)"
+          type: power
+          model: "APC Metered"
+          location: side-right
+        - id: pdu-right-2
+          name: "PDU B2 (Right)"
           type: power
           model: "APC Metered"
           location: side-right

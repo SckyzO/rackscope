@@ -34,6 +34,8 @@ class InfrastructureComponent(BaseModel):
 
 class RackInfrastructure(BaseModel):
     components: List[InfrastructureComponent] = Field(default_factory=list)
+    front_components: List[InfrastructureComponent] = Field(default_factory=list)
+    rear_components: List[InfrastructureComponent] = Field(default_factory=list)
 
 class RackTemplate(BaseModel):
     id: str
