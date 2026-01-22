@@ -1,0 +1,46 @@
+# Rackscope Simulator Configuration
+
+# Simulation timing
+update_interval: 20
+
+# Probability of incidents (0.0 to 1.0)
+incident_rates:
+  node_micro_failure: 0.001   # Random single node failure
+  rack_macro_failure: 0.01    # Power issue on a whole rack
+  aisle_cooling_failure: 0.005 # Cooling issue on a whole aisle
+
+# Duration of incidents (in number of ticks)
+incident_durations:
+  rack: 3
+  aisle: 5
+
+# Behavioral Profiles
+profiles:
+  compute:
+    base_temp: 24.0
+    temp_range: 8.0
+    base_power: 200.0
+    power_var: 200.0
+    load_min: 40.0
+    load_max: 80.0
+  gpu:
+    base_temp: 28.0
+    temp_range: 25.0
+    base_power: 250.0
+    power_var: 500.0
+    load_min: 5.0
+    load_max: 100.0
+  service: # login, mngt
+    base_temp: 21.0
+    temp_range: 3.0
+    base_power: 100.0
+    power_var: 20.0
+    load_min: 2.0
+    load_max: 8.0
+  network:
+    base_temp: 32.0
+    temp_range: 4.0
+    base_power: 120.0
+    power_var: 10.0
+    load_min: 15.0
+    load_max: 15.0

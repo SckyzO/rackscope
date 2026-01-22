@@ -141,12 +141,13 @@ async def get_rack_state(rack_id: str):
     nodes_metrics = await prom_client.get_node_metrics(rack_id)
     
     # Calculate Node States and Aggregate Rack State
-    rack_state = "OK"
     processed_nodes = {}
     
     total_power = 0.0
     total_temp = 0.0
     temp_count = 0
+    
+    node_states = []
     
     for node_id, m in nodes_metrics.items():
         temp = m.get("temperature", 0)
@@ -160,17 +161,28 @@ async def get_rack_state(rack_id: str):
         state = "OK"
         if temp > 35:
             state = "CRIT"
-            rack_state = "CRIT"
         elif temp > 30:
             state = "WARN"
-            if rack_state != "CRIT":
-                rack_state = "WARN"
-                
+        
+        node_states.append(state)
         processed_nodes[node_id] = {
             "state": state,
             "temperature": temp,
             "power": power
         }
+    
+    # Aggregation Logic:
+    # - CRIT only if 100% nodes are CRIT
+    # - WARN if > 0 nodes are NOT OK
+    rack_state = "OK"
+    if node_states:
+        crit_count = node_states.count("CRIT")
+        warn_count = node_states.count("WARN")
+        
+        if crit_count == len(node_states):
+            rack_state = "CRIT"
+        elif crit_count > 0 or warn_count > 0:
+            rack_state = "WARN"
     
     avg_temp = total_temp / temp_count if temp_count > 0 else 0
 

@@ -6,128 +6,142 @@ import math
 import re
 from prometheus_client import start_http_server, Gauge
 
-# Configuration
-CONFIG_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology.yaml")
-UPDATE_INTERVAL = 5
+# Configuration Paths
+TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology.yaml")
+SIMULATOR_CONFIG_PATH = os.getenv("SIMULATOR_CONFIG", "/app/config/simulator.yaml")
 
 # Metrics definition
-# We now focus on Node metrics primarily
 NODE_TEMP = Gauge('node_temperature_celsius', 'Ambient temperature of the node', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id'])
 NODE_POWER = Gauge('node_power_watts', 'Power consumption of the node', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id'])
 NODE_HEALTH = Gauge('node_health_status', 'Health status (0=OK, 1=WARN, 2=CRIT)', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id'])
+NODE_LOAD = Gauge('node_load_percent', 'Resource load (CPU/GPU/Switch)', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id'])
 
-# Helper to parse "compute[001-004]"
+def load_yaml(path):
+    try:
+        with open(path, 'r') as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        print(f"Error loading {path}: {e}")
+        return {}
+
 def parse_nodeset(pattern):
     if not isinstance(pattern, str): return pattern or {}
-    match = re.match(r"(.+)\[(\d+)-(\d+)\]", pattern)
+    match = re.match(r"(.+)[(\d+)-(\d+)]", pattern)
     if not match: return {1: pattern}
-    
     prefix, start_str, end_str = match.groups()
     start, end = int(start_str), int(end_str)
     count = end - start + 1
     padding = len(start_str)
-    
     nodes = {}
     for i in range(count):
         num = str(start + i).zfill(padding)
         nodes[i+1] = f"{prefix}{num}"
     return nodes
 
-def load_topology_nodes():
-    """Extract all node IDs from the topology file."""
+def load_topology_nodes(topo_data):
     targets = []
-    try:
-        with open(CONFIG_PATH, 'r') as f:
-            data = yaml.safe_load(f)
-            if not data: return []
-            
-            for site in data.get('sites', []):
-                for room in site.get('rooms', []):
-                    # Helper to process a rack
-                    def process_rack(rack):
-                        for device in rack.get('devices', []):
-                            nodes_map = device.get('nodes')
-                            if isinstance(nodes_map, str):
-                                nodes_map = parse_nodeset(nodes_map)
-                            
-                            # If no nodes defined (e.g. switch without logical nodes), treat device as one node
-                            if not nodes_map:
-                                targets.append({
-                                    'site_id': site['id'], 'room_id': room['id'], 
-                                    'rack_id': rack['id'], 'chassis_id': device['id'],
-                                    'node_id': device['id'] # Self-reference
-                                })
-                            else:
-                                for _, node_id in nodes_map.items():
-                                    targets.append({
-                                        'site_id': site['id'], 'room_id': room['id'], 
-                                        'rack_id': rack['id'], 'chassis_id': device['id'],
-                                        'node_id': node_id
-                                    })
-
-                    for aisle in room.get('aisles', []):
-                        for rack in aisle.get('racks', []):
-                            process_rack(rack)
-                    for rack in room.get('standalone_racks', []):
-                        process_rack(rack)
-    except Exception as e:
-        print(f"Error loading topology: {e}")
+    if not topo_data: return []
+    for site in topo_data.get('sites', []):
+        for room in site.get('rooms', []):
+            def process_rack(rack, aisle_id):
+                for device in rack.get('devices', []):
+                    nodes_map = device.get('nodes')
+                    if isinstance(nodes_map, str): nodes_map = parse_nodeset(nodes_map)
+                    if not nodes_map:
+                        targets.append({'site_id': site['id'], 'room_id': room['id'], 'aisle_id': aisle_id, 'rack_id': rack['id'], 'chassis_id': device['id'], 'node_id': device['id']})
+                    else:
+                        for _, node_id in nodes_map.items():
+                            targets.append({'site_id': site['id'], 'room_id': room['id'], 'aisle_id': aisle_id, 'rack_id': rack['id'], 'chassis_id': device['id'], 'node_id': node_id})
+            for aisle in room.get('aisles', []):
+                for rack in aisle.get('racks', []): process_rack(rack, aisle['id'])
+            for rack in room.get('standalone_racks', []): process_rack(rack, 'standalone')
     return targets
 
+active_incidents = {'aisles': {}, 'racks': {}}
+
 def simulate():
-    """Update metrics with simulated values."""
-    print("Starting simulation loop...")
+    # Load Initial Config
+    sim_cfg = load_yaml(SIMULATOR_CONFIG_PATH)
+    update_interval = sim_cfg.get('update_interval', 20)
+    rates = sim_cfg.get('incident_rates', {})
+    durations = sim_cfg.get('incident_durations', {'rack': 3, 'aisle': 5})
+    profiles = sim_cfg.get('profiles', {})
+
+    print(f"Starting simulation loop (Interval: {update_interval}s)")
     tick = 0
     
     while True:
-        targets = load_topology_nodes() # Reload occasionally to support config changes? For now ok.
+        # Reload topology every tick to support dynamic changes
+        topo_data = load_yaml(TOPOLOGY_PATH)
+        targets = load_topology_nodes(topo_data)
         tick += 1
         
+        # --- Macro Incidents ---
+        for aisle in set(t['aisle_id'] for t in targets):
+            if aisle not in active_incidents['aisles'] and random.random() < rates.get('aisle_cooling_failure', 0.005):
+                print(f"!!! Incident: Aisle {aisle} cooling failure")
+                active_incidents['aisles'][aisle] = tick
+            elif aisle in active_incidents['aisles'] and (tick - active_incidents['aisles'][aisle]) > durations.get('aisle', 5):
+                del active_incidents['aisles'][aisle]
+
+        for rack in set(t['rack_id'] for t in targets):
+            if rack not in active_incidents['racks'] and random.random() < rates.get('rack_macro_failure', 0.01):
+                print(f"!!! Incident: Rack {rack} power issue")
+                active_incidents['racks'][rack] = tick
+            elif rack in active_incidents['racks'] and (tick - active_incidents['racks'][rack]) > durations.get('rack', 3):
+                del active_incidents['racks'][rack]
+
         for target in targets:
-            labels = {k: v for k, v in target.items()}
-            node_id = target['node_id']
-            aisle_id = target['room_id'] # Simplified lookup
+            labels = {k: v for k, v in target.items() if k != 'aisle_id'}
+            nid = target['node_id'].lower()
+            aid = target['aisle_id']
+            rid = target['rack_id']
             
-            random.seed(node_id + str(tick // 2)) # Slower changes
+            random.seed(nid + str(tick // 2))
             
-            # Base temperature (20-23°C)
-            temp = 21 + (math.sin(tick / 50.0) * 2) + random.uniform(-0.5, 0.5)
+            # --- Determine Profile ---
+            prof_name = 'compute' if nid.startswith('compute') else \
+                        'gpu' if nid.startswith('gpu') else \
+                        'service' if (nid.startswith('login') or nid.startswith('mngt')) else \
+                        'network' if ('isw' in nid or 'esw' in nid) else 'compute' 
             
-            # Aisle Bias: Compute aisle (01) is naturally warmer
-            if "aisle-01" in target.get('rack_id', ''):
-                temp += 3
+            p = profiles.get(prof_name, profiles.get('compute', {}))
             
-            # Realistic "Load" simulation: only a few nodes are actually working
-            # 1% chance of being under high load (WARN level)
-            if random.random() > 0.99:
-                temp += 8 
+            # Base calculation
+            load_min = p.get('load_min', 10)
+            load_max = p.get('load_max', 50)
             
-            # 0.1% chance of a real physical issue (CRIT level)
-            if random.random() > 0.999:
-                temp += 20
-            
-            # Ensure "003" nodes aren't ALWAYS failing, maybe just 10% of them
-            if "003" in node_id and random.random() > 0.90:
-                temp += 15
-            
+            if prof_name == 'compute':
+                load = load_min + ((math.sin(tick / 10.0) + 1) / 2.0 * (load_max - load_min))
+            elif prof_name == 'gpu':
+                load = random.uniform(load_min, load_max) if random.random() > 0.7 else random.uniform(5, 15)
+            else:
+                load = random.uniform(load_min, load_max)
+
+            # --- Apply Macro Incidents ---
+            temp_boost = 12.0 if aid in active_incidents['aisles'] else 0
+            is_down = rid in active_incidents['racks']
+
+            # Final Metrics
+            temp = p.get('base_temp', 22) + (load / 100.0 * p.get('temp_range', 5)) + temp_boost + random.uniform(-0.5, 0.5)
+            power = (p.get('base_power', 150) + (load / 100.0 * p.get('power_var', 50))) if not is_down else 50.0
+            final_load = load if not is_down else 0
+
+            # Micro-failures
+            if not is_down and random.random() < rates.get('node_micro_failure', 0.001):
+                temp += 25.0
+
             NODE_TEMP.labels(**labels).set(round(temp, 1))
-            
-            # Power: proportional to temp (Fans + CPU load)
-            power = 150 + ((temp - 20) * 20) + random.uniform(-10, 10)
-            if "switch" in node_id: power = 80
-            
             NODE_POWER.labels(**labels).set(round(power, 0))
+            NODE_LOAD.labels(**labels).set(round(final_load, 1))
             
-            # Health Status
             status = 0
-            if temp > 35: status = 2
-            elif temp > 30: status = 1
-            
+            if is_down or temp > 45: status = 2
+            elif temp > 38: status = 1
             NODE_HEALTH.labels(**labels).set(status)
 
-        time.sleep(UPDATE_INTERVAL)
+        time.sleep(update_interval)
 
 if __name__ == '__main__':
-    print("Starting Prometheus Exporter on port 9000")
     start_http_server(9000)
     simulate()

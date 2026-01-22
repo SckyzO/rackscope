@@ -31,8 +31,10 @@ services:
       - "9000:9000"
     volumes:
       - ./config-examples/topology.yaml:/app/config/topology.yaml:ro
+      - ./config-examples/simulator.yaml:/app/config/simulator.yaml:ro
     environment:
       - TOPOLOGY_FILE=/app/config/topology.yaml
+      - SIMULATOR_CONFIG=/app/config/simulator.yaml
 
   prometheus:
     image: prom/prometheus:latest

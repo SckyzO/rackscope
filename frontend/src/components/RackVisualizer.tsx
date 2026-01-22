@@ -69,7 +69,27 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
 
 export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearView }: { device: Device, template: DeviceTemplate, rackHealth: string, nodesData?: Record<string, any>, isRearView?: boolean }) => {
     const nodeMap = useMemo(() => parseNodeset(device.nodes), [device.nodes]);
-    const chassisHealth = rackHealth; 
+    
+    // --- Custom HPC Health Aggregation Logic ---
+    const chassisHealth = useMemo(() => {
+        if (!nodesData) return rackHealth;
+        
+        const nodeIds = Object.values(nodeMap);
+        const states = nodeIds.map(id => nodesData[id]?.state).filter(Boolean);
+        
+        if (states.length === 0) return rackHealth;
+
+        const critCount = states.filter(s => s === 'CRIT').length;
+        const warnCount = states.filter(s => s === 'WARN').length;
+
+        if (critCount === states.length && states.length > 0) {
+            return 'CRIT'; // 100% Critical -> Red
+        }
+        if (critCount > 0 || warnCount > 0) {
+            return 'WARN'; // Partially failing -> Orange
+        }
+        return 'OK';
+    }, [nodesData, nodeMap, rackHealth]);
     
     // Use the appropriate layout (Front or Rear)
     const layout = (isRearView && template.rear_layout) ? template.rear_layout : template.layout;
