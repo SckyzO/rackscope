@@ -1,27 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
-import type { Room, Rack, Device, DeviceTemplate } from '../types';
+import type { Room, Rack, DeviceTemplate } from '../types';
 import { Box, Zap, Thermometer, Maximize2 } from 'lucide-react';
-import { RackElevation, parseNodeset } from '../components/RackVisualizer';
+import { RackElevation, HUDTooltip } from '../components/RackVisualizer';
 
-/**
- * RoomPage Component
- * 
- * Displays the physical layout of a specific room (Floor Plan).
- * Features:
- * - Aisle/Rack Grid Visualization
- * - Real-time Health Status (via API polling)
- * - Rack Detail Panel (side view)
- * 
- * Architecture:
- * - Fetches layout once on mount.
- * - Polls /api/racks/{id}/state every 5s for telemetry.
- */
 export const RoomPage = () => {
   const { roomId } = useParams<{ roomId: string }>();
-  
-  // State management
   const [room, setRoom] = useState<Room | null>(null);
   const [catalog, setCatalog] = useState<Record<string, DeviceTemplate>>({});
   const [loading, setLoading] = useState(true);
@@ -29,7 +14,6 @@ export const RoomPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [healthMap, setHealthMap] = useState<Record<string, any>>({});
 
-  // 1. Initial Load: Topology + Catalog
   useEffect(() => {
     const init = async () => {
       if (!roomId) return;
@@ -40,8 +24,6 @@ export const RoomPage = () => {
           api.getCatalog()
         ]);
         setRoom(roomData);
-        
-        // Index catalog by ID for O(1) lookups during rendering
         const deviceTemplates = (catalogData as any).device_templates || [];
         const catMap = deviceTemplates.reduce((acc: any, t: DeviceTemplate) => ({ ...acc, [t.id]: t }), {});
         setCatalog(catMap);
@@ -54,20 +36,14 @@ export const RoomPage = () => {
     init();
   }, [roomId]);
 
-  // 2. Telemetry Polling Loop
   useEffect(() => {
     if (!room) return;
-    
     const fetchHealth = async () => {
       const newHealth: Record<string, any> = {};
-      // Aggregate all rack IDs in the room to fetch their health
       const rackIds = [
         ...room.aisles.flatMap(a => a.racks.map(r => r.id)),
         ...room.standalone_racks.map(r => r.id)
       ];
-
-      // Note: In production, a single bulk API endpoint (GET /api/rooms/{id}/bulk_state) 
-      // would be preferred over N parallel requests.
       await Promise.all(rackIds.map(async (id) => {
         try {
           const data = await api.getRackState(id);
@@ -78,13 +54,11 @@ export const RoomPage = () => {
       }));
       setHealthMap(newHealth);
     };
-
     fetchHealth();
     const interval = setInterval(fetchHealth, 5000);
     return () => clearInterval(interval);
   }, [room]);
 
-  // Derived state for the sidebar detail view
   const selectedMetrics = selectedRack ? healthMap[selectedRack.id]?.metrics : null;
   const selectedNodesData = selectedRack ? healthMap[selectedRack.id]?.nodes : null;
 
@@ -94,7 +68,6 @@ export const RoomPage = () => {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header Section */}
       <header className="px-8 py-6 border-b border-white/5 bg-black/20 flex justify-between items-center shrink-0">
         <div>
           <nav className="flex items-center gap-2 text-gray-500 text-[10px] font-mono uppercase tracking-[0.2em] mb-1">
@@ -117,10 +90,7 @@ export const RoomPage = () => {
         </div>
       </header>
 
-      {/* Main Content Grid */}
       <div className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden">
-        
-        {/* Left Column: Room Floor Plan */}
         <div className="col-span-12 lg:col-span-8 bg-rack-panel border border-rack-border rounded-xl p-6 overflow-auto relative custom-scrollbar shadow-inner">
            <div className="space-y-12">
             {room.aisles.map(aisle => (
@@ -134,7 +104,7 @@ export const RoomPage = () => {
                     <RackThumbnail 
                       key={rack.id} 
                       rack={rack} 
-                      health={healthMap[rack.id]?.state || 'UNKNOWN'}
+                      healthData={healthMap[rack.id]}
                       isSelected={selectedRack?.id === rack.id}
                       onClick={() => setSelectedRack(rack)} 
                     />
@@ -145,7 +115,6 @@ export const RoomPage = () => {
            </div>
         </div>
 
-        {/* Right Column: Rack Inspection Panel */}
         <div className="col-span-12 lg:col-span-4 flex flex-col h-full overflow-hidden">
           <div className="bg-rack-panel border border-rack-border rounded-xl flex-1 flex flex-col overflow-hidden shadow-2xl relative">
             {selectedRack ? (
@@ -174,7 +143,6 @@ export const RoomPage = () => {
                        </div>
                    </div>
                 </div>
-                {/* Reused RackVisualizer Component */}
                 <RackElevation rack={selectedRack} catalog={catalog} health={healthMap[selectedRack.id]?.state} nodesData={selectedNodesData} />
               </>
             ) : (
@@ -190,24 +158,63 @@ export const RoomPage = () => {
   );
 };
 
-// ... RackThumbnail Component remains relatively simple ...
-const RackThumbnail = ({ rack, health, isSelected, onClick }: { rack: Rack, health: string, isSelected: boolean, onClick: () => void }) => {
+const RackThumbnail = ({ rack, healthData, isSelected, onClick }: { rack: Rack, healthData: any, isSelected: boolean, onClick: () => void }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const hoverTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const health = healthData?.state || 'UNKNOWN';
   const isCrit = health === 'CRIT';
   const isWarn = health === 'WARN';
+
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
+    hoverTimer.current = setTimeout(() => {
+        setIsHovered(true);
+    }, 600); // 600ms delay
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    setIsHovered(false);
+  };
+
   return (
-    <button onClick={onClick} className={`w-20 h-24 border rounded flex flex-col items-center justify-between p-1.5 transition-all relative group overflow-hidden ${isSelected ? 'ring-1 ring-blue-500 border-blue-500 bg-blue-500/5' : 'bg-[#121212] border-white/10 hover:border-white/30 hover:bg-white/5'}`}>
-      <div className="w-full flex justify-between items-center px-1">
-        <div className={`w-1.5 h-1.5 rounded-full ${isCrit ? 'bg-status-crit shadow-[0_0_5px_var(--color-status-crit)]' : isWarn ? 'bg-status-warn' : health === 'OK' ? 'bg-status-ok shadow-[0_0_5px_var(--color-status-ok)]' : 'bg-status-unknown'}`}></div>
-        <span className="text-[7px] text-gray-600 font-mono tracking-tighter">{rack.u_height}U</span>
-      </div>
-      <div className="flex-1 w-full my-2 flex flex-col gap-[2px] px-2 opacity-50 group-hover:opacity-80 transition-opacity">
-         {Array.from({length: 6}).map((_, i) => (
-             <div key={i} className={`h-[2px] w-full rounded-full ${isCrit && i % 2 === 0 ? 'bg-status-crit/50' : 'bg-gray-700'}`}></div>
-         ))}
-      </div>
-      <div className="w-full bg-white/5 py-1 rounded text-center border-t border-white/5">
-        <div className="text-[9px] font-bold truncate text-gray-300 px-1 uppercase">{rack.name.replace('Rack ', '')}</div>
-      </div>
-    </button>
+    <>
+        <button 
+            onClick={onClick} 
+            onMouseEnter={handleMouseEnter}
+            onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
+            onMouseLeave={handleMouseLeave}
+            className={`w-20 h-24 border rounded flex flex-col items-center justify-between p-1.5 transition-all relative group overflow-hidden ${isSelected ? 'ring-1 ring-blue-500 border-blue-500 bg-blue-500/5' : 'bg-[#121212] border-white/10 hover:border-white/30 hover:bg-white/5'}`}
+        >
+        <div className="w-full flex justify-between items-center px-1">
+            <div className={`w-1.5 h-1.5 rounded-full ${isCrit ? 'bg-status-crit shadow-[0_0_5px_var(--color-status-crit)]' : isWarn ? 'bg-status-warn' : health === 'OK' ? 'bg-status-ok shadow-[0_0_5px_var(--color-status-ok)]' : 'bg-status-unknown'}`}></div>
+            <span className="text-[7px] text-gray-600 font-mono tracking-tighter">{rack.u_height}U</span>
+        </div>
+        <div className="flex-1 w-full my-2 flex flex-col gap-[2px] px-2 opacity-50 group-hover:opacity-80 transition-opacity">
+            {Array.from({length: 6}).map((_, i) => (
+                <div key={i} className={`h-[2px] w-full rounded-full ${isCrit && i % 2 === 0 ? 'bg-status-crit/50' : 'bg-gray-700'}`}></div>
+            ))}
+        </div>
+        <div className="w-full bg-white/5 py-1 rounded text-center border-t border-white/5">
+            <div className="text-[9px] font-bold truncate text-gray-300 px-1 uppercase">{rack.name.replace('Rack ', '')}</div>
+        </div>
+        </button>
+
+        {isHovered && (
+            <HUDTooltip 
+                title={rack.name}
+                subtitle="Enclosure Overview"
+                status={health}
+                details={[
+                    { label: 'Template', value: rack.template_id || 'Generic' },
+                    { label: 'Capacity', value: `${rack.devices.length} Assets / ${rack.u_height}U`, italic: true }
+                ]}
+                metrics={healthData?.metrics ? { temp: healthData.metrics.temperature, power: healthData.metrics.power } : undefined}
+                mousePos={mousePos}
+            />
+        )}
+    </>
   );
 };
