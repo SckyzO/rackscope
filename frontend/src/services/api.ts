@@ -18,6 +18,10 @@ export const api = {
     const res = await fetch('/api/rooms');
     return res.json();
   },
+  getGlobalStats: async () => {
+    const res = await fetch('/api/stats/global');
+    return res.json();
+  },
   getRoomLayout: async (roomId: string): Promise<Room> => {
     const res = await fetch(`/api/rooms/${roomId}/layout`);
     if (!res.ok) throw new Error('Room not found');

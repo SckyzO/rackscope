@@ -110,6 +110,41 @@ def get_rack_details(rack_id: str):
     
     raise HTTPException(status_code=404, detail=f"Rack {rack_id} not found")
 
+@app.get("/api/stats/global")
+async def get_global_stats():
+    # 1. Fetch all health summaries in one go
+    rack_healths = await prom_client.get_rack_health_summary()
+    
+    total_racks = 0
+    crit_alerts = 0
+    warn_alerts = 0
+    
+    if TOPOLOGY:
+        for site in TOPOLOGY.sites:
+            for room in site.rooms:
+                for aisle in room.aisles:
+                    total_racks += len(aisle.racks)
+                total_racks += len(room.standalone_racks)
+
+    for state in rack_healths.values():
+        if state == "CRIT":
+            crit_alerts += 1
+        elif state == "WARN":
+            warn_alerts += 1
+            
+    global_status = "OK"
+    if crit_alerts > 0: global_status = "CRIT"
+    elif warn_alerts > 0: global_status = "WARN"
+
+    return {
+        "total_rooms": len(TOPOLOGY.sites[0].rooms) if TOPOLOGY and TOPOLOGY.sites else 0,
+        "total_racks": total_racks,
+        "active_alerts": crit_alerts + warn_alerts,
+        "crit_count": crit_alerts,
+        "warn_count": warn_alerts,
+        "status": global_status
+    }
+
 @app.get("/api/rooms/{room_id}/state")
 async def get_room_state(room_id: str):
     # Get aggregated health for all racks (efficient query)
