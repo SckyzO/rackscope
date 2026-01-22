@@ -12,8 +12,8 @@ Rackscope bridges the gap between physical layout (Racks, Chassis, Cables) and l
 *   **HPC Native**: Support for High-Density chassis (Twins, Quads), Blades, and Liquid Cooling (DLC).
 *   **Prometheus First**: No database to maintain. Direct PromQL querying.
 *   **Template System**: Define your hardware once (YAML), use it everywhere.
-*   **Full Visibility**: Front View, Rear View, and Infrastructure (PDU/HMC).
-*   **Modern UI**: React, Tailwind v4, Dark/Light modes.
+*   **Full Visibility**: Overview Hub, Room Floor Plan, Front/Rear Rack Cockpit.
+*   **Modern UI**: React, Tailwind v4, Dark/Light modes, custom accent colors.
 
 ## 📦 Quick Start (Docker)
 
@@ -28,28 +28,27 @@ Rackscope bridges the gap between physical layout (Racks, Chassis, Cables) and l
     docker compose up -d --build
     ```
 
-3.  **Access the UI**:
-    Open [http://localhost:5173](http://localhost:5173)
-
-4.  **Explore**:
-    - **Frontend**: [http://localhost:5173](http://localhost:5173)
+3.  **Access the interfaces**:
+    - **Frontend (Web UI)**: [http://localhost:5173](http://localhost:5173)
+    - **API Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
     - **Prometheus**: [http://localhost:9090](http://localhost:9090)
-    - **Simulator**: [http://localhost:9000](http://localhost:9000)
+    - **Metrics Simulator**: [http://localhost:9000](http://localhost:9000)
 
 ## 📚 Documentation
 
 - [Architecture Design](docs/ARCHITECTURE.md)
-- [Administrator Guide (Configuration)](docs/ADMIN_GUIDE.md)
+- [API Reference](docs/API_REFERENCE.md)
+- [Administrator Guide (YAML Config)](docs/ADMIN_GUIDE.md)
 - [User Guide](docs/USER_GUIDE.md)
 
 ## 🛠️ Configuration
 
 Topologies are defined in `config-examples/topology.yaml`.
-Hardware templates are in `config-examples/templates/`.
+Hardware templates are organized in `config-examples/templates/`.
 
 Example Rack Definition:
 ```yaml
-- id: r4-01
+- id: r01-01
   template_id: bull-xh3000
   devices:
     - id: chassis-01

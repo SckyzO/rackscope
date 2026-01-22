@@ -4,6 +4,7 @@ ARCHITECTURE/
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
 *.pyd
 *.pyo
 *.pkl
@@ -14,15 +15,34 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+.ipynb_checkpoints/
 
-# Node / frontend (if applicable later)
+# Node / frontend
 node_modules/
+**/node_modules/
 dist/
+**/dist/
 .build/
 .next/
 .vite/
+.eslintcache
+
+# Env / Secrets
+.env
+.env.*
+!.env.example
 
 # OS / editors
 .DS_Store
 .idea/
 .vscode/
+*.swp
+*.swo
+*.bak
+*~
+
+# Project specific
+
+backup/
+
+
