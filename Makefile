@@ -1,21 +1,31 @@
 SHELL := /bin/bash
 
-.PHONY: venv install fmt lint test run
+.PHONY: up down restart logs build lint test clean
 
-venv:
-	python -m venv .venv
+# Docker Stack Management
+up:
+	docker compose up -d
 
-install:
-	. .venv/bin/activate && pip install -e '.[dev]'
+down:
+	docker compose down
 
-fmt:
-	. .venv/bin/activate && ruff format .
+restart:
+	docker compose restart
 
+logs:
+	docker compose logs -f
+
+build:
+	docker compose build
+
+# Local Quality Tools (Requires local venv if not using docker exec)
 lint:
-	. .venv/bin/activate && ruff check .
+	docker compose exec backend ruff check .
+	docker compose exec frontend npm run lint
 
 test:
-	. .venv/bin/activate && pytest -q
+	docker compose exec backend pytest
 
-run:
-	. .venv/bin/activate && python -m rackscope
+clean:
+	docker compose down -v
+	rm -rf __pycache__ .pytest_cache .venv frontend/node_modules
