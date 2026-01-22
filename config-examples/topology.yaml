@@ -3,36 +3,136 @@ sites:
     name: "Main Datacenter"
     rooms:
       - id: room-a
-        name: "Room A"
+        name: "HPC Cluster Room A"
         aisles:
+          # --- AISLE 4: High Density Compute ---
           - id: aisle-4
-            name: "Aisle 4"
+            name: "Aisle 4 (Compute)"
             racks:
-              - id: dc1-ra-a4-r11
-                name: "Rack 11"
+              - id: r4-01
+                name: "Rack 4-01"
                 u_height: 42
                 devices:
-                  - id: rack11-sw01
-                    name: "ToR Switch"
+                  - id: r4-01-sw
+                    name: "ToR InfiniBand"
                     template_id: generic-switch-1u
                     u_position: 42
-                  - id: rack11-ch01
-                    name: "Compute Chassis 01"
+                  - id: r4-01-c01
+                    name: "Compute Encl 01"
                     template_id: bs-x440-a5
-                    u_position: 10
+                    u_position: 1
                     nodes: "compute[001-004]"
-                  - id: rack11-ch02
-                    name: "Compute Chassis 02"
+                  - id: r4-01-c02
+                    name: "Compute Encl 02"
                     template_id: bs-x440-a5
-                    u_position: 12
+                    u_position: 3
                     nodes: "compute[005-008]"
-              - id: dc1-ra-a4-r12
-                name: "Rack 12"
+                  - id: r4-01-c03
+                    name: "Compute Encl 03"
+                    template_id: bs-x440-a5
+                    u_position: 5
+                    nodes: "compute[009-012]"
+                  - id: r4-01-c04
+                    name: "Compute Encl 04"
+                    template_id: bs-x440-a5
+                    u_position: 7
+                    nodes: "compute[013-016]"
+                  - id: r4-01-c05
+                    name: "Compute Encl 05"
+                    template_id: bs-x440-a5
+                    u_position: 9
+                    nodes: "compute[017-020]"
+
+              - id: r4-02
+                name: "Rack 4-02"
                 u_height: 42
                 devices:
-                  - id: rack12-ch01
-                    name: "Fat Node"
-                    template_id: bs-x430-a5
+                  - id: r4-02-sw
+                    name: "ToR Ethernet"
+                    template_id: generic-switch-1u
+                    u_position: 42
+                  - id: r4-02-c01
+                    name: "Compute Encl 06"
+                    template_id: bs-x440-a5
+                    u_position: 10
+                    nodes: "compute[021-024]"
+                  - id: r4-02-c02
+                    name: "Compute Encl 07"
+                    template_id: bs-x440-a5
+                    u_position: 12
+                    nodes: "compute[025-028]"
+
+          # --- AISLE 5: Storage & Fat Nodes ---
+          - id: aisle-5
+            name: "Aisle 5 (Storage)"
+            racks:
+              - id: r5-01
+                name: "Rack 5-01 (Tier 1)"
+                u_height: 42
+                devices:
+                  - id: r5-01-sw
+                    name: "Storage Switch"
+                    template_id: generic-switch-1u
+                    u_position: 42
+                  # NetApp Style 2U Flash
+                  - id: r5-01-flash01
+                    name: "Flash Array A"
+                    template_id: storage-2u-24disk
+                    u_position: 30
+                    nodes: "ssd[01-24]"
+                  - id: r5-01-flash02
+                    name: "Flash Array B"
+                    template_id: storage-2u-24disk
+                    u_position: 28
+                    nodes: "ssd[25-48]"
+                  
+                  # High Density 4U
+                  - id: r5-01-hd01
+                    name: "Mass Storage 01"
+                    template_id: storage-4u-60disk
+                    u_position: 10
+                    nodes: "hdd[001-060]"
+                  - id: r5-01-hd02
+                    name: "Mass Storage 02"
+                    template_id: storage-4u-60disk
+                    u_position: 6
+                    nodes: "hdd[061-120]"
+
+              - id: r5-02
+                name: "Rack 5-02 (Blades)"
+                u_height: 42
+                devices:
+                  - id: r5-02-blade01
+                    name: "Blade Center A"
+                    template_id: blade-5u-7node
                     u_position: 1
-                    nodes:
-                      1: "storage-node-01"
+                    nodes: "blade[01-07]"
+                  - id: r5-02-blade02
+                    name: "Blade Center B"
+                    template_id: blade-5u-7node
+                    u_position: 6
+                    nodes: "blade[08-14]"
+                  - id: r5-02-blade03
+                    name: "Blade Center C"
+                    template_id: blade-5u-7node
+                    u_position: 11
+                    nodes: "blade[15-21]"
+
+          # --- AISLE 6: Management ---
+          - id: aisle-6
+            name: "Aisle 6 (Mgmt)"
+            racks:
+              - id: r6-01
+                name: "Rack 6-01"
+                u_height: 42
+                devices:
+                  - id: r6-01-adm
+                    name: "Admin Server"
+                    template_id: generic-switch-1u 
+                    u_position: 20
+                    nodes: {1: "admin-01"}
+                  - id: r6-01-mon
+                    name: "Monitoring"
+                    template_id: generic-switch-1u
+                    u_position: 21
+                    nodes: {1: "monitoring-01"}

@@ -248,6 +248,10 @@ const RackDetailView = ({ rack, catalog, health, metrics, nodesData }: { rack: R
 const DeviceChassis = ({ device, template, rackHealth, nodesData }: { device: Device, template: DeviceTemplate, rackHealth: string, nodesData: Record<string, any> }) => {
     const nodeMap = useMemo(() => parseNodeset(device.nodes), [device.nodes]);
     const chassisHealth = rackHealth; 
+    
+    // Density detection: if too many columns, we simplify the view
+    const isHighDensity = template.layout.cols > 8;
+
     let borderColor = 'border-white/10';
     let bgColor = 'bg-gray-900/50';
     if (template.id.includes('switch')) {
@@ -262,30 +266,85 @@ const DeviceChassis = ({ device, template, rackHealth, nodesData }: { device: De
     return (
         <div className={`w-full h-full border ${borderColor} ${bgColor} rounded-sm overflow-hidden flex relative group`}>
             <div className={`w-1.5 h-full ${statusColor} shrink-0 opacity-70 group-hover:opacity-100 transition-opacity`} title={`Chassis Status: ${chassisHealth}`}></div>
+            
             <div 
                 className="flex-1 grid gap-[1px] p-[1px] bg-transparent"
                 style={{ 
                     gridTemplateRows: `repeat(${template.layout.rows}, 1fr)`,
-                    gridTemplateColumns: `repeat(${template.layout.cols}, 1fr)` 
+                    gridTemplateColumns: isHighDensity ? '1fr' : `repeat(${template.layout.cols}, 1fr)` 
                 }}
             >
                 {template.layout.matrix.map((row, rIdx) => (
-                    row.map((slotNum, cIdx) => {
-                        const nodeId = nodeMap[slotNum];
-                        const nodeHealth = nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].state : 'UNKNOWN';
-                        const nodeTemp = nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].temperature : null;
-                        
-                        return (
-                            <NodeUnit 
-                                key={`${rIdx}-${cIdx}`} 
-                                nodeName={nodeId} 
-                                slotNum={slotNum}
-                                nodeHealth={nodeHealth}
-                                nodeTemp={nodeTemp}
-                            />
-                        );
-                    })
+                    isHighDensity ? (
+                        // Render a single summary unit for the whole row
+                        <RowSummaryUnit 
+                            key={rIdx} 
+                            rowNodes={row.map(slot => nodeMap[slot])} 
+                            nodesData={nodesData}
+                            label={template.layout.rows > 1 ? `DRAWER ${rIdx + 1}` : 'STORAGE ARRAY'}
+                        />
+                    ) : (
+                        // Classic grid rendering
+                        row.map((slotNum, cIdx) => {
+                            const nodeId = nodeMap[slotNum];
+                            const nodeHealth = nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].state : 'UNKNOWN';
+                            const nodeTemp = nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].temperature : null;
+                            
+                            return (
+                                <NodeUnit 
+                                    key={`${rIdx}-${cIdx}`} 
+                                    nodeName={nodeId} 
+                                    slotNum={slotNum}
+                                    nodeHealth={nodeHealth}
+                                    nodeTemp={nodeTemp}
+                                />
+                            );
+                        })
+                    )
                 ))}
+            </div>
+        </div>
+    );
+};
+
+const RowSummaryUnit = ({ rowNodes, nodesData, label }: { rowNodes: (string|undefined)[], nodesData: Record<string, any>, label: string }) => {
+    // Calculate aggregate health for the row
+    let worstState = 'OK';
+    let critCount = 0;
+    let warnCount = 0;
+    let okCount = 0;
+
+    rowNodes.forEach(nodeId => {
+        if (!nodeId || !nodesData[nodeId]) return;
+        const state = nodesData[nodeId].state;
+        if (state === 'CRIT') { worstState = 'CRIT'; critCount++; }
+        else if (state === 'WARN') { warnCount++; if (worstState !== 'CRIT') worstState = 'WARN'; }
+        else if (state === 'OK') okCount++;
+    });
+
+    const statusColor = worstState === 'CRIT' ? 'bg-status-crit' : worstState === 'WARN' ? 'bg-status-warn' : 'bg-status-ok';
+
+    return (
+        <div className={`relative flex items-center justify-between px-3 bg-[#0a0a0a] group hover:bg-white/5 transition-colors cursor-help border-b border-white/5 last:border-0`}>
+            <div className="flex items-center gap-3">
+                <div className={`w-2 h-2 rounded-full ${statusColor} ${worstState === 'CRIT' ? 'animate-pulse shadow-[0_0_8px_var(--color-status-crit)]' : ''}`}></div>
+                <span className="text-[8px] font-bold font-mono text-gray-400 group-hover:text-white uppercase tracking-wider">{label}</span>
+            </div>
+            <div className="flex gap-1.5 opacity-40 group-hover:opacity-100">
+                {critCount > 0 && <span className="text-[7px] font-mono text-status-crit">{critCount} ERR</span>}
+                {warnCount > 0 && <span className="text-[7px] font-mono text-status-warn">{warnCount} WRN</span>}
+                <span className="text-[7px] font-mono text-gray-600">{rowNodes.length} DISKS</span>
+            </div>
+
+            {/* Detailed row tooltip */}
+            <div className="absolute z-50 bg-black border border-white/20 px-3 py-2 rounded text-[9px] text-white opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap left-1/2 -translate-x-1/2 -top-10 shadow-2xl">
+                <div className="font-bold border-b border-white/10 pb-1 mb-1">{label} SUMMARY</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
+                    <div className="text-gray-500">Total Units:</div><div className="text-right">{rowNodes.length}</div>
+                    <div className="text-status-crit">Critical:</div><div className="text-right text-status-crit">{critCount}</div>
+                    <div className="text-status-warn">Warning:</div><div className="text-right text-status-warn">{warnCount}</div>
+                    <div className="text-status-ok">Healthy:</div><div className="text-right text-status-ok">{okCount}</div>
+                </div>
             </div>
         </div>
     );

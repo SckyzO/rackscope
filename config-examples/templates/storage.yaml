@@ -1,0 +1,26 @@
+templates:
+  - id: storage-2u-24disk
+    name: "Flash Array 2U (24 SFF)"
+    u_height: 2
+    layout:
+      type: grid
+      rows: 1
+      cols: 24
+      # 24 Disks in a single row
+      matrix:
+        - [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+
+  - id: storage-4u-60disk
+    name: "High Density Drawer 4U (60 LFF)"
+    u_height: 4
+    layout:
+      type: grid
+      rows: 5
+      cols: 12
+      # 5 Drawers of 12 disks each
+      matrix:
+        - [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]       # Drawer 1
+        - [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24] # Drawer 2
+        - [25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36] # Drawer 3
+        - [37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48] # Drawer 4
+        - [49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60] # Drawer 5
