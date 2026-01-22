@@ -30,6 +30,16 @@ templates:
       cols: 4
       matrix: [[901, 902, 903, 904]] # 4 Fans
 
+  - id: bs-xh35mq-ib-1u
+    name: "BullSequana XH35MQ IB Switch (1U)"
+    type: network
+    u_height: 1
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix: [[1]]
+
   # --- ETHERNET ---
   - id: eth-switch-tor
     name: "Ethernet Mgmt Switch"

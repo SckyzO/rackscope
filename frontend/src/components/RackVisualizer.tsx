@@ -123,7 +123,32 @@ export const HUDTooltip = ({ title, subtitle, status, details, metrics, mousePos
 
 // --- Core Visualizers ---
 
-export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = false }: { rack: Rack, catalog: Record<string, DeviceTemplate>, health?: string, nodesData?: Record<string, any>, isRearView?: boolean }) => {
+export const RackElevation = ({
+  rack,
+  catalog,
+  health,
+  nodesData,
+  isRearView = false,
+  infraComponents = [],
+  allowInfraOverlap = false,
+}: {
+  rack: Rack,
+  catalog: Record<string, DeviceTemplate>,
+  health?: string,
+  nodesData?: Record<string, any>,
+  isRearView?: boolean,
+  infraComponents?: {
+    id: string;
+    name: string;
+    type: 'power' | 'cooling' | 'management' | 'network' | 'other';
+    model?: string;
+    role?: string;
+    location: 'u-mount' | 'side-left' | 'side-right' | 'top' | 'bottom';
+    u_position?: number;
+    u_height?: number;
+  }[],
+  allowInfraOverlap?: boolean,
+}) => {
   const uMap = new Map<number, Device>();
   rack.devices.forEach(d => {
       const template = catalog[d.template_id];
@@ -133,6 +158,23 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
       }
   });
 
+  const infraMap = new Map<number, { component: any; height: number; hasCollision: boolean }>();
+  infraComponents
+    .filter(c => c.location === 'u-mount' && c.u_position)
+    .forEach(c => {
+      const height = c.u_height || 1;
+      let hasCollision = false;
+      if (!allowInfraOverlap) {
+        for (let i = 0; i < height; i++) {
+          if (uMap.has(c.u_position + i)) {
+            hasCollision = true;
+            break;
+          }
+        }
+      }
+      infraMap.set(c.u_position, { component: c, height, hasCollision });
+    });
+
   return (
     <div className="flex-1 bg-[var(--color-rack-interior)] p-4 flex items-center justify-center h-full transition-colors duration-500 rounded-lg relative">
       <div className="flex flex-col-reverse w-full max-w-[380px] h-full border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-frame)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative transition-colors duration-500 rounded-sm">
@@ -141,6 +183,7 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
           const device = uMap.get(u);
           const template = device ? catalog[device.template_id] : null;
           const isDeviceStart = device && device.u_position === u;
+          const infraStart = infraMap.get(u);
 
           return (
             <div key={u} className="relative flex items-center border-b border-[var(--color-border)]/10 min-h-0 w-full flex-1 transition-colors duration-300">
@@ -156,6 +199,17 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
                           <DeviceChassis device={device} template={template} rackHealth={health || 'UNKNOWN'} nodesData={nodesData} isRearView={isRearView} uPosition={u} />
                       </div>
                   )}
+
+                  {infraStart && (
+                      <div
+                        className={`absolute bottom-0 left-0.5 right-0.5 z-30 ${
+                          infraStart.hasCollision ? 'ring-2 ring-[var(--color-status-crit)]/70' : ''
+                        }`}
+                        style={{ height: `calc(${infraStart.height} * 100%)` }}
+                      >
+                        <InfraOverlay component={infraStart.component} hasCollision={infraStart.hasCollision} />
+                      </div>
+                  )}
                   
                   {!device && (
                       <div className="w-full h-full bg-[var(--color-empty-slot)] opacity-40"></div>
@@ -165,6 +219,20 @@ export const RackElevation = ({ rack, catalog, health, nodesData, isRearView = f
           );
         })}
       </div>
+    </div>
+  );
+};
+
+const InfraOverlay = ({ component, hasCollision }: { component: any; hasCollision: boolean }) => {
+  const base = 'bg-[var(--color-node-surface)]/70 border border-[var(--color-border)]/30';
+  const accent = component.type === 'power' ? 'text-status-warn border-status-warn/40'
+               : component.type === 'cooling' ? 'text-blue-400 border-blue-500/40'
+               : component.type === 'management' ? 'text-cyan-400 border-cyan-500/40'
+               : 'text-gray-400 border-[var(--color-border)]/40';
+  return (
+    <div className={`w-full h-full ${base} ${accent} rounded-[2px] flex items-center justify-between px-2 text-[9px] font-mono uppercase tracking-widest pointer-events-none`}>
+      <span className="truncate">{component.name}</span>
+      {hasCollision && <span className="text-status-crit font-black">INVALID</span>}
     </div>
   );
 };
@@ -183,7 +251,11 @@ export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearV
         return 'OK';
     }, [nodesData, nodeMap, rackHealth]);
     
-    const layout = (isRearView && template.rear_layout) ? template.rear_layout : template.layout;
+    const hasRearLayout = Boolean(template.rear_layout);
+    if (isRearView && !hasRearLayout) {
+        return null;
+    }
+    const layout = (isRearView && hasRearLayout) ? template.rear_layout : template.layout;
     const isHighDensity = layout.cols > 8 && template.type !== 'network';
 
     let borderColor = 'border-[var(--color-border)]/30';

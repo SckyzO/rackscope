@@ -51,21 +51,6 @@ templates:
       cols: 1
       matrix: [[1]]
 
-  - id: bs-xh35mq-ib-1u
-    name: "BullSequana XH35MQ IB Switch (1U)"
-    type: network
-    u_height: 1
-    layout:
-      type: grid
-      rows: 1
-      cols: 1
-      matrix: [[1]]
-    rear_layout:
-      type: grid
-      rows: 1
-      cols: 2
-      matrix: [[901, 902]]
-
   - id: bs-xh3140-trio-1u-3n
     name: "BullSequana XH3140 Trio (1U 3 Nodes)"
     type: server

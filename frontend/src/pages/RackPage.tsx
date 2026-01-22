@@ -75,6 +75,13 @@ export const RackPage = () => {
   if (loading) return <div className="p-12 font-mono animate-pulse text-blue-500">LDR :: ANALYZING_RACK_STRUCTURE...</div>;
   if (error || !rack) return <div className="p-12 text-status-crit font-mono">ERR :: {error || 'RACK_NOT_FOUND'}</div>;
 
+  const frontInfra = rackTemplate?.infrastructure.front_components?.length
+    ? rackTemplate.infrastructure.front_components
+    : rackTemplate?.infrastructure.components || [];
+  const rearInfra = rackTemplate?.infrastructure.rear_components?.length
+    ? rackTemplate.infrastructure.rear_components
+    : rackTemplate?.infrastructure.components || [];
+
   return (
     <div className="h-full flex flex-col p-8 bg-[var(--color-bg-base)]">
       {/* Top Navigation & Title */}
@@ -149,7 +156,13 @@ export const RackPage = () => {
                 Front Orientation
             </div>
             <div className="flex-1 p-6">
-                <RackElevation rack={rack} catalog={deviceCatalog} health={healthData?.state} nodesData={healthData?.nodes} />
+                <RackElevation
+                    rack={rack}
+                    catalog={deviceCatalog}
+                    health={healthData?.state}
+                    nodesData={healthData?.nodes}
+                    infraComponents={frontInfra}
+                />
             </div>
         </div>
 
@@ -159,7 +172,15 @@ export const RackPage = () => {
                 Rear Orientation
             </div>
             <div className="flex-1 p-6 opacity-90">
-                <RackElevation rack={rack} catalog={deviceCatalog} health={healthData?.state} nodesData={healthData?.nodes} isRearView={true} />
+                <RackElevation
+                    rack={rack}
+                    catalog={deviceCatalog}
+                    health={healthData?.state}
+                    nodesData={healthData?.nodes}
+                    isRearView={true}
+                    infraComponents={rearInfra}
+                    allowInfraOverlap={true}
+                />
             </div>
         </div>
 
