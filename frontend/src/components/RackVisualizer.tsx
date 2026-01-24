@@ -27,6 +27,7 @@ interface HUDTooltipProps {
     subtitle?: string;
     status: string;
     details: { label: string; value: string; italic?: boolean }[];
+    reasons?: string[];
     metrics?: {
         temp?: number;
         power?: number;
@@ -34,7 +35,7 @@ interface HUDTooltipProps {
     mousePos: { x: number; y: number };
 }
 
-export const HUDTooltip = ({ title, subtitle, status, details, metrics, mousePos }: HUDTooltipProps) => {
+export const HUDTooltip = ({ title, subtitle, status, details, reasons, metrics, mousePos }: HUDTooltipProps) => {
     const statusColor = status === 'OK' ? 'bg-status-ok' 
                       : status === 'CRIT' ? 'bg-status-crit' 
                       : status === 'WARN' ? 'bg-status-warn' 
@@ -110,6 +111,20 @@ export const HUDTooltip = ({ title, subtitle, status, details, metrics, mousePos
                             </div>
                         </div>
                     )}
+
+                    {/* Reasons */}
+                    {reasons && reasons.length > 0 && (
+                        <div className="mt-4 border-t border-[var(--color-border)]/10 pt-4">
+                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Reasons</div>
+                            <div className="space-y-1">
+                                {reasons.map((r, i) => (
+                                    <div key={i} className="text-[11px] font-mono text-[var(--color-text-base)] opacity-80 truncate">
+                                        {r}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
             
@@ -175,49 +190,140 @@ export const RackElevation = ({
       infraMap.set(c.u_position, { component: c, height, hasCollision });
     });
 
+  const topSlots = Math.max(6, rack.u_height);
+  const topSide = buildSideLayout(infraComponents.filter(c => c.location === 'top'), topSlots);
+  const bottomSide = buildSideLayout(infraComponents.filter(c => c.location === 'bottom'), topSlots);
+
   return (
     <div className="flex-1 bg-[var(--color-rack-interior)] p-4 flex items-center justify-center h-full transition-colors duration-500 rounded-lg relative">
-      <div className="flex flex-col-reverse w-full max-w-[380px] h-full border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-frame)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative transition-colors duration-500 rounded-sm">
-        {Array.from({ length: rack.u_height }).map((_, idx) => {
-          const u = idx + 1;
-          const device = uMap.get(u);
-          const template = device ? catalog[device.template_id] : null;
-          const isDeviceStart = device && device.u_position === u;
-          const infraStart = infraMap.get(u);
+      <div className="relative w-full max-w-[380px] h-full flex items-stretch">
+        {isRearView && topSide.length > 0 && (
+          <div
+            className="absolute left-4 right-4 -top-10 h-8 grid gap-1"
+            style={{ gridTemplateColumns: `repeat(${topSlots}, minmax(0, 1fr))` }}
+          >
+            {topSide.map(({ component, slot, span }) => (
+              <SideAttachment
+                key={component.id}
+                component={component}
+                horizontal
+                style={{ gridColumn: `${slot} / span ${span}` }}
+              />
+            ))}
+          </div>
+        )}
+        {isRearView && bottomSide.length > 0 && (
+          <div
+            className="absolute left-4 right-4 -bottom-10 h-8 grid gap-1"
+            style={{ gridTemplateColumns: `repeat(${topSlots}, minmax(0, 1fr))` }}
+          >
+            {bottomSide.map(({ component, slot, span }) => (
+              <SideAttachment
+                key={component.id}
+                component={component}
+                horizontal
+                style={{ gridColumn: `${slot} / span ${span}` }}
+              />
+            ))}
+          </div>
+        )}
+        <div className="flex flex-col-reverse w-full h-full border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-frame)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative transition-colors duration-500 rounded-sm">
+          {Array.from({ length: rack.u_height }).map((_, idx) => {
+            const u = idx + 1;
+            const device = uMap.get(u);
+            const template = device ? catalog[device.template_id] : null;
+            const isDeviceStart = device && device.u_position === u;
+            const infraStart = infraMap.get(u);
 
-          return (
-            <div key={u} className="relative flex items-center border-b border-[var(--color-border)]/10 min-h-0 w-full flex-1 transition-colors duration-300">
-              <div className="absolute -left-[20px] w-4 text-center text-[10px] font-mono text-[var(--color-text-base)] font-black opacity-40 select-none flex items-center justify-center h-full z-10">{u}</div>
-              <div className="absolute -right-[20px] w-4 text-center text-[10px] font-mono text-[var(--color-text-base)] font-black opacity-40 select-none flex items-center justify-center h-full z-10">{u}</div>
-              
-              <div className="w-full px-0.5 py-[1px] h-full relative">
-                  {isDeviceStart && template && (
-                      <div 
-                        className="absolute bottom-0 left-0.5 right-0.5 z-20" 
-                        style={{ height: `calc(${template.u_height} * 100%)` }}
-                      >
-                          <DeviceChassis device={device} template={template} rackHealth={health || 'UNKNOWN'} nodesData={nodesData} isRearView={isRearView} uPosition={u} />
-                      </div>
-                  )}
+            return (
+              <div key={u} className="relative flex items-center border-b border-[var(--color-border)]/10 min-h-0 w-full flex-1 transition-colors duration-300">
+                <div className="absolute -left-[20px] w-4 text-center text-[10px] font-mono text-[var(--color-text-base)] font-black opacity-40 select-none flex items-center justify-center h-full z-10">{u}</div>
+                <div className="absolute -right-[20px] w-4 text-center text-[10px] font-mono text-[var(--color-text-base)] font-black opacity-40 select-none flex items-center justify-center h-full z-10">{u}</div>
+                
+                <div className="w-full px-0.5 py-[1px] h-full relative">
+                    {isDeviceStart && template && (
+                        <div 
+                          className="absolute bottom-0 left-0.5 right-0.5 z-20" 
+                          style={{ height: `calc(${template.u_height} * 100%)` }}
+                        >
+                            <DeviceChassis device={device} template={template} rackHealth={health || 'UNKNOWN'} nodesData={nodesData} isRearView={isRearView} uPosition={u} />
+                        </div>
+                    )}
 
-                  {infraStart && (
-                      <div
-                        className={`absolute bottom-0 left-0.5 right-0.5 z-30 ${
-                          infraStart.hasCollision ? 'ring-2 ring-[var(--color-status-crit)]/70' : ''
-                        }`}
-                        style={{ height: `calc(${infraStart.height} * 100%)` }}
-                      >
-                        <InfraOverlay component={infraStart.component} hasCollision={infraStart.hasCollision} />
-                      </div>
-                  )}
-                  
-                  {!device && (
-                      <div className="w-full h-full bg-[var(--color-empty-slot)] opacity-40"></div>
-                  )}
+                    {infraStart && (
+                        <div
+                          className={`absolute bottom-0 left-0.5 right-0.5 z-30 ${
+                            infraStart.hasCollision ? 'ring-2 ring-[var(--color-status-crit)]/70' : ''
+                          }`}
+                          style={{ height: `calc(${infraStart.height} * 100%)` }}
+                        >
+                          <InfraOverlay component={infraStart.component} hasCollision={infraStart.hasCollision} />
+                        </div>
+                    )}
+                    
+                    {!device && (
+                        <div className="w-full h-full bg-[var(--color-empty-slot)] opacity-40"></div>
+                    )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const buildSideLayout = (components: any[], slots: number) => {
+  const used = new Array(slots + 1).fill(false);
+  const withOrder = [...components].sort((a, b) => {
+    const aSlot = a.slot ?? Number.MAX_SAFE_INTEGER;
+    const bSlot = b.slot ?? Number.MAX_SAFE_INTEGER;
+    if (aSlot !== bSlot) return aSlot - bSlot;
+    return String(a.id).localeCompare(String(b.id));
+  });
+
+  return withOrder.map((component) => {
+    let span = Math.max(1, Math.min(slots, component.span ?? 1));
+    let slot = Math.max(1, Math.min(slots, component.slot ?? 1));
+    while (slot <= slots && used[slot]) slot += 1;
+    if (slot > slots) slot = slots;
+    for (let i = 0; i < span; i += 1) {
+      const s = slot + i;
+      if (s <= slots) used[s] = true;
+    }
+    return { component, slot, span };
+  });
+};
+
+const SideAttachment = ({
+  component,
+  horizontal = false,
+  style,
+}: {
+  component: any;
+  horizontal?: boolean;
+  style?: React.CSSProperties;
+}) => {
+  const accent = component.type === 'power' ? 'text-status-warn border-status-warn/40'
+               : component.type === 'cooling' ? 'text-blue-400 border-blue-500/40'
+               : component.type === 'management' ? 'text-cyan-400 border-cyan-500/40'
+               : component.type === 'network' ? 'text-indigo-400 border-indigo-500/40'
+               : 'text-gray-400 border-[var(--color-border)]/40';
+  const layout = horizontal ? 'h-full w-full' : 'h-full w-full';
+  const Icon = component.type === 'power' ? Power
+             : component.type === 'cooling' ? Thermometer
+             : component.type === 'management' ? Activity
+             : component.type === 'network' ? RouterIcon
+             : Box;
+  return (
+    <div
+      className={`bg-[var(--color-node-surface)]/70 border ${accent} rounded-[2px] ${layout} flex items-center justify-center text-[8px] font-mono uppercase tracking-widest px-1 shadow-[inset_0_0_12px_rgba(0,0,0,0.25)]`}
+      style={style}
+    >
+      <div className={`flex items-center gap-1 ${horizontal ? '' : 'flex-col'} truncate`}>
+        <Icon className="w-3 h-3 opacity-70" />
+        <span className="truncate">{component.name}</span>
       </div>
     </div>
   );

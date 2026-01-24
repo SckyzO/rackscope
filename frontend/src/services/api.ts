@@ -1,38 +1,98 @@
 import type { Site, Room, RoomSummary, DeviceTemplate, Rack } from '../types';
 
+const CACHE_PREFIX = 'rackscope.cache.';
+const META_KEY = 'rackscope.cache.meta';
+const ERROR_KEY = 'rackscope.client.errors';
+const STALE_THRESHOLD_MS = 2 * 60 * 1000;
+
+const readJSON = (key: string) => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeJSON = (key: string, value: any) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Ignore storage failures.
+  }
+};
+
+const logClientError = (message: string, context?: string) => {
+  const entry = { ts: Date.now(), message, context };
+  const current = readJSON(ERROR_KEY) || [];
+  const next = [entry, ...current].slice(0, 50);
+  writeJSON(ERROR_KEY, next);
+  // Also log to console for visibility.
+  console.error('[rackscope]', message, context || '');
+};
+
+const markSuccess = () => {
+  writeJSON(META_KEY, { lastSuccess: Date.now() });
+};
+
+const readCache = (key: string) => readJSON(`${CACHE_PREFIX}${key}`);
+const writeCache = (key: string, data: any) => writeJSON(`${CACHE_PREFIX}${key}`, { ts: Date.now(), data });
+
+const fetchWithCache = async <T>(url: string, cacheKey: string): Promise<T> => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, url);
+      const cached = readCache(cacheKey);
+      if (cached?.data) return cached.data as T;
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache(cacheKey, data);
+    markSuccess();
+    return data as T;
+  } catch (err: any) {
+    logClientError(err?.message || 'Network error', url);
+    const cached = readCache(cacheKey);
+    if (cached?.data) return cached.data as T;
+    throw err;
+  }
+};
+
 export const api = {
   getSites: async (): Promise<Site[]> => {
-    const res = await fetch('/api/sites');
-    return res.json();
+    return fetchWithCache('/api/sites', 'sites');
   },
   getCatalog: async (): Promise<{ device_templates: DeviceTemplate[], rack_templates: any[] }> => {
-    const res = await fetch('/api/catalog');
-    return res.json();
+    return fetchWithCache('/api/catalog', 'catalog');
   },
   getRack: async (rackId: string): Promise<Rack> => {
-    const res = await fetch(`/api/racks/${rackId}`);
-    if (!res.ok) throw new Error('Rack not found');
-    return res.json();
+    return fetchWithCache(`/api/racks/${rackId}`, `rack.${rackId}`);
   },
   getRooms: async (): Promise<RoomSummary[]> => {
-    const res = await fetch('/api/rooms');
-    return res.json();
+    return fetchWithCache('/api/rooms', 'rooms');
   },
   getGlobalStats: async () => {
-    const res = await fetch('/api/stats/global');
-    return res.json();
+    return fetchWithCache('/api/stats/global', 'stats.global');
   },
   getRoomLayout: async (roomId: string): Promise<Room> => {
-    const res = await fetch(`/api/rooms/${roomId}/layout`);
-    if (!res.ok) throw new Error('Room not found');
-    return res.json();
+    return fetchWithCache(`/api/rooms/${roomId}/layout`, `room.layout.${roomId}`);
   },
   getRoomState: async (roomId: string) => {
-    const res = await fetch(`/api/rooms/${roomId}/state`);
-    return res.json();
+    return fetchWithCache(`/api/rooms/${roomId}/state`, `room.state.${roomId}`);
   },
   getRackState: async (rackId: string) => {
-    const res = await fetch(`/api/racks/${rackId}/state`);
-    return res.json();
-  }
+    return fetchWithCache(`/api/racks/${rackId}/state`, `rack.state.${rackId}`);
+  },
+  getLastSuccessTs: () => {
+    const meta = readJSON(META_KEY);
+    return meta?.lastSuccess || null;
+  },
+  isStale: () => {
+    const ts = api.getLastSuccessTs();
+    if (!ts) return true;
+    return Date.now() - ts > STALE_THRESHOLD_MS;
+  },
+  getErrorLog: () => readJSON(ERROR_KEY) || [],
+  clearErrorLog: () => writeJSON(ERROR_KEY, []),
 };

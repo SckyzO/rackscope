@@ -29,3 +29,9 @@ Access settings via the sidebar to:
 - Switch between **Dark** and **Light** mode.
 - Change the accent color (Blue, Orange, Purple, etc.).
 - Clear local cache if display issues occur.
+
+## Notifications
+A header badge shows recent WARN/CRIT transitions and lists them on click.
+
+## Offline Mode
+If the backend is unreachable, the UI uses the last cached data and shows a **STALE** indicator in the header.

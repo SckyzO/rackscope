@@ -33,24 +33,24 @@ export const Sidebar = () => {
   };
 
   return (
-    <div className="w-64 h-screen bg-[var(--color-bg-panel)] border-r border-[var(--color-border)] flex flex-col overflow-hidden shrink-0 z-50 backdrop-blur-md">
+    <div className="w-64 h-screen bg-[var(--color-bg-panel)] border-r border-[var(--color-border)] flex flex-col overflow-hidden shrink-0 z-50">
       {/* Branding */}
-      <div className="p-6 border-b border-[var(--color-border)] bg-[var(--color-bg-base)]/50">
+      <div className="p-5 border-b border-[var(--color-border)] bg-[var(--color-bg-panel)]">
         <div className="flex items-center gap-3 mb-1">
-          <div className="p-1.5 rounded-lg bg-[var(--color-accent)] shadow-[0_0_15px_var(--color-accent)]/30">
+          <div className="p-1.5 rounded-lg bg-[var(--color-accent)] shadow-[0_0_10px_var(--color-accent)]/20">
             <Activity className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-xl font-black tracking-tighter text-[var(--color-text-base)] uppercase">
+          <h1 className="text-lg font-black tracking-tight text-[var(--color-text-base)] uppercase">
             RACK<span className="text-[var(--color-accent)]">SCOPE</span>
           </h1>
         </div>
-        <p className="text-[9px] text-gray-500 font-mono uppercase tracking-[0.3em] pl-11">Physical Intelligence</p>
+        <p className="text-[9px] text-gray-500 font-mono uppercase tracking-[0.3em] pl-10">Physical Intelligence</p>
       </div>
 
       <nav className="flex-1 overflow-y-auto py-6 custom-scrollbar px-3">
         {/* Main Section */}
         <div className="mb-8">
-          <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 px-3 opacity-50">Main Control</h2>
+          <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 px-3 opacity-70">Main Control</h2>
           <div className="space-y-1">
             <SidebarLink to="/" icon={LayoutDashboard} label="Overview" />
             <SidebarLink to="/settings" icon={Settings} label="Settings" />
@@ -59,7 +59,7 @@ export const Sidebar = () => {
 
         {/* Topology Section */}
         <div className="mb-8">
-          <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 px-3 opacity-50">Topology</h2>
+          <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 px-3 opacity-70">Topology</h2>
           <div className="space-y-1">
             {rooms.map(room => (
               <RoomTreeItem key={room.id} room={room} />
@@ -69,7 +69,7 @@ export const Sidebar = () => {
 
         {/* Library Section */}
         <div className="border-t border-[var(--color-border)] pt-6 mt-6">
-          <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4 px-3 italic opacity-50">Library</h2>
+          <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4 px-3 italic opacity-70">Library</h2>
           
           <div className="space-y-2">
              {Object.entries(groupedDevices).map(([type, templates]) => (
@@ -101,7 +101,7 @@ export const Sidebar = () => {
       </nav>
 
       {/* Footer Status */}
-      <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-bg-base)]/50">
+      <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-bg-panel)]">
         <div className="flex items-center gap-3 px-2 py-1 rounded-full bg-[var(--color-accent)]/5 border border-[var(--color-accent)]/10">
           <div className="w-2 h-2 rounded-full bg-status-ok animate-pulse shadow-[0_0_8px_var(--color-status-ok)]"></div>
           <span className="text-[9px] font-mono font-bold text-[var(--color-accent)] uppercase tracking-tighter">System Online</span>

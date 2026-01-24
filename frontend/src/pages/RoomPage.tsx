@@ -179,6 +179,16 @@ const RackThumbnail = ({ rack, healthData, isSelected, onClick }: { rack: Rack, 
     setIsHovered(false);
   };
 
+  const reasons = (() => {
+    if (!healthData) return [];
+    const raw = healthData.reasons || healthData.checks || healthData.alerts;
+    if (Array.isArray(raw)) {
+      return raw.map((r: any) => r?.name || r?.label || r?.id || r).filter(Boolean);
+    }
+    return [];
+  })();
+  const showReasons = health !== 'OK' ? (reasons.length > 0 ? reasons : ['No checks available']) : [];
+
   return (
     <>
         <button 
@@ -211,6 +221,7 @@ const RackThumbnail = ({ rack, healthData, isSelected, onClick }: { rack: Rack, 
                     { label: 'Template', value: rack.template_id || 'Generic' },
                     { label: 'Capacity', value: `${rack.devices.length} Assets / ${rack.u_height}U`, italic: true }
                 ]}
+                reasons={showReasons}
                 metrics={healthData?.metrics ? { temp: healthData.metrics.temperature, power: healthData.metrics.power } : undefined}
                 mousePos={mousePos}
             />

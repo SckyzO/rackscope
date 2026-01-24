@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
+import { NotificationHeader } from './components/NotificationHeader';
 import { RoomPage } from './pages/RoomPage';
 import { RackPage } from './pages/RackPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -9,15 +10,71 @@ import type { RoomSummary } from './types';
 import { Activity, Zap, Thermometer, AlertTriangle, Map as MapIcon, ArrowUpRight } from 'lucide-react';
 
 // Layout global
-const Layout = ({ children }: { children: React.ReactNode }) => (
-  <div className="flex h-screen bg-rack-dark text-gray-100 overflow-hidden font-sans">
-    <Sidebar />
-    <main className="flex-1 overflow-hidden relative bg-[var(--color-bg-base)] text-[var(--color-text-base)]">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(128,128,128,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(128,128,128,0.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
-      {children}
-    </main>
-  </div>
-);
+const Layout = ({ children }: { children: React.ReactNode }) => {
+  const [stale, setStale] = useState(api.isStale());
+  const [lastSyncText, setLastSyncText] = useState<string | null>(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStale(api.isStale());
+      const ts = api.getLastSuccessTs();
+      if (!ts) {
+        setLastSyncText(null);
+        return;
+      }
+      const diffMs = Date.now() - ts;
+      const min = Math.floor(diffMs / 60000);
+      if (min < 1) {
+        setLastSyncText('just now');
+        return;
+      }
+      if (min < 60) {
+        setLastSyncText(`${min} min`);
+        return;
+      }
+      const hours = Math.floor(min / 60);
+      if (hours < 24) {
+        setLastSyncText(`${hours} h`);
+        return;
+      }
+      const days = Math.floor(hours / 24);
+      setLastSyncText(`${days} d`);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex h-screen bg-rack-dark text-gray-100 overflow-hidden font-sans">
+      <Sidebar />
+      <main className="flex-1 overflow-hidden relative bg-[var(--color-bg-base)] text-[var(--color-text-base)]">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(128,128,128,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(128,128,128,0.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+        <header className="h-14 px-6 border-b border-[var(--color-border)] bg-[var(--color-bg-panel)]/70 backdrop-blur-xl flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-status-ok shadow-[0_0_8px_var(--color-status-ok)]"></div>
+              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">RackScope</span>
+            </div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">Wallboard</div>
+          </div>
+          <div className="flex items-center gap-3">
+            {stale ? (
+              <div className="text-[10px] font-mono uppercase tracking-widest text-status-crit">Stale</div>
+            ) : (
+              <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">Live</div>
+            )}
+            <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">
+              Last sync: {lastSyncText || '--'}
+            </div>
+            <NotificationHeader />
+          </div>
+        </header>
+        <div className="h-[calc(100%-3.5rem)]">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
+};
 
 /**
  * Dashboard Component (Overview)
