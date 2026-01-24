@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
-import type { Room, Rack, DeviceTemplate } from '../types';
+import type { Room, Rack, DeviceTemplate, RackTemplate } from '../types';
 import { Box, Zap, Thermometer, Maximize2 } from 'lucide-react';
 import { RackElevation, HUDTooltip } from '../components/RackVisualizer';
 
@@ -9,8 +9,10 @@ export const RoomPage = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const [room, setRoom] = useState<Room | null>(null);
   const [catalog, setCatalog] = useState<Record<string, DeviceTemplate>>({});
+  const [rackTemplates, setRackTemplates] = useState<Record<string, RackTemplate>>({});
   const [loading, setLoading] = useState(true);
   const [selectedRack, setSelectedRack] = useState<Rack | null>(null);
+  const [viewSide, setViewSide] = useState<'front' | 'rear'>('front');
   const [error, setError] = useState<string | null>(null);
   const [healthMap, setHealthMap] = useState<Record<string, any>>({});
 
@@ -25,8 +27,11 @@ export const RoomPage = () => {
         ]);
         setRoom(roomData);
         const deviceTemplates = (catalogData as any).device_templates || [];
+        const rackTemplates = (catalogData as any).rack_templates || [];
         const catMap = deviceTemplates.reduce((acc: any, t: DeviceTemplate) => ({ ...acc, [t.id]: t }), {});
         setCatalog(catMap);
+        const rackMap = rackTemplates.reduce((acc: any, t: RackTemplate) => ({ ...acc, [t.id]: t }), {});
+        setRackTemplates(rackMap);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -61,6 +66,13 @@ export const RoomPage = () => {
 
   const selectedMetrics = selectedRack ? healthMap[selectedRack.id]?.metrics : null;
   const selectedNodesData = selectedRack ? healthMap[selectedRack.id]?.nodes : null;
+  const selectedRackTemplate = selectedRack?.template_id ? rackTemplates[selectedRack.template_id] : null;
+  const frontInfra = selectedRackTemplate?.infrastructure.front_components?.length
+    ? selectedRackTemplate.infrastructure.front_components
+    : selectedRackTemplate?.infrastructure.components || [];
+  const rearInfra = selectedRackTemplate?.infrastructure.rear_components?.length
+    ? selectedRackTemplate.infrastructure.rear_components
+    : selectedRackTemplate?.infrastructure.components || [];
 
   if (loading) return <div className="p-8 font-mono animate-pulse text-blue-500">LDR :: INITIALIZING_ENVIRONMENT...</div>;
   if (error) return <div className="p-8 text-status-crit font-mono uppercase">ERR :: {error}</div>;
@@ -143,7 +155,36 @@ export const RoomPage = () => {
                        </div>
                    </div>
                 </div>
-                <RackElevation rack={selectedRack} catalog={catalog} health={healthMap[selectedRack.id]?.state} nodesData={selectedNodesData} />
+                <div className="flex-1">
+                  <RackElevation
+                    rack={selectedRack}
+                    catalog={catalog}
+                    health={healthMap[selectedRack.id]?.state}
+                    nodesData={selectedNodesData}
+                    isRearView={viewSide === 'rear'}
+                    infraComponents={viewSide === 'rear' ? rearInfra : frontInfra}
+                    allowInfraOverlap={viewSide === 'rear'}
+                    overlay={(
+                      <button
+                        type="button"
+                        onClick={() => setViewSide(viewSide === 'front' ? 'rear' : 'front')}
+                        aria-label="Toggle rack view"
+                        aria-pressed={viewSide === 'rear'}
+                        className="relative h-6 w-[132px] rounded-[6px] border border-white/10 bg-black/50 p-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-gray-500 transition-colors hover:text-gray-300"
+                      >
+                        <span
+                          className={`absolute inset-y-0.5 left-0.5 w-1/2 rounded-[4px] bg-white/12 border border-white/12 shadow-[0_0_10px_rgba(255,255,255,0.08)] transition-transform duration-300 ${viewSide === 'rear' ? 'translate-x-full' : ''}`}
+                        />
+                        <span className={`relative z-10 inline-flex w-1/2 items-center justify-center ${viewSide === 'front' ? 'text-white' : ''}`}>
+                          Front
+                        </span>
+                        <span className={`relative z-10 inline-flex w-1/2 items-center justify-center ${viewSide === 'rear' ? 'text-white' : ''}`}>
+                          Rear
+                        </span>
+                      </button>
+                    )}
+                  />
+                </div>
               </>
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8 opacity-50">

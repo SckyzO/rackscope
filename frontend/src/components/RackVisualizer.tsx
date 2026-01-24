@@ -146,6 +146,9 @@ export const RackElevation = ({
   isRearView = false,
   infraComponents = [],
   allowInfraOverlap = false,
+  flipView,
+  rearInfraComponents = [],
+  overlay,
 }: {
   rack: Rack,
   catalog: Record<string, DeviceTemplate>,
@@ -163,6 +166,18 @@ export const RackElevation = ({
     u_height?: number;
   }[],
   allowInfraOverlap?: boolean,
+  flipView?: 'front' | 'rear',
+  rearInfraComponents?: {
+    id: string;
+    name: string;
+    type: 'power' | 'cooling' | 'management' | 'network' | 'other';
+    model?: string;
+    role?: string;
+    location: 'u-mount' | 'side-left' | 'side-right' | 'top' | 'bottom';
+    u_position?: number;
+    u_height?: number;
+  }[],
+  overlay?: ReactNode,
 }) => {
   const uMap = new Map<number, Device>();
   rack.devices.forEach(d => {
@@ -173,31 +188,35 @@ export const RackElevation = ({
       }
   });
 
-  const infraMap = new Map<number, { component: any; height: number; hasCollision: boolean }>();
-  infraComponents
-    .filter(c => c.location === 'u-mount' && c.u_position)
-    .forEach(c => {
-      const height = c.u_height || 1;
-      let hasCollision = false;
-      if (!allowInfraOverlap) {
-        for (let i = 0; i < height; i++) {
-          if (uMap.has(c.u_position + i)) {
-            hasCollision = true;
-            break;
+  const renderRackFace = (
+    faceRearView: boolean,
+    faceInfra: typeof infraComponents,
+    faceAllowOverlap: boolean
+  ) => {
+    const infraMap = new Map<number, { component: any; height: number; hasCollision: boolean }>();
+    faceInfra
+      .filter(c => c.location === 'u-mount' && c.u_position)
+      .forEach(c => {
+        const height = c.u_height || 1;
+        let hasCollision = false;
+        if (!faceAllowOverlap) {
+          for (let i = 0; i < height; i++) {
+            if (uMap.has(c.u_position + i)) {
+              hasCollision = true;
+              break;
+            }
           }
         }
-      }
-      infraMap.set(c.u_position, { component: c, height, hasCollision });
-    });
+        infraMap.set(c.u_position, { component: c, height, hasCollision });
+      });
 
-  const topSlots = Math.max(6, rack.u_height);
-  const topSide = buildSideLayout(infraComponents.filter(c => c.location === 'top'), topSlots);
-  const bottomSide = buildSideLayout(infraComponents.filter(c => c.location === 'bottom'), topSlots);
+    const topSlots = Math.max(6, rack.u_height);
+    const topSide = buildSideLayout(faceInfra.filter(c => c.location === 'top'), topSlots);
+    const bottomSide = buildSideLayout(faceInfra.filter(c => c.location === 'bottom'), topSlots);
 
-  return (
-    <div className="flex-1 bg-[var(--color-rack-interior)] p-4 flex items-center justify-center h-full transition-colors duration-500 rounded-lg relative">
-      <div className="relative w-full max-w-[380px] h-full flex items-stretch">
-        {isRearView && topSide.length > 0 && (
+    return (
+      <div className="relative w-full h-full flex items-stretch">
+        {faceRearView && topSide.length > 0 && (
           <div
             className="absolute left-4 right-4 -top-10 h-8 grid gap-1"
             style={{ gridTemplateColumns: `repeat(${topSlots}, minmax(0, 1fr))` }}
@@ -212,7 +231,7 @@ export const RackElevation = ({
             ))}
           </div>
         )}
-        {isRearView && bottomSide.length > 0 && (
+        {faceRearView && bottomSide.length > 0 && (
           <div
             className="absolute left-4 right-4 -bottom-10 h-8 grid gap-1"
             style={{ gridTemplateColumns: `repeat(${topSlots}, minmax(0, 1fr))` }}
@@ -246,7 +265,7 @@ export const RackElevation = ({
                           className="absolute bottom-0 left-0.5 right-0.5 z-20" 
                           style={{ height: `calc(${template.u_height} * 100%)` }}
                         >
-                            <DeviceChassis device={device} template={template} rackHealth={health || 'UNKNOWN'} nodesData={nodesData} isRearView={isRearView} uPosition={u} />
+                            <DeviceChassis device={device} template={template} rackHealth={health || 'UNKNOWN'} nodesData={nodesData} isRearView={faceRearView} uPosition={u} />
                         </div>
                     )}
 
@@ -269,6 +288,21 @@ export const RackElevation = ({
             );
           })}
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex-1 bg-[var(--color-rack-interior)] p-4 flex items-center justify-center h-full transition-colors duration-500 rounded-lg relative">
+      {overlay && (
+        <div className="absolute top-2 left-2 z-30">
+          {overlay}
+        </div>
+      )}
+      <div className="relative w-full max-w-[380px] h-full flex items-stretch">
+        {flipView
+          ? renderRackFace(flipView === 'rear', flipView === 'rear' ? rearInfraComponents : infraComponents, flipView === 'rear')
+          : renderRackFace(isRearView, infraComponents, allowInfraOverlap)}
       </div>
     </div>
   );
