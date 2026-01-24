@@ -149,6 +149,8 @@ Agents MUST:
 - Avoid context bloat
 - Not invent requirements
 - Not silently change APIs or data models
+- Keep public docs in `docs/` updated as phases advance
+- Validate each feature implementation together using the Docker Compose stack (review logs and rebuild when needed; not necessarily every change, but regularly)
 
 If something is unclear:
 - ASK before implementing
