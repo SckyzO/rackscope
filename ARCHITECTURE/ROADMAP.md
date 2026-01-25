@@ -52,8 +52,14 @@ Telemetry:
 - [x] Segment topology files by site/room/rack
 - [x] Support multi-DC topology (future world map view)
 - [x] Update View Model spec (instances, chassis, selectors, scopes)
+- [ ] Overview/Home dashboard refactor (single or multi-DC aware):
+  - [x] wallboard layout with global status + key KPIs
+  - [x] alert integration (summary + top active alerts)
+  - [ ] pixel-perfect polish + dark/light parity
+- [x] Prometheus latency stats (backend heartbeat + sidebar display)
 - [ ] Settings UI (full app configuration — entire app configurable):
   - [ ] Prometheus endpoints + auth (optional)
+  - [ ] Prometheus heartbeat interval + latency settings
   - [ ] Identity mapping (instance/host/node) + label overrides
   - [ ] Refresh policies (room/rack/global)
   - [ ] Cache TTL/dedup policies
@@ -118,7 +124,6 @@ Telemetry:
 ---
 
 ## Phase 9 — Finalization
-- [ ] Redesign home dashboard with full alert integration
 - [ ] Phase 1 polish:
   - [ ] Rack rear view with attachments (minimal)
   - [ ] Tooltip shows failing reasons (top checks)

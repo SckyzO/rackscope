@@ -4,6 +4,7 @@ import os
 import time
 import asyncio
 import httpx
+from collections import deque
 from typing import Dict, Any, List, Tuple
 
 # Default to internal docker network hostname if not set
@@ -18,6 +19,9 @@ class PrometheusClient:
         self._cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
         self._in_flight: Dict[str, asyncio.Task] = {}
         self._lock = asyncio.Lock()
+        self._latency_samples: deque[float] = deque(maxlen=20)
+        self._last_latency_ms: float | None = None
+        self._last_query_ts: float | None = None
 
     async def query(self, query: str) -> Dict[str, Any]:
         """Execute a PromQL instant query with simple TTL caching."""
@@ -44,6 +48,7 @@ class PrometheusClient:
 
     async def _fetch_query(self, query: str) -> Dict[str, Any]:
         """Execute a PromQL instant query."""
+        start = time.perf_counter()
         try:
             response = await self.client.get(
                 f"{self.base_url}/api/v1/query",
@@ -54,6 +59,25 @@ class PrometheusClient:
         except Exception as e:
             print(f"Prometheus query error: {e}")
             return {"status": "error", "error": str(e)}
+        finally:
+            duration_ms = (time.perf_counter() - start) * 1000.0
+            self._last_latency_ms = duration_ms
+            self._last_query_ts = time.time() * 1000.0
+            self._latency_samples.append(duration_ms)
+
+    async def ping(self) -> None:
+        """Force a Prometheus call to refresh latency stats."""
+        await self._fetch_query("vector(1)")
+
+    def get_latency_stats(self) -> Dict[str, Any]:
+        if not self._latency_samples:
+            return {"last_ms": None, "avg_ms": None, "last_ts": None}
+        avg_ms = sum(self._latency_samples) / len(self._latency_samples)
+        return {
+            "last_ms": self._last_latency_ms,
+            "avg_ms": avg_ms,
+            "last_ts": self._last_query_ts,
+        }
 
     async def get_node_metrics(self, rack_id: str) -> Dict[str, Any]:
         """Fetch metrics for all nodes in a specific rack."""

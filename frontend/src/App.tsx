@@ -8,7 +8,7 @@ import { RackPage } from './pages/RackPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { api } from './services/api';
 import type { RoomSummary, Site } from './types';
-import { Activity, Zap, Thermometer, AlertTriangle, Map as MapIcon, ArrowUpRight, Search, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Activity, AlertTriangle, Map as MapIcon, ArrowUpRight, Search, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 // Layout global
 const Layout = ({
@@ -183,8 +183,6 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
     return () => clearInterval(interval);
   }, [refreshMs]);
 
-  if (loading) return <div className="p-12 font-mono animate-pulse text-blue-500">LDR :: AGGREGATING_GLOBAL_METRICS...</div>;
-
   const matchingRoomIds = useMemo(() => {
     if (!hasQuery) return null;
     const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
@@ -242,46 +240,131 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
     return matchingRoomIds.has(room.id);
   });
 
+  const currentSite = useMemo(() => {
+    if (!selectedSiteId) return null;
+    return sites.find((site) => site.id === selectedSiteId) || null;
+  }, [sites, selectedSiteId]);
+
+  const rackMetaById = useMemo(() => {
+    const map = new Map<string, { rackName: string; roomId: string; roomName: string }>();
+    for (const room of rooms) {
+      for (const aisle of room.aisles || []) {
+        for (const rack of aisle.racks || []) {
+          map.set(rack.id, { rackName: rack.name, roomId: room.id, roomName: room.name });
+        }
+      }
+    }
+    return map;
+  }, [rooms]);
+
+  const roomSummaries = useMemo(() => {
+    return filteredRooms.map((room) => {
+      const racks = room.aisles?.flatMap((aisle) => aisle.racks || []) || [];
+      const rackStates = roomStates[room.id]?.racks || {};
+      let crit = 0;
+      let warn = 0;
+      let ok = 0;
+      let unknown = 0;
+      for (const rack of racks) {
+        const rawState = rackStates[rack.id];
+        const state = typeof rawState === 'string' ? rawState : rawState?.state || 'UNKNOWN';
+        if (state === 'CRIT') crit += 1;
+        else if (state === 'WARN') warn += 1;
+        else if (state === 'OK') ok += 1;
+        else unknown += 1;
+      }
+      return {
+        room,
+        racks,
+        totals: { crit, warn, ok, unknown, total: racks.length },
+      };
+    });
+  }, [filteredRooms, roomStates]);
+
+  const alertItems = useMemo(() => {
+    const items: Array<{ rackId: string; rackName: string; roomName: string; state: string }> = [];
+    for (const room of rooms) {
+      const rackStates = roomStates[room.id]?.racks || {};
+      for (const [rackId, rawState] of Object.entries(rackStates)) {
+        const state = typeof rawState === 'string' ? rawState : (rawState as any)?.state || 'UNKNOWN';
+        if (state !== 'CRIT' && state !== 'WARN') continue;
+        const meta = rackMetaById.get(rackId);
+        items.push({
+          rackId,
+          rackName: meta?.rackName || rackId,
+          roomName: meta?.roomName || room.name,
+          state,
+        });
+      }
+    }
+    const weight = (state: string) => (state === 'CRIT' ? 2 : state === 'WARN' ? 1 : 0);
+    return items.sort((a, b) => weight(b.state) - weight(a.state)).slice(0, 6);
+  }, [rooms, roomStates, rackMetaById]);
+
+  if (loading) {
+    return <div className="p-12 font-mono animate-pulse text-blue-500">LDR :: AGGREGATING_GLOBAL_METRICS...</div>;
+  }
+
   return (
-    <div className="p-12 h-full overflow-y-auto custom-scrollbar">
-      <header className="mb-12">
-        <h1 className="text-5xl font-black tracking-tighter mb-2 uppercase italic text-[var(--color-accent-primary)]">Overview</h1>
-        <p className="text-gray-500 font-mono text-sm uppercase tracking-[0.3em]">Global Infrastructure Status</p>
+    <div className="p-10 h-full overflow-y-auto custom-scrollbar">
+      <header className="flex flex-col gap-6 mb-10">
+        <div className="flex flex-col gap-2">
+          <div className="text-[10px] font-mono uppercase tracking-[0.45em] text-gray-500">Wallboard</div>
+          <h1 className="text-4xl font-black tracking-tight uppercase text-[var(--color-accent-primary)]">Overview</h1>
+          <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono uppercase tracking-[0.3em] text-gray-500">
+            <span>Global Infrastructure Status</span>
+            {currentSite && (
+              <span className="flex items-center gap-2 text-gray-400">
+                <span className="h-1 w-1 rounded-full bg-gray-600"></span>
+                {currentSite.name}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-rack-panel border border-rack-border rounded-2xl px-6 py-5 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Global Status</div>
+              <div className={`mt-2 text-2xl font-black font-mono ${
+                globalStats?.status === 'CRIT' ? 'text-status-crit' :
+                globalStats?.status === 'WARN' ? 'text-status-warn' :
+                'text-status-ok'
+              }`}>
+                {globalStats?.status === 'CRIT' ? 'CRITICAL' : globalStats?.status === 'WARN' ? 'WARNING' : 'OPTIMAL'}
+              </div>
+            </div>
+            <div className="h-12 w-12 rounded-2xl border border-white/5 bg-black/20 flex items-center justify-center">
+              <Activity className="h-5 w-5 text-[var(--color-accent-primary)]" />
+            </div>
+          </div>
+          <div className="bg-rack-panel border border-rack-border rounded-2xl px-6 py-5 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Active Alerts</div>
+              <div className="mt-2 flex items-center gap-4">
+                <div className="text-2xl font-black font-mono text-white">{globalStats?.active_alerts || 0}</div>
+                <div className="text-[11px] font-mono uppercase text-gray-500">
+                  <span className="text-status-crit">{globalStats?.crit_count || 0}</span> CRIT /{' '}
+                  <span className="text-status-warn">{globalStats?.warn_count || 0}</span> WARN
+                </div>
+              </div>
+            </div>
+            <div className="h-12 w-12 rounded-2xl border border-white/5 bg-black/20 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5 text-status-warn" />
+            </div>
+          </div>
+          <div className="bg-rack-panel border border-rack-border rounded-2xl px-6 py-5 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Managed Racks</div>
+              <div className="mt-2 text-2xl font-black font-mono text-white">{globalStats?.total_racks || 0}</div>
+            </div>
+            <div className="h-12 w-12 rounded-2xl border border-white/5 bg-black/20 flex items-center justify-center">
+              <MapIcon className="h-5 w-5 text-[var(--color-accent-primary)]" />
+            </div>
+          </div>
+        </div>
       </header>
 
-      {/* KPI Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-        <div className="bg-rack-panel border border-rack-border p-6 rounded-2xl shadow-xl">
-            <div className="flex items-center gap-3 mb-2 text-gray-500">
-                <Zap className="w-4 h-4" /> <span className="text-[10px] font-bold uppercase tracking-widest">Global Status</span>
-            </div>
-            <div className={`text-3xl font-black font-mono ${globalStats?.status === 'CRIT' ? 'text-status-crit' : globalStats?.status === 'WARN' ? 'text-status-warn' : 'text-status-ok'}`}>
-                {globalStats?.status === 'CRIT' ? 'CRITICAL' : globalStats?.status === 'WARN' ? 'WARNING' : 'OPTIMAL'}
-            </div>
-        </div>
-        <div className="bg-rack-panel border border-rack-border p-6 rounded-2xl shadow-xl">
-            <div className="flex items-center gap-3 mb-2 text-gray-500">
-                <AlertTriangle className="w-4 h-4" /> <span className="text-[10px] font-bold uppercase tracking-widest">Active Alerts</span>
-            </div>
-            <div className={`text-3xl font-black font-mono ${globalStats?.active_alerts > 0 ? 'text-status-warn' : 'text-white'}`}>
-                {globalStats?.active_alerts || 0}
-            </div>
-        </div>
-        <div className="bg-rack-panel border border-rack-border p-6 rounded-2xl shadow-xl">
-            <div className="flex items-center gap-3 mb-2 text-gray-500">
-                <MapIcon className="w-4 h-4" /> <span className="text-[10px] font-bold uppercase tracking-widest">Managed Racks</span>
-            </div>
-            <div className="text-3xl font-black font-mono text-white">{globalStats?.total_racks || 0}</div>
-        </div>
-        <div className="bg-rack-panel border border-rack-border p-6 rounded-2xl shadow-xl">
-            <div className="flex items-center gap-3 mb-2 text-gray-500">
-                <Activity className="w-4 h-4" /> <span className="text-[10px] font-bold uppercase tracking-widest">Telemetry Pulse</span>
-            </div>
-            <div className="text-3xl font-black font-mono text-status-ok animate-pulse">LIVE</div>
-        </div>
-      </div>
-
-      {/* Site Selector */}
       {sites.length > 1 && (
         <div className="mb-8 flex flex-wrap gap-2">
           {sites.map((site) => (
@@ -300,50 +383,95 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
         </div>
       )}
 
-      {/* Room Grid */}
-      <h2 className="text-xs font-bold text-gray-600 uppercase tracking-[0.4em] mb-6 border-b border-white/5 pb-2">Datacenter Locations</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredRooms.map(room => (
-            <Link 
-                key={room.id} 
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-8">
+        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Topology</div>
+              <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Rooms</h2>
+            </div>
+            <div className="text-[11px] font-mono uppercase text-gray-500">
+              {roomSummaries.length} Rooms
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {roomSummaries.map(({ room, totals }) => (
+              <Link
+                key={room.id}
                 to={`/room/${room.id}`}
-                className="group relative bg-rack-panel border border-rack-border rounded-3xl p-8 hover:border-[var(--color-accent-primary)] transition-all hover:shadow-[0_0_40px_rgba(59,130,246,0.05)] overflow-hidden"
-            >
-                {/* Background Decor */}
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
-                    <MapIcon className="w-24 h-24 -rotate-12" />
+                className="group flex items-center justify-between gap-4 rounded-2xl border border-transparent bg-black/20 px-4 py-3 transition-colors hover:border-[var(--color-accent-primary)]/40"
+              >
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-semibold text-gray-200 group-hover:text-[var(--color-accent-primary)] transition-colors">{room.name}</span>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-gray-500">{totals.total} racks</span>
                 </div>
-
-                <div className="relative z-10">
-                    <div className="flex justify-between items-start mb-6">
-                        <div>
-                            <h3 className="text-2xl font-black text-white uppercase group-hover:text-[var(--color-accent-primary)] transition-colors">{room.name}</h3>
-                            <p className="text-[10px] font-mono text-gray-500 uppercase mt-1 tracking-widest">Site ID: {room.site_id}</p>
-                        </div>
-                        <div className={`px-3 py-1 rounded-full text-[10px] font-bold border ${
-                            roomStates[room.id]?.state === 'OK' ? 'bg-status-ok/10 text-status-ok border-status-ok/20' :
-                            roomStates[room.id]?.state === 'CRIT' ? 'bg-status-crit/10 text-status-crit border-status-crit/20 animate-pulse' :
-                            'bg-status-warn/10 text-status-warn border-status-warn/20'
-                        }`}>
-                            {roomStates[room.id]?.state || 'UNKNOWN'}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 mt-12">
-                        <div className="flex flex-col gap-1">
-                            <span className="text-[9px] text-gray-600 uppercase font-bold tracking-tighter">Inventory</span>
-                            <span className="text-xl font-mono text-gray-300">{room.aisles?.length || 0} Aisles</span>
-                        </div>
-                        <div className="flex flex-col gap-1 items-end">
-                            <span className="text-[9px] text-gray-600 uppercase font-bold tracking-tighter">Inspection</span>
-                            <div className="flex items-center gap-1 text-[var(--color-accent-primary)] font-bold text-xs uppercase">
-                                Open Map <ArrowUpRight className="w-3 h-3" />
-                            </div>
-                        </div>
-                    </div>
+                <div className="flex items-center gap-3 text-[10px] font-mono uppercase">
+                  <span className="text-status-crit">{totals.crit}</span>
+                  <span className="text-status-warn">{totals.warn}</span>
+                  <span className="text-status-ok">{totals.ok}</span>
+                  <span className="text-gray-500">{totals.unknown}</span>
+                  <ArrowUpRight className="h-3 w-3 text-gray-500 group-hover:text-[var(--color-accent-primary)]" />
                 </div>
-            </Link>
-        ))}
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <aside className="bg-rack-panel border border-rack-border rounded-3xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Alerts</div>
+              <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Top Active</h2>
+            </div>
+            <div className="text-[10px] font-mono uppercase text-gray-500">
+              {globalStats?.active_alerts || 0} total
+            </div>
+          </div>
+
+          {alertItems.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-center text-[11px] font-mono uppercase tracking-widest text-gray-500">
+              No active alerts
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {alertItems.map((item) => (
+                <div key={item.rackId} className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/20 px-4 py-3">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-200">{item.rackName}</div>
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">{item.roomName}</div>
+                  </div>
+                  <div className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${
+                    item.state === 'CRIT'
+                      ? 'border-status-crit/40 text-status-crit bg-status-crit/10'
+                      : 'border-status-warn/40 text-status-warn bg-status-warn/10'
+                  }`}>
+                    {item.state}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </aside>
+      </div>
+
+      <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
+          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Rooms</div>
+          <div className="mt-2 text-xl font-black font-mono text-white">{globalStats?.total_rooms || 0}</div>
+        </div>
+        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
+          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Racks</div>
+          <div className="mt-2 text-xl font-black font-mono text-white">{globalStats?.total_racks || 0}</div>
+        </div>
+        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
+          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Critical</div>
+          <div className="mt-2 text-xl font-black font-mono text-status-crit">{globalStats?.crit_count || 0}</div>
+        </div>
+        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
+          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Warning</div>
+          <div className="mt-2 text-xl font-black font-mono text-status-warn">{globalStats?.warn_count || 0}</div>
+        </div>
       </div>
     </div>
   );

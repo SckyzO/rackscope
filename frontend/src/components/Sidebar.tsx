@@ -30,6 +30,7 @@ export const Sidebar = ({
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
   const [rackTemplates, setRackTemplates] = useState<any[]>([]);
+  const [promStats, setPromStats] = useState<{ last_ms?: number | null; avg_ms?: number | null; last_ts?: number | null }>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     topology: false,
     templates: false,
@@ -50,6 +51,38 @@ export const Sidebar = ({
         }
       }).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadStats = async () => {
+      try {
+        const stats = await api.getPrometheusStats();
+        if (active) {
+          setPromStats(stats || {});
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadStats();
+    const interval = setInterval(loadStats, 60000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  const formatAge = (ts?: number | null) => {
+    if (!ts) return '--';
+    const diffMs = Date.now() - ts;
+    const min = Math.floor(diffMs / 60000);
+    if (min < 1) return 'just now';
+    if (min < 60) return `${min} min`;
+    const hours = Math.floor(min / 60);
+    if (hours < 24) return `${hours} h`;
+    const days = Math.floor(hours / 24);
+    return `${days} d`;
+  };
 
   const groupedDevices = useMemo(() => {
     return deviceTemplates.reduce((acc, t) => {
@@ -253,6 +286,18 @@ export const Sidebar = ({
 
       {/* Footer Status */}
       <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-bg-panel)]/70 backdrop-blur-sm relative z-10">
+        <div className="px-3 pb-3 space-y-1 text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500">
+          <div className="flex items-center justify-between">
+            <span>Prometheus update</span>
+            <span className="text-gray-400">{formatAge(promStats.last_ts)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span>Prometheus latency</span>
+            <span className="text-gray-400">
+              {promStats.avg_ms ? `${Math.round(promStats.avg_ms)} ms` : '--'}
+            </span>
+          </div>
+        </div>
         <div className="flex items-center gap-3 px-3 py-2 rounded-full bg-[var(--color-accent)]/8 border border-[var(--color-accent)]/15">
           <div className="w-2 h-2 rounded-full bg-status-ok animate-pulse shadow-[0_0_8px_var(--color-status-ok)]"></div>
           <span className="text-[9px] font-mono font-bold text-[var(--color-accent)] uppercase tracking-tighter">System Online</span>

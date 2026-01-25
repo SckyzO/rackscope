@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import os
-from contextlib import asynccontextmanager
+import asyncio
+from contextlib import asynccontextmanager, suppress
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
@@ -20,6 +21,7 @@ CATALOG: Optional[Catalog] = None
 CHECKS_LIBRARY: Optional[ChecksLibrary] = None
 APP_CONFIG: Optional[AppConfig] = None
 PLANNER: Optional[TelemetryPlanner] = None
+PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
 
 
 def aggregate_states(states: List[str]) -> str:
@@ -36,7 +38,7 @@ def aggregate_states(states: List[str]) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global TOPOLOGY, CATALOG, CHECKS_LIBRARY, APP_CONFIG
-    global PLANNER
+    global PLANNER, PROMETHEUS_HEARTBEAT
     app_config_path = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
     
     try:
@@ -79,7 +81,24 @@ async def lifespan(app: FastAPI):
         CHECKS_LIBRARY = ChecksLibrary()
         APP_CONFIG = None
         PLANNER = TelemetryPlanner()
+    heartbeat_seconds = 60
+    if APP_CONFIG:
+        heartbeat_seconds = max(10, APP_CONFIG.refresh.room_state_seconds)
+
+    async def _heartbeat() -> None:
+        while True:
+            try:
+                await prom_client.ping()
+            except Exception as e:
+                print(f"Prometheus heartbeat error: {e}")
+            await asyncio.sleep(heartbeat_seconds)
+
+    PROMETHEUS_HEARTBEAT = asyncio.create_task(_heartbeat())
     yield
+    if PROMETHEUS_HEARTBEAT:
+        PROMETHEUS_HEARTBEAT.cancel()
+        with suppress(asyncio.CancelledError):
+            await PROMETHEUS_HEARTBEAT
 
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
 
@@ -217,6 +236,10 @@ async def get_global_stats():
         "warn_count": warn_alerts,
         "status": global_status
     }
+
+@app.get("/api/stats/prometheus")
+def get_prometheus_stats():
+    return prom_client.get_latency_stats()
 
 @app.get("/api/rooms/{room_id}/state")
 async def get_room_state(room_id: str):
