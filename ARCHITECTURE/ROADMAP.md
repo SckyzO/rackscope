@@ -55,7 +55,7 @@ Telemetry:
 - [ ] Overview/Home dashboard refactor (single or multi-DC aware):
   - [x] wallboard layout with global status + key KPIs
   - [x] alert integration (summary + top active alerts)
-  - [ ] pixel-perfect polish + dark/light parity
+  - [ ] pixel-perfect polish + dark/light parity (deferred to final pass)
 - [x] Prometheus latency stats (backend heartbeat + sidebar display)
 - [ ] Settings UI (full app configuration — entire app configurable):
   - [ ] Prometheus endpoints + auth (optional)
@@ -124,6 +124,7 @@ Telemetry:
 ---
 
 ## Phase 9 — Finalization
+- [ ] Design polish pass (pixel-perfect + global dark/light parity)
 - [ ] Phase 1 polish:
   - [ ] Rack rear view with attachments (minimal)
   - [ ] Tooltip shows failing reasons (top checks)

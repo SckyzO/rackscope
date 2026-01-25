@@ -16,7 +16,7 @@ export const RoomPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [healthMap, setHealthMap] = useState<Record<string, any>>({});
   const [selectedRackHealth, setSelectedRackHealth] = useState<any>(null);
-  const [refreshMs, setRefreshMs] = useState(60000);
+  const [refreshMs, setRefreshMs] = useState(30000);
 
   useEffect(() => {
     const init = async () => {
@@ -35,8 +35,8 @@ export const RoomPage = () => {
         setCatalog(catMap);
         const rackMap = rackTemplates.reduce((acc: any, t: RackTemplate) => ({ ...acc, [t.id]: t }), {});
         setRackTemplates(rackMap);
-        const nextRefresh = Number(configData?.refresh?.room_state_seconds) || 60;
-        setRefreshMs(Math.max(60000, nextRefresh * 1000));
+        const nextRefresh = Number(configData?.refresh?.room_state_seconds) || 30;
+        setRefreshMs(Math.max(10000, nextRefresh * 1000));
       } catch (err: any) {
         setError(err.message);
       } finally {

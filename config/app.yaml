@@ -4,11 +4,11 @@ paths:
   checks: config/checks/library.yaml
 
 refresh:
-  room_state_seconds: 60
-  rack_state_seconds: 60
+  room_state_seconds: 30
+  rack_state_seconds: 30
 
 cache:
-  ttl_seconds: 60
+  ttl_seconds: 30
 
 telemetry:
   prometheus_url: http://prometheus:9090
@@ -19,5 +19,5 @@ telemetry:
 
 planner:
   unknown_state: UNKNOWN
-  cache_ttl_seconds: 60
+  cache_ttl_seconds: 30
   max_ids_per_query: 50

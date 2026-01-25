@@ -23,7 +23,7 @@ export const RackPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [healthData, setHealthData] = useState<any>(null);
-  const [refreshMs, setRefreshMs] = useState(60000);
+  const [refreshMs, setRefreshMs] = useState(30000);
 
   // 1. Fetch Rack Details & Catalog
   useEffect(() => {
@@ -49,8 +49,8 @@ export const RackPage = () => {
             const template = rackCat.find((t: RackTemplate) => t.id === rackData.template_id);
             setRackTemplate(template || null);
         }
-        const nextRefresh = Number(configData?.refresh?.rack_state_seconds) || 60;
-        setRefreshMs(Math.max(60000, nextRefresh * 1000));
+        const nextRefresh = Number(configData?.refresh?.rack_state_seconds) || 30;
+        setRefreshMs(Math.max(10000, nextRefresh * 1000));
       } catch (err: any) {
         setError(err.message);
       } finally {

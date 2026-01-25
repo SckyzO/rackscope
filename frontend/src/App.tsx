@@ -122,7 +122,7 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
   const [loading, setLoading] = useState(true);
   const [sites, setSites] = useState<Site[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
-  const [refreshMs, setRefreshMs] = useState(60000);
+  const [refreshMs, setRefreshMs] = useState(30000);
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const hasQuery = normalizedQuery.length > 0;
 
@@ -131,9 +131,9 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
     const loadConfig = async () => {
       try {
         const configData = await api.getConfig();
-        const nextRefresh = Number(configData?.refresh?.room_state_seconds) || 60;
+        const nextRefresh = Number(configData?.refresh?.room_state_seconds) || 30;
         if (active) {
-          setRefreshMs(Math.max(60000, nextRefresh * 1000));
+          setRefreshMs(Math.max(10000, nextRefresh * 1000));
         }
       } catch (e) {
         console.error(e);

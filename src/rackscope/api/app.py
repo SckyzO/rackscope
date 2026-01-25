@@ -3,9 +3,11 @@ from __future__ import annotations
 import os
 import asyncio
 from contextlib import asynccontextmanager, suppress
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+import yaml
 
 from rackscope.model.domain import Room, Site, Topology, Rack
 from rackscope.model.catalog import Catalog
@@ -22,6 +24,28 @@ CHECKS_LIBRARY: Optional[ChecksLibrary] = None
 APP_CONFIG: Optional[AppConfig] = None
 PLANNER: Optional[TelemetryPlanner] = None
 PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
+
+
+def apply_config(app_config: AppConfig) -> None:
+    global TOPOLOGY, CATALOG, CHECKS_LIBRARY, APP_CONFIG, PLANNER
+    APP_CONFIG = app_config
+    TOPOLOGY = load_topology(app_config.paths.topology)
+    CATALOG = load_catalog(app_config.paths.templates)
+    CHECKS_LIBRARY = load_checks_library(app_config.paths.checks)
+    if APP_CONFIG.telemetry.prometheus_url:
+        prom_client.base_url = APP_CONFIG.telemetry.prometheus_url.rstrip("/")
+    prom_client.cache_ttl = APP_CONFIG.cache.ttl_seconds
+    PLANNER = TelemetryPlanner(
+        PlannerConfig(
+            identity_label=APP_CONFIG.telemetry.identity_label,
+            rack_label=APP_CONFIG.telemetry.rack_label,
+            chassis_label=APP_CONFIG.telemetry.chassis_label,
+            job_regex=APP_CONFIG.telemetry.job_regex,
+            unknown_state=APP_CONFIG.planner.unknown_state,
+            cache_ttl_seconds=APP_CONFIG.planner.cache_ttl_seconds,
+            max_ids_per_query=APP_CONFIG.planner.max_ids_per_query,
+        )
+    )
 
 
 def aggregate_states(states: List[str]) -> str:
@@ -44,23 +68,7 @@ async def lifespan(app: FastAPI):
     try:
         if os.path.exists(app_config_path):
             APP_CONFIG = load_app_config(app_config_path)
-            TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
-            CATALOG = load_catalog(APP_CONFIG.paths.templates)
-            CHECKS_LIBRARY = load_checks_library(APP_CONFIG.paths.checks)
-            if APP_CONFIG.telemetry.prometheus_url:
-                prom_client.base_url = APP_CONFIG.telemetry.prometheus_url.rstrip("/")
-            prom_client.cache_ttl = APP_CONFIG.cache.ttl_seconds
-            PLANNER = TelemetryPlanner(
-                PlannerConfig(
-                    identity_label=APP_CONFIG.telemetry.identity_label,
-                    rack_label=APP_CONFIG.telemetry.rack_label,
-                    chassis_label=APP_CONFIG.telemetry.chassis_label,
-                    job_regex=APP_CONFIG.telemetry.job_regex,
-                    unknown_state=APP_CONFIG.planner.unknown_state,
-                    cache_ttl_seconds=APP_CONFIG.planner.cache_ttl_seconds,
-                    max_ids_per_query=APP_CONFIG.planner.max_ids_per_query,
-                )
-            )
+            apply_config(APP_CONFIG)
         else:
             config_dir = os.getenv("RACKSCOPE_CONFIG_DIR", "config")
             config_path = os.getenv("RACKSCOPE_CONFIG", os.path.join(config_dir, "topology", "topology.yaml"))
@@ -120,19 +128,45 @@ def get_app_config():
         return APP_CONFIG
     return {
         "paths": {},
-        "refresh": {"room_state_seconds": 60, "rack_state_seconds": 60},
-        "cache": {"ttl_seconds": 60},
+        "refresh": {"room_state_seconds": 30, "rack_state_seconds": 30},
+        "cache": {"ttl_seconds": 30},
         "telemetry": {
             "prometheus_url": None,
             "identity_label": "instance",
             "rack_label": "rack_id",
             "chassis_label": "chassis_id",
+            "job_regex": ".*",
         },
         "planner": {
             "unknown_state": "UNKNOWN",
-            "cache_ttl_seconds": 60,
+            "cache_ttl_seconds": 30,
+            "max_ids_per_query": 50,
         },
     }
+
+
+@app.put("/api/config")
+def update_app_config(payload: AppConfig):
+    config_path = Path(os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml"))
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    with config_path.open("w") as f:
+        yaml.safe_dump(payload.model_dump(), f, sort_keys=False)
+    apply_config(payload)
+    return payload
+
+
+@app.get("/api/env")
+def get_env() -> Dict[str, Any]:
+    keys = [
+        "RACKSCOPE_APP_CONFIG",
+        "RACKSCOPE_CONFIG_DIR",
+        "RACKSCOPE_CONFIG",
+        "RACKSCOPE_TEMPLATES",
+        "RACKSCOPE_CHECKS",
+        "PROMETHEUS_URL",
+        "PROMETHEUS_CACHE_TTL",
+    ]
+    return {key: os.getenv(key) for key in keys}
 
 @app.get("/api/sites", response_model=List[Site])
 def get_sites():

@@ -112,5 +112,14 @@ export interface AppConfig {
   };
   telemetry: {
     prometheus_url?: string | null;
+    identity_label?: string;
+    rack_label?: string;
+    chassis_label?: string;
+    job_regex?: string;
+  };
+  planner?: {
+    unknown_state?: string;
+    cache_ttl_seconds?: number;
+    max_ids_per_query?: number;
   };
 }

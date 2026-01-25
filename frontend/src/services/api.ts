@@ -90,6 +90,24 @@ export const api = {
   getConfig: async (): Promise<AppConfig> => {
     return fetchWithCache('/api/config', 'app.config');
   },
+  updateConfig: async (payload: AppConfig): Promise<AppConfig> => {
+    const res = await fetch('/api/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/config');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('app.config', data);
+    markSuccess();
+    return data as AppConfig;
+  },
+  getEnv: async (): Promise<Record<string, string | null>> => {
+    return fetchWithCache('/api/env', 'app.env');
+  },
   getLastSuccessTs: () => {
     const meta = readJSON(META_KEY);
     return meta?.lastSuccess || null;

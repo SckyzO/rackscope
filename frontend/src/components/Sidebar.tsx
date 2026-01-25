@@ -31,6 +31,8 @@ export const Sidebar = ({
   const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
   const [rackTemplates, setRackTemplates] = useState<any[]>([]);
   const [promStats, setPromStats] = useState<{ last_ms?: number | null; avg_ms?: number | null; last_ts?: number | null }>({});
+  const [refreshSeconds, setRefreshSeconds] = useState(30);
+  const [now, setNow] = useState(Date.now());
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     topology: false,
     templates: false,
@@ -38,14 +40,16 @@ export const Sidebar = ({
   });
 
   useEffect(() => {
-    Promise.all([api.getRooms(), api.getCatalog(), api.getSites()])
-      .then(([roomsData, catalogData, sitesData]) => {
+    Promise.all([api.getRooms(), api.getCatalog(), api.getSites(), api.getConfig()])
+      .then(([roomsData, catalogData, sitesData, configData]) => {
         const safeRooms = Array.isArray(roomsData) ? roomsData : [];
         const safeSites = Array.isArray(sitesData) ? sitesData : [];
         setRooms(safeRooms);
         setDeviceTemplates(catalogData.device_templates || []);
         setRackTemplates(catalogData.rack_templates || []);
         setSites(safeSites);
+        const nextRefresh = Number(configData?.refresh?.room_state_seconds) || 30;
+        setRefreshSeconds(Math.max(10, nextRefresh));
         if (!selectedSiteId && safeSites.length > 0) {
           setSelectedSiteId(safeSites[0].id);
         }
@@ -72,6 +76,13 @@ export const Sidebar = ({
     };
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const formatAge = (ts?: number | null) => {
     if (!ts) return '--';
     const diffMs = Date.now() - ts;
@@ -82,6 +93,22 @@ export const Sidebar = ({
     if (hours < 24) return `${hours} h`;
     const days = Math.floor(hours / 24);
     return `${days} d`;
+  };
+
+  const formatCountdown = (ts?: number | null) => {
+    if (!ts) return '--';
+    const nextMs = ts + refreshSeconds * 1000 - now;
+    if (nextMs <= 0) return 'due';
+    const totalSeconds = Math.ceil(nextMs / 1000);
+    const min = Math.floor(totalSeconds / 60);
+    const sec = totalSeconds % 60;
+    if (min >= 60) {
+      const hours = Math.floor(min / 60);
+      const remMin = min % 60;
+      return `${hours}h ${remMin}m`;
+    }
+    if (min >= 1) return `${min}m ${sec}s`;
+    return `${sec}s`;
   };
 
   const groupedDevices = useMemo(() => {
@@ -276,10 +303,10 @@ export const Sidebar = ({
         />
         {expandedSections.settings && (
           <div className="space-y-1">
-            <SidebarLink to="/settings" icon={SlidersHorizontal} label="Application Settings" depth={1} />
-            <NavItem icon={Globe} label="Topology Settings" depth={1} />
-            <NavItem icon={Palette} label="Theme Settings" depth={1} />
-            <NavItem icon={FileText} label="Logs" depth={1} />
+            <SidebarLink to="/settings#configuration" icon={SlidersHorizontal} label="Application Settings" depth={1} />
+            <SidebarLink to="/settings#appearance" icon={Palette} label="Theme Settings" depth={1} />
+            <SidebarLink to="/settings#system" icon={FileText} label="System & Logs" depth={1} />
+            <SidebarLink to="/settings#environment" icon={Globe} label="Environment" depth={1} />
           </div>
         )}
       </nav>
@@ -288,8 +315,12 @@ export const Sidebar = ({
       <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-bg-panel)]/70 backdrop-blur-sm relative z-10">
         <div className="px-3 pb-3 space-y-1 text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500">
           <div className="flex items-center justify-between">
-            <span>Prometheus update</span>
+            <span>Last Prometheus scrape</span>
             <span className="text-gray-400">{formatAge(promStats.last_ts)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span>Next Prometheus scrape</span>
+            <span className="text-gray-400">{formatCountdown(promStats.last_ts)}</span>
           </div>
           <div className="flex items-center justify-between">
             <span>Prometheus latency</span>
