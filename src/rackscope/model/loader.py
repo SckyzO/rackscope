@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from rackscope.model.domain import Topology
 from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
+from rackscope.model.checks import ChecksLibrary, CheckDefinition
 
 # ... (keep exceptions)
 
@@ -61,3 +62,45 @@ def load_topology(path: Union[str, Path]) -> Topology:
     except ValidationError as e:
         # Pydantic errors are quite detailed, we wrap them for consistency
         raise InvalidFormatError(f"Validation failed for {path}:\n{e}")
+
+
+def load_checks_library(path: Union[str, Path]) -> ChecksLibrary:
+    """Load a checks library from a YAML file."""
+    path = Path(path)
+    library = ChecksLibrary()
+    if not path.exists():
+        return library
+
+    try:
+        with path.open("r") as f:
+            data = yaml.safe_load(f)
+    except yaml.YAMLError as e:
+        print(f"Warning: Failed to parse checks file {path}: {e}")
+        return library
+
+    if not data:
+        return library
+
+    checks = []
+    if isinstance(data, dict) and "checks" in data:
+        checks.extend(data.get("checks") or [])
+
+    if isinstance(data, dict) and "kinds" in data:
+        kinds = data.get("kinds") or {}
+        if isinstance(kinds, dict):
+            for kind, items in kinds.items():
+                if not items:
+                    continue
+                for item in items:
+                    if isinstance(item, dict):
+                        item = dict(item)
+                        item.setdefault("kind", kind)
+                    checks.append(item)
+
+    for c in checks:
+        try:
+            library.checks.append(CheckDefinition(**c))
+        except Exception as e:
+            print(f"Warning: Failed to load check in {path}: {e}")
+
+    return library

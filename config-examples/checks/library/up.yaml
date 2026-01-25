@@ -1,0 +1,20 @@
+groups:
+  - name: up_v2
+    rules:
+      - alert: HostInstanceDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Instance {{ $labels.instance }} down'
+          description: 'The job {{ $labels.job }} on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) has been down for more than 5 minutes.'
+
+      - alert: HostSystemReboot
+        expr: time() - node_boot_time_seconds < 600
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'System rebooted on {{ $labels.instance }}'
+          description: 'Node {{ $labels.instance }} (cluster {{ $labels.cluster }}) has just rebooted (uptime < 10 minutes).'

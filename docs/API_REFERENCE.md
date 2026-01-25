@@ -64,6 +64,9 @@ Get the full technical details of a rack (dimensions, devices list, template).
 #### `GET /api/catalog`
 Retrieve all available hardware templates (devices and racks).
 
+#### `GET /api/checks`
+Retrieve the checks library (built-in monitoring checks).
+
 ---
 
 ## Development

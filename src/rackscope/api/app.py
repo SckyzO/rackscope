@@ -8,28 +8,35 @@ from fastapi import FastAPI, HTTPException
 
 from rackscope.model.domain import Room, Site, Topology, Rack
 from rackscope.model.catalog import Catalog
-from rackscope.model.loader import load_topology, load_catalog
+from rackscope.model.checks import ChecksLibrary
+from rackscope.model.loader import load_topology, load_catalog, load_checks_library
 from rackscope.telemetry.prometheus import client as prom_client
 
 # Global state
 TOPOLOGY: Optional[Topology] = None
 CATALOG: Optional[Catalog] = None
+CHECKS_LIBRARY: Optional[ChecksLibrary] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global TOPOLOGY, CATALOG
+    global TOPOLOGY, CATALOG, CHECKS_LIBRARY
     config_path = os.getenv("RACKSCOPE_CONFIG", "config-examples/topology.yaml")
     templates_dir = os.path.dirname(config_path) + "/templates"
+    default_checks_path = os.path.join(os.path.dirname(config_path), "checks", "library.yaml")
+    checks_path = os.getenv("RACKSCOPE_CHECKS", default_checks_path)
     
     try:
         TOPOLOGY = load_topology(config_path)
         CATALOG = load_catalog(templates_dir)
+        CHECKS_LIBRARY = load_checks_library(checks_path)
         print(f"Loaded topology with {len(TOPOLOGY.sites)} sites")
         print(f"Loaded catalog with {len(CATALOG.device_templates)} devices and {len(CATALOG.rack_templates)} racks")
+        print(f"Loaded checks library with {len(CHECKS_LIBRARY.checks)} checks")
     except Exception as e:
         print(f"Failed to load configuration: {e}")
         TOPOLOGY = Topology()
         CATALOG = Catalog()
+        CHECKS_LIBRARY = ChecksLibrary()
     yield
 
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
@@ -41,6 +48,10 @@ def healthz() -> dict[str, str]:
 @app.get("/api/catalog")
 def get_catalog():
     return CATALOG if CATALOG else {"device_templates": [], "rack_templates": []}
+
+@app.get("/api/checks")
+def get_checks_library():
+    return CHECKS_LIBRARY if CHECKS_LIBRARY else {"checks": []}
 
 @app.get("/api/sites", response_model=List[Site])
 def get_sites():

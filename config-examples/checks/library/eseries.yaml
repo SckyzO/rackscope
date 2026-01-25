@@ -1,0 +1,74 @@
+groups:
+  - name: eseries
+    rules:
+      - alert: ESeriesCollectErrors
+        expr: eseries_exporter_collect_error == 1
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'E-Series exporter error on {{ $labels.instance }}'
+          description: 'E-Series exporter on {{ $labels.instance }} (cluster {{ $labels.cluster }}) has errors with collector {{ $labels.collector }}.'
+
+      - alert: ESeriesStorageSystemHealth
+        expr: eseries_storage_system_status{status!~"(optimal)"} == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'E-Series storage system unhealthy on {{ $labels.instance }}'
+          description: 'E-Series storage system {{ $labels.instance }} (cluster {{ $labels.cluster }}) status is {{ $labels.status }}.'
+
+      - alert: ESeriesDriveHealth
+        expr: eseries_drive_status{status!~"(optimal)"} == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'E-Series drive unhealthy on {{ $labels.instance }}'
+          description: 'E-Series drive on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is {{ $labels.status }} (tray={{ $labels.tray }}, slot={{ $labels.slot }}).'
+
+      - alert: ESeriesBatteryHealth
+        expr: eseries_battery_status{status!~"(optimal|learning)"} == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'E-Series battery unhealthy on {{ $labels.instance }}'
+          description: 'E-Series battery on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is {{ $labels.status }} (tray={{ $labels.tray }}, slot={{ $labels.slot }}).'
+
+      - alert: ESeriesFanHealth
+        expr: eseries_fan_status{status!~"(optimal)"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'E-Series fan unhealthy on {{ $labels.instance }}'
+          description: 'E-Series fan on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is {{ $labels.status }} (tray={{ $labels.tray }}, slot={{ $labels.slot }}).'
+
+      - alert: ESeriesPowerSupplyHealth
+        expr: eseries_power_supply_status{status!~"(optimal)"} == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'E-Series power supply unhealthy on {{ $labels.instance }}'
+          description: 'E-Series power supply on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is {{ $labels.status }} (tray={{ $labels.tray }}, slot={{ $labels.slot }}).'
+
+      - alert: ESeriesCacheMemoryDIMMHealth
+        expr: eseries_cache_memory_dimm_status{status!~"(optimal)"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'E-Series cache memory DIMM unhealthy on {{ $labels.instance }}'
+          description: 'E-Series cache memory DIMM on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is {{ $labels.status }} (tray={{ $labels.tray }}, slot={{ $labels.slot }}).'
+
+      - alert: ESeriesThermalSensorHealth
+        expr: eseries_thermal_sensor_status{status!~"(optimal)"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'E-Series thermal sensor unhealthy on {{ $labels.instance }}'
+          description: 'E-Series thermal sensor on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is {{ $labels.status }} (tray={{ $labels.tray }}, slot={{ $labels.slot }}).'
