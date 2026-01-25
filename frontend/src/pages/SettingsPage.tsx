@@ -24,6 +24,8 @@ type ConfigDraft = {
     rack_label: string;
     chassis_label: string;
     job_regex: string;
+    prometheus_heartbeat_seconds: string;
+    prometheus_latency_window: string;
     basic_auth_user: string;
     basic_auth_password: string;
     tls_verify: boolean;
@@ -35,6 +37,11 @@ type ConfigDraft = {
     unknown_state: string;
     cache_ttl_seconds: string;
     max_ids_per_query: string;
+  };
+  features: {
+    notifications: boolean;
+    playlist: boolean;
+    offline: boolean;
   };
 };
 
@@ -113,6 +120,8 @@ export const SettingsPage = () => {
         rack_label: config.telemetry?.rack_label || 'rack_id',
         chassis_label: config.telemetry?.chassis_label || 'chassis_id',
         job_regex: config.telemetry?.job_regex || '.*',
+        prometheus_heartbeat_seconds: String(config.telemetry?.prometheus_heartbeat_seconds ?? 30),
+        prometheus_latency_window: String(config.telemetry?.prometheus_latency_window ?? 20),
         basic_auth_user: config.telemetry?.basic_auth_user || '',
         basic_auth_password: config.telemetry?.basic_auth_password || '',
         tls_verify: config.telemetry?.tls_verify ?? true,
@@ -124,6 +133,11 @@ export const SettingsPage = () => {
         unknown_state: config.planner?.unknown_state || 'UNKNOWN',
         cache_ttl_seconds: String(config.planner?.cache_ttl_seconds ?? ''),
         max_ids_per_query: String(config.planner?.max_ids_per_query ?? ''),
+      },
+      features: {
+        notifications: config.features?.notifications ?? false,
+        playlist: config.features?.playlist ?? false,
+        offline: config.features?.offline ?? false,
       },
     });
   }, [config]);
@@ -171,6 +185,14 @@ export const SettingsPage = () => {
       new RegExp(draft.telemetry.job_regex);
     } catch {
       next.telemetry_job_regex = 'Invalid regex';
+    }
+    const heartbeat = Number.parseInt(draft.telemetry.prometheus_heartbeat_seconds, 10);
+    if (!Number.isFinite(heartbeat) || heartbeat < 10) {
+      next.telemetry_heartbeat = 'Must be >= 10';
+    }
+    const windowSize = Number.parseInt(draft.telemetry.prometheus_latency_window, 10);
+    if (!Number.isFinite(windowSize) || windowSize < 1) {
+      next.telemetry_latency_window = 'Must be >= 1';
     }
 
     if (draft.telemetry.basic_auth_password && !draft.telemetry.basic_auth_user) {
@@ -233,6 +255,8 @@ export const SettingsPage = () => {
           rack_label: draft.telemetry.rack_label,
           chassis_label: draft.telemetry.chassis_label,
           job_regex: draft.telemetry.job_regex,
+          prometheus_heartbeat_seconds: Number.parseInt(draft.telemetry.prometheus_heartbeat_seconds, 10),
+          prometheus_latency_window: Number.parseInt(draft.telemetry.prometheus_latency_window, 10),
           basic_auth_user: draft.telemetry.basic_auth_user || null,
           basic_auth_password: draft.telemetry.basic_auth_password || null,
           tls_verify: draft.telemetry.tls_verify,
@@ -244,6 +268,11 @@ export const SettingsPage = () => {
           unknown_state: draft.planner.unknown_state as any,
           cache_ttl_seconds: Number.parseInt(draft.planner.cache_ttl_seconds, 10),
           max_ids_per_query: Number.parseInt(draft.planner.max_ids_per_query, 10),
+        },
+        features: {
+          notifications: draft.features.notifications,
+          playlist: draft.features.playlist,
+          offline: draft.features.offline,
         },
       };
       const updated = await api.updateConfig(payload);
@@ -336,6 +365,28 @@ export const SettingsPage = () => {
                   />
                   <div className="mt-1 text-[10px] text-gray-500">Regex used to match Prometheus job labels.</div>
                   {validationErrors.telemetry_job_regex && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_job_regex}</div>}
+                </label>
+                <label className="text-xs text-gray-400" title="Interval for heartbeat calls to Prometheus">
+                  Prometheus heartbeat (seconds)
+                  <input
+                    type="number"
+                    value={draft?.telemetry.prometheus_heartbeat_seconds || ''}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, prometheus_heartbeat_seconds: e.target.value } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  />
+                  <div className="mt-1 text-[10px] text-gray-500">Min 10s. Drives scrape countdown in sidebar.</div>
+                  {validationErrors.telemetry_heartbeat && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_heartbeat}</div>}
+                </label>
+                <label className="text-xs text-gray-400" title="Number of latency samples used to compute average">
+                  Prometheus latency window
+                  <input
+                    type="number"
+                    value={draft?.telemetry.prometheus_latency_window || ''}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, prometheus_latency_window: e.target.value } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  />
+                  <div className="mt-1 text-[10px] text-gray-500">Number of samples for average latency.</div>
+                  {validationErrors.telemetry_latency_window && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_latency_window}</div>}
                 </label>
                 <label className="text-xs text-gray-400" title="Basic auth username for Prometheus">
                   Basic auth username
@@ -512,6 +563,43 @@ export const SettingsPage = () => {
                   />
                   <div className="mt-1 text-[10px] text-gray-500">Directory containing check definitions.</div>
                   {validationErrors.paths_checks && <div className="text-[10px] text-status-crit">{validationErrors.paths_checks}</div>}
+                </label>
+              </div>
+
+              <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
+                <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Feature toggles</h3>
+                <label className="text-xs text-gray-400" title="Enable notifications UI">
+                  Notifications
+                  <select
+                    value={draft?.features.notifications ? 'true' : 'false'}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, features: { ...prev.features, notifications: e.target.value === 'true' } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  >
+                    <option value="false">false</option>
+                    <option value="true">true</option>
+                  </select>
+                </label>
+                <label className="text-xs text-gray-400" title="Enable playlist mode UI">
+                  Playlist
+                  <select
+                    value={draft?.features.playlist ? 'true' : 'false'}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, features: { ...prev.features, playlist: e.target.value === 'true' } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  >
+                    <option value="false">false</option>
+                    <option value="true">true</option>
+                  </select>
+                </label>
+                <label className="text-xs text-gray-400" title="Enable offline snapshot UI">
+                  Offline snapshots
+                  <select
+                    value={draft?.features.offline ? 'true' : 'false'}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, features: { ...prev.features, offline: e.target.value === 'true' } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  >
+                    <option value="false">false</option>
+                    <option value="true">true</option>
+                  </select>
                 </label>
               </div>
             </div>

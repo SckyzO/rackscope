@@ -54,6 +54,7 @@ def apply_config(app_config: AppConfig) -> None:
         auth=auth,
         verify=verify,
         cert=cert,
+        latency_window=APP_CONFIG.telemetry.prometheus_latency_window,
     )
     PLANNER = TelemetryPlanner(
         PlannerConfig(
@@ -111,7 +112,7 @@ async def lifespan(app: FastAPI):
         PLANNER = TelemetryPlanner()
     heartbeat_seconds = 60
     if APP_CONFIG:
-        heartbeat_seconds = max(10, APP_CONFIG.refresh.room_state_seconds)
+        heartbeat_seconds = max(10, APP_CONFIG.telemetry.prometheus_heartbeat_seconds)
 
     async def _heartbeat() -> None:
         while True:
@@ -156,6 +157,8 @@ def get_app_config():
             "rack_label": "rack_id",
             "chassis_label": "chassis_id",
             "job_regex": ".*",
+            "prometheus_heartbeat_seconds": 30,
+            "prometheus_latency_window": 20,
             "basic_auth_user": None,
             "basic_auth_password": None,
             "tls_verify": True,
@@ -167,6 +170,11 @@ def get_app_config():
             "unknown_state": "UNKNOWN",
             "cache_ttl_seconds": 30,
             "max_ids_per_query": 50,
+        },
+        "features": {
+            "notifications": False,
+            "playlist": False,
+            "offline": False,
         },
     }
 

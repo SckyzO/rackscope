@@ -33,12 +33,15 @@ class PrometheusClient:
         auth: Optional[httpx.BasicAuth],
         verify: bool | str,
         cert: Optional[tuple[str, str] | str],
+        latency_window: int,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.cache_ttl = cache_ttl
         self._auth = auth
         self._verify = verify
         self._cert = cert
+        if latency_window >= 1:
+            self._latency_samples = deque(list(self._latency_samples), maxlen=latency_window)
         old_client = self.client
         self.client = httpx.AsyncClient(timeout=2.0, auth=self._auth, verify=self._verify, cert=self._cert)
         try:

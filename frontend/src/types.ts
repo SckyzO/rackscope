@@ -116,6 +116,8 @@ export interface AppConfig {
     rack_label?: string;
     chassis_label?: string;
     job_regex?: string;
+    prometheus_heartbeat_seconds?: number;
+    prometheus_latency_window?: number;
     basic_auth_user?: string | null;
     basic_auth_password?: string | null;
     tls_verify?: boolean;
@@ -127,5 +129,10 @@ export interface AppConfig {
     unknown_state?: string;
     cache_ttl_seconds?: number;
     max_ids_per_query?: number;
+  };
+  features?: {
+    notifications?: boolean;
+    playlist?: boolean;
+    offline?: boolean;
   };
 }

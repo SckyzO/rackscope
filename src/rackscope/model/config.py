@@ -27,6 +27,8 @@ class TelemetryConfig(BaseModel):
     rack_label: str = "rack_id"
     chassis_label: str = "chassis_id"
     job_regex: str = ".*"
+    prometheus_heartbeat_seconds: int = Field(default=30, ge=10)
+    prometheus_latency_window: int = Field(default=20, ge=1)
     basic_auth_user: Optional[str] = None
     basic_auth_password: Optional[str] = None
     tls_verify: bool = True
@@ -70,9 +72,16 @@ class PlannerConfig(BaseModel):
     max_ids_per_query: int = Field(default=50, ge=1)
 
 
+class FeatureConfig(BaseModel):
+    notifications: bool = False
+    playlist: bool = False
+    offline: bool = False
+
+
 class AppConfig(BaseModel):
     paths: PathsConfig
     refresh: RefreshConfig = Field(default_factory=RefreshConfig)
     cache: CacheConfig = Field(default_factory=CacheConfig)
     telemetry: TelemetryConfig = Field(default_factory=TelemetryConfig)
     planner: PlannerConfig = Field(default_factory=PlannerConfig)
+    features: FeatureConfig = Field(default_factory=FeatureConfig)

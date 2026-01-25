@@ -67,6 +67,7 @@ Telemetry:
   - [ ] Paths (topology/templates/checks)
   - [ ] Feature toggles (notifications, playlist, offline)
   - [ ] Validation + save/reload workflow
+  - [ ] Settings UX refinement (help text, guided flows) — deferred to final pass
 - [ ] Refactor simulator (multi-metric, topology-driven, demo-ready)
 
 ---
@@ -125,6 +126,7 @@ Telemetry:
 
 ## Phase 9 — Finalization
 - [ ] Design polish pass (pixel-perfect + global dark/light parity)
+- [ ] Settings UX refactor (clarify toggles, add guided playlist config)
 - [ ] Phase 1 polish:
   - [ ] Rack rear view with attachments (minimal)
   - [ ] Tooltip shows failing reasons (top checks)
