@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import asyncio
+import time
 from contextlib import asynccontextmanager, suppress
 from typing import List, Optional, Dict, Any
 from pathlib import Path
@@ -175,6 +176,23 @@ def get_app_config():
             "notifications": False,
             "playlist": False,
             "offline": False,
+            "demo": False,
+        },
+        "simulator": {
+            "update_interval_seconds": 20,
+            "seed": None,
+            "scenario": None,
+            "scale_factor": 1.0,
+            "incident_rates": {
+                "node_micro_failure": 0.001,
+                "rack_macro_failure": 0.01,
+                "aisle_cooling_failure": 0.005,
+            },
+            "incident_durations": {
+                "rack": 3,
+                "aisle": 5,
+            },
+            "overrides_path": "config/simulator_overrides.yaml",
         },
     }
 
@@ -201,6 +219,96 @@ def get_env() -> Dict[str, Any]:
         "PROMETHEUS_CACHE_TTL",
     ]
     return {key: os.getenv(key) for key in keys}
+
+
+def _overrides_path() -> Path:
+    if APP_CONFIG and getattr(APP_CONFIG, "simulator", None):
+        return Path(APP_CONFIG.simulator.overrides_path)
+    return Path("config/simulator_overrides.yaml")
+
+
+def _load_overrides() -> list[dict[str, Any]]:
+    path = _overrides_path()
+    if not path.exists():
+        return []
+    try:
+        data = yaml.safe_load(path.read_text()) or {}
+    except yaml.YAMLError as exc:
+        print(f"Failed to load overrides: {exc}")
+        return []
+    return data.get("overrides", []) if isinstance(data, dict) else []
+
+
+def _save_overrides(overrides: list[dict[str, Any]]) -> None:
+    path = _overrides_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"overrides": overrides}
+    with path.open("w") as f:
+        yaml.safe_dump(payload, f, sort_keys=False)
+
+
+@app.get("/api/simulator/overrides")
+def get_simulator_overrides():
+    return {"overrides": _load_overrides()}
+
+
+@app.get("/api/simulator/scenarios")
+def get_simulator_scenarios():
+    sim_path = Path("config/simulator.yaml")
+    if not sim_path.exists():
+        return {"scenarios": []}
+    try:
+        data = yaml.safe_load(sim_path.read_text()) or {}
+    except yaml.YAMLError as exc:
+        print(f"Failed to load simulator scenarios: {exc}")
+        return {"scenarios": []}
+    scenarios = data.get("scenarios") if isinstance(data, dict) else {}
+    if not isinstance(scenarios, dict):
+        return {"scenarios": []}
+    return {"scenarios": sorted(scenarios.keys())}
+
+
+@app.post("/api/simulator/overrides")
+def add_simulator_override(payload: dict):
+    instance = payload.get("instance")
+    rack_id = payload.get("rack_id")
+    metric = payload.get("metric")
+    value = payload.get("value")
+    ttl = payload.get("ttl_seconds")
+    if not metric:
+        raise HTTPException(status_code=400, detail="metric is required")
+    if not instance and not rack_id:
+        raise HTTPException(status_code=400, detail="instance or rack_id is required")
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="value must be numeric")
+    override_id = payload.get("id") or f"{(instance or rack_id)}-{metric}-{int(time.time())}"
+    override = {
+        "id": override_id,
+        "instance": instance,
+        "rack_id": rack_id,
+        "metric": metric,
+        "value": value,
+    }
+    if ttl:
+        try:
+            ttl_val = int(ttl)
+            override["expires_at"] = int(time.time()) + max(ttl_val, 1)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="ttl_seconds must be int")
+    overrides = _load_overrides()
+    overrides.append(override)
+    _save_overrides(overrides)
+    return {"overrides": overrides}
+
+
+@app.delete("/api/simulator/overrides/{override_id}")
+def delete_simulator_override(override_id: str):
+    overrides = _load_overrides()
+    next_overrides = [o for o in overrides if o.get("id") != override_id]
+    _save_overrides(next_overrides)
+    return {"overrides": next_overrides}
 
 @app.get("/api/sites", response_model=List[Site])
 def get_sites():

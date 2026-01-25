@@ -76,6 +76,28 @@ class FeatureConfig(BaseModel):
     notifications: bool = False
     playlist: bool = False
     offline: bool = False
+    demo: bool = False
+
+
+class IncidentRates(BaseModel):
+    node_micro_failure: float = Field(default=0.001, ge=0, le=1)
+    rack_macro_failure: float = Field(default=0.01, ge=0, le=1)
+    aisle_cooling_failure: float = Field(default=0.005, ge=0, le=1)
+
+
+class IncidentDurations(BaseModel):
+    rack: int = Field(default=3, ge=1)
+    aisle: int = Field(default=5, ge=1)
+
+
+class SimulatorConfig(BaseModel):
+    update_interval_seconds: int = Field(default=20, ge=1)
+    seed: Optional[int] = None
+    scenario: Optional[str] = None
+    scale_factor: float = Field(default=1.0, ge=0.1)
+    incident_rates: IncidentRates = Field(default_factory=IncidentRates)
+    incident_durations: IncidentDurations = Field(default_factory=IncidentDurations)
+    overrides_path: str = Field(default="config/simulator_overrides.yaml", min_length=1)
 
 
 class AppConfig(BaseModel):
@@ -85,3 +107,4 @@ class AppConfig(BaseModel):
     telemetry: TelemetryConfig = Field(default_factory=TelemetryConfig)
     planner: PlannerConfig = Field(default_factory=PlannerConfig)
     features: FeatureConfig = Field(default_factory=FeatureConfig)
+    simulator: SimulatorConfig = Field(default_factory=SimulatorConfig)

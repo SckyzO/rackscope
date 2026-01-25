@@ -30,11 +30,11 @@ services:
     ports:
       - "9000:9000"
     volumes:
-      - ./config/topology:/app/config/topology:ro
-      - ./config/simulator.yaml:/app/config/simulator.yaml:ro
+      - ./config:/app/config:ro
     environment:
       - TOPOLOGY_FILE=/app/config/topology
       - SIMULATOR_CONFIG=/app/config/simulator.yaml
+      - SIMULATOR_APP_CONFIG=/app/config/app.yaml
 
   prometheus:
     image: prom/prometheus:latest

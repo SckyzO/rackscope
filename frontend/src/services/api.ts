@@ -108,6 +108,41 @@ export const api = {
   getEnv: async (): Promise<Record<string, string | null>> => {
     return fetchWithCache('/api/env', 'app.env');
   },
+  getSimulatorOverrides: async () => {
+    return fetchWithCache('/api/simulator/overrides', 'simulator.overrides');
+  },
+  getSimulatorScenarios: async () => {
+    return fetchWithCache('/api/simulator/scenarios', 'simulator.scenarios');
+  },
+  addSimulatorOverride: async (payload: {
+    instance: string;
+    metric: string;
+    value: number;
+    ttl_seconds?: number;
+  }) => {
+    const res = await fetch('/api/simulator/overrides', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/simulator/overrides');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('simulator.overrides', data);
+    return data;
+  },
+  deleteSimulatorOverride: async (overrideId: string) => {
+    const res = await fetch(`/api/simulator/overrides/${overrideId}`, { method: 'DELETE' });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/simulator/overrides');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('simulator.overrides', data);
+    return data;
+  },
   getLastSuccessTs: () => {
     const meta = readJSON(META_KEY);
     return meta?.lastSuccess || null;

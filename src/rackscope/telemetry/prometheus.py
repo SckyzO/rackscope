@@ -45,9 +45,11 @@ class PrometheusClient:
         old_client = self.client
         self.client = httpx.AsyncClient(timeout=2.0, auth=self._auth, verify=self._verify, cert=self._cert)
         try:
-            asyncio.create_task(old_client.aclose())
+            loop = asyncio.get_running_loop()
         except RuntimeError:
-            pass
+            asyncio.run(old_client.aclose())
+        else:
+            loop.create_task(old_client.aclose())
 
     async def query(self, query: str) -> Dict[str, Any]:
         """Execute a PromQL instant query with simple TTL caching."""

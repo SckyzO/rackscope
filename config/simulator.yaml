@@ -44,3 +44,76 @@ profiles:
     power_var: 10.0
     load_min: 15.0
     load_max: 15.0
+
+# Scenarios (optional overrides)
+scenarios:
+  full-ok:
+    seed: 1
+    scale_factor: 0.0
+    incident_rates:
+      node_micro_failure: 0.0
+      rack_macro_failure: 0.0
+      aisle_cooling_failure: 0.0
+    profiles:
+      compute:
+        base_temp: 20.0
+        temp_range: 4.0
+        base_power: 140.0
+        power_var: 40.0
+        load_min: 5.0
+        load_max: 20.0
+      gpu:
+        base_temp: 22.0
+        temp_range: 6.0
+        base_power: 180.0
+        power_var: 80.0
+        load_min: 5.0
+        load_max: 25.0
+      service:
+        base_temp: 19.0
+        temp_range: 3.0
+        base_power: 90.0
+        power_var: 20.0
+        load_min: 2.0
+        load_max: 10.0
+      network:
+        base_temp: 21.0
+        temp_range: 3.0
+        base_power: 100.0
+        power_var: 20.0
+        load_min: 5.0
+        load_max: 15.0
+  random-1-critical:
+    seed: 11
+    scale_factor: 0.05
+    incident_rates:
+      node_micro_failure: 0.01
+      rack_macro_failure: 0.0
+      aisle_cooling_failure: 0.0
+  random-1-rack-down:
+    seed: 12
+    scale_factor: 0.1
+    incident_rates:
+      node_micro_failure: 0.0
+      rack_macro_failure: 0.02
+      aisle_cooling_failure: 0.0
+    incident_durations:
+      rack: 3
+  random-demo-small:
+    seed: 42
+    scale_factor: 1.0
+    incident_rates:
+      node_micro_failure: 0.001
+      rack_macro_failure: 0.0
+      aisle_cooling_failure: 0.004
+  random-demo-high:
+    seed: 99
+    scale_factor: 1.0
+    incident_rates:
+      node_micro_failure: 0.10
+      rack_macro_failure: 0.05
+      aisle_cooling_failure: 0.20
+  demo-stable:
+    update_interval_seconds: 20
+    seed: 7
+    scale_factor: 0.5

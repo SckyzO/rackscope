@@ -48,7 +48,7 @@ export const Sidebar = ({
         setDeviceTemplates(catalogData.device_templates || []);
         setRackTemplates(catalogData.rack_templates || []);
         setSites(safeSites);
-        const nextRefresh = Number(configData?.refresh?.room_state_seconds) || 30;
+        const nextRefresh = Number(configData?.telemetry?.prometheus_heartbeat_seconds) || 30;
         setRefreshSeconds(Math.max(10, nextRefresh));
         if (!selectedSiteId && safeSites.length > 0) {
           setSelectedSiteId(safeSites[0].id);
@@ -307,6 +307,7 @@ export const Sidebar = ({
             <SidebarLink to="/settings#appearance" icon={Palette} label="Theme Settings" depth={1} />
             <SidebarLink to="/settings#system" icon={FileText} label="System & Logs" depth={1} />
             <SidebarLink to="/settings#environment" icon={Globe} label="Environment" depth={1} />
+            <SidebarLink to="/settings#simulator" icon={Activity} label="Simulator" depth={1} />
           </div>
         )}
       </nav>

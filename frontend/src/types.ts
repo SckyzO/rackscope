@@ -134,5 +134,22 @@ export interface AppConfig {
     notifications?: boolean;
     playlist?: boolean;
     offline?: boolean;
+    demo?: boolean;
+  };
+  simulator?: {
+    update_interval_seconds?: number;
+    seed?: number | null;
+    scenario?: string | null;
+    scale_factor?: number;
+    incident_rates?: {
+      node_micro_failure?: number;
+      rack_macro_failure?: number;
+      aisle_cooling_failure?: number;
+    };
+    incident_durations?: {
+      rack?: number;
+      aisle?: number;
+    };
+    overrides_path?: string;
   };
 }

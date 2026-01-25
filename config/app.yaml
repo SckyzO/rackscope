@@ -29,3 +29,17 @@ features:
   notifications: true
   playlist: false
   offline: false
+  demo: true
+simulator:
+  update_interval_seconds: 20
+  seed: null
+  scenario: full-ok
+  scale_factor: 1.0
+  incident_rates:
+    node_micro_failure: 0.001
+    rack_macro_failure: 0.01
+    aisle_cooling_failure: 0.005
+  incident_durations:
+    rack: 3
+    aisle: 5
+  overrides_path: config/simulator_overrides.yaml

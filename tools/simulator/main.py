@@ -9,13 +9,14 @@ from prometheus_client import start_http_server, Gauge
 # Configuration Paths
 TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology")
 SIMULATOR_CONFIG_PATH = os.getenv("SIMULATOR_CONFIG", "/app/config/simulator.yaml")
+APP_CONFIG_PATH = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
 
 # Metrics definition
 NODE_TEMP = Gauge('node_temperature_celsius', 'Ambient temperature of the node', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
 NODE_POWER = Gauge('node_power_watts', 'Power consumption of the node', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
 NODE_HEALTH = Gauge('node_health_status', 'Health status (0=OK, 1=WARN, 2=CRIT)', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
 NODE_LOAD = Gauge('node_load_percent', 'Resource load (CPU/GPU/Switch)', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
-NODE_UP = Gauge('up', 'Exporter availability', ['job', 'instance'])
+NODE_UP = Gauge('up', 'Exporter availability', ['job', 'instance', 'node_id'])
 
 def load_yaml(path):
     try:
@@ -120,13 +121,58 @@ def load_topology_nodes(topo_data):
 
 active_incidents = {'aisles': {}, 'racks': {}}
 
+def load_simulator_config():
+    sim_cfg = load_yaml(SIMULATOR_CONFIG_PATH) or {}
+    app_cfg = load_yaml(APP_CONFIG_PATH) or {}
+    app_sim = app_cfg.get('simulator') if isinstance(app_cfg, dict) else None
+    if isinstance(app_sim, dict):
+        sim_cfg = {**sim_cfg, **app_sim}
+    return sim_cfg
+
+def apply_scenario(sim_cfg):
+    scenario_name = sim_cfg.get('scenario')
+    scenarios = sim_cfg.get('scenarios', {})
+    if scenario_name and isinstance(scenarios, dict) and scenario_name in scenarios:
+        scenario_cfg = scenarios.get(scenario_name) or {}
+        if isinstance(scenario_cfg, dict):
+            merged = dict(sim_cfg)
+            # Scenario should be authoritative. Do not inherit random rates unless explicitly set.
+            if 'incident_rates' not in scenario_cfg:
+                merged['incident_rates'] = {}
+            for key in ['incident_rates', 'incident_durations', 'profiles', 'seed', 'update_interval_seconds']:
+                if key in scenario_cfg:
+                    merged[key] = scenario_cfg[key]
+            if 'scale_factor' in scenario_cfg:
+                merged['scale_factor'] = scenario_cfg['scale_factor']
+            return merged
+    return sim_cfg
+
+def load_overrides(path):
+    data = load_yaml(path) or {}
+    overrides = data.get('overrides') if isinstance(data, dict) else []
+    if not overrides:
+        return []
+    now = int(time.time())
+    active = []
+    for item in overrides:
+        if not isinstance(item, dict):
+            continue
+        expires_at = item.get('expires_at')
+        if expires_at and expires_at <= now:
+            continue
+        active.append(item)
+    return active
+
 def simulate():
     # Load Initial Config
-    sim_cfg = load_yaml(SIMULATOR_CONFIG_PATH)
-    update_interval = sim_cfg.get('update_interval', 20)
+    sim_cfg = apply_scenario(load_simulator_config())
+    update_interval = sim_cfg.get('update_interval_seconds', sim_cfg.get('update_interval', 20))
     rates = sim_cfg.get('incident_rates', {})
     durations = sim_cfg.get('incident_durations', {'rack': 3, 'aisle': 5})
     profiles = sim_cfg.get('profiles', {})
+    seed = sim_cfg.get('seed')
+    scale_factor = sim_cfg.get('scale_factor', 1.0)
+    overrides_path = sim_cfg.get('overrides_path', '/app/config/simulator_overrides.yaml')
 
     print(f"Starting simulation loop (Interval: {update_interval}s)")
     tick = 0
@@ -137,16 +183,33 @@ def simulate():
         targets = load_topology_nodes(topo_data)
         tick += 1
         
+        if seed is not None:
+            random.seed(f"{seed}-{tick}")
+
+        overrides = load_overrides(overrides_path)
+        overrides_by_instance = {}
+        overrides_by_rack = {}
+        for item in overrides:
+            inst = item.get('instance')
+            if not inst:
+                rack_id = item.get('rack_id')
+                if rack_id:
+                    overrides_by_rack.setdefault(rack_id, []).append(item)
+                continue
+            overrides_by_instance.setdefault(inst, []).append(item)
+
         # --- Macro Incidents ---
         for aisle in set(t['aisle_id'] for t in targets):
-            if aisle not in active_incidents['aisles'] and random.random() < rates.get('aisle_cooling_failure', 0.005):
+            aisle_rate = min(1.0, rates.get('aisle_cooling_failure', 0.005) * scale_factor)
+            if aisle not in active_incidents['aisles'] and random.random() < aisle_rate:
                 print(f"!!! Incident: Aisle {aisle} cooling failure")
                 active_incidents['aisles'][aisle] = tick
             elif aisle in active_incidents['aisles'] and (tick - active_incidents['aisles'][aisle]) > durations.get('aisle', 5):
                 del active_incidents['aisles'][aisle]
 
         for rack in set(t['rack_id'] for t in targets):
-            if rack not in active_incidents['racks'] and random.random() < rates.get('rack_macro_failure', 0.01):
+            rack_rate = min(1.0, rates.get('rack_macro_failure', 0.01) * scale_factor)
+            if rack not in active_incidents['racks'] and random.random() < rack_rate:
                 print(f"!!! Incident: Rack {rack} power issue")
                 active_incidents['racks'][rack] = tick
             elif rack in active_incidents['racks'] and (tick - active_incidents['racks'][rack]) > durations.get('rack', 3):
@@ -184,6 +247,17 @@ def simulate():
             # --- Apply Macro Incidents ---
             temp_boost = 12.0 if aid in active_incidents['aisles'] else 0
             is_down = rid in active_incidents['racks']
+            rack_overrides = overrides_by_rack.get(rid, [])
+            for override in rack_overrides:
+                metric = override.get('metric')
+                value = override.get('value')
+                if metric == 'rack_down':
+                    try:
+                        value = float(value)
+                    except (TypeError, ValueError):
+                        continue
+                    if value > 0:
+                        is_down = True
 
             # Final Metrics
             temp = p.get('base_temp', 22) + (load / 100.0 * p.get('temp_range', 5)) + temp_boost + random.uniform(-0.5, 0.5)
@@ -191,18 +265,45 @@ def simulate():
             final_load = load if not is_down else 0
 
             # Micro-failures
-            if not is_down and random.random() < rates.get('node_micro_failure', 0.001):
+            node_rate = min(1.0, rates.get('node_micro_failure', 0.001) * scale_factor)
+            if not is_down and random.random() < node_rate:
                 temp += 25.0
+
+            status = 0
+            if is_down or temp > 45:
+                status = 2
+            elif temp > 38:
+                status = 1
+            up_val = 0 if is_down else 1
+
+            inst_overrides = overrides_by_instance.get(target['node_id'], [])
+            for override in inst_overrides:
+                metric = override.get('metric')
+                value = override.get('value')
+                try:
+                    value = float(value)
+                except (TypeError, ValueError):
+                    continue
+                if metric == 'up':
+                    up_val = 0 if value <= 0 else 1
+                    if up_val == 0:
+                        status = 2
+                        power = 0.0
+                        final_load = 0.0
+                elif metric == 'node_temperature_celsius':
+                    temp = value
+                elif metric == 'node_power_watts':
+                    power = value
+                elif metric == 'node_load_percent':
+                    final_load = value
+                elif metric == 'node_health_status':
+                    status = int(value)
 
             NODE_TEMP.labels(**labels).set(round(temp, 1))
             NODE_POWER.labels(**labels).set(round(power, 0))
             NODE_LOAD.labels(**labels).set(round(final_load, 1))
-            
-            status = 0
-            if is_down or temp > 45: status = 2
-            elif temp > 38: status = 1
             NODE_HEALTH.labels(**labels).set(status)
-            NODE_UP.labels(job='node', instance=target['node_id']).set(0 if is_down else 1)
+            NODE_UP.labels(job='node', instance=target['node_id'], node_id=target['node_id']).set(up_val)
 
         time.sleep(update_interval)
 

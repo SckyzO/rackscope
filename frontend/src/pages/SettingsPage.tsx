@@ -42,6 +42,23 @@ type ConfigDraft = {
     notifications: boolean;
     playlist: boolean;
     offline: boolean;
+    demo: boolean;
+  };
+  simulator: {
+    update_interval_seconds: string;
+    seed: string;
+    scenario: string;
+    scale_factor: string;
+    incident_rates: {
+      node_micro_failure: string;
+      rack_macro_failure: string;
+      aisle_cooling_failure: string;
+    };
+    incident_durations: {
+      rack: string;
+      aisle: string;
+    };
+    overrides_path: string;
   };
 };
 
@@ -53,6 +70,9 @@ export const SettingsPage = () => {
   const [draft, setDraft] = useState<ConfigDraft | null>(null);
   const [envVars, setEnvVars] = useState<Record<string, string | null>>({});
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [overrides, setOverrides] = useState<Array<{ id: string; instance?: string; rack_id?: string; metric: string; value: number; expires_at?: number }>>([]);
+  const [overrideForm, setOverrideForm] = useState({ scope: 'instance', instance: '', rack_id: '', metric: 'up', value: '', ttl_seconds: '' });
+  const [scenarioOptions, setScenarioOptions] = useState<string[]>([]);
 
   const colors = [
     { id: 'blue', value: '#3b82f6' },
@@ -100,6 +120,42 @@ export const SettingsPage = () => {
   }, []);
 
   useEffect(() => {
+    let active = true;
+    const loadOverrides = async () => {
+      try {
+        const data = await api.getSimulatorOverrides();
+        if (active) {
+          setOverrides((data?.overrides || []) as any[]);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadOverrides();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadScenarios = async () => {
+      try {
+        const data = await api.getSimulatorScenarios();
+        if (active) {
+          setScenarioOptions((data?.scenarios || []) as string[]);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadScenarios();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!config) return;
     setDraft({
       paths: {
@@ -138,6 +194,23 @@ export const SettingsPage = () => {
         notifications: config.features?.notifications ?? false,
         playlist: config.features?.playlist ?? false,
         offline: config.features?.offline ?? false,
+        demo: config.features?.demo ?? false,
+      },
+      simulator: {
+        update_interval_seconds: String(config.simulator?.update_interval_seconds ?? 20),
+        seed: config.simulator?.seed !== null && config.simulator?.seed !== undefined ? String(config.simulator?.seed) : '',
+        scenario: config.simulator?.scenario || '',
+        scale_factor: String(config.simulator?.scale_factor ?? 1.0),
+        incident_rates: {
+          node_micro_failure: String(config.simulator?.incident_rates?.node_micro_failure ?? 0.001),
+          rack_macro_failure: String(config.simulator?.incident_rates?.rack_macro_failure ?? 0.01),
+          aisle_cooling_failure: String(config.simulator?.incident_rates?.aisle_cooling_failure ?? 0.005),
+        },
+        incident_durations: {
+          rack: String(config.simulator?.incident_durations?.rack ?? 3),
+          aisle: String(config.simulator?.incident_durations?.aisle ?? 5),
+        },
+        overrides_path: config.simulator?.overrides_path || 'config/simulator_overrides.yaml',
       },
     });
   }, [config]);
@@ -214,6 +287,9 @@ export const SettingsPage = () => {
       ['cache_ttl', draft.cache.ttl_seconds, 1],
       ['planner_cache', draft.planner.cache_ttl_seconds, 1],
       ['planner_max', draft.planner.max_ids_per_query, 1],
+      ['sim_update_interval', draft.simulator.update_interval_seconds, 1],
+      ['sim_duration_rack', draft.simulator.incident_durations.rack, 1],
+      ['sim_duration_aisle', draft.simulator.incident_durations.aisle, 1],
     ];
     for (const [key, value, min] of intFields) {
       const num = Number.parseInt(value, 10);
@@ -225,6 +301,22 @@ export const SettingsPage = () => {
     const allowedStates = ['OK', 'WARN', 'CRIT', 'UNKNOWN'];
     if (!allowedStates.includes(draft.planner.unknown_state)) {
       next.planner_unknown_state = 'Invalid state';
+    }
+
+    const rateFields: Array<[string, string]> = [
+      ['sim_rate_node', draft.simulator.incident_rates.node_micro_failure],
+      ['sim_rate_rack', draft.simulator.incident_rates.rack_macro_failure],
+      ['sim_rate_aisle', draft.simulator.incident_rates.aisle_cooling_failure],
+    ];
+    for (const [key, value] of rateFields) {
+      const num = Number.parseFloat(value);
+      if (!Number.isFinite(num) || num < 0 || num > 1) {
+        next[key] = 'Must be between 0 and 1';
+      }
+    }
+    const scale = Number.parseFloat(draft.simulator.scale_factor);
+    if (!Number.isFinite(scale) || scale < 0.1) {
+      next.sim_scale = 'Must be >= 0.1';
     }
 
     return next;
@@ -273,6 +365,23 @@ export const SettingsPage = () => {
           notifications: draft.features.notifications,
           playlist: draft.features.playlist,
           offline: draft.features.offline,
+          demo: draft.features.demo,
+        },
+        simulator: {
+          update_interval_seconds: Number.parseInt(draft.simulator.update_interval_seconds, 10),
+          seed: draft.simulator.seed ? Number.parseInt(draft.simulator.seed, 10) : null,
+          scenario: draft.simulator.scenario || null,
+          scale_factor: Number.parseFloat(draft.simulator.scale_factor),
+          incident_rates: {
+            node_micro_failure: Number.parseFloat(draft.simulator.incident_rates.node_micro_failure),
+            rack_macro_failure: Number.parseFloat(draft.simulator.incident_rates.rack_macro_failure),
+            aisle_cooling_failure: Number.parseFloat(draft.simulator.incident_rates.aisle_cooling_failure),
+          },
+          incident_durations: {
+            rack: Number.parseInt(draft.simulator.incident_durations.rack, 10),
+            aisle: Number.parseInt(draft.simulator.incident_durations.aisle, 10),
+          },
+          overrides_path: draft.simulator.overrides_path,
         },
       };
       const updated = await api.updateConfig(payload);
@@ -601,9 +710,241 @@ export const SettingsPage = () => {
                     <option value="true">true</option>
                   </select>
                 </label>
+                <label className="text-xs text-gray-400" title="Enable simulator controls for demo mode">
+                  Demo mode
+                  <select
+                    value={draft?.features.demo ? 'true' : 'false'}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, features: { ...prev.features, demo: e.target.value === 'true' } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  >
+                    <option value="false">false</option>
+                    <option value="true">true</option>
+                  </select>
+                </label>
               </div>
             </div>
           </section>
+
+          {draft?.features.demo && (
+            <section id="simulator">
+              <h2 className="text-xl font-bold mb-6 border-b border-rack-border pb-2">Simulator</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
+                  <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Runtime</h3>
+                  <label className="text-xs text-gray-400" title="Simulator update interval">
+                    Update interval (seconds)
+                    <input
+                      type="number"
+                      value={draft?.simulator.update_interval_seconds || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, update_interval_seconds: e.target.value } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    {validationErrors.sim_update_interval && <div className="text-[10px] text-status-crit">{validationErrors.sim_update_interval}</div>}
+                  </label>
+                  <label className="text-xs text-gray-400" title="Scenario name from simulator.yaml">
+                    Scenario
+                    <select
+                      value={draft?.simulator.scenario || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, scenario: e.target.value } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    >
+                      <option value="">(none)</option>
+                      {scenarioOptions.map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-xs text-gray-400" title="Scale factor for incident rates (1.0 = baseline, 2.0 = twice as frequent)">
+                    Scale factor
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={draft?.simulator.scale_factor || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, scale_factor: e.target.value } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    {validationErrors.sim_scale && <div className="text-[10px] text-status-crit">{validationErrors.sim_scale}</div>}
+                  </label>
+                  <label className="text-xs text-gray-400" title="Seed for deterministic simulation">
+                    Seed
+                    <input
+                      type="number"
+                      value={draft?.simulator.seed || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, seed: e.target.value } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      placeholder="Optional"
+                    />
+                  </label>
+                  <label className="text-xs text-gray-400" title="Overrides file path">
+                    Overrides path
+                    <input
+                      value={draft?.simulator.overrides_path || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, overrides_path: e.target.value } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                  </label>
+                </div>
+
+                <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
+                  <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Incident rates</h3>
+                  <label className="text-xs text-gray-400">
+                    Node micro failure
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={draft?.simulator.incident_rates.node_micro_failure || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, incident_rates: { ...prev.simulator.incident_rates, node_micro_failure: e.target.value } } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    {validationErrors.sim_rate_node && <div className="text-[10px] text-status-crit">{validationErrors.sim_rate_node}</div>}
+                  </label>
+                  <label className="text-xs text-gray-400">
+                    Rack macro failure
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={draft?.simulator.incident_rates.rack_macro_failure || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, incident_rates: { ...prev.simulator.incident_rates, rack_macro_failure: e.target.value } } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    {validationErrors.sim_rate_rack && <div className="text-[10px] text-status-crit">{validationErrors.sim_rate_rack}</div>}
+                  </label>
+                  <label className="text-xs text-gray-400">
+                    Aisle cooling failure
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={draft?.simulator.incident_rates.aisle_cooling_failure || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, incident_rates: { ...prev.simulator.incident_rates, aisle_cooling_failure: e.target.value } } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    {validationErrors.sim_rate_aisle && <div className="text-[10px] text-status-crit">{validationErrors.sim_rate_aisle}</div>}
+                  </label>
+                </div>
+
+                <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
+                  <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Incident durations</h3>
+                  <label className="text-xs text-gray-400">
+                    Rack duration (ticks)
+                    <input
+                      type="number"
+                      value={draft?.simulator.incident_durations.rack || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, incident_durations: { ...prev.simulator.incident_durations, rack: e.target.value } } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    {validationErrors.sim_duration_rack && <div className="text-[10px] text-status-crit">{validationErrors.sim_duration_rack}</div>}
+                  </label>
+                  <label className="text-xs text-gray-400">
+                    Aisle duration (ticks)
+                    <input
+                      type="number"
+                      value={draft?.simulator.incident_durations.aisle || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, incident_durations: { ...prev.simulator.incident_durations, aisle: e.target.value } } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    {validationErrors.sim_duration_aisle && <div className="text-[10px] text-status-crit">{validationErrors.sim_duration_aisle}</div>}
+                  </label>
+                </div>
+
+                <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
+                  <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Overrides</h3>
+                  <div className="space-y-2">
+                    <select
+                      value={overrideForm.scope}
+                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, scope: e.target.value }))}
+                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    >
+                      <option value="instance">Instance override</option>
+                      <option value="rack">Rack override</option>
+                    </select>
+                    {overrideForm.scope === 'instance' ? (
+                    <input
+                      value={overrideForm.instance}
+                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, instance: e.target.value }))}
+                      placeholder="Instance (e.g. compute001)"
+                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    ) : (
+                    <input
+                      value={overrideForm.rack_id}
+                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, rack_id: e.target.value }))}
+                      placeholder="Rack ID (e.g. r01-01)"
+                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    )}
+                    <select
+                      value={overrideForm.metric}
+                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, metric: e.target.value }))}
+                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    >
+                      <option value="up">up</option>
+                      <option value="node_temperature_celsius">node_temperature_celsius</option>
+                      <option value="node_power_watts">node_power_watts</option>
+                      <option value="node_load_percent">node_load_percent</option>
+                      <option value="node_health_status">node_health_status</option>
+                      <option value="rack_down">rack_down</option>
+                    </select>
+                    <input
+                      value={overrideForm.value}
+                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, value: e.target.value }))}
+                      placeholder="Value"
+                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    <input
+                      value={overrideForm.ttl_seconds}
+                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, ttl_seconds: e.target.value }))}
+                      placeholder="TTL seconds (optional)"
+                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (overrideForm.value === '') return;
+                        if (overrideForm.scope === 'instance' && !overrideForm.instance) return;
+                        if (overrideForm.scope === 'rack' && !overrideForm.rack_id) return;
+                        const payload = {
+                          instance: overrideForm.scope === 'instance' ? overrideForm.instance : undefined,
+                          rack_id: overrideForm.scope === 'rack' ? overrideForm.rack_id : undefined,
+                          metric: overrideForm.metric,
+                          value: Number.parseFloat(overrideForm.value),
+                          ttl_seconds: overrideForm.ttl_seconds ? Number.parseInt(overrideForm.ttl_seconds, 10) : undefined,
+                        };
+                        const data = await api.addSimulatorOverride(payload);
+                        setOverrides((data?.overrides || []) as any[]);
+                        setOverrideForm({ scope: overrideForm.scope, instance: '', rack_id: '', metric: 'up', value: '', ttl_seconds: '' });
+                      }}
+                      className="w-full rounded-lg bg-[var(--color-accent)]/15 text-[var(--color-accent)] border border-[var(--color-accent)]/30 px-3 py-2 text-xs font-bold uppercase tracking-widest"
+                    >
+                      Add override
+                    </button>
+                  </div>
+                  <div className="mt-4 space-y-2 text-[11px] text-gray-400">
+                    {overrides.length === 0 && <div>No overrides set.</div>}
+                    {overrides.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
+                            {(item.instance || item.rack_id)} · {item.metric}
+                          </div>
+                          <div>{item.value}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const data = await api.deleteSimulatorOverride(item.id);
+                            setOverrides((data?.overrides || []) as any[]);
+                          }}
+                          className="text-[10px] uppercase tracking-widest text-status-crit"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
         {/* Appearance Section */}
         <section id="appearance">

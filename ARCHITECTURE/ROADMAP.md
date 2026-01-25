@@ -58,17 +58,24 @@ Telemetry:
   - [ ] pixel-perfect polish + dark/light parity (deferred to final pass)
 - [x] Prometheus latency stats (backend heartbeat + sidebar display)
 - [ ] Settings UI (full app configuration — entire app configurable):
-  - [ ] Prometheus endpoints + auth (optional)
-  - [ ] Prometheus heartbeat interval + latency settings
-  - [ ] Identity mapping (instance/host/node) + label overrides
-  - [ ] Refresh policies (room/rack/global)
-  - [ ] Cache TTL/dedup policies
-  - [ ] UNKNOWN/aggregation policies
-  - [ ] Paths (topology/templates/checks)
-  - [ ] Feature toggles (notifications, playlist, offline)
-  - [ ] Validation + save/reload workflow
+  - [x] Prometheus endpoints + auth (optional)
+  - [x] Prometheus heartbeat interval + latency settings
+  - [x] Identity mapping (instance/host/node) + label overrides
+  - [x] Refresh policies (room/rack/global)
+  - [x] Cache TTL/dedup policies
+  - [x] UNKNOWN/aggregation policies
+  - [x] Paths (topology/templates/checks)
+  - [x] Feature toggles (notifications, playlist, offline, demo)
+  - [x] Validation + save/reload workflow
   - [ ] Settings UX refinement (help text, guided flows) — deferred to final pass
-- [ ] Refactor simulator (multi-metric, topology-driven, demo-ready)
+- [ ] Refactor simulator (multi-metric, topology-driven, demo-ready):
+  - [ ] Configurable scenarios (profiles + scale factor)
+  - [ ] Topology-driven target generation (instances/racks)
+  - [ ] Multi-metric bundles (node/ipmi/storage/infra)
+  - [ ] Deterministic seeding (repeatable demos)
+  - [ ] Failure injection controls (per metric + per scope)
+  - [ ] Prometheus labels parity (instance/rack/chassis/job)
+  - [ ] Export fixtures in config-examples
 
 ---
 
