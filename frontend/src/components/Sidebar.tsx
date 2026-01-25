@@ -18,7 +18,13 @@ import {
   FileText,
 } from 'lucide-react';
 
-export const Sidebar = ({ collapsed }: { collapsed?: boolean }) => {
+export const Sidebar = ({
+  collapsed,
+  searchQuery = '',
+}: {
+  collapsed?: boolean;
+  searchQuery?: string;
+}) => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
@@ -58,12 +64,89 @@ export const Sidebar = ({ collapsed }: { collapsed?: boolean }) => {
     setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const hasQuery = normalizedQuery.length > 0;
+
+  const rackIdsWithDeviceMatch = useMemo(() => {
+    if (!hasQuery) return new Set<string>();
+    const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
+    const rackIds = new Set<string>();
+
+    for (const site of sites) {
+      for (const room of site.rooms || []) {
+        for (const aisle of room.aisles || []) {
+          for (const rack of aisle.racks || []) {
+            for (const device of rack.devices || []) {
+              if (matches(device.name) || matches(device.id)) {
+                rackIds.add(rack.id);
+              }
+            }
+          }
+        }
+        for (const rack of room.standalone_racks || []) {
+          for (const device of rack.devices || []) {
+            if (matches(device.name) || matches(device.id)) {
+              rackIds.add(rack.id);
+            }
+          }
+        }
+      }
+    }
+
+    return rackIds;
+  }, [hasQuery, normalizedQuery, sites]);
+
   const roomsBySite = useMemo(() => {
     return sites.reduce((acc, site) => {
       acc[site.id] = rooms.filter(room => room.site_id === site.id);
       return acc;
     }, {} as Record<string, RoomSummary[]>);
   }, [rooms, sites]);
+
+  const filteredRoomsBySite = useMemo(() => {
+    if (!hasQuery) return roomsBySite;
+    const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
+
+    return sites.reduce((acc, site) => {
+      const siteMatch = matches(site.name) || matches(site.id);
+      const roomsForSite = roomsBySite[site.id] || [];
+
+      const filteredRooms = roomsForSite
+        .map((room) => {
+          const roomMatch = siteMatch || matches(room.name) || matches(room.id);
+          if (!room.aisles || roomMatch) {
+            return room;
+          }
+
+          const filteredAisles = room.aisles
+            .map((aisle) => {
+              const aisleMatch = roomMatch || matches(aisle.name) || matches(aisle.id);
+              if (aisleMatch) return aisle;
+
+              const filteredRacks = aisle.racks.filter((rack) => {
+                return (
+                  matches(rack.name) ||
+                  matches(rack.id) ||
+                  rackIdsWithDeviceMatch.has(rack.id)
+                );
+              });
+
+              if (filteredRacks.length === 0) return null;
+              return { ...aisle, racks: filteredRacks };
+            })
+            .filter(Boolean) as AisleSummary[];
+
+          if (filteredAisles.length === 0) return null;
+          return { ...room, aisles: filteredAisles };
+        })
+        .filter(Boolean) as RoomSummary[];
+
+      if (filteredRooms.length > 0) {
+        acc[site.id] = filteredRooms;
+      }
+      return acc;
+    }, {} as Record<string, RoomSummary[]>);
+  }, [hasQuery, normalizedQuery, roomsBySite, rackIdsWithDeviceMatch, sites]);
 
   if (collapsed) {
     return (
@@ -89,7 +172,7 @@ export const Sidebar = ({ collapsed }: { collapsed?: boolean }) => {
   return (
     <div className="w-72 h-screen bg-[var(--color-bg-panel)] border-r border-[var(--color-border)] flex flex-col overflow-hidden shrink-0 z-50">
       {/* Branding */}
-      <div className="p-5 border-b border-[var(--color-border)]">
+      <div className="h-20 p-5 border-b border-[var(--color-border)] flex items-center">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-[var(--color-accent)]/20 border border-[var(--color-accent)]/20 flex items-center justify-center">
             <Activity className="w-5 h-5 text-[var(--color-accent)]" />
@@ -118,9 +201,16 @@ export const Sidebar = ({ collapsed }: { collapsed?: boolean }) => {
             <div className="px-3 text-[9px] font-mono uppercase tracking-[0.25em] text-gray-500/70">
               Datacenters
             </div>
-            {sites.map((site) => (
-              <SiteTreeItem key={site.id} site={site} rooms={roomsBySite[site.id] || []} />
-            ))}
+            {sites
+              .filter((site) => (filteredRoomsBySite[site.id] || []).length > 0)
+              .map((site) => (
+                <SiteTreeItem
+                  key={site.id}
+                  site={site}
+                  rooms={filteredRoomsBySite[site.id] || []}
+                  forceExpanded={hasQuery}
+                />
+              ))}
           </div>
         )}
         <div className="h-px bg-[var(--color-border)]/40 my-2"></div>
@@ -254,8 +344,50 @@ const NavItem = ({
   );
 };
 
-const SiteTreeItem = ({ site, rooms }: { site: Site; rooms: RoomSummary[] }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const CollapsedLink = ({
+  to,
+  icon: Icon,
+  label,
+}: {
+  to: string;
+  icon: any;
+  label: string;
+}) => {
+  const location = useLocation();
+  const isActive = location.pathname === to;
+
+  return (
+    <Link
+      to={to}
+      title={label}
+      aria-label={label}
+      className={`h-10 w-10 rounded-xl flex items-center justify-center transition-colors ${
+        isActive
+          ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)] border border-[var(--color-accent)]/30'
+          : 'text-gray-500 hover:text-[var(--color-text-base)] hover:bg-white/5'
+      }`}
+    >
+      <Icon className="w-4 h-4" />
+    </Link>
+  );
+};
+
+const SiteTreeItem = ({
+  site,
+  rooms,
+  forceExpanded = false,
+}: {
+  site: Site;
+  rooms: RoomSummary[];
+  forceExpanded?: boolean;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(forceExpanded);
+
+  useEffect(() => {
+    if (forceExpanded) {
+      setIsExpanded(true);
+    }
+  }, [forceExpanded]);
 
   return (
     <div className="space-y-1">
@@ -278,7 +410,7 @@ const SiteTreeItem = ({ site, rooms }: { site: Site; rooms: RoomSummary[] }) => 
       {isExpanded && (
         <div className="pl-2 ml-3 border-l border-[var(--color-border)] space-y-1 mt-1">
           {rooms.map((room) => (
-            <RoomTreeItem key={room.id} room={room} />
+            <RoomTreeItem key={room.id} room={room} forceExpanded={forceExpanded} />
           ))}
         </div>
       )}
@@ -286,10 +418,22 @@ const SiteTreeItem = ({ site, rooms }: { site: Site; rooms: RoomSummary[] }) => 
   );
 };
 
-const RoomTreeItem = ({ room }: { room: RoomSummary }) => {
+const RoomTreeItem = ({
+  room,
+  forceExpanded = false,
+}: {
+  room: RoomSummary;
+  forceExpanded?: boolean;
+}) => {
   const { roomId } = useParams();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(forceExpanded);
   const isActive = roomId === room.id;
+
+  useEffect(() => {
+    if (forceExpanded) {
+      setIsExpanded(true);
+    }
+  }, [forceExpanded]);
 
   return (
     <div className="space-y-1">
@@ -317,7 +461,7 @@ const RoomTreeItem = ({ room }: { room: RoomSummary }) => {
       {isExpanded && (
         <div className="pl-2 ml-3 border-l border-[var(--color-border)] space-y-1 mt-1">
           {room.aisles?.map(aisle => (
-            <AisleTreeItem key={aisle.id} aisle={aisle} />
+            <AisleTreeItem key={aisle.id} aisle={aisle} forceExpanded={forceExpanded} />
           ))}
         </div>
       )}
@@ -325,8 +469,20 @@ const RoomTreeItem = ({ room }: { room: RoomSummary }) => {
   );
 };
 
-const AisleTreeItem = ({ aisle }: { aisle: AisleSummary }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const AisleTreeItem = ({
+  aisle,
+  forceExpanded = false,
+}: {
+  aisle: AisleSummary;
+  forceExpanded?: boolean;
+}) => {
+  const [isExpanded, setIsExpanded] = useState(forceExpanded);
+
+  useEffect(() => {
+    if (forceExpanded) {
+      setIsExpanded(true);
+    }
+  }, [forceExpanded]);
   
   return (
     <div className="relative">

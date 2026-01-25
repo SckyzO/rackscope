@@ -4,3 +4,8 @@ sites:
   rooms:
   - id: room-a
     name: Room A
+- id: dc2
+  name: Secondary Datacenter
+  rooms:
+  - id: room-b
+    name: Room B
