@@ -1,18 +1,48 @@
 from __future__ import annotations
 
 import os
+import time
+import asyncio
 import httpx
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
 # Default to internal docker network hostname if not set
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
+PROMETHEUS_CACHE_TTL = float(os.getenv("PROMETHEUS_CACHE_TTL", "60"))
 
 class PrometheusClient:
     def __init__(self, base_url: str = PROMETHEUS_URL):
         self.base_url = base_url.rstrip("/")
         self.client = httpx.AsyncClient(timeout=2.0)
+        self.cache_ttl = PROMETHEUS_CACHE_TTL
+        self._cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+        self._in_flight: Dict[str, asyncio.Task] = {}
+        self._lock = asyncio.Lock()
 
     async def query(self, query: str) -> Dict[str, Any]:
+        """Execute a PromQL instant query with simple TTL caching."""
+        now = time.monotonic()
+        async with self._lock:
+            cached = self._cache.get(query)
+            if cached and (now - cached[0]) < self.cache_ttl:
+                return cached[1]
+            task = self._in_flight.get(query)
+            if task is None:
+                task = asyncio.create_task(self._fetch_query(query))
+                self._in_flight[query] = task
+
+        if task is not None:
+            result = await task
+            async with self._lock:
+                if self._in_flight.get(query) is task:
+                    self._in_flight.pop(query, None)
+                if result.get("status") == "success":
+                    self._cache[query] = (time.monotonic(), result)
+            return result
+
+        return {"status": "error", "error": "query scheduling failed"}
+
+    async def _fetch_query(self, query: str) -> Dict[str, Any]:
         """Execute a PromQL instant query."""
         try:
             response = await self.client.get(
