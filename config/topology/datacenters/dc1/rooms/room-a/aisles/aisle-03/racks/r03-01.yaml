@@ -16,53 +16,53 @@ devices:
   name: Mgmt 01
   template_id: bs-x430-service-2u
   u_position: 1
-  nodes:
+  instance:
     1: mngt0
 - id: r03-01-m02
   name: Mgmt 02
   template_id: bs-x430-service-2u
   u_position: 3
-  nodes:
+  instance:
     1: mngt1
 - id: r03-01-s01
   name: Service 01
   template_id: bs-x430-service-2u
   u_position: 5
-  nodes:
+  instance:
     1: service0
 - id: r03-01-s02
   name: Service 02
   template_id: bs-x430-service-2u
   u_position: 7
-  nodes:
+  instance:
     1: service1
 - id: r03-01-l01
   name: Login 01
   template_id: bs-x430-service-2u
   u_position: 9
-  nodes:
+  instance:
     1: login0
 - id: r03-01-l02
   name: Login 02
   template_id: bs-x430-service-2u
   u_position: 11
-  nodes:
+  instance:
     1: login1
 - id: r03-01-l03
   name: Login 03
   template_id: bs-x430-service-2u
   u_position: 13
-  nodes:
+  instance:
     1: login2
 - id: r03-01-l04
   name: Login 04
   template_id: bs-x430-service-2u
   u_position: 15
-  nodes:
+  instance:
     1: login3
 - id: r03-01-l05
   name: Login 05
   template_id: bs-x430-service-2u
   u_position: 17
-  nodes:
+  instance:
     1: login4

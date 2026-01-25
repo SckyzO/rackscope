@@ -15,6 +15,7 @@ export const RoomPage = () => {
   const [viewSide, setViewSide] = useState<'front' | 'rear'>('front');
   const [error, setError] = useState<string | null>(null);
   const [healthMap, setHealthMap] = useState<Record<string, any>>({});
+  const [selectedRackHealth, setSelectedRackHealth] = useState<any>(null);
   const [refreshMs, setRefreshMs] = useState(60000);
 
   useEffect(() => {
@@ -48,28 +49,47 @@ export const RoomPage = () => {
   useEffect(() => {
     if (!room) return;
     const fetchHealth = async () => {
-      const newHealth: Record<string, any> = {};
-      const rackIds = [
-        ...room.aisles.flatMap(a => a.racks.map(r => r.id)),
-        ...room.standalone_racks.map(r => r.id)
-      ];
-      await Promise.all(rackIds.map(async (id) => {
-        try {
-          const data = await api.getRackState(id);
-          newHealth[id] = data;
-        } catch (e) {
-          newHealth[id] = { state: 'UNKNOWN' };
-        }
-      }));
-      setHealthMap(newHealth);
+      try {
+        const data = await api.getRoomState(room.id);
+        setHealthMap(data?.racks || {});
+      } catch (e) {
+        console.error("Failed to fetch room health", e);
+        setHealthMap({});
+      }
     };
     fetchHealth();
     const interval = setInterval(fetchHealth, refreshMs);
     return () => clearInterval(interval);
   }, [room, refreshMs]);
 
-  const selectedMetrics = selectedRack ? healthMap[selectedRack.id]?.metrics : null;
-  const selectedNodesData = selectedRack ? healthMap[selectedRack.id]?.nodes : null;
+  useEffect(() => {
+    if (!selectedRack) {
+      setSelectedRackHealth(null);
+      return;
+    }
+    let active = true;
+    const fetchSelected = async () => {
+      try {
+        const data = await api.getRackState(selectedRack.id);
+        if (active) {
+          setSelectedRackHealth(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch rack health", e);
+        if (active) {
+          setSelectedRackHealth(null);
+        }
+      }
+    };
+    fetchSelected();
+    return () => {
+      active = false;
+    };
+  }, [selectedRack]);
+
+  const selectedMetrics = selectedRackHealth?.metrics || null;
+  const selectedNodesData = selectedRackHealth?.nodes || null;
+  const selectedState = selectedRackHealth?.state || healthMap[selectedRack?.id || ""]?.state;
   const selectedRackTemplate = selectedRack?.template_id ? rackTemplates[selectedRack.template_id] : null;
   const frontInfra = selectedRackTemplate?.infrastructure.front_components?.length
     ? selectedRackTemplate.infrastructure.front_components
@@ -144,7 +164,7 @@ export const RoomPage = () => {
                           </Link>
                           <div className="flex items-center gap-2 mt-1">
                               <span className="text-[10px] font-mono text-gray-500 uppercase px-1.5 py-0.5 border border-white/10 rounded">ID: {selectedRack.id}</span>
-                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${healthMap[selectedRack.id]?.state === 'OK' ? 'bg-status-ok/20 text-status-ok' : healthMap[selectedRack.id]?.state === 'CRIT' ? 'bg-status-crit/20 text-status-crit' : 'bg-gray-800 text-gray-400'}`}>{healthMap[selectedRack.id]?.state}</span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${selectedState === 'OK' ? 'bg-status-ok/20 text-status-ok' : selectedState === 'CRIT' ? 'bg-status-crit/20 text-status-crit' : 'bg-gray-800 text-gray-400'}`}>{selectedState}</span>
                           </div>
                        </div>
                        <div className="flex gap-2">
@@ -163,7 +183,7 @@ export const RoomPage = () => {
                   <RackElevation
                     rack={selectedRack}
                     catalog={catalog}
-                    health={healthMap[selectedRack.id]?.state}
+                    health={selectedState}
                     nodesData={selectedNodesData}
                     isRearView={viewSide === 'rear'}
                     infraComponents={viewSide === 'rear' ? rearInfra : frontInfra}

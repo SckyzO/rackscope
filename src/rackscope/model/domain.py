@@ -11,10 +11,23 @@ class Device(BaseModel):
     name: str = Field(..., description="Human readable label")
     template_id: str = Field(..., description="Reference to a catalog template ID")
     u_position: int = Field(..., description="Bottom U position in the rack")
-    
-    # Mapping of logical nodes to physical slots
-    # Can be a dictionary {slot_num: node_id} or a string "node[1-4]" (parsed later)
-    nodes: Union[Dict[int, str], str] = Field(default_factory=dict)
+
+    # Prometheus identity selector for this device or its nodes.
+    # Can be a dictionary {slot_num: instance_id} or a string "node[1-4]" (parsed later).
+    instance: Union[Dict[int, str], str] = Field(default_factory=dict)
+    # Backward-compat: older configs used "nodes".
+    nodes: Optional[Union[Dict[int, str], str]] = Field(default=None, description="Deprecated; use instance")
+
+    @field_validator("instance", mode="before")
+    @classmethod
+    def prefer_instance(cls, v, info):
+        if v is not None and v != {}:
+            return v
+        data = info.data or {}
+        legacy = data.get("nodes")
+        if legacy is not None:
+            return legacy
+        return v
 
 class Rack(BaseModel):
     id: str = Field(..., description="Unique technical identifier for the rack")

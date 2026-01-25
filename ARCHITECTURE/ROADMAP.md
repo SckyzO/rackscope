@@ -37,10 +37,10 @@ Every line is a task; checked items are done.
 **Goal:** Build a scalable, Prometheus-first telemetry layer.
 
 Telemetry:
-- [ ] Checks library (separate file) with scopes (node/chassis/rack)
-- [ ] PromQL planner (vector queries, no per-node queries)
-- [ ] Cache + dedup + TTL strategy (60s refresh)
-- [ ] UNKNOWN handling + severity aggregation rules
+- [x] Checks library (separate file) with scopes (node/chassis/rack)
+- [x] PromQL planner (vector queries, no per-node queries)
+- [x] Cache + dedup + TTL strategy (60s refresh)
+- [x] UNKNOWN handling + severity aggregation rules
 
 ---
 
@@ -51,7 +51,7 @@ Telemetry:
 - [x] Set refresh defaults to >= 60s (config-driven)
 - [x] Segment topology files by site/room/rack
 - [x] Support multi-DC topology (future world map view)
-- [x] Update View Model spec (nodes, chassis, selectors, scopes)
+- [x] Update View Model spec (instances, chassis, selectors, scopes)
 - [ ] Settings UI (full app configuration — entire app configurable):
   - [ ] Prometheus endpoints + auth (optional)
   - [ ] Identity mapping (instance/host/node) + label overrides

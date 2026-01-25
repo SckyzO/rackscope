@@ -174,6 +174,7 @@ config/topology/
 - Avoid per-device PromQL
 - Prefer vector queries and recording rules (“health series”)
 - Mandatory caching + dedup
+- Planner compiles checks to vector queries using config-driven labels
 
 ===============================================================================
 9. NOTIFICATIONS (UI-LEVEL)

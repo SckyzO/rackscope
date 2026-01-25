@@ -68,7 +68,7 @@ devices:
     name: XH3140 Trio 01
     template_id: bs-xh3140-trio-1u-3n
     u_position: 1
-    nodes: compute[001-003]
+    instance: compute[001-003]  # or a single instance like "esw01"
 ```
 
 `datacenters/dc1/rooms/room-a/standalone_racks/mgmt-01.yaml`

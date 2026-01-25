@@ -12,49 +12,49 @@ devices:
   name: XH3150 Tino 01
   template_id: bs-xh3150-tino-1u-3n
   u_position: 1
-  nodes: compute[051-053]
+  instance: compute[051-053]
 - id: r01-03-c02
   name: XH3150 Tino 02
   template_id: bs-xh3150-tino-1u-3n
   u_position: 2
-  nodes: compute[054-056]
+  instance: compute[054-056]
 - id: r01-03-c03
   name: XH3150 Tino 03
   template_id: bs-xh3150-tino-1u-3n
   u_position: 3
-  nodes: compute[057-059]
+  instance: compute[057-059]
 - id: r01-03-c04
   name: XH3150 Tino 04
   template_id: bs-xh3150-tino-1u-3n
   u_position: 4
-  nodes: compute[060-062]
+  instance: compute[060-062]
 - id: r01-03-c05
   name: XH3150 Tino 05
   template_id: bs-xh3150-tino-1u-3n
   u_position: 5
-  nodes: compute[063-065]
+  instance: compute[063-065]
 - id: r01-03-c06
   name: XH3150 Tino 06
   template_id: bs-xh3150-tino-1u-3n
   u_position: 6
-  nodes: compute[066-068]
+  instance: compute[066-068]
 - id: r01-03-c07
   name: XH3150 Tino 07
   template_id: bs-xh3150-tino-1u-3n
   u_position: 7
-  nodes: compute[069-071]
+  instance: compute[069-071]
 - id: r01-03-c08
   name: XH3150 Tino 08
   template_id: bs-xh3150-tino-1u-3n
   u_position: 8
-  nodes: compute[072-074]
+  instance: compute[072-074]
 - id: r01-03-c09
   name: XH3150 Tino 09
   template_id: bs-xh3150-tino-1u-3n
   u_position: 9
-  nodes: compute[075-077]
+  instance: compute[075-077]
 - id: r01-03-c10
   name: XH3150 Tino 10
   template_id: bs-xh3150-tino-1u-3n
   u_position: 10
-  nodes: compute[078-080]
+  instance: compute[078-080]

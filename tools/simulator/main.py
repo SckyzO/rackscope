@@ -11,10 +11,11 @@ TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology")
 SIMULATOR_CONFIG_PATH = os.getenv("SIMULATOR_CONFIG", "/app/config/simulator.yaml")
 
 # Metrics definition
-NODE_TEMP = Gauge('node_temperature_celsius', 'Ambient temperature of the node', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id'])
-NODE_POWER = Gauge('node_power_watts', 'Power consumption of the node', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id'])
-NODE_HEALTH = Gauge('node_health_status', 'Health status (0=OK, 1=WARN, 2=CRIT)', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id'])
-NODE_LOAD = Gauge('node_load_percent', 'Resource load (CPU/GPU/Switch)', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id'])
+NODE_TEMP = Gauge('node_temperature_celsius', 'Ambient temperature of the node', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
+NODE_POWER = Gauge('node_power_watts', 'Power consumption of the node', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
+NODE_HEALTH = Gauge('node_health_status', 'Health status (0=OK, 1=WARN, 2=CRIT)', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
+NODE_LOAD = Gauge('node_load_percent', 'Resource load (CPU/GPU/Switch)', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
+NODE_UP = Gauge('up', 'Exporter availability', ['job', 'instance'])
 
 def load_yaml(path):
     try:
@@ -91,13 +92,27 @@ def load_topology_nodes(topo_data):
         for room in site.get('rooms', []):
             def process_rack(rack, aisle_id):
                 for device in rack.get('devices', []):
-                    nodes_map = device.get('nodes')
+                    nodes_map = device.get('instance') or device.get('nodes')
                     if isinstance(nodes_map, str): nodes_map = parse_nodeset(nodes_map)
                     if not nodes_map:
-                        targets.append({'site_id': site['id'], 'room_id': room['id'], 'aisle_id': aisle_id, 'rack_id': rack['id'], 'chassis_id': device['id'], 'node_id': device['id']})
+                        targets.append({
+                            'site_id': site['id'],
+                            'room_id': room['id'],
+                            'aisle_id': aisle_id,
+                            'rack_id': rack['id'],
+                            'chassis_id': device['id'],
+                            'node_id': device['id'],
+                        })
                     else:
                         for _, node_id in nodes_map.items():
-                            targets.append({'site_id': site['id'], 'room_id': room['id'], 'aisle_id': aisle_id, 'rack_id': rack['id'], 'chassis_id': device['id'], 'node_id': node_id})
+                            targets.append({
+                                'site_id': site['id'],
+                                'room_id': room['id'],
+                                'aisle_id': aisle_id,
+                                'rack_id': rack['id'],
+                                'chassis_id': device['id'],
+                                'node_id': node_id,
+                            })
             for aisle in room.get('aisles', []):
                 for rack in aisle.get('racks', []): process_rack(rack, aisle['id'])
             for rack in room.get('standalone_racks', []): process_rack(rack, 'standalone')
@@ -139,6 +154,8 @@ def simulate():
 
         for target in targets:
             labels = {k: v for k, v in target.items() if k != 'aisle_id'}
+            labels['instance'] = target['node_id']
+            labels['job'] = 'node'
             nid = target['node_id'].lower()
             aid = target['aisle_id']
             rid = target['rack_id']
@@ -185,6 +202,7 @@ def simulate():
             if is_down or temp > 45: status = 2
             elif temp > 38: status = 1
             NODE_HEALTH.labels(**labels).set(status)
+            NODE_UP.labels(job='node', instance=target['node_id']).set(0 if is_down else 1)
 
         time.sleep(update_interval)
 

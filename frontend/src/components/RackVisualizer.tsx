@@ -4,7 +4,8 @@ import { Server, Box, Zap, Thermometer, Router as RouterIcon, HardDrive, Fan, Po
 import type { Device, DeviceTemplate, Rack } from '../types';
 
 // --- Helpers ---
-export const parseNodeset = (pattern: string | Record<number, string>): Record<number, string> => {
+export const parseNodeset = (pattern?: string | Record<number, string>): Record<number, string> => {
+  if (!pattern) return {};
   if (typeof pattern !== 'string') return pattern;
   const match = pattern.match(/(.+)\[(\d+)-(\d+)\]/);
   if (!match) return { 1: pattern };
@@ -378,7 +379,7 @@ const InfraOverlay = ({ component, hasCollision }: { component: any; hasCollisio
 };
 
 export const DeviceChassis = ({ device, template, rackHealth, nodesData, isRearView, uPosition }: { device: Device, template: DeviceTemplate, rackHealth: string, nodesData?: Record<string, any>, isRearView?: boolean, uPosition: number }) => {
-    const nodeMap = useMemo(() => parseNodeset(device.nodes), [device.nodes]);
+    const nodeMap = useMemo(() => parseNodeset(device.instance || device.nodes), [device.instance, device.nodes]);
     const chassisHealth = useMemo(() => {
         if (!nodesData) return rackHealth;
         const nodeIds = Object.values(nodeMap);

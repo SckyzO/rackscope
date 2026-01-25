@@ -12,12 +12,14 @@ from rackscope.model.checks import ChecksLibrary
 from rackscope.model.config import AppConfig
 from rackscope.model.loader import load_topology, load_catalog, load_checks_library, load_app_config
 from rackscope.telemetry.prometheus import client as prom_client
+from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
 
 # Global state
 TOPOLOGY: Optional[Topology] = None
 CATALOG: Optional[Catalog] = None
 CHECKS_LIBRARY: Optional[ChecksLibrary] = None
 APP_CONFIG: Optional[AppConfig] = None
+PLANNER: Optional[TelemetryPlanner] = None
 
 
 def aggregate_states(states: List[str]) -> str:
@@ -34,6 +36,7 @@ def aggregate_states(states: List[str]) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global TOPOLOGY, CATALOG, CHECKS_LIBRARY, APP_CONFIG
+    global PLANNER
     app_config_path = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
     
     try:
@@ -45,6 +48,17 @@ async def lifespan(app: FastAPI):
             if APP_CONFIG.telemetry.prometheus_url:
                 prom_client.base_url = APP_CONFIG.telemetry.prometheus_url.rstrip("/")
             prom_client.cache_ttl = APP_CONFIG.cache.ttl_seconds
+            PLANNER = TelemetryPlanner(
+                PlannerConfig(
+                    identity_label=APP_CONFIG.telemetry.identity_label,
+                    rack_label=APP_CONFIG.telemetry.rack_label,
+                    chassis_label=APP_CONFIG.telemetry.chassis_label,
+                    job_regex=APP_CONFIG.telemetry.job_regex,
+                    unknown_state=APP_CONFIG.planner.unknown_state,
+                    cache_ttl_seconds=APP_CONFIG.planner.cache_ttl_seconds,
+                    max_ids_per_query=APP_CONFIG.planner.max_ids_per_query,
+                )
+            )
         else:
             config_dir = os.getenv("RACKSCOPE_CONFIG_DIR", "config")
             config_path = os.getenv("RACKSCOPE_CONFIG", os.path.join(config_dir, "topology", "topology.yaml"))
@@ -54,6 +68,7 @@ async def lifespan(app: FastAPI):
             CATALOG = load_catalog(templates_dir)
             CHECKS_LIBRARY = load_checks_library(checks_path)
             APP_CONFIG = None
+            PLANNER = TelemetryPlanner()
         print(f"Loaded topology with {len(TOPOLOGY.sites)} sites")
         print(f"Loaded catalog with {len(CATALOG.device_templates)} devices and {len(CATALOG.rack_templates)} racks")
         print(f"Loaded checks library with {len(CHECKS_LIBRARY.checks)} checks")
@@ -63,6 +78,7 @@ async def lifespan(app: FastAPI):
         CATALOG = Catalog()
         CHECKS_LIBRARY = ChecksLibrary()
         APP_CONFIG = None
+        PLANNER = TelemetryPlanner()
     yield
 
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
@@ -87,7 +103,16 @@ def get_app_config():
         "paths": {},
         "refresh": {"room_state_seconds": 60, "rack_state_seconds": 60},
         "cache": {"ttl_seconds": 60},
-        "telemetry": {"prometheus_url": None},
+        "telemetry": {
+            "prometheus_url": None,
+            "identity_label": "instance",
+            "rack_label": "rack_id",
+            "chassis_label": "chassis_id",
+        },
+        "planner": {
+            "unknown_state": "UNKNOWN",
+            "cache_ttl_seconds": 60,
+        },
     }
 
 @app.get("/api/sites", response_model=List[Site])
@@ -195,8 +220,10 @@ async def get_global_stats():
 
 @app.get("/api/rooms/{room_id}/state")
 async def get_room_state(room_id: str):
-    # Get aggregated health for all racks (efficient query)
-    rack_healths = await prom_client.get_rack_health_summary()
+    if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
+        return {"room_id": room_id, "state": "UNKNOWN", "racks": {}}
+    snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY)
+    rack_healths = snapshot.rack_states
     
     room_status = "OK"
     rack_ids = []
@@ -216,11 +243,14 @@ async def get_room_state(room_id: str):
         if h == "WARN" and room_status != "CRIT":
             room_status = "WARN"
 
-    return {"room_id": room_id, "state": room_status}
+    racks_out = {rid: {"state": rack_healths.get(rid, "UNKNOWN")} for rid in rack_ids}
+    return {"room_id": room_id, "state": room_status, "racks": racks_out}
 
 @app.get("/api/racks/{rack_id}/state")
 async def get_rack_state(rack_id: str):
-    # Fetch all node metrics for this rack
+    if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
+        return {"rack_id": rack_id, "state": "UNKNOWN", "metrics": {}, "nodes": {}}
+    snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY)
     nodes_metrics = await prom_client.get_node_metrics(rack_id)
     
     # Calculate Node States and Aggregate Rack State
@@ -242,13 +272,7 @@ async def get_rack_state(rack_id: str):
             total_temp += temp
             temp_count += 1
         
-        state = "UNKNOWN"
-        if temp is not None and temp > 0:
-            state = "OK"
-            if temp > 35:
-                state = "CRIT"
-            elif temp > 30:
-                state = "WARN"
+        state = snapshot.node_states.get(node_id, "UNKNOWN")
         
         node_states.append(state)
         processed_nodes[node_id] = {
@@ -257,7 +281,7 @@ async def get_rack_state(rack_id: str):
             "power": power if power is not None else 0
         }
     
-    rack_state = aggregate_states(node_states)
+    rack_state = snapshot.rack_states.get(rack_id, aggregate_states(node_states))
     
     avg_temp = total_temp / temp_count if temp_count > 0 else 0
 

@@ -12,49 +12,49 @@ devices:
   name: XH3406 Mana 01
   template_id: bs-xh3406-mana-1u-3n
   u_position: 1
-  nodes: compute[081-083]
+  instance: compute[081-083]
 - id: r01-04-c02
   name: XH3406 Mana 02
   template_id: bs-xh3406-mana-1u-3n
   u_position: 2
-  nodes: compute[084-086]
+  instance: compute[084-086]
 - id: r01-04-c03
   name: XH3406 Mana 03
   template_id: bs-xh3406-mana-1u-3n
   u_position: 3
-  nodes: compute[087-089]
+  instance: compute[087-089]
 - id: r01-04-c04
   name: XH3406 Mana 04
   template_id: bs-xh3406-mana-1u-3n
   u_position: 4
-  nodes: compute[090-092]
+  instance: compute[090-092]
 - id: r01-04-c05
   name: XH3406 Mana 05
   template_id: bs-xh3406-mana-1u-3n
   u_position: 5
-  nodes: compute[093-095]
+  instance: compute[093-095]
 - id: r01-04-c06
   name: XH3406 Mana 06
   template_id: bs-xh3406-mana-1u-3n
   u_position: 6
-  nodes: compute[096-098]
+  instance: compute[096-098]
 - id: r01-04-c07
   name: XH3406 Mana 07
   template_id: bs-xh3406-mana-1u-3n
   u_position: 7
-  nodes: compute[099-101]
+  instance: compute[099-101]
 - id: r01-04-c08
   name: XH3406 Mana 08
   template_id: bs-xh3406-mana-1u-3n
   u_position: 8
-  nodes: compute[102-104]
+  instance: compute[102-104]
 - id: r01-04-c09
   name: XH3406 Mana 09
   template_id: bs-xh3406-mana-1u-3n
   u_position: 9
-  nodes: compute[105-107]
+  instance: compute[105-107]
 - id: r01-04-c10
   name: XH3406 Mana 10
   template_id: bs-xh3406-mana-1u-3n
   u_position: 10
-  nodes: compute[108-110]
+  instance: compute[108-110]

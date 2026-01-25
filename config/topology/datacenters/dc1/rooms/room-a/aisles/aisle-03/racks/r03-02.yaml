@@ -16,35 +16,35 @@ devices:
   name: Visu 01
   template_id: bs-x450-visu-4u
   u_position: 1
-  nodes:
+  instance:
     1: visu0
 - id: r03-02-v02
   name: Visu 02
   template_id: bs-x450-visu-4u
   u_position: 5
-  nodes:
+  instance:
     1: visu1
 - id: r03-02-v03
   name: Visu 03
   template_id: bs-x450-visu-4u
   u_position: 9
-  nodes:
+  instance:
     1: visu2
 - id: r03-02-v04
   name: Visu 04
   template_id: bs-x450-visu-4u
   u_position: 13
-  nodes:
+  instance:
     1: visu3
 - id: r03-02-v05
   name: Visu 05
   template_id: bs-x450-visu-4u
   u_position: 17
-  nodes:
+  instance:
     1: visu4
 - id: r03-02-v06
   name: Visu 06
   template_id: bs-x450-visu-4u
   u_position: 21
-  nodes:
+  instance:
     1: visu5

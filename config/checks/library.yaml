@@ -3,7 +3,7 @@ kinds:
     - id: node_up
       name: Node reachable
       scope: node
-      expr: up{job="node", instance=~"$instances"}
+      expr: up{job=~"$jobs", instance=~"$instances"}
       output: bool
       selectors: ["instance"]
       rules:
