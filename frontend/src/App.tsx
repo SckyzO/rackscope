@@ -1,18 +1,28 @@
 import { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { NotificationHeader } from './components/NotificationHeader';
 import { RoomPage } from './pages/RoomPage';
 import { RackPage } from './pages/RackPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { api } from './services/api';
-import type { RoomSummary } from './types';
-import { Activity, Zap, Thermometer, AlertTriangle, Map as MapIcon, ArrowUpRight } from 'lucide-react';
+import type { RoomSummary, Site } from './types';
+import { Activity, Zap, Thermometer, AlertTriangle, Map as MapIcon, ArrowUpRight, Search, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 // Layout global
-const Layout = ({ children }: { children: React.ReactNode }) => {
+const Layout = ({
+  children,
+  searchQuery,
+  onSearchChange,
+}: {
+  children: React.ReactNode;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
+}) => {
   const [stale, setStale] = useState(api.isStale());
   const [lastSyncText, setLastSyncText] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -45,30 +55,54 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="flex h-screen bg-rack-dark text-gray-100 overflow-hidden font-sans">
-      <Sidebar />
+      <Sidebar collapsed={sidebarCollapsed} searchQuery={searchQuery} />
       <main className="flex-1 overflow-hidden relative bg-[var(--color-bg-base)] text-[var(--color-text-base)]">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(128,128,128,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(128,128,128,0.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
-        <header className="h-14 px-6 border-b border-[var(--color-border)] bg-[var(--color-bg-panel)]/70 backdrop-blur-xl flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-status-ok shadow-[0_0_8px_var(--color-status-ok)]"></div>
-              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">RackScope</span>
+        <header className="h-20 px-5 border-b border-[var(--color-border)] bg-[var(--color-bg-panel)]/80 backdrop-blur-xl flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-4 min-w-[240px]">
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(prev => !prev)}
+              className="h-9 w-9 rounded-xl border border-[var(--color-border)] bg-black/30 flex items-center justify-center text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30 transition-colors"
+              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            </button>
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[#0b1f3a] border border-white/10 flex items-center justify-center shadow-[0_0_16px_rgba(59,130,246,0.35)]">
+              <Activity className="w-5 h-5 text-white" />
             </div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">Wallboard</div>
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">RackScope</div>
+              <div className="flex items-center gap-2 mt-1">
+                <div className={`w-2 h-2 rounded-full ${stale ? 'bg-status-crit' : 'bg-status-ok'} shadow-[0_0_8px_var(--color-status-ok)]`}></div>
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">{stale ? 'Stale' : 'Live'}</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {stale ? (
-              <div className="text-[10px] font-mono uppercase tracking-widest text-status-crit">Stale</div>
-            ) : (
-              <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">Live</div>
-            )}
+          <div className="flex-1 px-6 max-w-[700px]">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => onSearchChange(event.target.value)}
+                placeholder="Search datacenter / room / rack / device"
+                className="w-full h-12 pl-11 pr-4 rounded-xl bg-black/30 border border-[var(--color-border)] text-[13px] text-gray-300 placeholder:text-gray-500 focus:outline-none focus:border-[var(--color-accent)]/50"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-3 min-w-[240px] justify-end">
             <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">
               Last sync: {lastSyncText || '--'}
             </div>
             <NotificationHeader />
+            <Link to="/settings" className="h-9 w-9 rounded-xl border border-[var(--color-border)] bg-black/30 flex items-center justify-center text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30 transition-colors">
+              <Settings className="w-4 h-4" />
+            </Link>
           </div>
         </header>
-        <div className="h-[calc(100%-3.5rem)]">
+        <div className="h-[calc(100%-5rem)]">
           {children}
         </div>
       </main>
@@ -81,24 +115,55 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
  * 
  * Central monitoring hub providing a high-level view of the entire infrastructure.
  */
-const Dashboard = () => {
+const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [roomStates, setRoomStates] = useState<Record<string, any>>({});
   const [globalStats, setGlobalStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
+  const [refreshMs, setRefreshMs] = useState(60000);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const hasQuery = normalizedQuery.length > 0;
+
+  useEffect(() => {
+    let active = true;
+    const loadConfig = async () => {
+      try {
+        const configData = await api.getConfig();
+        const nextRefresh = Number(configData?.refresh?.room_state_seconds) || 60;
+        if (active) {
+          setRefreshMs(Math.max(60000, nextRefresh * 1000));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    loadConfig();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [roomsData, stats] = await Promise.all([
+        const [roomsData, stats, sitesData] = await Promise.all([
             api.getRooms(),
-            api.getGlobalStats()
+            api.getGlobalStats(),
+            api.getSites()
         ]);
-        setRooms(roomsData);
+        const safeRooms = Array.isArray(roomsData) ? roomsData : [];
+        const safeSites = Array.isArray(sitesData) ? sitesData : [];
+        setRooms(safeRooms);
         setGlobalStats(stats);
+        setSites(safeSites);
+        if (!selectedSiteId && safeSites.length > 0) {
+          setSelectedSiteId(safeSites[0].id);
+        }
         
         const states: Record<string, any> = {};
-        await Promise.all(roomsData.map(async (r) => {
+        await Promise.all(safeRooms.map(async (r) => {
             try {
                 const s = await api.getRoomState(r.id);
                 states[r.id] = s;
@@ -114,11 +179,68 @@ const Dashboard = () => {
       }
     };
     fetchData();
-    const interval = setInterval(fetchData, 60000); // 1 minute refresh
+    const interval = setInterval(fetchData, refreshMs);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshMs]);
 
   if (loading) return <div className="p-12 font-mono animate-pulse text-blue-500">LDR :: AGGREGATING_GLOBAL_METRICS...</div>;
+
+  const matchingRoomIds = useMemo(() => {
+    if (!hasQuery) return null;
+    const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
+    const matched = new Set<string>();
+
+    for (const site of sites) {
+      const siteMatch = matches(site.name) || matches(site.id);
+      for (const room of site.rooms || []) {
+        const roomMatch = siteMatch || matches(room.name) || matches(room.id);
+        if (roomMatch) {
+          matched.add(room.id);
+          continue;
+        }
+        for (const aisle of room.aisles || []) {
+          const aisleMatch = matches(aisle.name) || matches(aisle.id);
+          if (aisleMatch) {
+            matched.add(room.id);
+            break;
+          }
+          for (const rack of aisle.racks || []) {
+            const rackMatch = matches(rack.name) || matches(rack.id);
+            if (rackMatch) {
+              matched.add(room.id);
+              break;
+            }
+            for (const device of rack.devices || []) {
+              if (matches(device.name) || matches(device.id)) {
+                matched.add(room.id);
+                break;
+              }
+            }
+          }
+        }
+        for (const rack of room.standalone_racks || []) {
+          if (matches(rack.name) || matches(rack.id)) {
+            matched.add(room.id);
+            continue;
+          }
+          for (const device of rack.devices || []) {
+            if (matches(device.name) || matches(device.id)) {
+              matched.add(room.id);
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    return matched;
+  }, [hasQuery, normalizedQuery, sites]);
+
+  const filteredRooms = rooms.filter((room) => {
+    if (selectedSiteId && room.site_id !== selectedSiteId) return false;
+    if (!matchingRoomIds) return true;
+    return matchingRoomIds.has(room.id);
+  });
 
   return (
     <div className="p-12 h-full overflow-y-auto custom-scrollbar">
@@ -159,10 +281,29 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Site Selector */}
+      {sites.length > 1 && (
+        <div className="mb-8 flex flex-wrap gap-2">
+          {sites.map((site) => (
+            <button
+              key={site.id}
+              onClick={() => setSelectedSiteId(site.id)}
+              className={`px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-widest border transition-colors ${
+                selectedSiteId === site.id
+                  ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)] border-[var(--color-accent)]/30'
+                  : 'bg-transparent text-gray-500 border-[var(--color-border)] hover:text-[var(--color-text-base)]'
+              }`}
+            >
+              {site.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Room Grid */}
       <h2 className="text-xs font-bold text-gray-600 uppercase tracking-[0.4em] mb-6 border-b border-white/5 pb-2">Datacenter Locations</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {rooms.map(room => (
+        {filteredRooms.map(room => (
             <Link 
                 key={room.id} 
                 to={`/room/${room.id}`}
@@ -209,16 +350,20 @@ const Dashboard = () => {
 };
 
 function App() {
+  const [searchQuery, setSearchQuery] = useState('');
+
   return (
     <BrowserRouter>
-      <Layout>
-        <Routes>
-           <Route path="/" element={<Dashboard />} />
-           <Route path="/room/:roomId" element={<RoomPage />} />
-           <Route path="/rack/:rackId" element={<RackPage />} />
-           <Route path="/settings" element={<SettingsPage />} />
-        </Routes>
-      </Layout>
+      <ErrorBoundary>
+        <Layout searchQuery={searchQuery} onSearchChange={setSearchQuery}>
+          <Routes>
+            <Route path="/" element={<Dashboard searchQuery={searchQuery} />} />
+            <Route path="/room/:roomId" element={<RoomPage />} />
+            <Route path="/rack/:rackId" element={<RackPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Routes>
+        </Layout>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

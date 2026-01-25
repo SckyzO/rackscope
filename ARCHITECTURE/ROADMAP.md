@@ -47,11 +47,11 @@ Telemetry:
 ## Phase 4 — Config & Segmentation (Priority)
 **Goal:** Make topology and config scalable for large DCs.
 
-- [ ] Add `config.yaml` (global config: paths, identity label, refresh/caches)
-- [ ] Set refresh defaults to >= 60s (config-driven)
-- [ ] Segment topology files by site/room/rack
-- [ ] Support multi-DC topology (future world map view)
-- [ ] Update View Model spec (nodes, chassis, selectors, scopes)
+- [x] Add `config.yaml` (global config: paths, identity label, refresh/caches)
+- [x] Set refresh defaults to >= 60s (config-driven)
+- [x] Segment topology files by site/room/rack
+- [x] Support multi-DC topology (future world map view)
+- [x] Update View Model spec (nodes, chassis, selectors, scopes)
 - [ ] Settings UI (full app configuration — entire app configurable):
   - [ ] Prometheus endpoints + auth (optional)
   - [ ] Identity mapping (instance/host/node) + label overrides
@@ -75,6 +75,9 @@ Telemetry:
 - [ ] Active infrastructure:
   - [ ] connect HMC/PMC to real Prometheus metrics
   - [ ] add gauges/charts for infra components
+- [ ] Global search UX:
+  - [ ] searchable datacenter/room/aisle/rack/device names
+  - [ ] highlight matches + keep hierarchy context
 
 ---
 
