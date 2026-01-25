@@ -17,6 +17,18 @@ TOPOLOGY: Optional[Topology] = None
 CATALOG: Optional[Catalog] = None
 CHECKS_LIBRARY: Optional[ChecksLibrary] = None
 
+
+def aggregate_states(states: List[str]) -> str:
+    if not states:
+        return "UNKNOWN"
+    if "CRIT" in states:
+        return "CRIT"
+    if "WARN" in states:
+        return "WARN"
+    if "UNKNOWN" in states:
+        return "UNKNOWN"
+    return "OK"
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global TOPOLOGY, CATALOG, CHECKS_LIBRARY
@@ -196,39 +208,31 @@ async def get_rack_state(rack_id: str):
     node_states = []
     
     for node_id, m in nodes_metrics.items():
-        temp = m.get("temperature", 0)
-        power = m.get("power", 0)
+        temp = m.get("temperature")
+        power = m.get("power")
         
-        total_power += power
-        if temp > 0:
+        if power is not None:
+            total_power += power
+        if temp is not None and temp > 0:
             total_temp += temp
             temp_count += 1
         
-        state = "OK"
-        if temp > 35:
-            state = "CRIT"
-        elif temp > 30:
-            state = "WARN"
+        state = "UNKNOWN"
+        if temp is not None and temp > 0:
+            state = "OK"
+            if temp > 35:
+                state = "CRIT"
+            elif temp > 30:
+                state = "WARN"
         
         node_states.append(state)
         processed_nodes[node_id] = {
             "state": state,
-            "temperature": temp,
-            "power": power
+            "temperature": temp if temp is not None else 0,
+            "power": power if power is not None else 0
         }
     
-    # Aggregation Logic:
-    # - CRIT only if 100% nodes are CRIT
-    # - WARN if > 0 nodes are NOT OK
-    rack_state = "OK"
-    if node_states:
-        crit_count = node_states.count("CRIT")
-        warn_count = node_states.count("WARN")
-        
-        if crit_count == len(node_states):
-            rack_state = "CRIT"
-        elif crit_count > 0 or warn_count > 0:
-            rack_state = "WARN"
+    rack_state = aggregate_states(node_states)
     
     avg_temp = total_temp / temp_count if temp_count > 0 else 0
 
