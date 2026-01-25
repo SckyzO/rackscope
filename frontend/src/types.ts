@@ -95,3 +95,21 @@ export interface RackTemplate {
     rear_components?: InfrastructureComponent[];
   };
 }
+
+export interface AppConfig {
+  paths: {
+    topology?: string;
+    templates?: string;
+    checks?: string;
+  };
+  refresh: {
+    room_state_seconds: number;
+    rack_state_seconds: number;
+  };
+  cache: {
+    ttl_seconds: number;
+  };
+  telemetry: {
+    prometheus_url?: string | null;
+  };
+}

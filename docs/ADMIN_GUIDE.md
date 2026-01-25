@@ -4,7 +4,7 @@ How to configure Rackscope topology and templates.
 
 ## Configuration Structure
 
-All configuration resides in YAML files. The default location is `config-examples/`.
+All configuration resides in YAML files. The default location is `config/`.
 
 ### 1. Defining Hardware Templates
 

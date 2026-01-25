@@ -195,7 +195,7 @@ def main():
     parser.add_argument(
         "-o",
         "--output",
-        default="config-examples/topology.yaml",
+        default="config/topology/topology.yaml",
         help="Output path for the generated topology YAML.",
     )
     args = parser.parse_args()

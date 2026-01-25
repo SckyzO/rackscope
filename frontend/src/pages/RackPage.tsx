@@ -23,6 +23,7 @@ export const RackPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [healthData, setHealthData] = useState<any>(null);
+  const [refreshMs, setRefreshMs] = useState(60000);
 
   // 1. Fetch Rack Details & Catalog
   useEffect(() => {
@@ -30,9 +31,10 @@ export const RackPage = () => {
       if (!rackId) return;
       setLoading(true);
       try {
-        const [rackData, catalogData] = await Promise.all([
+        const [rackData, catalogData, configData] = await Promise.all([
           api.getRack(rackId),
-          api.getCatalog()
+          api.getCatalog(),
+          api.getConfig()
         ]);
         
         setRack(rackData);
@@ -47,6 +49,8 @@ export const RackPage = () => {
             const template = rackCat.find((t: RackTemplate) => t.id === rackData.template_id);
             setRackTemplate(template || null);
         }
+        const nextRefresh = Number(configData?.refresh?.rack_state_seconds) || 60;
+        setRefreshMs(Math.max(60000, nextRefresh * 1000));
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -68,9 +72,9 @@ export const RackPage = () => {
       }
     };
     fetchHealth();
-    const interval = setInterval(fetchHealth, 5000);
+    const interval = setInterval(fetchHealth, refreshMs);
     return () => clearInterval(interval);
-  }, [rackId]);
+  }, [rackId, refreshMs]);
 
   if (loading) return <div className="p-12 font-mono animate-pulse text-blue-500">LDR :: ANALYZING_RACK_STRUCTURE...</div>;
   if (error || !rack) return <div className="p-12 text-status-crit font-mono">ERR :: {error || 'RACK_NOT_FOUND'}</div>;

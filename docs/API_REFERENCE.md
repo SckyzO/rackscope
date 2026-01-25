@@ -67,6 +67,9 @@ Retrieve all available hardware templates (devices and racks).
 #### `GET /api/checks`
 Retrieve the checks library (built-in monitoring checks).
 
+#### `GET /api/config`
+Retrieve the app configuration (paths, refresh, cache, telemetry).
+
 ---
 
 ## Development

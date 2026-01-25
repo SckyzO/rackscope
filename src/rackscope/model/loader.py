@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from rackscope.model.domain import Topology
 from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
 from rackscope.model.checks import ChecksLibrary, CheckDefinition
+from rackscope.model.config import AppConfig
 
 # ... (keep exceptions)
 
@@ -104,3 +105,24 @@ def load_checks_library(path: Union[str, Path]) -> ChecksLibrary:
             print(f"Warning: Failed to load check in {path}: {e}")
 
     return library
+
+
+def load_app_config(path: Union[str, Path]) -> AppConfig:
+    """Load and validate app config from a YAML file."""
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"Config file not found: {path}")
+
+    try:
+        with path.open("r") as f:
+            data = yaml.safe_load(f)
+    except yaml.YAMLError as e:
+        raise InvalidFormatError(f"Error parsing YAML file {path}: {e}")
+
+    if data is None:
+        raise InvalidFormatError(f"Config file is empty: {path}")
+
+    try:
+        return AppConfig(**data)
+    except ValidationError as e:
+        raise InvalidFormatError(f"Validation failed for {path}:\n{e}")

@@ -16,7 +16,7 @@ Rackscope is a **Physical Infrastructure Monitoring** dashboard designed for Hig
 - **Role**: API Gateway, Topology Loader, Telemetry Aggregator.
 - **Key Modules**:
     - `model/`: Pydantic models for the domain (Rack, Device, Template).
-    - `loader.py`: Recursively loads YAML configuration from `config-examples/`.
+    - `loader.py`: Recursively loads YAML configuration from `config/`.
     - `telemetry/`: Async Prometheus client using `httpx`.
     - `api/`: REST endpoints served by Uvicorn.
 

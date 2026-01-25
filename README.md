@@ -43,8 +43,8 @@ Rackscope bridges the gap between physical layout (Racks, Chassis, Cables) and l
 
 ## 🛠️ Configuration
 
-Topologies are defined in `config-examples/topology.yaml`.
-Hardware templates are organized in `config-examples/templates/`.
+Topologies are defined in `config/topology/topology.yaml`.
+Hardware templates are organized in `config/templates/`.
 
 Example Rack Definition:
 ```yaml

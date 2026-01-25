@@ -1,0 +1,14 @@
+paths:
+  topology: config/topology/topology.yaml
+  templates: config/templates
+  checks: config/checks/library.yaml
+
+refresh:
+  room_state_seconds: 60
+  rack_state_seconds: 60
+
+cache:
+  ttl_seconds: 60
+
+telemetry:
+  prometheus_url: http://prometheus:9090

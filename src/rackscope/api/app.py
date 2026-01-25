@@ -9,13 +9,15 @@ from fastapi import FastAPI, HTTPException
 from rackscope.model.domain import Room, Site, Topology, Rack
 from rackscope.model.catalog import Catalog
 from rackscope.model.checks import ChecksLibrary
-from rackscope.model.loader import load_topology, load_catalog, load_checks_library
+from rackscope.model.config import AppConfig
+from rackscope.model.loader import load_topology, load_catalog, load_checks_library, load_app_config
 from rackscope.telemetry.prometheus import client as prom_client
 
 # Global state
 TOPOLOGY: Optional[Topology] = None
 CATALOG: Optional[Catalog] = None
 CHECKS_LIBRARY: Optional[ChecksLibrary] = None
+APP_CONFIG: Optional[AppConfig] = None
 
 
 def aggregate_states(states: List[str]) -> str:
@@ -31,16 +33,27 @@ def aggregate_states(states: List[str]) -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global TOPOLOGY, CATALOG, CHECKS_LIBRARY
-    config_path = os.getenv("RACKSCOPE_CONFIG", "config-examples/topology.yaml")
-    templates_dir = os.path.dirname(config_path) + "/templates"
-    default_checks_path = os.path.join(os.path.dirname(config_path), "checks", "library.yaml")
-    checks_path = os.getenv("RACKSCOPE_CHECKS", default_checks_path)
+    global TOPOLOGY, CATALOG, CHECKS_LIBRARY, APP_CONFIG
+    app_config_path = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
     
     try:
-        TOPOLOGY = load_topology(config_path)
-        CATALOG = load_catalog(templates_dir)
-        CHECKS_LIBRARY = load_checks_library(checks_path)
+        if os.path.exists(app_config_path):
+            APP_CONFIG = load_app_config(app_config_path)
+            TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+            CATALOG = load_catalog(APP_CONFIG.paths.templates)
+            CHECKS_LIBRARY = load_checks_library(APP_CONFIG.paths.checks)
+            if APP_CONFIG.telemetry.prometheus_url:
+                prom_client.base_url = APP_CONFIG.telemetry.prometheus_url.rstrip("/")
+            prom_client.cache_ttl = APP_CONFIG.cache.ttl_seconds
+        else:
+            config_dir = os.getenv("RACKSCOPE_CONFIG_DIR", "config")
+            config_path = os.getenv("RACKSCOPE_CONFIG", os.path.join(config_dir, "topology", "topology.yaml"))
+            templates_dir = os.getenv("RACKSCOPE_TEMPLATES", os.path.join(config_dir, "templates"))
+            checks_path = os.getenv("RACKSCOPE_CHECKS", os.path.join(config_dir, "checks", "library.yaml"))
+            TOPOLOGY = load_topology(config_path)
+            CATALOG = load_catalog(templates_dir)
+            CHECKS_LIBRARY = load_checks_library(checks_path)
+            APP_CONFIG = None
         print(f"Loaded topology with {len(TOPOLOGY.sites)} sites")
         print(f"Loaded catalog with {len(CATALOG.device_templates)} devices and {len(CATALOG.rack_templates)} racks")
         print(f"Loaded checks library with {len(CHECKS_LIBRARY.checks)} checks")
@@ -49,6 +62,7 @@ async def lifespan(app: FastAPI):
         TOPOLOGY = Topology()
         CATALOG = Catalog()
         CHECKS_LIBRARY = ChecksLibrary()
+        APP_CONFIG = None
     yield
 
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
@@ -64,6 +78,17 @@ def get_catalog():
 @app.get("/api/checks")
 def get_checks_library():
     return CHECKS_LIBRARY if CHECKS_LIBRARY else {"checks": []}
+
+@app.get("/api/config")
+def get_app_config():
+    if APP_CONFIG:
+        return APP_CONFIG
+    return {
+        "paths": {},
+        "refresh": {"room_state_seconds": 60, "rack_state_seconds": 60},
+        "cache": {"ttl_seconds": 60},
+        "telemetry": {"prometheus_url": None},
+    }
 
 @app.get("/api/sites", response_model=List[Site])
 def get_sites():

@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -e '.[dev]'
 
 # Copy source code
 COPY src/ src/
-COPY config-examples/ config-examples/
+COPY config/ config/
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1

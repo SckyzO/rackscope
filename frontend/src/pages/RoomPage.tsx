@@ -15,15 +15,17 @@ export const RoomPage = () => {
   const [viewSide, setViewSide] = useState<'front' | 'rear'>('front');
   const [error, setError] = useState<string | null>(null);
   const [healthMap, setHealthMap] = useState<Record<string, any>>({});
+  const [refreshMs, setRefreshMs] = useState(60000);
 
   useEffect(() => {
     const init = async () => {
       if (!roomId) return;
       setLoading(true);
       try {
-        const [roomData, catalogData] = await Promise.all([
+        const [roomData, catalogData, configData] = await Promise.all([
           api.getRoomLayout(roomId),
-          api.getCatalog()
+          api.getCatalog(),
+          api.getConfig()
         ]);
         setRoom(roomData);
         const deviceTemplates = (catalogData as any).device_templates || [];
@@ -32,6 +34,8 @@ export const RoomPage = () => {
         setCatalog(catMap);
         const rackMap = rackTemplates.reduce((acc: any, t: RackTemplate) => ({ ...acc, [t.id]: t }), {});
         setRackTemplates(rackMap);
+        const nextRefresh = Number(configData?.refresh?.room_state_seconds) || 60;
+        setRefreshMs(Math.max(60000, nextRefresh * 1000));
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -60,9 +64,9 @@ export const RoomPage = () => {
       setHealthMap(newHealth);
     };
     fetchHealth();
-    const interval = setInterval(fetchHealth, 5000);
+    const interval = setInterval(fetchHealth, refreshMs);
     return () => clearInterval(interval);
-  }, [room]);
+  }, [room, refreshMs]);
 
   const selectedMetrics = selectedRack ? healthMap[selectedRack.id]?.metrics : null;
   const selectedNodesData = selectedRack ? healthMap[selectedRack.id]?.nodes : null;

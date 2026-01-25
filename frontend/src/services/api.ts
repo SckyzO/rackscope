@@ -1,4 +1,4 @@
-import type { Site, Room, RoomSummary, DeviceTemplate, Rack } from '../types';
+import type { Site, Room, RoomSummary, DeviceTemplate, Rack, AppConfig } from '../types';
 
 const CACHE_PREFIX = 'rackscope.cache.';
 const META_KEY = 'rackscope.cache.meta';
@@ -83,6 +83,9 @@ export const api = {
   },
   getRackState: async (rackId: string) => {
     return fetchWithCache(`/api/racks/${rackId}/state`, `rack.state.${rackId}`);
+  },
+  getConfig: async (): Promise<AppConfig> => {
+    return fetchWithCache('/api/config', 'app.config');
   },
   getLastSuccessTs: () => {
     const meta = readJSON(META_KEY);
