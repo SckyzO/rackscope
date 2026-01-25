@@ -1,0 +1,60 @@
+id: r01-01
+name: Rack XH3000 Compute 01
+template_id: bull-xh3000
+aisle_id: aisle-01
+u_height: 42
+devices:
+- id: r01-01-ib
+  name: IB Switch XH35MQ
+  template_id: bs-xh35mq-ib-1u
+  u_position: 12
+- id: r01-01-c01
+  name: XH3140 Trio 01
+  template_id: bs-xh3140-trio-1u-3n
+  u_position: 1
+  nodes: compute[001-003]
+- id: r01-01-c02
+  name: XH3140 Trio 02
+  template_id: bs-xh3140-trio-1u-3n
+  u_position: 2
+  nodes: compute[004-006]
+- id: r01-01-c03
+  name: XH3140 Trio 03
+  template_id: bs-xh3140-trio-1u-3n
+  u_position: 3
+  nodes: compute[007-009]
+- id: r01-01-c04
+  name: XH3140 Trio 04
+  template_id: bs-xh3140-trio-1u-3n
+  u_position: 4
+  nodes: compute[010-012]
+- id: r01-01-c05
+  name: XH3140 Trio 05
+  template_id: bs-xh3140-trio-1u-3n
+  u_position: 5
+  nodes: compute[013-015]
+- id: r01-01-c06
+  name: XH3140 Trio 06
+  template_id: bs-xh3140-trio-1u-3n
+  u_position: 6
+  nodes: compute[016-018]
+- id: r01-01-c07
+  name: XH3140 Trio 07
+  template_id: bs-xh3140-trio-1u-3n
+  u_position: 7
+  nodes: compute[019-021]
+- id: r01-01-c08
+  name: XH3140 Trio 08
+  template_id: bs-xh3140-trio-1u-3n
+  u_position: 8
+  nodes: compute[022-024]
+- id: r01-01-c09
+  name: XH3140 Trio 09
+  template_id: bs-xh3140-trio-1u-3n
+  u_position: 9
+  nodes: compute[025-027]
+- id: r01-01-c10
+  name: XH3140 Trio 10
+  template_id: bs-xh3140-trio-1u-3n
+  u_position: 10
+  nodes: compute[028-030]

@@ -1,0 +1,60 @@
+id: r01-07
+name: Rack XH3000 Compute 07
+template_id: bull-xh3000
+aisle_id: aisle-01
+u_height: 42
+devices:
+- id: r01-07-ib
+  name: IB Switch XH35MQ
+  template_id: bs-xh35mq-ib-1u
+  u_position: 12
+- id: r01-07-c01
+  name: XH3610 Milo 01
+  template_id: bs-xh3610-milo-1u-3n
+  u_position: 1
+  nodes: compute[161-163]
+- id: r01-07-c02
+  name: XH3610 Milo 02
+  template_id: bs-xh3610-milo-1u-3n
+  u_position: 2
+  nodes: compute[164-166]
+- id: r01-07-c03
+  name: XH3610 Milo 03
+  template_id: bs-xh3610-milo-1u-3n
+  u_position: 3
+  nodes: compute[167-169]
+- id: r01-07-c04
+  name: XH3610 Milo 04
+  template_id: bs-xh3610-milo-1u-3n
+  u_position: 4
+  nodes: compute[170-172]
+- id: r01-07-c05
+  name: XH3610 Milo 05
+  template_id: bs-xh3610-milo-1u-3n
+  u_position: 5
+  nodes: compute[173-175]
+- id: r01-07-c06
+  name: XH3610 Milo 06
+  template_id: bs-xh3610-milo-1u-3n
+  u_position: 6
+  nodes: compute[176-178]
+- id: r01-07-c07
+  name: XH3610 Milo 07
+  template_id: bs-xh3610-milo-1u-3n
+  u_position: 7
+  nodes: compute[179-181]
+- id: r01-07-c08
+  name: XH3610 Milo 08
+  template_id: bs-xh3610-milo-1u-3n
+  u_position: 8
+  nodes: compute[182-184]
+- id: r01-07-c09
+  name: XH3610 Milo 09
+  template_id: bs-xh3610-milo-1u-3n
+  u_position: 9
+  nodes: compute[185-187]
+- id: r01-07-c10
+  name: XH3610 Milo 10
+  template_id: bs-xh3610-milo-1u-3n
+  u_position: 10
+  nodes: compute[188-190]

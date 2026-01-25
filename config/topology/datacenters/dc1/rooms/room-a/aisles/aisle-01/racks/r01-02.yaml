@@ -1,0 +1,60 @@
+id: r01-02
+name: Rack XH3000 Compute 02
+template_id: bull-xh3000
+aisle_id: aisle-01
+u_height: 42
+devices:
+- id: r01-02-ib
+  name: IB Switch XH35MQ
+  template_id: bs-xh35mq-ib-1u
+  u_position: 12
+- id: r01-02-c01
+  name: XH3145 Tiya 01
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 1
+  nodes: compute[031-032]
+- id: r01-02-c02
+  name: XH3145 Tiya 02
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 2
+  nodes: compute[033-034]
+- id: r01-02-c03
+  name: XH3145 Tiya 03
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 3
+  nodes: compute[035-036]
+- id: r01-02-c04
+  name: XH3145 Tiya 04
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 4
+  nodes: compute[037-038]
+- id: r01-02-c05
+  name: XH3145 Tiya 05
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 5
+  nodes: compute[039-040]
+- id: r01-02-c06
+  name: XH3145 Tiya 06
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 6
+  nodes: compute[041-042]
+- id: r01-02-c07
+  name: XH3145 Tiya 07
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 7
+  nodes: compute[043-044]
+- id: r01-02-c08
+  name: XH3145 Tiya 08
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 8
+  nodes: compute[045-046]
+- id: r01-02-c09
+  name: XH3145 Tiya 09
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 9
+  nodes: compute[047-048]
+- id: r01-02-c10
+  name: XH3145 Tiya 10
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 10
+  nodes: compute[049-050]

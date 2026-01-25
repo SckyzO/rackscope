@@ -7,7 +7,7 @@ import re
 from prometheus_client import start_http_server, Gauge
 
 # Configuration Paths
-TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology.yaml")
+TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology")
 SIMULATOR_CONFIG_PATH = os.getenv("SIMULATOR_CONFIG", "/app/config/simulator.yaml")
 
 # Metrics definition
@@ -23,6 +23,52 @@ def load_yaml(path):
     except Exception as e:
         print(f"Error loading {path}: {e}")
         return {}
+
+def load_topology_data(path):
+    if os.path.isdir(path):
+        sites_path = os.path.join(path, "sites.yaml")
+        sites_data = load_yaml(sites_path) or {}
+        sites_out = []
+        for site in sites_data.get("sites", []):
+            site_id = site.get("id")
+            if not site_id:
+                continue
+            rooms_out = []
+            room_entries = site.get("rooms") or []
+            if not room_entries:
+                rooms_dir = os.path.join(path, "datacenters", site_id, "rooms")
+                room_entries = [{"id": p} for p in sorted(os.listdir(rooms_dir)) if os.path.isdir(os.path.join(rooms_dir, p))]
+            for room_entry in room_entries:
+                room_id = room_entry.get("id") if isinstance(room_entry, dict) else room_entry
+                room_path = os.path.join(path, "datacenters", site_id, "rooms", room_id, "room.yaml")
+                room_data = load_yaml(room_path) or {}
+                aisles_out = []
+                for aisle in room_data.get("aisles", []):
+                    aisle_id = aisle.get("id") if isinstance(aisle, dict) else aisle
+                    aisle_path = os.path.join(path, "datacenters", site_id, "rooms", room_id, "aisles", aisle_id, "aisle.yaml")
+                    aisle_data = load_yaml(aisle_path) or {}
+                    racks_out = []
+                    for rack_ref in aisle_data.get("racks", []):
+                        rack_id = rack_ref.get("id") if isinstance(rack_ref, dict) else rack_ref
+                        rack_path = os.path.join(path, "datacenters", site_id, "rooms", room_id, "aisles", aisle_id, "racks", f"{rack_id}.yaml")
+                        rack_data = load_yaml(rack_path) or {}
+                        racks_out.append(rack_data)
+                    aisles_out.append({"id": aisle_id, "name": aisle.get("name"), "racks": racks_out})
+                standalone_out = []
+                for rack_ref in room_data.get("standalone_racks", []):
+                    rack_id = rack_ref.get("id") if isinstance(rack_ref, dict) else rack_ref
+                    rack_path = os.path.join(path, "datacenters", site_id, "rooms", room_id, "standalone_racks", f"{rack_id}.yaml")
+                    rack_data = load_yaml(rack_path) or {}
+                    standalone_out.append(rack_data)
+                rooms_out.append({
+                    "id": room_data.get("id", room_id),
+                    "name": room_data.get("name", room_id),
+                    "aisles": aisles_out,
+                    "standalone_racks": standalone_out,
+                })
+            sites_out.append({"id": site_id, "name": site.get("name", site_id), "rooms": rooms_out})
+        return {"sites": sites_out}
+    return load_yaml(path)
 
 def parse_nodeset(pattern):
     if not isinstance(pattern, str): return pattern or {}
@@ -72,7 +118,7 @@ def simulate():
     
     while True:
         # Reload topology every tick to support dynamic changes
-        topo_data = load_yaml(TOPOLOGY_PATH)
+        topo_data = load_topology_data(TOPOLOGY_PATH)
         targets = load_topology_nodes(topo_data)
         tick += 1
         

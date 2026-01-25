@@ -1,0 +1,6 @@
+sites:
+- id: dc1
+  name: Main Datacenter
+  rooms:
+  - id: room-a
+    name: Room A

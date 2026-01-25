@@ -1,0 +1,7 @@
+id: aisle-02
+name: Aisle 02 (Storage)
+racks:
+- r02-01
+- r02-02
+- r02-03
+- r02-04

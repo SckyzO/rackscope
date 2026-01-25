@@ -1,0 +1,5 @@
+id: aisle-03
+name: Aisle 03 (Management)
+racks:
+- r03-01
+- r03-02
