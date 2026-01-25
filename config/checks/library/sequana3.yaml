@@ -1,90 +1,48 @@
-groups:
-  - name: Alerts for XH3000
+checks:
+  - id: sequana3_pressure
+    name: Sequana3 pressure
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: |
+      sequana3_hyc_p_in_kpa{sequana_rack_id=~"$racks"}
+        and on(cluster, env, host, instance, job, mc_type, model, region, sequana_rack_id, sequana_type)
+            sequana3_hyc_state_info{state="standbyspare"}
+    output: numeric
     rules:
-      - alert: Sequana3PressureWarning
-        expr: >
-          sequana3_hyc_p_in_kpa < 180
-          and on(cluster, env, host, instance, job, mc_type, model, region, sequana_rack_id, sequana_type)
-              sequana3_hyc_state_info{state="standbyspare"}
-        for: 10m
-        labels:
-          severity: warning
-          rack_id: "{{ $labels.sequana_rack_id }}"
-          model: "{{ $labels.model }}"
-          mc_type: "{{ $labels.mc_type }}"
-          sequana_type: "{{ $labels.sequana_type }}"
-        annotations:
-          summary: "Pressure Warning on instance {{ $labels.instance }} (Rack: {{ $labels.sequana_rack_id }}, Model: {{ $labels.model }}, MC Type: {{ $labels.mc_type }}, Sequana Type: {{ $labels.sequana_type }})"
-          description: "Pressure is below 180 kPa (current value: {{ $value }} kPa)."
+      - op: "<="
+        value: 170
+        severity: CRIT
+      - op: "<"
+        value: 180
+        severity: WARN
 
-      - alert: Sequana3PressureCritical
-        expr: >
-          sequana3_hyc_p_in_kpa <= 170
-          and on(cluster, env, host, instance, job, mc_type, model, region, sequana_rack_id, sequana_type)
-              sequana3_hyc_state_info{state="standbyspare"}
-        for: 10m
-        labels:
-          severity: critical
-          rack_id: "{{ $labels.sequana_rack_id }}"
-          model: "{{ $labels.model }}"
-          mc_type: "{{ $labels.mc_type }}"
-          sequana_type: "{{ $labels.sequana_type }}"
-        annotations:
-          summary: "Critical Pressure on instance {{ $labels.instance }} (Rack: {{ $labels.sequana_rack_id }}, Model: {{ $labels.model }}, MC Type: {{ $labels.mc_type }}, Sequana Type: {{ $labels.sequana_type }})"
-          description: "Pressure is at or below 170 kPa (current value: {{ $value }} kPa)."
+  - id: sequana3_leak
+    name: Sequana3 leak sensor
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: sequana3_hyc_leak_sensor_pump{sequana_rack_id=~"$racks"}
+    output: numeric
+    rules:
+      - op: ">="
+        value: 1.0
+        severity: CRIT
+      - op: ">="
+        value: 0.5
+        severity: WARN
 
-      - alert: Sequana3LeakWarning
-        expr: >
-          sequana3_hyc_leak_sensor_pump >= 0.5 and sequana3_hyc_leak_sensor_pump < 1.0
-        for: 10m
-        labels:
-          severity: warning
-          rack_id: "{{ $labels.sequana_rack_id }}"
-          model: "{{ $labels.model }}"
-          mc_type: "{{ $labels.mc_type }}"
-          sequana_type: "{{ $labels.sequana_type }}"
-        annotations:
-          summary: "Leak Warning on instance {{ $labels.instance }} (Rack: {{ $labels.sequana_rack_id }}, Model: {{ $labels.model }}, MC Type: {{ $labels.mc_type }}, Sequana Type: {{ $labels.sequana_type }})"
-          description: "Leak sensor reading is between 50% and 100% (current value: {{ $value }}%)."
-
-      - alert: Sequana3LeakCritical
-        expr: >
-          sequana3_hyc_leak_sensor_pump >= 1.0
-        for: 10m
-        labels:
-          severity: critical
-          rack_id: "{{ $labels.sequana_rack_id }}"
-          model: "{{ $labels.model }}"
-          mc_type: "{{ $labels.mc_type }}"
-          sequana_type: "{{ $labels.sequana_type }}"
-        annotations:
-          summary: "Critical Leak on instance {{ $labels.instance }} (Rack: {{ $labels.sequana_rack_id }}, Model: {{ $labels.model }}, MC Type: {{ $labels.mc_type }}, Sequana Type: {{ $labels.sequana_type }})"
-          description: "Leak sensor reading is at or above 100% (current value: {{ $value }}%)."
-
-      - alert: Sequana3BoardTemperatureWarning
-        expr: >
-          sequana3_hyc_tmp_pcb_cel >= 75 and sequana3_hyc_tmp_pcb_cel < 90
-        for: 10m
-        labels:
-          severity: warning
-          rack_id: "{{ $labels.sequana_rack_id }}"
-          model: "{{ $labels.model }}"
-          mc_type: "{{ $labels.mc_type }}"
-          sequana_type: "{{ $labels.sequana_type }}"
-        annotations:
-          summary: "Board Temperature Warning on instance {{ $labels.instance }} (Rack: {{ $labels.sequana_rack_id }}, Model: {{ $labels.model }}, MC Type: {{ $labels.mc_type }}, Sequana Type: {{ $labels.sequana_type }})"
-          description: "Board temperature is between 75°C and 90°C (current value: {{ $value }}°C)."
-
-      - alert: Sequana3BoardTemperatureCritical
-        expr: >
-          sequana3_hyc_tmp_pcb_cel >= 90
-        for: 10m
-        labels:
-          severity: critical
-          rack_id: "{{ $labels.sequana_rack_id }}"
-          model: "{{ $labels.model }}"
-          mc_type: "{{ $labels.mc_type }}"
-          sequana_type: "{{ $labels.sequana_type }}"
-        annotations:
-          summary: "Critical Board Temperature on instance {{ $labels.instance }} (Rack: {{ $labels.sequana_rack_id }}, Model: {{ $labels.model }}, MC Type: {{ $labels.mc_type }}, Sequana Type: {{ $labels.sequana_type }})"
-          description: "Board temperature is at or above 90°C (current value: {{ $value }}°C)."
+  - id: sequana3_board_temperature
+    name: Sequana3 board temperature
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: sequana3_hyc_tmp_pcb_cel{sequana_rack_id=~"$racks"}
+    output: numeric
+    rules:
+      - op: ">="
+        value: 90
+        severity: CRIT
+      - op: ">="
+        value: 75
+        severity: WARN

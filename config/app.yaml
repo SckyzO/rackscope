@@ -1,7 +1,7 @@
 paths:
   topology: config/topology
   templates: config/templates
-  checks: config/checks/library.yaml
+  checks: config/checks/library
 refresh:
   room_state_seconds: 30
   rack_state_seconds: 30

@@ -166,22 +166,16 @@ def _load_rack_ref(base_dir: Path, site_id: str, room_id: str, aisle_id: str | N
     return yaml.safe_load(rack_path.read_text()) or None
 
 
-def load_checks_library(path: Union[str, Path]) -> ChecksLibrary:
-    """Load a checks library from a YAML file."""
-    path = Path(path)
-    library = ChecksLibrary()
-    if not path.exists():
-        return library
-
+def _load_checks_file(path: Path, library: ChecksLibrary) -> None:
     try:
         with path.open("r") as f:
             data = yaml.safe_load(f)
     except yaml.YAMLError as e:
         print(f"Warning: Failed to parse checks file {path}: {e}")
-        return library
+        return
 
     if not data:
-        return library
+        return
 
     checks = []
     if isinstance(data, dict) and "checks" in data:
@@ -205,6 +199,21 @@ def load_checks_library(path: Union[str, Path]) -> ChecksLibrary:
         except Exception as e:
             print(f"Warning: Failed to load check in {path}: {e}")
 
+
+def load_checks_library(path: Union[str, Path]) -> ChecksLibrary:
+    """Load a checks library from YAML files."""
+    path = Path(path)
+    library = ChecksLibrary()
+    if not path.exists():
+        return library
+
+    if path.is_dir():
+        files = sorted(path.glob("*.yaml")) + sorted(path.glob("*.yml"))
+        for file_path in files:
+            _load_checks_file(file_path, library)
+        return library
+
+    _load_checks_file(path, library)
     return library
 
 

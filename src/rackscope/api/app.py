@@ -95,7 +95,7 @@ async def lifespan(app: FastAPI):
             config_dir = os.getenv("RACKSCOPE_CONFIG_DIR", "config")
             config_path = os.getenv("RACKSCOPE_CONFIG", os.path.join(config_dir, "topology", "topology.yaml"))
             templates_dir = os.getenv("RACKSCOPE_TEMPLATES", os.path.join(config_dir, "templates"))
-            checks_path = os.getenv("RACKSCOPE_CHECKS", os.path.join(config_dir, "checks", "library.yaml"))
+            checks_path = os.getenv("RACKSCOPE_CHECKS", os.path.join(config_dir, "checks", "library"))
             TOPOLOGY = load_topology(config_path)
             CATALOG = load_catalog(templates_dir)
             CHECKS_LIBRARY = load_checks_library(checks_path)

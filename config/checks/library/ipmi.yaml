@@ -1,101 +1,81 @@
-groups:
-  - name: IPMI Alerts Improved
+checks:
+  - id: ipmi_fan_speed_state
+    name: IPMI fan speed state
+    scope: node
+    kind: ipmi
+    expr: ipmi_fan_speed_state{instance=~"$instances"}
+    output: numeric
     rules:
-      - alert: IpmiFanSpeedHigh
-        expr: ipmi_fan_speed_state == 1
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: 'IPMI fan speed high on {{ $labels.instance }}'
-          description: 'Fan {{ $labels.name }} on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is reporting a warning state.'
+      - op: "=="
+        value: 1
+        severity: WARN
+      - op: "=="
+        value: 2
+        severity: CRIT
 
-      - alert: IpmiFanSpeedHigh
-        expr: ipmi_fan_speed_state == 2
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: 'IPMI fan speed critical on {{ $labels.instance }}'
-          description: 'Fan {{ $labels.name }} on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is reporting a critical state.'
+  - id: ipmi_power_state
+    name: IPMI power state
+    scope: node
+    kind: ipmi
+    expr: ipmi_power_state{instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: "=="
+        value: 1
+        severity: WARN
+      - op: "=="
+        value: 2
+        severity: CRIT
 
-      - alert: IpmiPowerConsumptionHigh
-        expr: ipmi_power_state == 1
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: 'IPMI power consumption high on {{ $labels.instance }}'
-          description: 'Power sensor {{ $labels.name }} on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is reporting a warning state.'
+  - id: ipmi_sensor_state
+    name: IPMI sensor state
+    scope: node
+    kind: ipmi
+    expr: ipmi_sensor_state{name!~"Low Security Jmp|Phy Presence Jmp|Dongle Cable",instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: "=="
+        value: 1
+        severity: WARN
+      - op: "=="
+        value: 2
+        severity: CRIT
 
-      - alert: IpmiPowerConsumptionHigh
-        expr: ipmi_power_state == 2
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: 'IPMI power consumption critical on {{ $labels.instance }}'
-          description: 'Power sensor {{ $labels.name }} on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is reporting a critical state.'
+  - id: ipmi_temperature_state
+    name: IPMI temperature state
+    scope: node
+    kind: ipmi
+    expr: ipmi_temperature_state{instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: "=="
+        value: 1
+        severity: WARN
+      - op: "=="
+        value: 2
+        severity: CRIT
 
-      - alert: IpmiSensorState
-        expr: ipmi_sensor_state{name!~"Low Security Jmp|Phy Presence Jmp|Dongle Cable"} == 1
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: 'IPMI sensor warning on {{ $labels.instance }}'
-          description: 'Sensor {{ $labels.name }} on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is in warning state.'
+  - id: ipmi_up
+    name: IPMI exporter up
+    scope: node
+    kind: ipmi
+    expr: ipmi_up{instance=~"$instances"}
+    output: bool
+    rules:
+      - op: "=="
+        value: 0
+        severity: CRIT
 
-      - alert: IpmiSensorState
-        expr: ipmi_sensor_state{name!~"Low Security Jmp|Phy Presence Jmp|Dongle Cable"} == 2
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: 'IPMI sensor critical on {{ $labels.instance }}'
-          description: 'Sensor {{ $labels.name }} on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is in critical state.'
-
-      - alert: IpmiTemperatureHigh
-        expr: ipmi_temperature_state == 1
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: 'IPMI temperature high on {{ $labels.instance }}'
-          description: 'Temperature sensor {{ $labels.name }} on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is in warning state.'
-
-      - alert: IpmiTemperatureHigh
-        expr: ipmi_temperature_state == 2
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: 'IPMI temperature critical on {{ $labels.instance }}'
-          description: 'Temperature sensor {{ $labels.name }} on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is in critical state.'
-
-      - alert: IpmiExporterDown
-        expr: ipmi_up == 0
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: 'IPMI exporter down on {{ $labels.instance }}'
-          description: 'Could not scrape IPMI metrics from node {{ $labels.instance }} (cluster {{ $labels.cluster }}).'
-
-      - alert: IpmiVoltageHigh
-        expr: ipmi_voltage_state == 1
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: 'IPMI voltage high on {{ $labels.instance }}'
-          description: 'Voltage sensor {{ $labels.name }} on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is in warning state.'
-
-      - alert: IpmiVoltageHigh
-        expr: ipmi_voltage_state == 2
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: 'IPMI voltage critical on {{ $labels.instance }}'
-          description: 'Voltage sensor {{ $labels.name }} on node {{ $labels.instance }} (cluster {{ $labels.cluster }}) is in critical state.'
+  - id: ipmi_voltage_state
+    name: IPMI voltage state
+    scope: node
+    kind: ipmi
+    expr: ipmi_voltage_state{instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: "=="
+        value: 1
+        severity: WARN
+      - op: "=="
+        value: 2
+        severity: CRIT

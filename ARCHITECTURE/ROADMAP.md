@@ -37,7 +37,11 @@ Every line is a task; checked items are done.
 **Goal:** Build a scalable, Prometheus-first telemetry layer.
 
 Telemetry:
-- [x] Checks library (separate file) with scopes (node/chassis/rack)
+- [ ] Checks library split (folder-based, no monolith):
+  - [ ] Migrate to `config/checks/library/*.yaml`
+  - [ ] Remove `config/checks/library.yaml` (no fallback)
+  - [ ] Loader reads all files in `checks/library/`
+  - [ ] Keep scopes (node/chassis/rack) + label mappings
 - [x] PromQL planner (vector queries, no per-node queries)
 - [x] Cache + dedup + TTL strategy (60s refresh)
 - [x] UNKNOWN handling + severity aggregation rules
