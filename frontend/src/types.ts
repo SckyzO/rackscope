@@ -116,6 +116,12 @@ export interface AppConfig {
     rack_label?: string;
     chassis_label?: string;
     job_regex?: string;
+    basic_auth_user?: string | null;
+    basic_auth_password?: string | null;
+    tls_verify?: boolean;
+    tls_ca_file?: string | null;
+    tls_cert_file?: string | null;
+    tls_key_file?: string | null;
   };
   planner?: {
     unknown_state?: string;

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 import yaml
+import httpx
 
 from rackscope.model.domain import Room, Site, Topology, Rack
 from rackscope.model.catalog import Catalog
@@ -32,9 +33,28 @@ def apply_config(app_config: AppConfig) -> None:
     TOPOLOGY = load_topology(app_config.paths.topology)
     CATALOG = load_catalog(app_config.paths.templates)
     CHECKS_LIBRARY = load_checks_library(app_config.paths.checks)
-    if APP_CONFIG.telemetry.prometheus_url:
-        prom_client.base_url = APP_CONFIG.telemetry.prometheus_url.rstrip("/")
-    prom_client.cache_ttl = APP_CONFIG.cache.ttl_seconds
+    base_url = APP_CONFIG.telemetry.prometheus_url or prom_client.base_url
+    auth = None
+    if APP_CONFIG.telemetry.basic_auth_user:
+        auth = httpx.BasicAuth(
+            APP_CONFIG.telemetry.basic_auth_user,
+            APP_CONFIG.telemetry.basic_auth_password or "",
+        )
+    verify: bool | str = True
+    if not APP_CONFIG.telemetry.tls_verify:
+        verify = False
+    elif APP_CONFIG.telemetry.tls_ca_file:
+        verify = APP_CONFIG.telemetry.tls_ca_file
+    cert = None
+    if APP_CONFIG.telemetry.tls_cert_file and APP_CONFIG.telemetry.tls_key_file:
+        cert = (APP_CONFIG.telemetry.tls_cert_file, APP_CONFIG.telemetry.tls_key_file)
+    prom_client.configure(
+        base_url=base_url,
+        cache_ttl=APP_CONFIG.cache.ttl_seconds,
+        auth=auth,
+        verify=verify,
+        cert=cert,
+    )
     PLANNER = TelemetryPlanner(
         PlannerConfig(
             identity_label=APP_CONFIG.telemetry.identity_label,
@@ -136,6 +156,12 @@ def get_app_config():
             "rack_label": "rack_id",
             "chassis_label": "chassis_id",
             "job_regex": ".*",
+            "basic_auth_user": None,
+            "basic_auth_password": None,
+            "tls_verify": True,
+            "tls_ca_file": None,
+            "tls_cert_file": None,
+            "tls_key_file": None,
         },
         "planner": {
             "unknown_state": "UNKNOWN",

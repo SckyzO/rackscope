@@ -24,6 +24,12 @@ type ConfigDraft = {
     rack_label: string;
     chassis_label: string;
     job_regex: string;
+    basic_auth_user: string;
+    basic_auth_password: string;
+    tls_verify: boolean;
+    tls_ca_file: string;
+    tls_cert_file: string;
+    tls_key_file: string;
   };
   planner: {
     unknown_state: string;
@@ -107,6 +113,12 @@ export const SettingsPage = () => {
         rack_label: config.telemetry?.rack_label || 'rack_id',
         chassis_label: config.telemetry?.chassis_label || 'chassis_id',
         job_regex: config.telemetry?.job_regex || '.*',
+        basic_auth_user: config.telemetry?.basic_auth_user || '',
+        basic_auth_password: config.telemetry?.basic_auth_password || '',
+        tls_verify: config.telemetry?.tls_verify ?? true,
+        tls_ca_file: config.telemetry?.tls_ca_file || '',
+        tls_cert_file: config.telemetry?.tls_cert_file || '',
+        tls_key_file: config.telemetry?.tls_key_file || '',
       },
       planner: {
         unknown_state: config.planner?.unknown_state || 'UNKNOWN',
@@ -161,6 +173,19 @@ export const SettingsPage = () => {
       next.telemetry_job_regex = 'Invalid regex';
     }
 
+    if (draft.telemetry.basic_auth_password && !draft.telemetry.basic_auth_user) {
+      next.telemetry_basic_auth = 'Username required when password is set';
+    }
+    if (draft.telemetry.basic_auth_user && !draft.telemetry.basic_auth_password) {
+      next.telemetry_basic_auth = 'Password required when username is set';
+    }
+    if (draft.telemetry.tls_key_file && !draft.telemetry.tls_cert_file) {
+      next.telemetry_tls_pair = 'Client cert required when key is set';
+    }
+    if (draft.telemetry.tls_cert_file && !draft.telemetry.tls_key_file) {
+      next.telemetry_tls_pair = 'Client key required when cert is set';
+    }
+
     const intFields: Array<[string, string, number]> = [
       ['refresh_room', draft.refresh.room_state_seconds, 10],
       ['refresh_rack', draft.refresh.rack_state_seconds, 10],
@@ -208,6 +233,12 @@ export const SettingsPage = () => {
           rack_label: draft.telemetry.rack_label,
           chassis_label: draft.telemetry.chassis_label,
           job_regex: draft.telemetry.job_regex,
+          basic_auth_user: draft.telemetry.basic_auth_user || null,
+          basic_auth_password: draft.telemetry.basic_auth_password || null,
+          tls_verify: draft.telemetry.tls_verify,
+          tls_ca_file: draft.telemetry.tls_ca_file || null,
+          tls_cert_file: draft.telemetry.tls_cert_file || null,
+          tls_key_file: draft.telemetry.tls_key_file || null,
         },
         planner: {
           unknown_state: draft.planner.unknown_state as any,
@@ -306,6 +337,70 @@ export const SettingsPage = () => {
                   <div className="mt-1 text-[10px] text-gray-500">Regex used to match Prometheus job labels.</div>
                   {validationErrors.telemetry_job_regex && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_job_regex}</div>}
                 </label>
+                <label className="text-xs text-gray-400" title="Basic auth username for Prometheus">
+                  Basic auth username
+                  <input
+                    value={draft?.telemetry.basic_auth_user || ''}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, basic_auth_user: e.target.value } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  />
+                  <div className="mt-1 text-[10px] text-gray-500">Optional. Requires password.</div>
+                </label>
+                <label className="text-xs text-gray-400" title="Basic auth password for Prometheus">
+                  Basic auth password
+                  <input
+                    type="password"
+                    value={draft?.telemetry.basic_auth_password || ''}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, basic_auth_password: e.target.value } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  />
+                  <div className="mt-1 text-[10px] text-gray-500">Optional. Requires username.</div>
+                </label>
+                {validationErrors.telemetry_basic_auth && (
+                  <div className="text-[10px] text-status-crit">{validationErrors.telemetry_basic_auth}</div>
+                )}
+                <label className="text-xs text-gray-400" title="Verify Prometheus TLS certificate">
+                  TLS verify
+                  <select
+                    value={draft?.telemetry.tls_verify ? 'true' : 'false'}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, tls_verify: e.target.value === 'true' } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  >
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                  </select>
+                  <div className="mt-1 text-[10px] text-gray-500">Disable only for trusted internal endpoints.</div>
+                </label>
+                <label className="text-xs text-gray-400" title="Custom CA bundle path for TLS verification">
+                  TLS CA file
+                  <input
+                    value={draft?.telemetry.tls_ca_file || ''}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, tls_ca_file: e.target.value } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  />
+                  <div className="mt-1 text-[10px] text-gray-500">Optional CA bundle path.</div>
+                </label>
+                <label className="text-xs text-gray-400" title="Client certificate path for mTLS">
+                  TLS client cert
+                  <input
+                    value={draft?.telemetry.tls_cert_file || ''}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, tls_cert_file: e.target.value } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  />
+                  <div className="mt-1 text-[10px] text-gray-500">Optional. Requires key.</div>
+                </label>
+                <label className="text-xs text-gray-400" title="Client key path for mTLS">
+                  TLS client key
+                  <input
+                    value={draft?.telemetry.tls_key_file || ''}
+                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, tls_key_file: e.target.value } }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  />
+                  <div className="mt-1 text-[10px] text-gray-500">Optional. Requires cert.</div>
+                </label>
+                {validationErrors.telemetry_tls_pair && (
+                  <div className="text-[10px] text-status-crit">{validationErrors.telemetry_tls_pair}</div>
+                )}
               </div>
 
               <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">

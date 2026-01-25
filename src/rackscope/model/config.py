@@ -27,6 +27,12 @@ class TelemetryConfig(BaseModel):
     rack_label: str = "rack_id"
     chassis_label: str = "chassis_id"
     job_regex: str = ".*"
+    basic_auth_user: Optional[str] = None
+    basic_auth_password: Optional[str] = None
+    tls_verify: bool = True
+    tls_ca_file: Optional[str] = None
+    tls_cert_file: Optional[str] = None
+    tls_key_file: Optional[str] = None
 
     @field_validator("job_regex")
     @classmethod
@@ -35,6 +41,26 @@ class TelemetryConfig(BaseModel):
             re.compile(value)
         except re.error as exc:
             raise ValueError(f"Invalid job_regex: {exc}") from exc
+        return value
+
+    @field_validator("basic_auth_password")
+    @classmethod
+    def validate_basic_auth_password(cls, value: Optional[str], info) -> Optional[str]:
+        if value is None:
+            return value
+        user = info.data.get("basic_auth_user")
+        if not user:
+            raise ValueError("basic_auth_user is required when basic_auth_password is set")
+        return value
+
+    @field_validator("tls_key_file")
+    @classmethod
+    def validate_tls_key_file(cls, value: Optional[str], info) -> Optional[str]:
+        if value is None:
+            return value
+        cert = info.data.get("tls_cert_file")
+        if not cert:
+            raise ValueError("tls_cert_file is required when tls_key_file is set")
         return value
 
 

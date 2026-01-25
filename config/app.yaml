@@ -16,6 +16,12 @@ telemetry:
   rack_label: rack_id
   chassis_label: chassis_id
   job_regex: node|rackscope-simulator
+  basic_auth_user:
+  basic_auth_password:
+  tls_verify: true
+  tls_ca_file:
+  tls_cert_file:
+  tls_key_file:
 
 planner:
   unknown_state: UNKNOWN

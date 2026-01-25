@@ -5,7 +5,7 @@ import time
 import asyncio
 import httpx
 from collections import deque
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 
 # Default to internal docker network hostname if not set
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
@@ -22,6 +22,29 @@ class PrometheusClient:
         self._latency_samples: deque[float] = deque(maxlen=20)
         self._last_latency_ms: float | None = None
         self._last_query_ts: float | None = None
+        self._auth: Optional[httpx.BasicAuth] = None
+        self._verify: bool | str = True
+        self._cert: Optional[tuple[str, str] | str] = None
+
+    def configure(
+        self,
+        base_url: str,
+        cache_ttl: float,
+        auth: Optional[httpx.BasicAuth],
+        verify: bool | str,
+        cert: Optional[tuple[str, str] | str],
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.cache_ttl = cache_ttl
+        self._auth = auth
+        self._verify = verify
+        self._cert = cert
+        old_client = self.client
+        self.client = httpx.AsyncClient(timeout=2.0, auth=self._auth, verify=self._verify, cert=self._cert)
+        try:
+            asyncio.create_task(old_client.aclose())
+        except RuntimeError:
+            pass
 
     async def query(self, query: str) -> Dict[str, Any]:
         """Execute a PromQL instant query with simple TTL caching."""
