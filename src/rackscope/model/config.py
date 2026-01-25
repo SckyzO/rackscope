@@ -99,6 +99,7 @@ class SimulatorConfig(BaseModel):
     incident_durations: IncidentDurations = Field(default_factory=IncidentDurations)
     overrides_path: str = Field(default="config/simulator_overrides.yaml", min_length=1)
     default_ttl_seconds: int = Field(default=120, ge=0)
+    metrics_catalog_path: str = Field(default="config/simulator_metrics_full.yaml", min_length=1)
 
 
 class AppConfig(BaseModel):

@@ -184,6 +184,7 @@ def get_app_config():
             "scenario": None,
             "scale_factor": 1.0,
             "default_ttl_seconds": 120,
+            "metrics_catalog_path": "config/simulator_metrics_full.yaml",
             "incident_rates": {
                 "node_micro_failure": 0.001,
                 "rack_macro_failure": 0.01,

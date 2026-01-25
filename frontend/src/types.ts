@@ -142,6 +142,7 @@ export interface AppConfig {
     scenario?: string | null;
     scale_factor?: number;
     default_ttl_seconds?: number;
+    metrics_catalog_path?: string;
     incident_rates?: {
       node_micro_failure?: number;
       rack_macro_failure?: number;

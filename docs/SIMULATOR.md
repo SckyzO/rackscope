@@ -24,6 +24,7 @@ simulator:
     rack: 3
     aisle: 5
   overrides_path: config/simulator_overrides.yaml
+  metrics_catalog_path: config/simulator_metrics_full.yaml
 ```
 
 ## Scenarios
@@ -62,6 +63,72 @@ scenarios:
 
 The built-in `full-ok` scenario also overrides profiles to keep temperatures under
 warning thresholds.
+
+## Metrics Catalog
+
+`simulator.metrics_catalog_path` points to a YAML file that defines which metrics
+are emitted and for which instances/racks. When empty, the simulator emits all
+known metrics.
+
+Example (`config/simulator_metrics_examples.yaml`):
+
+```yaml
+metrics:
+  - name: ipmi_temperature_state
+    scope: node
+    instances:
+      - compute[001-010]
+      - switch001
+    labels:
+      job: node
+
+  - name: eseries_storage_system_status
+    scope: node
+    instances:
+      - storage[001-002]
+
+  - name: sequana3_hyc_p_in_kpa
+    scope: rack
+    racks:
+      - r01-01
+    labels:
+      cluster: demo
+      env: demo
+      mc_type: xh3000
+      model: xh3000
+      region: demo
+      sequana_type: liquid
+
+  - name: sequana3_hyc_state_info
+    scope: rack
+    racks:
+      - r01-01
+    labels:
+      cluster: demo
+      env: demo
+      host: demo
+      mc_type: xh3000
+      model: xh3000
+      region: demo
+      sequana_type: liquid
+```
+
+Notes:
+- `instances` and `racks` accept ranges like `compute[001-700]` and wildcards like `compute*`.
+- `labels` can override default labels for a metric (only use labels supported by that metric).
+  - Tokens: `$site_id`, `$room_id`, `$rack_id`, `$chassis_id`, `$node_id`, `$instance`, `$job`,
+    plus metric-specific tokens like `$status`, `$tray`, `$slot`, `$collector`, `$state`, `$name`.
+
+Full catalog: `config/simulator_metrics_full.yaml`.
+
+## Adding a new metric
+
+1) Add the metric to your catalog YAML (`config/simulator_metrics_full.yaml`).
+2) Implement its value generation in `tools/simulator/main.py`:
+   - add the metric name to `SUPPORTED_METRICS`
+   - emit its values in the simulation loop (with `set_metric_value`)
+
+This keeps the metric list declarative while making value generation explicit.
 
 ## Overrides TTL
 

@@ -50,6 +50,7 @@ type ConfigDraft = {
     scenario: string;
     scale_factor: string;
     default_ttl_seconds: string;
+    metrics_catalog_path: string;
     incident_rates: {
       node_micro_failure: string;
       rack_macro_failure: string;
@@ -204,6 +205,7 @@ export const SettingsPage = () => {
         scenario: config.simulator?.scenario || '',
         scale_factor: String(config.simulator?.scale_factor ?? 1.0),
         default_ttl_seconds: String(config.simulator?.default_ttl_seconds ?? 120),
+        metrics_catalog_path: config.simulator?.metrics_catalog_path || 'config/simulator_metrics_full.yaml',
         incident_rates: {
           node_micro_failure: String(config.simulator?.incident_rates?.node_micro_failure ?? 0.001),
           rack_macro_failure: String(config.simulator?.incident_rates?.rack_macro_failure ?? 0.01),
@@ -381,6 +383,7 @@ export const SettingsPage = () => {
           scenario: draft.simulator.scenario || null,
           scale_factor: Number.parseFloat(draft.simulator.scale_factor),
           default_ttl_seconds: Number.parseInt(draft.simulator.default_ttl_seconds, 10),
+          metrics_catalog_path: draft.simulator.metrics_catalog_path,
           incident_rates: {
             node_micro_failure: Number.parseFloat(draft.simulator.incident_rates.node_micro_failure),
             rack_macro_failure: Number.parseFloat(draft.simulator.incident_rates.rack_macro_failure),
@@ -802,6 +805,14 @@ export const SettingsPage = () => {
                     <input
                       value={draft?.simulator.overrides_path || ''}
                       onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, overrides_path: e.target.value } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                  </label>
+                  <label className="text-xs text-gray-400" title="Metrics catalog file for multi-metric simulator">
+                    Metrics catalog path
+                    <input
+                      value={draft?.simulator.metrics_catalog_path || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, metrics_catalog_path: e.target.value } }))}
                       className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
                     />
                   </label>

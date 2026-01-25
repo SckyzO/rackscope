@@ -1,0 +1,152 @@
+metrics:
+  - name: node_temperature_celsius
+    scope: node
+    instances: ["*"]
+  - name: node_power_watts
+    scope: node
+    instances: ["*"]
+  - name: node_load_percent
+    scope: node
+    instances: ["*"]
+  - name: node_health_status
+    scope: node
+    instances: ["*"]
+  - name: up
+    scope: node
+    instances: ["*"]
+
+  - name: ipmi_fan_speed_state
+    scope: node
+    instances: ["*"]
+    labels:
+      name: fan
+  - name: ipmi_power_state
+    scope: node
+    instances: ["*"]
+    labels:
+      name: power
+  - name: ipmi_sensor_state
+    scope: node
+    instances: ["*"]
+    labels:
+      name: sensor
+  - name: ipmi_temperature_state
+    scope: node
+    instances: ["*"]
+    labels:
+      name: temperature
+  - name: ipmi_voltage_state
+    scope: node
+    instances: ["*"]
+    labels:
+      name: voltage
+  - name: ipmi_up
+    scope: node
+    instances: ["*"]
+
+  - name: eseries_exporter_collect_error
+    scope: node
+    instances: ["*"]
+    labels:
+      collector: all
+  - name: eseries_storage_system_status
+    scope: node
+    instances: ["*"]
+    labels:
+      status: $status
+  - name: eseries_drive_status
+    scope: node
+    instances: ["*"]
+    labels:
+      status: $status
+      tray: $tray
+      slot: $slot
+  - name: eseries_battery_status
+    scope: node
+    instances: ["*"]
+    labels:
+      status: $status
+      tray: $tray
+      slot: $slot
+  - name: eseries_fan_status
+    scope: node
+    instances: ["*"]
+    labels:
+      status: $status
+      tray: $tray
+      slot: $slot
+  - name: eseries_power_supply_status
+    scope: node
+    instances: ["*"]
+    labels:
+      status: $status
+      tray: $tray
+      slot: $slot
+  - name: eseries_cache_memory_dimm_status
+    scope: node
+    instances: ["*"]
+    labels:
+      status: $status
+      tray: $tray
+      slot: $slot
+  - name: eseries_thermal_sensor_status
+    scope: node
+    instances: ["*"]
+    labels:
+      status: $status
+      tray: $tray
+      slot: $slot
+
+  - name: sequana3_hyc_state_info
+    scope: rack
+    racks: ["*"]
+    labels:
+      job: sequana3
+      cluster: demo
+      env: demo
+      host: demo
+      mc_type: xh3000
+      model: xh3000
+      region: demo
+      sequana_rack_id: $rack_id
+      sequana_type: liquid
+      state: $state
+  - name: sequana3_hyc_p_in_kpa
+    scope: rack
+    racks: ["*"]
+    labels:
+      job: sequana3
+      cluster: demo
+      env: demo
+      host: demo
+      mc_type: xh3000
+      model: xh3000
+      region: demo
+      sequana_rack_id: $rack_id
+      sequana_type: liquid
+  - name: sequana3_hyc_leak_sensor_pump
+    scope: rack
+    racks: ["*"]
+    labels:
+      job: sequana3
+      cluster: demo
+      env: demo
+      host: demo
+      mc_type: xh3000
+      model: xh3000
+      region: demo
+      sequana_rack_id: $rack_id
+      sequana_type: liquid
+  - name: sequana3_hyc_tmp_pcb_cel
+    scope: rack
+    racks: ["*"]
+    labels:
+      job: sequana3
+      cluster: demo
+      env: demo
+      host: demo
+      mc_type: xh3000
+      model: xh3000
+      region: demo
+      sequana_rack_id: $rack_id
+      sequana_type: liquid

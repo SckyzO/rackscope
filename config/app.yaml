@@ -33,7 +33,7 @@ features:
 simulator:
   update_interval_seconds: 20
   seed: null
-  scenario: full-ok
+  scenario: random-1-critical
   scale_factor: 1.0
   incident_rates:
     node_micro_failure: 0.001
@@ -44,3 +44,4 @@ simulator:
     aisle: 5
   overrides_path: config/simulator_overrides.yaml
   default_ttl_seconds: 120
+  metrics_catalog_path: config/simulator_metrics_full.yaml

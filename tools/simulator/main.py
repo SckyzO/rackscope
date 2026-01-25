@@ -4,6 +4,7 @@ import yaml
 import os
 import math
 import re
+import fnmatch
 from prometheus_client import start_http_server, Gauge
 
 # Configuration Paths
@@ -11,12 +12,8 @@ TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology")
 SIMULATOR_CONFIG_PATH = os.getenv("SIMULATOR_CONFIG", "/app/config/simulator.yaml")
 APP_CONFIG_PATH = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
 
-# Metrics definition
-NODE_TEMP = Gauge('node_temperature_celsius', 'Ambient temperature of the node', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
-NODE_POWER = Gauge('node_power_watts', 'Power consumption of the node', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
-NODE_HEALTH = Gauge('node_health_status', 'Health status (0=OK, 1=WARN, 2=CRIT)', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
-NODE_LOAD = Gauge('node_load_percent', 'Resource load (CPU/GPU/Switch)', ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'])
-NODE_UP = Gauge('up', 'Exporter availability', ['job', 'instance', 'node_id'])
+METRICS = {}
+METRICS_DEFS = {}
 
 def load_yaml(path):
     try:
@@ -25,6 +22,79 @@ def load_yaml(path):
     except Exception as e:
         print(f"Error loading {path}: {e}")
         return {}
+
+def _expand_patterns(patterns):
+    exact = set()
+    wildcards = []
+    if not patterns:
+        return exact, wildcards
+    for pattern in patterns:
+        if not isinstance(pattern, str) or not pattern:
+            continue
+        if "[" in pattern and "]" in pattern and "-" in pattern:
+            expanded = parse_nodeset(pattern)
+            for name in expanded.values():
+                exact.add(name)
+            continue
+        if "*" in pattern or "?" in pattern:
+            wildcards.append(pattern)
+            continue
+        exact.add(pattern)
+    return exact, wildcards
+
+def _matches(name, exact, wildcards):
+    if name in exact:
+        return True
+    for pattern in wildcards:
+        if fnmatch.fnmatchcase(name, pattern):
+            return True
+    return False
+
+def load_metrics_catalog(path):
+    data = load_yaml(path) or {}
+    metrics = data.get('metrics') if isinstance(data, dict) else []
+    if not isinstance(metrics, list):
+        return []
+    return [m for m in metrics if isinstance(m, dict)]
+
+def build_metric_registry(metric_defs):
+    registry = {}
+    for name, definition in metric_defs.items():
+        if name not in SUPPORTED_METRICS:
+            print(f"Warning: Metric {name} not supported yet")
+            continue
+        scope = definition.get('scope')
+        label_templates = definition.get('labels') or {}
+        labelnames = list(BASE_LABELS.get(scope, []))
+        for key in label_templates.keys():
+            if key not in labelnames:
+                labelnames.append(key)
+        registry[name] = Gauge(name, definition.get('help') or name, labelnames)
+    return registry
+
+def _resolve_token(value, base_labels, context):
+    if not isinstance(value, str):
+        return value
+    if not value.startswith("$"):
+        return value
+    token = value[1:]
+    if token in context:
+        return context[token]
+    return base_labels.get(token, "")
+
+def resolve_labels(definition, base_labels, context):
+    labels = dict(base_labels)
+    for key, template in (definition.get('labels') or {}).items():
+        labels[key] = _resolve_token(template, base_labels, context)
+    return labels
+
+def set_metric_value(name, base_labels, value, context):
+    definition = METRICS_DEFS.get(name)
+    gauge = METRICS.get(name)
+    if not definition or not gauge:
+        return
+    labels = resolve_labels(definition, base_labels, context)
+    gauge.labels(**labels).set(value)
 
 def load_topology_data(path):
     if os.path.isdir(path):
@@ -121,6 +191,64 @@ def load_topology_nodes(topo_data):
 
 active_incidents = {'aisles': {}, 'racks': {}}
 
+SUPPORTED_METRICS = {
+    'node_temperature_celsius': 'node',
+    'node_power_watts': 'node',
+    'node_health_status': 'node',
+    'node_load_percent': 'node',
+    'up': 'node',
+    'ipmi_fan_speed_state': 'node',
+    'ipmi_power_state': 'node',
+    'ipmi_sensor_state': 'node',
+    'ipmi_temperature_state': 'node',
+    'ipmi_voltage_state': 'node',
+    'ipmi_up': 'node',
+    'eseries_exporter_collect_error': 'node',
+    'eseries_storage_system_status': 'node',
+    'eseries_drive_status': 'node',
+    'eseries_battery_status': 'node',
+    'eseries_fan_status': 'node',
+    'eseries_power_supply_status': 'node',
+    'eseries_cache_memory_dimm_status': 'node',
+    'eseries_thermal_sensor_status': 'node',
+    'sequana3_hyc_p_in_kpa': 'rack',
+    'sequana3_hyc_state_info': 'rack',
+    'sequana3_hyc_leak_sensor_pump': 'rack',
+    'sequana3_hyc_tmp_pcb_cel': 'rack',
+}
+
+BASE_LABELS = {
+    'node': ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'],
+    'rack': ['site_id', 'room_id', 'rack_id', 'instance', 'job'],
+}
+
+def normalize_metric_defs(metric_defs):
+    defs = {}
+    for item in metric_defs:
+        name = item.get('name') if isinstance(item, dict) else None
+        if not name:
+            continue
+        scope = item.get('scope') or SUPPORTED_METRICS.get(name)
+        if not scope:
+            print(f"Warning: Metric {name} missing scope")
+            continue
+        instances = item.get('instances') if isinstance(item.get('instances'), list) else []
+        racks = item.get('racks') if isinstance(item.get('racks'), list) else []
+        labels = item.get('labels') if isinstance(item.get('labels'), dict) else {}
+        help_text = item.get('help') if isinstance(item.get('help'), str) else name
+        inst_exact, inst_wild = _expand_patterns(instances)
+        rack_exact, rack_wild = _expand_patterns(racks)
+        defs[name] = {
+            'scope': scope,
+            'labels': labels,
+            'help': help_text,
+            'inst_exact': inst_exact,
+            'inst_wild': inst_wild,
+            'rack_exact': rack_exact,
+            'rack_wild': rack_wild,
+        }
+    return defs
+
 def load_simulator_config():
     sim_cfg = load_yaml(SIMULATOR_CONFIG_PATH) or {}
     app_cfg = load_yaml(APP_CONFIG_PATH) or {}
@@ -173,6 +301,35 @@ def simulate():
     seed = sim_cfg.get('seed')
     scale_factor = sim_cfg.get('scale_factor', 1.0)
     overrides_path = sim_cfg.get('overrides_path', '/app/config/simulator_overrides.yaml')
+    metrics_catalog_path = sim_cfg.get('metrics_catalog_path', '/app/config/simulator_metrics_full.yaml')
+    metric_defs = normalize_metric_defs(load_metrics_catalog(metrics_catalog_path))
+    if not metric_defs:
+        print(f"Error: No metrics catalog found at {metrics_catalog_path}")
+        return
+    global METRICS, METRICS_DEFS
+    METRICS_DEFS = metric_defs
+    METRICS = build_metric_registry(metric_defs)
+    limit_metrics = True
+
+    def metric_enabled(name, scope, node_id=None, rack_id=None):
+        definition = METRICS_DEFS.get(name)
+        if not definition or definition.get('scope') != scope:
+            return False
+        if scope == 'node':
+            if not definition['inst_exact'] and not definition['inst_wild']:
+                return True
+            return _matches(node_id or '', definition['inst_exact'], definition['inst_wild'])
+        if scope == 'rack':
+            if not definition['rack_exact'] and not definition['rack_wild']:
+                return True
+            return _matches(rack_id or '', definition['rack_exact'], definition['rack_wild'])
+        return False
+
+    def build_base_labels(target):
+        base_labels = {k: v for k, v in target.items() if k != 'aisle_id'}
+        base_labels['instance'] = target['node_id']
+        base_labels['job'] = 'node'
+        return base_labels
 
     print(f"Starting simulation loop (Interval: {update_interval}s)")
     tick = 0
@@ -181,6 +338,15 @@ def simulate():
         # Reload topology every tick to support dynamic changes
         topo_data = load_topology_data(TOPOLOGY_PATH)
         targets = load_topology_nodes(topo_data)
+        rack_info = {}
+        for target in targets:
+            rid = target['rack_id']
+            if rid not in rack_info:
+                rack_info[rid] = {
+                    'site_id': target['site_id'],
+                    'room_id': target['room_id'],
+                    'aisle_id': target['aisle_id'],
+                }
         tick += 1
         
         if seed is not None:
@@ -216,9 +382,7 @@ def simulate():
                 del active_incidents['racks'][rack]
 
         for target in targets:
-            labels = {k: v for k, v in target.items() if k != 'aisle_id'}
-            labels['instance'] = target['node_id']
-            labels['job'] = 'node'
+            base_labels = build_base_labels(target)
             nid = target['node_id'].lower()
             aid = target['aisle_id']
             rid = target['rack_id']
@@ -299,11 +463,114 @@ def simulate():
                 elif metric == 'node_health_status':
                     status = int(value)
 
-            NODE_TEMP.labels(**labels).set(round(temp, 1))
-            NODE_POWER.labels(**labels).set(round(power, 0))
-            NODE_LOAD.labels(**labels).set(round(final_load, 1))
-            NODE_HEALTH.labels(**labels).set(status)
-            NODE_UP.labels(job='node', instance=target['node_id'], node_id=target['node_id']).set(up_val)
+            if metric_enabled('node_temperature_celsius', 'node', node_id=target['node_id']):
+                set_metric_value('node_temperature_celsius', base_labels, round(temp, 1), {})
+            if metric_enabled('node_power_watts', 'node', node_id=target['node_id']):
+                set_metric_value('node_power_watts', base_labels, round(power, 0), {})
+            if metric_enabled('node_load_percent', 'node', node_id=target['node_id']):
+                set_metric_value('node_load_percent', base_labels, round(final_load, 1), {})
+            if metric_enabled('node_health_status', 'node', node_id=target['node_id']):
+                set_metric_value('node_health_status', base_labels, status, {})
+            if metric_enabled('up', 'node', node_id=target['node_id']):
+                set_metric_value('up', base_labels, up_val, {})
+
+            state_value = 2 if status == 2 else 1 if status == 1 else 0
+            if metric_enabled('ipmi_fan_speed_state', 'node', node_id=target['node_id']):
+                set_metric_value('ipmi_fan_speed_state', base_labels, state_value, {'name': 'fan'})
+            if metric_enabled('ipmi_power_state', 'node', node_id=target['node_id']):
+                set_metric_value('ipmi_power_state', base_labels, state_value, {'name': 'power'})
+            if metric_enabled('ipmi_sensor_state', 'node', node_id=target['node_id']):
+                set_metric_value('ipmi_sensor_state', base_labels, state_value, {'name': 'sensor'})
+            if metric_enabled('ipmi_temperature_state', 'node', node_id=target['node_id']):
+                set_metric_value('ipmi_temperature_state', base_labels, state_value, {'name': 'temperature'})
+            if metric_enabled('ipmi_voltage_state', 'node', node_id=target['node_id']):
+                set_metric_value('ipmi_voltage_state', base_labels, state_value, {'name': 'voltage'})
+            if metric_enabled('ipmi_up', 'node', node_id=target['node_id']):
+                set_metric_value('ipmi_up', base_labels, up_val, {})
+
+            status_label = 'optimal' if status == 0 else 'failed'
+            warn_value = 1 if status in (1, 2) else 0
+            crit_value = 1 if status == 2 else 0
+            if metric_enabled('eseries_exporter_collect_error', 'node', node_id=target['node_id']):
+                set_metric_value('eseries_exporter_collect_error', base_labels, warn_value, {'collector': 'all'})
+            if metric_enabled('eseries_storage_system_status', 'node', node_id=target['node_id']):
+                set_metric_value('eseries_storage_system_status', base_labels, crit_value, {'status': status_label})
+            if metric_enabled('eseries_drive_status', 'node', node_id=target['node_id']):
+                set_metric_value('eseries_drive_status', base_labels, crit_value, {'status': status_label, 'tray': '0', 'slot': '0'})
+            if metric_enabled('eseries_battery_status', 'node', node_id=target['node_id']):
+                set_metric_value('eseries_battery_status', base_labels, crit_value, {'status': status_label, 'tray': '0', 'slot': '0'})
+            if metric_enabled('eseries_fan_status', 'node', node_id=target['node_id']):
+                set_metric_value('eseries_fan_status', base_labels, warn_value, {'status': status_label, 'tray': '0', 'slot': '0'})
+            if metric_enabled('eseries_power_supply_status', 'node', node_id=target['node_id']):
+                set_metric_value('eseries_power_supply_status', base_labels, crit_value, {'status': status_label, 'tray': '0', 'slot': '0'})
+            if metric_enabled('eseries_cache_memory_dimm_status', 'node', node_id=target['node_id']):
+                set_metric_value('eseries_cache_memory_dimm_status', base_labels, warn_value, {'status': status_label, 'tray': '0', 'slot': '0'})
+            if metric_enabled('eseries_thermal_sensor_status', 'node', node_id=target['node_id']):
+                set_metric_value('eseries_thermal_sensor_status', base_labels, warn_value, {'status': status_label, 'tray': '0', 'slot': '0'})
+
+        for rack_id, info in rack_info.items():
+            if not metric_enabled('sequana3_hyc_p_in_kpa', 'rack', rack_id=rack_id) and \
+               not metric_enabled('sequana3_hyc_state_info', 'rack', rack_id=rack_id) and \
+               not metric_enabled('sequana3_hyc_leak_sensor_pump', 'rack', rack_id=rack_id) and \
+               not metric_enabled('sequana3_hyc_tmp_pcb_cel', 'rack', rack_id=rack_id):
+                continue
+
+            aisle_id = info.get('aisle_id')
+            is_rack_down = rack_id in active_incidents['racks']
+            rack_overrides = overrides_by_rack.get(rack_id, [])
+            for override in rack_overrides:
+                if override.get('metric') == 'rack_down':
+                    try:
+                        if float(override.get('value', 0)) > 0:
+                            is_rack_down = True
+                    except (TypeError, ValueError):
+                        continue
+            is_aisle_hot = aisle_id in active_incidents['aisles']
+
+            random.seed(f"{rack_id}-{tick}")
+            pressure = 200.0 + random.uniform(-2.0, 2.0)
+            leak = 0.0
+            board_temp = 60.0 + random.uniform(-2.0, 2.0)
+
+            if is_aisle_hot:
+                pressure = 175.0 + random.uniform(-2.0, 2.0)
+                leak = 0.6 + random.uniform(-0.1, 0.1)
+                board_temp = 80.0 + random.uniform(-1.0, 1.0)
+            if is_rack_down:
+                pressure = 160.0 + random.uniform(-1.0, 1.0)
+                leak = 1.2 + random.uniform(-0.1, 0.1)
+                board_temp = 95.0 + random.uniform(-1.0, 1.0)
+
+            base_labels = {
+                'site_id': info.get('site_id'),
+                'room_id': info.get('room_id'),
+                'rack_id': rack_id,
+                'instance': f"sequana-{rack_id}",
+                'job': 'sequana3',
+            }
+            context = {
+                'rack_id': rack_id,
+                'instance': base_labels['instance'],
+                'job': base_labels['job'],
+                'cluster': 'demo',
+                'env': 'demo',
+                'host': 'demo',
+                'mc_type': 'xh3000',
+                'model': 'xh3000',
+                'region': 'demo',
+                'sequana_rack_id': rack_id,
+                'sequana_type': 'liquid',
+                'state': 'standbyspare',
+            }
+
+            if metric_enabled('sequana3_hyc_state_info', 'rack', rack_id=rack_id):
+                set_metric_value('sequana3_hyc_state_info', base_labels, 1, context)
+            if metric_enabled('sequana3_hyc_p_in_kpa', 'rack', rack_id=rack_id):
+                set_metric_value('sequana3_hyc_p_in_kpa', base_labels, round(pressure, 2), context)
+            if metric_enabled('sequana3_hyc_leak_sensor_pump', 'rack', rack_id=rack_id):
+                set_metric_value('sequana3_hyc_leak_sensor_pump', base_labels, round(leak, 2), context)
+            if metric_enabled('sequana3_hyc_tmp_pcb_cel', 'rack', rack_id=rack_id):
+                set_metric_value('sequana3_hyc_tmp_pcb_cel', base_labels, round(board_temp, 1), context)
 
         time.sleep(update_interval)
 

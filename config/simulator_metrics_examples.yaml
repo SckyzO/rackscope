@@ -1,0 +1,47 @@
+metrics:
+  - name: ipmi_temperature_state
+    scope: node
+    instances:
+      - compute[001-010]
+      - switch001
+    labels:
+      name: temperature
+      job: node
+
+  - name: eseries_storage_system_status
+    scope: node
+    instances:
+      - storage[001-002]
+    labels:
+      status: $status
+
+  - name: sequana3_hyc_state_info
+    scope: rack
+    racks:
+      - r01-01
+    labels:
+      job: sequana3
+      cluster: demo
+      env: demo
+      host: demo
+      mc_type: xh3000
+      model: xh3000
+      region: demo
+      sequana_rack_id: $rack_id
+      sequana_type: liquid
+      state: $state
+
+  - name: sequana3_hyc_p_in_kpa
+    scope: rack
+    racks:
+      - r01-01
+    labels:
+      job: sequana3
+      cluster: demo
+      env: demo
+      host: demo
+      mc_type: xh3000
+      model: xh3000
+      region: demo
+      sequana_rack_id: $rack_id
+      sequana_type: liquid
