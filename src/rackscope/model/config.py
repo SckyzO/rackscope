@@ -94,10 +94,11 @@ class SimulatorConfig(BaseModel):
     update_interval_seconds: int = Field(default=20, ge=1)
     seed: Optional[int] = None
     scenario: Optional[str] = None
-    scale_factor: float = Field(default=1.0, ge=0.1)
+    scale_factor: float = Field(default=1.0, ge=0.0)
     incident_rates: IncidentRates = Field(default_factory=IncidentRates)
     incident_durations: IncidentDurations = Field(default_factory=IncidentDurations)
     overrides_path: str = Field(default="config/simulator_overrides.yaml", min_length=1)
+    default_ttl_seconds: int = Field(default=120, ge=0)
 
 
 class AppConfig(BaseModel):

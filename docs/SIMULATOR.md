@@ -32,6 +32,7 @@ Scenarios live in `config/simulator.yaml` and override simulator settings. You c
 select a scenario via `simulator.scenario` in `app.yaml`. When a scenario is set,
 the base `incident_rates` are not inherited unless the scenario explicitly defines
 them.
+Scenarios can include an optional `description` field used by the UI.
 
 Each scenario can override:
 - `update_interval_seconds`
@@ -61,6 +62,11 @@ scenarios:
 
 The built-in `full-ok` scenario also overrides profiles to keep temperatures under
 warning thresholds.
+
+## Overrides TTL
+
+`simulator.default_ttl_seconds` sets the default TTL (seconds) for overrides when
+the UI leaves TTL empty. Use `0` for no expiry.
 
 ## Labels and instance mapping
 

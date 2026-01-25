@@ -141,6 +141,7 @@ export interface AppConfig {
     seed?: number | null;
     scenario?: string | null;
     scale_factor?: number;
+    default_ttl_seconds?: number;
     incident_rates?: {
       node_micro_failure?: number;
       rack_macro_failure?: number;
@@ -152,4 +153,9 @@ export interface AppConfig {
     };
     overrides_path?: string;
   };
+}
+
+export interface SimulatorScenario {
+  name: string;
+  description?: string | null;
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
-import type { AppConfig } from '../types';
+import type { AppConfig, SimulatorScenario } from '../types';
 import { Moon, Sun, Check, Save } from 'lucide-react';
 
 type ConfigDraft = {
@@ -49,6 +49,7 @@ type ConfigDraft = {
     seed: string;
     scenario: string;
     scale_factor: string;
+    default_ttl_seconds: string;
     incident_rates: {
       node_micro_failure: string;
       rack_macro_failure: string;
@@ -72,7 +73,8 @@ export const SettingsPage = () => {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [overrides, setOverrides] = useState<Array<{ id: string; instance?: string; rack_id?: string; metric: string; value: number; expires_at?: number }>>([]);
   const [overrideForm, setOverrideForm] = useState({ scope: 'instance', instance: '', rack_id: '', metric: 'up', value: '', ttl_seconds: '' });
-  const [scenarioOptions, setScenarioOptions] = useState<string[]>([]);
+  const [overrideError, setOverrideError] = useState<string | null>(null);
+  const [scenarioOptions, setScenarioOptions] = useState<SimulatorScenario[]>([]);
 
   const colors = [
     { id: 'blue', value: '#3b82f6' },
@@ -143,7 +145,7 @@ export const SettingsPage = () => {
       try {
         const data = await api.getSimulatorScenarios();
         if (active) {
-          setScenarioOptions((data?.scenarios || []) as string[]);
+          setScenarioOptions((data?.scenarios || []) as SimulatorScenario[]);
         }
       } catch (err) {
         console.error(err);
@@ -201,6 +203,7 @@ export const SettingsPage = () => {
         seed: config.simulator?.seed !== null && config.simulator?.seed !== undefined ? String(config.simulator?.seed) : '',
         scenario: config.simulator?.scenario || '',
         scale_factor: String(config.simulator?.scale_factor ?? 1.0),
+        default_ttl_seconds: String(config.simulator?.default_ttl_seconds ?? 120),
         incident_rates: {
           node_micro_failure: String(config.simulator?.incident_rates?.node_micro_failure ?? 0.001),
           rack_macro_failure: String(config.simulator?.incident_rates?.rack_macro_failure ?? 0.01),
@@ -288,6 +291,7 @@ export const SettingsPage = () => {
       ['planner_cache', draft.planner.cache_ttl_seconds, 1],
       ['planner_max', draft.planner.max_ids_per_query, 1],
       ['sim_update_interval', draft.simulator.update_interval_seconds, 1],
+      ['sim_default_ttl', draft.simulator.default_ttl_seconds, 0],
       ['sim_duration_rack', draft.simulator.incident_durations.rack, 1],
       ['sim_duration_aisle', draft.simulator.incident_durations.aisle, 1],
     ];
@@ -315,14 +319,18 @@ export const SettingsPage = () => {
       }
     }
     const scale = Number.parseFloat(draft.simulator.scale_factor);
-    if (!Number.isFinite(scale) || scale < 0.1) {
-      next.sim_scale = 'Must be >= 0.1';
+    if (!Number.isFinite(scale) || scale < 0) {
+      next.sim_scale = 'Must be >= 0';
     }
 
     return next;
   }, [draft]);
 
   const canSave = draft && Object.keys(validationErrors).length === 0;
+  const selectedScenario = useMemo(() => {
+    if (!draft?.simulator.scenario) return null;
+    return scenarioOptions.find((opt) => opt.name === draft.simulator.scenario) || null;
+  }, [scenarioOptions, draft?.simulator.scenario]);
 
   const handleSave = async () => {
     if (!draft || !canSave) return;
@@ -372,6 +380,7 @@ export const SettingsPage = () => {
           seed: draft.simulator.seed ? Number.parseInt(draft.simulator.seed, 10) : null,
           scenario: draft.simulator.scenario || null,
           scale_factor: Number.parseFloat(draft.simulator.scale_factor),
+          default_ttl_seconds: Number.parseInt(draft.simulator.default_ttl_seconds, 10),
           incident_rates: {
             node_micro_failure: Number.parseFloat(draft.simulator.incident_rates.node_micro_failure),
             rack_macro_failure: Number.parseFloat(draft.simulator.incident_rates.rack_macro_failure),
@@ -749,10 +758,13 @@ export const SettingsPage = () => {
                       className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
                     >
                       <option value="">(none)</option>
-                      {scenarioOptions.map((name) => (
-                        <option key={name} value={name}>{name}</option>
+                      {scenarioOptions.map((item) => (
+                        <option key={item.name} value={item.name}>{item.name}</option>
                       ))}
                     </select>
+                    {selectedScenario?.description && (
+                      <div className="mt-1 text-[10px] text-gray-500">{selectedScenario.description}</div>
+                    )}
                   </label>
                   <label className="text-xs text-gray-400" title="Scale factor for incident rates (1.0 = baseline, 2.0 = twice as frequent)">
                     Scale factor
@@ -774,6 +786,16 @@ export const SettingsPage = () => {
                       className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
                       placeholder="Optional"
                     />
+                  </label>
+                  <label className="text-xs text-gray-400" title="Default TTL for overrides when left empty (0 disables TTL)">
+                    Override default TTL (seconds)
+                    <input
+                      type="number"
+                      value={draft?.simulator.default_ttl_seconds || ''}
+                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, default_ttl_seconds: e.target.value } }))}
+                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    />
+                    {validationErrors.sim_default_ttl && <div className="text-[10px] text-status-crit">{validationErrors.sim_default_ttl}</div>}
                   </label>
                   <label className="text-xs text-gray-400" title="Overrides file path">
                     Overrides path
@@ -893,21 +915,61 @@ export const SettingsPage = () => {
                     <input
                       value={overrideForm.ttl_seconds}
                       onChange={(e) => setOverrideForm((prev) => ({ ...prev, ttl_seconds: e.target.value }))}
-                      placeholder="TTL seconds (optional)"
+                      placeholder={`TTL seconds (default ${draft?.simulator.default_ttl_seconds ?? 120})`}
                       className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
                     />
+                    {overrideError && <div className="text-[10px] text-status-crit">{overrideError}</div>}
                     <button
                       type="button"
                       onClick={async () => {
-                        if (overrideForm.value === '') return;
-                        if (overrideForm.scope === 'instance' && !overrideForm.instance) return;
-                        if (overrideForm.scope === 'rack' && !overrideForm.rack_id) return;
+                        setOverrideError(null);
+                        if (overrideForm.value === '') {
+                          setOverrideError('Value is required');
+                          return;
+                        }
+                        if (overrideForm.scope === 'instance' && !overrideForm.instance) {
+                          setOverrideError('Instance is required');
+                          return;
+                        }
+                        if (overrideForm.scope === 'rack' && !overrideForm.rack_id) {
+                          setOverrideError('Rack ID is required');
+                          return;
+                        }
+                        if (overrideForm.scope === 'rack' && overrideForm.metric !== 'rack_down') {
+                          setOverrideError('Rack overrides only support rack_down');
+                          return;
+                        }
+                        if (overrideForm.scope === 'instance' && overrideForm.metric === 'rack_down') {
+                          setOverrideError('rack_down requires rack scope');
+                          return;
+                        }
+                        const value = Number.parseFloat(overrideForm.value);
+                        if (!Number.isFinite(value)) {
+                          setOverrideError('Value must be numeric');
+                          return;
+                        }
+                        if (overrideForm.metric === 'up' && ![0, 1].includes(value)) {
+                          setOverrideError('up must be 0 or 1');
+                          return;
+                        }
+                        if (overrideForm.metric === 'node_health_status' && ![0, 1, 2].includes(value)) {
+                          setOverrideError('node_health_status must be 0, 1, or 2');
+                          return;
+                        }
+                        let ttl: number | undefined;
+                        if (overrideForm.ttl_seconds) {
+                          ttl = Number.parseInt(overrideForm.ttl_seconds, 10);
+                          if (!Number.isFinite(ttl) || ttl < 0) {
+                            setOverrideError('TTL must be >= 0');
+                            return;
+                          }
+                        }
                         const payload = {
                           instance: overrideForm.scope === 'instance' ? overrideForm.instance : undefined,
                           rack_id: overrideForm.scope === 'rack' ? overrideForm.rack_id : undefined,
                           metric: overrideForm.metric,
-                          value: Number.parseFloat(overrideForm.value),
-                          ttl_seconds: overrideForm.ttl_seconds ? Number.parseInt(overrideForm.ttl_seconds, 10) : undefined,
+                          value,
+                          ttl_seconds: ttl,
                         };
                         const data = await api.addSimulatorOverride(payload);
                         setOverrides((data?.overrides || []) as any[]);
@@ -916,6 +978,16 @@ export const SettingsPage = () => {
                       className="w-full rounded-lg bg-[var(--color-accent)]/15 text-[var(--color-accent)] border border-[var(--color-accent)]/30 px-3 py-2 text-xs font-bold uppercase tracking-widest"
                     >
                       Add override
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const data = await api.clearSimulatorOverrides();
+                        setOverrides((data?.overrides || []) as any[]);
+                      }}
+                      className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs uppercase tracking-widest text-gray-400"
+                    >
+                      Reset overrides
                     </button>
                   </div>
                   <div className="mt-4 space-y-2 text-[11px] text-gray-400">

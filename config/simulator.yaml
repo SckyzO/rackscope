@@ -48,6 +48,7 @@ profiles:
 # Scenarios (optional overrides)
 scenarios:
   full-ok:
+    description: "No incidents. Low temps and load for a fully green demo."
     seed: 1
     scale_factor: 0.0
     incident_rates:
@@ -84,6 +85,7 @@ scenarios:
         load_min: 5.0
         load_max: 15.0
   random-1-critical:
+    description: "Occasional single critical node incident."
     seed: 11
     scale_factor: 0.05
     incident_rates:
@@ -91,6 +93,7 @@ scenarios:
       rack_macro_failure: 0.0
       aisle_cooling_failure: 0.0
   random-1-rack-down:
+    description: "Occasional rack down incident (affects all nodes in a rack)."
     seed: 12
     scale_factor: 0.1
     incident_rates:
@@ -100,6 +103,7 @@ scenarios:
     incident_durations:
       rack: 3
   random-demo-small:
+    description: "Mostly OK, rare warning/critical incidents."
     seed: 42
     scale_factor: 1.0
     incident_rates:
@@ -107,6 +111,7 @@ scenarios:
       rack_macro_failure: 0.0
       aisle_cooling_failure: 0.004
   random-demo-high:
+    description: "High churn demo with frequent warning/critical incidents."
     seed: 99
     scale_factor: 1.0
     incident_rates:
@@ -114,6 +119,7 @@ scenarios:
       rack_macro_failure: 0.05
       aisle_cooling_failure: 0.20
   demo-stable:
+    description: "Stable baseline with few incidents."
     update_interval_seconds: 20
     seed: 7
     scale_factor: 0.5

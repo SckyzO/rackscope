@@ -1,4 +1,4 @@
-import type { Site, Room, RoomSummary, DeviceTemplate, Rack, AppConfig } from '../types';
+import type { Site, Room, RoomSummary, DeviceTemplate, Rack, AppConfig, SimulatorScenario } from '../types';
 
 const CACHE_PREFIX = 'rackscope.cache.';
 const META_KEY = 'rackscope.cache.meta';
@@ -111,11 +111,12 @@ export const api = {
   getSimulatorOverrides: async () => {
     return fetchWithCache('/api/simulator/overrides', 'simulator.overrides');
   },
-  getSimulatorScenarios: async () => {
+  getSimulatorScenarios: async (): Promise<{ scenarios: SimulatorScenario[] }> => {
     return fetchWithCache('/api/simulator/scenarios', 'simulator.scenarios');
   },
   addSimulatorOverride: async (payload: {
-    instance: string;
+    instance?: string;
+    rack_id?: string;
     metric: string;
     value: number;
     ttl_seconds?: number;
@@ -125,6 +126,16 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/simulator/overrides');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('simulator.overrides', data);
+    return data;
+  },
+  clearSimulatorOverrides: async () => {
+    const res = await fetch('/api/simulator/overrides', { method: 'DELETE' });
     if (!res.ok) {
       logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/simulator/overrides');
       throw new Error(`Request failed: ${res.status}`);

@@ -183,6 +183,7 @@ def get_app_config():
             "seed": None,
             "scenario": None,
             "scale_factor": 1.0,
+            "default_ttl_seconds": 120,
             "incident_rates": {
                 "node_micro_failure": 0.001,
                 "rack_macro_failure": 0.01,
@@ -265,11 +266,26 @@ def get_simulator_scenarios():
     scenarios = data.get("scenarios") if isinstance(data, dict) else {}
     if not isinstance(scenarios, dict):
         return {"scenarios": []}
-    return {"scenarios": sorted(scenarios.keys())}
+    payload = []
+    for name in sorted(scenarios.keys()):
+        entry = scenarios.get(name) if isinstance(scenarios.get(name), dict) else {}
+        payload.append({
+            "name": name,
+            "description": entry.get("description") if isinstance(entry, dict) else None,
+        })
+    return {"scenarios": payload}
 
 
 @app.post("/api/simulator/overrides")
 def add_simulator_override(payload: dict):
+    valid_metrics = {
+        "up",
+        "node_temperature_celsius",
+        "node_power_watts",
+        "node_load_percent",
+        "node_health_status",
+        "rack_down",
+    }
     instance = payload.get("instance")
     rack_id = payload.get("rack_id")
     metric = payload.get("metric")
@@ -277,12 +293,22 @@ def add_simulator_override(payload: dict):
     ttl = payload.get("ttl_seconds")
     if not metric:
         raise HTTPException(status_code=400, detail="metric is required")
+    if metric not in valid_metrics:
+        raise HTTPException(status_code=400, detail="metric is not supported")
     if not instance and not rack_id:
         raise HTTPException(status_code=400, detail="instance or rack_id is required")
+    if rack_id and metric != "rack_down":
+        raise HTTPException(status_code=400, detail="rack overrides only support rack_down")
+    if instance and metric == "rack_down":
+        raise HTTPException(status_code=400, detail="rack_down requires rack_id")
     try:
         value = float(value)
     except (TypeError, ValueError):
         raise HTTPException(status_code=400, detail="value must be numeric")
+    if metric == "node_health_status" and value not in (0, 1, 2):
+        raise HTTPException(status_code=400, detail="node_health_status must be 0, 1, or 2")
+    if metric == "up" and value not in (0, 1):
+        raise HTTPException(status_code=400, detail="up must be 0 or 1")
     override_id = payload.get("id") or f"{(instance or rack_id)}-{metric}-{int(time.time())}"
     override = {
         "id": override_id,
@@ -291,16 +317,29 @@ def add_simulator_override(payload: dict):
         "metric": metric,
         "value": value,
     }
-    if ttl:
+    default_ttl = None
+    if APP_CONFIG and getattr(APP_CONFIG, "simulator", None):
+        default_ttl = getattr(APP_CONFIG.simulator, "default_ttl_seconds", None)
+    ttl_val = ttl if ttl is not None else default_ttl
+    if ttl_val is not None:
         try:
-            ttl_val = int(ttl)
-            override["expires_at"] = int(time.time()) + max(ttl_val, 1)
+            ttl_val = int(ttl_val)
         except (TypeError, ValueError):
             raise HTTPException(status_code=400, detail="ttl_seconds must be int")
+        if ttl_val < 0:
+            raise HTTPException(status_code=400, detail="ttl_seconds must be >= 0")
+        if ttl_val > 0:
+            override["expires_at"] = int(time.time()) + ttl_val
     overrides = _load_overrides()
     overrides.append(override)
     _save_overrides(overrides)
     return {"overrides": overrides}
+
+
+@app.delete("/api/simulator/overrides")
+def clear_simulator_overrides():
+    _save_overrides([])
+    return {"overrides": []}
 
 
 @app.delete("/api/simulator/overrides/{override_id}")
