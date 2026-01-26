@@ -81,6 +81,7 @@ export interface DeviceRearComponent {
   name: string;
   type: 'psu' | 'fan' | 'io' | 'hydraulics' | 'other';
   role?: string;
+  checks?: string[];
 }
 
 export interface InfrastructureComponent {

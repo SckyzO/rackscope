@@ -15,6 +15,7 @@ class DeviceRearComponent(BaseModel):
     name: str
     type: Literal["psu", "fan", "io", "hydraulics", "other"]
     role: Optional[str] = None
+    checks: List[str] = Field(default_factory=list)
 
 
 class DeviceTemplate(BaseModel):
