@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
+import type { RackTemplate } from '../types';
 
 type RackComponentDraft = {
   id: string;
@@ -50,6 +51,9 @@ export const TemplatesRackEditorPage = () => {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
+  const [rackTemplates, setRackTemplates] = useState<RackTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   const unitHeight = 24;
   const minPreviewHeight = 240;
 
@@ -59,6 +63,43 @@ export const TemplatesRackEditorPage = () => {
   }, [draft.u_height]);
 
   const previewUCount = useMemo(() => parsePositiveInt(draft.u_height, 42), [draft.u_height]);
+
+  useEffect(() => {
+    let active = true;
+    api.getCatalog()
+      .then((catalog) => {
+        if (!active) return;
+        setRackTemplates(catalog.rack_templates || []);
+      })
+      .catch(console.error);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const mapComponentDraft = (comp: any, rackHeight: number): RackComponentDraft => ({
+    id: comp?.id || '',
+    name: comp?.name || '',
+    type: comp?.type || 'other',
+    location: comp?.location || 'u-mount',
+    u_position: String(comp?.u_position || 1),
+    u_height: String(comp?.u_height || (comp?.location?.startsWith('side') ? rackHeight : 1)),
+  });
+
+  const loadTemplate = (template: RackTemplate) => {
+    const rackHeight = template.u_height || 42;
+    setDraft({
+      id: template.id,
+      name: template.name,
+      u_height: String(rackHeight),
+      front_components: (template.infrastructure?.front_components || []).map((comp) => mapComponentDraft(comp, rackHeight)),
+      rear_components: (template.infrastructure?.rear_components || []).map((comp) => mapComponentDraft(comp, rackHeight)),
+      side_components: (template.infrastructure?.side_components || []).map((comp) => mapComponentDraft(comp, rackHeight)),
+    });
+    setIsEditing(true);
+    setStatus('idle');
+    setError(null);
+  };
 
   const yamlPreview = useMemo(() => {
     const uHeight = parsePositiveInt(draft.u_height, 42);
@@ -83,7 +124,37 @@ export const TemplatesRackEditorPage = () => {
     return `rack_templates:\n  - ${JSON.stringify(template, null, 2).replace(/\n/g, '\n    ')}`;
   }, [draft]);
 
-  const canSave = draft.id.trim() && draft.name.trim();
+  const validationErrors = useMemo(() => {
+    const errors: string[] = [];
+    const uHeight = parsePositiveInt(draft.u_height, 0);
+    if (!draft.id.trim()) errors.push('Template ID is required.');
+    if (!draft.name.trim()) errors.push('Name is required.');
+    if (!Number.isFinite(uHeight) || uHeight <= 0) errors.push('U height must be greater than 0.');
+    if (!isEditing && rackTemplates.some((t) => t.id === draft.id.trim())) {
+      errors.push('Template ID already exists.');
+    }
+
+    const validateComponents = (items: RackComponentDraft[], label: string) => {
+      items.forEach((comp) => {
+        const pos = parsePositiveInt(comp.u_position, 1);
+        const height = parsePositiveInt(comp.u_height, 1);
+        if (pos <= 0 || height <= 0) {
+          errors.push(`${label}: u_position and u_height must be > 0.`);
+          return;
+        }
+        if (uHeight && pos + height - 1 > uHeight) {
+          errors.push(`${label}: component exceeds rack height.`);
+        }
+      });
+    };
+
+    validateComponents(draft.front_components, 'Front components');
+    validateComponents(draft.rear_components, 'Rear components');
+    validateComponents(draft.side_components, 'Side components');
+    return errors;
+  }, [draft, rackTemplates, isEditing]);
+
+  const canSave = validationErrors.length === 0;
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -109,10 +180,16 @@ export const TemplatesRackEditorPage = () => {
           side_components: draft.side_components.map(mapComponent),
         },
       };
-      await api.createTemplate({ kind: 'rack', template });
+      if (isEditing) {
+        await api.updateTemplate({ kind: 'rack', template });
+      } else {
+        await api.createTemplate({ kind: 'rack', template });
+      }
       setStatus('saved');
       setTimeout(() => setStatus('idle'), 1500);
-      setDraft(defaultDraft);
+      if (!isEditing) {
+        setDraft(defaultDraft);
+      }
     } catch (err: any) {
       setError(err?.message || 'Failed to save');
       setStatus('error');
@@ -287,6 +364,19 @@ export const TemplatesRackEditorPage = () => {
         <div className="flex items-center gap-3">
           <button
             type="button"
+            onClick={() => {
+              setSelectedTemplateId('');
+              setIsEditing(false);
+              setDraft(defaultDraft);
+              setStatus('idle');
+              setError(null);
+            }}
+            className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[var(--color-border)] text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/40 transition-colors"
+          >
+            New Template
+          </button>
+          <button
+            type="button"
             onClick={() => setShowYaml((prev) => !prev)}
             className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[var(--color-border)] text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/40 transition-colors"
           >
@@ -302,7 +392,13 @@ export const TemplatesRackEditorPage = () => {
                 : 'bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed'
             }`}
           >
-            {status === 'saving' ? 'Saving' : status === 'saved' ? 'Saved' : 'Save'}
+            {status === 'saving'
+              ? 'Saving'
+              : status === 'saved'
+                ? 'Saved'
+                : isEditing
+                  ? 'Update'
+                  : 'Save'}
           </button>
         </div>
       </header>
@@ -311,10 +407,36 @@ export const TemplatesRackEditorPage = () => {
         <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 space-y-4">
           <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Rack Template</h2>
           <label className="text-xs text-gray-400">
+            Load existing
+            <select
+              value={selectedTemplateId}
+              onChange={(e) => {
+                const nextId = e.target.value;
+                setSelectedTemplateId(nextId);
+                const selected = rackTemplates.find((t) => t.id === nextId);
+                if (selected) {
+                  loadTemplate(selected);
+                } else {
+                  setIsEditing(false);
+                  setDraft(defaultDraft);
+                }
+              }}
+              className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+            >
+              <option value="">New rack template</option>
+              {rackTemplates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-gray-400">
             Template ID
             <input
               value={draft.id}
               onChange={(e) => setDraft((prev) => ({ ...prev, id: e.target.value }))}
+              disabled={isEditing}
               className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
               placeholder="my-rack-42u"
             />
@@ -342,6 +464,16 @@ export const TemplatesRackEditorPage = () => {
           {renderComponentRows(draft.rear_components, (next) => setDraft((prev) => ({ ...prev, rear_components: next })), 'Rear components', false)}
           {renderComponentRows(draft.side_components, (next) => setDraft((prev) => ({ ...prev, side_components: next })), 'Side components', true)}
 
+          {validationErrors.length > 0 && (
+            <div className="text-[11px] text-status-warn space-y-1">
+              {validationErrors.slice(0, 3).map((message) => (
+                <div key={message}>{message}</div>
+              ))}
+              {validationErrors.length > 3 && (
+                <div>{`+${validationErrors.length - 3} more`}</div>
+              )}
+            </div>
+          )}
           {error && <div className="text-[11px] text-status-crit">{error}</div>}
         </section>
 

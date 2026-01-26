@@ -39,6 +39,15 @@ def _safe_segment(value: str, fallback: str) -> str:
     value = value.strip("-")
     return value or fallback
 
+def _find_device_template_path(templates_dir: Path, template_id: str) -> Optional[Path]:
+    devices_dir = templates_dir / "devices"
+    if not devices_dir.exists():
+        return None
+    matches = list(devices_dir.rglob(f"{template_id}.yaml"))
+    if not matches:
+        return None
+    return matches[0]
+
 
 def apply_config(app_config: AppConfig) -> None:
     global TOPOLOGY, CATALOG, CHECKS_LIBRARY, APP_CONFIG, PLANNER
@@ -464,6 +473,40 @@ def write_template(payload: TemplateWriteRequest):
     target_path = target_dir / filename
     if target_path.exists():
         raise HTTPException(status_code=400, detail=f"Template file already exists: {target_path}")
+    data = {key: [template.model_dump()]}
+    target_path.write_text(dump_yaml(data))
+
+    # Reload catalog to keep in-memory state aligned.
+    CATALOG = load_catalog(templates_dir)
+
+    return template
+
+@app.put("/api/catalog/templates")
+def update_template(payload: TemplateWriteRequest):
+    global CATALOG
+    if not APP_CONFIG:
+        raise HTTPException(status_code=500, detail="App config not loaded")
+    templates_dir = Path(APP_CONFIG.paths.templates)
+    templates_dir.mkdir(parents=True, exist_ok=True)
+
+    if payload.kind == "device":
+        template = DeviceTemplate(**payload.template)
+        type_dir = _safe_segment(template.type, "other")
+        target_dir = templates_dir / "devices" / type_dir
+        key = "templates"
+        filename = f"{_safe_segment(template.id, 'device')}.yaml"
+        existing_path = _find_device_template_path(templates_dir, template.id)
+        target_path = target_dir / filename
+        if existing_path and existing_path != target_path:
+            existing_path.unlink(missing_ok=True)
+    else:
+        template = RackTemplate(**payload.template)
+        target_dir = templates_dir / "racks"
+        key = "rack_templates"
+        filename = f"{_safe_segment(template.id, 'rack')}.yaml"
+        target_path = target_dir / filename
+
+    target_dir.mkdir(parents=True, exist_ok=True)
     data = {key: [template.model_dump()]}
     target_path.write_text(dump_yaml(data))
 

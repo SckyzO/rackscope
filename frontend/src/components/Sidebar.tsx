@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../services/api';
-import type { RoomSummary, AisleSummary, DeviceTemplate, Site } from '../types';
+import type { RoomSummary, AisleSummary, Site } from '../types';
 import { matchesInstanceValue, matchesText } from '../utils/search';
 import {
   LayoutDashboard,
@@ -29,8 +29,6 @@ export const Sidebar = ({
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
-  const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
-  const [rackTemplates, setRackTemplates] = useState<any[]>([]);
   const [promStats, setPromStats] = useState<{
     last_ms?: number | null;
     avg_ms?: number | null;
@@ -47,13 +45,11 @@ export const Sidebar = ({
   });
 
   useEffect(() => {
-    Promise.all([api.getRooms(), api.getCatalog(), api.getSites(), api.getConfig()])
-      .then(([roomsData, catalogData, sitesData, configData]) => {
+    Promise.all([api.getRooms(), api.getSites(), api.getConfig()])
+      .then(([roomsData, sitesData, configData]) => {
         const safeRooms = Array.isArray(roomsData) ? roomsData : [];
         const safeSites = Array.isArray(sitesData) ? sitesData : [];
         setRooms(safeRooms);
-        setDeviceTemplates(catalogData.device_templates || []);
-        setRackTemplates(catalogData.rack_templates || []);
         setSites(safeSites);
         const nextRefresh = Number(configData?.telemetry?.prometheus_heartbeat_seconds) || 30;
         setRefreshSeconds(Math.max(10, nextRefresh));
@@ -128,15 +124,6 @@ export const Sidebar = ({
     if (min >= 1) return `${min}m ${sec}s`;
     return `${sec}s`;
   };
-
-  const groupedDevices = useMemo(() => {
-    return deviceTemplates.reduce((acc, t) => {
-      const type = t.type || 'other';
-      if (!acc[type]) acc[type] = [];
-      acc[type].push(t);
-      return acc;
-    }, {} as Record<string, DeviceTemplate[]>);
-  }, [deviceTemplates]);
 
   const toggleSection = (key: string) => {
     setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
@@ -307,14 +294,6 @@ export const Sidebar = ({
             <SidebarLink to="/templates" icon={Folder} label="Library" depth={1} />
             <SidebarLink to="/templates/editor" icon={Component} label="Device Editor" depth={1} />
             <SidebarLink to="/templates/editor/racks" icon={Component} label="Rack Editor" depth={1} />
-            <NavToggle icon={Component} label="Racks" depth={1} expanded onToggle={() => undefined} disabled />
-            {rackTemplates.map((t: any) => (
-              <NavItem key={t.id} label={t.name} depth={2} />
-            ))}
-            <NavToggle icon={Component} label="Devices" depth={1} expanded onToggle={() => undefined} disabled />
-            {Object.values(groupedDevices).flat().map((t) => (
-              <NavItem key={t.id} label={t.name} depth={2} />
-            ))}
           </div>
         )}
         <div className="h-px bg-[var(--color-border)]/40 my-2"></div>

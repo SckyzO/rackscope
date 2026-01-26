@@ -87,6 +87,21 @@ export const api = {
     markSuccess();
     return data;
   },
+  updateTemplate: async (payload: { kind: 'device' | 'rack'; template: Record<string, any> }) => {
+    const res = await fetch('/api/catalog/templates', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/catalog/templates');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('catalog', null);
+    markSuccess();
+    return data;
+  },
   getRack: async (rackId: string): Promise<Rack> => {
     return fetchWithCache(`/api/racks/${rackId}`, `rack.${rackId}`);
   },
