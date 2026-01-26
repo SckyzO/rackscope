@@ -5,7 +5,7 @@ import type { Room, Rack, DeviceTemplate, RackTemplate } from '../types';
 import { Box, Zap, Thermometer, Maximize2 } from 'lucide-react';
 import { RackElevation, HUDTooltip } from '../components/RackVisualizer';
 
-export const RoomPage = () => {
+export const RoomPage = ({ searchQuery = '' }: { searchQuery?: string }) => {
   const { roomId } = useParams<{ roomId: string }>();
   const [room, setRoom] = useState<Room | null>(null);
   const [catalog, setCatalog] = useState<Record<string, DeviceTemplate>>({});
@@ -17,6 +17,8 @@ export const RoomPage = () => {
   const [healthMap, setHealthMap] = useState<Record<string, any>>({});
   const [selectedRackHealth, setSelectedRackHealth] = useState<any>(null);
   const [refreshMs, setRefreshMs] = useState(30000);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const hasQuery = normalizedQuery.length > 0;
 
   useEffect(() => {
     const init = async () => {
@@ -98,6 +100,62 @@ export const RoomPage = () => {
     ? selectedRackTemplate.infrastructure.rear_components
     : selectedRackTemplate?.infrastructure.components || [];
 
+  const filteredAisles = useMemo(() => {
+    if (!hasQuery || !room) return room?.aisles || [];
+    const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
+    return room.aisles
+      .map((aisle) => {
+        const aisleMatch = matches(aisle.name) || matches(aisle.id);
+        if (aisleMatch) return aisle;
+        const filteredRacks = aisle.racks.filter((rack) => {
+          if (matches(rack.name) || matches(rack.id)) return true;
+          return rack.devices?.some((device) => {
+            if (matches(device.name) || matches(device.id)) return true;
+            const inst = device.instance;
+            if (typeof inst === 'string' && matches(inst)) return true;
+            if (inst && typeof inst === 'object') {
+              return Object.values(inst).some((value) => matches(String(value)));
+            }
+            return false;
+          });
+        });
+        if (filteredRacks.length === 0) return null;
+        return { ...aisle, racks: filteredRacks };
+      })
+      .filter(Boolean) as typeof room.aisles;
+  }, [hasQuery, normalizedQuery, room]);
+
+  const rackMatches = useMemo(() => {
+    if (!hasQuery || !room) return new Set<string>();
+    const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
+    const ids = new Set<string>();
+    for (const aisle of room.aisles) {
+      for (const rack of aisle.racks) {
+        if (matches(rack.name) || matches(rack.id)) {
+          ids.add(rack.id);
+          continue;
+        }
+        for (const device of rack.devices || []) {
+          if (matches(device.name) || matches(device.id)) {
+            ids.add(rack.id);
+            continue;
+          }
+          const inst = device.instance;
+          if (typeof inst === 'string' && matches(inst)) {
+            ids.add(rack.id);
+            continue;
+          }
+          if (inst && typeof inst === 'object') {
+            if (Object.values(inst).some((value) => matches(String(value)))) {
+              ids.add(rack.id);
+            }
+          }
+        }
+      }
+    }
+    return ids;
+  }, [hasQuery, normalizedQuery, room]);
+
   if (loading) return <div className="p-8 font-mono animate-pulse text-blue-500">LDR :: INITIALIZING_ENVIRONMENT...</div>;
   if (error) return <div className="p-8 text-status-crit font-mono uppercase">ERR :: {error}</div>;
   if (!room) return <div className="p-8 text-gray-500 font-mono text-center uppercase">ERR :: ROOM_NOT_FOUND</div>;
@@ -129,7 +187,7 @@ export const RoomPage = () => {
       <div className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden">
         <div className="col-span-12 lg:col-span-8 bg-rack-panel border border-rack-border rounded-xl p-6 overflow-auto relative custom-scrollbar shadow-inner">
            <div className="space-y-12">
-            {room.aisles.map(aisle => (
+            {filteredAisles.map(aisle => (
               <div key={aisle.id}>
                 <h3 className="text-[10px] font-bold text-blue-500/80 uppercase tracking-[0.3em] mb-4 flex items-center gap-4">
                   <span className="bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20">{aisle.name}</span>
@@ -142,12 +200,18 @@ export const RoomPage = () => {
                       rack={rack} 
                       healthData={healthMap[rack.id]}
                       isSelected={selectedRack?.id === rack.id}
+                      isMatch={hasQuery ? rackMatches.has(rack.id) : false}
                       onClick={() => setSelectedRack(rack)} 
                     />
                   ))}
                 </div>
               </div>
             ))}
+            {hasQuery && filteredAisles.length === 0 && (
+              <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">
+                No racks match the search.
+              </div>
+            )}
            </div>
         </div>
 
@@ -223,7 +287,7 @@ export const RoomPage = () => {
   );
 };
 
-const RackThumbnail = ({ rack, healthData, isSelected, onClick }: { rack: Rack, healthData: any, isSelected: boolean, onClick: () => void }) => {
+const RackThumbnail = ({ rack, healthData, isSelected, isMatch, onClick }: { rack: Rack, healthData: any, isSelected: boolean, isMatch: boolean, onClick: () => void }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const hoverTimer = useRef<NodeJS.Timeout | null>(null);
@@ -261,7 +325,7 @@ const RackThumbnail = ({ rack, healthData, isSelected, onClick }: { rack: Rack, 
             onMouseEnter={handleMouseEnter}
             onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
             onMouseLeave={handleMouseLeave}
-            className={`w-20 h-24 border rounded flex flex-col items-center justify-between p-1.5 transition-all relative group overflow-hidden ${isSelected ? 'ring-1 ring-blue-500 border-blue-500 bg-blue-500/5' : 'bg-[#121212] border-white/10 hover:border-white/30 hover:bg-white/5'}`}
+            className={`w-20 h-24 border rounded flex flex-col items-center justify-between p-1.5 transition-all relative group overflow-hidden ${isSelected ? 'ring-1 ring-blue-500 border-blue-500 bg-blue-500/5' : 'bg-[#121212] border-white/10 hover:border-white/30 hover:bg-white/5'} ${isMatch ? 'ring-1 ring-[var(--color-accent)]/60' : ''}`}
         >
         <div className="w-full flex justify-between items-center px-1">
             <div className={`w-1.5 h-1.5 rounded-full ${isCrit ? 'bg-status-crit shadow-[0_0_5px_var(--color-status-crit)]' : isWarn ? 'bg-status-warn' : health === 'OK' ? 'bg-status-ok shadow-[0_0_5px_var(--color-status-ok)]' : 'bg-status-unknown'}`}></div>
