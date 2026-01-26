@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import type { DeviceTemplate } from '../types';
 
@@ -58,6 +59,7 @@ export const TemplatesEditorPage = () => {
   const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [searchParams] = useSearchParams();
   const unitHeight = 48;
   const minPreviewHeight = 48;
 
@@ -73,6 +75,38 @@ export const TemplatesEditorPage = () => {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (!id || deviceTemplates.length === 0) return;
+    const selected = deviceTemplates.find((t) => t.id === id);
+    if (!selected) return;
+    setSelectedTemplateId(id);
+    setDraft({
+      id: selected.id,
+      name: selected.name,
+      type: selected.type || 'server',
+      u_height: String(selected.u_height || 1),
+      rows: String(selected.layout?.rows || 1),
+      cols: String(selected.layout?.cols || 1),
+      layout_type: (selected.layout?.type as DeviceDraft['layout_type']) || 'grid',
+      layout_matrix: selected.layout?.matrix,
+      rear_enabled: Boolean(selected.rear_layout),
+      rear_rows: String(selected.rear_layout?.rows || 1),
+      rear_cols: String(selected.rear_layout?.cols || 1),
+      rear_layout_type: (selected.rear_layout?.type as DeviceDraft['rear_layout_type']) || 'grid',
+      rear_layout_matrix: selected.rear_layout?.matrix,
+      rear_components: (selected.rear_components || []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        checks: c.checks || [],
+      })),
+    });
+    setIsEditing(true);
+    setStatus('idle');
+    setError(null);
+  }, [deviceTemplates, searchParams]);
 
   const buildPreviewMatrix = (rows: number, cols: number, matrix?: number[][]) => {
     if (matrix && matrix.length === rows && matrix.every((row) => row.length === cols)) {

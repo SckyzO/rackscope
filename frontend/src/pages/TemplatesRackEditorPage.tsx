@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import type { RackTemplate } from '../types';
 
@@ -54,6 +55,7 @@ export const TemplatesRackEditorPage = () => {
   const [rackTemplates, setRackTemplates] = useState<RackTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [searchParams] = useSearchParams();
   const unitHeight = 24;
   const minPreviewHeight = 240;
 
@@ -76,6 +78,15 @@ export const TemplatesRackEditorPage = () => {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (!id || rackTemplates.length === 0) return;
+    const selected = rackTemplates.find((t) => t.id === id);
+    if (!selected) return;
+    setSelectedTemplateId(id);
+    loadTemplate(selected);
+  }, [rackTemplates, searchParams]);
 
   const mapComponentDraft = (comp: any, rackHeight: number): RackComponentDraft => ({
     id: comp?.id || '',

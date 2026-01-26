@@ -619,8 +619,12 @@ def update_template(payload: TemplateWriteRequest):
 
 @app.get("/api/stats/global")
 async def get_global_stats():
-    # 1. Fetch all health summaries in one go
-    rack_healths = await prom_client.get_rack_health_summary()
+    rack_healths: Dict[str, str] = {}
+    if TOPOLOGY and CHECKS_LIBRARY and PLANNER:
+        snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY)
+        rack_healths = snapshot.rack_states
+    else:
+        rack_healths = await prom_client.get_rack_health_summary()
     
     total_racks = 0
     crit_alerts = 0

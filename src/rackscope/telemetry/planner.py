@@ -103,12 +103,19 @@ class TelemetryPlanner:
         _apply_unknown(chassis_ids, seen_chassis, chassis_states, self.config.unknown_state)
         _apply_unknown(rack_ids, seen_racks, rack_states, self.config.unknown_state)
 
-        # Fallback: derive rack state from node states when rack checks are absent.
+        # Derive rack state from node states and combine with rack checks.
         for rack_id, nodes in rack_nodes.items():
-            if rack_states.get(rack_id) not in (None, self.config.unknown_state):
-                continue
             states = [node_states.get(n, self.config.unknown_state) for n in nodes]
-            rack_states[rack_id] = _aggregate_states(states, self.config.unknown_state)
+            node_agg = _aggregate_states(states, self.config.unknown_state)
+            existing = rack_states.get(rack_id)
+            if node_agg in ("WARN", "CRIT"):
+                rack_states[rack_id] = _max_severity(existing, node_agg)
+                continue
+            if existing is None:
+                rack_states[rack_id] = node_agg
+                continue
+            if existing == self.config.unknown_state and node_agg != self.config.unknown_state:
+                rack_states[rack_id] = node_agg
 
         self._snapshot = PlannerSnapshot(
             generated_at=now,

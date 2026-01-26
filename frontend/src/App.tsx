@@ -28,7 +28,6 @@ const Layout = ({
   onReload: () => void;
 }) => {
   const [stale, setStale] = useState(api.isStale());
-  const [lastSyncText, setLastSyncText] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sites, setSites] = useState<Site[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -39,28 +38,6 @@ const Layout = ({
   useEffect(() => {
     const interval = setInterval(() => {
       setStale(api.isStale());
-      const ts = api.getLastSuccessTs();
-      if (!ts) {
-        setLastSyncText(null);
-        return;
-      }
-      const diffMs = Date.now() - ts;
-      const min = Math.floor(diffMs / 60000);
-      if (min < 1) {
-        setLastSyncText('just now');
-        return;
-      }
-      if (min < 60) {
-        setLastSyncText(`${min} min`);
-        return;
-      }
-      const hours = Math.floor(min / 60);
-      if (hours < 24) {
-        setLastSyncText(`${hours} h`);
-        return;
-      }
-      const days = Math.floor(hours / 24);
-      setLastSyncText(`${days} d`);
     }, 10000);
     return () => clearInterval(interval);
   }, []);
@@ -243,12 +220,9 @@ const Layout = ({
             <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[#0b1f3a] border border-white/10 flex items-center justify-center shadow-[0_0_16px_rgba(59,130,246,0.35)]">
               <Activity className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">RackScope</div>
-              <div className="flex items-center gap-2 mt-1">
-                <div className={`w-2 h-2 rounded-full ${stale ? 'bg-status-crit' : 'bg-status-ok'} shadow-[0_0_8px_var(--color-status-ok)]`}></div>
-                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">{stale ? 'Stale' : 'Live'}</span>
-              </div>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${stale ? 'bg-status-crit' : 'bg-status-ok'} shadow-[0_0_8px_var(--color-status-ok)]`}></div>
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">{stale ? 'Stale' : 'Live'}</span>
             </div>
           </div>
           <div className="flex-1 px-6 max-w-[700px]">
@@ -295,9 +269,6 @@ const Layout = ({
             </div>
           </div>
           <div className="flex items-center gap-3 min-w-[240px] justify-end">
-            <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">
-              Last sync: {lastSyncText || '--'}
-            </div>
             <button
               type="button"
               onClick={onReload}
