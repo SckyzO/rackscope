@@ -105,7 +105,7 @@ Telemetry:
 **Goal:** Safe editing of topology, templates, and checks from the UI.
 
 - [ ] Backend writer:
-  - [ ] `POST /api/catalog/templates` with validation
+  - [x] `POST /api/catalog/templates` with validation
   - [ ] safe YAML dumping (structured rewrite)
 - [ ] Template designer UI:
   - [ ] visual grid editor for devices
