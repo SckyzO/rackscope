@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Bell, AlertTriangle } from 'lucide-react';
 import { api } from '../services/api';
 
 type Transition = {
   id: string;
   name: string;
-  prev: string;
   next: string;
   ts: number;
 };
@@ -13,7 +12,6 @@ type Transition = {
 export const NotificationHeader = () => {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Transition[]>([]);
-  const prevStates = useRef<Record<string, string>>({});
 
   useEffect(() => {
     let mounted = true;
@@ -26,20 +24,12 @@ export const NotificationHeader = () => {
             return { id: r.id, name: r.name, state: s?.state || 'UNKNOWN' };
           })
         );
-
-        const nextMap: Record<string, string> = {};
-        const newTransitions: Transition[] = [];
-        states.forEach((s) => {
-          nextMap[s.id] = s.state;
-          const prev = prevStates.current[s.id];
-          if (prev && prev !== s.state && (s.state === 'WARN' || s.state === 'CRIT')) {
-            newTransitions.push({ id: s.id, name: s.name, prev, next: s.state, ts: Date.now() });
-          }
-        });
-        prevStates.current = nextMap;
-
-        if (!mounted || newTransitions.length === 0) return;
-        setItems((current) => [...newTransitions.reverse(), ...current].slice(0, 50));
+        if (!mounted) return;
+        const now = Date.now();
+        const active = states
+          .filter((s) => s.state === 'WARN' || s.state === 'CRIT')
+          .map((s) => ({ id: s.id, name: s.name, next: s.state, ts: now }));
+        setItems(active);
       } catch {
         // Keep silent for now; notifications are best-effort.
       }
@@ -72,20 +62,18 @@ export const NotificationHeader = () => {
       {open && (
         <div className="absolute right-0 mt-2 w-80 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-panel)]/95 backdrop-blur-xl shadow-2xl overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--color-border)]/20 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
-            Recent Transitions
+            Active Alerts
           </div>
           <div className="max-h-64 overflow-auto custom-scrollbar">
             {items.length === 0 && (
-              <div className="p-4 text-[11px] text-gray-500 font-mono">No transitions yet.</div>
+              <div className="p-4 text-[11px] text-gray-500 font-mono">No active alerts.</div>
             )}
             {items.map((it) => (
               <div key={`${it.id}-${it.ts}`} className="px-4 py-3 border-b border-[var(--color-border)]/10 flex items-center gap-3">
                 <AlertTriangle className={`w-4 h-4 ${it.next === 'CRIT' ? 'text-status-crit' : 'text-status-warn'}`} />
                 <div className="flex-1 min-w-0">
                   <div className="text-[11px] font-bold text-[var(--color-text-base)] truncate">{it.name}</div>
-                  <div className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">
-                    {it.prev} → {it.next}
-                  </div>
+                  <div className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">{it.next}</div>
                 </div>
                 <div className="text-[9px] font-mono text-gray-500">
                   {new Date(it.ts).toLocaleTimeString()}
