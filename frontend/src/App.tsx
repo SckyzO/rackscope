@@ -6,6 +6,8 @@ import { NotificationHeader } from './components/NotificationHeader';
 import { RoomPage } from './pages/RoomPage';
 import { RackPage } from './pages/RackPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { TemplatesLibraryPage } from './pages/TemplatesLibraryPage';
+import { TemplatesEditorPage } from './pages/TemplatesEditorPage';
 import { api } from './services/api';
 import type { RoomSummary, Site } from './types';
 import { expandInstanceMatches, matchesText } from './utils/search';
@@ -811,6 +813,8 @@ function App() {
             <Route path="/" element={<Dashboard searchQuery={searchQuery} />} />
             <Route path="/room/:roomId" element={<RoomPage searchQuery={searchQuery} />} />
             <Route path="/rack/:rackId" element={<RackPage />} />
+            <Route path="/templates" element={<TemplatesLibraryPage />} />
+            <Route path="/templates/editor" element={<TemplatesEditorPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </Layout>

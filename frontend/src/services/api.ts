@@ -36,7 +36,13 @@ const markSuccess = () => {
 };
 
 const readCache = (key: string) => readJSON(`${CACHE_PREFIX}${key}`);
-const writeCache = (key: string, data: any) => writeJSON(`${CACHE_PREFIX}${key}`, { ts: Date.now(), data });
+const writeCache = (key: string, data: any) => {
+  if (data === null) {
+    localStorage.removeItem(`${CACHE_PREFIX}${key}`);
+    return;
+  }
+  writeJSON(`${CACHE_PREFIX}${key}`, { ts: Date.now(), data });
+};
 
 const fetchWithCache = async <T>(url: string, cacheKey: string): Promise<T> => {
   try {
@@ -65,6 +71,21 @@ export const api = {
   },
   getCatalog: async (): Promise<{ device_templates: DeviceTemplate[], rack_templates: any[] }> => {
     return fetchWithCache('/api/catalog', 'catalog');
+  },
+  createTemplate: async (payload: { kind: 'device' | 'rack'; template: Record<string, any> }) => {
+    const res = await fetch('/api/catalog/templates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/catalog/templates');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('catalog', null);
+    markSuccess();
+    return data;
   },
   getRack: async (rackId: string): Promise<Rack> => {
     return fetchWithCache(`/api/racks/${rackId}`, `rack.${rackId}`);
