@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import type { RoomSummary, AisleSummary, DeviceTemplate, Site } from '../types';
+import { matchesInstanceValue, matchesText } from '../utils/search';
 import {
   LayoutDashboard,
   ChevronRight,
@@ -140,7 +141,6 @@ export const Sidebar = ({
 
   const rackIdsWithDeviceMatch = useMemo(() => {
     if (!hasQuery) return new Set<string>();
-    const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
     const rackIds = new Set<string>();
 
     for (const site of sites) {
@@ -148,7 +148,10 @@ export const Sidebar = ({
         for (const aisle of room.aisles || []) {
           for (const rack of aisle.racks || []) {
             for (const device of rack.devices || []) {
-              if (matches(device.name) || matches(device.id)) {
+              if (matchesText(device.name, normalizedQuery) || matchesText(device.id, normalizedQuery)) {
+                rackIds.add(rack.id);
+              }
+              if (matchesInstanceValue(normalizedQuery, device.instance)) {
                 rackIds.add(rack.id);
               }
             }
@@ -156,7 +159,10 @@ export const Sidebar = ({
         }
         for (const rack of room.standalone_racks || []) {
           for (const device of rack.devices || []) {
-            if (matches(device.name) || matches(device.id)) {
+            if (matchesText(device.name, normalizedQuery) || matchesText(device.id, normalizedQuery)) {
+              rackIds.add(rack.id);
+            }
+            if (matchesInstanceValue(normalizedQuery, device.instance)) {
               rackIds.add(rack.id);
             }
           }
@@ -176,28 +182,26 @@ export const Sidebar = ({
 
   const filteredRoomsBySite = useMemo(() => {
     if (!hasQuery) return roomsBySite;
-    const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
-
     return sites.reduce((acc, site) => {
-      const siteMatch = matches(site.name) || matches(site.id);
+      const siteMatch = matchesText(site.name, normalizedQuery) || matchesText(site.id, normalizedQuery);
       const roomsForSite = roomsBySite[site.id] || [];
 
       const filteredRooms = roomsForSite
         .map((room) => {
-          const roomMatch = siteMatch || matches(room.name) || matches(room.id);
+          const roomMatch = siteMatch || matchesText(room.name, normalizedQuery) || matchesText(room.id, normalizedQuery);
           if (!room.aisles || roomMatch) {
             return room;
           }
 
           const filteredAisles = room.aisles
             .map((aisle) => {
-              const aisleMatch = roomMatch || matches(aisle.name) || matches(aisle.id);
+              const aisleMatch = roomMatch || matchesText(aisle.name, normalizedQuery) || matchesText(aisle.id, normalizedQuery);
               if (aisleMatch) return aisle;
 
               const filteredRacks = aisle.racks.filter((rack) => {
                 return (
-                  matches(rack.name) ||
-                  matches(rack.id) ||
+                  matchesText(rack.name, normalizedQuery) ||
+                  matchesText(rack.id, normalizedQuery) ||
                   rackIdsWithDeviceMatch.has(rack.id)
                 );
               });

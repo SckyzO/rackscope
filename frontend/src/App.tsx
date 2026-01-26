@@ -8,6 +8,7 @@ import { RackPage } from './pages/RackPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { api } from './services/api';
 import type { RoomSummary, Site } from './types';
+import { matchesInstanceValue, matchesText } from './utils/search';
 import { Activity, AlertTriangle, Map as MapIcon, ArrowUpRight, Search, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 // Layout global
@@ -78,7 +79,6 @@ const Layout = ({
 
   const searchResults = useMemo(() => {
     if (!hasQuery) return [];
-    const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
     const results: Array<{
       id: string;
       type: 'datacenter' | 'room' | 'aisle' | 'rack' | 'device' | 'instance';
@@ -88,7 +88,7 @@ const Layout = ({
     }> = [];
 
     for (const site of sites) {
-      if (matches(site.name) || matches(site.id)) {
+      if (matchesText(site.name, normalizedQuery) || matchesText(site.id, normalizedQuery)) {
         const targetRoom = site.rooms?.[0];
         results.push({
           id: site.id,
@@ -100,7 +100,7 @@ const Layout = ({
       }
 
       for (const room of site.rooms || []) {
-        if (matches(room.name) || matches(room.id)) {
+        if (matchesText(room.name, normalizedQuery) || matchesText(room.id, normalizedQuery)) {
           results.push({
             id: room.id,
             type: 'room',
@@ -111,7 +111,7 @@ const Layout = ({
         }
 
         for (const aisle of room.aisles || []) {
-          if (matches(aisle.name) || matches(aisle.id)) {
+          if (matchesText(aisle.name, normalizedQuery) || matchesText(aisle.id, normalizedQuery)) {
             results.push({
               id: `${room.id}:${aisle.id}`,
               type: 'aisle',
@@ -122,7 +122,7 @@ const Layout = ({
           }
 
           for (const rack of aisle.racks || []) {
-            const rackMatches = matches(rack.name) || matches(rack.id);
+            const rackMatches = matchesText(rack.name, normalizedQuery) || matchesText(rack.id, normalizedQuery);
             if (rackMatches) {
               results.push({
                 id: rack.id,
@@ -134,7 +134,7 @@ const Layout = ({
             }
 
             for (const device of rack.devices || []) {
-              if (matches(device.name) || matches(device.id)) {
+              if (matchesText(device.name, normalizedQuery) || matchesText(device.id, normalizedQuery)) {
                 results.push({
                   id: `${rack.id}:${device.id}`,
                   type: 'device',
@@ -143,36 +143,21 @@ const Layout = ({
                   to: `/rack/${rack.id}`,
                 });
               }
-              const inst = device.instance;
-              if (typeof inst === 'string' && matches(inst)) {
+              if (matchesInstanceValue(normalizedQuery, device.instance)) {
                 results.push({
                   id: `${rack.id}:${device.id}:instance`,
                   type: 'instance',
-                  label: inst,
+                  label: searchQuery.trim(),
                   sublabel: `${rack.name || rack.id} / Instance`,
                   to: `/rack/${rack.id}`,
                 });
-              }
-              if (inst && typeof inst === 'object') {
-                for (const value of Object.values(inst)) {
-                  const instValue = String(value);
-                  if (matches(instValue)) {
-                    results.push({
-                      id: `${rack.id}:${device.id}:${instValue}`,
-                      type: 'instance',
-                      label: instValue,
-                      sublabel: `${rack.name || rack.id} / Instance`,
-                      to: `/rack/${rack.id}`,
-                    });
-                  }
-                }
               }
             }
           }
         }
 
         for (const rack of room.standalone_racks || []) {
-          const rackMatches = matches(rack.name) || matches(rack.id);
+          const rackMatches = matchesText(rack.name, normalizedQuery) || matchesText(rack.id, normalizedQuery);
           if (rackMatches) {
             results.push({
               id: rack.id,
@@ -183,7 +168,7 @@ const Layout = ({
             });
           }
           for (const device of rack.devices || []) {
-            if (matches(device.name) || matches(device.id)) {
+            if (matchesText(device.name, normalizedQuery) || matchesText(device.id, normalizedQuery)) {
               results.push({
                 id: `${rack.id}:${device.id}`,
                 type: 'device',
@@ -192,29 +177,14 @@ const Layout = ({
                 to: `/rack/${rack.id}`,
               });
             }
-            const inst = device.instance;
-            if (typeof inst === 'string' && matches(inst)) {
+            if (matchesInstanceValue(normalizedQuery, device.instance)) {
               results.push({
                 id: `${rack.id}:${device.id}:instance`,
                 type: 'instance',
-                label: inst,
+                label: searchQuery.trim(),
                 sublabel: `${rack.name || rack.id} / Instance`,
                 to: `/rack/${rack.id}`,
               });
-            }
-            if (inst && typeof inst === 'object') {
-              for (const value of Object.values(inst)) {
-                const instValue = String(value);
-                if (matches(instValue)) {
-                  results.push({
-                    id: `${rack.id}:${device.id}:${instValue}`,
-                    type: 'instance',
-                    label: instValue,
-                    sublabel: `${rack.name || rack.id} / Instance`,
-                    to: `/rack/${rack.id}`,
-                  });
-                }
-              }
             }
           }
         }

@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import type { Room, Rack, DeviceTemplate, RackTemplate } from '../types';
 import { Box, Zap, Thermometer, Maximize2 } from 'lucide-react';
 import { RackElevation, HUDTooltip } from '../components/RackVisualizer';
+import { matchesInstanceValue, matchesText } from '../utils/search';
 
 export const RoomPage = ({ searchQuery = '' }: { searchQuery?: string }) => {
   const { roomId } = useParams<{ roomId: string }>();
@@ -102,21 +103,15 @@ export const RoomPage = ({ searchQuery = '' }: { searchQuery?: string }) => {
 
   const filteredAisles = useMemo(() => {
     if (!hasQuery || !room) return room?.aisles || [];
-    const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
     return room.aisles
       .map((aisle) => {
-        const aisleMatch = matches(aisle.name) || matches(aisle.id);
+        const aisleMatch = matchesText(aisle.name, normalizedQuery) || matchesText(aisle.id, normalizedQuery);
         if (aisleMatch) return aisle;
         const filteredRacks = aisle.racks.filter((rack) => {
-          if (matches(rack.name) || matches(rack.id)) return true;
+          if (matchesText(rack.name, normalizedQuery) || matchesText(rack.id, normalizedQuery)) return true;
           return rack.devices?.some((device) => {
-            if (matches(device.name) || matches(device.id)) return true;
-            const inst = device.instance;
-            if (typeof inst === 'string' && matches(inst)) return true;
-            if (inst && typeof inst === 'object') {
-              return Object.values(inst).some((value) => matches(String(value)));
-            }
-            return false;
+            if (matchesText(device.name, normalizedQuery) || matchesText(device.id, normalizedQuery)) return true;
+            return matchesInstanceValue(normalizedQuery, device.instance);
           });
         });
         if (filteredRacks.length === 0) return null;
@@ -127,28 +122,20 @@ export const RoomPage = ({ searchQuery = '' }: { searchQuery?: string }) => {
 
   const rackMatches = useMemo(() => {
     if (!hasQuery || !room) return new Set<string>();
-    const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
     const ids = new Set<string>();
     for (const aisle of room.aisles) {
       for (const rack of aisle.racks) {
-        if (matches(rack.name) || matches(rack.id)) {
+        if (matchesText(rack.name, normalizedQuery) || matchesText(rack.id, normalizedQuery)) {
           ids.add(rack.id);
           continue;
         }
         for (const device of rack.devices || []) {
-          if (matches(device.name) || matches(device.id)) {
+          if (matchesText(device.name, normalizedQuery) || matchesText(device.id, normalizedQuery)) {
             ids.add(rack.id);
             continue;
           }
-          const inst = device.instance;
-          if (typeof inst === 'string' && matches(inst)) {
+          if (matchesInstanceValue(normalizedQuery, device.instance)) {
             ids.add(rack.id);
-            continue;
-          }
-          if (inst && typeof inst === 'object') {
-            if (Object.values(inst).some((value) => matches(String(value)))) {
-              ids.add(rack.id);
-            }
           }
         }
       }
