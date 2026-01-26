@@ -315,6 +315,8 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [roomStates, setRoomStates] = useState<Record<string, any>>({});
   const [globalStats, setGlobalStats] = useState<any>(null);
+  const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
+  const [promStats, setPromStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sites, setSites] = useState<Site[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
@@ -344,16 +346,20 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [roomsData, stats, sitesData] = await Promise.all([
+        const [roomsData, stats, sitesData, alertsData, promData] = await Promise.all([
             api.getRooms(),
             api.getGlobalStats(),
-            api.getSites()
+            api.getSites(),
+            api.getActiveAlerts(),
+            api.getPrometheusStats(),
         ]);
         const safeRooms = Array.isArray(roomsData) ? roomsData : [];
         const safeSites = Array.isArray(sitesData) ? sitesData : [];
         setRooms(safeRooms);
         setGlobalStats(stats);
         setSites(safeSites);
+        setActiveAlerts(Array.isArray(alertsData?.alerts) ? alertsData.alerts : []);
+        setPromStats(promData || null);
         if (!selectedSiteId && safeSites.length > 0) {
           setSelectedSiteId(safeSites[0].id);
         }
@@ -497,6 +503,14 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
     return items.sort((a, b) => weight(b.state) - weight(a.state)).slice(0, 6);
   }, [rooms, roomStates, rackMetaById]);
 
+  const deviceAlerts = useMemo(() => {
+    const weight = (state: string) => (state === 'CRIT' ? 2 : state === 'WARN' ? 1 : 0);
+    return [...activeAlerts]
+      .filter((item) => item?.state === 'CRIT' || item?.state === 'WARN')
+      .sort((a, b) => weight(b.state) - weight(a.state))
+      .slice(0, 10);
+  }, [activeAlerts]);
+
   if (loading) {
     return <div className="p-12 font-mono animate-pulse text-blue-500">LDR :: AGGREGATING_GLOBAL_METRICS...</div>;
   }
@@ -518,7 +532,7 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-rack-panel border border-rack-border rounded-2xl px-6 py-5 flex items-center justify-between">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Global Status</div>
@@ -558,6 +572,20 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
               <MapIcon className="h-5 w-5 text-[var(--color-accent-primary)]" />
             </div>
           </div>
+          <div className="bg-rack-panel border border-rack-border rounded-2xl px-6 py-5 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Prometheus</div>
+              <div className="mt-2 text-2xl font-black font-mono text-white">
+                {promStats?.avg_ms ? `${Math.round(promStats.avg_ms)} ms` : '--'}
+              </div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 mt-1">
+                {promStats?.last_ms ? `last ${Math.round(promStats.last_ms)} ms` : 'no samples'}
+              </div>
+            </div>
+            <div className="h-12 w-12 rounded-2xl border border-white/5 bg-black/20 flex items-center justify-center">
+              <Activity className="h-5 w-5 text-[var(--color-accent-primary)]" />
+            </div>
+          </div>
         </div>
       </header>
 
@@ -579,7 +607,7 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_420px] gap-8">
         <section className="bg-rack-panel border border-rack-border rounded-3xl p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -618,24 +646,33 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Alerts</div>
-              <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Top Active</h2>
+              <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Active Devices</h2>
             </div>
             <div className="text-[10px] font-mono uppercase text-gray-500">
-              {globalStats?.active_alerts || 0} total
+              {activeAlerts.length} total
             </div>
           </div>
 
-          {alertItems.length === 0 ? (
+          {deviceAlerts.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-center text-[11px] font-mono uppercase tracking-widest text-gray-500">
               No active alerts
             </div>
           ) : (
             <div className="space-y-3">
-              {alertItems.map((item) => (
-                <div key={item.rackId} className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/20 px-4 py-3">
-                  <div>
-                    <div className="text-sm font-semibold text-gray-200">{item.rackName}</div>
-                    <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">{item.roomName}</div>
+              {deviceAlerts.map((item) => (
+                <Link
+                  key={`${item.rack_id}-${item.node_id}`}
+                  to={`/rack/${item.rack_id}`}
+                  className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/20 px-4 py-3 transition-colors hover:border-[var(--color-accent-primary)]/40"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-gray-200 truncate">{item.device_name}</div>
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500 truncate">
+                      {item.site_name} / {item.room_name} / {item.rack_name}
+                    </div>
+                    <div className="text-[9px] font-mono uppercase tracking-widest text-gray-500">
+                      {item.node_id}
+                    </div>
                   </div>
                   <div className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${
                     item.state === 'CRIT'
@@ -644,7 +681,7 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
                   }`}>
                     {item.state}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

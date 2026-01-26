@@ -70,6 +70,7 @@ Telemetry:
   - [x] UNKNOWN/aggregation policies
   - [x] Paths (topology/templates/checks)
   - [x] Feature toggles (notifications, playlist, offline, demo)
+  - [x] Notification panel size (max visible alerts)
   - [x] Validation + save/reload workflow
   - [ ] Settings UX refinement (help text, guided flows) — deferred to final pass
 - [ ] Device alert detail pipeline (device/node alerts in header + tooltips)
