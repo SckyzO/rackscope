@@ -12,13 +12,15 @@ import yaml
 import httpx
 
 from rackscope.model.domain import Room, Site, Topology, Rack
-from rackscope.model.catalog import Catalog
+from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
 from rackscope.model.checks import ChecksLibrary
 from rackscope.model.config import AppConfig
 from rackscope.model.loader import load_topology, load_catalog, load_checks_library, load_app_config
 from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import _expand_nodes_pattern
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
+from pydantic import BaseModel
+from typing import Literal
 
 # Global state
 TOPOLOGY: Optional[Topology] = None
@@ -133,6 +135,11 @@ async def lifespan(app: FastAPI):
             await PROMETHEUS_HEARTBEAT
 
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
+
+
+class TemplateWriteRequest(BaseModel):
+    kind: Literal["device", "rack"]
+    template: Dict[str, Any]
 
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
@@ -419,6 +426,44 @@ def get_rack_details(rack_id: str):
                     return rack
     
     raise HTTPException(status_code=404, detail=f"Rack {rack_id} not found")
+
+@app.post("/api/catalog/templates")
+def write_template(payload: TemplateWriteRequest):
+    global CATALOG
+    if not APP_CONFIG:
+        raise HTTPException(status_code=500, detail="App config not loaded")
+    templates_dir = Path(APP_CONFIG.paths.templates)
+    templates_dir.mkdir(parents=True, exist_ok=True)
+
+    if payload.kind == "device":
+        template = DeviceTemplate(**payload.template)
+        if CATALOG and CATALOG.get_device_template(template.id):
+            raise HTTPException(status_code=400, detail=f"Device template already exists: {template.id}")
+        target_dir = templates_dir / "devices"
+        key = "templates"
+        filename = "custom.yaml"
+    else:
+        template = RackTemplate(**payload.template)
+        if CATALOG and CATALOG.get_rack_template(template.id):
+            raise HTTPException(status_code=400, detail=f"Rack template already exists: {template.id}")
+        target_dir = templates_dir / "racks"
+        key = "rack_templates"
+        filename = "custom.yaml"
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target_path = target_dir / filename
+    data = {}
+    if target_path.exists():
+        data = yaml.safe_load(target_path.read_text()) or {}
+    items = data.get(key) or []
+    items.append(template.model_dump())
+    data[key] = items
+    target_path.write_text(yaml.safe_dump(data, sort_keys=False))
+
+    # Reload catalog to keep in-memory state aligned.
+    CATALOG = load_catalog(templates_dir)
+
+    return template
 
 @app.get("/api/stats/global")
 async def get_global_stats():

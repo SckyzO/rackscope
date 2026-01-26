@@ -67,6 +67,9 @@ Retrieve all available hardware templates (devices and racks).
 #### `GET /api/checks`
 Retrieve the checks library (built-in monitoring checks).
 
+#### `POST /api/catalog/templates`
+Create a device or rack template (validated and persisted to YAML).
+
 #### `GET /api/config`
 Retrieve the app configuration (paths, refresh, cache, telemetry).
 
