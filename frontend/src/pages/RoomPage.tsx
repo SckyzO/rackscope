@@ -85,10 +85,12 @@ export const RoomPage = ({ searchQuery = '' }: { searchQuery?: string }) => {
       }
     };
     fetchSelected();
+    const interval = setInterval(fetchSelected, refreshMs);
     return () => {
       active = false;
+      clearInterval(interval);
     };
-  }, [selectedRack]);
+  }, [selectedRack, refreshMs]);
 
   const selectedMetrics = selectedRackHealth?.metrics || null;
   const selectedNodesData = selectedRackHealth?.nodes || null;
