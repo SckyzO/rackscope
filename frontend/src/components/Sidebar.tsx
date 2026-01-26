@@ -17,6 +17,7 @@ import {
   SlidersHorizontal,
   Palette,
   FileText,
+  BookOpen,
 } from 'lucide-react';
 
 export const Sidebar = ({
@@ -294,6 +295,7 @@ export const Sidebar = ({
             <SidebarLink to="/templates" icon={Folder} label="Library" depth={1} />
             <SidebarLink to="/templates/editor" icon={Component} label="Device Editor" depth={1} />
             <SidebarLink to="/templates/editor/racks" icon={Component} label="Rack Editor" depth={1} />
+            <SidebarLink to="/checks/library" icon={BookOpen} label="Checks Library" depth={1} />
           </div>
         )}
         <div className="h-px bg-[var(--color-border)]/40 my-2"></div>

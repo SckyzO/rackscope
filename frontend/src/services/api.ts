@@ -123,6 +123,50 @@ export const api = {
   getChecks: async () => {
     return fetchWithCache('/api/checks', 'checks.library');
   },
+  getChecksFiles: async () => {
+    return fetchWithCache('/api/checks/files', 'checks.files');
+  },
+  getChecksFile: async (name: string) => {
+    return fetchWithCache(`/api/checks/files/${encodeURIComponent(name)}`, `checks.file.${name}`);
+  },
+  updateChecksFile: async (name: string, content: string) => {
+    const res = await fetch(`/api/checks/files/${encodeURIComponent(name)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    if (!res.ok) {
+      let message = `Request failed: ${res.status} ${res.statusText}`;
+      try {
+        const data = await res.json();
+        const detail = data?.detail;
+        if (typeof detail === 'string') {
+          message = detail;
+        } else if (detail?.message) {
+          if (Array.isArray(detail.errors)) {
+            const lines = detail.errors.map((entry: any) => {
+              const id = entry?.id ? ` (${entry.id})` : '';
+              const msg = entry?.errors?.[0]?.msg || 'invalid check';
+              return `- check #${entry?.index ?? '?'}${id}: ${msg}`;
+            });
+            message = `${detail.message}\n${lines.join('\n')}`;
+          } else {
+            message = detail.message;
+          }
+        } else if (detail) {
+          message = JSON.stringify(detail, null, 2);
+        }
+      } catch {
+        // Ignore parsing errors.
+      }
+      logClientError(message, '/api/checks/files');
+      throw new Error(message);
+    }
+    const data = await res.json();
+    writeCache('checks.files', null);
+    markSuccess();
+    return data;
+  },
   getRoomLayout: async (roomId: string): Promise<Room> => {
     return fetchWithCache(`/api/rooms/${roomId}/layout`, `room.layout.${roomId}`);
   },

@@ -14,13 +14,13 @@ import httpx
 
 from rackscope.model.domain import Room, Site, Topology, Rack
 from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
-from rackscope.model.checks import ChecksLibrary
+from rackscope.model.checks import ChecksLibrary, CheckDefinition
 from rackscope.model.config import AppConfig
 from rackscope.model.loader import load_topology, load_catalog, load_checks_library, load_app_config, dump_yaml
 from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import _expand_nodes_pattern
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from typing import Literal
 
 # Global state
@@ -170,6 +170,108 @@ def get_catalog():
 @app.get("/api/checks")
 def get_checks_library():
     return CHECKS_LIBRARY if CHECKS_LIBRARY else {"checks": []}
+
+@app.get("/api/checks/files")
+def get_checks_files():
+    if not APP_CONFIG:
+        raise HTTPException(status_code=500, detail="App config not loaded")
+    base_dir = Path(APP_CONFIG.paths.checks)
+    if not base_dir.exists():
+        return {"files": []}
+    if base_dir.is_dir():
+        files = sorted(base_dir.glob("*.yaml")) + sorted(base_dir.glob("*.yml"))
+    else:
+        files = [base_dir]
+    return {
+        "files": [
+            {"name": f.name, "path": str(f), "relative": str(f.relative_to(base_dir)) if base_dir.is_dir() else f.name}
+            for f in files
+        ]
+    }
+
+@app.get("/api/checks/files/{name}")
+def read_checks_file(name: str):
+    if not APP_CONFIG:
+        raise HTTPException(status_code=500, detail="App config not loaded")
+    base_dir = Path(APP_CONFIG.paths.checks)
+    if base_dir.is_dir():
+        target = base_dir / name
+    else:
+        target = base_dir
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="Checks file not found")
+    return {"name": target.name, "content": target.read_text()}
+
+@app.put("/api/checks/files/{name}")
+def write_checks_file(name: str, payload: Dict[str, Any]):
+    if not APP_CONFIG:
+        raise HTTPException(status_code=500, detail="App config not loaded")
+    base_dir = Path(APP_CONFIG.paths.checks)
+    if base_dir.is_dir():
+        base_dir.mkdir(parents=True, exist_ok=True)
+        target = base_dir / name
+    else:
+        target = base_dir
+
+    content = payload.get("content")
+    if not isinstance(content, str) or not content.strip():
+        raise HTTPException(status_code=400, detail="Content is required")
+
+    # Validate YAML by parsing and re-dumping to keep it consistent.
+    try:
+        parsed = yaml.safe_load(content)
+    except yaml.YAMLError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid YAML: {e}")
+
+    checks = []
+    if isinstance(parsed, dict) and "checks" in parsed:
+        checks.extend(parsed.get("checks") or [])
+
+    if isinstance(parsed, dict) and "kinds" in parsed:
+        kinds = parsed.get("kinds") or {}
+        if isinstance(kinds, dict):
+            for kind, items in kinds.items():
+                if not items:
+                    continue
+                for item in items:
+                    if isinstance(item, dict):
+                        item = dict(item)
+                        item.setdefault("kind", kind)
+                    checks.append(item)
+
+    errors = []
+    seen_ids = set()
+    for idx, check in enumerate(checks):
+        try:
+            parsed_check = CheckDefinition(**check)
+            if not parsed_check.rules:
+                errors.append({
+                    "index": idx,
+                    "id": parsed_check.id,
+                    "errors": [{"msg": "rules must not be empty"}],
+                })
+            if parsed_check.id in seen_ids:
+                errors.append({
+                    "index": idx,
+                    "id": parsed_check.id,
+                    "errors": [{"msg": "duplicate id"}],
+                })
+            seen_ids.add(parsed_check.id)
+        except ValidationError as e:
+            errors.append({
+                "index": idx,
+                "id": check.get("id") if isinstance(check, dict) else None,
+                "errors": e.errors(),
+            })
+
+    if errors:
+        raise HTTPException(status_code=400, detail={"message": "Validation failed", "errors": errors})
+
+    target.write_text(dump_yaml(parsed if parsed is not None else {}))
+    # Reload checks library to keep in-memory state aligned.
+    global CHECKS_LIBRARY
+    CHECKS_LIBRARY = load_checks_library(base_dir)
+    return {"status": "ok", "name": target.name}
 
 @app.get("/api/config")
 def get_app_config():
