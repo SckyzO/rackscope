@@ -305,7 +305,8 @@ export const Sidebar = ({
         {expandedSections.templates && (
           <div className="space-y-1">
             <SidebarLink to="/templates" icon={Folder} label="Library" depth={1} />
-            <SidebarLink to="/templates/editor" icon={Component} label="Editor" depth={1} />
+            <SidebarLink to="/templates/editor" icon={Component} label="Device Editor" depth={1} />
+            <SidebarLink to="/templates/editor/racks" icon={Component} label="Rack Editor" depth={1} />
             <NavToggle icon={Component} label="Racks" depth={1} expanded onToggle={() => undefined} disabled />
             {rackTemplates.map((t: any) => (
               <NavItem key={t.id} label={t.name} depth={2} />

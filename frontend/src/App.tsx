@@ -8,6 +8,7 @@ import { RackPage } from './pages/RackPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TemplatesLibraryPage } from './pages/TemplatesLibraryPage';
 import { TemplatesEditorPage } from './pages/TemplatesEditorPage';
+import { TemplatesRackEditorPage } from './pages/TemplatesRackEditorPage';
 import { api } from './services/api';
 import type { RoomSummary, Site } from './types';
 import { expandInstanceMatches, matchesText } from './utils/search';
@@ -815,6 +816,7 @@ function App() {
             <Route path="/rack/:rackId" element={<RackPage />} />
             <Route path="/templates" element={<TemplatesLibraryPage />} />
             <Route path="/templates/editor" element={<TemplatesEditorPage />} />
+            <Route path="/templates/editor/racks" element={<TemplatesRackEditorPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </Layout>

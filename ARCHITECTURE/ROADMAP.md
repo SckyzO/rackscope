@@ -92,6 +92,7 @@ Telemetry:
   - [x] normalize `rear_layout` in device templates
   - [ ] render PSUs, fans, rear connectors in UI
   - [ ] render zero-U side attachments (PDU rails) aligned to U scale
+  - [ ] integrate side attachments into front/rear rack panels (rails L/R)
 - [ ] Active infrastructure:
   - [ ] connect HMC/PMC to real Prometheus metrics
   - [ ] add gauges/charts for infra components

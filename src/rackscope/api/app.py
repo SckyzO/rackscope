@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import asyncio
 import time
+import re
 from contextlib import asynccontextmanager, suppress
 from typing import List, Optional, Dict, Any
 from pathlib import Path
@@ -29,6 +30,14 @@ CHECKS_LIBRARY: Optional[ChecksLibrary] = None
 APP_CONFIG: Optional[AppConfig] = None
 PLANNER: Optional[TelemetryPlanner] = None
 PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
+
+def _safe_segment(value: str, fallback: str) -> str:
+    value = (value or "").strip().lower()
+    if not value:
+        return fallback
+    value = re.sub(r"[^a-z0-9._-]+", "-", value)
+    value = value.strip("-")
+    return value or fallback
 
 
 def apply_config(app_config: AppConfig) -> None:
@@ -439,25 +448,23 @@ def write_template(payload: TemplateWriteRequest):
         template = DeviceTemplate(**payload.template)
         if CATALOG and CATALOG.get_device_template(template.id):
             raise HTTPException(status_code=400, detail=f"Device template already exists: {template.id}")
-        target_dir = templates_dir / "devices"
+        type_dir = _safe_segment(template.type, "other")
+        target_dir = templates_dir / "devices" / type_dir
         key = "templates"
-        filename = "custom.yaml"
+        filename = f"{_safe_segment(template.id, 'device')}.yaml"
     else:
         template = RackTemplate(**payload.template)
         if CATALOG and CATALOG.get_rack_template(template.id):
             raise HTTPException(status_code=400, detail=f"Rack template already exists: {template.id}")
         target_dir = templates_dir / "racks"
         key = "rack_templates"
-        filename = "custom.yaml"
+        filename = f"{_safe_segment(template.id, 'rack')}.yaml"
 
     target_dir.mkdir(parents=True, exist_ok=True)
     target_path = target_dir / filename
-    data = {}
     if target_path.exists():
-        data = yaml.safe_load(target_path.read_text()) or {}
-    items = data.get(key) or []
-    items.append(template.model_dump())
-    data[key] = items
+        raise HTTPException(status_code=400, detail=f"Template file already exists: {target_path}")
+    data = {key: [template.model_dump()]}
     target_path.write_text(dump_yaml(data))
 
     # Reload catalog to keep in-memory state aligned.
