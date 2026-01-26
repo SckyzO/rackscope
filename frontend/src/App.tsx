@@ -318,6 +318,7 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
   const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
   const [promStats, setPromStats] = useState<any>(null);
   const [checksTotal, setChecksTotal] = useState(0);
+  const [telemetryStats, setTelemetryStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sites, setSites] = useState<Site[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
@@ -347,13 +348,14 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [roomsData, stats, sitesData, alertsData, promData, checksData] = await Promise.all([
+        const [roomsData, stats, sitesData, alertsData, promData, checksData, telemetryData] = await Promise.all([
             api.getRooms(),
             api.getGlobalStats(),
             api.getSites(),
             api.getActiveAlerts(),
             api.getPrometheusStats(),
             api.getChecks(),
+            api.getTelemetryStats(),
         ]);
         const safeRooms = Array.isArray(roomsData) ? roomsData : [];
         const safeSites = Array.isArray(sitesData) ? sitesData : [];
@@ -363,6 +365,7 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
         setActiveAlerts(Array.isArray(alertsData?.alerts) ? alertsData.alerts : []);
         setPromStats(promData || null);
         setChecksTotal(Array.isArray(checksData?.checks) ? checksData.checks.length : 0);
+        setTelemetryStats(telemetryData || null);
         if (!selectedSiteId && safeSites.length > 0) {
           setSelectedSiteId(safeSites[0].id);
         }
@@ -682,49 +685,86 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
           </div>
         </section>
 
-        <aside className="bg-rack-panel border border-rack-border rounded-3xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Alerts</div>
-              <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Active Devices</h2>
+        <aside className="space-y-6">
+          <div className="bg-rack-panel border border-rack-border rounded-3xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Alerts</div>
+                <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Active Devices</h2>
+              </div>
+              <div className="text-[10px] font-mono uppercase text-gray-500">
+                {activeAlerts.length} total
+              </div>
             </div>
-            <div className="text-[10px] font-mono uppercase text-gray-500">
-              {activeAlerts.length} total
-            </div>
+
+            {deviceAlerts.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-center text-[11px] font-mono uppercase tracking-widest text-gray-500">
+                No active alerts
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {deviceAlerts.map((item) => (
+                  <Link
+                    key={`${item.rack_id}-${item.node_id}`}
+                    to={`/rack/${item.rack_id}`}
+                    className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/20 px-4 py-3 transition-colors hover:border-[var(--color-accent-primary)]/40"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-gray-200 truncate">{item.device_name}</div>
+                      <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500 truncate">
+                        {item.site_name} / {item.room_name} / {item.rack_name}
+                      </div>
+                      <div className="text-[9px] font-mono uppercase tracking-widest text-gray-500">
+                        {item.node_id}
+                      </div>
+                    </div>
+                    <div className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${
+                      item.state === 'CRIT'
+                        ? 'border-status-crit/40 text-status-crit bg-status-crit/10'
+                        : 'border-status-warn/40 text-status-warn bg-status-warn/10'
+                    }`}>
+                      {item.state}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
-          {deviceAlerts.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-center text-[11px] font-mono uppercase tracking-widest text-gray-500">
-              No active alerts
+          <div className="bg-rack-panel border border-rack-border rounded-3xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Telemetry</div>
+                <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Prometheus</h2>
+              </div>
+              <div className="text-[10px] font-mono uppercase text-gray-500">
+                {telemetryStats?.in_flight ?? 0} in flight
+              </div>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {deviceAlerts.map((item) => (
-                <Link
-                  key={`${item.rack_id}-${item.node_id}`}
-                  to={`/rack/${item.rack_id}`}
-                  className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/20 px-4 py-3 transition-colors hover:border-[var(--color-accent-primary)]/40"
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-gray-200 truncate">{item.device_name}</div>
-                    <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500 truncate">
-                      {item.site_name} / {item.room_name} / {item.rack_name}
-                    </div>
-                    <div className="text-[9px] font-mono uppercase tracking-widest text-gray-500">
-                      {item.node_id}
-                    </div>
-                  </div>
-                  <div className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${
-                    item.state === 'CRIT'
-                      ? 'border-status-crit/40 text-status-crit bg-status-crit/10'
-                      : 'border-status-warn/40 text-status-warn bg-status-warn/10'
-                  }`}>
-                    {item.state}
-                  </div>
-                </Link>
-              ))}
+
+            <div className="grid grid-cols-2 gap-3 text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">
+              <div className="bg-black/20 border border-white/5 rounded-xl p-3">
+                <div className="text-[9px]">Queries</div>
+                <div className="mt-2 text-lg font-black text-white">{telemetryStats?.query_count ?? 0}</div>
+              </div>
+              <div className="bg-black/20 border border-white/5 rounded-xl p-3">
+                <div className="text-[9px]">Cache hits</div>
+                <div className="mt-2 text-lg font-black text-status-ok">{telemetryStats?.cache_hits ?? 0}</div>
+              </div>
+              <div className="bg-black/20 border border-white/5 rounded-xl p-3">
+                <div className="text-[9px]">Cache misses</div>
+                <div className="mt-2 text-lg font-black text-status-warn">{telemetryStats?.cache_misses ?? 0}</div>
+              </div>
+              <div className="bg-black/20 border border-white/5 rounded-xl p-3">
+                <div className="text-[9px]">Last batch</div>
+                <div className="mt-2 text-[11px] font-mono text-gray-300">
+                  {telemetryStats?.last_batch
+                    ? `${telemetryStats.last_batch.total_ids} ids / ${telemetryStats.last_batch.query_count} q`
+                    : '--'}
+                </div>
+              </div>
             </div>
-          )}
+          </div>
         </aside>
       </div>
 
