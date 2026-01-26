@@ -8,7 +8,7 @@ import { RackPage } from './pages/RackPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { api } from './services/api';
 import type { RoomSummary, Site } from './types';
-import { matchesInstanceValue, matchesText } from './utils/search';
+import { expandInstanceMatches, matchesText } from './utils/search';
 import { Activity, AlertTriangle, Map as MapIcon, ArrowUpRight, Search, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 // Layout global
@@ -86,11 +86,17 @@ const Layout = ({
       sublabel: string;
       to: string;
     }> = [];
+    const seen = new Set<string>();
+    const pushResult = (item: typeof results[number]) => {
+      if (seen.has(item.id)) return;
+      seen.add(item.id);
+      results.push(item);
+    };
 
     for (const site of sites) {
       if (matchesText(site.name, normalizedQuery) || matchesText(site.id, normalizedQuery)) {
         const targetRoom = site.rooms?.[0];
-        results.push({
+        pushResult({
           id: site.id,
           type: 'datacenter',
           label: site.name || site.id,
@@ -101,7 +107,7 @@ const Layout = ({
 
       for (const room of site.rooms || []) {
         if (matchesText(room.name, normalizedQuery) || matchesText(room.id, normalizedQuery)) {
-          results.push({
+          pushResult({
             id: room.id,
             type: 'room',
             label: room.name || room.id,
@@ -112,7 +118,7 @@ const Layout = ({
 
         for (const aisle of room.aisles || []) {
           if (matchesText(aisle.name, normalizedQuery) || matchesText(aisle.id, normalizedQuery)) {
-            results.push({
+            pushResult({
               id: `${room.id}:${aisle.id}`,
               type: 'aisle',
               label: aisle.name || aisle.id,
@@ -124,7 +130,7 @@ const Layout = ({
           for (const rack of aisle.racks || []) {
             const rackMatches = matchesText(rack.name, normalizedQuery) || matchesText(rack.id, normalizedQuery);
             if (rackMatches) {
-              results.push({
+              pushResult({
                 id: rack.id,
                 type: 'rack',
                 label: rack.name || rack.id,
@@ -135,7 +141,7 @@ const Layout = ({
 
             for (const device of rack.devices || []) {
               if (matchesText(device.name, normalizedQuery) || matchesText(device.id, normalizedQuery)) {
-                results.push({
+                pushResult({
                   id: `${rack.id}:${device.id}`,
                   type: 'device',
                   label: device.name || device.id,
@@ -143,14 +149,16 @@ const Layout = ({
                   to: `/rack/${rack.id}`,
                 });
               }
-              if (matchesInstanceValue(normalizedQuery, device.instance)) {
-                results.push({
-                  id: `${rack.id}:${device.id}:instance`,
+              const instanceMatches = expandInstanceMatches(searchQuery, device.instance, 50);
+              for (const value of instanceMatches) {
+                pushResult({
+                  id: `${rack.id}:${device.id}:${value}`,
                   type: 'instance',
-                  label: searchQuery.trim(),
+                  label: value,
                   sublabel: `${rack.name || rack.id} / Instance`,
                   to: `/rack/${rack.id}`,
                 });
+                if (results.length >= 30) break;
               }
             }
           }
@@ -159,7 +167,7 @@ const Layout = ({
         for (const rack of room.standalone_racks || []) {
           const rackMatches = matchesText(rack.name, normalizedQuery) || matchesText(rack.id, normalizedQuery);
           if (rackMatches) {
-            results.push({
+            pushResult({
               id: rack.id,
               type: 'rack',
               label: rack.name || rack.id,
@@ -169,7 +177,7 @@ const Layout = ({
           }
           for (const device of rack.devices || []) {
             if (matchesText(device.name, normalizedQuery) || matchesText(device.id, normalizedQuery)) {
-              results.push({
+              pushResult({
                 id: `${rack.id}:${device.id}`,
                 type: 'device',
                 label: device.name || device.id,
@@ -177,14 +185,16 @@ const Layout = ({
                 to: `/rack/${rack.id}`,
               });
             }
-            if (matchesInstanceValue(normalizedQuery, device.instance)) {
-              results.push({
-                id: `${rack.id}:${device.id}:instance`,
+            const instanceMatches = expandInstanceMatches(searchQuery, device.instance, 50);
+            for (const value of instanceMatches) {
+              pushResult({
+                id: `${rack.id}:${device.id}:${value}`,
                 type: 'instance',
-                label: searchQuery.trim(),
+                label: value,
                 sublabel: `${rack.name || rack.id} / Instance`,
                 to: `/rack/${rack.id}`,
               });
+              if (results.length >= 30) break;
             }
           }
         }

@@ -67,3 +67,51 @@ export const matchesInstanceValue = (query: string, instance: unknown): boolean 
   }
   return false;
 };
+
+export const expandInstanceMatches = (query: string, instance: unknown, limit = 50): string[] => {
+  const normalizedQuery = normalizeQuery(query);
+  if (!normalizedQuery || limit <= 0) return [];
+  const results: string[] = [];
+
+  const pushIfMatch = (value: string) => {
+    const normalizedValue = value.toLowerCase();
+    if (normalizedValue.includes(normalizedQuery)) {
+      results.push(value);
+    }
+  };
+
+  const expandPattern = (pattern: string) => {
+    if (results.length >= limit) return;
+    const parsed = parseRangePattern(pattern);
+    if (!parsed) {
+      pushIfMatch(pattern);
+      return;
+    }
+    const { prefix, suffix, start, end, startStr, endStr } = parsed;
+    const width = Math.max(startStr.length, endStr.length);
+    const rangeMin = Math.min(start, end);
+    const rangeMax = Math.max(start, end);
+
+    for (let value = rangeMin; value <= rangeMax; value += 1) {
+      if (results.length >= limit) return;
+      const num = String(value).padStart(width, '0');
+      const candidate = `${prefix}${num}${suffix}`;
+      pushIfMatch(candidate);
+    }
+  };
+
+  if (typeof instance === 'string') {
+    expandPattern(instance);
+  } else if (instance && typeof instance === 'object') {
+    for (const value of Object.values(instance as Record<string, unknown>)) {
+      if (results.length >= limit) break;
+      if (typeof value === 'string') {
+        expandPattern(value);
+      } else if (value !== null && value !== undefined) {
+        pushIfMatch(String(value));
+      }
+    }
+  }
+
+  return results.slice(0, limit);
+};
