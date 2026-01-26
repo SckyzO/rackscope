@@ -50,6 +50,7 @@ export const TemplatesEditorPage = () => {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
+  const unitHeight = 24;
 
   const matrixPreview = useMemo(() => {
     const rows = Number.parseInt(draft.rows, 10);
@@ -102,6 +103,11 @@ export const TemplatesEditorPage = () => {
   }, [draft]);
 
   const canSave = draft.id.trim() && draft.name.trim();
+  const previewHeight = (() => {
+    const uHeight = Number.parseInt(draft.u_height, 10);
+    if (!Number.isFinite(uHeight) || uHeight <= 0) return unitHeight;
+    return uHeight * unitHeight;
+  })();
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -371,42 +377,64 @@ export const TemplatesEditorPage = () => {
           ) : (
             <>
               <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Preview</div>
-              <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200 mb-4">Matrix</h2>
-              <div className="space-y-4">
+              <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200 mb-4">Device Preview</h2>
+              <div className="space-y-6">
                 <div className="space-y-2">
                   <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500">Front</div>
-                  {matrixPreview.length === 0 && (
+                  {matrixPreview.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-center text-[11px] font-mono uppercase tracking-widest text-gray-500">
                       Invalid layout
                     </div>
-                  )}
-                  {matrixPreview.map((row, idx) => (
-                    <div key={idx} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
-                      {row.map((cell) => (
-                        <div key={cell} className="h-8 rounded bg-black/30 border border-white/10 flex items-center justify-center text-[10px] font-mono text-gray-400">
-                          {cell}
-                        </div>
-                      ))}
+                  ) : (
+                    <div
+                      className="rounded-2xl border border-white/10 bg-black/30 p-2"
+                      style={{ height: `${previewHeight}px` }}
+                    >
+                      <div
+                        className="grid gap-1 h-full"
+                        style={{ gridTemplateRows: `repeat(${matrixPreview.length}, minmax(0, 1fr))` }}
+                      >
+                        {matrixPreview.map((row, idx) => (
+                          <div key={idx} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
+                            {row.map((cell) => (
+                              <div key={cell} className="rounded bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-mono text-gray-400">
+                                {cell}
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                  )}
                 </div>
                 {draft.rear_enabled && (
                   <div className="space-y-2">
                     <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500">Rear</div>
-                    {rearMatrixPreview.length === 0 && (
+                    {rearMatrixPreview.length === 0 ? (
                       <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-center text-[11px] font-mono uppercase tracking-widest text-gray-500">
                         Invalid rear layout
                       </div>
-                    )}
-                    {rearMatrixPreview.map((row, idx) => (
-                      <div key={idx} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
-                        {row.map((cell) => (
-                          <div key={cell} className="h-8 rounded bg-black/30 border border-white/10 flex items-center justify-center text-[10px] font-mono text-gray-400">
-                            {cell}
-                          </div>
-                        ))}
+                    ) : (
+                      <div
+                        className="rounded-2xl border border-white/10 bg-black/30 p-2"
+                        style={{ height: `${previewHeight}px` }}
+                      >
+                        <div
+                          className="grid gap-1 h-full"
+                          style={{ gridTemplateRows: `repeat(${rearMatrixPreview.length}, minmax(0, 1fr))` }}
+                        >
+                          {rearMatrixPreview.map((row, idx) => (
+                            <div key={idx} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
+                              {row.map((cell) => (
+                                <div key={cell} className="rounded bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-mono text-gray-400">
+                                  {cell}
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
               </div>
