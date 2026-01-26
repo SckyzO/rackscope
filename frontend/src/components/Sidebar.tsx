@@ -42,6 +42,7 @@ export const Sidebar = ({
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     topology: false,
     templates: false,
+    templatesEditor: false,
     templatesLibrary: false,
     settings: false,
   });
@@ -293,7 +294,19 @@ export const Sidebar = ({
         />
         {expandedSections.templates && (
           <div className="space-y-1">
-            <SidebarLink to="/templates/editor" icon={Component} label="Editor" depth={1} />
+            <NavToggle
+              icon={Component}
+              label="Editor"
+              depth={1}
+              expanded={expandedSections.templatesEditor}
+              onToggle={() => toggleSection('templatesEditor')}
+            />
+            {expandedSections.templatesEditor && (
+              <div className="space-y-1">
+                <SidebarLink to="/templates/editor" icon={Component} label="Devices" depth={2} />
+                <SidebarLink to="/templates/editor/racks" icon={Component} label="Racks" depth={2} />
+              </div>
+            )}
             <NavToggle
               icon={Folder}
               label="Library"
