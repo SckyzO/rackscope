@@ -50,8 +50,8 @@ export const TemplatesEditorPage = () => {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
-  const unitHeight = 24;
-  const minPreviewHeight = 24;
+  const unitHeight = 48;
+  const minPreviewHeight = 48;
 
   const matrixPreview = useMemo(() => {
     const rows = Number.parseInt(draft.rows, 10);
@@ -108,6 +108,11 @@ export const TemplatesEditorPage = () => {
     const uHeight = Number.parseInt(draft.u_height, 10);
     if (!Number.isFinite(uHeight) || uHeight <= 0) return minPreviewHeight;
     return Math.max(uHeight * unitHeight, minPreviewHeight);
+  })();
+  const previewUCount = (() => {
+    const uHeight = Number.parseInt(draft.u_height, 10);
+    if (!Number.isFinite(uHeight) || uHeight <= 0) return 1;
+    return uHeight;
   })();
 
   const handleSave = async () => {
@@ -188,7 +193,7 @@ export const TemplatesEditorPage = () => {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_420px] gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_520px] gap-6">
         <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 space-y-4">
           <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Device Template</h2>
           <label className="text-xs text-gray-400">
@@ -387,23 +392,41 @@ export const TemplatesEditorPage = () => {
                       Invalid layout
                     </div>
                   ) : (
-                    <div
-                      className="rounded-2xl border border-white/10 bg-black/30 p-2"
-                      style={{ height: `${previewHeight}px` }}
-                    >
-                      <div
-                        className="grid gap-1 h-full"
-                        style={{ gridTemplateRows: `repeat(${matrixPreview.length}, minmax(0, 1fr))` }}
-                      >
-                        {matrixPreview.map((row, idx) => (
-                          <div key={idx} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
-                            {row.map((cell) => (
-                              <div key={cell} className="rounded bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-mono text-gray-400">
-                                {cell}
+                    <div className="rounded-2xl border border-white/10 bg-black/30 p-2">
+                      <div className="flex gap-2">
+                        <div className="w-6 text-[9px] font-mono text-gray-600 flex flex-col" style={{ height: `${previewHeight}px` }}>
+                          {Array.from({ length: previewUCount }).map((_, idx) => (
+                            <div key={idx} className="flex-1 flex items-center justify-center border-b border-white/10">
+                              <span>{idx + 1}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div
+                          className="rounded-xl border border-white/10 bg-black/40 flex-1 p-2"
+                          style={{ height: `${previewHeight}px` }}
+                        >
+                          <div
+                            className="grid gap-1 h-full"
+                            style={{ gridTemplateRows: `repeat(${matrixPreview.length}, minmax(0, 1fr))` }}
+                          >
+                            {matrixPreview.map((row, idx) => (
+                              <div key={idx} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
+                                {row.map((cell) => (
+                                  <div key={cell} className="rounded bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-mono text-gray-400">
+                                    {cell}
+                                  </div>
+                                ))}
                               </div>
                             ))}
                           </div>
-                        ))}
+                        </div>
+                        <div className="w-6 text-[9px] font-mono text-gray-600 flex flex-col" style={{ height: `${previewHeight}px` }}>
+                          {Array.from({ length: previewUCount }).map((_, idx) => (
+                            <div key={idx} className="flex-1 flex items-center justify-center border-b border-white/10">
+                              <span>{idx + 1}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -416,23 +439,41 @@ export const TemplatesEditorPage = () => {
                         Invalid rear layout
                       </div>
                     ) : (
-                      <div
-                        className="rounded-2xl border border-white/10 bg-black/30 p-2"
-                        style={{ height: `${previewHeight}px` }}
-                      >
-                        <div
-                          className="grid gap-1 h-full"
-                          style={{ gridTemplateRows: `repeat(${rearMatrixPreview.length}, minmax(0, 1fr))` }}
-                        >
-                          {rearMatrixPreview.map((row, idx) => (
-                            <div key={idx} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
-                              {row.map((cell) => (
-                                <div key={cell} className="rounded bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-mono text-gray-400">
-                                  {cell}
+                      <div className="rounded-2xl border border-white/10 bg-black/30 p-2">
+                        <div className="flex gap-2">
+                          <div className="w-6 text-[9px] font-mono text-gray-600 flex flex-col" style={{ height: `${previewHeight}px` }}>
+                            {Array.from({ length: previewUCount }).map((_, idx) => (
+                              <div key={idx} className="flex-1 flex items-center justify-center border-b border-white/10">
+                                <span>{idx + 1}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div
+                            className="rounded-xl border border-white/10 bg-black/40 flex-1 p-2"
+                            style={{ height: `${previewHeight}px` }}
+                          >
+                            <div
+                              className="grid gap-1 h-full"
+                              style={{ gridTemplateRows: `repeat(${rearMatrixPreview.length}, minmax(0, 1fr))` }}
+                            >
+                              {rearMatrixPreview.map((row, idx) => (
+                                <div key={idx} className="grid gap-1" style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}>
+                                  {row.map((cell) => (
+                                    <div key={cell} className="rounded bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-mono text-gray-400">
+                                      {cell}
+                                    </div>
+                                  ))}
                                 </div>
                               ))}
                             </div>
-                          ))}
+                          </div>
+                          <div className="w-6 text-[9px] font-mono text-gray-600 flex flex-col" style={{ height: `${previewHeight}px` }}>
+                            {Array.from({ length: previewUCount }).map((_, idx) => (
+                              <div key={idx} className="flex-1 flex items-center justify-center border-b border-white/10">
+                                <span>{idx + 1}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )}
