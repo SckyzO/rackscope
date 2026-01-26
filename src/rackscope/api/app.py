@@ -39,6 +39,45 @@ def _safe_segment(value: str, fallback: str) -> str:
     value = value.strip("-")
     return value or fallback
 
+def _find_rack_location(rack_id: str) -> Optional[tuple[str, str, Optional[str], bool]]:
+    if not TOPOLOGY:
+        return None
+    for site in TOPOLOGY.sites:
+        for room in site.rooms:
+            for aisle in room.aisles:
+                for rack in aisle.racks:
+                    if rack.id == rack_id:
+                        return site.id, room.id, aisle.id, False
+            for rack in room.standalone_racks:
+                if rack.id == rack_id:
+                    return site.id, room.id, None, True
+    return None
+
+def _find_aisle_path(room_id: str, aisle_id: str) -> Optional[Path]:
+    if not APP_CONFIG or not TOPOLOGY:
+        return None
+    base_dir = Path(APP_CONFIG.paths.topology)
+    for site in TOPOLOGY.sites:
+        for room in site.rooms:
+            if room.id != room_id:
+                continue
+            for aisle in room.aisles:
+                if aisle.id == aisle_id:
+                    return base_dir / "datacenters" / site.id / "rooms" / room.id / "aisles" / aisle.id / "aisle.yaml"
+    return None
+
+def _find_rack_path(rack_id: str) -> Optional[Path]:
+    if not APP_CONFIG:
+        return None
+    base_dir = Path(APP_CONFIG.paths.topology)
+    location = _find_rack_location(rack_id)
+    if not location:
+        return None
+    site_id, room_id, aisle_id, is_standalone = location
+    if is_standalone:
+        return base_dir / "datacenters" / site_id / "rooms" / room_id / "standalone_racks" / f"{rack_id}.yaml"
+    return base_dir / "datacenters" / site_id / "rooms" / room_id / "aisles" / aisle_id / "racks" / f"{rack_id}.yaml"
+
 def _find_device_template_path(templates_dir: Path, template_id: str) -> Optional[Path]:
     devices_dir = templates_dir / "devices"
     if not devices_dir.exists():
@@ -158,6 +197,15 @@ app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
 class TemplateWriteRequest(BaseModel):
     kind: Literal["device", "rack"]
     template: Dict[str, Any]
+
+
+class AisleOrderUpdate(BaseModel):
+    room_id: str
+    racks: List[str]
+
+
+class RackTemplateUpdate(BaseModel):
+    template_id: Optional[str] = None
 
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
@@ -546,6 +594,47 @@ def get_rack_details(rack_id: str):
                     return rack
     
     raise HTTPException(status_code=404, detail=f"Rack {rack_id} not found")
+
+@app.put("/api/topology/aisles/{aisle_id}/racks")
+def update_aisle_racks(aisle_id: str, payload: AisleOrderUpdate):
+    global TOPOLOGY
+    if not APP_CONFIG:
+        raise HTTPException(status_code=500, detail="App config not loaded")
+    if not TOPOLOGY:
+        raise HTTPException(status_code=500, detail="Topology not loaded")
+    if not payload.racks:
+        raise HTTPException(status_code=400, detail="racks list is required")
+
+    aisle_path = _find_aisle_path(payload.room_id, aisle_id)
+    if not aisle_path or not aisle_path.exists():
+        raise HTTPException(status_code=404, detail="Aisle file not found")
+
+    data = yaml.safe_load(aisle_path.read_text()) or {}
+    data["racks"] = payload.racks
+    aisle_path.write_text(dump_yaml(data))
+
+    # Reload topology to keep in-memory state aligned.
+    TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    return {"status": "ok", "aisle_id": aisle_id, "racks": payload.racks}
+
+@app.put("/api/topology/racks/{rack_id}/template")
+def update_rack_template(rack_id: str, payload: RackTemplateUpdate):
+    global TOPOLOGY
+    if not APP_CONFIG:
+        raise HTTPException(status_code=500, detail="App config not loaded")
+    rack_path = _find_rack_path(rack_id)
+    if not rack_path or not rack_path.exists():
+        raise HTTPException(status_code=404, detail="Rack file not found")
+
+    data = yaml.safe_load(rack_path.read_text()) or {}
+    if payload.template_id:
+        data["template_id"] = payload.template_id
+    else:
+        data.pop("template_id", None)
+    rack_path.write_text(dump_yaml(data))
+
+    TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    return {"status": "ok", "rack_id": rack_id, "template_id": payload.template_id}
 
 @app.post("/api/catalog/templates")
 def write_template(payload: TemplateWriteRequest):

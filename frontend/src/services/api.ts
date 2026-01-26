@@ -176,6 +176,36 @@ export const api = {
   getRackState: async (rackId: string) => {
     return fetchWithCache(`/api/racks/${rackId}/state`, `rack.state.${rackId}`);
   },
+  updateAisleRacks: async (aisleId: string, roomId: string, racks: string[]) => {
+    const res = await fetch(`/api/topology/aisles/${encodeURIComponent(aisleId)}/racks`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ room_id: roomId, racks }),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/aisles');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('rooms', null);
+    markSuccess();
+    return data;
+  },
+  updateRackTemplate: async (rackId: string, templateId: string | null) => {
+    const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/template`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ template_id: templateId }),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/racks');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('rooms', null);
+    markSuccess();
+    return data;
+  },
   getConfig: async (): Promise<AppConfig> => {
     return fetchWithCache('/api/config', 'app.config');
   },

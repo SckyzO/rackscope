@@ -10,6 +10,7 @@ import { TemplatesLibraryPage } from './pages/TemplatesLibraryPage';
 import { TemplatesEditorPage } from './pages/TemplatesEditorPage';
 import { TemplatesRackEditorPage } from './pages/TemplatesRackEditorPage';
 import { ChecksLibraryEditorPage } from './pages/ChecksLibraryEditorPage';
+import { TopologyEditorPage } from './pages/TopologyEditorPage';
 import { api } from './services/api';
 import type { RoomSummary, Site } from './types';
 import { expandInstanceMatches, matchesText } from './utils/search';
@@ -805,6 +806,7 @@ function App() {
             <Route path="/templates/editor" element={<TemplatesEditorPage />} />
             <Route path="/templates/editor/racks" element={<TemplatesRackEditorPage />} />
             <Route path="/checks/library" element={<ChecksLibraryEditorPage />} />
+            <Route path="/topology/editor" element={<TopologyEditorPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </Layout>

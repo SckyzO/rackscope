@@ -269,6 +269,7 @@ export const Sidebar = ({
         />
         {expandedSections.topology && (
           <div className="space-y-1.5">
+            <SidebarLink to="/topology/editor" icon={Columns2} label="Editor" depth={1} />
             <div className="px-3 text-[9px] font-mono uppercase tracking-[0.25em] text-gray-500/70">
               Datacenters
             </div>
