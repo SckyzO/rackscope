@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -23,6 +23,11 @@ const Layout = ({
   const [stale, setStale] = useState(api.isStale());
   const [lastSyncText, setLastSyncText] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const blurTimer = useRef<number | null>(null);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const hasQuery = normalizedQuery.length > 0;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -52,6 +57,186 @@ const Layout = ({
     }, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadSites = async () => {
+      try {
+        const sitesData = await api.getSites();
+        if (active) {
+          setSites(Array.isArray(sitesData) ? sitesData : []);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    loadSites();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const searchResults = useMemo(() => {
+    if (!hasQuery) return [];
+    const matches = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
+    const results: Array<{
+      id: string;
+      type: 'datacenter' | 'room' | 'aisle' | 'rack' | 'device' | 'instance';
+      label: string;
+      sublabel: string;
+      to: string;
+    }> = [];
+
+    for (const site of sites) {
+      if (matches(site.name) || matches(site.id)) {
+        const targetRoom = site.rooms?.[0];
+        results.push({
+          id: site.id,
+          type: 'datacenter',
+          label: site.name || site.id,
+          sublabel: 'Datacenter',
+          to: targetRoom ? `/room/${targetRoom.id}` : '/',
+        });
+      }
+
+      for (const room of site.rooms || []) {
+        if (matches(room.name) || matches(room.id)) {
+          results.push({
+            id: room.id,
+            type: 'room',
+            label: room.name || room.id,
+            sublabel: `${site.name || site.id} / Room`,
+            to: `/room/${room.id}`,
+          });
+        }
+
+        for (const aisle of room.aisles || []) {
+          if (matches(aisle.name) || matches(aisle.id)) {
+            results.push({
+              id: `${room.id}:${aisle.id}`,
+              type: 'aisle',
+              label: aisle.name || aisle.id,
+              sublabel: `${site.name || site.id} / ${room.name || room.id} / Aisle`,
+              to: `/room/${room.id}`,
+            });
+          }
+
+          for (const rack of aisle.racks || []) {
+            const rackMatches = matches(rack.name) || matches(rack.id);
+            if (rackMatches) {
+              results.push({
+                id: rack.id,
+                type: 'rack',
+                label: rack.name || rack.id,
+                sublabel: `${site.name || site.id} / ${room.name || room.id} / ${aisle.name || aisle.id}`,
+                to: `/rack/${rack.id}`,
+              });
+            }
+
+            for (const device of rack.devices || []) {
+              if (matches(device.name) || matches(device.id)) {
+                results.push({
+                  id: `${rack.id}:${device.id}`,
+                  type: 'device',
+                  label: device.name || device.id,
+                  sublabel: `${rack.name || rack.id} / Device`,
+                  to: `/rack/${rack.id}`,
+                });
+              }
+              const inst = device.instance;
+              if (typeof inst === 'string' && matches(inst)) {
+                results.push({
+                  id: `${rack.id}:${device.id}:instance`,
+                  type: 'instance',
+                  label: inst,
+                  sublabel: `${rack.name || rack.id} / Instance`,
+                  to: `/rack/${rack.id}`,
+                });
+              }
+              if (inst && typeof inst === 'object') {
+                for (const value of Object.values(inst)) {
+                  const instValue = String(value);
+                  if (matches(instValue)) {
+                    results.push({
+                      id: `${rack.id}:${device.id}:${instValue}`,
+                      type: 'instance',
+                      label: instValue,
+                      sublabel: `${rack.name || rack.id} / Instance`,
+                      to: `/rack/${rack.id}`,
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        for (const rack of room.standalone_racks || []) {
+          const rackMatches = matches(rack.name) || matches(rack.id);
+          if (rackMatches) {
+            results.push({
+              id: rack.id,
+              type: 'rack',
+              label: rack.name || rack.id,
+              sublabel: `${site.name || site.id} / ${room.name || room.id}`,
+              to: `/rack/${rack.id}`,
+            });
+          }
+          for (const device of rack.devices || []) {
+            if (matches(device.name) || matches(device.id)) {
+              results.push({
+                id: `${rack.id}:${device.id}`,
+                type: 'device',
+                label: device.name || device.id,
+                sublabel: `${rack.name || rack.id} / Device`,
+                to: `/rack/${rack.id}`,
+              });
+            }
+            const inst = device.instance;
+            if (typeof inst === 'string' && matches(inst)) {
+              results.push({
+                id: `${rack.id}:${device.id}:instance`,
+                type: 'instance',
+                label: inst,
+                sublabel: `${rack.name || rack.id} / Instance`,
+                to: `/rack/${rack.id}`,
+              });
+            }
+            if (inst && typeof inst === 'object') {
+              for (const value of Object.values(inst)) {
+                const instValue = String(value);
+                if (matches(instValue)) {
+                  results.push({
+                    id: `${rack.id}:${device.id}:${instValue}`,
+                    type: 'instance',
+                    label: instValue,
+                    sublabel: `${rack.name || rack.id} / Instance`,
+                    to: `/rack/${rack.id}`,
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return results.slice(0, 30);
+  }, [hasQuery, normalizedQuery, sites]);
+
+  const handleSearchFocus = () => {
+    if (blurTimer.current) {
+      window.clearTimeout(blurTimer.current);
+      blurTimer.current = null;
+    }
+    setSearchOpen(true);
+  };
+
+  const handleSearchBlur = () => {
+    blurTimer.current = window.setTimeout(() => {
+      setSearchOpen(false);
+    }, 150);
+  };
 
   return (
     <div className="flex h-screen bg-rack-dark text-gray-100 overflow-hidden font-sans">
@@ -87,9 +272,40 @@ const Layout = ({
                 type="text"
                 value={searchQuery}
                 onChange={(event) => onSearchChange(event.target.value)}
+                onFocus={handleSearchFocus}
+                onBlur={handleSearchBlur}
                 placeholder="Search datacenter / room / rack / device"
                 className="w-full h-12 pl-11 pr-4 rounded-xl bg-black/30 border border-[var(--color-border)] text-[13px] text-gray-300 placeholder:text-gray-500 focus:outline-none focus:border-[var(--color-accent)]/50"
               />
+              {searchOpen && hasQuery && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--color-bg-panel)]/95 border border-[var(--color-border)] rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl overflow-hidden z-50">
+                  {searchResults.length === 0 ? (
+                    <div className="px-4 py-3 text-[11px] text-gray-400 font-mono uppercase tracking-[0.2em]">
+                      No matches found
+                    </div>
+                  ) : (
+                    <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                      {searchResults.map((result) => (
+                        <Link
+                          key={result.id}
+                          to={result.to}
+                          className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]/60 hover:bg-white/5 transition-colors"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => setSearchOpen(false)}
+                        >
+                          <div>
+                            <div className="text-[12px] font-semibold text-gray-100">{result.label}</div>
+                            <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500">{result.sublabel}</div>
+                          </div>
+                          <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                            {result.type}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3 min-w-[240px] justify-end">
@@ -486,7 +702,7 @@ function App() {
         <Layout searchQuery={searchQuery} onSearchChange={setSearchQuery}>
           <Routes>
             <Route path="/" element={<Dashboard searchQuery={searchQuery} />} />
-            <Route path="/room/:roomId" element={<RoomPage />} />
+            <Route path="/room/:roomId" element={<RoomPage searchQuery={searchQuery} />} />
             <Route path="/rack/:rackId" element={<RackPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
