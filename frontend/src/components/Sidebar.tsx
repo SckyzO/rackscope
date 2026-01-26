@@ -107,8 +107,14 @@ export const Sidebar = ({
   };
 
   const formatCountdown = (ts?: number | null, nextTs?: number | null) => {
-    const target = nextTs ?? (ts ? ts + refreshSeconds * 1000 : null);
-    if (!target) return '--';
+    if (!ts) return '--';
+    const intervalMs = refreshSeconds * 1000;
+    if (!intervalMs) return '--';
+    let target = nextTs ?? (ts + intervalMs);
+    if (target <= now) {
+      const cycles = Math.floor((now - ts) / intervalMs) + 1;
+      target = ts + cycles * intervalMs;
+    }
     const nextMs = target - now;
     if (nextMs <= 0) return '0s';
     const totalSeconds = Math.ceil(nextMs / 1000);
