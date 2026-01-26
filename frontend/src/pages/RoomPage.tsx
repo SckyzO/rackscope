@@ -6,7 +6,7 @@ import { Box, Zap, Thermometer, Maximize2 } from 'lucide-react';
 import { RackElevation, HUDTooltip } from '../components/RackVisualizer';
 import { matchesInstanceValue, matchesText } from '../utils/search';
 
-export const RoomPage = ({ searchQuery = '' }: { searchQuery?: string }) => {
+export const RoomPage = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; reloadKey?: number }) => {
   const { roomId } = useParams<{ roomId: string }>();
   const [room, setRoom] = useState<Room | null>(null);
   const [catalog, setCatalog] = useState<Record<string, DeviceTemplate>>({});
@@ -63,7 +63,7 @@ export const RoomPage = ({ searchQuery = '' }: { searchQuery?: string }) => {
     fetchHealth();
     const interval = setInterval(fetchHealth, refreshMs);
     return () => clearInterval(interval);
-  }, [room, refreshMs]);
+  }, [room, refreshMs, reloadKey]);
 
   useEffect(() => {
     if (!selectedRack) {
@@ -90,7 +90,7 @@ export const RoomPage = ({ searchQuery = '' }: { searchQuery?: string }) => {
       active = false;
       clearInterval(interval);
     };
-  }, [selectedRack, refreshMs]);
+  }, [selectedRack, refreshMs, reloadKey]);
 
   const selectedMetrics = selectedRackHealth?.metrics || null;
   const selectedNodesData = selectedRackHealth?.nodes || null;

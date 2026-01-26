@@ -20,10 +20,12 @@ const Layout = ({
   children,
   searchQuery,
   onSearchChange,
+  onReload,
 }: {
   children: React.ReactNode;
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  onReload: () => void;
 }) => {
   const [stale, setStale] = useState(api.isStale());
   const [lastSyncText, setLastSyncText] = useState<string | null>(null);
@@ -296,6 +298,14 @@ const Layout = ({
             <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">
               Last sync: {lastSyncText || '--'}
             </div>
+            <button
+              type="button"
+              onClick={onReload}
+              className="h-9 px-3 rounded-xl border border-[var(--color-border)] bg-black/30 flex items-center gap-2 text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30 transition-colors text-[10px] font-mono uppercase tracking-widest"
+              title="Reload now"
+            >
+              Reload
+            </button>
             <NotificationHeader />
             <Link to="/settings" className="h-9 w-9 rounded-xl border border-[var(--color-border)] bg-black/30 flex items-center justify-center text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30 transition-colors">
               <Settings className="w-4 h-4" />
@@ -315,7 +325,7 @@ const Layout = ({
  * 
  * Central monitoring hub providing a high-level view of the entire infrastructure.
  */
-const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
+const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; reloadKey?: number }) => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [roomStates, setRoomStates] = useState<Record<string, any>>({});
   const [globalStats, setGlobalStats] = useState<any>(null);
@@ -393,7 +403,7 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
     fetchData();
     const interval = setInterval(fetchData, refreshMs);
     return () => clearInterval(interval);
-  }, [refreshMs]);
+  }, [refreshMs, reloadKey]);
 
   const matchingRoomIds = useMemo(() => {
     if (!hasQuery) return null;
@@ -806,15 +816,20 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   return (
     <BrowserRouter>
       <ErrorBoundary>
-        <Layout searchQuery={searchQuery} onSearchChange={setSearchQuery}>
+        <Layout
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onReload={() => setReloadKey((prev) => prev + 1)}
+        >
           <Routes>
-            <Route path="/" element={<Dashboard searchQuery={searchQuery} />} />
-            <Route path="/room/:roomId" element={<RoomPage searchQuery={searchQuery} />} />
-            <Route path="/rack/:rackId" element={<RackPage />} />
+            <Route path="/" element={<Dashboard searchQuery={searchQuery} reloadKey={reloadKey} />} />
+            <Route path="/room/:roomId" element={<RoomPage searchQuery={searchQuery} reloadKey={reloadKey} />} />
+            <Route path="/rack/:rackId" element={<RackPage reloadKey={reloadKey} />} />
             <Route path="/templates" element={<TemplatesLibraryPage />} />
             <Route path="/templates/editor" element={<TemplatesEditorPage />} />
             <Route path="/templates/editor/racks" element={<TemplatesRackEditorPage />} />

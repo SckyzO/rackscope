@@ -14,7 +14,7 @@ import { RackElevation } from '../components/RackVisualizer';
  * - Front View (Compute/Storage)
  * - Rear View (Cabling/Cooling)
  */
-export const RackPage = () => {
+export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
   const { rackId } = useParams<{ rackId: string }>();
   
   const [rack, setRack] = useState<Rack | null>(null);
@@ -58,7 +58,7 @@ export const RackPage = () => {
       }
     };
     fetchData();
-  }, [rackId]);
+  }, [rackId, reloadKey]);
 
   // 2. Telemetry Polling
   useEffect(() => {
@@ -74,7 +74,7 @@ export const RackPage = () => {
     fetchHealth();
     const interval = setInterval(fetchHealth, refreshMs);
     return () => clearInterval(interval);
-  }, [rackId, refreshMs]);
+  }, [rackId, refreshMs, reloadKey]);
 
   if (loading) return <div className="p-12 font-mono animate-pulse text-blue-500">LDR :: ANALYZING_RACK_STRUCTURE...</div>;
   if (error || !rack) return <div className="p-12 text-status-crit font-mono">ERR :: {error || 'RACK_NOT_FOUND'}</div>;
