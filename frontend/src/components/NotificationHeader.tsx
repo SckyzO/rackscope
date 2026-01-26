@@ -2,34 +2,31 @@ import { useEffect, useState } from 'react';
 import { Bell, AlertTriangle } from 'lucide-react';
 import { api } from '../services/api';
 
-type Transition = {
-  id: string;
-  name: string;
-  next: string;
-  ts: number;
+type AlertItem = {
+  node_id: string;
+  state: string;
+  checks: { id: string; severity: string }[];
+  site_id: string;
+  site_name: string;
+  room_id: string;
+  room_name: string;
+  rack_id: string;
+  rack_name: string;
+  device_id: string;
+  device_name: string;
 };
 
 export const NotificationHeader = () => {
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<Transition[]>([]);
+  const [items, setItems] = useState<AlertItem[]>([]);
 
   useEffect(() => {
     let mounted = true;
     const poll = async () => {
       try {
-        const rooms = await api.getRooms();
-        const states = await Promise.all(
-          rooms.map(async (r) => {
-            const s = await api.getRoomState(r.id);
-            return { id: r.id, name: r.name, state: s?.state || 'UNKNOWN' };
-          })
-        );
+        const data = await api.getActiveAlerts();
         if (!mounted) return;
-        const now = Date.now();
-        const active = states
-          .filter((s) => s.state === 'WARN' || s.state === 'CRIT')
-          .map((s) => ({ id: s.id, name: s.name, next: s.state, ts: now }));
-        setItems(active);
+        setItems(Array.isArray(data?.alerts) ? data.alerts : []);
       } catch {
         // Keep silent for now; notifications are best-effort.
       }
@@ -62,21 +59,26 @@ export const NotificationHeader = () => {
       {open && (
         <div className="absolute right-0 mt-2 w-80 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-panel)]/95 backdrop-blur-xl shadow-2xl overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--color-border)]/20 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
-            Active Alerts
+            Active Device Alerts
           </div>
           <div className="max-h-64 overflow-auto custom-scrollbar">
             {items.length === 0 && (
               <div className="p-4 text-[11px] text-gray-500 font-mono">No active alerts.</div>
             )}
             {items.map((it) => (
-              <div key={`${it.id}-${it.ts}`} className="px-4 py-3 border-b border-[var(--color-border)]/10 flex items-center gap-3">
-                <AlertTriangle className={`w-4 h-4 ${it.next === 'CRIT' ? 'text-status-crit' : 'text-status-warn'}`} />
+              <div key={`${it.node_id}`} className="px-4 py-3 border-b border-[var(--color-border)]/10 flex items-center gap-3">
+                <AlertTriangle className={`w-4 h-4 ${it.state === 'CRIT' ? 'text-status-crit' : 'text-status-warn'}`} />
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] font-bold text-[var(--color-text-base)] truncate">{it.name}</div>
-                  <div className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">{it.next}</div>
+                  <div className="text-[11px] font-bold text-[var(--color-text-base)] truncate">{it.device_name}</div>
+                  <div className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">
+                    {it.site_name} / {it.room_name} / {it.rack_name}
+                  </div>
+                  <div className="text-[9px] font-mono text-gray-500 uppercase tracking-widest">
+                    {it.node_id} · {it.state}
+                  </div>
                 </div>
                 <div className="text-[9px] font-mono text-gray-500">
-                  {new Date(it.ts).toLocaleTimeString()}
+                  {it.checks[0]?.id || 'ALERT'}
                 </div>
               </div>
             ))}

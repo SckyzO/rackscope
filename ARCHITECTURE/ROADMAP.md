@@ -72,13 +72,14 @@ Telemetry:
   - [x] Feature toggles (notifications, playlist, offline, demo)
   - [x] Validation + save/reload workflow
   - [ ] Settings UX refinement (help text, guided flows) — deferred to final pass
+- [ ] Device alert detail pipeline (device/node alerts in header + tooltips)
 - [ ] Refactor simulator (multi-metric, topology-driven, demo-ready):
   - [ ] Rework scenario implementation (deterministic, explicit outcomes)
-  - [ ] Topology-driven target generation (instances/racks)
-  - [ ] Multi-metric bundles (node/ipmi/storage/infra)
-  - [ ] Deterministic seeding (repeatable demos)
-  - [ ] Failure injection controls (per metric + per scope)
-  - [ ] Prometheus labels parity (instance/rack/chassis/job)
+  - [x] Topology-driven target generation (instances/racks)
+  - [x] Multi-metric bundles (node/ipmi/storage/infra)
+  - [x] Deterministic seeding (repeatable demos)
+  - [x] Failure injection controls (per metric + per scope)
+  - [x] Prometheus labels parity (instance/rack/chassis/job)
   - [ ] Export fixtures in config-examples
 
 ---
@@ -87,7 +88,7 @@ Telemetry:
 **Goal:** Complete physical rendering (front/rear/infra).
 
 - [ ] Rear view implementation:
-  - [ ] normalize `rear_layout` in device templates
+  - [x] normalize `rear_layout` in device templates
   - [ ] render PSUs, fans, rear connectors in UI
   - [ ] render zero-U side attachments (PDU rails) aligned to U scale
 - [ ] Active infrastructure:

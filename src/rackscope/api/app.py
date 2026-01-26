@@ -17,6 +17,7 @@ from rackscope.model.checks import ChecksLibrary
 from rackscope.model.config import AppConfig
 from rackscope.model.loader import load_topology, load_catalog, load_checks_library, load_app_config
 from rackscope.telemetry.prometheus import client as prom_client
+from rackscope.telemetry.planner import _expand_nodes_pattern
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
 
 # Global state
@@ -519,12 +520,14 @@ async def get_rack_state(rack_id: str):
             temp_count += 1
         
         state = snapshot.node_states.get(node_id, "UNKNOWN")
-        
+        alerts = snapshot.node_alerts.get(node_id, {})
+
         node_states.append(state)
         processed_nodes[node_id] = {
             "state": state,
             "temperature": temp if temp is not None else 0,
-            "power": power if power is not None else 0
+            "power": power if power is not None else 0,
+            "alerts": [{"id": cid, "severity": sev} for cid, sev in alerts.items()],
         }
     
     rack_state = snapshot.rack_states.get(rack_id, aggregate_states(node_states))
@@ -532,7 +535,7 @@ async def get_rack_state(rack_id: str):
     avg_temp = total_temp / temp_count if temp_count > 0 else 0
 
     return {
-        "rack_id": rack_id, 
+        "rack_id": rack_id,
         "state": rack_state,
         "metrics": {
             "temperature": avg_temp,
@@ -540,3 +543,75 @@ async def get_rack_state(rack_id: str):
         },
         "nodes": processed_nodes
     }
+
+
+def _expand_device_instances(device: Device) -> List[str]:
+    if isinstance(device.instance, str):
+        return _expand_nodes_pattern(device.instance)
+    if isinstance(device.instance, dict):
+        expanded: List[str] = []
+        for value in device.instance.values():
+            if isinstance(value, str):
+                expanded.extend(_expand_nodes_pattern(value))
+        return expanded
+    if isinstance(device.nodes, str):
+        return _expand_nodes_pattern(device.nodes)
+    if isinstance(device.nodes, dict):
+        expanded: List[str] = []
+        for value in device.nodes.values():
+            if isinstance(value, str):
+                expanded.extend(_expand_nodes_pattern(value))
+        return expanded
+    return []
+
+
+@app.get("/api/alerts/active")
+async def get_active_alerts():
+    if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
+        return {"alerts": []}
+    snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY)
+
+    node_context: Dict[str, Dict[str, str]] = {}
+    for site in TOPOLOGY.sites:
+        for room in site.rooms:
+            for aisle in room.aisles:
+                for rack in aisle.racks:
+                    for device in rack.devices:
+                        for node_id in _expand_device_instances(device):
+                            node_context[node_id] = {
+                                "site_id": site.id,
+                                "site_name": site.name,
+                                "room_id": room.id,
+                                "room_name": room.name,
+                                "rack_id": rack.id,
+                                "rack_name": rack.name,
+                                "device_id": device.id,
+                                "device_name": device.name,
+                            }
+            for rack in room.standalone_racks:
+                for device in rack.devices:
+                    for node_id in _expand_device_instances(device):
+                        node_context[node_id] = {
+                            "site_id": site.id,
+                            "site_name": site.name,
+                            "room_id": room.id,
+                            "room_name": room.name,
+                            "rack_id": rack.id,
+                            "rack_name": rack.name,
+                            "device_id": device.id,
+                            "device_name": device.name,
+                        }
+
+    alerts = []
+    for node_id, checks in snapshot.node_alerts.items():
+        context = node_context.get(node_id)
+        if not context:
+            continue
+        alerts.append({
+            "node_id": node_id,
+            "state": snapshot.node_states.get(node_id, "UNKNOWN"),
+            "checks": [{"id": cid, "severity": sev} for cid, sev in checks.items()],
+            **context,
+        })
+
+    return {"alerts": alerts}

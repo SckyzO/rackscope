@@ -31,6 +31,7 @@ class PlannerSnapshot:
     chassis_states: Dict[str, str] = field(default_factory=dict)
     rack_states: Dict[str, str] = field(default_factory=dict)
     rack_nodes: Dict[str, List[str]] = field(default_factory=dict)
+    node_alerts: Dict[str, Dict[str, str]] = field(default_factory=dict)
 
 
 class TelemetryPlanner:
@@ -60,6 +61,7 @@ class TelemetryPlanner:
         node_states: Dict[str, str] = {}
         chassis_states: Dict[str, str] = {}
         rack_states: Dict[str, str] = {}
+        node_alerts: Dict[str, Dict[str, str]] = {}
 
         seen_nodes: set[str] = set()
         seen_chassis: set[str] = set()
@@ -80,6 +82,11 @@ class TelemetryPlanner:
                 if check.scope == "node":
                     seen_nodes.add(key)
                     node_states[key] = _max_severity(node_states.get(key), severity)
+                    if severity in ("WARN", "CRIT"):
+                        node_alerts.setdefault(key, {})
+                        current = node_alerts[key].get(check.id)
+                        if _max_severity(current, severity) == severity:
+                            node_alerts[key][check.id] = severity
                 elif check.scope == "chassis":
                     seen_chassis.add(key)
                     chassis_states[key] = _max_severity(chassis_states.get(key), severity)
@@ -104,6 +111,7 @@ class TelemetryPlanner:
             chassis_states=chassis_states,
             rack_states=rack_states,
             rack_nodes=rack_nodes,
+            node_alerts=node_alerts,
         )
         return self._snapshot
 

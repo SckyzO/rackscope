@@ -78,6 +78,9 @@ export const api = {
   getPrometheusStats: async () => {
     return fetchWithCache('/api/stats/prometheus', 'stats.prometheus');
   },
+  getActiveAlerts: async () => {
+    return fetchWithCache('/api/alerts/active', 'alerts.active');
+  },
   getRoomLayout: async (roomId: string): Promise<Room> => {
     return fetchWithCache(`/api/rooms/${roomId}/layout`, `room.layout.${roomId}`);
   },

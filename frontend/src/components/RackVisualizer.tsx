@@ -465,6 +465,9 @@ export const NodeUnit = ({ nodeName, slotNum, nodeHealth, type, uHeight, uPositi
     const isOk = nodeHealth === 'OK';
     let Icon = type === 'network' ? RouterIcon : Server;
     const hideText = uHeight === 1;
+    const reasons = Array.isArray(nodeMetrics?.alerts)
+        ? nodeMetrics.alerts.map((alert: any) => alert?.id).filter(Boolean)
+        : [];
 
     return (
         <>
@@ -497,6 +500,7 @@ export const NodeUnit = ({ nodeName, slotNum, nodeHealth, type, uHeight, uPositi
                         { label: 'Enclosure', value: chassisName },
                         { label: 'Physical Location', value: `RACK U${uPosition} S${slotNum}`, italic: true }
                     ]}
+                    reasons={reasons}
                     metrics={nodeMetrics ? { temp: nodeMetrics.temperature, power: nodeMetrics.power } : undefined}
                     mousePos={mousePos}
                 />
