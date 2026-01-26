@@ -37,11 +37,11 @@ Every line is a task; checked items are done.
 **Goal:** Build a scalable, Prometheus-first telemetry layer.
 
 Telemetry:
-- [ ] Checks library split (folder-based, no monolith):
-  - [ ] Migrate to `config/checks/library/*.yaml`
-  - [ ] Remove `config/checks/library.yaml` (no fallback)
-  - [ ] Loader reads all files in `checks/library/`
-  - [ ] Keep scopes (node/chassis/rack) + label mappings
+- [x] Checks library split (folder-based, no monolith):
+  - [x] Migrate to `config/checks/library/*.yaml`
+  - [x] Remove `config/checks/library.yaml` (no fallback)
+  - [x] Loader reads all files in `checks/library/`
+  - [x] Keep scopes (node/chassis/rack) + label mappings
 - [x] PromQL planner (vector queries, no per-node queries)
 - [x] Cache + dedup + TTL strategy (60s refresh)
 - [x] UNKNOWN handling + severity aggregation rules
@@ -73,7 +73,7 @@ Telemetry:
   - [x] Notification panel size (max visible alerts)
   - [x] Validation + save/reload workflow
   - [ ] Settings UX refinement (help text, guided flows) — deferred to final pass
-- [ ] Device alert detail pipeline (device/node alerts in header + tooltips)
+- [x] Device alert detail pipeline (device/node alerts in header + tooltips)
 - [ ] Refactor simulator (multi-metric, topology-driven, demo-ready):
   - [ ] Rework scenario implementation (deterministic, explicit outcomes)
   - [x] Topology-driven target generation (instances/racks)
@@ -96,8 +96,8 @@ Telemetry:
   - [ ] connect HMC/PMC to real Prometheus metrics
   - [ ] add gauges/charts for infra components
 - [ ] Global search UX:
-  - [ ] searchable datacenter/room/aisle/rack/device names
-  - [ ] highlight matches + keep hierarchy context
+  - [x] searchable datacenter/room/aisle/rack/device names
+  - [x] highlight matches + keep hierarchy context
 
 ---
 
