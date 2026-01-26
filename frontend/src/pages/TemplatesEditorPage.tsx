@@ -51,6 +51,7 @@ export const TemplatesEditorPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
   const unitHeight = 24;
+  const minPreviewHeight = 24;
 
   const matrixPreview = useMemo(() => {
     const rows = Number.parseInt(draft.rows, 10);
@@ -105,8 +106,8 @@ export const TemplatesEditorPage = () => {
   const canSave = draft.id.trim() && draft.name.trim();
   const previewHeight = (() => {
     const uHeight = Number.parseInt(draft.u_height, 10);
-    if (!Number.isFinite(uHeight) || uHeight <= 0) return unitHeight;
-    return uHeight * unitHeight;
+    if (!Number.isFinite(uHeight) || uHeight <= 0) return minPreviewHeight;
+    return Math.max(uHeight * unitHeight, minPreviewHeight);
   })();
 
   const handleSave = async () => {
@@ -187,7 +188,7 @@ export const TemplatesEditorPage = () => {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_420px] gap-6">
         <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 space-y-4">
           <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Device Template</h2>
           <label className="text-xs text-gray-400">
