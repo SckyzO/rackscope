@@ -29,14 +29,27 @@ export const matchesInstancePattern = (query: string, pattern: string): boolean 
     return false;
   }
   const middle = normalizedQuery.slice(prefix.length, normalizedQuery.length - suffix.length);
-  if (!/^\d+$/.test(middle)) return false;
+  if (middle && !/^\d+$/.test(middle)) return false;
 
   const minLen = Math.min(startStr.length, endStr.length);
   const maxLen = Math.max(startStr.length, endStr.length);
-  if (middle.length < minLen || middle.length > maxLen) return false;
+  if (middle.length > maxLen) return false;
+
+  const rangeMin = Math.min(start, end);
+  const rangeMax = Math.max(start, end);
+
+  if (middle.length < minLen) {
+    if (!middle) return true;
+    const width = maxLen;
+    const minStr = middle + '0'.repeat(Math.max(0, width - middle.length));
+    const maxStr = middle + '9'.repeat(Math.max(0, width - middle.length));
+    const prefixMin = Number.parseInt(minStr, 10);
+    const prefixMax = Number.parseInt(maxStr, 10);
+    return prefixMax >= rangeMin && prefixMin <= rangeMax;
+  }
 
   const value = Number.parseInt(middle, 10);
-  return value >= Math.min(start, end) && value <= Math.max(start, end);
+  return value >= rangeMin && value <= rangeMax;
 };
 
 export const matchesInstanceValue = (query: string, instance: unknown): boolean => {
