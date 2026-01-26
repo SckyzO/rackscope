@@ -1,0 +1,18 @@
+templates:
+- id: ib-switch-l1
+  name: InfiniBand L1 (NDR 40p)
+  type: network
+  u_height: 1
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1
+  rear_layout:
+    type: grid
+    rows: 1
+    cols: 2
+    matrix:
+    - - 901
+      - 902

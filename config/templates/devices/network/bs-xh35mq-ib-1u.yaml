@@ -1,0 +1,11 @@
+templates:
+- id: bs-xh35mq-ib-1u
+  name: BullSequana XH35MQ IB Switch (1U)
+  type: network
+  u_height: 1
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1

@@ -2,6 +2,22 @@
 
 Device templates describe the physical layout of an enclosure (chassis) and how logical nodes are mapped to it.
 
+## File Layout
+
+Each device template is stored in its own file and grouped by type:
+
+```
+config/templates/devices/
+  server/
+    bs-x430-service-2u.yaml
+  storage/
+    storage-2u-24disk.yaml
+  network/
+    ib-switch-l1.yaml
+```
+
+The template `type` determines the folder name. Files are named after the template `id`.
+
 ## Schema Specification
 
 ```yaml

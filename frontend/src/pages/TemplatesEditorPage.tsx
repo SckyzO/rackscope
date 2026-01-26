@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
+import type { DeviceTemplate } from '../types';
 
 type DeviceDraft = {
   id: string;
@@ -9,11 +10,13 @@ type DeviceDraft = {
   rows: string;
   cols: string;
   layout_type: 'grid' | 'vertical';
+  layout_matrix?: number[][];
   rear_enabled: boolean;
   rear_rows: string;
   rear_cols: string;
   rear_layout_type: 'grid' | 'vertical';
-  rear_components: Array<{ id: string; name: string; type: string }>;
+  rear_layout_matrix?: number[][];
+  rear_components: Array<{ id: string; name: string; type: string; checks?: string[] }>;
 };
 
 const defaultDraft: DeviceDraft = {
@@ -24,10 +27,12 @@ const defaultDraft: DeviceDraft = {
   rows: '1',
   cols: '1',
   layout_type: 'grid',
+  layout_matrix: undefined,
   rear_enabled: false,
   rear_rows: '1',
   rear_cols: '1',
   rear_layout_type: 'grid',
+  rear_layout_matrix: undefined,
   rear_components: [],
 };
 
@@ -50,23 +55,46 @@ export const TemplatesEditorPage = () => {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
+  const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   const unitHeight = 48;
   const minPreviewHeight = 48;
+
+  useEffect(() => {
+    let active = true;
+    api.getCatalog()
+      .then((catalog) => {
+        if (!active) return;
+        setDeviceTemplates(catalog.device_templates || []);
+      })
+      .catch(console.error);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const buildPreviewMatrix = (rows: number, cols: number, matrix?: number[][]) => {
+    if (matrix && matrix.length === rows && matrix.every((row) => row.length === cols)) {
+      return matrix;
+    }
+    return buildMatrix(rows, cols);
+  };
 
   const matrixPreview = useMemo(() => {
     const rows = Number.parseInt(draft.rows, 10);
     const cols = Number.parseInt(draft.cols, 10);
     if (!Number.isFinite(rows) || !Number.isFinite(cols) || rows <= 0 || cols <= 0) return [];
-    return buildMatrix(rows, cols);
-  }, [draft.rows, draft.cols]);
+    return buildPreviewMatrix(rows, cols, draft.layout_matrix);
+  }, [draft.rows, draft.cols, draft.layout_matrix]);
 
   const rearMatrixPreview = useMemo(() => {
     if (!draft.rear_enabled) return [];
     const rows = Number.parseInt(draft.rear_rows, 10);
     const cols = Number.parseInt(draft.rear_cols, 10);
     if (!Number.isFinite(rows) || !Number.isFinite(cols) || rows <= 0 || cols <= 0) return [];
-    return buildMatrix(rows, cols);
-  }, [draft.rear_rows, draft.rear_cols, draft.rear_enabled]);
+    return buildPreviewMatrix(rows, cols, draft.rear_layout_matrix);
+  }, [draft.rear_rows, draft.rear_cols, draft.rear_enabled, draft.rear_layout_matrix]);
 
   const yamlPreview = useMemo(() => {
     const rows = Number.parseInt(draft.rows, 10);
@@ -76,7 +104,7 @@ export const TemplatesEditorPage = () => {
       type: draft.layout_type,
       rows,
       cols,
-      matrix: buildMatrix(rows, cols),
+      matrix: buildPreviewMatrix(rows, cols, draft.layout_matrix),
     };
     const template: Record<string, any> = {
       id: draft.id.trim() || 'template-id',
@@ -92,18 +120,35 @@ export const TemplatesEditorPage = () => {
         type: draft.rear_layout_type,
         rows: rearRows,
         cols: rearCols,
-        matrix: buildMatrix(rearRows, rearCols),
+        matrix: buildPreviewMatrix(rearRows, rearCols, draft.rear_layout_matrix),
       };
       template.rear_components = draft.rear_components.map((c) => ({
         id: c.id,
         name: c.name,
         type: c.type,
+        checks: c.checks,
       }));
     }
     return `templates:\n  - ${JSON.stringify(template, null, 2).replace(/\n/g, '\n    ')}`;
   }, [draft]);
 
-  const canSave = draft.id.trim() && draft.name.trim();
+  const validationErrors = useMemo(() => {
+    const errors: string[] = [];
+    const uHeight = Number.parseInt(draft.u_height, 10);
+    const rows = Number.parseInt(draft.rows, 10);
+    const cols = Number.parseInt(draft.cols, 10);
+    if (!draft.id.trim()) errors.push('Template ID is required.');
+    if (!draft.name.trim()) errors.push('Name is required.');
+    if (!Number.isFinite(uHeight) || uHeight <= 0) errors.push('U height must be greater than 0.');
+    if (!Number.isFinite(rows) || rows <= 0) errors.push('Layout rows must be greater than 0.');
+    if (!Number.isFinite(cols) || cols <= 0) errors.push('Layout cols must be greater than 0.');
+    if (!isEditing && deviceTemplates.some((t) => t.id === draft.id.trim())) {
+      errors.push('Template ID already exists.');
+    }
+    return errors;
+  }, [draft, deviceTemplates, isEditing]);
+
+  const canSave = validationErrors.length === 0;
   const previewHeight = (() => {
     const uHeight = Number.parseInt(draft.u_height, 10);
     if (!Number.isFinite(uHeight) || uHeight <= 0) return minPreviewHeight;
@@ -132,7 +177,7 @@ export const TemplatesEditorPage = () => {
           type: draft.layout_type,
           rows,
           cols,
-          matrix: buildMatrix(rows, cols),
+          matrix: buildPreviewMatrix(rows, cols, draft.layout_matrix),
         },
       };
       if (draft.rear_enabled) {
@@ -142,18 +187,25 @@ export const TemplatesEditorPage = () => {
           type: draft.rear_layout_type,
           rows: rearRows,
           cols: rearCols,
-          matrix: buildMatrix(rearRows, rearCols),
+          matrix: buildPreviewMatrix(rearRows, rearCols, draft.rear_layout_matrix),
         };
         template.rear_components = draft.rear_components.map((c) => ({
           id: c.id,
           name: c.name,
           type: c.type,
+          checks: c.checks,
         }));
       }
-      await api.createTemplate({ kind: 'device', template });
+      if (isEditing) {
+        await api.updateTemplate({ kind: 'device', template });
+      } else {
+        await api.createTemplate({ kind: 'device', template });
+      }
       setStatus('saved');
       setTimeout(() => setStatus('idle'), 1500);
-      setDraft(defaultDraft);
+      if (!isEditing) {
+        setDraft(defaultDraft);
+      }
     } catch (err: any) {
       setError(err?.message || 'Failed to save');
       setStatus('error');
@@ -173,6 +225,19 @@ export const TemplatesEditorPage = () => {
         <div className="flex items-center gap-3">
           <button
             type="button"
+            onClick={() => {
+              setSelectedTemplateId('');
+              setIsEditing(false);
+              setDraft(defaultDraft);
+              setStatus('idle');
+              setError(null);
+            }}
+            className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[var(--color-border)] text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/40 transition-colors"
+          >
+            New Template
+          </button>
+          <button
+            type="button"
             onClick={() => setShowYaml((prev) => !prev)}
             className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[var(--color-border)] text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/40 transition-colors"
           >
@@ -188,7 +253,13 @@ export const TemplatesEditorPage = () => {
                 : 'bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed'
             }`}
           >
-            {status === 'saving' ? 'Saving' : status === 'saved' ? 'Saved' : 'Save'}
+            {status === 'saving'
+              ? 'Saving'
+              : status === 'saved'
+                ? 'Saved'
+                : isEditing
+                  ? 'Update'
+                  : 'Save'}
           </button>
         </div>
       </header>
@@ -197,10 +268,59 @@ export const TemplatesEditorPage = () => {
         <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 space-y-4">
           <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Device Template</h2>
           <label className="text-xs text-gray-400">
+            Load existing
+            <select
+              value={selectedTemplateId}
+              onChange={(e) => {
+                const nextId = e.target.value;
+                setSelectedTemplateId(nextId);
+                const selected = deviceTemplates.find((t) => t.id === nextId);
+                if (!selected) {
+                  setIsEditing(false);
+                  setDraft(defaultDraft);
+                  return;
+                }
+                setDraft({
+                  id: selected.id,
+                  name: selected.name,
+                  type: selected.type || 'server',
+                  u_height: String(selected.u_height || 1),
+                  rows: String(selected.layout?.rows || 1),
+                  cols: String(selected.layout?.cols || 1),
+                  layout_type: (selected.layout?.type as DeviceDraft['layout_type']) || 'grid',
+                  layout_matrix: selected.layout?.matrix,
+                  rear_enabled: Boolean(selected.rear_layout),
+                  rear_rows: String(selected.rear_layout?.rows || 1),
+                  rear_cols: String(selected.rear_layout?.cols || 1),
+                  rear_layout_type: (selected.rear_layout?.type as DeviceDraft['rear_layout_type']) || 'grid',
+                  rear_layout_matrix: selected.rear_layout?.matrix,
+                  rear_components: (selected.rear_components || []).map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                    type: c.type,
+                    checks: c.checks || [],
+                  })),
+                });
+                setIsEditing(true);
+                setStatus('idle');
+                setError(null);
+              }}
+              className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+            >
+              <option value="">New device template</option>
+              {deviceTemplates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-gray-400">
             Template ID
             <input
               value={draft.id}
               onChange={(e) => setDraft((prev) => ({ ...prev, id: e.target.value }))}
+              disabled={isEditing}
               className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
               placeholder="my-device-1u"
             />
@@ -233,7 +353,7 @@ export const TemplatesEditorPage = () => {
             Layout type
             <select
               value={draft.layout_type}
-              onChange={(e) => setDraft((prev) => ({ ...prev, layout_type: e.target.value as DeviceDraft['layout_type'] }))}
+              onChange={(e) => setDraft((prev) => ({ ...prev, layout_type: e.target.value as DeviceDraft['layout_type'], layout_matrix: undefined }))}
               className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
             >
               <option value="grid">grid</option>
@@ -255,7 +375,7 @@ export const TemplatesEditorPage = () => {
               <input
                 type="number"
                 value={draft.rows}
-                onChange={(e) => setDraft((prev) => ({ ...prev, rows: e.target.value }))}
+                onChange={(e) => setDraft((prev) => ({ ...prev, rows: e.target.value, layout_matrix: undefined }))}
                 className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
               />
             </label>
@@ -264,7 +384,7 @@ export const TemplatesEditorPage = () => {
               <input
                 type="number"
                 value={draft.cols}
-                onChange={(e) => setDraft((prev) => ({ ...prev, cols: e.target.value }))}
+                onChange={(e) => setDraft((prev) => ({ ...prev, cols: e.target.value, layout_matrix: undefined }))}
                 className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
               />
             </label>
@@ -284,11 +404,11 @@ export const TemplatesEditorPage = () => {
               <div className="space-y-3">
                 <label className="text-xs text-gray-400">
                   Rear layout type
-                  <select
-                    value={draft.rear_layout_type}
-                    onChange={(e) => setDraft((prev) => ({ ...prev, rear_layout_type: e.target.value as DeviceDraft['rear_layout_type'] }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
-                  >
+                <select
+                  value={draft.rear_layout_type}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, rear_layout_type: e.target.value as DeviceDraft['rear_layout_type'], rear_layout_matrix: undefined }))}
+                  className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                >
                     <option value="grid">grid</option>
                     <option value="vertical">vertical</option>
                   </select>
@@ -296,23 +416,23 @@ export const TemplatesEditorPage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <label className="text-xs text-gray-400">
                     Rear rows
-                    <input
-                      type="number"
-                      value={draft.rear_rows}
-                      onChange={(e) => setDraft((prev) => ({ ...prev, rear_rows: e.target.value }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
-                    />
-                  </label>
-                  <label className="text-xs text-gray-400">
-                    Rear cols
-                    <input
-                      type="number"
-                      value={draft.rear_cols}
-                      onChange={(e) => setDraft((prev) => ({ ...prev, rear_cols: e.target.value }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
-                    />
-                  </label>
-                </div>
+                  <input
+                    type="number"
+                    value={draft.rear_rows}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, rear_rows: e.target.value, rear_layout_matrix: undefined }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  />
+                </label>
+                <label className="text-xs text-gray-400">
+                  Rear cols
+                  <input
+                    type="number"
+                    value={draft.rear_cols}
+                    onChange={(e) => setDraft((prev) => ({ ...prev, rear_cols: e.target.value, rear_layout_matrix: undefined }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  />
+                </label>
+              </div>
                 <div className="space-y-2">
                   <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">Rear components</div>
                   {draft.rear_components.map((comp, idx) => (
@@ -368,6 +488,16 @@ export const TemplatesEditorPage = () => {
               </div>
             )}
           </div>
+          {validationErrors.length > 0 && (
+            <div className="text-[11px] text-status-warn space-y-1">
+              {validationErrors.slice(0, 3).map((message) => (
+                <div key={message}>{message}</div>
+              ))}
+              {validationErrors.length > 3 && (
+                <div>{`+${validationErrors.length - 3} more`}</div>
+              )}
+            </div>
+          )}
           {error && <div className="text-[11px] text-status-crit">{error}</div>}
         </section>
 

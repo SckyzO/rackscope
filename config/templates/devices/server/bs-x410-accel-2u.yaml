@@ -1,0 +1,11 @@
+templates:
+- id: bs-x410-accel-2u
+  name: BullSequana X410 Acceleration (2U 1 Node)
+  type: server
+  u_height: 2
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1

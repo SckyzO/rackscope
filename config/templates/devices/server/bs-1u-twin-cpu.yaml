@@ -1,0 +1,19 @@
+templates:
+- id: bs-1u-twin-cpu
+  name: BullSequana X410 (1U Twin)
+  type: server
+  u_height: 1
+  layout:
+    type: grid
+    rows: 1
+    cols: 2
+    matrix:
+    - - 1
+      - 2
+  rear_layout:
+    type: grid
+    rows: 1
+    cols: 2
+    matrix:
+    - - 901
+      - 902
