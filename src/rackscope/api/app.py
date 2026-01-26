@@ -455,7 +455,14 @@ async def get_global_stats():
 
 @app.get("/api/stats/prometheus")
 def get_prometheus_stats():
-    return prom_client.get_latency_stats()
+    stats = prom_client.get_latency_stats()
+    heartbeat_seconds = 60
+    if APP_CONFIG:
+        heartbeat_seconds = max(10, APP_CONFIG.telemetry.prometheus_heartbeat_seconds)
+    stats["heartbeat_seconds"] = heartbeat_seconds
+    last_ts = stats.get("last_ts")
+    stats["next_ts"] = (last_ts + heartbeat_seconds * 1000) if last_ts else None
+    return stats
 
 @app.get("/api/rooms/{room_id}/state")
 async def get_room_state(room_id: str):

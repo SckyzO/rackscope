@@ -30,7 +30,13 @@ export const Sidebar = ({
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
   const [rackTemplates, setRackTemplates] = useState<any[]>([]);
-  const [promStats, setPromStats] = useState<{ last_ms?: number | null; avg_ms?: number | null; last_ts?: number | null }>({});
+  const [promStats, setPromStats] = useState<{
+    last_ms?: number | null;
+    avg_ms?: number | null;
+    last_ts?: number | null;
+    next_ts?: number | null;
+    heartbeat_seconds?: number | null;
+  }>({});
   const [refreshSeconds, setRefreshSeconds] = useState(30);
   const [now, setNow] = useState(Date.now());
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -63,18 +69,22 @@ export const Sidebar = ({
         const stats = await api.getPrometheusStats();
         if (active) {
           setPromStats(stats || {});
+          if (stats?.heartbeat_seconds) {
+            setRefreshSeconds(Math.max(10, Number(stats.heartbeat_seconds)));
+          }
         }
       } catch (err) {
         console.error(err);
       }
     };
     loadStats();
-    const interval = setInterval(loadStats, 60000);
+    const intervalMs = Math.max(10000, refreshSeconds * 1000);
+    const interval = setInterval(loadStats, intervalMs);
     return () => {
       active = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [refreshSeconds]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -95,10 +105,11 @@ export const Sidebar = ({
     return `${days} d`;
   };
 
-  const formatCountdown = (ts?: number | null) => {
-    if (!ts) return '--';
-    const nextMs = ts + refreshSeconds * 1000 - now;
-    if (nextMs <= 0) return 'due';
+  const formatCountdown = (ts?: number | null, nextTs?: number | null) => {
+    const target = nextTs ?? (ts ? ts + refreshSeconds * 1000 : null);
+    if (!target) return '--';
+    const nextMs = target - now;
+    if (nextMs <= 0) return '0s';
     const totalSeconds = Math.ceil(nextMs / 1000);
     const min = Math.floor(totalSeconds / 60);
     const sec = totalSeconds % 60;
@@ -321,7 +332,7 @@ export const Sidebar = ({
           </div>
           <div className="flex items-center justify-between">
             <span>Next Prometheus scrape</span>
-            <span className="text-gray-400">{formatCountdown(promStats.last_ts)}</span>
+            <span className="text-gray-400">{formatCountdown(promStats.last_ts, promStats.next_ts)}</span>
           </div>
           <div className="flex items-center justify-between">
             <span>Prometheus latency</span>
