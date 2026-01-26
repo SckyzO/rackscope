@@ -6,7 +6,7 @@ refresh:
   room_state_seconds: 30
   rack_state_seconds: 30
 cache:
-  ttl_seconds: 30
+  ttl_seconds: 60
 telemetry:
   prometheus_url: http://prometheus:9090
   identity_label: instance
@@ -24,8 +24,8 @@ telemetry:
   tls_key_file: null
 planner:
   unknown_state: UNKNOWN
-  cache_ttl_seconds: 30
-  max_ids_per_query: 50
+  cache_ttl_seconds: 60
+  max_ids_per_query: 300
 features:
   notifications: true
   notifications_max_visible: 10

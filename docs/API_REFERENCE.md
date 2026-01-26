@@ -70,6 +70,9 @@ Retrieve the checks library (built-in monitoring checks).
 #### `GET /api/config`
 Retrieve the app configuration (paths, refresh, cache, telemetry).
 
+#### `GET /api/stats/telemetry`
+Retrieve telemetry debug stats (query counts, cache hits/misses, last batch).
+
 ---
 
 ## Development

@@ -102,3 +102,20 @@ The backend is pre-configured to query:
 - `node_health_status`
 
 Ensure your Prometheus exporters expose these metrics with a `node_id` label matching the hostnames defined in your topology.
+
+## Telemetry Refresh & Cache
+
+Rackscope does not pull metrics on a background schedule. The UI refresh interval
+triggers backend requests, and the backend queries Prometheus on demand.
+
+Key settings in `config/app.yaml`:
+- `refresh.room_state_seconds` / `refresh.rack_state_seconds`: UI refresh interval.
+- `cache.ttl_seconds`: Prometheus query cache TTL (seconds).
+- `planner.cache_ttl_seconds`: Planner snapshot TTL (seconds).
+- `planner.max_ids_per_query`: Max IDs per PromQL query chunk.
+
+Typical guidance (hardware monitoring):
+- Set TTLs to the same value as the UI refresh (e.g., 60s).
+- Increase `max_ids_per_query` (e.g., 200–300) to reduce query count.
+
+If you need "live" every refresh, keep TTL <= refresh interval.
