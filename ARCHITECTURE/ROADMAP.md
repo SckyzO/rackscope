@@ -151,3 +151,11 @@ Telemetry:
   - [ ] Offline mode:
     - [ ] last snapshot stored
     - [ ] stale indicator when backend unreachable
+
+## Phase 10 — Documentation (Static)
+**Goal:** Publish a complete, static documentation set.
+
+- [ ] Consolidate docs into a single static site (structure + navigation)
+- [ ] Full Admin Guide (install, config, telemetry, checks, templates)
+- [ ] Full User Guide (UI flows, troubleshooting)
+- [ ] API Reference (all endpoints + examples)
