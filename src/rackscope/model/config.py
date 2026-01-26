@@ -29,6 +29,7 @@ class TelemetryConfig(BaseModel):
     job_regex: str = ".*"
     prometheus_heartbeat_seconds: int = Field(default=30, ge=10)
     prometheus_latency_window: int = Field(default=20, ge=1)
+    debug_stats: bool = False
     basic_auth_user: Optional[str] = None
     basic_auth_password: Optional[str] = None
     tls_verify: bool = True

@@ -26,6 +26,7 @@ type ConfigDraft = {
     job_regex: string;
     prometheus_heartbeat_seconds: string;
     prometheus_latency_window: string;
+    debug_stats: boolean;
     basic_auth_user: string;
     basic_auth_password: string;
     tls_verify: boolean;
@@ -182,6 +183,7 @@ export const SettingsPage = () => {
         job_regex: config.telemetry?.job_regex || '.*',
         prometheus_heartbeat_seconds: String(config.telemetry?.prometheus_heartbeat_seconds ?? 30),
         prometheus_latency_window: String(config.telemetry?.prometheus_latency_window ?? 20),
+        debug_stats: config.telemetry?.debug_stats ?? false,
         basic_auth_user: config.telemetry?.basic_auth_user || '',
         basic_auth_password: config.telemetry?.basic_auth_password || '',
         tls_verify: config.telemetry?.tls_verify ?? true,
@@ -362,6 +364,7 @@ export const SettingsPage = () => {
           job_regex: draft.telemetry.job_regex,
           prometheus_heartbeat_seconds: Number.parseInt(draft.telemetry.prometheus_heartbeat_seconds, 10),
           prometheus_latency_window: Number.parseInt(draft.telemetry.prometheus_latency_window, 10),
+          debug_stats: draft.telemetry.debug_stats,
           basic_auth_user: draft.telemetry.basic_auth_user || null,
           basic_auth_password: draft.telemetry.basic_auth_password || null,
           tls_verify: draft.telemetry.tls_verify,
@@ -512,6 +515,21 @@ export const SettingsPage = () => {
                   />
                   <div className="mt-1 text-[10px] text-gray-500">Number of samples for average latency.</div>
                   {validationErrors.telemetry_latency_window && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_latency_window}</div>}
+                </label>
+                <label className="text-xs text-gray-400" title="Enable telemetry debug stats logging">
+                  Telemetry debug
+                  <select
+                    value={draft?.telemetry.debug_stats ? 'true' : 'false'}
+                    onChange={(e) => setDraft((prev) => prev && ({
+                      ...prev,
+                      telemetry: { ...prev.telemetry, debug_stats: e.target.value === 'true' },
+                    }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  >
+                    <option value="false">false</option>
+                    <option value="true">true</option>
+                  </select>
+                  <div className="mt-1 text-[10px] text-gray-500">Logs PromQL batch sizes and counts.</div>
                 </label>
                 <label className="text-xs text-gray-400" title="Basic auth username for Prometheus">
                   Basic auth username

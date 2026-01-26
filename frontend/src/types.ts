@@ -128,6 +128,7 @@ export interface AppConfig {
     job_regex?: string;
     prometheus_heartbeat_seconds?: number;
     prometheus_latency_window?: number;
+    debug_stats?: boolean;
     basic_auth_user?: string | null;
     basic_auth_password?: string | null;
     tls_verify?: boolean;

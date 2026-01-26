@@ -57,6 +57,11 @@ class TelemetryPlanner:
             self.config.max_ids_per_query,
             self.config.job_regex,
         )
+        prom_client.record_planner_batch(
+            total_ids=len(node_ids) + len(chassis_ids) + len(rack_ids),
+            query_count=len(queries),
+            max_ids_per_query=self.config.max_ids_per_query,
+        )
 
         node_states: Dict[str, str] = {}
         chassis_states: Dict[str, str] = {}

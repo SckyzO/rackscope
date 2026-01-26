@@ -25,6 +25,11 @@ class PrometheusClient:
         self._auth: Optional[httpx.BasicAuth] = None
         self._verify: bool | str = True
         self._cert: Optional[tuple[str, str] | str] = None
+        self._debug_stats: bool = False
+        self._cache_hits: int = 0
+        self._cache_misses: int = 0
+        self._query_count: int = 0
+        self._last_batch: Dict[str, Any] = {}
 
     def configure(
         self,
@@ -34,12 +39,14 @@ class PrometheusClient:
         verify: bool | str,
         cert: Optional[tuple[str, str] | str],
         latency_window: int,
+        debug_stats: bool = False,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.cache_ttl = cache_ttl
         self._auth = auth
         self._verify = verify
         self._cert = cert
+        self._debug_stats = debug_stats
         if latency_window >= 1:
             self._latency_samples = deque(list(self._latency_samples), maxlen=latency_window)
         old_client = self.client
@@ -57,7 +64,9 @@ class PrometheusClient:
         async with self._lock:
             cached = self._cache.get(query)
             if cached and (now - cached[0]) < self.cache_ttl:
+                self._cache_hits += 1
                 return cached[1]
+            self._cache_misses += 1
             task = self._in_flight.get(query)
             if task is None:
                 task = asyncio.create_task(self._fetch_query(query))
@@ -78,6 +87,7 @@ class PrometheusClient:
         """Execute a PromQL instant query."""
         start = time.perf_counter()
         try:
+            self._query_count += 1
             response = await self.client.get(
                 f"{self.base_url}/api/v1/query",
                 params={"query": query}
@@ -104,6 +114,31 @@ class PrometheusClient:
         return {
             "last_ms": self._last_latency_ms,
             "avg_ms": avg_ms,
+            "last_ts": self._last_query_ts,
+        }
+
+    def record_planner_batch(self, total_ids: int, query_count: int, max_ids_per_query: int) -> None:
+        self._last_batch = {
+            "total_ids": total_ids,
+            "query_count": query_count,
+            "max_ids_per_query": max_ids_per_query,
+            "ts": time.time() * 1000.0,
+        }
+        if self._debug_stats:
+            print(
+                "Telemetry batch: ids=%s queries=%s max_ids=%s"
+                % (total_ids, query_count, max_ids_per_query)
+            )
+
+    def get_telemetry_stats(self) -> Dict[str, Any]:
+        return {
+            "query_count": self._query_count,
+            "cache_hits": self._cache_hits,
+            "cache_misses": self._cache_misses,
+            "in_flight": len(self._in_flight),
+            "last_batch": self._last_batch or None,
+            "last_ms": self._last_latency_ms,
+            "avg_ms": (sum(self._latency_samples) / len(self._latency_samples)) if self._latency_samples else None,
             "last_ts": self._last_query_ts,
         }
 

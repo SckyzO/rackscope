@@ -15,6 +15,7 @@ telemetry:
   job_regex: node|rackscope-simulator
   prometheus_heartbeat_seconds: 30
   prometheus_latency_window: 20
+  debug_stats: false
   basic_auth_user: null
   basic_auth_password: null
   tls_verify: true

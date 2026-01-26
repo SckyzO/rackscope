@@ -57,6 +57,7 @@ def apply_config(app_config: AppConfig) -> None:
         verify=verify,
         cert=cert,
         latency_window=APP_CONFIG.telemetry.prometheus_latency_window,
+        debug_stats=APP_CONFIG.telemetry.debug_stats,
     )
     PLANNER = TelemetryPlanner(
         PlannerConfig(
@@ -464,6 +465,11 @@ def get_prometheus_stats():
     last_ts = stats.get("last_ts")
     stats["next_ts"] = (last_ts + heartbeat_seconds * 1000) if last_ts else None
     return stats
+
+
+@app.get("/api/stats/telemetry")
+def get_telemetry_stats():
+    return prom_client.get_telemetry_stats()
 
 @app.get("/api/rooms/{room_id}/state")
 async def get_room_state(room_id: str):
