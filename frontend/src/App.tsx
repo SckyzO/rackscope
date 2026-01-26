@@ -581,6 +581,20 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
               <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 mt-1">
                 {promStats?.last_ms ? `last ${Math.round(promStats.last_ms)} ms` : 'no samples'}
               </div>
+              <div className="mt-3 text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500 space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span>Last scrape</span>
+                  <span className="text-gray-400">
+                    {promStats?.last_ts ? new Date(promStats.last_ts).toLocaleTimeString() : '--'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span>Next scrape</span>
+                  <span className="text-gray-400">
+                    {promStats?.next_ts ? new Date(promStats.next_ts).toLocaleTimeString() : '--'}
+                  </span>
+                </div>
+              </div>
             </div>
             <div className="h-12 w-12 rounded-2xl border border-white/5 bg-black/20 flex items-center justify-center">
               <Activity className="h-5 w-5 text-[var(--color-accent-primary)]" />
