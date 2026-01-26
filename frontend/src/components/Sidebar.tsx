@@ -42,6 +42,7 @@ export const Sidebar = ({
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     topology: false,
     templates: false,
+    templatesLibrary: false,
     settings: false,
   });
 
@@ -292,10 +293,21 @@ export const Sidebar = ({
         />
         {expandedSections.templates && (
           <div className="space-y-1">
-            <SidebarLink to="/templates" icon={Folder} label="Library" depth={1} />
-            <SidebarLink to="/templates/editor" icon={Component} label="Device Editor" depth={1} />
-            <SidebarLink to="/templates/editor/racks" icon={Component} label="Rack Editor" depth={1} />
-            <SidebarLink to="/checks/library" icon={BookOpen} label="Checks Library" depth={1} />
+            <SidebarLink to="/templates/editor" icon={Component} label="Editor" depth={1} />
+            <NavToggle
+              icon={Folder}
+              label="Library"
+              depth={1}
+              expanded={expandedSections.templatesLibrary}
+              onToggle={() => toggleSection('templatesLibrary')}
+            />
+            {expandedSections.templatesLibrary && (
+              <div className="space-y-1">
+                <SidebarLink to="/checks/library" icon={BookOpen} label="Checks" depth={2} />
+                <SidebarLink to="/templates#templates-devices" icon={Component} label="Devices" depth={2} />
+                <SidebarLink to="/templates#templates-racks" icon={Component} label="Racks" depth={2} />
+              </div>
+            )}
           </div>
         )}
         <div className="h-px bg-[var(--color-border)]/40 my-2"></div>
@@ -320,10 +332,6 @@ export const Sidebar = ({
       {/* Footer Status */}
       <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-bg-panel)]/70 backdrop-blur-sm relative z-10">
         <div className="px-3 pb-3 space-y-1 text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500">
-          <div className="flex items-center justify-between">
-            <span>Last Prometheus scrape</span>
-            <span className="text-gray-400">{formatAge(promStats.last_ts)}</span>
-          </div>
           <div className="flex items-center justify-between">
             <span>Next Prometheus scrape</span>
             <span className="text-gray-400">{formatCountdown(promStats.last_ts, promStats.next_ts)}</span>

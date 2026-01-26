@@ -40,7 +40,7 @@ export const TemplatesLibraryPage = () => {
       </header>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6">
+        <section id="templates-devices" className="bg-rack-panel border border-rack-border rounded-3xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Devices</div>
@@ -66,7 +66,7 @@ export const TemplatesLibraryPage = () => {
           </div>
         </section>
 
-        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6">
+        <section id="templates-racks" className="bg-rack-panel border border-rack-border rounded-3xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Racks</div>
