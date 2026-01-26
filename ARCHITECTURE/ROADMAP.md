@@ -73,7 +73,7 @@ Telemetry:
   - [x] Validation + save/reload workflow
   - [ ] Settings UX refinement (help text, guided flows) — deferred to final pass
 - [ ] Refactor simulator (multi-metric, topology-driven, demo-ready):
-  - [ ] Configurable scenarios (profiles + scale factor)
+  - [ ] Rework scenario implementation (deterministic, explicit outcomes)
   - [ ] Topology-driven target generation (instances/racks)
   - [ ] Multi-metric bundles (node/ipmi/storage/infra)
   - [ ] Deterministic seeding (repeatable demos)

@@ -73,6 +73,14 @@ export interface DeviceTemplate {
   u_height: number;
   layout: LayoutConfig;
   rear_layout?: LayoutConfig;
+  rear_components?: DeviceRearComponent[];
+}
+
+export interface DeviceRearComponent {
+  id: string;
+  name: string;
+  type: 'psu' | 'fan' | 'io' | 'hydraulics' | 'other';
+  role?: string;
 }
 
 export interface InfrastructureComponent {
@@ -94,6 +102,7 @@ export interface RackTemplate {
     components: InfrastructureComponent[];
     front_components?: InfrastructureComponent[];
     rear_components?: InfrastructureComponent[];
+    side_components?: InfrastructureComponent[];
   };
 }
 

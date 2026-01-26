@@ -27,7 +27,14 @@ templates:
       type: grid
       rows: 1
       cols: 2
-      matrix: [[901, 902]] # 9xx IDs are rendered as PSUs/Fans
+      matrix: [[901, 902]] # Rear grid slots
+    rear_components:
+      - id: 901
+        name: "PSU A"
+        type: psu
+      - id: 902
+        name: "PSU B"
+        type: psu
 ```
 
 **Example: A Rack with Infrastructure**
@@ -37,11 +44,19 @@ rack_templates:
   - id: hpc-rack-dlc
     name: "HPC Rack DLC"
     infrastructure:
-      components:
-        - id: pdu-01
+      rear_components:
+        - id: psu-bank
           type: power
           location: u-mount
-          u_position: 1
+          u_position: 40
+          u_height: 3
+      side_components:
+        - id: pdu-left
+          type: power
+          location: side-left
+        - id: pdu-right
+          type: power
+          location: side-right
 ```
 
 ### 2. Defining Topology

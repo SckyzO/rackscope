@@ -10,6 +10,13 @@ class LayoutConfig(BaseModel):
     cols: int = 1
     matrix: List[List[int]]
 
+class DeviceRearComponent(BaseModel):
+    id: str
+    name: str
+    type: Literal["psu", "fan", "io", "hydraulics", "other"]
+    role: Optional[str] = None
+
+
 class DeviceTemplate(BaseModel):
     id: str
     name: str
@@ -17,6 +24,7 @@ class DeviceTemplate(BaseModel):
     u_height: int
     layout: LayoutConfig
     rear_layout: Optional[LayoutConfig] = None
+    rear_components: List[DeviceRearComponent] = Field(default_factory=list)
 
 # --- Rack Infrastructure Templates ---
 
@@ -36,6 +44,7 @@ class RackInfrastructure(BaseModel):
     components: List[InfrastructureComponent] = Field(default_factory=list)
     front_components: List[InfrastructureComponent] = Field(default_factory=list)
     rear_components: List[InfrastructureComponent] = Field(default_factory=list)
+    side_components: List[InfrastructureComponent] = Field(default_factory=list)
 
 class RackTemplate(BaseModel):
     id: str

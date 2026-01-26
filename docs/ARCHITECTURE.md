@@ -40,8 +40,9 @@ Rackscope is a **Physical Infrastructure Monitoring** dashboard designed for Hig
 ### Templates (The "Catalog")
 To avoid repetition, hardware definitions are separated from topology.
 - **DeviceTemplate**: Defines dimensions (U), type (Server/Switch), and physical layout (Matrix).
-    - Supports `layout` (Front) and `rear_layout` (Back).
+    - Supports `layout` (Front) and `rear_layout` (Back), plus optional `rear_components` for PSUs/Fans/IO.
 - **RackTemplate**: Defines rack dimensions and built-in infrastructure (PDU, HMC, RMC).
+    - Uses `rear_components` and `side_components` for back/zero‑U elements.
 
 ### Layout System
 Rackscope uses a **Grid System** to render devices.
