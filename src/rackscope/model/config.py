@@ -74,6 +74,7 @@ class PlannerConfig(BaseModel):
 
 class FeatureConfig(BaseModel):
     notifications: bool = False
+    notifications_max_visible: int = Field(default=10, ge=1)
     playlist: bool = False
     offline: bool = False
     demo: bool = False

@@ -19,6 +19,26 @@ type AlertItem = {
 export const NotificationHeader = () => {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AlertItem[]>([]);
+  const [maxVisible, setMaxVisible] = useState(10);
+
+  useEffect(() => {
+    let active = true;
+    const loadConfig = async () => {
+      try {
+        const config = await api.getConfig();
+        const nextValue = Number(config?.features?.notifications_max_visible ?? 10);
+        if (active && Number.isFinite(nextValue)) {
+          setMaxVisible(Math.max(1, nextValue));
+        }
+      } catch {
+        // keep default
+      }
+    };
+    loadConfig();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -61,7 +81,10 @@ export const NotificationHeader = () => {
           <div className="px-4 py-3 border-b border-[var(--color-border)]/20 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
             Active Device Alerts
           </div>
-          <div className="max-h-64 overflow-auto custom-scrollbar">
+          <div
+            className="overflow-auto custom-scrollbar"
+            style={{ maxHeight: `${maxVisible * 56}px` }}
+          >
             {items.length === 0 && (
               <div className="p-4 text-[11px] text-gray-500 font-mono">No active alerts.</div>
             )}

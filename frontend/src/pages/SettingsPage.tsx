@@ -40,6 +40,7 @@ type ConfigDraft = {
   };
   features: {
     notifications: boolean;
+    notifications_max_visible: string;
     playlist: boolean;
     offline: boolean;
     demo: boolean;
@@ -195,6 +196,7 @@ export const SettingsPage = () => {
       },
       features: {
         notifications: config.features?.notifications ?? false,
+        notifications_max_visible: String(config.features?.notifications_max_visible ?? 10),
         playlist: config.features?.playlist ?? false,
         offline: config.features?.offline ?? false,
         demo: config.features?.demo ?? false,
@@ -292,6 +294,7 @@ export const SettingsPage = () => {
       ['cache_ttl', draft.cache.ttl_seconds, 1],
       ['planner_cache', draft.planner.cache_ttl_seconds, 1],
       ['planner_max', draft.planner.max_ids_per_query, 1],
+      ['notifications_max_visible', draft.features.notifications_max_visible, 1],
       ['sim_update_interval', draft.simulator.update_interval_seconds, 1],
       ['sim_default_ttl', draft.simulator.default_ttl_seconds, 0],
       ['sim_duration_rack', draft.simulator.incident_durations.rack, 1],
@@ -373,6 +376,7 @@ export const SettingsPage = () => {
         },
         features: {
           notifications: draft.features.notifications,
+          notifications_max_visible: Number.parseInt(draft.features.notifications_max_visible, 10),
           playlist: draft.features.playlist,
           offline: draft.features.offline,
           demo: draft.features.demo,
@@ -699,6 +703,22 @@ export const SettingsPage = () => {
                     <option value="false">false</option>
                     <option value="true">true</option>
                   </select>
+                </label>
+                <label className="text-xs text-gray-400" title="Max alert rows shown before scrolling">
+                  Max visible alerts
+                  <input
+                    type="number"
+                    value={draft?.features.notifications_max_visible || ''}
+                    onChange={(e) => setDraft((prev) => prev && ({
+                      ...prev,
+                      features: { ...prev.features, notifications_max_visible: e.target.value },
+                    }))}
+                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                  />
+                  <div className="mt-1 text-[10px] text-gray-500">Controls alert panel height (scroll for more).</div>
+                  {validationErrors.notifications_max_visible && (
+                    <div className="text-[10px] text-status-crit">{validationErrors.notifications_max_visible}</div>
+                  )}
                 </label>
                 <label className="text-xs text-gray-400" title="Enable playlist mode UI">
                   Playlist

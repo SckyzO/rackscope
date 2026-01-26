@@ -27,13 +27,14 @@ planner:
   max_ids_per_query: 50
 features:
   notifications: true
+  notifications_max_visible: 10
   playlist: false
   offline: false
   demo: true
 simulator:
   update_interval_seconds: 20
   seed: null
-  scenario: random-1-critical
+  scenario: full-ok
   scale_factor: 1.0
   incident_rates:
     node_micro_failure: 0.001
