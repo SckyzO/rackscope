@@ -15,7 +15,7 @@ from rackscope.model.domain import Room, Site, Topology, Rack
 from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
 from rackscope.model.checks import ChecksLibrary
 from rackscope.model.config import AppConfig
-from rackscope.model.loader import load_topology, load_catalog, load_checks_library, load_app_config
+from rackscope.model.loader import load_topology, load_catalog, load_checks_library, load_app_config, dump_yaml
 from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import _expand_nodes_pattern
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
@@ -458,7 +458,7 @@ def write_template(payload: TemplateWriteRequest):
     items = data.get(key) or []
     items.append(template.model_dump())
     data[key] = items
-    target_path.write_text(yaml.safe_dump(data, sort_keys=False))
+    target_path.write_text(dump_yaml(data))
 
     # Reload catalog to keep in-memory state aligned.
     CATALOG = load_catalog(templates_dir)

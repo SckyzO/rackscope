@@ -43,6 +43,15 @@ def load_catalog(templates_dir: Union[str, Path]) -> Catalog:
             
     return catalog
 
+
+def dump_yaml(data: dict) -> str:
+    """Stable YAML dump for config writes."""
+    return yaml.safe_dump(
+        data,
+        sort_keys=False,
+        default_flow_style=False,
+    )
+
 def load_topology(path: Union[str, Path]) -> Topology:
     """Load and validate topology from a YAML file or segmented directory."""
     path = Path(path)

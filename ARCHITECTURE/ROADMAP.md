@@ -106,7 +106,7 @@ Telemetry:
 
 - [ ] Backend writer:
   - [x] `POST /api/catalog/templates` with validation
-  - [ ] safe YAML dumping (structured rewrite)
+  - [x] safe YAML dumping (structured rewrite)
 - [ ] Template designer UI:
   - [ ] visual grid editor for devices
   - [ ] form-based properties editing
