@@ -498,6 +498,7 @@ export const NodeUnit = ({ nodeName, slotNum, nodeHealth, type, uHeight, uPositi
                     status={nodeHealth}
                     details={[
                         { label: 'Enclosure', value: chassisName },
+                        { label: 'Active checks', value: String(reasons.length) },
                         { label: 'Physical Location', value: `RACK U${uPosition} S${slotNum}`, italic: true }
                     ]}
                     reasons={reasons}

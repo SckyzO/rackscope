@@ -317,6 +317,7 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
   const [globalStats, setGlobalStats] = useState<any>(null);
   const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
   const [promStats, setPromStats] = useState<any>(null);
+  const [checksTotal, setChecksTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [sites, setSites] = useState<Site[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
@@ -346,12 +347,13 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [roomsData, stats, sitesData, alertsData, promData] = await Promise.all([
+        const [roomsData, stats, sitesData, alertsData, promData, checksData] = await Promise.all([
             api.getRooms(),
             api.getGlobalStats(),
             api.getSites(),
             api.getActiveAlerts(),
             api.getPrometheusStats(),
+            api.getChecks(),
         ]);
         const safeRooms = Array.isArray(roomsData) ? roomsData : [];
         const safeSites = Array.isArray(sitesData) ? sitesData : [];
@@ -360,6 +362,7 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
         setSites(safeSites);
         setActiveAlerts(Array.isArray(alertsData?.alerts) ? alertsData.alerts : []);
         setPromStats(promData || null);
+        setChecksTotal(Array.isArray(checksData?.checks) ? checksData.checks.length : 0);
         if (!selectedSiteId && safeSites.length > 0) {
           setSelectedSiteId(safeSites[0].id);
         }
@@ -511,6 +514,23 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
       .slice(0, 10);
   }, [activeAlerts]);
 
+  const activeChecksBySite = useMemo(() => {
+    const totals = new Map<string, { checks: number; devices: number }>();
+    for (const alert of activeAlerts) {
+      if (!alert?.site_id) continue;
+      const entry = totals.get(alert.site_id) || { checks: 0, devices: 0 };
+      entry.checks += Array.isArray(alert.checks) ? alert.checks.length : 0;
+      entry.devices += 1;
+      totals.set(alert.site_id, entry);
+    }
+    return totals;
+  }, [activeAlerts]);
+
+  const siteAlertSummary = useMemo(() => {
+    if (!currentSite) return null;
+    return activeChecksBySite.get(currentSite.id) || { checks: 0, devices: 0 };
+  }, [activeChecksBySite, currentSite]);
+
   if (loading) {
     return <div className="p-12 font-mono animate-pulse text-blue-500">LDR :: AGGREGATING_GLOBAL_METRICS...</div>;
   }
@@ -527,6 +547,12 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
               <span className="flex items-center gap-2 text-gray-400">
                 <span className="h-1 w-1 rounded-full bg-gray-600"></span>
                 {currentSite.name}
+              </span>
+            )}
+            {siteAlertSummary && (
+              <span className="flex items-center gap-2 text-gray-400">
+                <span className="h-1 w-1 rounded-full bg-gray-600"></span>
+                {siteAlertSummary.checks} checks / {siteAlertSummary.devices} devices
               </span>
             )}
           </div>
@@ -702,7 +728,7 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
         </aside>
       </div>
 
-      <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="mt-10 grid grid-cols-2 md:grid-cols-6 gap-4">
         <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
           <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Rooms</div>
           <div className="mt-2 text-xl font-black font-mono text-white">{globalStats?.total_rooms || 0}</div>
@@ -718,6 +744,16 @@ const Dashboard = ({ searchQuery = '' }: { searchQuery?: string }) => {
         <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
           <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Warning</div>
           <div className="mt-2 text-xl font-black font-mono text-status-warn">{globalStats?.warn_count || 0}</div>
+        </div>
+        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
+          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Checks</div>
+          <div className="mt-2 text-xl font-black font-mono text-white">{checksTotal}</div>
+        </div>
+        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
+          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Active checks</div>
+          <div className="mt-2 text-xl font-black font-mono text-status-warn">
+            {activeAlerts.reduce((acc, item) => acc + (Array.isArray(item?.checks) ? item.checks.length : 0), 0)}
+          </div>
         </div>
       </div>
     </div>

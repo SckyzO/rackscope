@@ -111,6 +111,14 @@ export const RackPage = () => {
                 <span className="text-[10px] text-gray-500 font-mono uppercase">Health Score</span>
                 <span className={`text-2xl font-mono ${healthData?.state === 'OK' ? 'text-status-ok' : 'text-status-crit'}`}>{healthData?.state || '---'}</span>
             </div>
+            <div className="flex flex-col items-end">
+                <span className="text-[10px] text-gray-500 font-mono uppercase">Active checks</span>
+                <span className="text-2xl font-mono text-status-warn">
+                  {healthData?.nodes
+                    ? Object.values(healthData.nodes).reduce((acc: number, node: any) => acc + (Array.isArray(node?.alerts) ? node.alerts.length : 0), 0)
+                    : 0}
+                </span>
+            </div>
         </div>
       </header>
 

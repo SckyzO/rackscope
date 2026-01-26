@@ -81,6 +81,9 @@ export const api = {
   getActiveAlerts: async () => {
     return fetchWithCache('/api/alerts/active', 'alerts.active');
   },
+  getChecks: async () => {
+    return fetchWithCache('/api/checks', 'checks.library');
+  },
   getRoomLayout: async (roomId: string): Promise<Room> => {
     return fetchWithCache(`/api/rooms/${roomId}/layout`, `room.layout.${roomId}`);
   },
