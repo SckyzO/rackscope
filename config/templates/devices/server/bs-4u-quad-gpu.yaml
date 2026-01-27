@@ -8,19 +8,14 @@ templates:
     rows: 2
     cols: 2
     matrix:
-    - - 1
-      - 2
-    - - 3
-      - 4
+      - [1, 2]
+      - [3, 4]
   rear_layout:
     type: grid
     rows: 1
     cols: 4
     matrix:
-    - - 901
-      - 902
-      - 903
-      - 904
+      - [901, 902, 903, 904]
   checks:
   - node_up
   - node_recent_reboot

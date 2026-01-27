@@ -8,6 +8,6 @@ templates:
     rows: 1
     cols: 1
     matrix:
-    - - 1
+      - [1]
   checks:
   - node_up

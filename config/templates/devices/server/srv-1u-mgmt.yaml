@@ -8,14 +8,13 @@ templates:
     rows: 1
     cols: 1
     matrix:
-    - - 1
+      - [1]
   rear_layout:
     type: grid
     rows: 1
     cols: 2
     matrix:
-    - - 901
-      - 902
+      - [901, 902]
   rear_components:
   - id: '901'
     name: Rear Fan
