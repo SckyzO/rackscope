@@ -120,6 +120,7 @@ def load_segmented_topology(base_dir: Path) -> Topology:
                 "id": room_data.get("id", room_id),
                 "name": room_data.get("name", room_id),
                 "description": room_data.get("description"),
+                "layout": room_data.get("layout"),
                 "aisles": [],
                 "standalone_racks": [],
             }

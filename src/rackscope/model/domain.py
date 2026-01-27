@@ -51,10 +51,39 @@ class Aisle(BaseModel):
     racks: List[Rack] = Field(default_factory=list)
 
 
+class RoomLayoutSize(BaseModel):
+    width: float = Field(default=24, ge=1)
+    height: float = Field(default=16, ge=1)
+
+
+class RoomLayoutOrientation(BaseModel):
+    north: str = Field(default="top", description="top|right|bottom|left")
+
+
+class RoomLayoutGrid(BaseModel):
+    enabled: bool = False
+    cell: float = Field(default=32, ge=4)
+
+
+class RoomLayoutDoor(BaseModel):
+    side: str = Field(default="west", description="north|south|east|west")
+    label: Optional[str] = Field(default="Entrance")
+    position: float = Field(default=0.2, ge=0.0, le=1.0)
+
+
+class RoomLayout(BaseModel):
+    shape: str = Field(default="rectangle", description="rectangle|polygon")
+    size: RoomLayoutSize = Field(default_factory=RoomLayoutSize)
+    orientation: RoomLayoutOrientation = Field(default_factory=RoomLayoutOrientation)
+    grid: RoomLayoutGrid = Field(default_factory=RoomLayoutGrid)
+    door: Optional[RoomLayoutDoor] = Field(default_factory=RoomLayoutDoor)
+
+
 class Room(BaseModel):
     id: str = Field(..., description="Unique identifier for the room within the site")
     name: str = Field(..., description="Human-readable name")
     description: Optional[str] = None
+    layout: Optional[RoomLayout] = None
     aisles: List[Aisle] = Field(default_factory=list)
     # Support for racks outside aisles if necessary
     standalone_racks: List[Rack] = Field(default_factory=list)

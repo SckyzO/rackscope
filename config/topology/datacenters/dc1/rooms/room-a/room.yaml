@@ -1,5 +1,19 @@
 id: room-a
 name: Room A
+layout:
+  shape: rectangle
+  size:
+    width: 36
+    height: 22
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: west
+    label: Entrance A
+    position: 0.25
 aisles:
 - id: aisle-01
   name: Aisle 01 (Compute)

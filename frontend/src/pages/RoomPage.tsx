@@ -214,7 +214,105 @@ export const RoomPage = ({
       </header>
 
       <div className="grid flex-1 grid-cols-12 gap-6 overflow-hidden p-6">
-        <div className="bg-rack-panel border-rack-border custom-scrollbar relative col-span-12 overflow-auto rounded-xl border p-6 shadow-inner lg:col-span-8">
+        <div
+          className="bg-rack-panel border-rack-border custom-scrollbar relative col-span-12 overflow-auto rounded-xl border p-8 shadow-inner lg:col-span-8"
+          style={(() => {
+            const grid = room.layout?.grid;
+            if (!grid?.enabled) return undefined;
+            const cell = Number(grid.cell || 28);
+            return {
+              backgroundImage:
+                'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+              backgroundSize: `${cell}px ${cell}px`,
+            } as React.CSSProperties;
+          })()}
+        >
+          {room.layout && (
+            <>
+              <div className="pointer-events-none absolute inset-3 rounded-xl border border-white/10">
+                {(() => {
+                  const north = room.layout?.orientation?.north || 'top';
+                  const order = ['top', 'right', 'bottom', 'left'] as const;
+                  const labels = ['N', 'E', 'S', 'W'];
+                  const idx = order.indexOf(north as (typeof order)[number]);
+                  const rotated = labels.slice(idx).concat(labels.slice(0, idx));
+                  return (
+                    <>
+                      <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded bg-black/60 px-2 py-0.5 text-[9px] font-bold text-gray-300">
+                        {rotated[0]}
+                      </span>
+                      <span className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 rounded bg-black/60 px-2 py-0.5 text-[9px] font-bold text-gray-300">
+                        {rotated[1]}
+                      </span>
+                      <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded bg-black/60 px-2 py-0.5 text-[9px] font-bold text-gray-300">
+                        {rotated[2]}
+                      </span>
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 rounded bg-black/60 px-2 py-0.5 text-[9px] font-bold text-gray-300">
+                        {rotated[3]}
+                      </span>
+                    </>
+                  );
+                })()}
+              </div>
+              {(() => {
+                const door = room.layout?.door;
+                if (!door) return null;
+                const pos = Math.min(1, Math.max(0, door.position ?? 0.2)) * 100;
+                const strip =
+                  'absolute pointer-events-auto group flex items-center justify-center rounded-full bg-[var(--color-accent)]/70 shadow-[0_0_18px_rgba(86,179,255,0.55)]';
+                const label = door.label || 'Door';
+                const labelBadge =
+                  'absolute whitespace-nowrap rounded-md border border-white/10 bg-black/80 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-100 shadow-[0_8px_20px_rgba(0,0,0,0.4)] opacity-0 transition-opacity group-hover:opacity-100';
+                if (door.side === 'north')
+                  return (
+                    <div
+                      className={`${strip} top-[12px] h-[6px] w-20`}
+                      style={{ left: `${pos}%`, transform: 'translateX(-50%)' }}
+                      title={label}
+                    >
+                      <span className={`${labelBadge} -top-7 left-1/2 -translate-x-1/2`}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                if (door.side === 'south')
+                  return (
+                    <div
+                      className={`${strip} bottom-[12px] h-[6px] w-20`}
+                      style={{ left: `${pos}%`, transform: 'translateX(-50%)' }}
+                      title={label}
+                    >
+                      <span className={`${labelBadge} -bottom-7 left-1/2 -translate-x-1/2`}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                if (door.side === 'east')
+                  return (
+                    <div
+                      className={`${strip} right-[12px] h-20 w-[6px]`}
+                      style={{ top: `${pos}%`, transform: 'translateY(-50%)' }}
+                      title={label}
+                    >
+                      <span className={`${labelBadge} left-5 top-1/2 -translate-y-1/2`}>
+                        {label}
+                      </span>
+                    </div>
+                  );
+                return (
+                  <div
+                    className={`${strip} left-[12px] h-20 w-[6px]`}
+                    style={{ top: `${pos}%`, transform: 'translateY(-50%)' }}
+                    title={label}
+                  >
+                    <span className={`${labelBadge} right-5 top-1/2 -translate-y-1/2`}>
+                      {label}
+                    </span>
+                  </div>
+                );
+              })()}
+            </>
+          )}
           <div className="space-y-12">
             {filteredAisles.map((aisle) => (
               <div key={aisle.id}>
@@ -429,7 +527,7 @@ const RackThumbnail = ({
           </span>
         </div>
         <div className="my-2 flex w-full flex-1 flex-col gap-[2px] px-2 opacity-50 transition-opacity group-hover:opacity-80">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {Array.from({ length: 10 }).map((_, i) => (
             <div
               key={i}
               className={`h-[2px] w-full rounded-full ${isCrit && i % 2 === 0 ? 'bg-status-crit/50' : 'bg-gray-700'}`}

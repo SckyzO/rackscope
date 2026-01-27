@@ -22,10 +22,31 @@ export interface Aisle {
   racks: Rack[];
 }
 
+export interface RoomLayout {
+  shape?: 'rectangle' | 'polygon';
+  size?: {
+    width?: number;
+    height?: number;
+  };
+  orientation?: {
+    north?: 'top' | 'right' | 'bottom' | 'left';
+  };
+  grid?: {
+    enabled?: boolean;
+    cell?: number;
+  };
+  door?: {
+    side?: 'north' | 'south' | 'east' | 'west';
+    label?: string | null;
+    position?: number;
+  };
+}
+
 export interface Room {
   id: string;
   name: string;
   description?: string;
+  layout?: RoomLayout | null;
   aisles: Aisle[];
   standalone_racks: Rack[];
 }

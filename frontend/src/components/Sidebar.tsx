@@ -276,9 +276,7 @@ export const Sidebar = ({
         />
         {expandedSections.topology && (
           <div className="space-y-1.5">
-            <div className="px-3 font-mono text-[9px] tracking-[0.25em] text-gray-500/70 uppercase">
-              Datacenters
-            </div>
+            <TreeLabel label="Datacenters" />
             {sites
               .filter((site) => (filteredRoomsBySite[site.id] || []).length > 0)
               .map((site) => (
@@ -531,7 +529,6 @@ const SiteTreeItem = ({
 
       {expanded && (
         <div className="mt-1 ml-3 space-y-1 border-l border-[var(--color-border)] pl-2">
-          <TreeLabel label="Rooms" />
           {rooms.map((room) => (
             <RoomTreeItem key={room.id} room={room} forceExpanded={forceExpanded} />
           ))}
@@ -584,7 +581,6 @@ const RoomTreeItem = ({
 
       {expanded && (
         <div className="mt-1 ml-3 space-y-1 border-l border-[var(--color-border)] pl-2">
-          <TreeLabel label="Aisles" />
           {room.aisles?.map((aisle) => (
             <AisleTreeItem key={aisle.id} aisle={aisle} forceExpanded={forceExpanded} />
           ))}
@@ -626,7 +622,6 @@ const AisleTreeItem = ({
 
       {expanded && (
         <div className="animate-in slide-in-from-top-1 mt-1 ml-3 space-y-0.5 border-l border-[var(--color-border)] pl-2 duration-200">
-          <TreeLabel label="Racks" />
           {aisle.racks.map((rack) => (
             <Link
               key={rack.id}
