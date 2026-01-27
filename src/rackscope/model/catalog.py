@@ -26,6 +26,7 @@ class DeviceTemplate(BaseModel):
     layout: LayoutConfig
     rear_layout: Optional[LayoutConfig] = None
     rear_components: List[DeviceRearComponent] = Field(default_factory=list)
+    checks: List[str] = Field(default_factory=list)
 
 # --- Rack Infrastructure Templates ---
 
@@ -52,6 +53,7 @@ class RackTemplate(BaseModel):
     name: str
     u_height: int = 42
     infrastructure: RackInfrastructure = Field(default_factory=RackInfrastructure)
+    checks: List[str] = Field(default_factory=list)
 
 class Catalog(BaseModel):
     device_templates: List[DeviceTemplate] = Field(default_factory=list)

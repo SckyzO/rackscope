@@ -43,7 +43,12 @@ class TelemetryPlanner:
         self.config = config
         self._snapshot = None
 
-    async def get_snapshot(self, topology: Topology, checks: ChecksLibrary) -> PlannerSnapshot:
+    async def get_snapshot(
+        self,
+        topology: Topology,
+        checks: ChecksLibrary,
+        targets_by_check: Optional[Dict[str, Dict[str, List[str]]]] = None,
+    ) -> PlannerSnapshot:
         now = time.monotonic()
         if self._snapshot and (now - self._snapshot.generated_at) < self.config.cache_ttl_seconds:
             return self._snapshot
@@ -56,9 +61,13 @@ class TelemetryPlanner:
             rack_ids,
             self.config.max_ids_per_query,
             self.config.job_regex,
+            targets_by_check,
         )
+        total_ids = len(node_ids) + len(chassis_ids) + len(rack_ids)
+        if targets_by_check is not None:
+            total_ids = _count_target_ids(targets_by_check)
         prom_client.record_planner_batch(
-            total_ids=len(node_ids) + len(chassis_ids) + len(rack_ids),
+            total_ids=total_ids,
             query_count=len(queries),
             max_ids_per_query=self.config.max_ids_per_query,
         )
@@ -135,10 +144,24 @@ def _build_queries(
     rack_ids: List[str],
     max_ids_per_query: int,
     job_regex: str,
+    targets_by_check: Optional[Dict[str, Dict[str, List[str]]]] = None,
 ) -> List[Tuple[CheckDefinition, str]]:
     queries: List[Tuple[CheckDefinition, str]] = []
 
     for check in checks:
+        if targets_by_check is not None:
+            scoped_targets = targets_by_check.get(check.id)
+            if not scoped_targets:
+                continue
+            node_ids = scoped_targets.get("node", [])
+            chassis_ids = scoped_targets.get("chassis", [])
+            rack_ids = scoped_targets.get("rack", [])
+            if check.scope == "node" and not node_ids:
+                continue
+            if check.scope == "chassis" and not chassis_ids:
+                continue
+            if check.scope == "rack" and not rack_ids:
+                continue
         base_expr = check.expr or ""
         expanded = [base_expr]
         expanded = _expand_placeholder(expanded, "$jobs", [job_regex], max_ids_per_query)
@@ -149,6 +172,17 @@ def _build_queries(
             queries.append((check, expr))
 
     return queries
+
+
+def _count_target_ids(targets_by_check: Dict[str, Dict[str, List[str]]]) -> int:
+    node_ids: set[str] = set()
+    chassis_ids: set[str] = set()
+    rack_ids: set[str] = set()
+    for targets in targets_by_check.values():
+        node_ids.update(targets.get("node", []))
+        chassis_ids.update(targets.get("chassis", []))
+        rack_ids.update(targets.get("rack", []))
+    return len(node_ids) + len(chassis_ids) + len(rack_ids)
 
 
 def _extract_key(check: CheckDefinition, labels: Dict[str, str], config: PlannerConfig) -> Optional[str]:

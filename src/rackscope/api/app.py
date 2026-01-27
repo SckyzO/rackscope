@@ -105,6 +105,70 @@ def _get_rack_height(data: dict) -> int:
     return 42
 
 
+def _extract_device_instances(device: Device) -> List[str]:
+    if isinstance(device.instance, dict):
+        return [node for node in device.instance.values() if isinstance(node, str)]
+    if isinstance(device.instance, str):
+        return _expand_nodes_pattern(device.instance)
+    if isinstance(device.nodes, dict):
+        return [node for node in device.nodes.values() if isinstance(node, str)]
+    if isinstance(device.nodes, str):
+        return _expand_nodes_pattern(device.nodes)
+    return [device.id]
+
+
+def _collect_check_targets(
+    topology: Topology,
+    catalog: Catalog,
+    checks: ChecksLibrary,
+) -> Dict[str, Dict[str, List[str]]]:
+    check_by_id = {c.id: c for c in checks.checks}
+    targets: Dict[str, Dict[str, set[str]]] = {}
+
+    def add_targets(check_id: str, nodes: List[str], chassis: List[str], racks: List[str]) -> None:
+        check = check_by_id.get(check_id)
+        if not check:
+            return
+        bucket = targets.setdefault(check_id, {"node": set(), "chassis": set(), "rack": set()})
+        if check.scope == "node":
+            bucket["node"].update(nodes)
+        elif check.scope == "chassis":
+            bucket["chassis"].update(chassis)
+        elif check.scope == "rack":
+            bucket["rack"].update(racks)
+
+    for site in topology.sites:
+        for room in site.rooms:
+            racks = []
+            for aisle in room.aisles:
+                racks.extend(aisle.racks)
+            racks.extend(room.standalone_racks)
+            for rack in racks:
+                rack_nodes: List[str] = []
+                rack_chassis: List[str] = []
+                for device in rack.devices:
+                    nodes = _extract_device_instances(device)
+                    rack_nodes.extend(nodes)
+                    rack_chassis.append(device.id)
+                    device_template = catalog.get_device_template(device.template_id)
+                    if device_template and device_template.checks:
+                        for check_id in device_template.checks:
+                            add_targets(check_id, nodes, [device.id], [rack.id])
+                rack_template = catalog.get_rack_template(rack.template_id) if rack.template_id else None
+                if rack_template and rack_template.checks:
+                    for check_id in rack_template.checks:
+                        add_targets(check_id, rack_nodes, rack_chassis, [rack.id])
+
+    return {
+        check_id: {
+            "node": sorted(list(values.get("node", set()))),
+            "chassis": sorted(list(values.get("chassis", set()))),
+            "rack": sorted(list(values.get("rack", set()))),
+        }
+        for check_id, values in targets.items()
+    }
+
+
 def apply_config(app_config: AppConfig) -> None:
     global TOPOLOGY, CATALOG, CHECKS_LIBRARY, APP_CONFIG, PLANNER
     APP_CONFIG = app_config
@@ -1128,7 +1192,8 @@ def update_template(payload: TemplateWriteRequest):
 async def get_global_stats():
     rack_healths: Dict[str, str] = {}
     if TOPOLOGY and CHECKS_LIBRARY and PLANNER:
-        snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY)
+        targets_by_check = _collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
+        snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
         rack_healths = snapshot.rack_states
     else:
         rack_healths = await prom_client.get_rack_health_summary()
@@ -1183,7 +1248,8 @@ def get_telemetry_stats():
 async def get_room_state(room_id: str):
     if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
         return {"room_id": room_id, "state": "UNKNOWN", "racks": {}}
-    snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY)
+    targets_by_check = _collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
+    snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
     rack_healths = snapshot.rack_states
     
     room_status = "OK"
@@ -1211,7 +1277,8 @@ async def get_room_state(room_id: str):
 async def get_rack_state(rack_id: str):
     if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
         return {"rack_id": rack_id, "state": "UNKNOWN", "metrics": {}, "nodes": {}}
-    snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY)
+    targets_by_check = _collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
+    snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
     nodes_metrics = await prom_client.get_node_metrics(rack_id)
     
     # Calculate Node States and Aggregate Rack State
@@ -1283,7 +1350,8 @@ def _expand_device_instances(device: Device) -> List[str]:
 async def get_active_alerts():
     if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
         return {"alerts": []}
-    snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY)
+    targets_by_check = _collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
+    snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
 
     node_context: Dict[str, Dict[str, str]] = {}
     for site in TOPOLOGY.sites:

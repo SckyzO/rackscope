@@ -71,6 +71,7 @@ export interface DeviceTemplate {
   layout: LayoutConfig;
   rear_layout?: LayoutConfig;
   rear_components?: DeviceRearComponent[];
+  checks?: string[];
 }
 
 export interface DeviceRearComponent {
@@ -102,6 +103,7 @@ export interface RackTemplate {
     rear_components?: InfrastructureComponent[];
     side_components?: InfrastructureComponent[];
   };
+  checks?: string[];
 }
 
 export interface AppConfig {
