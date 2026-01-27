@@ -69,6 +69,52 @@ export const api = {
   getSites: async (): Promise<Site[]> => {
     return fetchWithCache('/api/sites', 'sites');
   },
+  createSite: async (payload: { id?: string | null; name: string }) => {
+    const res = await fetch('/api/topology/sites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/sites');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('sites', null);
+    writeCache('rooms', null);
+    markSuccess();
+    return data;
+  },
+  createRoom: async (siteId: string, payload: { id?: string | null; name: string; description?: string | null }) => {
+    const res = await fetch(`/api/topology/sites/${encodeURIComponent(siteId)}/rooms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/sites/rooms');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('rooms', null);
+    markSuccess();
+    return data;
+  },
+  createRoomAisles: async (roomId: string, aisles: { id?: string | null; name: string }[]) => {
+    const res = await fetch(`/api/topology/rooms/${encodeURIComponent(roomId)}/aisles/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ aisles }),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/rooms/aisles/create');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('rooms', null);
+    markSuccess();
+    return data;
+  },
   getCatalog: async (): Promise<{ device_templates: DeviceTemplate[], rack_templates: any[] }> => {
     return fetchWithCache('/api/catalog', 'catalog');
   },
@@ -107,6 +153,9 @@ export const api = {
   },
   getRooms: async (): Promise<RoomSummary[]> => {
     return fetchWithCache('/api/rooms', 'rooms');
+  },
+  getRoomLayout: async (roomId: string): Promise<Room> => {
+    return fetchWithCache(`/api/rooms/${encodeURIComponent(roomId)}/layout`, `room.layout.${roomId}`);
   },
   getGlobalStats: async () => {
     return fetchWithCache('/api/stats/global', 'stats.global');
@@ -167,9 +216,6 @@ export const api = {
     markSuccess();
     return data;
   },
-  getRoomLayout: async (roomId: string): Promise<Room> => {
-    return fetchWithCache(`/api/rooms/${roomId}/layout`, `room.layout.${roomId}`);
-  },
   getRoomState: async (roomId: string) => {
     return fetchWithCache(`/api/rooms/${roomId}/state`, `room.state.${roomId}`);
   },
@@ -203,6 +249,88 @@ export const api = {
     }
     const data = await res.json();
     writeCache('rooms', null);
+    writeCache(`rack.${rackId}`, null);
+    markSuccess();
+    return data;
+  },
+  updateRoomAisles: async (roomId: string, aisles: Record<string, string[]>) => {
+    const res = await fetch(`/api/topology/rooms/${encodeURIComponent(roomId)}/aisles`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ aisles }),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/rooms');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('rooms', null);
+    writeCache(`room.layout.${roomId}`, null);
+    markSuccess();
+    return data;
+  },
+  addRackDevice: async (
+    rackId: string,
+    payload: { id: string; name: string; template_id: string; u_position: number; instance?: Record<number, string> | string | null }
+  ) => {
+    const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/racks');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('rooms', null);
+    writeCache(`rack.${rackId}`, null);
+    markSuccess();
+    return data;
+  },
+  updateRackDevicePosition: async (rackId: string, deviceId: string, uPosition: number) => {
+    const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices/${encodeURIComponent(deviceId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ u_position: uPosition }),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/racks/devices');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('rooms', null);
+    writeCache(`rack.${rackId}`, null);
+    markSuccess();
+    return data;
+  },
+  deleteRackDevice: async (rackId: string, deviceId: string) => {
+    const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices/${encodeURIComponent(deviceId)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/racks/devices');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('rooms', null);
+    writeCache(`rack.${rackId}`, null);
+    markSuccess();
+    return data;
+  },
+  updateRackDevices: async (rackId: string, devices: Array<Record<string, any>>) => {
+    const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ devices }),
+    });
+    if (!res.ok) {
+      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/racks/devices');
+      throw new Error(`Request failed: ${res.status}`);
+    }
+    const data = await res.json();
+    writeCache('rooms', null);
+    writeCache(`rack.${rackId}`, null);
     markSuccess();
     return data;
   },
