@@ -39,6 +39,20 @@ sites:
 ```yaml
 id: room-a
 name: Room A
+layout:
+  shape: rectangle
+  size:
+    width_m: 28
+    height_m: 18
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: north
+    position: 0.2
+    label: Door A
 aisles:
   - id: aisle-01
     name: Aisle Compute
@@ -47,6 +61,13 @@ aisles:
 standalone_racks:
   - mgmt-01
 ```
+
+Layout fields (optional)
+- `layout.shape`: visual hint for the room (e.g. rectangle, L).
+- `layout.size`: physical size in meters (optional; used for UI scaling later).
+- `layout.orientation.north`: where north is on screen (`top`, `right`, `bottom`, `left`).
+- `layout.grid`: show a subtle grid (`enabled`) with cell size in px (`cell`).
+- `layout.door`: add a door marker on a side with a position (0..1) and a label.
 
 `datacenters/dc1/rooms/room-a/aisles/aisle-01/aisle.yaml`
 ```yaml

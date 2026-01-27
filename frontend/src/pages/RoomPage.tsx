@@ -241,13 +241,13 @@ export const RoomPage = ({
                       <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded bg-black/60 px-2 py-0.5 text-[9px] font-bold text-gray-300">
                         {rotated[0]}
                       </span>
-                      <span className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 rounded bg-black/60 px-2 py-0.5 text-[9px] font-bold text-gray-300">
+                      <span className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 rounded bg-black/60 px-2 py-0.5 text-[9px] font-bold text-gray-300">
                         {rotated[1]}
                       </span>
                       <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded bg-black/60 px-2 py-0.5 text-[9px] font-bold text-gray-300">
                         {rotated[2]}
                       </span>
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 rounded bg-black/60 px-2 py-0.5 text-[9px] font-bold text-gray-300">
+                      <span className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 rounded bg-black/60 px-2 py-0.5 text-[9px] font-bold text-gray-300">
                         {rotated[3]}
                       </span>
                     </>
@@ -294,7 +294,7 @@ export const RoomPage = ({
                       style={{ top: `${pos}%`, transform: 'translateY(-50%)' }}
                       title={label}
                     >
-                      <span className={`${labelBadge} left-5 top-1/2 -translate-y-1/2`}>
+                      <span className={`${labelBadge} top-1/2 left-5 -translate-y-1/2`}>
                         {label}
                       </span>
                     </div>
@@ -305,7 +305,7 @@ export const RoomPage = ({
                     style={{ top: `${pos}%`, transform: 'translateY(-50%)' }}
                     title={label}
                   >
-                    <span className={`${labelBadge} right-5 top-1/2 -translate-y-1/2`}>
+                    <span className={`${labelBadge} top-1/2 right-5 -translate-y-1/2`}>
                       {label}
                     </span>
                   </div>

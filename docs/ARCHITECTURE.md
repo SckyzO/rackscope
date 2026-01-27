@@ -37,6 +37,14 @@ Rackscope is a **Physical Infrastructure Monitoring** dashboard designed for Hig
 ### Topology Hierarchy
 `Site` -> `Room` -> `Aisle` -> `Rack` -> `Device` -> `Instance`
 
+### Room Layout Metadata
+Rooms can include optional layout metadata to improve spatial context in the UI:
+- `layout.shape`: visual hint (e.g. rectangle, L-shape).
+- `layout.size`: physical size in meters (width/height).
+- `layout.orientation.north`: where north is on screen (top/right/bottom/left).
+- `layout.grid`: optional background grid (cell size in px).
+- `layout.door`: door marker (side + position + label).
+
 ### Templates (The "Catalog")
 To avoid repetition, hardware definitions are separated from topology.
 - **DeviceTemplate**: Defines dimensions (U), type (Server/Switch), and physical layout (Matrix).

@@ -63,6 +63,7 @@ Telemetry:
 - [x] Segment topology files by site/room/rack
 - [x] Support multi-DC topology (future world map view)
 - [x] Update View Model spec (instances, chassis, selectors, scopes)
+- [x] Room layout annotations (grid, compass, door markers)
 - [ ] Overview/Home dashboard refactor (single or multi-DC aware):
   - [x] wallboard layout with global status + key KPIs
   - [x] alert integration (summary + top active alerts)
