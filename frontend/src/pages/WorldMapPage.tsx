@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import type { Site } from '../types';
 import { MapPin } from 'lucide-react';
 import { api } from '../services/api';
@@ -10,6 +10,38 @@ const DEFAULT_VIEW_ZOOMS: Record<string, number> = {
   continent: 3,
   country: 5,
   city: 7,
+};
+
+const MapCentering = ({
+  sites,
+  defaultCenter,
+  defaultZoom,
+}: {
+  sites: Site[];
+  defaultCenter: { lat: number; lon: number };
+  defaultZoom: number;
+}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    const points = sites
+      .map((site) => site.location)
+      .filter(Boolean)
+      .map((loc) => [loc!.lat, loc!.lon]) as [number, number][];
+
+    if (points.length === 0) {
+      map.setView([defaultCenter.lat, defaultCenter.lon], defaultZoom);
+      return;
+    }
+    const avg = points.reduce(
+      (acc, point) => ({ lat: acc.lat + point[0], lon: acc.lon + point[1] }),
+      { lat: 0, lon: 0 }
+    );
+    const center = { lat: avg.lat / points.length, lon: avg.lon / points.length };
+    map.setView([center.lat, center.lon], defaultZoom, { animate: true });
+  }, [map, sites, defaultCenter.lat, defaultCenter.lon, defaultZoom]);
+
+  return null;
 };
 
 export const WorldMapPage = () => {
@@ -89,6 +121,11 @@ export const WorldMapPage = () => {
             <TileLayer
               attribution="&copy; OpenStreetMap contributors &copy; CARTO"
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            />
+            <MapCentering
+              sites={sitesWithLocation}
+              defaultCenter={mapConfig.center}
+              defaultZoom={mapConfig.default_zoom}
             />
             {sitesWithLocation.map((site) => (
               <CircleMarker

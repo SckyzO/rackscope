@@ -3,7 +3,7 @@ app:
   description: Datacenter Overview
 map:
   default_view: world
-  default_zoom: 2
+  default_zoom: 4
   min_zoom: 2
   max_zoom: 7
   zoom_controls: true

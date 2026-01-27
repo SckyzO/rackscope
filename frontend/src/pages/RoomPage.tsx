@@ -530,7 +530,7 @@ const RackThumbnail = ({
           {Array.from({ length: 10 }).map((_, i) => (
             <div
               key={i}
-              className={`h-[2px] w-full rounded-full ${isCrit && i % 2 === 0 ? 'bg-status-crit/50' : 'bg-gray-700'}`}
+              className={`h-[3px] w-full rounded-full ${isCrit && i % 2 === 0 ? 'bg-status-crit/50' : 'bg-gray-700'}`}
             ></div>
           ))}
         </div>
