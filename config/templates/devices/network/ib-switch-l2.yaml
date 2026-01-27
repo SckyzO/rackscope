@@ -1,20 +1,17 @@
 templates:
-- id: ib-switch-l2
-  name: InfiniBand L2 (Director 2U)
-  type: network
-  u_height: 2
-  layout:
-    type: grid
-    rows: 1
-    cols: 1
-    matrix:
-    - - 1
-  rear_layout:
-    type: grid
-    rows: 1
-    cols: 4
-    matrix:
-    - - 901
-      - 902
-      - 903
-      - 904
+  - id: ib-switch-l2
+    name: InfiniBand L2 (Director 2U)
+    type: network
+    u_height: 2
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix:
+        - [1]
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 4
+      matrix:
+        - [901, 902, 903, 904]

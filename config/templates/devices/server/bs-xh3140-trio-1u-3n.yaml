@@ -1,13 +1,11 @@
 templates:
-- id: bs-xh3140-trio-1u-3n
-  name: BullSequana XH3140 Trio (1U 3 Nodes)
-  type: server
-  u_height: 1
-  layout:
-    type: grid
-    rows: 1
-    cols: 3
-    matrix:
-    - - 1
-      - 2
-      - 3
+  - id: bs-xh3140-trio-1u-3n
+    name: BullSequana XH3140 Trio (1U 3 Nodes)
+    type: server
+    u_height: 1
+    layout:
+      type: grid
+      rows: 1
+      cols: 3
+      matrix:
+        - [1, 2, 3]

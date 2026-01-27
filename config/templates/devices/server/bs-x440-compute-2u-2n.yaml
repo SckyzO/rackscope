@@ -1,12 +1,11 @@
 templates:
-- id: bs-x440-compute-2u-2n
-  name: BullSequana X440 Compute (2U 2 Nodes)
-  type: server
-  u_height: 2
-  layout:
-    type: grid
-    rows: 1
-    cols: 2
-    matrix:
-    - - 1
-      - 2
+  - id: bs-x440-compute-2u-2n
+    name: BullSequana X440 Compute (2U 2 Nodes)
+    type: server
+    u_height: 2
+    layout:
+      type: grid
+      rows: 1
+      cols: 2
+      matrix:
+        - [1, 2]

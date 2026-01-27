@@ -1,18 +1,17 @@
 templates:
-- id: eth-switch-tor
-  name: Ethernet Mgmt Switch
-  type: network
-  u_height: 1
-  layout:
-    type: grid
-    rows: 1
-    cols: 1
-    matrix:
-    - - 1
-  rear_layout:
-    type: grid
-    rows: 1
-    cols: 2
-    matrix:
-    - - 901
-      - 902
+  - id: eth-switch-tor
+    name: Ethernet Mgmt Switch
+    type: network
+    u_height: 1
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix:
+        - [1]
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 2
+      matrix:
+        - [901, 902]

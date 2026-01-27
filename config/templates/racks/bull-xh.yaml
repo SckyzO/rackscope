@@ -1,66 +1,63 @@
 rack_templates:
   - id: bull-xh3000
-    name: "BullSequana XH3000 DLC"
+    name: BullSequana XH3000 DLC
     u_height: 42
     infrastructure:
-        # Front layout (fixed positions)
       front_components:
         - id: p3sm
-          name: "P3SM [1,2]"
+          name: P3SM [1,2]
           type: power
-          model: "P3SM"
+          model: P3SM
           location: u-mount
           u_position: 39
           u_height: 3
         - id: pmc
-          name: "PMC"
+          name: PMC
           type: power
-          model: "PMC"
+          model: PMC
           location: u-mount
           u_position: 42
           u_height: 1
-
-        # Rear layout (fixed positions)
       rear_components:
         - id: h3e
-          name: "H3E"
+          name: H3E
           type: cooling
-          model: "H3E"
+          model: H3E
           location: u-mount
           u_position: 1
           u_height: 11
         - id: h3p0
-          name: "H3P0"
+          name: H3P0
           type: cooling
-          model: "H3P0"
+          model: H3P0
           location: u-mount
           u_position: 12
           u_height: 10
         - id: h3p1
-          name: "H3P1"
+          name: H3P1
           type: cooling
-          model: "H3P1"
+          model: H3P1
           location: u-mount
           u_position: 22
           u_height: 10
         - id: w3am2
-          name: "W3AM2"
+          name: W3AM2
           type: management
-          model: "W3AM2"
+          model: W3AM2
           location: u-mount
           u_position: 32
           u_height: 1
         - id: w3am1
-          name: "W3AM1"
+          name: W3AM1
           type: management
-          model: "W3AM1"
+          model: W3AM1
           location: u-mount
           u_position: 33
           u_height: 1
         - id: w3am0
-          name: "W3AM0"
+          name: W3AM0
           type: management
-          model: "W3AM0"
+          model: W3AM0
           location: u-mount
           u_position: 34
           u_height: 1

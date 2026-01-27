@@ -1,17 +1,11 @@
 templates:
-- id: blade-5u-7node
-  name: Blade Center 5U (7 Blades)
-  type: server
-  u_height: 5
-  layout:
-    type: grid
-    rows: 1
-    cols: 7
-    matrix:
-    - - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
+  - id: blade-5u-7node
+    name: Blade Center 5U (7 Blades)
+    type: server
+    u_height: 5
+    layout:
+      type: grid
+      rows: 1
+      cols: 7
+      matrix:
+        - [1, 2, 3, 4, 5, 6, 7]
