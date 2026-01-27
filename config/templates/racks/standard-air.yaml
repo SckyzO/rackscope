@@ -1,34 +1,35 @@
 rack_templates:
-  - id: standard-42u-air
-    name: Standard 42U Air Cooled
-    u_height: 42
-    infrastructure:
-      side_components:
-        - id: pdu-left-1
-          name: PDU A1 (Left)
-          type: power
-          model: APC Metered
-          location: side-left
-        - id: pdu-left-2
-          name: PDU A2 (Left)
-          type: power
-          model: APC Metered
-          location: side-left
-        - id: pdu-right-1
-          name: PDU B1 (Right)
-          type: power
-          model: APC Metered
-          location: side-right
-        - id: pdu-right-2
-          name: PDU B2 (Right)
-          type: power
-          model: APC Metered
-          location: side-right
-      rear_components:
-        - id: rear-fan-bank
-          name: Rear Fan Bank
-          type: cooling
-          model: Generic Fan
-          location: u-mount
-          u_position: 38
-          u_height: 4
+- id: standard-42u-air
+  name: Standard 42U Air Cooled
+  u_height: 42
+  infrastructure:
+    side_components:
+    - id: pdu-left-1
+      name: PDU A1 (Left)
+      type: power
+      model: APC Metered
+      location: side-left
+    - id: pdu-left-2
+      name: PDU A2 (Left)
+      type: power
+      model: APC Metered
+      location: side-left
+    - id: pdu-right-1
+      name: PDU B1 (Right)
+      type: power
+      model: APC Metered
+      location: side-right
+    - id: pdu-right-2
+      name: PDU B2 (Right)
+      type: power
+      model: APC Metered
+      location: side-right
+    rear_components:
+    - id: rear-fan-bank
+      name: Rear Fan Bank
+      type: cooling
+      model: Generic Fan
+      location: u-mount
+      u_position: 38
+      u_height: 4
+  checks: []

@@ -1,11 +1,22 @@
 templates:
-  - id: bs-xh3610-milo-1u-3n
-    name: BullSequana XH3610 Milo (1U 3 Nodes)
-    type: server
-    u_height: 1
-    layout:
-      type: grid
-      rows: 1
-      cols: 3
-      matrix:
-        - [1, 2, 3]
+- id: bs-xh3610-milo-1u-3n
+  name: BullSequana XH3610 Milo (1U 3 Nodes)
+  type: server
+  u_height: 1
+  layout:
+    type: grid
+    rows: 1
+    cols: 3
+    matrix:
+    - - 1
+      - 2
+      - 3
+  checks:
+  - node_up
+  - node_recent_reboot
+  - ipmi_up
+  - ipmi_fan_speed_state
+  - ipmi_power_state
+  - ipmi_sensor_state
+  - ipmi_temperature_state
+  - ipmi_voltage_state
