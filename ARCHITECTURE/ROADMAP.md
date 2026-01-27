@@ -45,6 +45,13 @@ Telemetry:
 - [x] PromQL planner (vector queries, no per-node queries)
 - [x] Cache + dedup + TTL strategy (60s refresh)
 - [x] UNKNOWN handling + severity aggregation rules
+- [ ] Template‑scoped checks (only run checks required by templates):
+  - [ ] add `checks[]` to device/rack templates (optional)
+  - [ ] add `kind` or grouping to checks library (for UI grouping)
+  - [ ] planner filters checks by templates present in topology
+  - [ ] fallback: if no checks on template, use global defaults
+  - [ ] update UI: template editor can assign checks
+  - [ ] update UI: checks library shows scope + kind + usage
 
 ---
 
@@ -119,6 +126,13 @@ Telemetry:
 ## Phase 7 — Additional Views + Importers
 - [ ] World map overview (multi-DC)
 - [x] Multi-DC UI support (site selector + per-site room list)
+- [ ] Slurm Status Wallboard (Aisle Compact View):
+  - [ ] compact aisle view (front-only racks, no rear)
+  - [ ] layout modes: horizontal scroll / multi-row / auto-fit
+  - [ ] Slurm state -> severity/color mapping (configurable)
+  - [ ] legend + filtering by state
+  - [ ] tooltips (node state, reason, partition)
+  - [ ] view toggle: Physical vs Slurm
 - [ ] Compute grid view
 - [ ] Services view
 - [ ] Playlist mode (rotate rooms every X minutes)
@@ -161,3 +175,6 @@ Telemetry:
 - [ ] Full Admin Guide (install, config, telemetry, checks, templates)
 - [ ] Full User Guide (UI flows, troubleshooting)
 - [ ] API Reference (all endpoints + examples)
+
+## Maintenance — Repo Hygiene
+- [ ] Remove `ARCHITECTURE/` from git history (rewrite) after docs are migrated to `docs/`.
