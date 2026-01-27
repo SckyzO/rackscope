@@ -40,7 +40,7 @@ export const Sidebar = ({
   const [refreshSeconds, setRefreshSeconds] = useState(30);
   const [now, setNow] = useState(Date.now());
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    topology: true,
+    topology: false,
     catalog: false,
     editors: false,
     settings: false,
