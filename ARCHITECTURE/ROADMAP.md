@@ -1,7 +1,7 @@
 # Roadmap Rackscope (Private)
 
 Status: **Active Development**
-Current Phase: **Phase 3 (Telemetry Foundation)**
+Current Phase: **Phase 6 (Configuration Editor)**
 
 This roadmap merges the previous checklist into a single source of truth.
 Every line is a task; checked items are done.
@@ -45,13 +45,13 @@ Telemetry:
 - [x] PromQL planner (vector queries, no per-node queries)
 - [x] Cache + dedup + TTL strategy (60s refresh)
 - [x] UNKNOWN handling + severity aggregation rules
-- [ ] Template‑scoped checks (only run checks required by templates):
-  - [ ] add `checks[]` to device/rack templates (optional)
-  - [ ] add `kind` or grouping to checks library (for UI grouping)
-  - [ ] planner filters checks by templates present in topology
-  - [ ] fallback: if no checks on template, use global defaults
-  - [ ] update UI: template editor can assign checks
-  - [ ] update UI: checks library shows scope + kind + usage
+- [x] Template‑scoped checks (only run checks required by templates):
+  - [x] add `checks[]` to device/rack templates (optional)
+  - [x] add `kind` or grouping to checks library (for UI grouping)
+  - [x] planner filters checks by templates present in topology
+  - [x] fallback: if no checks on template, run no checks (show "no checks configured")
+  - [x] update UI: template editor can assign checks
+  - [x] update UI: checks library shows scope + kind + usage
 
 ---
 
@@ -80,6 +80,8 @@ Telemetry:
   - [x] Notification panel size (max visible alerts)
   - [x] Validation + save/reload workflow
   - [ ] Settings UX refinement (help text, guided flows) — deferred to final pass
+  - [ ] Preset configs (prod/demo/lab)
+  - [ ] Self-check summary (config sanity)
 - [x] Device alert detail pipeline (device/node alerts in header + tooltips)
 - [ ] Refactor simulator (multi-metric, topology-driven, demo-ready):
   - [ ] Rework scenario implementation (deterministic, explicit outcomes)
@@ -89,6 +91,8 @@ Telemetry:
   - [x] Failure injection controls (per metric + per scope)
   - [x] Prometheus labels parity (instance/rack/chassis/job)
   - [ ] Export fixtures in config-examples
+  - [ ] Priority rules: scenario > overrides > random
+  - [ ] Override persistence (no TTL decay while override active)
 
 ---
 
@@ -100,6 +104,7 @@ Telemetry:
   - [ ] render PSUs, fans, rear connectors in UI
   - [ ] render zero-U side attachments (PDU rails) aligned to U scale
   - [ ] integrate side attachments into front/rear rack panels (rails L/R)
+  - [ ] rear component schema (type, checks, slots, layout)
 - [ ] Active infrastructure:
   - [ ] connect HMC/PMC to real Prometheus metrics
   - [ ] add gauges/charts for infra components
@@ -118,10 +123,15 @@ Telemetry:
 - [ ] Template designer UI:
   - [x] visual grid editor for devices
   - [x] form-based properties editing
+  - [ ] YAML view with live validation + error details
+  - [ ] Diff preview (before save)
 - [ ] Topology editor:
   - [x] drag & drop racks in aisles/rooms
   - [x] assign templates to empty rack slots (rack editor)
   - [x] wizard: create datacenter + room + aisles
+  - [ ] Save confirmation + unsaved changes guard
+  - [ ] Editor rollback (discard pending changes)
+  - [ ] Validation per file (schema + YAML lint)
 
 ## Phase 7 — Additional Views + Importers
 - [ ] World map overview (multi-DC)
@@ -133,6 +143,7 @@ Telemetry:
   - [ ] legend + filtering by state
   - [ ] tooltips (node state, reason, partition)
   - [ ] view toggle: Physical vs Slurm
+  - [ ] config: `slurm_state_map` + thresholds
 - [ ] Compute grid view
 - [ ] Services view
 - [ ] Playlist mode (rotate rooms every X minutes)

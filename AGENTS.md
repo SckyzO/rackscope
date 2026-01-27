@@ -151,6 +151,8 @@ Agents MUST:
 - Not silently change APIs or data models
 - Keep public docs in `docs/` updated as phases advance
 - Validate each feature implementation together using the Docker Compose stack (review logs and rebuild when needed; not necessarily every change, but regularly)
+- Follow backend/frontend best practices and project coding standards at all times
+- After any backend/frontend change, run a small sanity check (e.g. `make lint` or the relevant lightweight check) to catch syntax/lint errors early
 
 If something is unclear:
 - ASK before implementing
