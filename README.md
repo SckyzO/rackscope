@@ -41,6 +41,18 @@ Rackscope bridges the gap between physical layout (Racks, Chassis, Cables) and l
 - [Administrator Guide (YAML Config)](docs/ADMIN_GUIDE.md)
 - [User Guide](docs/USER_GUIDE.md)
 
+## ✅ Lint & Quality (Docker)
+
+All checks run inside Docker via the Makefile:
+
+```bash
+make lint
+```
+
+This runs:
+- **Backend**: `ruff check` + `ruff format --check`
+- **Frontend**: `eslint`, `stylelint` (CSS), and `prettier --check`
+
 ## 🛠️ Configuration
 
 Topologies are defined in `config/topology/` (starting at `config/topology/sites.yaml`).
