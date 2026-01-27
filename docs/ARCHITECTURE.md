@@ -6,7 +6,7 @@ Rackscope is a **Physical Infrastructure Monitoring** dashboard designed for Hig
 
 ## Core Principles
 
-1.  **File-Based Source of Truth**: The physical topology (Sites, Rooms, Racks) is defined in YAML files, enabling GitOps workflows.
+1.  **File-Based Source of Truth**: The physical topology (Sites, Rooms, Aisles, Racks) is defined in YAML files, enabling GitOps workflows.
 2.  **Prometheus-First**: No internal time-series database. All metrics are queried live from Prometheus via PromQL.
 3.  **HPC-Ready**: Native support for high-density chassis (Twins, Quads, Blades), liquid cooling (HMC), and shared infrastructure.
 
@@ -17,25 +17,25 @@ Rackscope is a **Physical Infrastructure Monitoring** dashboard designed for Hig
 - **Key Modules**:
     - `model/`: Pydantic models for the domain (Rack, Device, Template).
     - `loader.py`: Recursively loads YAML configuration from `config/`.
-    - `telemetry/`: Async Prometheus client using `httpx`.
+    - `telemetry/`: PromQL planner, async Prometheus client (`httpx`), cache/dedup.
     - `api/`: REST endpoints served by Uvicorn.
 
 ### 2. Frontend (React / Vite)
 - **Role**: Single Page Application (SPA) for visualization.
 - **Stack**: React 18, TypeScript, Tailwind CSS v4.
 - **Key Components**:
-    - `RackVisualizer`: Universal component for rendering racks (Front/Rear) and chassis grids.
-    - `Sidebar`: Hierarchical navigation (Site > Room > Aisle > Rack).
-    - `ThemeContext`: Handles Dark/Light mode and accent colors.
+- `RackVisualizer`: Rendering racks (Front/Rear) and chassis grids.
+- `Sidebar`: Explorer-like navigation (Datacenter > Room > Aisle > Rack).
+- `ThemeContext`: Handles Dark/Light mode and accent colors.
 
 ### 3. Simulation Stack
-- **Simulator**: Python script generating "fake" Prometheus metrics for defined nodes.
+- **Simulator**: Python service generating Prometheus metrics for demo/testing (config-driven).
 - **Prometheus**: Standard instance scraping the simulator to provide a realistic query API for the backend.
 
 ## Data Model
 
 ### Topology Hierarchy
-`Site` -> `Room` -> `Aisle` -> `Rack` -> `Device` -> `Node`
+`Site` -> `Room` -> `Aisle` -> `Rack` -> `Device` -> `Instance`
 
 ### Templates (The "Catalog")
 To avoid repetition, hardware definitions are separated from topology.
@@ -61,3 +61,8 @@ graph TD
     Prometheus -->|Scrape| Simulator
     Simulator -->|Read| Config
 ```
+
+## Configuration Editors
+- **Template Editor**: create/update device/rack templates with live preview.
+- **Topology Editor**: reorder racks between aisles, create datacenters/rooms/aisles.
+- **Rack Editor**: place/remove devices in rack slots with collision checks.

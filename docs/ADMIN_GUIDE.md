@@ -149,17 +149,18 @@ devices:
     nodes: "compute[001-004]"
 ```
 
-## Node Naming Patterns
+## Instance Naming Patterns
 
-You can assign nodes using:
+You can assign instances using:
 1.  **Pattern**: `"compute[01-04]"` -> `compute01`, `compute02`, `compute03`, `compute04`.
 2.  **Explicit Map**:
     ```yaml
-    nodes:
+    instance:
       1: "master-node"
       2: "login-node"
       3: "spare"
     ```
+`nodes:` is still accepted as a deprecated alias for `instance:`.
 
 ## Adding Metrics
 

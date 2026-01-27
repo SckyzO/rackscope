@@ -67,14 +67,77 @@ Retrieve all available hardware templates (devices and racks).
 #### `GET /api/checks`
 Retrieve the checks library (built-in monitoring checks).
 
+#### `GET /api/checks/files`
+List check library files under `config/checks/library/`.
+
+#### `GET /api/checks/files/{name}`
+Get a specific checks file.
+
+#### `PUT /api/checks/files/{name}`
+Update a checks file (validated).
+
 #### `POST /api/catalog/templates`
 Create a device or rack template (validated and persisted to YAML).
+
+#### `PUT /api/catalog/templates`
+Update a device or rack template.
 
 #### `GET /api/config`
 Retrieve the app configuration (paths, refresh, cache, telemetry).
 
+#### `PUT /api/config`
+Update the app configuration (validated).
+
+#### `POST /api/topology/sites`
+Create a datacenter (site).
+
+#### `POST /api/topology/sites/{site_id}/rooms`
+Create a room under a datacenter.
+
+#### `POST /api/topology/rooms/{room_id}/aisles/create`
+Create aisles for a room.
+
+#### `PUT /api/topology/rooms/{room_id}/aisles`
+Reorder/move racks between aisles.
+
+#### `PUT /api/topology/racks/{rack_id}/template`
+Assign a rack template.
+
+#### `POST /api/topology/racks/{rack_id}/devices`
+Add a device to a rack.
+
+#### `PUT /api/topology/racks/{rack_id}/devices/{device_id}`
+Move a device within a rack.
+
+#### `DELETE /api/topology/racks/{rack_id}/devices/{device_id}`
+Remove a device from a rack.
+
+#### `PUT /api/topology/racks/{rack_id}/devices`
+Replace the full device list for a rack.
+
 #### `GET /api/stats/telemetry`
 Retrieve telemetry debug stats (query counts, cache hits/misses, last batch).
+
+#### `GET /api/stats/prometheus`
+Prometheus heartbeat + latency stats.
+
+#### `GET /api/alerts/active`
+Active alert list (for header/notifications).
+
+#### `GET /api/simulator/scenarios`
+List available simulator scenarios.
+
+#### `GET /api/simulator/overrides`
+List active simulator overrides.
+
+#### `POST /api/simulator/overrides`
+Create an override (per instance or rack).
+
+#### `DELETE /api/simulator/overrides`
+Clear all overrides.
+
+#### `DELETE /api/simulator/overrides/{id}`
+Delete a specific override.
 
 ---
 

@@ -90,7 +90,7 @@ Configuration approach:
 
 4.1 Room Top View
 -----------------
-- 2D grid (x,y), each rack has coordinates and footprint
+- Aisle-based layout (aisles contain ordered rack lists)
 - Color is aggregated rack severity
 - Hover: summary counts (OK/WARN/CRIT/UNKNOWN)
 - Filters:

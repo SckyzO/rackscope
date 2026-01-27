@@ -30,7 +30,10 @@ Each file under `config/checks/library/` must contain a top-level `checks:` list
 Planner integration:
 - `$instances`, `$racks`, `$chassis` placeholders are replaced by the planner.
 - `$jobs` placeholder can be used for job label filtering (config-driven).
-- The planner groups by scope labels (identity, rack_id, chassis_id) from `config/app.yaml`.
+- The planner groups by scope labels from `config/app.yaml`:
+  - `identity_label` (default: instance)
+  - `rack_label` (default: rack_id)
+  - `chassis_label` (default: chassis_id)
 - UNKNOWN is applied when no series is returned for an expected scope.
 
 Example:

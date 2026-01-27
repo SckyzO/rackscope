@@ -24,6 +24,7 @@ simulator:
     rack: 3
     aisle: 5
   overrides_path: config/simulator_overrides.yaml
+  default_ttl_seconds: 0
   metrics_catalog_path: config/simulator_metrics_full.yaml
 ```
 
@@ -133,12 +134,13 @@ This keeps the metric list declarative while making value generation explicit.
 ## Overrides TTL
 
 `simulator.default_ttl_seconds` sets the default TTL (seconds) for overrides when
-the UI leaves TTL empty. Use `0` for no expiry.
+the UI leaves TTL empty. Use `0` for no expiry. The UI now forces TTL to `0`
+when you add an override or select a scenario (so overrides persist).
 
 ## Labels and instance mapping
 
-The simulator emits `node_id` on metrics to let Prometheus relabel `instance`
-consistently (including the `up` series).
+The simulator uses `instance = node_id` for node metrics by default (including `up`).
+You can relabel further in Prometheus if needed.
 
 ## Live Overrides
 
