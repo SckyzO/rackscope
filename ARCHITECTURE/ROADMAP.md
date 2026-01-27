@@ -69,6 +69,7 @@ Telemetry:
   - [ ] pixel-perfect polish + dark/light parity (deferred to final pass)
 - [x] Prometheus latency stats (backend heartbeat + sidebar display)
 - [ ] Settings UI (full app configuration — entire app configurable):
+  - [x] Site name + description (branding)
   - [x] Prometheus endpoints + auth (optional)
   - [x] Prometheus heartbeat interval + latency settings
   - [x] Identity mapping (instance/host/node) + label overrides
