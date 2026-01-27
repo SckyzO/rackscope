@@ -106,6 +106,104 @@ export interface RackTemplate {
   checks?: string[];
 }
 
+export interface Catalog {
+  device_templates: DeviceTemplate[];
+  rack_templates: RackTemplate[];
+}
+
+export interface CheckDefinition {
+  id: string;
+  name: string;
+  scope: 'node' | 'chassis' | 'rack';
+  expr: string;
+  output?: 'bool' | 'numeric';
+  selectors?: string[];
+  rules?: Array<{
+    op: '==' | '!=' | '>' | '>=' | '<' | '<=';
+    value: number | string;
+    severity: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
+  }>;
+  kind?: string;
+}
+
+export interface ChecksLibrary {
+  checks: CheckDefinition[];
+}
+
+export interface PrometheusStats {
+  last_ms?: number | null;
+  avg_ms?: number | null;
+  last_ts?: number | null;
+  next_ts?: number | null;
+  heartbeat_seconds?: number | null;
+}
+
+export interface TelemetryStats {
+  query_count: number;
+  cache_hits: number;
+  cache_misses: number;
+  in_flight: number;
+  last_batch?: {
+    total_ids: number;
+    query_count: number;
+    max_ids_per_query: number;
+    ts: number;
+  } | null;
+  last_ms?: number | null;
+  avg_ms?: number | null;
+  last_ts?: number | null;
+}
+
+export interface GlobalStats {
+  total_rooms: number;
+  total_racks: number;
+  active_alerts: number;
+  crit_count: number;
+  warn_count: number;
+  status: string;
+}
+
+export interface AlertCheck {
+  id: string;
+  severity: string;
+}
+
+export interface ActiveAlert {
+  node_id: string;
+  state: string;
+  checks: AlertCheck[];
+  site_id: string;
+  site_name: string;
+  room_id: string;
+  room_name: string;
+  rack_id: string;
+  rack_name: string;
+  device_id: string;
+  device_name: string;
+}
+
+export interface RackNodeState {
+  state?: string;
+  temperature?: number;
+  power?: number;
+  alerts?: AlertCheck[];
+}
+
+export interface RackState {
+  state?: string;
+  metrics?: {
+    temperature?: number;
+    power?: number;
+  };
+  nodes?: Record<string, RackNodeState>;
+}
+
+export interface RoomState {
+  room_id?: string;
+  state?: string;
+  racks?: Record<string, RackState | string>;
+}
+
 export interface AppConfig {
   paths: {
     topology?: string;
@@ -170,4 +268,13 @@ export interface AppConfig {
 export interface SimulatorScenario {
   name: string;
   description?: string | null;
+}
+
+export interface SimulatorOverride {
+  id: string;
+  instance?: string | null;
+  rack_id?: string | null;
+  metric: string;
+  value: number;
+  expires_at?: number | null;
 }

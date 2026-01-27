@@ -1,20 +1,38 @@
-import type { Site, Room, RoomSummary, DeviceTemplate, Rack, AppConfig, SimulatorScenario } from '../types';
+import type {
+  Site,
+  Room,
+  RoomSummary,
+  Device,
+  DeviceTemplate,
+  RackTemplate,
+  Rack,
+  AppConfig,
+  SimulatorScenario,
+  ChecksLibrary,
+  GlobalStats,
+  PrometheusStats,
+  TelemetryStats,
+  ActiveAlert,
+  RoomState,
+  RackState,
+  SimulatorOverride,
+} from '../types';
 
 const CACHE_PREFIX = 'rackscope.cache.';
 const META_KEY = 'rackscope.cache.meta';
 const ERROR_KEY = 'rackscope.client.errors';
 const STALE_THRESHOLD_MS = 2 * 60 * 1000;
 
-const readJSON = (key: string) => {
+const readJSON = <T>(key: string): T | null => {
   try {
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
   }
 };
 
-const writeJSON = (key: string, value: any) => {
+const writeJSON = (key: string, value: unknown) => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
@@ -36,7 +54,7 @@ const markSuccess = () => {
 };
 
 const readCache = (key: string) => readJSON(`${CACHE_PREFIX}${key}`);
-const writeCache = (key: string, data: any) => {
+const writeCache = (key: string, data: unknown) => {
   if (data === null) {
     localStorage.removeItem(`${CACHE_PREFIX}${key}`);
     return;
@@ -57,11 +75,12 @@ const fetchWithCache = async <T>(url: string, cacheKey: string): Promise<T> => {
     writeCache(cacheKey, data);
     markSuccess();
     return data as T;
-  } catch (err: any) {
-    logClientError(err?.message || 'Network error', url);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Network error';
+    logClientError(message, url);
     const cached = readCache(cacheKey);
     if (cached?.data) return cached.data as T;
-    throw err;
+    throw err instanceof Error ? err : new Error('Network error');
   }
 };
 
@@ -85,14 +104,20 @@ export const api = {
     markSuccess();
     return data;
   },
-  createRoom: async (siteId: string, payload: { id?: string | null; name: string; description?: string | null }) => {
+  createRoom: async (
+    siteId: string,
+    payload: { id?: string | null; name: string; description?: string | null }
+  ) => {
     const res = await fetch(`/api/topology/sites/${encodeURIComponent(siteId)}/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/sites/rooms');
+      logClientError(
+        `Request failed: ${res.status} ${res.statusText}`,
+        '/api/topology/sites/rooms'
+      );
       throw new Error(`Request failed: ${res.status}`);
     }
     const data = await res.json();
@@ -107,7 +132,10 @@ export const api = {
       body: JSON.stringify({ aisles }),
     });
     if (!res.ok) {
-      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/rooms/aisles/create');
+      logClientError(
+        `Request failed: ${res.status} ${res.statusText}`,
+        '/api/topology/rooms/aisles/create'
+      );
       throw new Error(`Request failed: ${res.status}`);
     }
     const data = await res.json();
@@ -115,10 +143,16 @@ export const api = {
     markSuccess();
     return data;
   },
-  getCatalog: async (): Promise<{ device_templates: DeviceTemplate[], rack_templates: any[] }> => {
+  getCatalog: async (): Promise<{
+    device_templates: DeviceTemplate[];
+    rack_templates: RackTemplate[];
+  }> => {
     return fetchWithCache('/api/catalog', 'catalog');
   },
-  createTemplate: async (payload: { kind: 'device' | 'rack'; template: Record<string, any> }) => {
+  createTemplate: async (payload: {
+    kind: 'device' | 'rack';
+    template: Record<string, unknown>;
+  }) => {
     const res = await fetch('/api/catalog/templates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -133,7 +167,10 @@ export const api = {
     markSuccess();
     return data;
   },
-  updateTemplate: async (payload: { kind: 'device' | 'rack'; template: Record<string, any> }) => {
+  updateTemplate: async (payload: {
+    kind: 'device' | 'rack';
+    template: Record<string, unknown>;
+  }) => {
     const res = await fetch('/api/catalog/templates', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -155,21 +192,24 @@ export const api = {
     return fetchWithCache('/api/rooms', 'rooms');
   },
   getRoomLayout: async (roomId: string): Promise<Room> => {
-    return fetchWithCache(`/api/rooms/${encodeURIComponent(roomId)}/layout`, `room.layout.${roomId}`);
+    return fetchWithCache(
+      `/api/rooms/${encodeURIComponent(roomId)}/layout`,
+      `room.layout.${roomId}`
+    );
   },
-  getGlobalStats: async () => {
+  getGlobalStats: async (): Promise<GlobalStats> => {
     return fetchWithCache('/api/stats/global', 'stats.global');
   },
-  getPrometheusStats: async () => {
+  getPrometheusStats: async (): Promise<PrometheusStats> => {
     return fetchWithCache('/api/stats/prometheus', 'stats.prometheus');
   },
-  getTelemetryStats: async () => {
+  getTelemetryStats: async (): Promise<TelemetryStats> => {
     return fetchWithCache('/api/stats/telemetry', 'stats.telemetry');
   },
-  getActiveAlerts: async () => {
+  getActiveAlerts: async (): Promise<{ alerts: ActiveAlert[] }> => {
     return fetchWithCache('/api/alerts/active', 'alerts.active');
   },
-  getChecks: async () => {
+  getChecks: async (): Promise<ChecksLibrary> => {
     return fetchWithCache('/api/checks', 'checks.library');
   },
   getChecksFiles: async () => {
@@ -187,23 +227,29 @@ export const api = {
     if (!res.ok) {
       let message = `Request failed: ${res.status} ${res.statusText}`;
       try {
-        const data = await res.json();
+        const data = (await res.json()) as { detail?: unknown };
         const detail = data?.detail;
         if (typeof detail === 'string') {
           message = detail;
-        } else if (detail?.message) {
-          if (Array.isArray(detail.errors)) {
-            const lines = detail.errors.map((entry: any) => {
-              const id = entry?.id ? ` (${entry.id})` : '';
-              const msg = entry?.errors?.[0]?.msg || 'invalid check';
-              return `- check #${entry?.index ?? '?'}${id}: ${msg}`;
-            });
-            message = `${detail.message}\n${lines.join('\n')}`;
+        } else if (detail && typeof detail === 'object') {
+          const detailObj = detail as {
+            message?: string;
+            errors?: Array<{ index?: number; id?: string; errors?: Array<{ msg?: string }> }>;
+          };
+          if (detailObj.message) {
+            if (Array.isArray(detailObj.errors)) {
+              const lines = detailObj.errors.map((entry) => {
+                const id = entry?.id ? ` (${entry.id})` : '';
+                const msg = entry?.errors?.[0]?.msg || 'invalid check';
+                return `- check #${entry?.index ?? '?'}${id}: ${msg}`;
+              });
+              message = `${detailObj.message}\n${lines.join('\n')}`;
+            } else {
+              message = detailObj.message;
+            }
           } else {
-            message = detail.message;
+            message = JSON.stringify(detail, null, 2);
           }
-        } else if (detail) {
-          message = JSON.stringify(detail, null, 2);
         }
       } catch {
         // Ignore parsing errors.
@@ -216,10 +262,10 @@ export const api = {
     markSuccess();
     return data;
   },
-  getRoomState: async (roomId: string) => {
+  getRoomState: async (roomId: string): Promise<RoomState> => {
     return fetchWithCache(`/api/rooms/${roomId}/state`, `room.state.${roomId}`);
   },
-  getRackState: async (rackId: string) => {
+  getRackState: async (rackId: string): Promise<RackState> => {
     return fetchWithCache(`/api/racks/${rackId}/state`, `rack.state.${rackId}`);
   },
   updateAisleRacks: async (aisleId: string, roomId: string, racks: string[]) => {
@@ -271,7 +317,13 @@ export const api = {
   },
   addRackDevice: async (
     rackId: string,
-    payload: { id: string; name: string; template_id: string; u_position: number; instance?: Record<number, string> | string | null }
+    payload: {
+      id: string;
+      name: string;
+      template_id: string;
+      u_position: number;
+      instance?: Record<number, string> | string | null;
+    }
   ) => {
     const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices`, {
       method: 'POST',
@@ -289,13 +341,19 @@ export const api = {
     return data;
   },
   updateRackDevicePosition: async (rackId: string, deviceId: string, uPosition: number) => {
-    const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices/${encodeURIComponent(deviceId)}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ u_position: uPosition }),
-    });
+    const res = await fetch(
+      `/api/topology/racks/${encodeURIComponent(rackId)}/devices/${encodeURIComponent(deviceId)}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ u_position: uPosition }),
+      }
+    );
     if (!res.ok) {
-      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/racks/devices');
+      logClientError(
+        `Request failed: ${res.status} ${res.statusText}`,
+        '/api/topology/racks/devices'
+      );
       throw new Error(`Request failed: ${res.status}`);
     }
     const data = await res.json();
@@ -305,11 +363,17 @@ export const api = {
     return data;
   },
   deleteRackDevice: async (rackId: string, deviceId: string) => {
-    const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices/${encodeURIComponent(deviceId)}`, {
-      method: 'DELETE',
-    });
+    const res = await fetch(
+      `/api/topology/racks/${encodeURIComponent(rackId)}/devices/${encodeURIComponent(deviceId)}`,
+      {
+        method: 'DELETE',
+      }
+    );
     if (!res.ok) {
-      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/racks/devices');
+      logClientError(
+        `Request failed: ${res.status} ${res.statusText}`,
+        '/api/topology/racks/devices'
+      );
       throw new Error(`Request failed: ${res.status}`);
     }
     const data = await res.json();
@@ -318,14 +382,17 @@ export const api = {
     markSuccess();
     return data;
   },
-  updateRackDevices: async (rackId: string, devices: Array<Record<string, any>>) => {
+  updateRackDevices: async (rackId: string, devices: Device[]) => {
     const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ devices }),
     });
     if (!res.ok) {
-      logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/topology/racks/devices');
+      logClientError(
+        `Request failed: ${res.status} ${res.statusText}`,
+        '/api/topology/racks/devices'
+      );
       throw new Error(`Request failed: ${res.status}`);
     }
     const data = await res.json();
@@ -355,7 +422,7 @@ export const api = {
   getEnv: async (): Promise<Record<string, string | null>> => {
     return fetchWithCache('/api/env', 'app.env');
   },
-  getSimulatorOverrides: async () => {
+  getSimulatorOverrides: async (): Promise<{ overrides: SimulatorOverride[] }> => {
     return fetchWithCache('/api/simulator/overrides', 'simulator.overrides');
   },
   getSimulatorScenarios: async (): Promise<{ scenarios: SimulatorScenario[] }> => {
@@ -367,7 +434,7 @@ export const api = {
     metric: string;
     value: number;
     ttl_seconds?: number;
-  }) => {
+  }): Promise<{ overrides: SimulatorOverride[] }> => {
     const res = await fetch('/api/simulator/overrides', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -381,7 +448,7 @@ export const api = {
     writeCache('simulator.overrides', data);
     return data;
   },
-  clearSimulatorOverrides: async () => {
+  clearSimulatorOverrides: async (): Promise<{ overrides: SimulatorOverride[] }> => {
     const res = await fetch('/api/simulator/overrides', { method: 'DELETE' });
     if (!res.ok) {
       logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/simulator/overrides');
@@ -391,7 +458,9 @@ export const api = {
     writeCache('simulator.overrides', data);
     return data;
   },
-  deleteSimulatorOverride: async (overrideId: string) => {
+  deleteSimulatorOverride: async (
+    overrideId: string
+  ): Promise<{ overrides: SimulatorOverride[] }> => {
     const res = await fetch(`/api/simulator/overrides/${overrideId}`, { method: 'DELETE' });
     if (!res.ok) {
       logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/simulator/overrides');

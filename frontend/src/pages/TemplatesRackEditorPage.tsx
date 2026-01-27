@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
-import type { RackTemplate } from '../types';
+import type { RackTemplate, InfrastructureComponent, CheckDefinition } from '../types';
 
 type RackComponentDraft = {
   id: string;
@@ -47,7 +47,8 @@ const parsePositiveInt = (value: string, fallback: number) => {
   return parsed;
 };
 
-const renderComponentLabel = (comp: RackComponentDraft) => comp.id || comp.name || comp.type || 'component';
+const renderComponentLabel = (comp: RackComponentDraft) =>
+  comp.id || comp.name || comp.type || 'component';
 
 export const TemplatesRackEditorPage = () => {
   const [draft, setDraft] = useState<RackDraft>(defaultDraft);
@@ -55,10 +56,11 @@ export const TemplatesRackEditorPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
   const [rackTemplates, setRackTemplates] = useState<RackTemplate[]>([]);
-  const [checksLibrary, setChecksLibrary] = useState<any[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
+  const [checksLibrary, setChecksLibrary] = useState<CheckDefinition[]>([]);
   const [searchParams] = useSearchParams();
+  const initialTemplateId = searchParams.get('id') || '';
+  const [selectedTemplateId, setSelectedTemplateId] = useState(initialTemplateId);
+  const [isEditing, setIsEditing] = useState(false);
   const unitHeight = 24;
   const minPreviewHeight = 240;
 
@@ -69,53 +71,64 @@ export const TemplatesRackEditorPage = () => {
 
   const previewUCount = useMemo(() => parsePositiveInt(draft.u_height, 42), [draft.u_height]);
 
+  const mapComponentDraft = useCallback(
+    (comp: InfrastructureComponent, rackHeight: number): RackComponentDraft => ({
+      id: comp.id || '',
+      name: comp.name || '',
+      type: comp.type || 'other',
+      location: comp.location || 'u-mount',
+      u_position: String(comp.u_position || 1),
+      u_height: String(comp.u_height || (comp.location?.startsWith('side') ? rackHeight : 1)),
+    }),
+    []
+  );
+
+  const loadTemplate = useCallback(
+    (template: RackTemplate) => {
+      const rackHeight = template.u_height || 42;
+      setDraft({
+        id: template.id,
+        name: template.name,
+        u_height: String(rackHeight),
+        front_components: (template.infrastructure?.front_components || []).map((comp) =>
+          mapComponentDraft(comp, rackHeight)
+        ),
+        rear_components: (template.infrastructure?.rear_components || []).map((comp) =>
+          mapComponentDraft(comp, rackHeight)
+        ),
+        side_components: (template.infrastructure?.side_components || []).map((comp) =>
+          mapComponentDraft(comp, rackHeight)
+        ),
+        checks: template.checks || [],
+      });
+      setIsEditing(true);
+      setStatus('idle');
+      setError(null);
+    },
+    [mapComponentDraft]
+  );
+
   useEffect(() => {
     let active = true;
     Promise.all([api.getCatalog(), api.getChecks()])
       .then(([catalog, checks]) => {
         if (!active) return;
-        setRackTemplates(catalog.rack_templates || []);
+        const templates = catalog.rack_templates || [];
+        setRackTemplates(templates);
         setChecksLibrary(checks?.checks || []);
+        if (initialTemplateId) {
+          const selected = templates.find((t) => t.id === initialTemplateId);
+          if (selected) {
+            setSelectedTemplateId(selected.id);
+            loadTemplate(selected);
+          }
+        }
       })
       .catch(console.error);
     return () => {
       active = false;
     };
-  }, []);
-
-  useEffect(() => {
-    const id = searchParams.get('id');
-    if (!id || rackTemplates.length === 0) return;
-    const selected = rackTemplates.find((t) => t.id === id);
-    if (!selected) return;
-    setSelectedTemplateId(id);
-    loadTemplate(selected);
-  }, [rackTemplates, searchParams]);
-
-  const mapComponentDraft = (comp: any, rackHeight: number): RackComponentDraft => ({
-    id: comp?.id || '',
-    name: comp?.name || '',
-    type: comp?.type || 'other',
-    location: comp?.location || 'u-mount',
-    u_position: String(comp?.u_position || 1),
-    u_height: String(comp?.u_height || (comp?.location?.startsWith('side') ? rackHeight : 1)),
-  });
-
-  const loadTemplate = (template: RackTemplate) => {
-    const rackHeight = template.u_height || 42;
-    setDraft({
-      id: template.id,
-      name: template.name,
-      u_height: String(rackHeight),
-      front_components: (template.infrastructure?.front_components || []).map((comp) => mapComponentDraft(comp, rackHeight)),
-      rear_components: (template.infrastructure?.rear_components || []).map((comp) => mapComponentDraft(comp, rackHeight)),
-      side_components: (template.infrastructure?.side_components || []).map((comp) => mapComponentDraft(comp, rackHeight)),
-      checks: template.checks || [],
-    });
-    setIsEditing(true);
-    setStatus('idle');
-    setError(null);
-  };
+  }, [loadTemplate, initialTemplateId]);
 
   const yamlPreview = useMemo(() => {
     const uHeight = parsePositiveInt(draft.u_height, 42);
@@ -127,7 +140,7 @@ export const TemplatesRackEditorPage = () => {
       u_position: parsePositiveInt(comp.u_position, 1),
       u_height: parsePositiveInt(comp.u_height, 1),
     });
-    const template: Record<string, any> = {
+    const template: Record<string, unknown> = {
       id: draft.id.trim() || 'rack-template-id',
       name: draft.name.trim() || 'Rack Template',
       u_height: uHeight,
@@ -208,8 +221,9 @@ export const TemplatesRackEditorPage = () => {
       if (!isEditing) {
         setDraft(defaultDraft);
       }
-    } catch (err: any) {
-      setError(err?.message || 'Failed to save');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save';
+      setError(message);
       setStatus('error');
     }
   };
@@ -218,10 +232,10 @@ export const TemplatesRackEditorPage = () => {
     items: RackComponentDraft[],
     onChange: (next: RackComponentDraft[]) => void,
     label: string,
-    allowSide: boolean,
+    allowSide: boolean
   ) => (
     <div className="space-y-2">
-      <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">{label}</div>
+      <div className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">{label}</div>
       {items.map((comp, idx) => (
         <div key={`${label}-${comp.id || idx}`} className="grid grid-cols-6 gap-2">
           <input
@@ -231,7 +245,7 @@ export const TemplatesRackEditorPage = () => {
               next[idx] = { ...next[idx], id: e.target.value };
               onChange(next);
             }}
-            className="rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-xs text-gray-200"
+            className="rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-xs text-gray-200"
             placeholder="id"
           />
           <input
@@ -241,7 +255,7 @@ export const TemplatesRackEditorPage = () => {
               next[idx] = { ...next[idx], name: e.target.value };
               onChange(next);
             }}
-            className="rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-xs text-gray-200"
+            className="rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-xs text-gray-200"
             placeholder="name"
           />
           <select
@@ -251,7 +265,7 @@ export const TemplatesRackEditorPage = () => {
               next[idx] = { ...next[idx], type: e.target.value };
               onChange(next);
             }}
-            className="rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-xs text-gray-200"
+            className="rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-xs text-gray-200"
           >
             <option value="power">power</option>
             <option value="cooling">cooling</option>
@@ -263,10 +277,13 @@ export const TemplatesRackEditorPage = () => {
             value={comp.location}
             onChange={(e) => {
               const next = [...items];
-              next[idx] = { ...next[idx], location: e.target.value as RackComponentDraft['location'] };
+              next[idx] = {
+                ...next[idx],
+                location: e.target.value as RackComponentDraft['location'],
+              };
               onChange(next);
             }}
-            className="rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-xs text-gray-200"
+            className="rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-xs text-gray-200"
           >
             <option value="u-mount">u-mount</option>
             {allowSide && <option value="side-left">side-left</option>}
@@ -281,7 +298,7 @@ export const TemplatesRackEditorPage = () => {
               next[idx] = { ...next[idx], u_position: e.target.value };
               onChange(next);
             }}
-            className="rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-xs text-gray-200"
+            className="rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-xs text-gray-200"
             placeholder="u_pos"
           />
           <input
@@ -291,7 +308,7 @@ export const TemplatesRackEditorPage = () => {
               next[idx] = { ...next[idx], u_height: e.target.value };
               onChange(next);
             }}
-            className="rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-xs text-gray-200"
+            className="rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-xs text-gray-200"
             placeholder="u_height"
           />
         </div>
@@ -299,7 +316,7 @@ export const TemplatesRackEditorPage = () => {
       <button
         type="button"
         onClick={() => onChange([...items, emptyComponent()])}
-        className="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-[var(--color-accent)]"
+        className="text-[10px] font-bold tracking-widest text-gray-400 uppercase hover:text-[var(--color-accent)]"
       >
         + Add component
       </button>
@@ -308,21 +325,30 @@ export const TemplatesRackEditorPage = () => {
 
   const renderRackPreview = (label: string, components: RackComponentDraft[]) => (
     <div className="space-y-2">
-      <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500">{label}</div>
+      <div className="font-mono text-[9px] tracking-[0.2em] text-gray-500 uppercase">{label}</div>
       <div className="rounded-2xl border border-white/10 bg-black/30 p-2">
         <div className="flex gap-2">
-          <div className="w-6 text-[9px] font-mono text-gray-600 flex flex-col" style={{ height: `${previewHeight}px` }}>
+          <div
+            className="flex w-6 flex-col font-mono text-[9px] text-gray-600"
+            style={{ height: `${previewHeight}px` }}
+          >
             {Array.from({ length: previewUCount }).map((_, idx) => (
-              <div key={idx} className="flex-1 flex items-center justify-center border-b border-white/10">
+              <div
+                key={idx}
+                className="flex flex-1 items-center justify-center border-b border-white/10"
+              >
                 <span>{idx + 1}</span>
               </div>
             ))}
           </div>
-          <div className="relative rounded-xl border border-white/10 bg-black/40 flex-1" style={{ height: `${previewHeight}px` }}>
-            <div className="absolute left-0 top-0 bottom-0 w-5 border-r border-white/10 bg-black/60 flex items-center justify-center text-[8px] text-gray-500 font-mono">
+          <div
+            className="relative flex-1 rounded-xl border border-white/10 bg-black/40"
+            style={{ height: `${previewHeight}px` }}
+          >
+            <div className="absolute top-0 bottom-0 left-0 flex w-5 items-center justify-center border-r border-white/10 bg-black/60 font-mono text-[8px] text-gray-500">
               L
             </div>
-            <div className="absolute right-0 top-0 bottom-0 w-5 border-l border-white/10 bg-black/60 flex items-center justify-center text-[8px] text-gray-500 font-mono">
+            <div className="absolute top-0 right-0 bottom-0 flex w-5 items-center justify-center border-l border-white/10 bg-black/60 font-mono text-[8px] text-gray-500">
               R
             </div>
             {draft.side_components.map((comp, idx) => {
@@ -334,7 +360,7 @@ export const TemplatesRackEditorPage = () => {
               return (
                 <div
                   key={`${comp.id}-${idx}`}
-                  className={`absolute ${isRight ? 'right-0' : 'left-0'} w-5 rounded-sm bg-black/60 border border-white/10`}
+                  className={`absolute ${isRight ? 'right-0' : 'left-0'} w-5 rounded-sm border border-white/10 bg-black/60`}
                   style={{ height: `${height}px`, bottom: `${bottom}px` }}
                   title={renderComponentLabel(comp)}
                 />
@@ -348,7 +374,7 @@ export const TemplatesRackEditorPage = () => {
               return (
                 <div
                   key={`${comp.id}-${idx}`}
-                  className="absolute left-7 right-7 rounded bg-black/40 border border-white/10 text-[9px] font-mono text-gray-300 flex items-center justify-between px-2"
+                  className="absolute right-7 left-7 flex items-center justify-between rounded border border-white/10 bg-black/40 px-2 font-mono text-[9px] text-gray-300"
                   style={{ height: `${height}px`, bottom: `${bottom}px` }}
                 >
                   <span className="truncate">{renderComponentLabel(comp)}</span>
@@ -357,9 +383,15 @@ export const TemplatesRackEditorPage = () => {
               );
             })}
           </div>
-          <div className="w-6 text-[9px] font-mono text-gray-600 flex flex-col" style={{ height: `${previewHeight}px` }}>
+          <div
+            className="flex w-6 flex-col font-mono text-[9px] text-gray-600"
+            style={{ height: `${previewHeight}px` }}
+          >
             {Array.from({ length: previewUCount }).map((_, idx) => (
-              <div key={idx} className="flex-1 flex items-center justify-center border-b border-white/10">
+              <div
+                key={idx}
+                className="flex flex-1 items-center justify-center border-b border-white/10"
+              >
                 <span>{idx + 1}</span>
               </div>
             ))}
@@ -370,12 +402,14 @@ export const TemplatesRackEditorPage = () => {
   );
 
   return (
-    <div className="p-10 h-full overflow-y-auto custom-scrollbar">
+    <div className="custom-scrollbar h-full overflow-y-auto p-10">
       <header className="mb-8 flex items-center justify-between">
         <div>
-          <div className="text-[10px] font-mono uppercase tracking-[0.45em] text-gray-500">Templates</div>
+          <div className="font-mono text-[10px] tracking-[0.45em] text-gray-500 uppercase">
+            Templates
+          </div>
           <h1 className="text-3xl font-black tracking-tight uppercase">Rack Editor</h1>
-          <div className="mt-2 text-[11px] font-mono uppercase tracking-[0.2em] text-gray-500">
+          <div className="mt-2 font-mono text-[11px] tracking-[0.2em] text-gray-500 uppercase">
             Rack template (basic)
           </div>
         </div>
@@ -389,14 +423,14 @@ export const TemplatesRackEditorPage = () => {
               setStatus('idle');
               setError(null);
             }}
-            className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[var(--color-border)] text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/40 transition-colors"
+            className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-[10px] font-bold tracking-widest text-gray-400 uppercase transition-colors hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
           >
             New Template
           </button>
           <button
             type="button"
             onClick={() => setShowYaml((prev) => !prev)}
-            className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[var(--color-border)] text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/40 transition-colors"
+            className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-[10px] font-bold tracking-widest text-gray-400 uppercase transition-colors hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
           >
             {showYaml ? 'Hide YAML' : 'Show YAML'}
           </button>
@@ -404,10 +438,10 @@ export const TemplatesRackEditorPage = () => {
             type="button"
             onClick={handleSave}
             disabled={!canSave || status === 'saving'}
-            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors ${
+            className={`rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase transition-colors ${
               canSave
-                ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)] border border-[var(--color-accent)]/30 hover:bg-[var(--color-accent)]/25'
-                : 'bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed'
+                ? 'border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/25'
+                : 'cursor-not-allowed border border-white/10 bg-white/5 text-gray-500'
             }`}
           >
             {status === 'saving'
@@ -421,9 +455,11 @@ export const TemplatesRackEditorPage = () => {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_720px] gap-6">
-        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 space-y-4">
-          <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Rack Template</h2>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_720px]">
+        <section className="bg-rack-panel border-rack-border space-y-4 rounded-3xl border p-6">
+          <h2 className="text-lg font-bold tracking-[0.2em] text-gray-200 uppercase">
+            Rack Template
+          </h2>
           <label className="text-xs text-gray-400">
             Load existing
             <select
@@ -439,7 +475,7 @@ export const TemplatesRackEditorPage = () => {
                   setDraft(defaultDraft);
                 }
               }}
-              className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+              className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
             >
               <option value="">New rack template</option>
               {rackTemplates.map((template) => (
@@ -455,7 +491,7 @@ export const TemplatesRackEditorPage = () => {
               value={draft.id}
               onChange={(e) => setDraft((prev) => ({ ...prev, id: e.target.value }))}
               disabled={isEditing}
-              className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+              className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
               placeholder="my-rack-42u"
             />
           </label>
@@ -464,13 +500,15 @@ export const TemplatesRackEditorPage = () => {
             <input
               value={draft.name}
               onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
-              className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+              className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
               placeholder="My Rack"
             />
           </label>
           <div className="space-y-2">
-            <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">Checks (rack)</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+            <div className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
+              Checks (rack)
+            </div>
+            <div className="custom-scrollbar grid max-h-48 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
               {checksLibrary
                 .filter((c) => c.scope === 'rack')
                 .map((check) => {
@@ -490,7 +528,9 @@ export const TemplatesRackEditorPage = () => {
                       />
                       <span className="truncate">{check.name || check.id}</span>
                       <span className="text-[9px] text-gray-500 uppercase">{check.scope}</span>
-                      {check.kind && <span className="text-[9px] text-gray-500 uppercase">{check.kind}</span>}
+                      {check.kind && (
+                        <span className="text-[9px] text-gray-500 uppercase">{check.kind}</span>
+                      )}
                     </label>
                   );
                 })}
@@ -505,40 +545,61 @@ export const TemplatesRackEditorPage = () => {
               type="number"
               value={draft.u_height}
               onChange={(e) => setDraft((prev) => ({ ...prev, u_height: e.target.value }))}
-              className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+              className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
             />
           </label>
 
-          {renderComponentRows(draft.front_components, (next) => setDraft((prev) => ({ ...prev, front_components: next })), 'Front components', false)}
-          {renderComponentRows(draft.rear_components, (next) => setDraft((prev) => ({ ...prev, rear_components: next })), 'Rear components', false)}
-          {renderComponentRows(draft.side_components, (next) => setDraft((prev) => ({ ...prev, side_components: next })), 'Side components', true)}
+          {renderComponentRows(
+            draft.front_components,
+            (next) => setDraft((prev) => ({ ...prev, front_components: next })),
+            'Front components',
+            false
+          )}
+          {renderComponentRows(
+            draft.rear_components,
+            (next) => setDraft((prev) => ({ ...prev, rear_components: next })),
+            'Rear components',
+            false
+          )}
+          {renderComponentRows(
+            draft.side_components,
+            (next) => setDraft((prev) => ({ ...prev, side_components: next })),
+            'Side components',
+            true
+          )}
 
           {validationErrors.length > 0 && (
-            <div className="text-[11px] text-status-warn space-y-1">
+            <div className="text-status-warn space-y-1 text-[11px]">
               {validationErrors.slice(0, 3).map((message) => (
                 <div key={message}>{message}</div>
               ))}
-              {validationErrors.length > 3 && (
-                <div>{`+${validationErrors.length - 3} more`}</div>
-              )}
+              {validationErrors.length > 3 && <div>{`+${validationErrors.length - 3} more`}</div>}
             </div>
           )}
-          {error && <div className="text-[11px] text-status-crit">{error}</div>}
+          {error && <div className="text-status-crit text-[11px]">{error}</div>}
         </section>
 
-        <aside className="bg-rack-panel border border-rack-border rounded-3xl p-6">
+        <aside className="bg-rack-panel border-rack-border rounded-3xl border p-6">
           {showYaml ? (
             <>
-              <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Preview</div>
-              <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200 mb-4">YAML</h2>
-              <pre className="whitespace-pre-wrap text-[10px] font-mono bg-black/30 border border-white/10 rounded-2xl p-4 text-gray-300">
+              <div className="font-mono text-[10px] tracking-[0.35em] text-gray-500 uppercase">
+                Preview
+              </div>
+              <h2 className="mb-4 text-lg font-bold tracking-[0.2em] text-gray-200 uppercase">
+                YAML
+              </h2>
+              <pre className="rounded-2xl border border-white/10 bg-black/30 p-4 font-mono text-[10px] whitespace-pre-wrap text-gray-300">
                 {yamlPreview}
               </pre>
             </>
           ) : (
             <>
-              <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Preview</div>
-              <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200 mb-4">Rack Preview</h2>
+              <div className="font-mono text-[10px] tracking-[0.35em] text-gray-500 uppercase">
+                Preview
+              </div>
+              <h2 className="mb-4 text-lg font-bold tracking-[0.2em] text-gray-200 uppercase">
+                Rack Preview
+              </h2>
               <div className="grid gap-6 lg:grid-cols-2">
                 {renderRackPreview('Front', draft.front_components)}
                 {renderRackPreview('Rear', draft.rear_components)}

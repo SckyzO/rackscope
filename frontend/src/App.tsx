@@ -13,9 +13,26 @@ import { ChecksLibraryEditorPage } from './pages/ChecksLibraryEditorPage';
 import { TopologyEditorPage } from './pages/TopologyEditorPage';
 import { RackEditorPage } from './pages/RackEditorPage';
 import { api } from './services/api';
-import type { RoomSummary, Site } from './types';
+import type {
+  RoomSummary,
+  Site,
+  RoomState,
+  GlobalStats,
+  ActiveAlert,
+  PrometheusStats,
+  TelemetryStats,
+} from './types';
 import { expandInstanceMatches, matchesText } from './utils/search';
-import { Activity, AlertTriangle, Map as MapIcon, ArrowUpRight, Search, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import {
+  Activity,
+  AlertTriangle,
+  Map as MapIcon,
+  ArrowUpRight,
+  Search,
+  Settings,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from 'lucide-react';
 
 // Layout global
 const Layout = ({
@@ -52,8 +69,8 @@ const Layout = ({
         if (active) {
           setSites(Array.isArray(sitesData) ? sitesData : []);
         }
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error(err);
       }
     };
     loadSites();
@@ -63,7 +80,9 @@ const Layout = ({
   }, []);
 
   const searchResults = useMemo(() => {
-    if (!hasQuery) return [];
+    const normalized = searchQuery.trim().toLowerCase();
+    const hasQueryLocal = normalized.length > 0;
+    if (!hasQueryLocal) return [];
     const results: Array<{
       id: string;
       type: 'datacenter' | 'room' | 'aisle' | 'rack' | 'device' | 'instance';
@@ -72,14 +91,14 @@ const Layout = ({
       to: string;
     }> = [];
     const seen = new Set<string>();
-    const pushResult = (item: typeof results[number]) => {
+    const pushResult = (item: (typeof results)[number]) => {
       if (seen.has(item.id)) return;
       seen.add(item.id);
       results.push(item);
     };
 
     for (const site of sites) {
-      if (matchesText(site.name, normalizedQuery) || matchesText(site.id, normalizedQuery)) {
+      if (matchesText(site.name, normalized) || matchesText(site.id, normalized)) {
         const targetRoom = site.rooms?.[0];
         pushResult({
           id: site.id,
@@ -91,7 +110,7 @@ const Layout = ({
       }
 
       for (const room of site.rooms || []) {
-        if (matchesText(room.name, normalizedQuery) || matchesText(room.id, normalizedQuery)) {
+        if (matchesText(room.name, normalized) || matchesText(room.id, normalized)) {
           pushResult({
             id: room.id,
             type: 'room',
@@ -102,7 +121,7 @@ const Layout = ({
         }
 
         for (const aisle of room.aisles || []) {
-          if (matchesText(aisle.name, normalizedQuery) || matchesText(aisle.id, normalizedQuery)) {
+          if (matchesText(aisle.name, normalized) || matchesText(aisle.id, normalized)) {
             pushResult({
               id: `${room.id}:${aisle.id}`,
               type: 'aisle',
@@ -113,7 +132,8 @@ const Layout = ({
           }
 
           for (const rack of aisle.racks || []) {
-            const rackMatches = matchesText(rack.name, normalizedQuery) || matchesText(rack.id, normalizedQuery);
+            const rackMatches =
+              matchesText(rack.name, normalized) || matchesText(rack.id, normalized);
             if (rackMatches) {
               pushResult({
                 id: rack.id,
@@ -125,7 +145,7 @@ const Layout = ({
             }
 
             for (const device of rack.devices || []) {
-              if (matchesText(device.name, normalizedQuery) || matchesText(device.id, normalizedQuery)) {
+              if (matchesText(device.name, normalized) || matchesText(device.id, normalized)) {
                 pushResult({
                   id: `${rack.id}:${device.id}`,
                   type: 'device',
@@ -150,7 +170,8 @@ const Layout = ({
         }
 
         for (const rack of room.standalone_racks || []) {
-          const rackMatches = matchesText(rack.name, normalizedQuery) || matchesText(rack.id, normalizedQuery);
+          const rackMatches =
+            matchesText(rack.name, normalized) || matchesText(rack.id, normalized);
           if (rackMatches) {
             pushResult({
               id: rack.id,
@@ -161,7 +182,7 @@ const Layout = ({
             });
           }
           for (const device of rack.devices || []) {
-            if (matchesText(device.name, normalizedQuery) || matchesText(device.id, normalizedQuery)) {
+            if (matchesText(device.name, normalized) || matchesText(device.id, normalized)) {
               pushResult({
                 id: `${rack.id}:${device.id}`,
                 type: 'device',
@@ -187,7 +208,7 @@ const Layout = ({
     }
 
     return results.slice(0, 30);
-  }, [hasQuery, normalizedQuery, sites]);
+  }, [searchQuery, sites]);
 
   const handleSearchFocus = () => {
     if (blurTimer.current) {
@@ -204,32 +225,40 @@ const Layout = ({
   };
 
   return (
-    <div className="flex h-screen bg-rack-dark text-gray-100 overflow-hidden font-sans">
+    <div className="bg-rack-dark flex h-screen overflow-hidden font-sans text-gray-100">
       <Sidebar collapsed={sidebarCollapsed} searchQuery={searchQuery} />
-      <main className="flex-1 overflow-hidden relative bg-[var(--color-bg-base)] text-[var(--color-text-base)]">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(128,128,128,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(128,128,128,0.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
-        <header className="h-20 px-5 border-b border-[var(--color-border)] bg-[var(--color-bg-panel)]/80 backdrop-blur-xl flex items-center justify-between relative z-10">
-          <div className="flex items-center gap-4 min-w-[240px]">
+      <main className="relative flex-1 overflow-hidden bg-[var(--color-bg-base)] text-[var(--color-text-base)]">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(128,128,128,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(128,128,128,0.05)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+        <header className="relative z-10 flex h-20 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-panel)]/80 px-5 backdrop-blur-xl">
+          <div className="flex min-w-[240px] items-center gap-4">
             <button
               type="button"
-              onClick={() => setSidebarCollapsed(prev => !prev)}
-              className="h-9 w-9 rounded-xl border border-[var(--color-border)] bg-black/30 flex items-center justify-center text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30 transition-colors"
+              onClick={() => setSidebarCollapsed((prev) => !prev)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--color-border)] bg-black/30 text-gray-400 transition-colors hover:border-[var(--color-accent)]/30 hover:text-[var(--color-accent)]"
               aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              {sidebarCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+              {sidebarCollapsed ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
             </button>
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[var(--color-accent)] to-[#0b1f3a] border border-white/10 flex items-center justify-center shadow-[0_0_16px_rgba(59,130,246,0.35)]">
-              <Activity className="w-5 h-5 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-[var(--color-accent)] to-[#0b1f3a] shadow-[0_0_16px_rgba(59,130,246,0.35)]">
+              <Activity className="h-5 w-5 text-white" />
             </div>
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${stale ? 'bg-status-crit' : 'bg-status-ok'} shadow-[0_0_8px_var(--color-status-ok)]`}></div>
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">{stale ? 'Stale' : 'Live'}</span>
+              <div
+                className={`h-2 w-2 rounded-full ${stale ? 'bg-status-crit' : 'bg-status-ok'} shadow-[0_0_8px_var(--color-status-ok)]`}
+              ></div>
+              <span className="text-[11px] font-bold tracking-[0.2em] text-gray-400 uppercase">
+                {stale ? 'Stale' : 'Live'}
+              </span>
             </div>
           </div>
-          <div className="flex-1 px-6 max-w-[700px]">
+          <div className="max-w-[700px] flex-1 px-6">
             <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-500" />
+              <Search className="absolute top-1/2 left-3.5 h-4.5 w-4.5 -translate-y-1/2 text-gray-500" />
               <input
                 type="text"
                 value={searchQuery}
@@ -237,29 +266,33 @@ const Layout = ({
                 onFocus={handleSearchFocus}
                 onBlur={handleSearchBlur}
                 placeholder="Search datacenter / room / rack / device"
-                className="w-full h-12 pl-11 pr-4 rounded-xl bg-black/30 border border-[var(--color-border)] text-[13px] text-gray-300 placeholder:text-gray-500 focus:outline-none focus:border-[var(--color-accent)]/50"
+                className="h-12 w-full rounded-xl border border-[var(--color-border)] bg-black/30 pr-4 pl-11 text-[13px] text-gray-300 placeholder:text-gray-500 focus:border-[var(--color-accent)]/50 focus:outline-none"
               />
               {searchOpen && hasQuery && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--color-bg-panel)]/95 border border-[var(--color-border)] rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl overflow-hidden z-50">
+                <div className="absolute top-full right-0 left-0 z-50 mt-2 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-panel)]/95 shadow-[0_20px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl">
                   {searchResults.length === 0 ? (
-                    <div className="px-4 py-3 text-[11px] text-gray-400 font-mono uppercase tracking-[0.2em]">
+                    <div className="px-4 py-3 font-mono text-[11px] tracking-[0.2em] text-gray-400 uppercase">
                       No matches found
                     </div>
                   ) : (
-                    <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                    <div className="custom-scrollbar max-h-80 overflow-y-auto">
                       {searchResults.map((result) => (
                         <Link
                           key={result.id}
                           to={result.to}
-                          className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]/60 hover:bg-white/5 transition-colors"
+                          className="flex items-center justify-between border-b border-[var(--color-border)]/60 px-4 py-3 transition-colors hover:bg-white/5"
                           onMouseDown={(event) => event.preventDefault()}
                           onClick={() => setSearchOpen(false)}
                         >
                           <div>
-                            <div className="text-[12px] font-semibold text-gray-100">{result.label}</div>
-                            <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500">{result.sublabel}</div>
+                            <div className="text-[12px] font-semibold text-gray-100">
+                              {result.label}
+                            </div>
+                            <div className="font-mono text-[9px] tracking-[0.2em] text-gray-500 uppercase">
+                              {result.sublabel}
+                            </div>
                           </div>
-                          <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-[var(--color-accent)]">
+                          <div className="font-mono text-[9px] tracking-[0.2em] text-[var(--color-accent)] uppercase">
                             {result.type}
                           </div>
                         </Link>
@@ -270,24 +303,25 @@ const Layout = ({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3 min-w-[240px] justify-end">
+          <div className="flex min-w-[240px] items-center justify-end gap-3">
             <button
               type="button"
               onClick={onReload}
-              className="h-9 px-3 rounded-xl border border-[var(--color-border)] bg-black/30 flex items-center gap-2 text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30 transition-colors text-[10px] font-mono uppercase tracking-widest"
+              className="flex h-9 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-black/30 px-3 font-mono text-[10px] tracking-widest text-gray-400 uppercase transition-colors hover:border-[var(--color-accent)]/30 hover:text-[var(--color-accent)]"
               title="Reload now"
             >
               Reload
             </button>
             <NotificationHeader />
-            <Link to="/settings" className="h-9 w-9 rounded-xl border border-[var(--color-border)] bg-black/30 flex items-center justify-center text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30 transition-colors">
-              <Settings className="w-4 h-4" />
+            <Link
+              to="/settings"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--color-border)] bg-black/30 text-gray-400 transition-colors hover:border-[var(--color-accent)]/30 hover:text-[var(--color-accent)]"
+            >
+              <Settings className="h-4 w-4" />
             </Link>
           </div>
         </header>
-        <div className="h-[calc(100%-5rem)]">
-          {children}
-        </div>
+        <div className="h-[calc(100%-5rem)]">{children}</div>
       </main>
     </div>
   );
@@ -295,17 +329,23 @@ const Layout = ({
 
 /**
  * Dashboard Component (Overview)
- * 
+ *
  * Central monitoring hub providing a high-level view of the entire infrastructure.
  */
-const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; reloadKey?: number }) => {
+const Dashboard = ({
+  searchQuery = '',
+  reloadKey = 0,
+}: {
+  searchQuery?: string;
+  reloadKey?: number;
+}) => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
-  const [roomStates, setRoomStates] = useState<Record<string, any>>({});
-  const [globalStats, setGlobalStats] = useState<any>(null);
-  const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
-  const [promStats, setPromStats] = useState<any>(null);
+  const [roomStates, setRoomStates] = useState<Record<string, RoomState>>({});
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
+  const [activeAlerts, setActiveAlerts] = useState<ActiveAlert[]>([]);
+  const [promStats, setPromStats] = useState<PrometheusStats | null>(null);
   const [checksTotal, setChecksTotal] = useState(0);
-  const [telemetryStats, setTelemetryStats] = useState<any>(null);
+  const [telemetryStats, setTelemetryStats] = useState<TelemetryStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [sites, setSites] = useState<Site[]>([]);
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
@@ -322,8 +362,8 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
         if (active) {
           setRefreshMs(Math.max(10000, nextRefresh * 1000));
         }
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error(err);
       }
     };
     loadConfig();
@@ -335,7 +375,8 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [roomsData, stats, sitesData, alertsData, promData, checksData, telemetryData] = await Promise.all([
+        const [roomsData, stats, sitesData, alertsData, promData, checksData, telemetryData] =
+          await Promise.all([
             api.getRooms(),
             api.getGlobalStats(),
             api.getSites(),
@@ -343,7 +384,7 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
             api.getPrometheusStats(),
             api.getChecks(),
             api.getTelemetryStats(),
-        ]);
+          ]);
         const safeRooms = Array.isArray(roomsData) ? roomsData : [];
         const safeSites = Array.isArray(sitesData) ? sitesData : [];
         setRooms(safeRooms);
@@ -353,22 +394,22 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
         setPromStats(promData || null);
         setChecksTotal(Array.isArray(checksData?.checks) ? checksData.checks.length : 0);
         setTelemetryStats(telemetryData || null);
-        if (!selectedSiteId && safeSites.length > 0) {
-          setSelectedSiteId(safeSites[0].id);
-        }
-        
-        const states: Record<string, any> = {};
-        await Promise.all(safeRooms.map(async (r) => {
+        setSelectedSiteId((prev) => prev ?? safeSites[0]?.id ?? null);
+
+        const states: Record<string, RoomState> = {};
+        await Promise.all(
+          safeRooms.map(async (r) => {
             try {
-                const s = await api.getRoomState(r.id);
-                states[r.id] = s;
-            } catch (e) {
-                states[r.id] = { state: 'UNKNOWN' };
+              const s = await api.getRoomState(r.id);
+              states[r.id] = s;
+            } catch {
+              states[r.id] = { state: 'UNKNOWN' };
             }
-        }));
+          })
+        );
         setRoomStates(states);
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -440,18 +481,6 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
     return sites.find((site) => site.id === selectedSiteId) || null;
   }, [sites, selectedSiteId]);
 
-  const rackMetaById = useMemo(() => {
-    const map = new Map<string, { rackName: string; roomId: string; roomName: string }>();
-    for (const room of rooms) {
-      for (const aisle of room.aisles || []) {
-        for (const rack of aisle.racks || []) {
-          map.set(rack.id, { rackName: rack.name, roomId: room.id, roomName: room.name });
-        }
-      }
-    }
-    return map;
-  }, [rooms]);
-
   const roomSummaries = useMemo(() => {
     return filteredRooms.map((room) => {
       const racks = room.aisles?.flatMap((aisle) => aisle.racks || []) || [];
@@ -462,7 +491,7 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
       let unknown = 0;
       for (const rack of racks) {
         const rawState = rackStates[rack.id];
-        const state = typeof rawState === 'string' ? rawState : rawState?.state || 'UNKNOWN';
+        const state = typeof rawState === 'string' ? rawState : (rawState?.state ?? 'UNKNOWN');
         if (state === 'CRIT') crit += 1;
         else if (state === 'WARN') warn += 1;
         else if (state === 'OK') ok += 1;
@@ -475,26 +504,6 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
       };
     });
   }, [filteredRooms, roomStates]);
-
-  const alertItems = useMemo(() => {
-    const items: Array<{ rackId: string; rackName: string; roomName: string; state: string }> = [];
-    for (const room of rooms) {
-      const rackStates = roomStates[room.id]?.racks || {};
-      for (const [rackId, rawState] of Object.entries(rackStates)) {
-        const state = typeof rawState === 'string' ? rawState : (rawState as any)?.state || 'UNKNOWN';
-        if (state !== 'CRIT' && state !== 'WARN') continue;
-        const meta = rackMetaById.get(rackId);
-        items.push({
-          rackId,
-          rackName: meta?.rackName || rackId,
-          roomName: meta?.roomName || room.name,
-          state,
-        });
-      }
-    }
-    const weight = (state: string) => (state === 'CRIT' ? 2 : state === 'WARN' ? 1 : 0);
-    return items.sort((a, b) => weight(b.state) - weight(a.state)).slice(0, 6);
-  }, [rooms, roomStates, rackMetaById]);
 
   const deviceAlerts = useMemo(() => {
     const weight = (state: string) => (state === 'CRIT' ? 2 : state === 'WARN' ? 1 : 0);
@@ -522,16 +531,24 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
   }, [activeChecksBySite, currentSite]);
 
   if (loading) {
-    return <div className="p-12 font-mono animate-pulse text-blue-500">LDR :: AGGREGATING_GLOBAL_METRICS...</div>;
+    return (
+      <div className="animate-pulse p-12 font-mono text-blue-500">
+        LDR :: AGGREGATING_GLOBAL_METRICS...
+      </div>
+    );
   }
 
   return (
-    <div className="p-10 h-full overflow-y-auto custom-scrollbar">
-      <header className="flex flex-col gap-6 mb-10">
+    <div className="custom-scrollbar h-full overflow-y-auto p-10">
+      <header className="mb-10 flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <div className="text-[10px] font-mono uppercase tracking-[0.45em] text-gray-500">Wallboard</div>
-          <h1 className="text-4xl font-black tracking-tight uppercase text-[var(--color-accent-primary)]">Overview</h1>
-          <div className="flex flex-wrap items-center gap-3 text-[11px] font-mono uppercase tracking-[0.3em] text-gray-500">
+          <div className="font-mono text-[10px] tracking-[0.45em] text-gray-500 uppercase">
+            Wallboard
+          </div>
+          <h1 className="text-4xl font-black tracking-tight text-[var(--color-accent-primary)] uppercase">
+            Overview
+          </h1>
+          <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] tracking-[0.3em] text-gray-500 uppercase">
             <span>Global Infrastructure Status</span>
             {currentSite && (
               <span className="flex items-center gap-2 text-gray-400">
@@ -548,56 +565,76 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-rack-panel border border-rack-border rounded-2xl px-6 py-5 flex items-center justify-between">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="bg-rack-panel border-rack-border flex items-center justify-between rounded-2xl border px-6 py-5">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Global Status</div>
-              <div className={`mt-2 text-2xl font-black font-mono ${
-                globalStats?.status === 'CRIT' ? 'text-status-crit' :
-                globalStats?.status === 'WARN' ? 'text-status-warn' :
-                'text-status-ok'
-              }`}>
-                {globalStats?.status === 'CRIT' ? 'CRITICAL' : globalStats?.status === 'WARN' ? 'WARNING' : 'OPTIMAL'}
+              <div className="text-[10px] font-bold tracking-[0.3em] text-gray-500 uppercase">
+                Global Status
+              </div>
+              <div
+                className={`mt-2 font-mono text-2xl font-black ${
+                  globalStats?.status === 'CRIT'
+                    ? 'text-status-crit'
+                    : globalStats?.status === 'WARN'
+                      ? 'text-status-warn'
+                      : 'text-status-ok'
+                }`}
+              >
+                {globalStats?.status === 'CRIT'
+                  ? 'CRITICAL'
+                  : globalStats?.status === 'WARN'
+                    ? 'WARNING'
+                    : 'OPTIMAL'}
               </div>
             </div>
-            <div className="h-12 w-12 rounded-2xl border border-white/5 bg-black/20 flex items-center justify-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/5 bg-black/20">
               <Activity className="h-5 w-5 text-[var(--color-accent-primary)]" />
             </div>
           </div>
-          <div className="bg-rack-panel border border-rack-border rounded-2xl px-6 py-5 flex items-center justify-between">
+          <div className="bg-rack-panel border-rack-border flex items-center justify-between rounded-2xl border px-6 py-5">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Active Alerts</div>
+              <div className="text-[10px] font-bold tracking-[0.3em] text-gray-500 uppercase">
+                Active Alerts
+              </div>
               <div className="mt-2 flex items-center gap-4">
-                <div className="text-2xl font-black font-mono text-white">{globalStats?.active_alerts || 0}</div>
-                <div className="text-[11px] font-mono uppercase text-gray-500">
+                <div className="font-mono text-2xl font-black text-white">
+                  {globalStats?.active_alerts || 0}
+                </div>
+                <div className="font-mono text-[11px] text-gray-500 uppercase">
                   <span className="text-status-crit">{globalStats?.crit_count || 0}</span> CRIT /{' '}
                   <span className="text-status-warn">{globalStats?.warn_count || 0}</span> WARN
                 </div>
               </div>
             </div>
-            <div className="h-12 w-12 rounded-2xl border border-white/5 bg-black/20 flex items-center justify-center">
-              <AlertTriangle className="h-5 w-5 text-status-warn" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/5 bg-black/20">
+              <AlertTriangle className="text-status-warn h-5 w-5" />
             </div>
           </div>
-          <div className="bg-rack-panel border border-rack-border rounded-2xl px-6 py-5 flex items-center justify-between">
+          <div className="bg-rack-panel border-rack-border flex items-center justify-between rounded-2xl border px-6 py-5">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Managed Racks</div>
-              <div className="mt-2 text-2xl font-black font-mono text-white">{globalStats?.total_racks || 0}</div>
+              <div className="text-[10px] font-bold tracking-[0.3em] text-gray-500 uppercase">
+                Managed Racks
+              </div>
+              <div className="mt-2 font-mono text-2xl font-black text-white">
+                {globalStats?.total_racks || 0}
+              </div>
             </div>
-            <div className="h-12 w-12 rounded-2xl border border-white/5 bg-black/20 flex items-center justify-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/5 bg-black/20">
               <MapIcon className="h-5 w-5 text-[var(--color-accent-primary)]" />
             </div>
           </div>
-          <div className="bg-rack-panel border border-rack-border rounded-2xl px-6 py-5 flex items-center justify-between">
+          <div className="bg-rack-panel border-rack-border flex items-center justify-between rounded-2xl border px-6 py-5">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Prometheus</div>
-              <div className="mt-2 text-2xl font-black font-mono text-white">
+              <div className="text-[10px] font-bold tracking-[0.3em] text-gray-500 uppercase">
+                Prometheus
+              </div>
+              <div className="mt-2 font-mono text-2xl font-black text-white">
                 {promStats?.avg_ms ? `${Math.round(promStats.avg_ms)} ms` : '--'}
               </div>
-              <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 mt-1">
+              <div className="mt-1 font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
                 {promStats?.last_ms ? `last ${Math.round(promStats.last_ms)} ms` : 'no samples'}
               </div>
-              <div className="mt-3 text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500 space-y-1">
+              <div className="mt-3 space-y-1 font-mono text-[9px] tracking-[0.2em] text-gray-500 uppercase">
                 <div className="flex items-center justify-between gap-2">
                   <span>Last scrape</span>
                   <span className="text-gray-400">
@@ -612,7 +649,7 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
                 </div>
               </div>
             </div>
-            <div className="h-12 w-12 rounded-2xl border border-white/5 bg-black/20 flex items-center justify-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/5 bg-black/20">
               <Activity className="h-5 w-5 text-[var(--color-accent-primary)]" />
             </div>
           </div>
@@ -625,10 +662,10 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
             <button
               key={site.id}
               onClick={() => setSelectedSiteId(site.id)}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-mono uppercase tracking-widest border transition-colors ${
+              className={`rounded-full border px-3 py-1.5 font-mono text-[10px] tracking-widest uppercase transition-colors ${
                 selectedSiteId === site.id
-                  ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)] border-[var(--color-accent)]/30'
-                  : 'bg-transparent text-gray-500 border-[var(--color-border)] hover:text-[var(--color-text-base)]'
+                  ? 'border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
+                  : 'border-[var(--color-border)] bg-transparent text-gray-500 hover:text-[var(--color-text-base)]'
               }`}
             >
               {site.name}
@@ -637,14 +674,16 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_420px] gap-8">
-        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6">
-          <div className="flex items-center justify-between mb-6">
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <section className="bg-rack-panel border-rack-border rounded-3xl border p-6">
+          <div className="mb-6 flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Topology</div>
-              <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Rooms</h2>
+              <div className="font-mono text-[10px] tracking-[0.35em] text-gray-500 uppercase">
+                Topology
+              </div>
+              <h2 className="text-lg font-bold tracking-[0.2em] text-gray-200 uppercase">Rooms</h2>
             </div>
-            <div className="text-[11px] font-mono uppercase text-gray-500">
+            <div className="font-mono text-[11px] text-gray-500 uppercase">
               {roomSummaries.length} Rooms
             </div>
           </div>
@@ -657,10 +696,14 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
                 className="group flex items-center justify-between gap-4 rounded-2xl border border-transparent bg-black/20 px-4 py-3 transition-colors hover:border-[var(--color-accent-primary)]/40"
               >
                 <div className="flex flex-col gap-1">
-                  <span className="text-sm font-semibold text-gray-200 group-hover:text-[var(--color-accent-primary)] transition-colors">{room.name}</span>
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-gray-500">{totals.total} racks</span>
+                  <span className="text-sm font-semibold text-gray-200 transition-colors group-hover:text-[var(--color-accent-primary)]">
+                    {room.name}
+                  </span>
+                  <span className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
+                    {totals.total} racks
+                  </span>
                 </div>
-                <div className="flex items-center gap-3 text-[10px] font-mono uppercase">
+                <div className="flex items-center gap-3 font-mono text-[10px] uppercase">
                   <span className="text-status-crit">{totals.crit}</span>
                   <span className="text-status-warn">{totals.warn}</span>
                   <span className="text-status-ok">{totals.ok}</span>
@@ -673,19 +716,23 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
         </section>
 
         <aside className="space-y-6">
-          <div className="bg-rack-panel border border-rack-border rounded-3xl p-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="bg-rack-panel border-rack-border rounded-3xl border p-6">
+            <div className="mb-6 flex items-center justify-between">
               <div>
-                <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Alerts</div>
-                <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Active Devices</h2>
+                <div className="font-mono text-[10px] tracking-[0.35em] text-gray-500 uppercase">
+                  Alerts
+                </div>
+                <h2 className="text-lg font-bold tracking-[0.2em] text-gray-200 uppercase">
+                  Active Devices
+                </h2>
               </div>
-              <div className="text-[10px] font-mono uppercase text-gray-500">
+              <div className="font-mono text-[10px] text-gray-500 uppercase">
                 {activeAlerts.length} total
               </div>
             </div>
 
             {deviceAlerts.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-center text-[11px] font-mono uppercase tracking-widest text-gray-500">
+              <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-center font-mono text-[11px] tracking-widest text-gray-500 uppercase">
                 No active alerts
               </div>
             ) : (
@@ -697,19 +744,23 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
                     className="flex items-center justify-between rounded-2xl border border-white/5 bg-black/20 px-4 py-3 transition-colors hover:border-[var(--color-accent-primary)]/40"
                   >
                     <div className="min-w-0">
-                      <div className="text-sm font-semibold text-gray-200 truncate">{item.device_name}</div>
-                      <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500 truncate">
+                      <div className="truncate text-sm font-semibold text-gray-200">
+                        {item.device_name}
+                      </div>
+                      <div className="truncate font-mono text-[10px] tracking-widest text-gray-500 uppercase">
                         {item.site_name} / {item.room_name} / {item.rack_name}
                       </div>
-                      <div className="text-[9px] font-mono uppercase tracking-widest text-gray-500">
+                      <div className="font-mono text-[9px] tracking-widest text-gray-500 uppercase">
                         {item.node_id}
                       </div>
                     </div>
-                    <div className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${
-                      item.state === 'CRIT'
-                        ? 'border-status-crit/40 text-status-crit bg-status-crit/10'
-                        : 'border-status-warn/40 text-status-warn bg-status-warn/10'
-                    }`}>
+                    <div
+                      className={`rounded-full border px-3 py-1 text-[10px] font-bold tracking-widest uppercase ${
+                        item.state === 'CRIT'
+                          ? 'border-status-crit/40 text-status-crit bg-status-crit/10'
+                          : 'border-status-warn/40 text-status-warn bg-status-warn/10'
+                      }`}
+                    >
                       {item.state}
                     </div>
                   </Link>
@@ -718,33 +769,43 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
             )}
           </div>
 
-          <div className="bg-rack-panel border border-rack-border rounded-3xl p-6">
-            <div className="flex items-center justify-between mb-6">
+          <div className="bg-rack-panel border-rack-border rounded-3xl border p-6">
+            <div className="mb-6 flex items-center justify-between">
               <div>
-                <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Telemetry</div>
-                <h2 className="text-lg font-bold uppercase tracking-[0.2em] text-gray-200">Prometheus</h2>
+                <div className="font-mono text-[10px] tracking-[0.35em] text-gray-500 uppercase">
+                  Telemetry
+                </div>
+                <h2 className="text-lg font-bold tracking-[0.2em] text-gray-200 uppercase">
+                  Prometheus
+                </h2>
               </div>
-              <div className="text-[10px] font-mono uppercase text-gray-500">
+              <div className="font-mono text-[10px] text-gray-500 uppercase">
                 {telemetryStats?.in_flight ?? 0} in flight
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">
-              <div className="bg-black/20 border border-white/5 rounded-xl p-3">
+            <div className="grid grid-cols-2 gap-3 font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
+              <div className="rounded-xl border border-white/5 bg-black/20 p-3">
                 <div className="text-[9px]">Queries</div>
-                <div className="mt-2 text-lg font-black text-white">{telemetryStats?.query_count ?? 0}</div>
+                <div className="mt-2 text-lg font-black text-white">
+                  {telemetryStats?.query_count ?? 0}
+                </div>
               </div>
-              <div className="bg-black/20 border border-white/5 rounded-xl p-3">
+              <div className="rounded-xl border border-white/5 bg-black/20 p-3">
                 <div className="text-[9px]">Cache hits</div>
-                <div className="mt-2 text-lg font-black text-status-ok">{telemetryStats?.cache_hits ?? 0}</div>
+                <div className="text-status-ok mt-2 text-lg font-black">
+                  {telemetryStats?.cache_hits ?? 0}
+                </div>
               </div>
-              <div className="bg-black/20 border border-white/5 rounded-xl p-3">
+              <div className="rounded-xl border border-white/5 bg-black/20 p-3">
                 <div className="text-[9px]">Cache misses</div>
-                <div className="mt-2 text-lg font-black text-status-warn">{telemetryStats?.cache_misses ?? 0}</div>
+                <div className="text-status-warn mt-2 text-lg font-black">
+                  {telemetryStats?.cache_misses ?? 0}
+                </div>
               </div>
-              <div className="bg-black/20 border border-white/5 rounded-xl p-3">
+              <div className="rounded-xl border border-white/5 bg-black/20 p-3">
                 <div className="text-[9px]">Last batch</div>
-                <div className="mt-2 text-[11px] font-mono text-gray-300">
+                <div className="mt-2 font-mono text-[11px] text-gray-300">
                   {telemetryStats?.last_batch
                     ? `${telemetryStats.last_batch.total_ids} ids / ${telemetryStats.last_batch.query_count} q`
                     : '--'}
@@ -755,31 +816,54 @@ const Dashboard = ({ searchQuery = '', reloadKey = 0 }: { searchQuery?: string; 
         </aside>
       </div>
 
-      <div className="mt-10 grid grid-cols-2 md:grid-cols-6 gap-4">
-        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
-          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Rooms</div>
-          <div className="mt-2 text-xl font-black font-mono text-white">{globalStats?.total_rooms || 0}</div>
+      <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-6">
+        <div className="bg-rack-panel border-rack-border rounded-2xl border px-5 py-4">
+          <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+            Rooms
+          </div>
+          <div className="mt-2 font-mono text-xl font-black text-white">
+            {globalStats?.total_rooms || 0}
+          </div>
         </div>
-        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
-          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Racks</div>
-          <div className="mt-2 text-xl font-black font-mono text-white">{globalStats?.total_racks || 0}</div>
+        <div className="bg-rack-panel border-rack-border rounded-2xl border px-5 py-4">
+          <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+            Racks
+          </div>
+          <div className="mt-2 font-mono text-xl font-black text-white">
+            {globalStats?.total_racks || 0}
+          </div>
         </div>
-        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
-          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Critical</div>
-          <div className="mt-2 text-xl font-black font-mono text-status-crit">{globalStats?.crit_count || 0}</div>
+        <div className="bg-rack-panel border-rack-border rounded-2xl border px-5 py-4">
+          <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+            Critical
+          </div>
+          <div className="text-status-crit mt-2 font-mono text-xl font-black">
+            {globalStats?.crit_count || 0}
+          </div>
         </div>
-        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
-          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Warning</div>
-          <div className="mt-2 text-xl font-black font-mono text-status-warn">{globalStats?.warn_count || 0}</div>
+        <div className="bg-rack-panel border-rack-border rounded-2xl border px-5 py-4">
+          <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+            Warning
+          </div>
+          <div className="text-status-warn mt-2 font-mono text-xl font-black">
+            {globalStats?.warn_count || 0}
+          </div>
         </div>
-        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
-          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Checks</div>
-          <div className="mt-2 text-xl font-black font-mono text-white">{checksTotal}</div>
+        <div className="bg-rack-panel border-rack-border rounded-2xl border px-5 py-4">
+          <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+            Checks
+          </div>
+          <div className="mt-2 font-mono text-xl font-black text-white">{checksTotal}</div>
         </div>
-        <div className="bg-rack-panel border border-rack-border rounded-2xl px-5 py-4">
-          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Active checks</div>
-          <div className="mt-2 text-xl font-black font-mono text-status-warn">
-            {activeAlerts.reduce((acc, item) => acc + (Array.isArray(item?.checks) ? item.checks.length : 0), 0)}
+        <div className="bg-rack-panel border-rack-border rounded-2xl border px-5 py-4">
+          <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+            Active checks
+          </div>
+          <div className="text-status-warn mt-2 font-mono text-xl font-black">
+            {activeAlerts.reduce(
+              (acc, item) => acc + (Array.isArray(item?.checks) ? item.checks.length : 0),
+              0
+            )}
           </div>
         </div>
       </div>
@@ -800,8 +884,14 @@ function App() {
           onReload={() => setReloadKey((prev) => prev + 1)}
         >
           <Routes>
-            <Route path="/" element={<Dashboard searchQuery={searchQuery} reloadKey={reloadKey} />} />
-            <Route path="/room/:roomId" element={<RoomPage searchQuery={searchQuery} reloadKey={reloadKey} />} />
+            <Route
+              path="/"
+              element={<Dashboard searchQuery={searchQuery} reloadKey={reloadKey} />}
+            />
+            <Route
+              path="/room/:roomId"
+              element={<RoomPage searchQuery={searchQuery} reloadKey={reloadKey} />}
+            />
             <Route path="/rack/:rackId" element={<RackPage reloadKey={reloadKey} />} />
             <Route path="/templates" element={<TemplatesLibraryPage />} />
             <Route path="/templates/editor" element={<TemplatesEditorPage />} />

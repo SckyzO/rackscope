@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
-import type { RackTemplate, RoomSummary, AisleSummary, DeviceTemplate, Rack, Site } from '../types';
+import type { RackTemplate, AisleSummary, DeviceTemplate, Rack, Site } from '../types';
 
 type RoomOption = { id: string; name: string; aisles: AisleSummary[] };
 
@@ -27,7 +27,12 @@ const mapsEqual = (a: AisleRackMap, b: AisleRackMap): boolean => {
   return true;
 };
 
-const moveRack = (map: AisleRackMap, rackId: string, targetAisleId: string, targetIndex?: number): AisleRackMap => {
+const moveRack = (
+  map: AisleRackMap,
+  rackId: string,
+  targetAisleId: string,
+  targetIndex?: number
+): AisleRackMap => {
   const next = Object.fromEntries(Object.entries(map).map(([k, v]) => [k, [...v]]));
   Object.values(next).forEach((racks) => {
     const idx = racks.indexOf(rackId);
@@ -84,7 +89,10 @@ export const TopologyEditorPage = () => {
         setDeviceTemplates(catalog.device_templates || []);
         setSites(Array.isArray(sitesData) ? sitesData : []);
       })
-      .catch((err) => setError(err?.message || 'Failed to load topology'));
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Failed to load topology';
+        setError(message);
+      });
     return () => {
       active = false;
     };
@@ -103,8 +111,11 @@ export const TopologyEditorPage = () => {
   }, [sites, wizardSiteId]);
 
   const selectedRoom = rooms.find((room) => room.id === selectedRoomId) || null;
-  const aisles = selectedRoom?.aisles || [];
-  const deviceTemplateById = useMemo(() => new Map(deviceTemplates.map((t) => [t.id, t])), [deviceTemplates]);
+  const aisles = useMemo(() => selectedRoom?.aisles || [], [selectedRoom]);
+  const deviceTemplateById = useMemo(
+    () => new Map(deviceTemplates.map((t) => [t.id, t])),
+    [deviceTemplates]
+  );
 
   useEffect(() => {
     const nextMap = buildAisleMap(aisles);
@@ -112,7 +123,7 @@ export const TopologyEditorPage = () => {
       setBaseAisleRacks(nextMap);
       setPendingAisleRacks(nextMap);
     }
-  }, [selectedRoomId, aisles]);
+  }, [aisles, baseAisleRacks, pendingAisleRacks, selectedRoomId]);
 
   const rackById = useMemo(() => {
     const map = new Map<string, { id: string; name: string }>();
@@ -145,14 +156,16 @@ export const TopologyEditorPage = () => {
       return;
     }
     let active = true;
-    api.getRack(selectedRackId)
+    api
+      .getRack(selectedRackId)
       .then((rack) => {
         if (!active) return;
         setSelectedRack(rack);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         if (!active) return;
-        setError(err?.message || 'Failed to load rack details');
+        const message = err instanceof Error ? err.message : 'Failed to load rack details';
+        setError(message);
       });
     return () => {
       active = false;
@@ -216,7 +229,13 @@ export const TopologyEditorPage = () => {
     if (!deviceNameTouched) {
       setNewDeviceName(`${template.name} U${uPos}`);
     }
-  }, [deviceTemplateById, newDeviceTemplateId, newDeviceUPosition, deviceIdTouched, deviceNameTouched]);
+  }, [
+    deviceTemplateById,
+    newDeviceTemplateId,
+    newDeviceUPosition,
+    deviceIdTouched,
+    deviceNameTouched,
+  ]);
 
   const handleDropOnRack = (aisleId: string, targetRackId: string, draggedId?: string | null) => {
     const activeId = draggedId || draggingId;
@@ -243,9 +262,10 @@ export const TopologyEditorPage = () => {
       setBaseAisleRacks(pendingAisleRacks);
       setStatus('saved');
       setTimeout(() => setStatus('idle'), 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save changes';
       setStatus('error');
-      setError(err?.message || 'Failed to save changes');
+      setError(message);
     }
   };
 
@@ -256,9 +276,10 @@ export const TopologyEditorPage = () => {
       await api.updateRackTemplate(rackId, templateId || null);
       setStatus('saved');
       setTimeout(() => setStatus('idle'), 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to update rack template';
       setStatus('error');
-      setError(err?.message || 'Failed to update rack template');
+      setError(message);
     }
   };
 
@@ -289,9 +310,10 @@ export const TopologyEditorPage = () => {
       setDeviceNameTouched(false);
       setStatus('saved');
       setTimeout(() => setStatus('idle'), 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to add device';
       setStatus('error');
-      setError(err?.message || 'Failed to add device');
+      setError(message);
     } finally {
       setAdding(false);
     }
@@ -371,20 +393,23 @@ export const TopologyEditorPage = () => {
       }
       setWizardOpen(false);
       resetWizard();
-    } catch (err: any) {
-      setWizardError(err?.message || 'Failed to create room');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to create room';
+      setWizardError(message);
     } finally {
       setWizardBusy(false);
     }
   };
 
   return (
-    <div className="p-10 h-full overflow-y-auto custom-scrollbar">
+    <div className="custom-scrollbar h-full overflow-y-auto p-10">
       <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="text-[10px] font-mono uppercase tracking-[0.45em] text-gray-500">Topology</div>
+          <div className="font-mono text-[10px] tracking-[0.45em] text-gray-500 uppercase">
+            Topology
+          </div>
           <h1 className="text-3xl font-black tracking-tight uppercase">Editor</h1>
-          <div className="mt-2 text-[11px] font-mono uppercase tracking-[0.2em] text-gray-500">
+          <div className="mt-2 font-mono text-[11px] tracking-[0.2em] text-gray-500 uppercase">
             Drag racks between aisles, then save
           </div>
         </div>
@@ -392,50 +417,65 @@ export const TopologyEditorPage = () => {
           {hasPendingChanges && (
             <button
               onClick={handleSaveLayout}
-              className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-200 transition hover:bg-white/20"
+              className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-200 uppercase transition hover:bg-white/20"
             >
               Save changes
             </button>
           )}
-          <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">
-            {status === 'saving' ? 'Saving...' : status === 'saved' ? 'Saved' : status === 'error' ? 'Error' : ''}
+          <div className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
+            {status === 'saving'
+              ? 'Saving...'
+              : status === 'saved'
+                ? 'Saved'
+                : status === 'error'
+                  ? 'Error'
+                  : ''}
           </div>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-6">
-        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 space-y-4">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <section className="bg-rack-panel border-rack-border space-y-4 rounded-3xl border p-6">
           <div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Room</div>
+            <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+              Room
+            </div>
             <select
               value={selectedRoomId}
               onChange={(e) => setSelectedRoomId(e.target.value)}
-              className="mt-2 w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+              className="mt-2 w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
             >
               {rooms.map((room) => (
                 <option key={room.id} value={room.id}>
                   {room.name}
                 </option>
               ))}
-              </select>
-            </div>
-            <button
-              onClick={handleOpenWizard}
-              className="mt-4 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-200 transition hover:bg-white/20"
-            >
-              Create datacenter / room
-            </button>
-          {error && <div className="text-[11px] text-status-crit">{error}</div>}
+            </select>
+          </div>
+          <button
+            onClick={handleOpenWizard}
+            className="mt-4 w-full rounded-xl border border-white/10 bg-white/10 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-200 uppercase transition hover:bg-white/20"
+          >
+            Create datacenter / room
+          </button>
+          {error && <div className="text-status-crit text-[11px]">{error}</div>}
         </section>
 
-        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 space-y-4">
-          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Room layout</div>
-          <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${Math.max(aisles.length, 1)}, minmax(0, 1fr))` }}>
+        <section className="bg-rack-panel border-rack-border space-y-4 rounded-3xl border p-6">
+          <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+            Room layout
+          </div>
+          <div
+            className="grid gap-4"
+            style={{ gridTemplateColumns: `repeat(${Math.max(aisles.length, 1)}, minmax(0, 1fr))` }}
+          >
             {aisles.map((aisle) => (
               <div key={aisle.id} className="flex flex-col gap-2">
-                <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">{aisle.name}</div>
+                <div className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
+                  {aisle.name}
+                </div>
                 <div
-                  className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-3 min-h-[240px] space-y-2"
+                  className="min-h-[240px] space-y-2 rounded-2xl border border-dashed border-white/10 bg-black/20 p-3"
                   onDragOver={(e) => {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
@@ -468,20 +508,24 @@ export const TopologyEditorPage = () => {
                           handleDropOnRack(aisle.id, rackId, dragged || null);
                         }}
                         onClick={() => setSelectedRackId(rackId)}
-                        className={`flex items-center justify-between rounded-2xl border px-4 py-3 transition-colors cursor-grab ${
+                        className={`flex cursor-grab items-center justify-between rounded-2xl border px-4 py-3 transition-colors ${
                           isSelected
                             ? 'border-blue-400/60 bg-blue-500/10'
                             : 'border-white/5 bg-black/20 hover:border-white/20'
                         }`}
                       >
                         <div>
-                          <div className="text-sm font-semibold text-gray-200">{rack?.name || rackId}</div>
-                          <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">{rackId}</div>
+                          <div className="text-sm font-semibold text-gray-200">
+                            {rack?.name || rackId}
+                          </div>
+                          <div className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
+                            {rackId}
+                          </div>
                         </div>
                         <select
                           defaultValue=""
                           onChange={(e) => handleTemplateChange(rackId, e.target.value)}
-                          className="rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-[11px] text-gray-200"
+                          className="rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-[11px] text-gray-200"
                         >
                           <option value="">No template</option>
                           {rackTemplates.map((template) => (
@@ -494,7 +538,7 @@ export const TopologyEditorPage = () => {
                     );
                   })}
                   {(pendingAisleRacks[aisle.id] || []).length === 0 && (
-                    <div className="rounded-xl border border-dashed border-white/10 bg-black/30 px-3 py-4 text-center text-[10px] font-mono uppercase tracking-widest text-gray-500">
+                    <div className="rounded-xl border border-dashed border-white/10 bg-black/30 px-3 py-4 text-center font-mono text-[10px] tracking-widest text-gray-500 uppercase">
                       Drop racks here
                     </div>
                   )}
@@ -502,21 +546,25 @@ export const TopologyEditorPage = () => {
               </div>
             ))}
             {aisles.length === 0 && (
-              <div className="text-[11px] font-mono uppercase tracking-widest text-gray-500">No aisles defined</div>
+              <div className="font-mono text-[11px] tracking-widest text-gray-500 uppercase">
+                No aisles defined
+              </div>
             )}
           </div>
 
-          <div className="pt-6 border-t border-white/5 space-y-4">
-            <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Add device</div>
+          <div className="space-y-4 border-t border-white/5 pt-6">
+            <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+              Add device
+            </div>
             {!selectedRack && (
               <div className="text-[11px] text-gray-500">Select a rack to assign a template.</div>
             )}
             {selectedRack && (
               <div className="space-y-3">
-                <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-gray-500">
+                <div className="font-mono text-[11px] tracking-[0.2em] text-gray-500 uppercase">
                   Rack: {selectedRack.name}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <label className="text-[11px] text-gray-400">
                     Template
                     <select
@@ -526,7 +574,7 @@ export const TopologyEditorPage = () => {
                         setDeviceIdTouched(false);
                         setDeviceNameTouched(false);
                       }}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-[11px] text-gray-200"
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-[11px] text-gray-200"
                     >
                       <option value="">Select template</option>
                       {deviceTemplates.map((template) => (
@@ -541,7 +589,7 @@ export const TopologyEditorPage = () => {
                     <select
                       value={newDeviceUPosition === '' ? '' : String(newDeviceUPosition)}
                       onChange={(e) => setNewDeviceUPosition(Number(e.target.value))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-[11px] text-gray-200"
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-[11px] text-gray-200"
                       disabled={!newDeviceTemplateId || availablePositions.length === 0}
                     >
                       {!newDeviceTemplateId && <option value="">Select template first</option>}
@@ -563,7 +611,7 @@ export const TopologyEditorPage = () => {
                         setDeviceIdTouched(true);
                         setNewDeviceId(e.target.value);
                       }}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-[11px] text-gray-200"
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-[11px] text-gray-200"
                     />
                   </label>
                   <label className="text-[11px] text-gray-400">
@@ -574,7 +622,7 @@ export const TopologyEditorPage = () => {
                         setDeviceNameTouched(true);
                         setNewDeviceName(e.target.value);
                       }}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-[11px] text-gray-200"
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-[11px] text-gray-200"
                     />
                   </label>
                 </div>
@@ -584,13 +632,13 @@ export const TopologyEditorPage = () => {
                     value={newDeviceInstance}
                     onChange={(e) => setNewDeviceInstance(e.target.value)}
                     placeholder="compute[001-003]"
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-2 py-1 text-[11px] text-gray-200"
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-[11px] text-gray-200"
                   />
                 </label>
                 <button
                   onClick={handleAddDevice}
                   disabled={adding}
-                  className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-200 transition hover:bg-white/20 disabled:opacity-50"
+                  className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-200 uppercase transition hover:bg-white/20 disabled:opacity-50"
                 >
                   {adding ? 'Adding...' : 'Add device'}
                 </button>
@@ -605,19 +653,23 @@ export const TopologyEditorPage = () => {
           <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[var(--color-panel)] p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-[10px] font-mono uppercase tracking-[0.35em] text-gray-500">Topology</div>
-                <h2 className="text-2xl font-black uppercase tracking-tight">Create datacenter & room</h2>
-                <p className="mt-2 text-[11px] font-mono uppercase tracking-[0.2em] text-gray-500">
+                <div className="font-mono text-[10px] tracking-[0.35em] text-gray-500 uppercase">
+                  Topology
+                </div>
+                <h2 className="text-2xl font-black tracking-tight uppercase">
+                  Create datacenter & room
+                </h2>
+                <p className="mt-2 font-mono text-[11px] tracking-[0.2em] text-gray-500 uppercase">
                   {wizardStep === 1
                     ? 'Choose or create a datacenter'
                     : wizardStep === 2
-                    ? 'Describe the new room'
-                    : 'Create aisles (optional)'}
+                      ? 'Describe the new room'
+                      : 'Create aisles (optional)'}
                 </p>
               </div>
               <button
                 onClick={handleCloseWizard}
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-mono uppercase tracking-widest text-gray-200"
+                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1 font-mono text-[11px] tracking-widest text-gray-200 uppercase"
               >
                 Close
               </button>
@@ -629,7 +681,7 @@ export const TopologyEditorPage = () => {
                   <div className="flex gap-3">
                     <button
                       onClick={() => setWizardMode('existing')}
-                      className={`rounded-xl border px-3 py-2 text-[11px] font-mono uppercase tracking-widest ${
+                      className={`rounded-xl border px-3 py-2 font-mono text-[11px] tracking-widest uppercase ${
                         wizardMode === 'existing'
                           ? 'border-blue-400/60 bg-blue-500/10 text-blue-100'
                           : 'border-white/10 bg-white/5 text-gray-300'
@@ -639,7 +691,7 @@ export const TopologyEditorPage = () => {
                     </button>
                     <button
                       onClick={() => setWizardMode('new')}
-                      className={`rounded-xl border px-3 py-2 text-[11px] font-mono uppercase tracking-widest ${
+                      className={`rounded-xl border px-3 py-2 font-mono text-[11px] tracking-widest uppercase ${
                         wizardMode === 'new'
                           ? 'border-blue-400/60 bg-blue-500/10 text-blue-100'
                           : 'border-white/10 bg-white/5 text-gray-300'
@@ -655,7 +707,7 @@ export const TopologyEditorPage = () => {
                       <select
                         value={wizardSiteId}
                         onChange={(e) => setWizardSiteId(e.target.value)}
-                        className="mt-2 w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                        className="mt-2 w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                       >
                         {sites.map((site) => (
                           <option key={site.id} value={site.id}>
@@ -673,7 +725,7 @@ export const TopologyEditorPage = () => {
                         <input
                           value={newSiteName}
                           onChange={(e) => setNewSiteName(e.target.value)}
-                          className="mt-2 w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                          className="mt-2 w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                         />
                       </label>
                       <label className="text-[11px] text-gray-400">
@@ -682,7 +734,7 @@ export const TopologyEditorPage = () => {
                           value={newSiteId}
                           onChange={(e) => setNewSiteId(e.target.value)}
                           placeholder="auto from name"
-                          className="mt-2 w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                          className="mt-2 w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                         />
                       </label>
                     </div>
@@ -697,7 +749,7 @@ export const TopologyEditorPage = () => {
                     <input
                       value={newRoomName}
                       onChange={(e) => setNewRoomName(e.target.value)}
-                      className="mt-2 w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      className="mt-2 w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
                   </label>
                   <label className="text-[11px] text-gray-400">
@@ -706,7 +758,7 @@ export const TopologyEditorPage = () => {
                       value={newRoomId}
                       onChange={(e) => setNewRoomId(e.target.value)}
                       placeholder="auto from name"
-                      className="mt-2 w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      className="mt-2 w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
                   </label>
                 </div>
@@ -721,16 +773,16 @@ export const TopologyEditorPage = () => {
                       min={0}
                       value={aisleCount}
                       onChange={(e) => setAisleCount(Math.max(0, Number(e.target.value)))}
-                      className="mt-2 w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      className="mt-2 w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <label className="text-[11px] text-gray-400">
                       Aisle name prefix
                       <input
                         value={aisleNamePrefix}
                         onChange={(e) => setAisleNamePrefix(e.target.value)}
-                        className="mt-2 w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                        className="mt-2 w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                       />
                     </label>
                     <label className="text-[11px] text-gray-400">
@@ -738,7 +790,7 @@ export const TopologyEditorPage = () => {
                       <input
                         value={aisleIdPrefix}
                         onChange={(e) => setAisleIdPrefix(e.target.value)}
-                        className="mt-2 w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                        className="mt-2 w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                       />
                     </label>
                   </div>
@@ -758,7 +810,7 @@ export const TopologyEditorPage = () => {
                 </div>
               )}
 
-              {wizardError && <div className="text-[11px] text-status-crit">{wizardError}</div>}
+              {wizardError && <div className="text-status-crit text-[11px]">{wizardError}</div>}
             </div>
 
             <div className="mt-6 flex items-center justify-between">
@@ -768,21 +820,21 @@ export const TopologyEditorPage = () => {
                   else if (wizardStep === 2) setWizardStep(1);
                 }}
                 disabled={wizardStep === 1}
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-300 disabled:opacity-40"
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-300 uppercase disabled:opacity-40"
               >
                 Back
               </button>
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleCloseWizard}
-                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-300"
+                  className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-300 uppercase"
                 >
                   Cancel
                 </button>
                 {wizardStep === 1 && (
                   <button
                     onClick={() => setWizardStep(2)}
-                    className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-200 hover:bg-white/20"
+                    className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-200 uppercase hover:bg-white/20"
                   >
                     Next
                   </button>
@@ -790,7 +842,7 @@ export const TopologyEditorPage = () => {
                 {wizardStep === 2 && (
                   <button
                     onClick={() => setWizardStep(3)}
-                    className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-200 hover:bg-white/20"
+                    className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-200 uppercase hover:bg-white/20"
                   >
                     Next
                   </button>
@@ -803,14 +855,14 @@ export const TopologyEditorPage = () => {
                         handleCreateRoom();
                       }}
                       disabled={wizardBusy}
-                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-300 hover:bg-white/10 disabled:opacity-50"
+                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-300 uppercase hover:bg-white/10 disabled:opacity-50"
                     >
                       Skip aisles
                     </button>
                     <button
                       onClick={handleCreateRoom}
                       disabled={wizardBusy}
-                      className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-200 hover:bg-white/20 disabled:opacity-50"
+                      className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-200 uppercase hover:bg-white/20 disabled:opacity-50"
                     >
                       {wizardBusy ? 'Creating...' : 'Create room'}
                     </button>

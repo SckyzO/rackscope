@@ -1,10 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
-@import "tailwindcss";
+@import url('tailwindcss');
 
 @theme {
-  --font-sans: "Space Grotesk", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
-  
+  --font-sans: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
   /* Status Colors */
   --color-status-ok: #10b981;
   --color-status-warn: #f59e0b;
@@ -22,7 +22,9 @@ body {
   background-color: var(--color-rack-dark);
   color: var(--color-text-base);
   font-family: var(--font-sans);
-  transition: background-color 0.3s, color 0.3s;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -31,13 +33,16 @@ body {
   width: 4px;
   height: 4px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 10px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-accent);
 }

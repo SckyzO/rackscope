@@ -29,25 +29,42 @@ export const TemplatesLibraryPage = () => {
   }, []);
 
   const normalizedQuery = query.trim().toLowerCase();
-  const matchesQuery = (value?: string) => (value || '').toLowerCase().includes(normalizedQuery);
 
   const filteredRacks = useMemo(() => {
     if (!normalizedQuery) return racks;
-    return racks.filter((rack) => matchesQuery(rack.name) || matchesQuery(rack.id));
+    return racks.filter((rack) => {
+      const name = rack.name || '';
+      const id = rack.id || '';
+      return (
+        name.toLowerCase().includes(normalizedQuery) || id.toLowerCase().includes(normalizedQuery)
+      );
+    });
   }, [normalizedQuery, racks]);
 
   const groupedDevices = useMemo(() => {
-    const grouped = devices.reduce((acc, device) => {
-      const type = (device.type || 'other').toLowerCase();
-      if (!acc[type]) acc[type] = [];
-      acc[type].push(device);
-      return acc;
-    }, {} as Record<string, DeviceTemplate[]>);
+    const grouped = devices.reduce(
+      (acc, device) => {
+        const type = (device.type || 'other').toLowerCase();
+        if (!acc[type]) acc[type] = [];
+        acc[type].push(device);
+        return acc;
+      },
+      {} as Record<string, DeviceTemplate[]>
+    );
 
     if (!normalizedQuery) return grouped;
     const filtered: Record<string, DeviceTemplate[]> = {};
     Object.entries(grouped).forEach(([type, items]) => {
-      const matching = items.filter((device) => matchesQuery(device.name) || matchesQuery(device.id) || matchesQuery(device.type));
+      const matching = items.filter((device) => {
+        const name = device.name || '';
+        const id = device.id || '';
+        const deviceType = device.type || '';
+        return (
+          name.toLowerCase().includes(normalizedQuery) ||
+          id.toLowerCase().includes(normalizedQuery) ||
+          deviceType.toLowerCase().includes(normalizedQuery)
+        );
+      });
       if (matching.length > 0) {
         filtered[type] = matching;
       }
@@ -55,52 +72,64 @@ export const TemplatesLibraryPage = () => {
     return filtered;
   }, [devices, normalizedQuery]);
 
-  const selectedTemplate = useMemo(() => {
-    if (!selected) return null;
-    if (selected.kind === 'rack') {
-      return racks.find((rack) => rack.id === selected.id) || null;
-    }
+  const selectedRack = useMemo(() => {
+    if (!selected || selected.kind !== 'rack') return null;
+    return racks.find((rack) => rack.id === selected.id) || null;
+  }, [selected, racks]);
+
+  const selectedDevice = useMemo(() => {
+    if (!selected || selected.kind !== 'device') return null;
     return devices.find((device) => device.id === selected.id) || null;
-  }, [selected, racks, devices]);
+  }, [selected, devices]);
+
+  const selectedTemplate = selectedDevice ?? selectedRack;
 
   if (loading) {
-    return <div className="p-10 font-mono text-blue-500 animate-pulse">LDR :: LOADING_TEMPLATES...</div>;
+    return (
+      <div className="animate-pulse p-10 font-mono text-blue-500">LDR :: LOADING_TEMPLATES...</div>
+    );
   }
 
   return (
-    <div className="p-10 h-full overflow-y-auto custom-scrollbar">
+    <div className="custom-scrollbar h-full overflow-y-auto p-10">
       <header className="mb-8">
-        <div className="text-[10px] font-mono uppercase tracking-[0.45em] text-gray-500">Templates</div>
+        <div className="font-mono text-[10px] tracking-[0.45em] text-gray-500 uppercase">
+          Templates
+        </div>
         <h1 className="text-3xl font-black tracking-tight uppercase">Library</h1>
-        <div className="mt-2 text-[11px] font-mono uppercase tracking-[0.2em] text-gray-500">
+        <div className="mt-2 font-mono text-[11px] tracking-[0.2em] text-gray-500 uppercase">
           {devices.length} devices / {racks.length} racks
         </div>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,380px)_minmax(0,1fr)] gap-6">
-        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 space-y-4">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+        <section className="bg-rack-panel border-rack-border space-y-4 rounded-3xl border p-6">
           <div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Library</div>
-            <h2 className="text-lg font-bold uppercase tracking-[0.2em]">Templates</h2>
+            <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+              Library
+            </div>
+            <h2 className="text-lg font-bold tracking-[0.2em] uppercase">Templates</h2>
           </div>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search name / type / id"
-            className="w-full h-10 rounded-xl bg-black/30 border border-[var(--color-border)] px-4 text-[12px] text-gray-200 placeholder:text-gray-500"
+            className="h-10 w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-4 text-[12px] text-gray-200 placeholder:text-gray-500"
           />
-          <div className="space-y-4 text-[12px] font-mono text-gray-300">
+          <div className="space-y-4 font-mono text-[12px] text-gray-300">
             <div>
-              <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">Rack</div>
+              <div className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
+                Rack
+              </div>
               <div className="mt-2 space-y-1">
                 {filteredRacks.map((rack) => (
                   <button
                     key={rack.id}
                     type="button"
                     onClick={() => setSelected({ kind: 'rack', id: rack.id })}
-                    className={`w-full text-left px-3 py-2 rounded-lg border ${
+                    className={`w-full rounded-lg border px-3 py-2 text-left ${
                       selected?.id === rack.id && selected.kind === 'rack'
-                        ? 'border-[var(--color-accent)]/30 text-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                        ? 'border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
                         : 'border-white/5 text-gray-300 hover:bg-white/5'
                     }`}
                   >
@@ -108,7 +137,7 @@ export const TemplatesLibraryPage = () => {
                   </button>
                 ))}
                 {filteredRacks.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-white/10 px-3 py-2 text-[10px] uppercase tracking-widest text-gray-500">
+                  <div className="rounded-lg border border-dashed border-white/10 px-3 py-2 text-[10px] tracking-widest text-gray-500 uppercase">
                     No rack templates
                   </div>
                 )}
@@ -116,20 +145,24 @@ export const TemplatesLibraryPage = () => {
             </div>
 
             <div>
-              <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">Device Templates</div>
+              <div className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
+                Device Templates
+              </div>
               <div className="mt-2 space-y-3">
                 {Object.entries(groupedDevices).map(([type, items]) => (
                   <div key={type}>
-                    <div className="text-[10px] uppercase tracking-widest text-gray-500">{type}</div>
+                    <div className="text-[10px] tracking-widest text-gray-500 uppercase">
+                      {type}
+                    </div>
                     <div className="mt-1 space-y-1">
                       {items.map((device) => (
                         <button
                           key={device.id}
                           type="button"
                           onClick={() => setSelected({ kind: 'device', id: device.id })}
-                          className={`w-full text-left px-3 py-2 rounded-lg border ${
+                          className={`w-full rounded-lg border px-3 py-2 text-left ${
                             selected?.id === device.id && selected.kind === 'device'
-                              ? 'border-[var(--color-accent)]/30 text-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                              ? 'border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
                               : 'border-white/5 text-gray-300 hover:bg-white/5'
                           }`}
                         >
@@ -140,7 +173,7 @@ export const TemplatesLibraryPage = () => {
                   </div>
                 ))}
                 {Object.keys(groupedDevices).length === 0 && (
-                  <div className="rounded-lg border border-dashed border-white/10 px-3 py-2 text-[10px] uppercase tracking-widest text-gray-500">
+                  <div className="rounded-lg border border-dashed border-white/10 px-3 py-2 text-[10px] tracking-widest text-gray-500 uppercase">
                     No device templates
                   </div>
                 )}
@@ -149,28 +182,30 @@ export const TemplatesLibraryPage = () => {
           </div>
         </section>
 
-        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 space-y-4">
-          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Details</div>
+        <section className="bg-rack-panel border-rack-border space-y-4 rounded-3xl border p-6">
+          <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+            Details
+          </div>
           {selectedTemplate ? (
             <>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-xl font-black text-white">{selectedTemplate.name}</div>
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">
+                  <div className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
                     {selectedTemplate.id}
                   </div>
                 </div>
                 {selected?.kind === 'device' ? (
                   <Link
                     to={`/templates/editor?id=${selectedTemplate.id}`}
-                    className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[var(--color-border)] text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/40 transition-colors"
+                    className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-[10px] font-bold tracking-widest text-gray-400 uppercase transition-colors hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
                   >
                     Edit
                   </Link>
                 ) : (
                   <Link
                     to={`/templates/editor/racks?id=${selectedTemplate.id}`}
-                    className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-[var(--color-border)] text-gray-400 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/40 transition-colors"
+                    className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-[10px] font-bold tracking-widest text-gray-400 uppercase transition-colors hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
                   >
                     Edit
                   </Link>
@@ -178,40 +213,54 @@ export const TemplatesLibraryPage = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-2xl border border-white/5 bg-black/20 px-4 py-3">
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">Type</div>
-                  <div className="text-sm text-gray-200">{(selectedTemplate as any).type || 'rack'}</div>
+                  <div className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
+                    Type
+                  </div>
+                  <div className="text-sm text-gray-200">
+                    {selected?.kind === 'device' ? selectedDevice?.type || 'device' : 'rack'}
+                  </div>
                 </div>
                 <div className="rounded-2xl border border-white/5 bg-black/20 px-4 py-3">
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">U Height</div>
-                  <div className="text-sm text-gray-200">{(selectedTemplate as any).u_height}U</div>
+                  <div className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
+                    U Height
+                  </div>
+                  <div className="text-sm text-gray-200">{selectedTemplate?.u_height}U</div>
                 </div>
                 {selected?.kind === 'device' ? (
                   <>
                     <div className="rounded-2xl border border-white/5 bg-black/20 px-4 py-3">
-                      <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">Layout</div>
+                      <div className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
+                        Layout
+                      </div>
                       <div className="text-sm text-gray-200">
-                        {(selectedTemplate as any).layout?.rows}x{(selectedTemplate as any).layout?.cols}
+                        {selectedDevice?.layout?.rows}x{selectedDevice?.layout?.cols}
                       </div>
                     </div>
                     <div className="rounded-2xl border border-white/5 bg-black/20 px-4 py-3">
-                      <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">Rear</div>
+                      <div className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
+                        Rear
+                      </div>
                       <div className="text-sm text-gray-200">
-                        {(selectedTemplate as any).rear_layout ? 'Yes' : 'No'}
+                        {selectedDevice?.rear_layout ? 'Yes' : 'No'}
                       </div>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="rounded-2xl border border-white/5 bg-black/20 px-4 py-3">
-                      <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">Front Components</div>
+                      <div className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
+                        Front Components
+                      </div>
                       <div className="text-sm text-gray-200">
-                        {(selectedTemplate as any).infrastructure?.front_components?.length || 0}
+                        {selectedRack?.infrastructure?.front_components?.length || 0}
                       </div>
                     </div>
                     <div className="rounded-2xl border border-white/5 bg-black/20 px-4 py-3">
-                      <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">Rear Components</div>
+                      <div className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
+                        Rear Components
+                      </div>
                       <div className="text-sm text-gray-200">
-                        {(selectedTemplate as any).infrastructure?.rear_components?.length || 0}
+                        {selectedRack?.infrastructure?.rear_components?.length || 0}
                       </div>
                     </div>
                   </>
@@ -219,7 +268,7 @@ export const TemplatesLibraryPage = () => {
               </div>
             </>
           ) : (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-8 text-center text-[11px] font-mono uppercase tracking-widest text-gray-500">
+            <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-8 text-center font-mono text-[11px] tracking-widest text-gray-500 uppercase">
               Select a template to view details
             </div>
           )}

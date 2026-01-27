@@ -7,9 +7,7 @@ const SLOT_HEIGHT = 24;
 
 type RackOption = { id: string; label: string };
 
-type DragPayload =
-  | { kind: 'template'; templateId: string }
-  | { kind: 'device'; deviceId: string };
+type DragPayload = { kind: 'template'; templateId: string } | { kind: 'device'; deviceId: string };
 
 const parseDragPayload = (data: string | undefined | null): DragPayload | null => {
   if (!data) return null;
@@ -63,9 +61,12 @@ export const RackEditorPage = () => {
       .then(([roomsData, catalog]) => {
         if (!active) return;
         setRooms(Array.isArray(roomsData) ? roomsData : []);
-        setDeviceTemplates((catalog as any).device_templates || []);
+        setDeviceTemplates(catalog.device_templates || []);
       })
-      .catch((err) => setError(err?.message || 'Failed to load data'))
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Failed to load data';
+        setError(message);
+      })
       .finally(() => setLoading(false));
     return () => {
       active = false;
@@ -84,16 +85,18 @@ export const RackEditorPage = () => {
     let active = true;
     if (!selectedRackId) return;
     setLoading(true);
-    api.getRack(selectedRackId)
+    api
+      .getRack(selectedRackId)
       .then((data) => {
         if (!active) return;
         setRack(data);
         setDraftDevices(data.devices || []);
         setDirty(false);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         if (!active) return;
-        setError(err?.message || 'Failed to load rack');
+        const message = err instanceof Error ? err.message : 'Failed to load rack';
+        setError(message);
       })
       .finally(() => setLoading(false));
     return () => {
@@ -111,7 +114,10 @@ export const RackEditorPage = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [dirty]);
 
-  const templateById = useMemo(() => new Map(deviceTemplates.map((t) => [t.id, t])), [deviceTemplates]);
+  const templateById = useMemo(
+    () => new Map(deviceTemplates.map((t) => [t.id, t])),
+    [deviceTemplates]
+  );
 
   const occupiedMap = useMemo(() => {
     const occupied = new Map<number, string>();
@@ -205,7 +211,9 @@ export const RackEditorPage = () => {
       }
       if (device.u_position === uPos) return;
       setError(null);
-      setDraftDevices((prev) => prev.map((d) => (d.id === device.id ? { ...d, u_position: uPos } : d)));
+      setDraftDevices((prev) =>
+        prev.map((d) => (d.id === device.id ? { ...d, u_position: uPos } : d))
+      );
       setDirty(true);
     }
   };
@@ -225,8 +233,9 @@ export const RackEditorPage = () => {
       setRack(refreshed);
       setDraftDevices(refreshed.devices || []);
       setDirty(false);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to save');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save';
+      setError(message);
     } finally {
       setSaving(false);
     }
@@ -269,7 +278,7 @@ export const RackEditorPage = () => {
             setDragHoverU(u);
           }}
           onDrop={(e) => handleDropOnU(u, e)}
-          className={`absolute left-6 right-6 border-b border-white/10 ${isHover ? 'bg-blue-500/10' : ''}`}
+          className={`absolute right-6 left-6 border-b border-white/10 ${isHover ? 'bg-blue-500/10' : ''}`}
           style={{ height: SLOT_HEIGHT, bottom }}
         />
       );
@@ -290,15 +299,18 @@ export const RackEditorPage = () => {
           key={device.id}
           draggable
           onDragStart={(e) => {
-            e.dataTransfer.setData('application/rackscope', JSON.stringify({ kind: 'device', deviceId: device.id }));
+            e.dataTransfer.setData(
+              'application/rackscope',
+              JSON.stringify({ kind: 'device', deviceId: device.id })
+            );
             e.dataTransfer.effectAllowed = 'move';
           }}
           title={tooltip}
-          className="absolute left-7 right-7 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-gray-200 shadow-md cursor-grab"
+          className="absolute right-7 left-7 cursor-grab rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-gray-200 shadow-md"
           style={{ top: topOffset + 2, height: blockHeight }}
         >
           <div className="flex items-center justify-between">
-            <div className="text-[11px] font-semibold truncate">{device.name}</div>
+            <div className="truncate text-[11px] font-semibold">{device.name}</div>
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -316,12 +328,14 @@ export const RackEditorPage = () => {
   };
 
   return (
-    <div className="p-10 h-full overflow-y-auto custom-scrollbar">
+    <div className="custom-scrollbar h-full overflow-y-auto p-10">
       <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="text-[10px] font-mono uppercase tracking-[0.45em] text-gray-500">Topology</div>
+          <div className="font-mono text-[10px] tracking-[0.45em] text-gray-500 uppercase">
+            Topology
+          </div>
           <h1 className="text-3xl font-black tracking-tight uppercase">Rack Editor</h1>
-          <div className="mt-2 text-[11px] font-mono uppercase tracking-[0.2em] text-gray-500">
+          <div className="mt-2 font-mono text-[11px] tracking-[0.2em] text-gray-500 uppercase">
             Drag templates onto empty U slots, or move existing devices.
           </div>
         </div>
@@ -329,24 +343,26 @@ export const RackEditorPage = () => {
           <button
             onClick={handleSave}
             disabled={!dirty || saving}
-            className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-200 transition hover:bg-white/20 disabled:opacity-50"
+            className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-200 uppercase transition hover:bg-white/20 disabled:opacity-50"
           >
             Save
           </button>
-          <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">
+          <div className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
             {saving ? 'Saving...' : dirty ? 'Unsaved changes' : ''}
           </div>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)_360px] gap-6">
-        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 space-y-4">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(0,1fr)_360px]">
+        <section className="bg-rack-panel border-rack-border space-y-4 rounded-3xl border p-6">
           <div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Rack</div>
+            <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+              Rack
+            </div>
             <select
               value={selectedRackId}
               onChange={(e) => requestRackChange(e.target.value)}
-              className="mt-2 w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+              className="mt-2 w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
             >
               {rackOptions.map((option) => (
                 <option key={option.id} value={option.id}>
@@ -355,44 +371,55 @@ export const RackEditorPage = () => {
               ))}
             </select>
           </div>
-          {error && <div className="text-[11px] text-status-crit">{error}</div>}
+          {error && <div className="text-status-crit text-[11px]">{error}</div>}
         </section>
 
-        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 flex justify-center">
-          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500 mb-4">Front view</div>
-          <div className="rounded-2xl border border-white/10 bg-black/30 p-2 max-w-[360px] w-full" ref={rackContainerRef}>
+        <section className="bg-rack-panel border-rack-border flex justify-center rounded-3xl border p-6">
+          <div className="mb-4 font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+            Front view
+          </div>
+          <div
+            className="w-full max-w-[360px] rounded-2xl border border-white/10 bg-black/30 p-2"
+            ref={rackContainerRef}
+          >
             <div className="flex gap-2">
               <div
-                className="w-6 text-[9px] font-mono text-gray-600 flex flex-col-reverse"
+                className="flex w-6 flex-col-reverse font-mono text-[9px] text-gray-600"
                 style={{ height: rack ? rack.u_height * SLOT_HEIGHT : 300 }}
               >
                 {rack &&
                   Array.from({ length: rack.u_height }).map((_, idx) => (
-                    <div key={idx} className="flex-1 flex items-center justify-center border-b border-white/10">
+                    <div
+                      key={idx}
+                      className="flex flex-1 items-center justify-center border-b border-white/10"
+                    >
                       <span>{idx + 1}</span>
                     </div>
                   ))}
               </div>
               <div
-                className="relative rounded-xl border border-white/10 bg-black/40 flex-1"
+                className="relative flex-1 rounded-xl border border-white/10 bg-black/40"
                 style={{ height: rack ? rack.u_height * SLOT_HEIGHT : 300 }}
               >
-                <div className="absolute left-0 top-0 bottom-0 w-5 border-r border-white/10 bg-black/60 flex items-center justify-center text-[8px] text-gray-500 font-mono">
+                <div className="absolute top-0 bottom-0 left-0 flex w-5 items-center justify-center border-r border-white/10 bg-black/60 font-mono text-[8px] text-gray-500">
                   L
                 </div>
-                <div className="absolute right-0 top-0 bottom-0 w-5 border-l border-white/10 bg-black/60 flex items-center justify-center text-[8px] text-gray-500 font-mono">
+                <div className="absolute top-0 right-0 bottom-0 flex w-5 items-center justify-center border-l border-white/10 bg-black/60 font-mono text-[8px] text-gray-500">
                   R
                 </div>
                 {renderSlotTargets()}
                 {renderDeviceBlocks()}
               </div>
               <div
-                className="w-6 text-[9px] font-mono text-gray-600 flex flex-col-reverse"
+                className="flex w-6 flex-col-reverse font-mono text-[9px] text-gray-600"
                 style={{ height: rack ? rack.u_height * SLOT_HEIGHT : 300 }}
               >
                 {rack &&
                   Array.from({ length: rack.u_height }).map((_, idx) => (
-                    <div key={idx} className="flex-1 flex items-center justify-center border-b border-white/10">
+                    <div
+                      key={idx}
+                      className="flex flex-1 items-center justify-center border-b border-white/10"
+                    >
                       <span>{idx + 1}</span>
                     </div>
                   ))}
@@ -402,21 +429,23 @@ export const RackEditorPage = () => {
           {loading && <div className="mt-3 text-[11px] text-gray-500">Loading rack...</div>}
         </section>
 
-        <section className="bg-rack-panel border border-rack-border rounded-3xl p-6 space-y-4">
-          <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Device library</div>
+        <section className="bg-rack-panel border-rack-border space-y-4 rounded-3xl border p-6">
+          <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+            Device library
+          </div>
           <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+            <Search className="absolute top-3 left-3 h-4 w-4 text-gray-500" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search templates"
-              className="w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-9 py-2 text-xs text-gray-200"
+              className="w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-9 py-2 text-xs text-gray-200"
             />
           </div>
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="w-full rounded-xl bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+            className="w-full rounded-xl border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
           >
             {templateTypes.map((type) => (
               <option key={type} value={type}>
@@ -424,19 +453,24 @@ export const RackEditorPage = () => {
               </option>
             ))}
           </select>
-          <div className="space-y-2 max-h-[520px] overflow-y-auto custom-scrollbar">
+          <div className="custom-scrollbar max-h-[520px] space-y-2 overflow-y-auto">
             {filteredTemplates.map((template) => (
               <div
                 key={template.id}
                 draggable
                 onDragStart={(e) => {
-                  e.dataTransfer.setData('application/rackscope', JSON.stringify({ kind: 'template', templateId: template.id }));
+                  e.dataTransfer.setData(
+                    'application/rackscope',
+                    JSON.stringify({ kind: 'template', templateId: template.id })
+                  );
                   e.dataTransfer.effectAllowed = 'copy';
                 }}
-                className="rounded-2xl border border-white/5 bg-black/20 px-4 py-3 text-[11px] text-gray-200 cursor-grab"
+                className="cursor-grab rounded-2xl border border-white/5 bg-black/20 px-4 py-3 text-[11px] text-gray-200"
               >
                 <div className="text-sm font-semibold">{template.name}</div>
-                <div className="text-[10px] font-mono uppercase tracking-widest text-gray-500">{template.type} • {template.u_height}U</div>
+                <div className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
+                  {template.type} • {template.u_height}U
+                </div>
               </div>
             ))}
             {filteredTemplates.length === 0 && (
@@ -456,13 +490,13 @@ export const RackEditorPage = () => {
             <div className="mt-5 flex items-center justify-end gap-2">
               <button
                 onClick={cancelDiscardChanges}
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-200 hover:bg-white/10"
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-200 uppercase hover:bg-white/10"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDiscardChanges}
-                className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-red-300 hover:bg-red-500/20"
+                className="rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-2 font-mono text-[11px] tracking-widest text-red-300 uppercase hover:bg-red-500/20"
               >
                 Discard
               </button>
@@ -471,7 +505,7 @@ export const RackEditorPage = () => {
                   handleSave();
                   setShowUnsavedPrompt(false);
                 }}
-                className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-gray-200 hover:bg-white/20"
+                className="rounded-xl border border-white/10 bg-white/10 px-4 py-2 font-mono text-[11px] tracking-widest text-gray-200 uppercase hover:bg-white/20"
               >
                 Save
               </button>

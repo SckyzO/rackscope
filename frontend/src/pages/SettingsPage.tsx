@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
-import type { AppConfig, SimulatorScenario } from '../types';
+import type { AppConfig, SimulatorScenario, SimulatorOverride } from '../types';
 import { Moon, Sun, Check, Save } from 'lucide-react';
 
 type ConfigDraft = {
@@ -66,20 +66,96 @@ type ConfigDraft = {
   };
 };
 
+const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
+  paths: {
+    topology: config.paths?.topology || '',
+    templates: config.paths?.templates || '',
+    checks: config.paths?.checks || '',
+  },
+  refresh: {
+    room_state_seconds: String(config.refresh?.room_state_seconds ?? ''),
+    rack_state_seconds: String(config.refresh?.rack_state_seconds ?? ''),
+  },
+  cache: {
+    ttl_seconds: String(config.cache?.ttl_seconds ?? ''),
+  },
+  telemetry: {
+    prometheus_url: config.telemetry?.prometheus_url || '',
+    identity_label: config.telemetry?.identity_label || 'instance',
+    rack_label: config.telemetry?.rack_label || 'rack_id',
+    chassis_label: config.telemetry?.chassis_label || 'chassis_id',
+    job_regex: config.telemetry?.job_regex || '.*',
+    prometheus_heartbeat_seconds: String(config.telemetry?.prometheus_heartbeat_seconds ?? 30),
+    prometheus_latency_window: String(config.telemetry?.prometheus_latency_window ?? 20),
+    debug_stats: config.telemetry?.debug_stats ?? false,
+    basic_auth_user: config.telemetry?.basic_auth_user || '',
+    basic_auth_password: config.telemetry?.basic_auth_password || '',
+    tls_verify: config.telemetry?.tls_verify ?? true,
+    tls_ca_file: config.telemetry?.tls_ca_file || '',
+    tls_cert_file: config.telemetry?.tls_cert_file || '',
+    tls_key_file: config.telemetry?.tls_key_file || '',
+  },
+  planner: {
+    unknown_state: config.planner?.unknown_state || 'UNKNOWN',
+    cache_ttl_seconds: String(config.planner?.cache_ttl_seconds ?? ''),
+    max_ids_per_query: String(config.planner?.max_ids_per_query ?? ''),
+  },
+  features: {
+    notifications: config.features?.notifications ?? false,
+    notifications_max_visible: String(config.features?.notifications_max_visible ?? 10),
+    playlist: config.features?.playlist ?? false,
+    offline: config.features?.offline ?? false,
+    demo: config.features?.demo ?? false,
+  },
+  simulator: {
+    update_interval_seconds: String(config.simulator?.update_interval_seconds ?? 20),
+    seed:
+      config.simulator?.seed !== null && config.simulator?.seed !== undefined
+        ? String(config.simulator?.seed)
+        : '',
+    scenario: config.simulator?.scenario || '',
+    scale_factor: String(config.simulator?.scale_factor ?? 1.0),
+    default_ttl_seconds: String(config.simulator?.default_ttl_seconds ?? 120),
+    metrics_catalog_path:
+      config.simulator?.metrics_catalog_path || 'config/simulator_metrics_full.yaml',
+    incident_rates: {
+      node_micro_failure: String(config.simulator?.incident_rates?.node_micro_failure ?? 0.001),
+      rack_macro_failure: String(config.simulator?.incident_rates?.rack_macro_failure ?? 0.01),
+      aisle_cooling_failure: String(
+        config.simulator?.incident_rates?.aisle_cooling_failure ?? 0.005
+      ),
+    },
+    incident_durations: {
+      rack: String(config.simulator?.incident_durations?.rack ?? 3),
+      aisle: String(config.simulator?.incident_durations?.aisle ?? 5),
+    },
+    overrides_path: config.simulator?.overrides_path || 'config/simulator_overrides.yaml',
+  },
+});
+
 export const SettingsPage = () => {
   const { mode, accent, setMode, setAccent } = useTheme();
   const location = useLocation();
-  const [errors, setErrors] = useState<{ ts: number; message: string; context?: string }[]>([]);
-  const [config, setConfig] = useState<AppConfig | null>(null);
+  const [errors] = useState<{ ts: number; message: string; context?: string }[]>(() =>
+    api.getErrorLog()
+  );
   const [draft, setDraft] = useState<ConfigDraft | null>(null);
   const [envVars, setEnvVars] = useState<Record<string, string | null>>({});
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [overrides, setOverrides] = useState<Array<{ id: string; instance?: string; rack_id?: string; metric: string; value: number; expires_at?: number }>>([]);
-  const [overrideForm, setOverrideForm] = useState({ scope: 'instance', instance: '', rack_id: '', metric: 'up', value: '', ttl_seconds: '' });
+  const [overrides, setOverrides] = useState<SimulatorOverride[]>([]);
+  const [overrideForm, setOverrideForm] = useState({
+    scope: 'instance',
+    instance: '',
+    rack_id: '',
+    metric: 'up',
+    value: '',
+    ttl_seconds: '',
+  });
   const [overrideError, setOverrideError] = useState<string | null>(null);
   const [scenarioOptions, setScenarioOptions] = useState<SimulatorScenario[]>([]);
 
-  const colors = [
+  type AccentColor = typeof accent;
+  const colors: Array<{ id: AccentColor; value: string }> = [
     { id: 'blue', value: '#3b82f6' },
     { id: 'green', value: '#10b981' },
     { id: 'purple', value: '#8b5cf6' },
@@ -89,15 +165,13 @@ export const SettingsPage = () => {
   ];
 
   useEffect(() => {
-    setErrors(api.getErrorLog());
-  }, []);
-
-  useEffect(() => {
     let active = true;
     const loadConfig = async () => {
       try {
         const data = await api.getConfig();
-        if (active) setConfig(data);
+        if (active) {
+          setDraft(buildDraftFromConfig(data));
+        }
       } catch (err) {
         console.error(err);
       }
@@ -130,7 +204,7 @@ export const SettingsPage = () => {
       try {
         const data = await api.getSimulatorOverrides();
         if (active) {
-          setOverrides((data?.overrides || []) as any[]);
+          setOverrides(data?.overrides || []);
         }
       } catch (err) {
         console.error(err);
@@ -159,70 +233,6 @@ export const SettingsPage = () => {
       active = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (!config) return;
-    setDraft({
-      paths: {
-        topology: config.paths?.topology || '',
-        templates: config.paths?.templates || '',
-        checks: config.paths?.checks || '',
-      },
-      refresh: {
-        room_state_seconds: String(config.refresh?.room_state_seconds ?? ''),
-        rack_state_seconds: String(config.refresh?.rack_state_seconds ?? ''),
-      },
-      cache: {
-        ttl_seconds: String(config.cache?.ttl_seconds ?? ''),
-      },
-      telemetry: {
-        prometheus_url: config.telemetry?.prometheus_url || '',
-        identity_label: config.telemetry?.identity_label || 'instance',
-        rack_label: config.telemetry?.rack_label || 'rack_id',
-        chassis_label: config.telemetry?.chassis_label || 'chassis_id',
-        job_regex: config.telemetry?.job_regex || '.*',
-        prometheus_heartbeat_seconds: String(config.telemetry?.prometheus_heartbeat_seconds ?? 30),
-        prometheus_latency_window: String(config.telemetry?.prometheus_latency_window ?? 20),
-        debug_stats: config.telemetry?.debug_stats ?? false,
-        basic_auth_user: config.telemetry?.basic_auth_user || '',
-        basic_auth_password: config.telemetry?.basic_auth_password || '',
-        tls_verify: config.telemetry?.tls_verify ?? true,
-        tls_ca_file: config.telemetry?.tls_ca_file || '',
-        tls_cert_file: config.telemetry?.tls_cert_file || '',
-        tls_key_file: config.telemetry?.tls_key_file || '',
-      },
-      planner: {
-        unknown_state: config.planner?.unknown_state || 'UNKNOWN',
-        cache_ttl_seconds: String(config.planner?.cache_ttl_seconds ?? ''),
-        max_ids_per_query: String(config.planner?.max_ids_per_query ?? ''),
-      },
-      features: {
-        notifications: config.features?.notifications ?? false,
-        notifications_max_visible: String(config.features?.notifications_max_visible ?? 10),
-        playlist: config.features?.playlist ?? false,
-        offline: config.features?.offline ?? false,
-        demo: config.features?.demo ?? false,
-      },
-      simulator: {
-        update_interval_seconds: String(config.simulator?.update_interval_seconds ?? 20),
-        seed: config.simulator?.seed !== null && config.simulator?.seed !== undefined ? String(config.simulator?.seed) : '',
-        scenario: config.simulator?.scenario || '',
-        scale_factor: String(config.simulator?.scale_factor ?? 1.0),
-        default_ttl_seconds: String(config.simulator?.default_ttl_seconds ?? 120),
-        metrics_catalog_path: config.simulator?.metrics_catalog_path || 'config/simulator_metrics_full.yaml',
-        incident_rates: {
-          node_micro_failure: String(config.simulator?.incident_rates?.node_micro_failure ?? 0.001),
-          rack_macro_failure: String(config.simulator?.incident_rates?.rack_macro_failure ?? 0.01),
-          aisle_cooling_failure: String(config.simulator?.incident_rates?.aisle_cooling_failure ?? 0.005),
-        },
-        incident_durations: {
-          rack: String(config.simulator?.incident_durations?.rack ?? 3),
-          aisle: String(config.simulator?.incident_durations?.aisle ?? 5),
-        },
-        overrides_path: config.simulator?.overrides_path || 'config/simulator_overrides.yaml',
-      },
-    });
-  }, [config]);
 
   useEffect(() => {
     if (!location.hash) return;
@@ -258,13 +268,15 @@ export const SettingsPage = () => {
       }
     }
 
-    if (!labelPattern.test(draft.telemetry.identity_label)) next.telemetry_identity_label = 'Invalid label';
+    if (!labelPattern.test(draft.telemetry.identity_label))
+      next.telemetry_identity_label = 'Invalid label';
     if (!labelPattern.test(draft.telemetry.rack_label)) next.telemetry_rack_label = 'Invalid label';
-    if (!labelPattern.test(draft.telemetry.chassis_label)) next.telemetry_chassis_label = 'Invalid label';
+    if (!labelPattern.test(draft.telemetry.chassis_label))
+      next.telemetry_chassis_label = 'Invalid label';
 
     try {
-      // eslint-disable-next-line no-new
-      new RegExp(draft.telemetry.job_regex);
+      const jobRegex = new RegExp(draft.telemetry.job_regex);
+      void jobRegex;
     } catch {
       next.telemetry_job_regex = 'Invalid regex';
     }
@@ -334,10 +346,9 @@ export const SettingsPage = () => {
   }, [draft]);
 
   const canSave = draft && Object.keys(validationErrors).length === 0;
-  const selectedScenario = useMemo(() => {
-    if (!draft?.simulator.scenario) return null;
-    return scenarioOptions.find((opt) => opt.name === draft.simulator.scenario) || null;
-  }, [scenarioOptions, draft?.simulator.scenario]);
+  const selectedScenario = draft?.simulator.scenario
+    ? scenarioOptions.find((opt) => opt.name === draft.simulator.scenario) || null
+    : null;
 
   const handleSave = async () => {
     if (!draft || !canSave) return;
@@ -362,7 +373,10 @@ export const SettingsPage = () => {
           rack_label: draft.telemetry.rack_label,
           chassis_label: draft.telemetry.chassis_label,
           job_regex: draft.telemetry.job_regex,
-          prometheus_heartbeat_seconds: Number.parseInt(draft.telemetry.prometheus_heartbeat_seconds, 10),
+          prometheus_heartbeat_seconds: Number.parseInt(
+            draft.telemetry.prometheus_heartbeat_seconds,
+            10
+          ),
           prometheus_latency_window: Number.parseInt(draft.telemetry.prometheus_latency_window, 10),
           debug_stats: draft.telemetry.debug_stats,
           basic_auth_user: draft.telemetry.basic_auth_user || null,
@@ -373,7 +387,7 @@ export const SettingsPage = () => {
           tls_key_file: draft.telemetry.tls_key_file || null,
         },
         planner: {
-          unknown_state: draft.planner.unknown_state as any,
+          unknown_state: draft.planner.unknown_state,
           cache_ttl_seconds: Number.parseInt(draft.planner.cache_ttl_seconds, 10),
           max_ids_per_query: Number.parseInt(draft.planner.max_ids_per_query, 10),
         },
@@ -392,9 +406,15 @@ export const SettingsPage = () => {
           default_ttl_seconds: Number.parseInt(draft.simulator.default_ttl_seconds, 10),
           metrics_catalog_path: draft.simulator.metrics_catalog_path,
           incident_rates: {
-            node_micro_failure: Number.parseFloat(draft.simulator.incident_rates.node_micro_failure),
-            rack_macro_failure: Number.parseFloat(draft.simulator.incident_rates.rack_macro_failure),
-            aisle_cooling_failure: Number.parseFloat(draft.simulator.incident_rates.aisle_cooling_failure),
+            node_micro_failure: Number.parseFloat(
+              draft.simulator.incident_rates.node_micro_failure
+            ),
+            rack_macro_failure: Number.parseFloat(
+              draft.simulator.incident_rates.rack_macro_failure
+            ),
+            aisle_cooling_failure: Number.parseFloat(
+              draft.simulator.incident_rates.aisle_cooling_failure
+            ),
           },
           incident_durations: {
             rack: Number.parseInt(draft.simulator.incident_durations.rack, 10),
@@ -414,129 +434,279 @@ export const SettingsPage = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="p-12 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+    <div className="custom-scrollbar h-full overflow-y-auto">
+      <div className="mx-auto max-w-5xl p-12">
+        <div className="mb-8 flex items-center justify-between">
           <h1 className="text-4xl font-black tracking-tight">Settings</h1>
           <button
             onClick={handleSave}
             disabled={!canSave || saveState === 'saving'}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors ${
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase transition-colors ${
               canSave
-                ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)] border border-[var(--color-accent)]/30 hover:bg-[var(--color-accent)]/25'
-                : 'bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed'
+                ? 'border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/25'
+                : 'cursor-not-allowed border border-white/10 bg-white/5 text-gray-500'
             }`}
           >
-            <Save className="w-4 h-4" />
+            <Save className="h-4 w-4" />
             {saveState === 'saving' ? 'Saving' : saveState === 'saved' ? 'Saved' : 'Save'}
           </button>
         </div>
 
         <div className="space-y-12">
           <section id="configuration">
-            <div className="flex items-center justify-between mb-6 border-b border-rack-border pb-2">
+            <div className="border-rack-border mb-6 flex items-center justify-between border-b pb-2">
               <h2 className="text-xl font-bold">Configuration</h2>
-              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500">Editable</span>
+              <span className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+                Editable
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
-                <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Telemetry</h3>
-                <label className="text-xs text-gray-400" title="Prometheus API base URL (http/https)">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
+                <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
+                  Telemetry
+                </h3>
+                <label
+                  className="text-xs text-gray-400"
+                  title="Prometheus API base URL (http/https)"
+                >
                   Prometheus URL
                   <input
                     value={draft?.telemetry.prometheus_url || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, prometheus_url: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: { ...prev.telemetry, prometheus_url: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     placeholder="http://prometheus:9090"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Full URL to Prometheus API (http/https).</div>
-                  {validationErrors.telemetry_prometheus_url && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_prometheus_url}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Full URL to Prometheus API (http/https).
+                  </div>
+                  {validationErrors.telemetry_prometheus_url && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.telemetry_prometheus_url}
+                    </div>
+                  )}
                 </label>
-                <label className="text-xs text-gray-400" title="Prometheus label used to identify nodes">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Prometheus label used to identify nodes"
+                >
                   Identity label
                   <input
                     value={draft?.telemetry.identity_label || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, identity_label: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: { ...prev.telemetry, identity_label: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Prometheus label used to identify nodes (e.g. instance).</div>
-                  {validationErrors.telemetry_identity_label && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_identity_label}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Prometheus label used to identify nodes (e.g. instance).
+                  </div>
+                  {validationErrors.telemetry_identity_label && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.telemetry_identity_label}
+                    </div>
+                  )}
                 </label>
-                <label className="text-xs text-gray-400" title="Prometheus label used to aggregate rack metrics">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Prometheus label used to aggregate rack metrics"
+                >
                   Rack label
                   <input
                     value={draft?.telemetry.rack_label || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, rack_label: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: { ...prev.telemetry, rack_label: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Label used to aggregate rack metrics.</div>
-                  {validationErrors.telemetry_rack_label && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_rack_label}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Label used to aggregate rack metrics.
+                  </div>
+                  {validationErrors.telemetry_rack_label && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.telemetry_rack_label}
+                    </div>
+                  )}
                 </label>
-                <label className="text-xs text-gray-400" title="Prometheus label used for chassis/blade aggregation">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Prometheus label used for chassis/blade aggregation"
+                >
                   Chassis label
                   <input
                     value={draft?.telemetry.chassis_label || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, chassis_label: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: { ...prev.telemetry, chassis_label: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Label used for chassis/blade aggregation.</div>
-                  {validationErrors.telemetry_chassis_label && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_chassis_label}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Label used for chassis/blade aggregation.
+                  </div>
+                  {validationErrors.telemetry_chassis_label && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.telemetry_chassis_label}
+                    </div>
+                  )}
                 </label>
-                <label className="text-xs text-gray-400" title="Regex used to match Prometheus job labels">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Regex used to match Prometheus job labels"
+                >
                   Job regex
                   <input
                     value={draft?.telemetry.job_regex || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, job_regex: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: { ...prev.telemetry, job_regex: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     placeholder="node|ipmi"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Regex used to match Prometheus job labels.</div>
-                  {validationErrors.telemetry_job_regex && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_job_regex}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Regex used to match Prometheus job labels.
+                  </div>
+                  {validationErrors.telemetry_job_regex && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.telemetry_job_regex}
+                    </div>
+                  )}
                 </label>
-                <label className="text-xs text-gray-400" title="Interval for heartbeat calls to Prometheus">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Interval for heartbeat calls to Prometheus"
+                >
                   Prometheus heartbeat (seconds)
                   <input
                     type="number"
                     value={draft?.telemetry.prometheus_heartbeat_seconds || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, prometheus_heartbeat_seconds: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: {
+                              ...prev.telemetry,
+                              prometheus_heartbeat_seconds: e.target.value,
+                            },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Min 10s. Drives scrape countdown in sidebar.</div>
-                  {validationErrors.telemetry_heartbeat && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_heartbeat}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Min 10s. Drives scrape countdown in sidebar.
+                  </div>
+                  {validationErrors.telemetry_heartbeat && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.telemetry_heartbeat}
+                    </div>
+                  )}
                 </label>
-                <label className="text-xs text-gray-400" title="Number of latency samples used to compute average">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Number of latency samples used to compute average"
+                >
                   Prometheus latency window
                   <input
                     type="number"
                     value={draft?.telemetry.prometheus_latency_window || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, prometheus_latency_window: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: {
+                              ...prev.telemetry,
+                              prometheus_latency_window: e.target.value,
+                            },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Number of samples for average latency.</div>
-                  {validationErrors.telemetry_latency_window && <div className="text-[10px] text-status-crit">{validationErrors.telemetry_latency_window}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Number of samples for average latency.
+                  </div>
+                  {validationErrors.telemetry_latency_window && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.telemetry_latency_window}
+                    </div>
+                  )}
                 </label>
-                <label className="text-xs text-gray-400" title="Enable telemetry debug stats logging">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Enable telemetry debug stats logging"
+                >
                   Telemetry debug
                   <select
                     value={draft?.telemetry.debug_stats ? 'true' : 'false'}
-                    onChange={(e) => setDraft((prev) => prev && ({
-                      ...prev,
-                      telemetry: { ...prev.telemetry, debug_stats: e.target.value === 'true' },
-                    }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: {
+                              ...prev.telemetry,
+                              debug_stats: e.target.value === 'true',
+                            },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   >
                     <option value="false">false</option>
                     <option value="true">true</option>
                   </select>
-                  <div className="mt-1 text-[10px] text-gray-500">Logs PromQL batch sizes and counts.</div>
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Logs PromQL batch sizes and counts.
+                  </div>
                 </label>
                 <label className="text-xs text-gray-400" title="Basic auth username for Prometheus">
                   Basic auth username
                   <input
                     value={draft?.telemetry.basic_auth_user || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, basic_auth_user: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: { ...prev.telemetry, basic_auth_user: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
                   <div className="mt-1 text-[10px] text-gray-500">Optional. Requires password.</div>
                 </label>
@@ -545,32 +715,63 @@ export const SettingsPage = () => {
                   <input
                     type="password"
                     value={draft?.telemetry.basic_auth_password || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, basic_auth_password: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: { ...prev.telemetry, basic_auth_password: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
                   <div className="mt-1 text-[10px] text-gray-500">Optional. Requires username.</div>
                 </label>
                 {validationErrors.telemetry_basic_auth && (
-                  <div className="text-[10px] text-status-crit">{validationErrors.telemetry_basic_auth}</div>
+                  <div className="text-status-crit text-[10px]">
+                    {validationErrors.telemetry_basic_auth}
+                  </div>
                 )}
                 <label className="text-xs text-gray-400" title="Verify Prometheus TLS certificate">
                   TLS verify
                   <select
                     value={draft?.telemetry.tls_verify ? 'true' : 'false'}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, tls_verify: e.target.value === 'true' } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: { ...prev.telemetry, tls_verify: e.target.value === 'true' },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   >
                     <option value="true">true</option>
                     <option value="false">false</option>
                   </select>
-                  <div className="mt-1 text-[10px] text-gray-500">Disable only for trusted internal endpoints.</div>
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Disable only for trusted internal endpoints.
+                  </div>
                 </label>
-                <label className="text-xs text-gray-400" title="Custom CA bundle path for TLS verification">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Custom CA bundle path for TLS verification"
+                >
                   TLS CA file
                   <input
                     value={draft?.telemetry.tls_ca_file || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, tls_ca_file: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: { ...prev.telemetry, tls_ca_file: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
                   <div className="mt-1 text-[10px] text-gray-500">Optional CA bundle path.</div>
                 </label>
@@ -578,8 +779,16 @@ export const SettingsPage = () => {
                   TLS client cert
                   <input
                     value={draft?.telemetry.tls_cert_file || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, tls_cert_file: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: { ...prev.telemetry, tls_cert_file: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
                   <div className="mt-1 text-[10px] text-gray-500">Optional. Requires key.</div>
                 </label>
@@ -587,163 +796,333 @@ export const SettingsPage = () => {
                   TLS client key
                   <input
                     value={draft?.telemetry.tls_key_file || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, telemetry: { ...prev.telemetry, tls_key_file: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            telemetry: { ...prev.telemetry, tls_key_file: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
                   <div className="mt-1 text-[10px] text-gray-500">Optional. Requires cert.</div>
                 </label>
                 {validationErrors.telemetry_tls_pair && (
-                  <div className="text-[10px] text-status-crit">{validationErrors.telemetry_tls_pair}</div>
+                  <div className="text-status-crit text-[10px]">
+                    {validationErrors.telemetry_tls_pair}
+                  </div>
                 )}
               </div>
 
-              <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
-                <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Refresh</h3>
-                <label className="text-xs text-gray-400" title="Room polling interval in seconds (min 10)">
+              <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
+                <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
+                  Refresh
+                </h3>
+                <label
+                  className="text-xs text-gray-400"
+                  title="Room polling interval in seconds (min 10)"
+                >
                   Room state (seconds)
                   <input
                     type="number"
                     value={draft?.refresh.room_state_seconds || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, refresh: { ...prev.refresh, room_state_seconds: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            refresh: { ...prev.refresh, room_state_seconds: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Min 10s. Used for room polling + Prometheus heartbeat.</div>
-                  {validationErrors.refresh_room && <div className="text-[10px] text-status-crit">{validationErrors.refresh_room}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Min 10s. Used for room polling + Prometheus heartbeat.
+                  </div>
+                  {validationErrors.refresh_room && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.refresh_room}
+                    </div>
+                  )}
                 </label>
-                <label className="text-xs text-gray-400" title="Rack polling interval in seconds (min 10)">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Rack polling interval in seconds (min 10)"
+                >
                   Rack state (seconds)
                   <input
                     type="number"
                     value={draft?.refresh.rack_state_seconds || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, refresh: { ...prev.refresh, rack_state_seconds: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            refresh: { ...prev.refresh, rack_state_seconds: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Min 10s. Used for rack polling.</div>
-                  {validationErrors.refresh_rack && <div className="text-[10px] text-status-crit">{validationErrors.refresh_rack}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Min 10s. Used for rack polling.
+                  </div>
+                  {validationErrors.refresh_rack && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.refresh_rack}
+                    </div>
+                  )}
                 </label>
                 <label className="text-xs text-gray-400" title="Client cache TTL in seconds">
                   Cache TTL (seconds)
                   <input
                     type="number"
                     value={draft?.cache.ttl_seconds || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, cache: { ttl_seconds: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) => prev && { ...prev, cache: { ttl_seconds: e.target.value } }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Client cache duration before refetch.</div>
-                  {validationErrors.cache_ttl && <div className="text-[10px] text-status-crit">{validationErrors.cache_ttl}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Client cache duration before refetch.
+                  </div>
+                  {validationErrors.cache_ttl && (
+                    <div className="text-status-crit text-[10px]">{validationErrors.cache_ttl}</div>
+                  )}
                 </label>
               </div>
 
-              <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
-                <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Planner</h3>
+              <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
+                <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
+                  Planner
+                </h3>
                 <label className="text-xs text-gray-400" title="Default state when no checks match">
                   UNKNOWN policy
                   <select
                     value={draft?.planner.unknown_state || 'UNKNOWN'}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, planner: { ...prev.planner, unknown_state: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            planner: { ...prev.planner, unknown_state: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   >
                     <option value="UNKNOWN">UNKNOWN</option>
                     <option value="OK">OK</option>
                     <option value="WARN">WARN</option>
                     <option value="CRIT">CRIT</option>
                   </select>
-                  <div className="mt-1 text-[10px] text-gray-500">Default state when no checks match.</div>
-                  {validationErrors.planner_unknown_state && <div className="text-[10px] text-status-crit">{validationErrors.planner_unknown_state}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Default state when no checks match.
+                  </div>
+                  {validationErrors.planner_unknown_state && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.planner_unknown_state}
+                    </div>
+                  )}
                 </label>
-                <label className="text-xs text-gray-400" title="Planner snapshot cache TTL in seconds">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Planner snapshot cache TTL in seconds"
+                >
                   Planner cache TTL (seconds)
                   <input
                     type="number"
                     value={draft?.planner.cache_ttl_seconds || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, planner: { ...prev.planner, cache_ttl_seconds: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            planner: { ...prev.planner, cache_ttl_seconds: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Cache duration for planner snapshots.</div>
-                  {validationErrors.planner_cache && <div className="text-[10px] text-status-crit">{validationErrors.planner_cache}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Cache duration for planner snapshots.
+                  </div>
+                  {validationErrors.planner_cache && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.planner_cache}
+                    </div>
+                  )}
                 </label>
                 <label className="text-xs text-gray-400" title="Max IDs per PromQL query chunk">
                   Max IDs per query
                   <input
                     type="number"
                     value={draft?.planner.max_ids_per_query || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, planner: { ...prev.planner, max_ids_per_query: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            planner: { ...prev.planner, max_ids_per_query: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Controls query chunking to Prometheus.</div>
-                  {validationErrors.planner_max && <div className="text-[10px] text-status-crit">{validationErrors.planner_max}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Controls query chunking to Prometheus.
+                  </div>
+                  {validationErrors.planner_max && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.planner_max}
+                    </div>
+                  )}
                 </label>
               </div>
 
-              <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
-                <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Paths</h3>
+              <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
+                <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">Paths</h3>
                 <label className="text-xs text-gray-400" title="Topology directory path">
                   Topology path
                   <input
                     value={draft?.paths.topology || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, paths: { ...prev.paths, topology: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && { ...prev, paths: { ...prev.paths, topology: e.target.value } }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Directory containing the topology hierarchy.</div>
-                  {validationErrors.paths_topology && <div className="text-[10px] text-status-crit">{validationErrors.paths_topology}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Directory containing the topology hierarchy.
+                  </div>
+                  {validationErrors.paths_topology && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.paths_topology}
+                    </div>
+                  )}
                 </label>
                 <label className="text-xs text-gray-400" title="Templates directory path">
                   Templates path
                   <input
                     value={draft?.paths.templates || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, paths: { ...prev.paths, templates: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && { ...prev, paths: { ...prev.paths, templates: e.target.value } }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Directory containing device/rack templates.</div>
-                  {validationErrors.paths_templates && <div className="text-[10px] text-status-crit">{validationErrors.paths_templates}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Directory containing device/rack templates.
+                  </div>
+                  {validationErrors.paths_templates && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.paths_templates}
+                    </div>
+                  )}
                 </label>
                 <label className="text-xs text-gray-400" title="Checks directory path">
                   Checks path
                   <input
                     value={draft?.paths.checks || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, paths: { ...prev.paths, checks: e.target.value } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && { ...prev, paths: { ...prev.paths, checks: e.target.value } }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Directory containing check definitions.</div>
-                  {validationErrors.paths_checks && <div className="text-[10px] text-status-crit">{validationErrors.paths_checks}</div>}
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Directory containing check definitions.
+                  </div>
+                  {validationErrors.paths_checks && (
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.paths_checks}
+                    </div>
+                  )}
                 </label>
               </div>
 
-              <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
-                <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Feature toggles</h3>
+              <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
+                <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
+                  Feature toggles
+                </h3>
                 <label className="text-xs text-gray-400" title="Enable notifications UI">
                   Notifications
                   <select
                     value={draft?.features.notifications ? 'true' : 'false'}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, features: { ...prev.features, notifications: e.target.value === 'true' } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            features: {
+                              ...prev.features,
+                              notifications: e.target.value === 'true',
+                            },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   >
                     <option value="false">false</option>
                     <option value="true">true</option>
                   </select>
                 </label>
-                <label className="text-xs text-gray-400" title="Max alert rows shown before scrolling">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Max alert rows shown before scrolling"
+                >
                   Max visible alerts
                   <input
                     type="number"
                     value={draft?.features.notifications_max_visible || ''}
-                    onChange={(e) => setDraft((prev) => prev && ({
-                      ...prev,
-                      features: { ...prev.features, notifications_max_visible: e.target.value },
-                    }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            features: {
+                              ...prev.features,
+                              notifications_max_visible: e.target.value,
+                            },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   />
-                  <div className="mt-1 text-[10px] text-gray-500">Controls alert panel height (scroll for more).</div>
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Controls alert panel height (scroll for more).
+                  </div>
                   {validationErrors.notifications_max_visible && (
-                    <div className="text-[10px] text-status-crit">{validationErrors.notifications_max_visible}</div>
+                    <div className="text-status-crit text-[10px]">
+                      {validationErrors.notifications_max_visible}
+                    </div>
                   )}
                 </label>
                 <label className="text-xs text-gray-400" title="Enable playlist mode UI">
                   Playlist
                   <select
                     value={draft?.features.playlist ? 'true' : 'false'}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, features: { ...prev.features, playlist: e.target.value === 'true' } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            features: { ...prev.features, playlist: e.target.value === 'true' },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   >
                     <option value="false">false</option>
                     <option value="true">true</option>
@@ -753,19 +1132,38 @@ export const SettingsPage = () => {
                   Offline snapshots
                   <select
                     value={draft?.features.offline ? 'true' : 'false'}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, features: { ...prev.features, offline: e.target.value === 'true' } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            features: { ...prev.features, offline: e.target.value === 'true' },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   >
                     <option value="false">false</option>
                     <option value="true">true</option>
                   </select>
                 </label>
-                <label className="text-xs text-gray-400" title="Enable simulator controls for demo mode">
+                <label
+                  className="text-xs text-gray-400"
+                  title="Enable simulator controls for demo mode"
+                >
                   Demo mode
                   <select
                     value={draft?.features.demo ? 'true' : 'false'}
-                    onChange={(e) => setDraft((prev) => prev && ({ ...prev, features: { ...prev.features, demo: e.target.value === 'true' } }))}
-                    className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            features: { ...prev.features, demo: e.target.value === 'true' },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                   >
                     <option value="false">false</option>
                     <option value="true">true</option>
@@ -777,21 +1175,41 @@ export const SettingsPage = () => {
 
           {draft?.features.demo && (
             <section id="simulator">
-              <h2 className="text-xl font-bold mb-6 border-b border-rack-border pb-2">Simulator</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
-                  <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Runtime</h3>
+              <h2 className="border-rack-border mb-6 border-b pb-2 text-xl font-bold">Simulator</h2>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
+                  <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
+                    Runtime
+                  </h3>
                   <label className="text-xs text-gray-400" title="Simulator update interval">
                     Update interval (seconds)
                     <input
                       type="number"
                       value={draft?.simulator.update_interval_seconds || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, update_interval_seconds: e.target.value } }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              simulator: {
+                                ...prev.simulator,
+                                update_interval_seconds: e.target.value,
+                              },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
-                    {validationErrors.sim_update_interval && <div className="text-[10px] text-status-crit">{validationErrors.sim_update_interval}</div>}
+                    {validationErrors.sim_update_interval && (
+                      <div className="text-status-crit text-[10px]">
+                        {validationErrors.sim_update_interval}
+                      </div>
+                    )}
                   </label>
-                  <label className="text-xs text-gray-400" title="Scenario name from simulator.yaml">
+                  <label
+                    className="text-xs text-gray-400"
+                    title="Scenario name from simulator.yaml"
+                  >
                     Scenario
                     <select
                       value={draft?.simulator.scenario || ''}
@@ -800,7 +1218,9 @@ export const SettingsPage = () => {
                           if (!prev) return prev;
                           const nextScenario = e.target.value;
                           const nextDefaultTtl =
-                            nextScenario && prev.simulator.default_ttl_seconds !== '0' ? '0' : prev.simulator.default_ttl_seconds;
+                            nextScenario && prev.simulator.default_ttl_seconds !== '0'
+                              ? '0'
+                              : prev.simulator.default_ttl_seconds;
                           return {
                             ...prev,
                             simulator: {
@@ -811,78 +1231,165 @@ export const SettingsPage = () => {
                           };
                         })
                       }
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     >
                       <option value="">(none)</option>
                       {scenarioOptions.map((item) => (
-                        <option key={item.name} value={item.name}>{item.name}</option>
+                        <option key={item.name} value={item.name}>
+                          {item.name}
+                        </option>
                       ))}
                     </select>
                     {selectedScenario?.description && (
-                      <div className="mt-1 text-[10px] text-gray-500">{selectedScenario.description}</div>
+                      <div className="mt-1 text-[10px] text-gray-500">
+                        {selectedScenario.description}
+                      </div>
                     )}
                   </label>
-                  <label className="text-xs text-gray-400" title="Scale factor for incident rates (1.0 = baseline, 2.0 = twice as frequent)">
+                  <label
+                    className="text-xs text-gray-400"
+                    title="Scale factor for incident rates (1.0 = baseline, 2.0 = twice as frequent)"
+                  >
                     Scale factor
                     <input
                       type="number"
                       step="0.1"
                       value={draft?.simulator.scale_factor || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, scale_factor: e.target.value } }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              simulator: { ...prev.simulator, scale_factor: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
-                    {validationErrors.sim_scale && <div className="text-[10px] text-status-crit">{validationErrors.sim_scale}</div>}
+                    {validationErrors.sim_scale && (
+                      <div className="text-status-crit text-[10px]">
+                        {validationErrors.sim_scale}
+                      </div>
+                    )}
                   </label>
-                  <label className="text-xs text-gray-400" title="Seed for deterministic simulation">
+                  <label
+                    className="text-xs text-gray-400"
+                    title="Seed for deterministic simulation"
+                  >
                     Seed
                     <input
                       type="number"
                       value={draft?.simulator.seed || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, seed: e.target.value } }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              simulator: { ...prev.simulator, seed: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                       placeholder="Optional"
                     />
                   </label>
-                  <label className="text-xs text-gray-400" title="Default TTL for overrides when left empty (0 disables TTL)">
+                  <label
+                    className="text-xs text-gray-400"
+                    title="Default TTL for overrides when left empty (0 disables TTL)"
+                  >
                     Override default TTL (seconds)
                     <input
                       type="number"
                       value={draft?.simulator.default_ttl_seconds || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, default_ttl_seconds: e.target.value } }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              simulator: { ...prev.simulator, default_ttl_seconds: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
-                    {validationErrors.sim_default_ttl && <div className="text-[10px] text-status-crit">{validationErrors.sim_default_ttl}</div>}
+                    {validationErrors.sim_default_ttl && (
+                      <div className="text-status-crit text-[10px]">
+                        {validationErrors.sim_default_ttl}
+                      </div>
+                    )}
                   </label>
                   <label className="text-xs text-gray-400" title="Overrides file path">
                     Overrides path
                     <input
                       value={draft?.simulator.overrides_path || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, overrides_path: e.target.value } }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              simulator: { ...prev.simulator, overrides_path: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
                   </label>
-                  <label className="text-xs text-gray-400" title="Metrics catalog file for multi-metric simulator">
+                  <label
+                    className="text-xs text-gray-400"
+                    title="Metrics catalog file for multi-metric simulator"
+                  >
                     Metrics catalog path
                     <input
                       value={draft?.simulator.metrics_catalog_path || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, metrics_catalog_path: e.target.value } }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              simulator: {
+                                ...prev.simulator,
+                                metrics_catalog_path: e.target.value,
+                              },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
                   </label>
                 </div>
 
-                <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
-                  <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Incident rates</h3>
+                <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
+                  <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
+                    Incident rates
+                  </h3>
                   <label className="text-xs text-gray-400">
                     Node micro failure
                     <input
                       type="number"
                       step="0.0001"
                       value={draft?.simulator.incident_rates.node_micro_failure || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, incident_rates: { ...prev.simulator.incident_rates, node_micro_failure: e.target.value } } }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              simulator: {
+                                ...prev.simulator,
+                                incident_rates: {
+                                  ...prev.simulator.incident_rates,
+                                  node_micro_failure: e.target.value,
+                                },
+                              },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
-                    {validationErrors.sim_rate_node && <div className="text-[10px] text-status-crit">{validationErrors.sim_rate_node}</div>}
+                    {validationErrors.sim_rate_node && (
+                      <div className="text-status-crit text-[10px]">
+                        {validationErrors.sim_rate_node}
+                      </div>
+                    )}
                   </label>
                   <label className="text-xs text-gray-400">
                     Rack macro failure
@@ -890,10 +1397,28 @@ export const SettingsPage = () => {
                       type="number"
                       step="0.0001"
                       value={draft?.simulator.incident_rates.rack_macro_failure || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, incident_rates: { ...prev.simulator.incident_rates, rack_macro_failure: e.target.value } } }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              simulator: {
+                                ...prev.simulator,
+                                incident_rates: {
+                                  ...prev.simulator.incident_rates,
+                                  rack_macro_failure: e.target.value,
+                                },
+                              },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
-                    {validationErrors.sim_rate_rack && <div className="text-[10px] text-status-crit">{validationErrors.sim_rate_rack}</div>}
+                    {validationErrors.sim_rate_rack && (
+                      <div className="text-status-crit text-[10px]">
+                        {validationErrors.sim_rate_rack}
+                      </div>
+                    )}
                   </label>
                   <label className="text-xs text-gray-400">
                     Aisle cooling failure
@@ -901,67 +1426,133 @@ export const SettingsPage = () => {
                       type="number"
                       step="0.0001"
                       value={draft?.simulator.incident_rates.aisle_cooling_failure || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, incident_rates: { ...prev.simulator.incident_rates, aisle_cooling_failure: e.target.value } } }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              simulator: {
+                                ...prev.simulator,
+                                incident_rates: {
+                                  ...prev.simulator.incident_rates,
+                                  aisle_cooling_failure: e.target.value,
+                                },
+                              },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
-                    {validationErrors.sim_rate_aisle && <div className="text-[10px] text-status-crit">{validationErrors.sim_rate_aisle}</div>}
+                    {validationErrors.sim_rate_aisle && (
+                      <div className="text-status-crit text-[10px]">
+                        {validationErrors.sim_rate_aisle}
+                      </div>
+                    )}
                   </label>
                 </div>
 
-                <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
-                  <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Incident durations</h3>
+                <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
+                  <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
+                    Incident durations
+                  </h3>
                   <label className="text-xs text-gray-400">
                     Rack duration (ticks)
                     <input
                       type="number"
                       value={draft?.simulator.incident_durations.rack || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, incident_durations: { ...prev.simulator.incident_durations, rack: e.target.value } } }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              simulator: {
+                                ...prev.simulator,
+                                incident_durations: {
+                                  ...prev.simulator.incident_durations,
+                                  rack: e.target.value,
+                                },
+                              },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
-                    {validationErrors.sim_duration_rack && <div className="text-[10px] text-status-crit">{validationErrors.sim_duration_rack}</div>}
+                    {validationErrors.sim_duration_rack && (
+                      <div className="text-status-crit text-[10px]">
+                        {validationErrors.sim_duration_rack}
+                      </div>
+                    )}
                   </label>
                   <label className="text-xs text-gray-400">
                     Aisle duration (ticks)
                     <input
                       type="number"
                       value={draft?.simulator.incident_durations.aisle || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, incident_durations: { ...prev.simulator.incident_durations, aisle: e.target.value } } }))}
-                      className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              simulator: {
+                                ...prev.simulator,
+                                incident_durations: {
+                                  ...prev.simulator.incident_durations,
+                                  aisle: e.target.value,
+                                },
+                              },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
-                    {validationErrors.sim_duration_aisle && <div className="text-[10px] text-status-crit">{validationErrors.sim_duration_aisle}</div>}
+                    {validationErrors.sim_duration_aisle && (
+                      <div className="text-status-crit text-[10px]">
+                        {validationErrors.sim_duration_aisle}
+                      </div>
+                    )}
                   </label>
                 </div>
 
-                <div className="bg-rack-panel border border-rack-border rounded-xl p-6 space-y-3">
-                  <h3 className="font-mono text-sm uppercase text-gray-500 tracking-widest">Overrides</h3>
+                <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
+                  <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
+                    Overrides
+                  </h3>
                   <div className="space-y-2">
                     <select
                       value={overrideForm.scope}
-                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, scope: e.target.value }))}
-                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setOverrideForm((prev) => ({ ...prev, scope: e.target.value }))
+                      }
+                      className="w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     >
                       <option value="instance">Instance override</option>
                       <option value="rack">Rack override</option>
                     </select>
                     {overrideForm.scope === 'instance' ? (
-                    <input
-                      value={overrideForm.instance}
-                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, instance: e.target.value }))}
-                      placeholder="Instance (e.g. compute001)"
-                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
-                    />
+                      <input
+                        value={overrideForm.instance}
+                        onChange={(e) =>
+                          setOverrideForm((prev) => ({ ...prev, instance: e.target.value }))
+                        }
+                        placeholder="Instance (e.g. compute001)"
+                        className="w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      />
                     ) : (
-                    <input
-                      value={overrideForm.rack_id}
-                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, rack_id: e.target.value }))}
-                      placeholder="Rack ID (e.g. r01-01)"
-                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
-                    />
+                      <input
+                        value={overrideForm.rack_id}
+                        onChange={(e) =>
+                          setOverrideForm((prev) => ({ ...prev, rack_id: e.target.value }))
+                        }
+                        placeholder="Rack ID (e.g. r01-01)"
+                        className="w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      />
                     )}
                     <select
                       value={overrideForm.metric}
-                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, metric: e.target.value }))}
-                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      onChange={(e) =>
+                        setOverrideForm((prev) => ({ ...prev, metric: e.target.value }))
+                      }
+                      className="w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     >
                       <option value="up">up</option>
                       <option value="node_temperature_celsius">node_temperature_celsius</option>
@@ -972,17 +1563,23 @@ export const SettingsPage = () => {
                     </select>
                     <input
                       value={overrideForm.value}
-                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, value: e.target.value }))}
+                      onChange={(e) =>
+                        setOverrideForm((prev) => ({ ...prev, value: e.target.value }))
+                      }
                       placeholder="Value"
-                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      className="w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
                     <input
                       value={overrideForm.ttl_seconds}
-                      onChange={(e) => setOverrideForm((prev) => ({ ...prev, ttl_seconds: e.target.value }))}
+                      onChange={(e) =>
+                        setOverrideForm((prev) => ({ ...prev, ttl_seconds: e.target.value }))
+                      }
                       placeholder={`TTL seconds (default ${draft?.simulator.default_ttl_seconds ?? 120})`}
-                      className="w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
+                      className="w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
-                    {overrideError && <div className="text-[10px] text-status-crit">{overrideError}</div>}
+                    {overrideError && (
+                      <div className="text-status-crit text-[10px]">{overrideError}</div>
+                    )}
                     <button
                       type="button"
                       onClick={async () => {
@@ -1003,7 +1600,10 @@ export const SettingsPage = () => {
                           setOverrideError('Rack overrides only support rack_down');
                           return;
                         }
-                        if (overrideForm.scope === 'instance' && overrideForm.metric === 'rack_down') {
+                        if (
+                          overrideForm.scope === 'instance' &&
+                          overrideForm.metric === 'rack_down'
+                        ) {
                           setOverrideError('rack_down requires rack scope');
                           return;
                         }
@@ -1016,7 +1616,10 @@ export const SettingsPage = () => {
                           setOverrideError('up must be 0 or 1');
                           return;
                         }
-                        if (overrideForm.metric === 'node_health_status' && ![0, 1, 2].includes(value)) {
+                        if (
+                          overrideForm.metric === 'node_health_status' &&
+                          ![0, 1, 2].includes(value)
+                        ) {
                           setOverrideError('node_health_status must be 0, 1, or 2');
                           return;
                         }
@@ -1031,20 +1634,34 @@ export const SettingsPage = () => {
                           ttl = 0;
                         }
                         const payload = {
-                          instance: overrideForm.scope === 'instance' ? overrideForm.instance : undefined,
+                          instance:
+                            overrideForm.scope === 'instance' ? overrideForm.instance : undefined,
                           rack_id: overrideForm.scope === 'rack' ? overrideForm.rack_id : undefined,
                           metric: overrideForm.metric,
                           value,
                           ttl_seconds: ttl,
                         };
                         const data = await api.addSimulatorOverride(payload);
-                        setOverrides((data?.overrides || []) as any[]);
-                        setOverrideForm({ scope: overrideForm.scope, instance: '', rack_id: '', metric: 'up', value: '', ttl_seconds: '' });
+                        setOverrides(data?.overrides || []);
+                        setOverrideForm({
+                          scope: overrideForm.scope,
+                          instance: '',
+                          rack_id: '',
+                          metric: 'up',
+                          value: '',
+                          ttl_seconds: '',
+                        });
                         if (draft?.simulator.default_ttl_seconds !== '0') {
-                          setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, default_ttl_seconds: '0' } }));
+                          setDraft(
+                            (prev) =>
+                              prev && {
+                                ...prev,
+                                simulator: { ...prev.simulator, default_ttl_seconds: '0' },
+                              }
+                          );
                         }
                       }}
-                      className="w-full rounded-lg bg-[var(--color-accent)]/15 text-[var(--color-accent)] border border-[var(--color-accent)]/30 px-3 py-2 text-xs font-bold uppercase tracking-widest"
+                      className="w-full rounded-lg border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 px-3 py-2 text-xs font-bold tracking-widest text-[var(--color-accent)] uppercase"
                     >
                       Add override
                     </button>
@@ -1052,9 +1669,9 @@ export const SettingsPage = () => {
                       type="button"
                       onClick={async () => {
                         const data = await api.clearSimulatorOverrides();
-                        setOverrides((data?.overrides || []) as any[]);
+                        setOverrides(data?.overrides || []);
                       }}
-                      className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs uppercase tracking-widest text-gray-400"
+                      className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs tracking-widest text-gray-400 uppercase"
                     >
                       Reset overrides
                     </button>
@@ -1064,8 +1681,8 @@ export const SettingsPage = () => {
                     {overrides.map((item) => (
                       <div key={item.id} className="flex items-center justify-between gap-3">
                         <div>
-                          <div className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
-                            {(item.instance || item.rack_id)} · {item.metric}
+                          <div className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
+                            {item.instance || item.rack_id} · {item.metric}
                           </div>
                           <div>{item.value}</div>
                         </div>
@@ -1073,9 +1690,9 @@ export const SettingsPage = () => {
                           type="button"
                           onClick={async () => {
                             const data = await api.deleteSimulatorOverride(item.id);
-                            setOverrides((data?.overrides || []) as any[]);
+                            setOverrides(data?.overrides || []);
                           }}
-                          className="text-[10px] uppercase tracking-widest text-status-crit"
+                          className="text-status-crit text-[10px] tracking-widest uppercase"
                         >
                           Remove
                         </button>
@@ -1087,122 +1704,138 @@ export const SettingsPage = () => {
             </section>
           )}
 
-        {/* Appearance Section */}
-        <section id="appearance">
-          <h2 className="text-xl font-bold mb-6 border-b border-rack-border pb-2">Appearance</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Theme Mode */}
-            <div className="bg-rack-panel border border-rack-border rounded-xl p-6">
-              <h3 className="font-mono text-sm uppercase text-gray-500 mb-4 tracking-widest">Interface Mode</h3>
-              <div className="flex gap-4">
-                <button 
-                  onClick={() => setMode('light')}
-                  className={`flex-1 p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${mode === 'light' ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-rack-border hover:bg-gray-100 dark:hover:bg-white/5'}`}
+          {/* Appearance Section */}
+          <section id="appearance">
+            <h2 className="border-rack-border mb-6 border-b pb-2 text-xl font-bold">Appearance</h2>
+
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+              {/* Theme Mode */}
+              <div className="bg-rack-panel border-rack-border rounded-xl border p-6">
+                <h3 className="mb-4 font-mono text-sm tracking-widest text-gray-500 uppercase">
+                  Interface Mode
+                </h3>
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setMode('light')}
+                    className={`flex flex-1 flex-col items-center gap-2 rounded-lg border p-4 transition-all ${mode === 'light' ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-rack-border hover:bg-gray-100 dark:hover:bg-white/5'}`}
+                  >
+                    <Sun className="h-6 w-6" />
+                    <span className="text-sm font-bold">Light</span>
+                  </button>
+                  <button
+                    onClick={() => setMode('dark')}
+                    className={`flex flex-1 flex-col items-center gap-2 rounded-lg border p-4 transition-all ${mode === 'dark' ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-rack-border hover:bg-gray-100 dark:hover:bg-white/5'}`}
+                  >
+                    <Moon className="h-6 w-6" />
+                    <span className="text-sm font-bold">Dark</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Accent Color */}
+              <div className="bg-rack-panel border-rack-border rounded-xl border p-6">
+                <h3 className="mb-4 font-mono text-sm tracking-widest text-gray-500 uppercase">
+                  Accent Color
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {colors.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setAccent(c.id)}
+                      className={`flex h-10 w-10 items-center justify-center rounded-full transition-transform hover:scale-110 ${accent === c.id ? 'ring-offset-rack-panel ring-2 ring-gray-400 ring-offset-2' : ''}`}
+                      style={{ backgroundColor: c.value }}
+                    >
+                      {accent === c.id && <Check className="h-5 w-5 text-white drop-shadow-md" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* System Section */}
+          <section id="system">
+            <h2 className="border-rack-border mb-6 border-b pb-2 text-xl font-bold">System</h2>
+            <div className="bg-rack-panel border-rack-border rounded-xl border p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold">Application Cache</h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Clear local preferences and temporary states.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    localStorage.clear();
+                    window.location.reload();
+                  }}
+                  className="rounded border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-bold text-red-500 uppercase transition-colors hover:bg-red-500/20"
                 >
-                  <Sun className="w-6 h-6" />
-                  <span className="font-bold text-sm">Light</span>
-                </button>
-                <button 
-                  onClick={() => setMode('dark')}
-                  className={`flex-1 p-4 rounded-lg border flex flex-col items-center gap-2 transition-all ${mode === 'dark' ? 'border-accent-primary bg-accent-primary/10 text-accent-primary' : 'border-rack-border hover:bg-gray-100 dark:hover:bg-white/5'}`}
-                >
-                  <Moon className="w-6 h-6" />
-                  <span className="font-bold text-sm">Dark</span>
+                  Clear Cache & Reload
                 </button>
               </div>
             </div>
-
-            {/* Accent Color */}
-            <div className="bg-rack-panel border border-rack-border rounded-xl p-6">
-              <h3 className="font-mono text-sm uppercase text-gray-500 mb-4 tracking-widest">Accent Color</h3>
-              <div className="flex flex-wrap gap-3">
-                {colors.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setAccent(c.id as any)}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform hover:scale-110 ${accent === c.id ? 'ring-2 ring-offset-2 ring-offset-rack-panel ring-gray-400' : ''}`}
-                    style={{ backgroundColor: c.value }}
+            <div className="bg-rack-panel border-rack-border mt-6 rounded-xl border p-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="text-sm font-bold">Client Error Log</h3>
+                  <p className="mt-1 text-xs text-gray-500">Last API failures stored locally.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    api.clearErrorLog();
+                    setErrors([]);
+                  }}
+                  className="rounded border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-gray-400 uppercase transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  Clear
+                </button>
+              </div>
+              <div className="custom-scrollbar mt-4 max-h-48 overflow-auto">
+                {errors.length === 0 && (
+                  <div className="font-mono text-[11px] text-gray-500">No errors logged.</div>
+                )}
+                {errors.map((e, i) => (
+                  <div
+                    key={i}
+                    className="border-b border-white/5 py-2 font-mono text-[11px] text-gray-400 last:border-0"
                   >
-                    {accent === c.id && <Check className="w-5 h-5 text-white drop-shadow-md" />}
-                  </button>
+                    <div className="text-[10px] tracking-widest text-gray-500 uppercase">
+                      {new Date(e.ts).toLocaleTimeString()}
+                    </div>
+                    <div className="truncate">
+                      {e.message}
+                      {e.context ? ` — ${e.context}` : ''}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* System Section */}
-        <section id="system">
-          <h2 className="text-xl font-bold mb-6 border-b border-rack-border pb-2">System</h2>
-          <div className="bg-rack-panel border border-rack-border rounded-xl p-6">
-             <div className="flex justify-between items-center">
-                <div>
-                    <h3 className="font-bold text-sm">Application Cache</h3>
-                    <p className="text-xs text-gray-500 mt-1">Clear local preferences and temporary states.</p>
-                </div>
-                <button 
-                    onClick={() => {
-                        localStorage.clear();
-                        window.location.reload();
-                    }}
-                    className="px-4 py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded hover:bg-red-500/20 transition-colors text-sm font-bold uppercase"
-                >
-                    Clear Cache & Reload
-                </button>
-             </div>
-          </div>
-          <div className="bg-rack-panel border border-rack-border rounded-xl p-6 mt-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-bold text-sm">Client Error Log</h3>
-                <p className="text-xs text-gray-500 mt-1">Last API failures stored locally.</p>
+          <section id="environment">
+            <h2 className="border-rack-border mb-6 border-b pb-2 text-xl font-bold">Environment</h2>
+            <div className="bg-rack-panel border-rack-border rounded-xl border p-6">
+              <div className="mb-4 font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
+                Read only
               </div>
-              <button
-                onClick={() => {
-                  api.clearErrorLog();
-                  setErrors([]);
-                }}
-                className="px-3 py-1.5 bg-white/5 border border-white/10 rounded text-xs font-bold uppercase text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                Clear
-              </button>
+              <div className="mb-4 text-[11px] text-gray-500">
+                Environment variables override app.yaml. When not set, defaults are used.
+              </div>
+              <div className="space-y-2 font-mono text-[12px] text-gray-400">
+                {Object.entries(envVars).map(([key, value]) => (
+                  <div key={key} className="flex justify-between gap-4">
+                    <span>{key}</span>
+                    <span className="text-right">
+                      {configValue(value, 'Not set (using app.yaml/defaults)')}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="mt-4 max-h-48 overflow-auto custom-scrollbar">
-              {errors.length === 0 && (
-                <div className="text-[11px] font-mono text-gray-500">No errors logged.</div>
-              )}
-              {errors.map((e, i) => (
-                <div key={i} className="text-[11px] font-mono text-gray-400 border-b border-white/5 py-2 last:border-0">
-                  <div className="text-[10px] uppercase tracking-widest text-gray-500">{new Date(e.ts).toLocaleTimeString()}</div>
-                  <div className="truncate">{e.message}{e.context ? ` — ${e.context}` : ''}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section id="environment">
-          <h2 className="text-xl font-bold mb-6 border-b border-rack-border pb-2">Environment</h2>
-          <div className="bg-rack-panel border border-rack-border rounded-xl p-6">
-            <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-gray-500 mb-4">Read only</div>
-            <div className="text-[11px] text-gray-500 mb-4">
-              Environment variables override app.yaml. When not set, defaults are used.
-            </div>
-            <div className="space-y-2 text-[12px] font-mono text-gray-400">
-              {Object.entries(envVars).map(([key, value]) => (
-                <div key={key} className="flex justify-between gap-4">
-                  <span>{key}</span>
-                  <span className="text-right">
-                    {configValue(value, 'Not set (using app.yaml/defaults)')}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
-    </div>
     </div>
   );
 };

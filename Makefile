@@ -21,7 +21,10 @@ build:
 # Local Quality Tools (Requires local venv if not using docker exec)
 lint:
 	docker compose exec backend ruff check .
+	docker compose exec backend ruff format --check .
 	docker compose exec frontend npm run lint
+	docker compose exec frontend npm run lint:css
+	docker compose exec frontend npm run lint:format
 
 test:
 	docker compose exec backend pytest
