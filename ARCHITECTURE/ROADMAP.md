@@ -102,18 +102,19 @@ Telemetry:
 
 ---
 
-## Phase 6 — Configuration Editor (Next)
+## Phase 6 — Configuration Editor (Active)
 **Goal:** Safe editing of topology, templates, and checks from the UI.
 
 - [ ] Backend writer:
   - [x] `POST /api/catalog/templates` with validation
   - [x] safe YAML dumping (structured rewrite)
 - [ ] Template designer UI:
-  - [ ] visual grid editor for devices
-  - [ ] form-based properties editing
+  - [x] visual grid editor for devices
+  - [x] form-based properties editing
 - [ ] Topology editor:
-  - [ ] drag & drop racks in aisles/rooms
-  - [ ] assign templates to empty rack slots
+  - [x] drag & drop racks in aisles/rooms
+  - [x] assign templates to empty rack slots (rack editor)
+  - [x] wizard: create datacenter + room + aisles
 
 ## Phase 7 — Additional Views + Importers
 - [ ] World map overview (multi-DC)
