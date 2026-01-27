@@ -205,6 +205,10 @@ export interface RoomState {
 }
 
 export interface AppConfig {
+  app?: {
+    name?: string;
+    description?: string | null;
+  };
   paths: {
     topology?: string;
     templates?: string;

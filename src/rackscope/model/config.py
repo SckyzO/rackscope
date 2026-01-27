@@ -104,7 +104,13 @@ class SimulatorConfig(BaseModel):
     metrics_catalog_path: str = Field(default="config/simulator_metrics_full.yaml", min_length=1)
 
 
+class AppInfoConfig(BaseModel):
+    name: str = Field(default="Rackscope", min_length=1)
+    description: Optional[str] = Field(default="Datacenter Overview")
+
+
 class AppConfig(BaseModel):
+    app: AppInfoConfig = Field(default_factory=AppInfoConfig)
     paths: PathsConfig
     refresh: RefreshConfig = Field(default_factory=RefreshConfig)
     cache: CacheConfig = Field(default_factory=CacheConfig)

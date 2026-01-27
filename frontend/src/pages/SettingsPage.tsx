@@ -6,6 +6,10 @@ import type { AppConfig, SimulatorScenario, SimulatorOverride } from '../types';
 import { Moon, Sun, Check, Save } from 'lucide-react';
 
 type ConfigDraft = {
+  app: {
+    name: string;
+    description: string;
+  };
   paths: {
     topology: string;
     templates: string;
@@ -67,6 +71,10 @@ type ConfigDraft = {
 };
 
 const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
+  app: {
+    name: config.app?.name || 'Rackscope',
+    description: config.app?.description || 'Datacenter Overview',
+  },
   paths: {
     topology: config.paths?.topology || '',
     templates: config.paths?.templates || '',
@@ -253,6 +261,8 @@ export const SettingsPage = () => {
     const next: Record<string, string> = {};
     const labelPattern = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
+    if (!draft.app.name.trim()) next.app_name = 'Required';
+
     if (!draft.paths.topology) next.paths_topology = 'Required path';
     if (!draft.paths.templates) next.paths_templates = 'Required path';
     if (!draft.paths.checks) next.paths_checks = 'Required path';
@@ -355,6 +365,10 @@ export const SettingsPage = () => {
     setSaveState('saving');
     try {
       const payload: AppConfig = {
+        app: {
+          name: draft.app.name,
+          description: draft.app.description,
+        },
         paths: {
           topology: draft.paths.topology,
           templates: draft.paths.templates,
@@ -423,8 +437,7 @@ export const SettingsPage = () => {
           overrides_path: draft.simulator.overrides_path,
         },
       };
-      const updated = await api.updateConfig(payload);
-      setConfig(updated);
+      await api.updateConfig(payload);
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 1500);
     } catch (err) {
@@ -462,6 +475,54 @@ export const SettingsPage = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
+                <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
+                  Branding
+                </h3>
+                <label className="text-xs text-gray-400" title="Application display name">
+                  Site name
+                  <input
+                    value={draft?.app.name || ''}
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            app: { ...prev.app, name: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                    placeholder="Rackscope"
+                  />
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Display name shown in the sidebar header.
+                  </div>
+                  {validationErrors.app_name && (
+                    <div className="text-status-crit text-[10px]">{validationErrors.app_name}</div>
+                  )}
+                </label>
+                <label className="text-xs text-gray-400" title="Short tagline shown under the name">
+                  Description
+                  <input
+                    value={draft?.app.description || ''}
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            app: { ...prev.app, description: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                    placeholder="Datacenter Overview"
+                  />
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Optional short tagline for the UI.
+                  </div>
+                </label>
+              </div>
               <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
                 <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
                   Telemetry

@@ -33,6 +33,8 @@ export const Sidebar = ({
   const [promStats, setPromStats] = useState<PrometheusStats>({});
   const [refreshSeconds, setRefreshSeconds] = useState(30);
   const [now, setNow] = useState(() => Date.now());
+  const [appName, setAppName] = useState('Rackscope');
+  const [appDescription, setAppDescription] = useState('Datacenter Overview');
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     topology: false,
     catalog: false,
@@ -49,6 +51,10 @@ export const Sidebar = ({
         setSites(safeSites);
         const nextRefresh = Number(configData?.telemetry?.prometheus_heartbeat_seconds) || 30;
         setRefreshSeconds(Math.max(10, nextRefresh));
+        if (configData?.app?.name) setAppName(configData.app.name);
+        if (typeof configData?.app?.description === 'string') {
+          setAppDescription(configData.app.description || 'Datacenter Overview');
+        }
       })
       .catch(console.error);
   }, []);
@@ -249,10 +255,10 @@ export const Sidebar = ({
           </div>
           <div>
             <h1 className="text-lg font-black tracking-tight text-[var(--color-text-base)] uppercase">
-              RACKSCOPE
+              {appName}
             </h1>
             <p className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
-              Datacenter Overview
+              {appDescription || 'Datacenter Overview'}
             </p>
           </div>
         </div>
