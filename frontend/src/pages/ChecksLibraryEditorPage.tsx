@@ -13,6 +13,8 @@ export const ChecksLibraryEditorPage = () => {
   const [content, setContent] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [checks, setChecks] = useState<any[]>([]);
+  const [catalog, setCatalog] = useState<any | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -25,6 +27,18 @@ export const ChecksLibraryEditorPage = () => {
         }
       })
       .catch((err) => setError(err?.message || 'Failed to load files'));
+    api.getChecks()
+      .then((data) => {
+        if (!active) return;
+        setChecks(data?.checks || []);
+      })
+      .catch(console.error);
+    api.getCatalog()
+      .then((data) => {
+        if (!active) return;
+        setCatalog(data || null);
+      })
+      .catch(console.error);
     return () => {
       active = false;
     };
@@ -52,6 +66,22 @@ export const ChecksLibraryEditorPage = () => {
   }, [selectedFile]);
 
   const isDirty = useMemo(() => content.trim().length > 0, [content]);
+  const usageByCheck = useMemo(() => {
+    const usage: Record<string, number> = {};
+    const deviceTemplates = catalog?.device_templates || [];
+    const rackTemplates = catalog?.rack_templates || [];
+    for (const template of deviceTemplates) {
+      (template.checks || []).forEach((id: string) => {
+        usage[id] = (usage[id] || 0) + 1;
+      });
+    }
+    for (const template of rackTemplates) {
+      (template.checks || []).forEach((id: string) => {
+        usage[id] = (usage[id] || 0) + 1;
+      });
+    }
+    return usage;
+  }, [catalog]);
 
   const handleSave = async () => {
     if (!selectedFile) return;
@@ -92,7 +122,7 @@ export const ChecksLibraryEditorPage = () => {
         </button>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[260px_minmax(0,1fr)] gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[260px_minmax(0,1fr)_320px] gap-6">
         <aside className="bg-rack-panel border border-rack-border rounded-3xl p-4 space-y-3">
           <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">Files</div>
           <div className="space-y-1">
@@ -129,6 +159,28 @@ export const ChecksLibraryEditorPage = () => {
             </pre>
           )}
         </section>
+
+        <aside className="bg-rack-panel border border-rack-border rounded-3xl p-4 space-y-3">
+          <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">Checks</div>
+          <div className="space-y-2 max-h-[600px] overflow-y-auto custom-scrollbar pr-1">
+            {checks.map((check) => (
+              <div key={check.id} className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-gray-300">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">{check.name || check.id}</span>
+                  <span className="text-[10px] text-gray-500">{check.id}</span>
+                </div>
+                <div className="mt-2 flex items-center gap-2 text-[9px] uppercase tracking-widest text-gray-500">
+                  <span>{check.scope || 'unknown'}</span>
+                  {check.kind && <span>{check.kind}</span>}
+                  <span>{`usage ${usageByCheck[check.id] || 0}`}</span>
+                </div>
+              </div>
+            ))}
+            {checks.length === 0 && (
+              <div className="text-[11px] text-gray-500">No checks loaded.</div>
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   );

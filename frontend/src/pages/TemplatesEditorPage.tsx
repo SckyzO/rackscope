@@ -18,6 +18,7 @@ type DeviceDraft = {
   rear_layout_type: 'grid' | 'vertical';
   rear_layout_matrix?: number[][];
   rear_components: Array<{ id: string; name: string; type: string; checks?: string[] }>;
+  checks: string[];
 };
 
 const defaultDraft: DeviceDraft = {
@@ -35,6 +36,7 @@ const defaultDraft: DeviceDraft = {
   rear_layout_type: 'grid',
   rear_layout_matrix: undefined,
   rear_components: [],
+  checks: [],
 };
 
 const buildMatrix = (rows: number, cols: number) => {
@@ -57,6 +59,7 @@ export const TemplatesEditorPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
   const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
+  const [checksLibrary, setChecksLibrary] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [searchParams] = useSearchParams();
@@ -65,10 +68,11 @@ export const TemplatesEditorPage = () => {
 
   useEffect(() => {
     let active = true;
-    api.getCatalog()
-      .then((catalog) => {
+    Promise.all([api.getCatalog(), api.getChecks()])
+      .then(([catalog, checks]) => {
         if (!active) return;
         setDeviceTemplates(catalog.device_templates || []);
+        setChecksLibrary(checks?.checks || []);
       })
       .catch(console.error);
     return () => {
@@ -102,6 +106,7 @@ export const TemplatesEditorPage = () => {
         type: c.type,
         checks: c.checks || [],
       })),
+      checks: selected.checks || [],
     });
     setIsEditing(true);
     setStatus('idle');
@@ -146,6 +151,7 @@ export const TemplatesEditorPage = () => {
       type: draft.type.trim() || 'server',
       u_height: Number.isFinite(uHeight) ? uHeight : 1,
       layout,
+      checks: draft.checks || [],
     };
     if (draft.rear_enabled) {
       const rearRows = Number.parseInt(draft.rear_rows, 10);
@@ -213,6 +219,7 @@ export const TemplatesEditorPage = () => {
           cols,
           matrix: buildPreviewMatrix(rows, cols, draft.layout_matrix),
         },
+        checks: draft.checks || [],
       };
       if (draft.rear_enabled) {
         const rearRows = Number.parseInt(draft.rear_rows, 10);
@@ -334,6 +341,7 @@ export const TemplatesEditorPage = () => {
                     type: c.type,
                     checks: c.checks || [],
                   })),
+                  checks: selected.checks || [],
                 });
                 setIsEditing(true);
                 setStatus('idle');
@@ -383,6 +391,37 @@ export const TemplatesEditorPage = () => {
               <option value="other">other</option>
             </select>
           </label>
+          <div className="space-y-2">
+            <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">Checks (node/chassis)</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+              {checksLibrary
+                .filter((c) => c.scope === 'node' || c.scope === 'chassis')
+                .map((check) => {
+                  const isChecked = draft.checks.includes(check.id);
+                  return (
+                    <label key={check.id} className="flex items-center gap-2 text-xs text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...draft.checks, check.id]
+                            : draft.checks.filter((id) => id !== check.id);
+                          setDraft((prev) => ({ ...prev, checks: next }));
+                        }}
+                        className="rounded border-gray-600 bg-black/40"
+                      />
+                      <span className="truncate">{check.name || check.id}</span>
+                      <span className="text-[9px] text-gray-500 uppercase">{check.scope}</span>
+                      {check.kind && <span className="text-[9px] text-gray-500 uppercase">{check.kind}</span>}
+                    </label>
+                  );
+                })}
+            </div>
+            {draft.checks.length === 0 && (
+              <div className="text-[10px] text-gray-500">No checks selected.</div>
+            )}
+          </div>
           <label className="text-xs text-gray-400">
             Layout type
             <select

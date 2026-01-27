@@ -19,6 +19,7 @@ type RackDraft = {
   front_components: RackComponentDraft[];
   rear_components: RackComponentDraft[];
   side_components: RackComponentDraft[];
+  checks: string[];
 };
 
 const emptyComponent = (): RackComponentDraft => ({
@@ -37,6 +38,7 @@ const defaultDraft: RackDraft = {
   front_components: [],
   rear_components: [],
   side_components: [],
+  checks: [],
 };
 
 const parsePositiveInt = (value: string, fallback: number) => {
@@ -53,6 +55,7 @@ export const TemplatesRackEditorPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
   const [rackTemplates, setRackTemplates] = useState<RackTemplate[]>([]);
+  const [checksLibrary, setChecksLibrary] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [searchParams] = useSearchParams();
@@ -68,10 +71,11 @@ export const TemplatesRackEditorPage = () => {
 
   useEffect(() => {
     let active = true;
-    api.getCatalog()
-      .then((catalog) => {
+    Promise.all([api.getCatalog(), api.getChecks()])
+      .then(([catalog, checks]) => {
         if (!active) return;
         setRackTemplates(catalog.rack_templates || []);
+        setChecksLibrary(checks?.checks || []);
       })
       .catch(console.error);
     return () => {
@@ -106,6 +110,7 @@ export const TemplatesRackEditorPage = () => {
       front_components: (template.infrastructure?.front_components || []).map((comp) => mapComponentDraft(comp, rackHeight)),
       rear_components: (template.infrastructure?.rear_components || []).map((comp) => mapComponentDraft(comp, rackHeight)),
       side_components: (template.infrastructure?.side_components || []).map((comp) => mapComponentDraft(comp, rackHeight)),
+      checks: template.checks || [],
     });
     setIsEditing(true);
     setStatus('idle');
@@ -131,6 +136,7 @@ export const TemplatesRackEditorPage = () => {
         rear_components: draft.rear_components.map(mapComponent),
         side_components: draft.side_components.map(mapComponent),
       },
+      checks: draft.checks || [],
     };
     return `rack_templates:\n  - ${JSON.stringify(template, null, 2).replace(/\n/g, '\n    ')}`;
   }, [draft]);
@@ -190,6 +196,7 @@ export const TemplatesRackEditorPage = () => {
           rear_components: draft.rear_components.map(mapComponent),
           side_components: draft.side_components.map(mapComponent),
         },
+        checks: draft.checks || [],
       };
       if (isEditing) {
         await api.updateTemplate({ kind: 'rack', template });
@@ -461,6 +468,37 @@ export const TemplatesRackEditorPage = () => {
               placeholder="My Rack"
             />
           </label>
+          <div className="space-y-2">
+            <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500">Checks (rack)</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+              {checksLibrary
+                .filter((c) => c.scope === 'rack')
+                .map((check) => {
+                  const isChecked = draft.checks.includes(check.id);
+                  return (
+                    <label key={check.id} className="flex items-center gap-2 text-xs text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...draft.checks, check.id]
+                            : draft.checks.filter((id) => id !== check.id);
+                          setDraft((prev) => ({ ...prev, checks: next }));
+                        }}
+                        className="rounded border-gray-600 bg-black/40"
+                      />
+                      <span className="truncate">{check.name || check.id}</span>
+                      <span className="text-[9px] text-gray-500 uppercase">{check.scope}</span>
+                      {check.kind && <span className="text-[9px] text-gray-500 uppercase">{check.kind}</span>}
+                    </label>
+                  );
+                })}
+            </div>
+            {draft.checks.length === 0 && (
+              <div className="text-[10px] text-gray-500">No checks selected.</div>
+            )}
+          </div>
           <label className="text-xs text-gray-400">
             U height
             <input

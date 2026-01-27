@@ -305,7 +305,9 @@ const RackThumbnail = ({ rack, healthData, isSelected, isMatch, onClick }: { rac
     }
     return [];
   })();
-  const showReasons = health !== 'OK' ? (reasons.length > 0 ? reasons : ['No checks available']) : [];
+  const showReasons = health !== 'OK'
+    ? (reasons.length > 0 ? reasons : ['No checks configured for this device'])
+    : [];
 
   return (
     <>
