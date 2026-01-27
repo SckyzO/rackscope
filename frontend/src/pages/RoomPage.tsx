@@ -418,7 +418,7 @@ const RackThumbnail = ({
         onMouseEnter={handleMouseEnter}
         onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
         onMouseLeave={handleMouseLeave}
-        className={`group relative flex h-24 w-20 flex-col items-center justify-between overflow-hidden rounded border p-1.5 transition-all ${isSelected ? 'border-blue-500 bg-blue-500/5 ring-1 ring-blue-500' : 'border-white/10 bg-[#121212] hover:border-white/30 hover:bg-white/5'} ${isMatch ? 'ring-1 ring-[var(--color-accent)]/60' : ''}`}
+        className={`group relative flex h-[121px] w-[92px] flex-col items-center justify-between overflow-hidden rounded border p-1.5 transition-all ${isSelected ? 'border-blue-500 bg-blue-500/5 ring-1 ring-blue-500' : 'border-white/10 bg-[#121212] hover:border-white/30 hover:bg-white/5'} ${isMatch ? 'ring-1 ring-[var(--color-accent)]/60' : ''}`}
       >
         <div className="flex w-full items-center justify-between px-1">
           <div
@@ -436,8 +436,8 @@ const RackThumbnail = ({
             ></div>
           ))}
         </div>
-        <div className="w-full rounded border-t border-white/5 bg-white/5 py-1 text-center">
-          <div className="truncate px-1 text-[9px] font-bold text-gray-300 uppercase">
+        <div className="w-full rounded border-t border-white/5 bg-white/5 px-1 py-1 text-center">
+          <div className="max-h-[2.4em] overflow-hidden text-[9px] leading-tight font-bold break-words whitespace-normal text-gray-300 uppercase">
             {rack.name.replace('Rack ', '')}
           </div>
         </div>
