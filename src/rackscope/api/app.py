@@ -16,7 +16,13 @@ from rackscope.model.domain import Room, Site, Topology, Rack, Device
 from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
 from rackscope.model.checks import ChecksLibrary, CheckDefinition
 from rackscope.model.config import AppConfig
-from rackscope.model.loader import load_topology, load_catalog, load_checks_library, load_app_config, dump_yaml
+from rackscope.model.loader import (
+    load_topology,
+    load_catalog,
+    load_checks_library,
+    load_app_config,
+    dump_yaml,
+)
 from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import _expand_nodes_pattern
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
@@ -31,6 +37,7 @@ APP_CONFIG: Optional[AppConfig] = None
 PLANNER: Optional[TelemetryPlanner] = None
 PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
 
+
 def _safe_segment(value: str, fallback: str) -> str:
     value = (value or "").strip().lower()
     if not value:
@@ -38,6 +45,7 @@ def _safe_segment(value: str, fallback: str) -> str:
     value = re.sub(r"[^a-z0-9._-]+", "-", value)
     value = value.strip("-")
     return value or fallback
+
 
 def _find_rack_location(rack_id: str) -> Optional[tuple[str, str, Optional[str], bool]]:
     if not TOPOLOGY:
@@ -53,6 +61,7 @@ def _find_rack_location(rack_id: str) -> Optional[tuple[str, str, Optional[str],
                     return site.id, room.id, None, True
     return None
 
+
 def _find_aisle_path(room_id: str, aisle_id: str) -> Optional[Path]:
     if not APP_CONFIG or not TOPOLOGY:
         return None
@@ -63,8 +72,18 @@ def _find_aisle_path(room_id: str, aisle_id: str) -> Optional[Path]:
                 continue
             for aisle in room.aisles:
                 if aisle.id == aisle_id:
-                    return base_dir / "datacenters" / site.id / "rooms" / room.id / "aisles" / aisle.id / "aisle.yaml"
+                    return (
+                        base_dir
+                        / "datacenters"
+                        / site.id
+                        / "rooms"
+                        / room.id
+                        / "aisles"
+                        / aisle.id
+                        / "aisle.yaml"
+                    )
     return None
+
 
 def _find_rack_path(rack_id: str) -> Optional[Path]:
     if not APP_CONFIG:
@@ -75,8 +94,27 @@ def _find_rack_path(rack_id: str) -> Optional[Path]:
         return None
     site_id, room_id, aisle_id, is_standalone = location
     if is_standalone:
-        return base_dir / "datacenters" / site_id / "rooms" / room_id / "standalone_racks" / f"{rack_id}.yaml"
-    return base_dir / "datacenters" / site_id / "rooms" / room_id / "aisles" / aisle_id / "racks" / f"{rack_id}.yaml"
+        return (
+            base_dir
+            / "datacenters"
+            / site_id
+            / "rooms"
+            / room_id
+            / "standalone_racks"
+            / f"{rack_id}.yaml"
+        )
+    return (
+        base_dir
+        / "datacenters"
+        / site_id
+        / "rooms"
+        / room_id
+        / "aisles"
+        / aisle_id
+        / "racks"
+        / f"{rack_id}.yaml"
+    )
+
 
 def _find_device_template_path(templates_dir: Path, template_id: str) -> Optional[Path]:
     devices_dir = templates_dir / "devices"
@@ -87,12 +125,14 @@ def _find_device_template_path(templates_dir: Path, template_id: str) -> Optiona
         return None
     return matches[0]
 
+
 def _get_device_height(template_id: str) -> int:
     if CATALOG:
         template = CATALOG.get_device_template(template_id)
         if template and template.u_height:
             return template.u_height
     return 1
+
 
 def _get_rack_height(data: dict) -> int:
     if data.get("u_height"):
@@ -154,7 +194,9 @@ def _collect_check_targets(
                     if device_template and device_template.checks:
                         for check_id in device_template.checks:
                             add_targets(check_id, nodes, [device.id], [rack.id])
-                rack_template = catalog.get_rack_template(rack.template_id) if rack.template_id else None
+                rack_template = (
+                    catalog.get_rack_template(rack.template_id) if rack.template_id else None
+                )
                 if rack_template and rack_template.checks:
                     for check_id in rack_template.checks:
                         add_targets(check_id, rack_nodes, rack_chassis, [rack.id])
@@ -223,28 +265,35 @@ def aggregate_states(states: List[str]) -> str:
         return "UNKNOWN"
     return "OK"
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global TOPOLOGY, CATALOG, CHECKS_LIBRARY, APP_CONFIG
     global PLANNER, PROMETHEUS_HEARTBEAT
     app_config_path = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
-    
+
     try:
         if os.path.exists(app_config_path):
             APP_CONFIG = load_app_config(app_config_path)
             apply_config(APP_CONFIG)
         else:
             config_dir = os.getenv("RACKSCOPE_CONFIG_DIR", "config")
-            config_path = os.getenv("RACKSCOPE_CONFIG", os.path.join(config_dir, "topology", "topology.yaml"))
+            config_path = os.getenv(
+                "RACKSCOPE_CONFIG", os.path.join(config_dir, "topology", "topology.yaml")
+            )
             templates_dir = os.getenv("RACKSCOPE_TEMPLATES", os.path.join(config_dir, "templates"))
-            checks_path = os.getenv("RACKSCOPE_CHECKS", os.path.join(config_dir, "checks", "library"))
+            checks_path = os.getenv(
+                "RACKSCOPE_CHECKS", os.path.join(config_dir, "checks", "library")
+            )
             TOPOLOGY = load_topology(config_path)
             CATALOG = load_catalog(templates_dir)
             CHECKS_LIBRARY = load_checks_library(checks_path)
             APP_CONFIG = None
             PLANNER = TelemetryPlanner()
         print(f"Loaded topology with {len(TOPOLOGY.sites)} sites")
-        print(f"Loaded catalog with {len(CATALOG.device_templates)} devices and {len(CATALOG.rack_templates)} racks")
+        print(
+            f"Loaded catalog with {len(CATALOG.device_templates)} devices and {len(CATALOG.rack_templates)} racks"
+        )
         print(f"Loaded checks library with {len(CHECKS_LIBRARY.checks)} checks")
     except Exception as e:
         print(f"Failed to load configuration: {e}")
@@ -272,6 +321,7 @@ async def lifespan(app: FastAPI):
         with suppress(asyncio.CancelledError):
             await PROMETHEUS_HEARTBEAT
 
+
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
 
 
@@ -279,14 +329,17 @@ class TemplateWriteRequest(BaseModel):
     kind: Literal["device", "rack"]
     template: Dict[str, Any]
 
+
 class SiteCreate(BaseModel):
     id: Optional[str] = None
     name: str
+
 
 class RoomCreate(BaseModel):
     id: Optional[str] = None
     name: str
     description: Optional[str] = None
+
 
 class RoomAislesCreate(BaseModel):
     aisles: List[Dict[str, str]]
@@ -320,17 +373,21 @@ class RackDevicesUpdate(BaseModel):
 class RoomAislesUpdate(BaseModel):
     aisles: Dict[str, List[str]]
 
+
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
+
 
 @app.get("/api/catalog")
 def get_catalog():
     return CATALOG if CATALOG else {"device_templates": [], "rack_templates": []}
 
+
 @app.get("/api/checks")
 def get_checks_library():
     return CHECKS_LIBRARY if CHECKS_LIBRARY else {"checks": []}
+
 
 @app.get("/api/checks/files")
 def get_checks_files():
@@ -345,10 +402,15 @@ def get_checks_files():
         files = [base_dir]
     return {
         "files": [
-            {"name": f.name, "path": str(f), "relative": str(f.relative_to(base_dir)) if base_dir.is_dir() else f.name}
+            {
+                "name": f.name,
+                "path": str(f),
+                "relative": str(f.relative_to(base_dir)) if base_dir.is_dir() else f.name,
+            }
             for f in files
         ]
     }
+
 
 @app.get("/api/checks/files/{name}")
 def read_checks_file(name: str):
@@ -362,6 +424,7 @@ def read_checks_file(name: str):
     if not target.exists():
         raise HTTPException(status_code=404, detail="Checks file not found")
     return {"name": target.name, "content": target.read_text()}
+
 
 @app.put("/api/checks/files/{name}")
 def write_checks_file(name: str, payload: Dict[str, Any]):
@@ -406,33 +469,42 @@ def write_checks_file(name: str, payload: Dict[str, Any]):
         try:
             parsed_check = CheckDefinition(**check)
             if not parsed_check.rules:
-                errors.append({
-                    "index": idx,
-                    "id": parsed_check.id,
-                    "errors": [{"msg": "rules must not be empty"}],
-                })
+                errors.append(
+                    {
+                        "index": idx,
+                        "id": parsed_check.id,
+                        "errors": [{"msg": "rules must not be empty"}],
+                    }
+                )
             if parsed_check.id in seen_ids:
-                errors.append({
-                    "index": idx,
-                    "id": parsed_check.id,
-                    "errors": [{"msg": "duplicate id"}],
-                })
+                errors.append(
+                    {
+                        "index": idx,
+                        "id": parsed_check.id,
+                        "errors": [{"msg": "duplicate id"}],
+                    }
+                )
             seen_ids.add(parsed_check.id)
         except ValidationError as e:
-            errors.append({
-                "index": idx,
-                "id": check.get("id") if isinstance(check, dict) else None,
-                "errors": e.errors(),
-            })
+            errors.append(
+                {
+                    "index": idx,
+                    "id": check.get("id") if isinstance(check, dict) else None,
+                    "errors": e.errors(),
+                }
+            )
 
     if errors:
-        raise HTTPException(status_code=400, detail={"message": "Validation failed", "errors": errors})
+        raise HTTPException(
+            status_code=400, detail={"message": "Validation failed", "errors": errors}
+        )
 
     target.write_text(dump_yaml(parsed if parsed is not None else {}))
     # Reload checks library to keep in-memory state aligned.
     global CHECKS_LIBRARY
     CHECKS_LIBRARY = load_checks_library(base_dir)
     return {"status": "ok", "name": target.name}
+
 
 @app.get("/api/config")
 def get_app_config():
@@ -560,10 +632,12 @@ def get_simulator_scenarios():
     payload = []
     for name in sorted(scenarios.keys()):
         entry = scenarios.get(name) if isinstance(scenarios.get(name), dict) else {}
-        payload.append({
-            "name": name,
-            "description": entry.get("description") if isinstance(entry, dict) else None,
-        })
+        payload.append(
+            {
+                "name": name,
+                "description": entry.get("description") if isinstance(entry, dict) else None,
+            }
+        )
     return {"scenarios": payload}
 
 
@@ -640,9 +714,11 @@ def delete_simulator_override(override_id: str):
     _save_overrides(next_overrides)
     return {"overrides": next_overrides}
 
+
 @app.get("/api/sites", response_model=List[Site])
 def get_sites():
     return TOPOLOGY.sites if TOPOLOGY else []
+
 
 @app.post("/api/topology/sites")
 def create_site(payload: SiteCreate):
@@ -675,6 +751,7 @@ def create_site(payload: SiteCreate):
 
     TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
     return {"site": site_entry}
+
 
 @app.post("/api/topology/sites/{site_id}/rooms")
 def create_room(site_id: str, payload: RoomCreate):
@@ -722,6 +799,7 @@ def create_room(site_id: str, payload: RoomCreate):
 
     TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
     return {"room": room_payload, "site_id": site_id}
+
 
 @app.post("/api/topology/rooms/{room_id}/aisles/create")
 def create_room_aisles(room_id: str, payload: RoomAislesCreate):
@@ -777,6 +855,7 @@ def create_room_aisles(room_id: str, payload: RoomAislesCreate):
     TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
     return {"room_id": room_id, "aisles": new_aisles}
 
+
 @app.get("/api/rooms", response_model=List[dict])
 def get_rooms():
     rooms = []
@@ -786,45 +865,48 @@ def get_rooms():
                 # Build hierarchy for sidebar
                 aisles_summary = []
                 for aisle in room.aisles:
-                    aisles_summary.append({
-                        "id": aisle.id,
-                        "name": aisle.name,
-                        "racks": [{"id": r.id, "name": r.name} for r in aisle.racks]
-                    })
-                
+                    aisles_summary.append(
+                        {
+                            "id": aisle.id,
+                            "name": aisle.name,
+                            "racks": [{"id": r.id, "name": r.name} for r in aisle.racks],
+                        }
+                    )
+
                 # Include standalone racks as a virtual aisle if needed
                 if room.standalone_racks:
-                    aisles_summary.append({
-                        "id": f"{room.id}-standalone",
-                        "name": "Standalone",
-                        "racks": [{"id": r.id, "name": r.name} for r in room.standalone_racks]
-                    })
+                    aisles_summary.append(
+                        {
+                            "id": f"{room.id}-standalone",
+                            "name": "Standalone",
+                            "racks": [{"id": r.id, "name": r.name} for r in room.standalone_racks],
+                        }
+                    )
 
-                rooms.append({
-                    "id": room.id,
-                    "name": room.name,
-                    "site_id": site.id,
-                    "aisles": aisles_summary
-                })
+                rooms.append(
+                    {"id": room.id, "name": room.name, "site_id": site.id, "aisles": aisles_summary}
+                )
     return rooms
+
 
 @app.get("/api/rooms/{room_id}/layout", response_model=Room)
 def get_room_layout(room_id: str):
     if not TOPOLOGY:
         raise HTTPException(status_code=500, detail="Topology not loaded")
-    
+
     for site in TOPOLOGY.sites:
         for room in site.rooms:
             if room.id == room_id:
                 return room
-    
+
     raise HTTPException(status_code=404, detail=f"Room {room_id} not found")
+
 
 @app.get("/api/racks/{rack_id}", response_model=Rack)
 def get_rack_details(rack_id: str):
     if not TOPOLOGY:
         raise HTTPException(status_code=500, detail="Topology not loaded")
-    
+
     # Linear search (slow but ok for MVP)
     # In production, we would index racks by ID on load
     for site in TOPOLOGY.sites:
@@ -838,8 +920,9 @@ def get_rack_details(rack_id: str):
             for rack in room.standalone_racks:
                 if rack.id == rack_id:
                     return rack
-    
+
     raise HTTPException(status_code=404, detail=f"Rack {rack_id} not found")
+
 
 @app.put("/api/topology/aisles/{aisle_id}/racks")
 def update_aisle_racks(aisle_id: str, payload: AisleOrderUpdate):
@@ -863,6 +946,7 @@ def update_aisle_racks(aisle_id: str, payload: AisleOrderUpdate):
     TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
     return {"status": "ok", "aisle_id": aisle_id, "racks": payload.racks}
 
+
 @app.put("/api/topology/racks/{rack_id}/template")
 def update_rack_template(rack_id: str, payload: RackTemplateUpdate):
     global TOPOLOGY
@@ -881,6 +965,7 @@ def update_rack_template(rack_id: str, payload: RackTemplateUpdate):
 
     TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
     return {"status": "ok", "rack_id": rack_id, "template_id": payload.template_id}
+
 
 @app.put("/api/topology/rooms/{room_id}/aisles")
 def update_room_aisles(room_id: str, payload: RoomAislesUpdate):
@@ -915,7 +1000,9 @@ def update_room_aisles(room_id: str, payload: RoomAislesUpdate):
     for aisle_id, racks in requested_aisles.items():
         for rack_id in racks:
             if rack_id not in current_map:
-                raise HTTPException(status_code=400, detail=f"Unknown rack id in payload: {rack_id}")
+                raise HTTPException(
+                    status_code=400, detail=f"Unknown rack id in payload: {rack_id}"
+                )
 
     base_dir = Path(APP_CONFIG.paths.topology)
     for rack_id, current_aisle in current_map.items():
@@ -926,12 +1013,31 @@ def update_room_aisles(room_id: str, payload: RoomAislesUpdate):
                 break
         if not target_aisle or target_aisle == current_aisle:
             continue
-        source_path = base_dir / "datacenters" / target_site_id / "rooms" / room_id / "aisles" / current_aisle / "racks" / f"{rack_id}.yaml"
+        source_path = (
+            base_dir
+            / "datacenters"
+            / target_site_id
+            / "rooms"
+            / room_id
+            / "aisles"
+            / current_aisle
+            / "racks"
+            / f"{rack_id}.yaml"
+        )
         if not source_path.exists():
             raise HTTPException(status_code=404, detail=f"Rack file not found for move: {rack_id}")
         data = yaml.safe_load(source_path.read_text()) or {}
         data["aisle_id"] = target_aisle
-        target_dir = base_dir / "datacenters" / target_site_id / "rooms" / room_id / "aisles" / target_aisle / "racks"
+        target_dir = (
+            base_dir
+            / "datacenters"
+            / target_site_id
+            / "rooms"
+            / room_id
+            / "aisles"
+            / target_aisle
+            / "racks"
+        )
         target_dir.mkdir(parents=True, exist_ok=True)
         target_path = target_dir / source_path.name
         target_path.write_text(dump_yaml(data))
@@ -948,6 +1054,7 @@ def update_room_aisles(room_id: str, payload: RoomAislesUpdate):
     TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
     return {"status": "ok", "room_id": room_id}
 
+
 @app.post("/api/topology/racks/{rack_id}/devices")
 def add_rack_device(rack_id: str, payload: RackDeviceCreate):
     global TOPOLOGY
@@ -961,7 +1068,9 @@ def add_rack_device(rack_id: str, payload: RackDeviceCreate):
         raise HTTPException(status_code=404, detail="Rack file not found")
 
     if not CATALOG.get_device_template(payload.template_id):
-        raise HTTPException(status_code=400, detail=f"Unknown device template: {payload.template_id}")
+        raise HTTPException(
+            status_code=400, detail=f"Unknown device template: {payload.template_id}"
+        )
 
     data = yaml.safe_load(rack_path.read_text()) or {}
     devices = data.get("devices") or []
@@ -1007,6 +1116,7 @@ def add_rack_device(rack_id: str, payload: RackDeviceCreate):
 
     TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
     return {"status": "ok", "rack_id": rack_id, "device_id": payload.id}
+
 
 @app.put("/api/topology/racks/{rack_id}/devices/{device_id}")
 def update_rack_device(rack_id: str, device_id: str, payload: RackDeviceUpdate):
@@ -1057,7 +1167,13 @@ def update_rack_device(rack_id: str, device_id: str, payload: RackDeviceUpdate):
     rack_path.write_text(dump_yaml(data))
 
     TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
-    return {"status": "ok", "rack_id": rack_id, "device_id": device_id, "u_position": payload.u_position}
+    return {
+        "status": "ok",
+        "rack_id": rack_id,
+        "device_id": device_id,
+        "u_position": payload.u_position,
+    }
+
 
 @app.delete("/api/topology/racks/{rack_id}/devices/{device_id}")
 def delete_rack_device(rack_id: str, device_id: str):
@@ -1080,6 +1196,7 @@ def delete_rack_device(rack_id: str, device_id: str):
 
     TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
     return {"status": "ok", "rack_id": rack_id, "device_id": device_id}
+
 
 @app.put("/api/topology/racks/{rack_id}/devices")
 def replace_rack_devices(rack_id: str, payload: RackDevicesUpdate):
@@ -1104,19 +1221,24 @@ def replace_rack_devices(rack_id: str, payload: RackDevicesUpdate):
             raise HTTPException(status_code=400, detail=f"Duplicate device id: {device.id}")
         seen_ids.add(device.id)
         if not CATALOG.get_device_template(device.template_id):
-            raise HTTPException(status_code=400, detail=f"Unknown device template: {device.template_id}")
+            raise HTTPException(
+                status_code=400, detail=f"Unknown device template: {device.template_id}"
+            )
         height = _get_device_height(device.template_id)
         if device.u_position < 1 or device.u_position + height - 1 > rack_height:
             raise HTTPException(status_code=400, detail=f"Device {device.id} does not fit in rack")
         for u in range(device.u_position, device.u_position + height):
             if u in occupied:
-                raise HTTPException(status_code=400, detail=f"Device {device.id} overlaps existing device")
+                raise HTTPException(
+                    status_code=400, detail=f"Device {device.id} overlaps existing device"
+                )
             occupied.add(u)
 
     data["devices"] = [d.model_dump() for d in payload.devices]
     rack_path.write_text(dump_yaml(data))
     TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
     return {"status": "ok", "rack_id": rack_id, "devices": len(payload.devices)}
+
 
 @app.post("/api/catalog/templates")
 def write_template(payload: TemplateWriteRequest):
@@ -1129,7 +1251,9 @@ def write_template(payload: TemplateWriteRequest):
     if payload.kind == "device":
         template = DeviceTemplate(**payload.template)
         if CATALOG and CATALOG.get_device_template(template.id):
-            raise HTTPException(status_code=400, detail=f"Device template already exists: {template.id}")
+            raise HTTPException(
+                status_code=400, detail=f"Device template already exists: {template.id}"
+            )
         type_dir = _safe_segment(template.type, "other")
         target_dir = templates_dir / "devices" / type_dir
         key = "templates"
@@ -1137,7 +1261,9 @@ def write_template(payload: TemplateWriteRequest):
     else:
         template = RackTemplate(**payload.template)
         if CATALOG and CATALOG.get_rack_template(template.id):
-            raise HTTPException(status_code=400, detail=f"Rack template already exists: {template.id}")
+            raise HTTPException(
+                status_code=400, detail=f"Rack template already exists: {template.id}"
+            )
         target_dir = templates_dir / "racks"
         key = "rack_templates"
         filename = f"{_safe_segment(template.id, 'rack')}.yaml"
@@ -1153,6 +1279,7 @@ def write_template(payload: TemplateWriteRequest):
     CATALOG = load_catalog(templates_dir)
 
     return template
+
 
 @app.put("/api/catalog/templates")
 def update_template(payload: TemplateWriteRequest):
@@ -1188,6 +1315,7 @@ def update_template(payload: TemplateWriteRequest):
 
     return template
 
+
 @app.get("/api/stats/global")
 async def get_global_stats():
     rack_healths: Dict[str, str] = {}
@@ -1197,11 +1325,11 @@ async def get_global_stats():
         rack_healths = snapshot.rack_states
     else:
         rack_healths = await prom_client.get_rack_health_summary()
-    
+
     total_racks = 0
     crit_alerts = 0
     warn_alerts = 0
-    
+
     if TOPOLOGY:
         for site in TOPOLOGY.sites:
             for room in site.rooms:
@@ -1214,10 +1342,12 @@ async def get_global_stats():
             crit_alerts += 1
         elif state == "WARN":
             warn_alerts += 1
-            
+
     global_status = "OK"
-    if crit_alerts > 0: global_status = "CRIT"
-    elif warn_alerts > 0: global_status = "WARN"
+    if crit_alerts > 0:
+        global_status = "CRIT"
+    elif warn_alerts > 0:
+        global_status = "WARN"
 
     return {
         "total_rooms": len(TOPOLOGY.sites[0].rooms) if TOPOLOGY and TOPOLOGY.sites else 0,
@@ -1225,8 +1355,9 @@ async def get_global_stats():
         "active_alerts": crit_alerts + warn_alerts,
         "crit_count": crit_alerts,
         "warn_count": warn_alerts,
-        "status": global_status
+        "status": global_status,
     }
+
 
 @app.get("/api/stats/prometheus")
 def get_prometheus_stats():
@@ -1244,6 +1375,7 @@ def get_prometheus_stats():
 def get_telemetry_stats():
     return prom_client.get_telemetry_stats()
 
+
 @app.get("/api/rooms/{room_id}/state")
 async def get_room_state(room_id: str):
     if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
@@ -1251,7 +1383,7 @@ async def get_room_state(room_id: str):
     targets_by_check = _collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
     snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
     rack_healths = snapshot.rack_states
-    
+
     room_status = "OK"
     rack_ids = []
     if TOPOLOGY:
@@ -1261,7 +1393,7 @@ async def get_room_state(room_id: str):
                     for aisle in room.aisles:
                         rack_ids.extend([r.id for r in aisle.racks])
                     rack_ids.extend([r.id for r in room.standalone_racks])
-    
+
     for rid in rack_ids:
         h = rack_healths.get(rid, "OK")
         if h == "CRIT":
@@ -1273,6 +1405,7 @@ async def get_room_state(room_id: str):
     racks_out = {rid: {"state": rack_healths.get(rid, "UNKNOWN")} for rid in rack_ids}
     return {"room_id": room_id, "state": room_status, "racks": racks_out}
 
+
 @app.get("/api/racks/{rack_id}/state")
 async def get_rack_state(rack_id: str):
     if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
@@ -1280,26 +1413,26 @@ async def get_rack_state(rack_id: str):
     targets_by_check = _collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
     snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
     nodes_metrics = await prom_client.get_node_metrics(rack_id)
-    
+
     # Calculate Node States and Aggregate Rack State
     processed_nodes = {}
-    
+
     total_power = 0.0
     total_temp = 0.0
     temp_count = 0
-    
+
     node_states = []
-    
+
     for node_id, m in nodes_metrics.items():
         temp = m.get("temperature")
         power = m.get("power")
-        
+
         if power is not None:
             total_power += power
         if temp is not None and temp > 0:
             total_temp += temp
             temp_count += 1
-        
+
         state = snapshot.node_states.get(node_id, "UNKNOWN")
         alerts = snapshot.node_alerts.get(node_id, {})
 
@@ -1310,19 +1443,16 @@ async def get_rack_state(rack_id: str):
             "power": power if power is not None else 0,
             "alerts": [{"id": cid, "severity": sev} for cid, sev in alerts.items()],
         }
-    
+
     rack_state = snapshot.rack_states.get(rack_id, aggregate_states(node_states))
-    
+
     avg_temp = total_temp / temp_count if temp_count > 0 else 0
 
     return {
         "rack_id": rack_id,
         "state": rack_state,
-        "metrics": {
-            "temperature": avg_temp,
-            "power": total_power
-        },
-        "nodes": processed_nodes
+        "metrics": {"temperature": avg_temp, "power": total_power},
+        "nodes": processed_nodes,
     }
 
 
@@ -1389,11 +1519,13 @@ async def get_active_alerts():
         context = node_context.get(node_id)
         if not context:
             continue
-        alerts.append({
-            "node_id": node_id,
-            "state": snapshot.node_states.get(node_id, "UNKNOWN"),
-            "checks": [{"id": cid, "severity": sev} for cid, sev in checks.items()],
-            **context,
-        })
+        alerts.append(
+            {
+                "node_id": node_id,
+                "state": snapshot.node_states.get(node_id, "UNKNOWN"),
+                "checks": [{"id": cid, "severity": sev} for cid, sev in checks.items()],
+                **context,
+            }
+        )
 
     return {"alerts": alerts}

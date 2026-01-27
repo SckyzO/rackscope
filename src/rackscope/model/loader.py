@@ -11,13 +11,16 @@ from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
 from rackscope.model.checks import ChecksLibrary, CheckDefinition
 from rackscope.model.config import AppConfig
 
-# ... (keep exceptions)
+
+class InvalidFormatError(ValueError):
+    pass
+
 
 def load_catalog(templates_dir: Union[str, Path]) -> Catalog:
     """Load all template files from a directory recursively into a single Catalog."""
     path = Path(templates_dir)
     catalog = Catalog()
-    
+
     if not path.exists() or not path.is_dir():
         return catalog
 
@@ -26,21 +29,22 @@ def load_catalog(templates_dir: Union[str, Path]) -> Catalog:
         try:
             with yaml_file.open("r") as f:
                 data = yaml.safe_load(f)
-                if not data: continue
-                
+                if not data:
+                    continue
+
                 # Load Device Templates
                 if "templates" in data:
                     for t_data in data["templates"]:
                         catalog.device_templates.append(DeviceTemplate(**t_data))
-                
+
                 # Load Rack Templates
                 if "rack_templates" in data:
                     for t_data in data["rack_templates"]:
                         catalog.rack_templates.append(RackTemplate(**t_data))
-                        
+
         except Exception as e:
             print(f"Warning: Failed to load template file {yaml_file}: {e}")
-            
+
     return catalog
 
 
@@ -51,6 +55,7 @@ def dump_yaml(data: dict) -> str:
         sort_keys=False,
         default_flow_style=False,
     )
+
 
 def load_topology(path: Union[str, Path]) -> Topology:
     """Load and validate topology from a YAML file or segmented directory."""
@@ -124,7 +129,16 @@ def load_segmented_topology(base_dir: Path) -> Topology:
                 if not aisle_id:
                     continue
                 aisle_name = aisle.get("name", aisle_id)
-                aisle_path = base_dir / "datacenters" / site_id / "rooms" / room_id / "aisles" / aisle_id / "aisle.yaml"
+                aisle_path = (
+                    base_dir
+                    / "datacenters"
+                    / site_id
+                    / "rooms"
+                    / room_id
+                    / "aisles"
+                    / aisle_id
+                    / "aisle.yaml"
+                )
                 if not aisle_path.exists():
                     print(f"Warning: Missing aisle file {aisle_path}")
                     continue
@@ -155,7 +169,9 @@ def load_segmented_topology(base_dir: Path) -> Topology:
         raise InvalidFormatError(f"Validation failed for segmented topology {base_dir}:\n{e}")
 
 
-def _load_rack_ref(base_dir: Path, site_id: str, room_id: str, aisle_id: str | None, rack_ref: object) -> dict | None:
+def _load_rack_ref(
+    base_dir: Path, site_id: str, room_id: str, aisle_id: str | None, rack_ref: object
+) -> dict | None:
     if isinstance(rack_ref, dict):
         rack_id = rack_ref.get("id")
         if rack_id and len(rack_ref.keys()) > 1:
@@ -166,9 +182,27 @@ def _load_rack_ref(base_dir: Path, site_id: str, room_id: str, aisle_id: str | N
         return None
 
     if aisle_id:
-        rack_path = base_dir / "datacenters" / site_id / "rooms" / room_id / "aisles" / aisle_id / "racks" / f"{rack_ref}.yaml"
+        rack_path = (
+            base_dir
+            / "datacenters"
+            / site_id
+            / "rooms"
+            / room_id
+            / "aisles"
+            / aisle_id
+            / "racks"
+            / f"{rack_ref}.yaml"
+        )
     else:
-        rack_path = base_dir / "datacenters" / site_id / "rooms" / room_id / "standalone_racks" / f"{rack_ref}.yaml"
+        rack_path = (
+            base_dir
+            / "datacenters"
+            / site_id
+            / "rooms"
+            / room_id
+            / "standalone_racks"
+            / f"{rack_ref}.yaml"
+        )
     if not rack_path.exists():
         print(f"Warning: Missing rack file {rack_path}")
         return None

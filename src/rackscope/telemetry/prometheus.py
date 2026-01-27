@@ -5,11 +5,12 @@ import time
 import asyncio
 import httpx
 from collections import deque
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, Tuple, Optional
 
 # Default to internal docker network hostname if not set
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
 PROMETHEUS_CACHE_TTL = float(os.getenv("PROMETHEUS_CACHE_TTL", "60"))
+
 
 class PrometheusClient:
     def __init__(self, base_url: str = PROMETHEUS_URL):
@@ -50,7 +51,9 @@ class PrometheusClient:
         if latency_window >= 1:
             self._latency_samples = deque(list(self._latency_samples), maxlen=latency_window)
         old_client = self.client
-        self.client = httpx.AsyncClient(timeout=2.0, auth=self._auth, verify=self._verify, cert=self._cert)
+        self.client = httpx.AsyncClient(
+            timeout=2.0, auth=self._auth, verify=self._verify, cert=self._cert
+        )
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -89,8 +92,7 @@ class PrometheusClient:
         try:
             self._query_count += 1
             response = await self.client.get(
-                f"{self.base_url}/api/v1/query",
-                params={"query": query}
+                f"{self.base_url}/api/v1/query", params={"query": query}
             )
             response.raise_for_status()
             return response.json()
@@ -117,7 +119,9 @@ class PrometheusClient:
             "last_ts": self._last_query_ts,
         }
 
-    def record_planner_batch(self, total_ids: int, query_count: int, max_ids_per_query: int) -> None:
+    def record_planner_batch(
+        self, total_ids: int, query_count: int, max_ids_per_query: int
+    ) -> None:
         self._last_batch = {
             "total_ids": total_ids,
             "query_count": query_count,
@@ -138,7 +142,9 @@ class PrometheusClient:
             "in_flight": len(self._in_flight),
             "last_batch": self._last_batch or None,
             "last_ms": self._last_latency_ms,
-            "avg_ms": (sum(self._latency_samples) / len(self._latency_samples)) if self._latency_samples else None,
+            "avg_ms": (sum(self._latency_samples) / len(self._latency_samples))
+            if self._latency_samples
+            else None,
             "last_ts": self._last_query_ts,
         }
 
@@ -147,21 +153,22 @@ class PrometheusClient:
         # We fetch temperature for all nodes in this rack
         q_temp = f'node_temperature_celsius{{rack_id="{rack_id}"}}'
         q_power = f'node_power_watts{{rack_id="{rack_id}"}}'
-        
+
         # Parallel fetch
         results = {}
         try:
             # Note: httpx usage here should be optimized with gather in real prod
             res_temp = await self.query(q_temp)
             res_power = await self.query(q_power)
-            
+
             # Parse Temperatures
             if res_temp.get("status") == "success":
                 for item in res_temp["data"]["result"]:
                     node_id = item["metric"].get("node_id")
                     val = float(item["value"][1])
                     if node_id:
-                        if node_id not in results: results[node_id] = {}
+                        if node_id not in results:
+                            results[node_id] = {}
                         results[node_id]["temperature"] = val
 
             # Parse Power
@@ -170,42 +177,46 @@ class PrometheusClient:
                     node_id = item["metric"].get("node_id")
                     val = float(item["value"][1])
                     if node_id:
-                        if node_id not in results: results[node_id] = {}
+                        if node_id not in results:
+                            results[node_id] = {}
                         results[node_id]["power"] = val
-                        
+
         except Exception as e:
             print(f"Error fetching node metrics: {e}")
-            
+
         return results
 
     async def get_rack_health_summary(self) -> Dict[str, str]:
         """Get aggregated health status per rack based on nodes."""
         # If any node is > 35°C, rack is CRIT. If > 30°C, WARN.
         # We do this aggregation in PromQL for efficiency.
-        
+
         # Count critical nodes per rack
-        q_crit = 'count(node_temperature_celsius > 35) by (rack_id)'
-        q_warn = 'count(node_temperature_celsius > 30) by (rack_id)'
-        
+        q_crit = "count(node_temperature_celsius > 35) by (rack_id)"
+        q_warn = "count(node_temperature_celsius > 30) by (rack_id)"
+
         health_map = {}
-        
+
         # Initialize default OK (we assume all known racks are OK unless proven otherwise)
         # In a real app we'd merge with topology list
-        
+
         res_crit = await self.query(q_crit)
         res_warn = await self.query(q_warn)
-        
+
         if res_warn.get("status") == "success":
             for item in res_warn["data"]["result"]:
                 rack_id = item["metric"].get("rack_id")
-                if rack_id: health_map[rack_id] = "WARN"
+                if rack_id:
+                    health_map[rack_id] = "WARN"
 
         if res_crit.get("status") == "success":
             for item in res_crit["data"]["result"]:
                 rack_id = item["metric"].get("rack_id")
-                if rack_id: health_map[rack_id] = "CRIT"
-                
+                if rack_id:
+                    health_map[rack_id] = "CRIT"
+
         return health_map
+
 
 # Global instance
 client = PrometheusClient()

@@ -185,7 +185,9 @@ def _count_target_ids(targets_by_check: Dict[str, Dict[str, List[str]]]) -> int:
     return len(node_ids) + len(chassis_ids) + len(rack_ids)
 
 
-def _extract_key(check: CheckDefinition, labels: Dict[str, str], config: PlannerConfig) -> Optional[str]:
+def _extract_key(
+    check: CheckDefinition, labels: Dict[str, str], config: PlannerConfig
+) -> Optional[str]:
     if check.selectors:
         return labels.get(check.selectors[0])
     if check.scope == "node":
@@ -341,7 +343,7 @@ def _expand_placeholder(
         return expressions
     if not ids:
         return [expr.replace(token, ".*") for expr in expressions]
-    chunks = [ids[i:i + max_ids_per_query] for i in range(0, len(ids), max_ids_per_query)]
+    chunks = [ids[i : i + max_ids_per_query] for i in range(0, len(ids), max_ids_per_query)]
     expanded: List[str] = []
     for expr in expressions:
         if token not in expr:
@@ -372,13 +374,17 @@ def _aggregate_states(states: List[str], unknown: str) -> str:
     return "OK"
 
 
-def _apply_unknown(expected: List[str], seen: set[str], target: Dict[str, str], unknown: str) -> None:
+def _apply_unknown(
+    expected: List[str], seen: set[str], target: Dict[str, str], unknown: str
+) -> None:
     for key in expected:
         if key not in seen:
             target.setdefault(key, unknown)
 
 
-def _collect_topology_ids(topology: Topology) -> Tuple[List[str], List[str], List[str], Dict[str, List[str]]]:
+def _collect_topology_ids(
+    topology: Topology,
+) -> Tuple[List[str], List[str], List[str], Dict[str, List[str]]]:
     node_ids: List[str] = []
     chassis_ids: List[str] = []
     rack_ids: List[str] = []
