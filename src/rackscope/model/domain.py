@@ -35,12 +35,7 @@ class Rack(BaseModel):
     template_id: Optional[str] = Field(None, description="Reference to a rack template (defines infrastructure)")
     u_height: int = Field(42, ge=1, le=60, description="Height in rack units")
     aisle_id: Optional[str] = Field(None, description="ID of the aisle this rack belongs to")
-    
-    # Position and orientation
-    x: Optional[int] = None
-    y: Optional[int] = None
-    rotation: int = Field(0, description="Rotation in degrees (0, 90, 180, 270)")
-    
+
     devices: List[Device] = Field(default_factory=list)
 
 class Aisle(BaseModel):

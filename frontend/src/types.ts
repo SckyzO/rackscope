@@ -13,9 +13,6 @@ export interface Rack {
   template_id?: string;
   u_height: number;
   aisle_id?: string;
-  x?: number;
-  y?: number;
-  rotation: number;
   devices: Device[];
 }
 
