@@ -41,9 +41,8 @@ export const Sidebar = ({
   const [now, setNow] = useState(Date.now());
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     topology: false,
-    templates: false,
-    templatesEditor: false,
-    templatesLibrary: false,
+    catalog: false,
+    editors: false,
     settings: false,
   });
 
@@ -230,7 +229,8 @@ export const Sidebar = ({
         <nav className="flex-1 flex flex-col gap-2 items-center py-4">
           <CollapsedLink to="/" icon={LayoutDashboard} label="Overview" />
           <CollapsedLink to="/room" icon={Globe} label="Topology" />
-          <CollapsedLink to="/templates" icon={Folder} label="Templates" />
+          <CollapsedLink to="/templates" icon={Folder} label="Catalog" />
+          <CollapsedLink to="/templates/editor" icon={Component} label="Editors" />
           <CollapsedLink to="/settings" icon={Settings} label="Settings" />
         </nav>
         <div className="p-3 border-t border-[var(--color-border)] flex items-center justify-center">
@@ -269,8 +269,6 @@ export const Sidebar = ({
         />
         {expandedSections.topology && (
           <div className="space-y-1.5">
-            <SidebarLink to="/topology/editor" icon={Columns2} label="Room Editor" depth={1} />
-            <SidebarLink to="/topology/racks/editor" icon={Columns2} label="Rack Editor" depth={1} />
             <div className="px-3 text-[9px] font-mono uppercase tracking-[0.25em] text-gray-500/70">
               Datacenters
             </div>
@@ -290,39 +288,31 @@ export const Sidebar = ({
 
         <NavToggle
           icon={Folder}
-          label="Templates"
-          expanded={expandedSections.templates}
-          onToggle={() => toggleSection('templates')}
+          label="Catalog"
+          expanded={expandedSections.catalog}
+          onToggle={() => toggleSection('catalog')}
         />
-        {expandedSections.templates && (
+        {expandedSections.catalog && (
           <div className="space-y-1">
-            <NavToggle
-              icon={Component}
-              label="Editor"
-              depth={1}
-              expanded={expandedSections.templatesEditor}
-              onToggle={() => toggleSection('templatesEditor')}
-            />
-            {expandedSections.templatesEditor && (
-              <div className="space-y-1">
-                <SidebarLink to="/templates/editor" icon={Component} label="Devices" depth={2} />
-                <SidebarLink to="/templates/editor/racks" icon={Component} label="Racks" depth={2} />
-              </div>
-            )}
-            <NavToggle
-              icon={Folder}
-              label="Library"
-              depth={1}
-              expanded={expandedSections.templatesLibrary}
-              onToggle={() => toggleSection('templatesLibrary')}
-            />
-            {expandedSections.templatesLibrary && (
-              <div className="space-y-1">
-                <SidebarLink to="/checks/library" icon={BookOpen} label="Checks" depth={2} />
-                <SidebarLink to="/templates#templates-devices" icon={Component} label="Devices" depth={2} />
-                <SidebarLink to="/templates#templates-racks" icon={Component} label="Racks" depth={2} />
-              </div>
-            )}
+            <SidebarLink to="/templates#templates-devices" icon={Component} label="Devices" depth={1} />
+            <SidebarLink to="/templates#templates-racks" icon={Component} label="Racks" depth={1} />
+            <SidebarLink to="/checks/library" icon={BookOpen} label="Checks" depth={1} />
+          </div>
+        )}
+        <div className="h-px bg-[var(--color-border)]/40 my-2"></div>
+
+        <NavToggle
+          icon={Component}
+          label="Editors"
+          expanded={expandedSections.editors}
+          onToggle={() => toggleSection('editors')}
+        />
+        {expandedSections.editors && (
+          <div className="space-y-1">
+            <SidebarLink to="/topology/editor" icon={Columns2} label="Topology Editor" depth={1} />
+            <SidebarLink to="/topology/racks/editor" icon={Columns2} label="Rack Editor" depth={1} />
+            <SidebarLink to="/templates/editor" icon={Component} label="Template Editor" depth={1} />
+            <SidebarLink to="/checks/library" icon={BookOpen} label="Checks Editor" depth={1} />
           </div>
         )}
         <div className="h-px bg-[var(--color-border)]/40 my-2"></div>
@@ -335,11 +325,11 @@ export const Sidebar = ({
         />
         {expandedSections.settings && (
           <div className="space-y-1">
-            <SidebarLink to="/settings#configuration" icon={SlidersHorizontal} label="Application Settings" depth={1} />
-            <SidebarLink to="/settings#appearance" icon={Palette} label="Theme Settings" depth={1} />
-            <SidebarLink to="/settings#system" icon={FileText} label="System & Logs" depth={1} />
-            <SidebarLink to="/settings#environment" icon={Globe} label="Environment" depth={1} />
+            <SidebarLink to="/settings#configuration" icon={SlidersHorizontal} label="Application" depth={1} />
+            <SidebarLink to="/settings#appearance" icon={Palette} label="Appearance" depth={1} />
             <SidebarLink to="/settings#simulator" icon={Activity} label="Simulator" depth={1} />
+            <SidebarLink to="/settings#telemetry" icon={Activity} label="Telemetry" depth={1} />
+            <SidebarLink to="/settings#system" icon={FileText} label="Logs" depth={1} />
           </div>
         )}
       </nav>
@@ -449,6 +439,12 @@ const NavItem = ({
   );
 };
 
+const TreeLabel = ({ label }: { label: string }) => (
+  <div className="px-3 text-[9px] font-mono uppercase tracking-[0.25em] text-gray-500/70">
+    {label}
+  </div>
+);
+
 const CollapsedLink = ({
   to,
   icon: Icon,
@@ -514,6 +510,7 @@ const SiteTreeItem = ({
 
       {isExpanded && (
         <div className="pl-2 ml-3 border-l border-[var(--color-border)] space-y-1 mt-1">
+          <TreeLabel label="Rooms" />
           {rooms.map((room) => (
             <RoomTreeItem key={room.id} room={room} forceExpanded={forceExpanded} />
           ))}
@@ -565,6 +562,7 @@ const RoomTreeItem = ({
       
       {isExpanded && (
         <div className="pl-2 ml-3 border-l border-[var(--color-border)] space-y-1 mt-1">
+          <TreeLabel label="Aisles" />
           {room.aisles?.map(aisle => (
             <AisleTreeItem key={aisle.id} aisle={aisle} forceExpanded={forceExpanded} />
           ))}
@@ -605,6 +603,7 @@ const AisleTreeItem = ({
 
       {isExpanded && (
         <div className="pl-2 ml-3 border-l border-[var(--color-border)] mt-1 space-y-0.5 animate-in slide-in-from-top-1 duration-200">
+          <TreeLabel label="Racks" />
           {aisle.racks.map(rack => (
             <Link 
               key={rack.id}
