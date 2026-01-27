@@ -63,6 +63,16 @@ rack_templates:
 
 The topology describes **where** your hardware is located.
 
+Rackscope supports **two formats**:
+- **Monolithic**: a single `topology.yaml` file (simple labs, demos)
+- **Segmented**: a folder tree under `config/topology/` (recommended for real DCs)
+
+Why segmented is preferred:
+- Smaller files, cleaner diffs
+- Safer editor writes (room/aisle/rack scoped)
+- Easier automation/importers per zone
+
+#### Option A — Monolithic
 File: `topology.yaml`
 ```yaml
 sites:
@@ -80,6 +90,63 @@ sites:
                     u_position: 10
                     # Assign logical node hostnames to physical slots
                     nodes: "compute[001-004]" 
+```
+
+#### Option B — Segmented (Recommended)
+Files are split under `config/topology/`:
+```
+config/topology/
+  sites.yaml
+  datacenters/
+    dc1/
+      rooms/
+        room-a/
+          room.yaml
+          aisles/
+            aisle-01/
+              aisle.yaml
+              racks/
+                r01-01.yaml
+```
+
+`sites.yaml`:
+```yaml
+sites:
+  - id: dc1
+    name: Main Datacenter
+    rooms:
+      - id: room-a
+        name: Room A
+```
+
+`room.yaml`:
+```yaml
+id: room-a
+name: Room A
+aisles:
+  - id: aisle-01
+    name: Aisle 01
+standalone_racks: []
+```
+
+`aisle.yaml`:
+```yaml
+id: aisle-01
+name: Aisle 01
+racks:
+  - r01-01
+```
+
+`r01-01.yaml`:
+```yaml
+id: r01-01
+name: Rack 01
+template_id: hpc-rack-dlc
+devices:
+  - id: chassis-01
+    template_id: my-quad-server
+    u_position: 10
+    nodes: "compute[001-004]"
 ```
 
 ## Node Naming Patterns
