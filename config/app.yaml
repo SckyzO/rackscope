@@ -45,5 +45,5 @@ simulator:
     rack: 3
     aisle: 5
   overrides_path: config/simulator_overrides.yaml
-  default_ttl_seconds: 120
+  default_ttl_seconds: 0
   metrics_catalog_path: config/simulator_metrics_full.yaml

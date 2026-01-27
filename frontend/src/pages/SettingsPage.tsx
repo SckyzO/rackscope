@@ -795,7 +795,22 @@ export const SettingsPage = () => {
                     Scenario
                     <select
                       value={draft?.simulator.scenario || ''}
-                      onChange={(e) => setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, scenario: e.target.value } }))}
+                      onChange={(e) =>
+                        setDraft((prev) => {
+                          if (!prev) return prev;
+                          const nextScenario = e.target.value;
+                          const nextDefaultTtl =
+                            nextScenario && prev.simulator.default_ttl_seconds !== '0' ? '0' : prev.simulator.default_ttl_seconds;
+                          return {
+                            ...prev,
+                            simulator: {
+                              ...prev.simulator,
+                              scenario: nextScenario,
+                              default_ttl_seconds: nextDefaultTtl,
+                            },
+                          };
+                        })
+                      }
                       className="mt-1 w-full rounded-lg bg-black/30 border border-[var(--color-border)] px-3 py-2 text-xs text-gray-200"
                     >
                       <option value="">(none)</option>
@@ -1012,6 +1027,8 @@ export const SettingsPage = () => {
                             setOverrideError('TTL must be >= 0');
                             return;
                           }
+                        } else {
+                          ttl = 0;
                         }
                         const payload = {
                           instance: overrideForm.scope === 'instance' ? overrideForm.instance : undefined,
@@ -1023,6 +1040,9 @@ export const SettingsPage = () => {
                         const data = await api.addSimulatorOverride(payload);
                         setOverrides((data?.overrides || []) as any[]);
                         setOverrideForm({ scope: overrideForm.scope, instance: '', rack_id: '', metric: 'up', value: '', ttl_seconds: '' });
+                        if (draft?.simulator.default_ttl_seconds !== '0') {
+                          setDraft((prev) => prev && ({ ...prev, simulator: { ...prev.simulator, default_ttl_seconds: '0' } }));
+                        }
                       }}
                       className="w-full rounded-lg bg-[var(--color-accent)]/15 text-[var(--color-accent)] border border-[var(--color-accent)]/30 px-3 py-2 text-xs font-bold uppercase tracking-widest"
                     >
