@@ -15,6 +15,7 @@ import {
   Globe,
   Home,
   Columns2,
+  Map,
   SlidersHorizontal,
   Palette,
   FileText,
@@ -276,6 +277,7 @@ export const Sidebar = ({
         />
         {expandedSections.topology && (
           <div className="space-y-1.5">
+            <SidebarLink to="/topology/map" icon={Map} label="World Map" depth={1} />
             <TreeLabel label="Datacenters" />
             {sites
               .filter((site) => (filteredRoomsBySite[site.id] || []).length > 0)

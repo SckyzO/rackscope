@@ -1,4 +1,5 @@
 @import 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap';
+@import 'leaflet/dist/leaflet.css';
 @import 'tailwindcss';
 
 @theme {
@@ -26,6 +27,28 @@ body {
     background-color 0.3s,
     color 0.3s;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Leaflet dark popup styling */
+.leaflet-container {
+  background: transparent;
+  font-family: var(--font-sans);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: rgb(10 10 10 / 90%);
+  color: #e5e7eb;
+  border: 1px solid rgb(255 255 255 / 8%);
+  box-shadow: 0 16px 30px rgb(0 0 0 / 35%);
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px;
+}
+
+.leaflet-popup-close-button {
+  color: #9ca3af;
 }
 
 /* Custom Thin Scrollbar */

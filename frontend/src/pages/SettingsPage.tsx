@@ -10,6 +10,15 @@ type ConfigDraft = {
     name: string;
     description: string;
   };
+  map: {
+    default_view: string;
+    default_zoom: string;
+    min_zoom: string;
+    max_zoom: string;
+    zoom_controls: boolean;
+    center_lat: string;
+    center_lon: string;
+  };
   paths: {
     topology: string;
     templates: string;
@@ -74,6 +83,18 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
   app: {
     name: config.app?.name || 'Rackscope',
     description: config.app?.description || 'Datacenter Overview',
+  },
+  map: {
+    default_view: config.map?.default_view || 'world',
+    default_zoom:
+      config.map?.default_zoom !== null && config.map?.default_zoom !== undefined
+        ? String(config.map?.default_zoom)
+        : '',
+    min_zoom: String(config.map?.min_zoom ?? 2),
+    max_zoom: String(config.map?.max_zoom ?? 7),
+    zoom_controls: config.map?.zoom_controls ?? true,
+    center_lat: String(config.map?.center?.lat ?? 20),
+    center_lon: String(config.map?.center?.lon ?? 0),
   },
   paths: {
     topology: config.paths?.topology || '',
@@ -323,6 +344,9 @@ export const SettingsPage = () => {
       ['sim_default_ttl', draft.simulator.default_ttl_seconds, 0],
       ['sim_duration_rack', draft.simulator.incident_durations.rack, 1],
       ['sim_duration_aisle', draft.simulator.incident_durations.aisle, 1],
+      ['map_default_zoom', draft.map.default_zoom || '2', 1],
+      ['map_min_zoom', draft.map.min_zoom, 1],
+      ['map_max_zoom', draft.map.max_zoom, 1],
     ];
     for (const [key, value, min] of intFields) {
       const num = Number.parseInt(value, 10);
@@ -350,6 +374,15 @@ export const SettingsPage = () => {
     const scale = Number.parseFloat(draft.simulator.scale_factor);
     if (!Number.isFinite(scale) || scale < 0) {
       next.sim_scale = 'Must be >= 0';
+    }
+
+    const lat = Number.parseFloat(draft.map.center_lat);
+    const lon = Number.parseFloat(draft.map.center_lon);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      next.map_center = 'Latitude must be between -90 and 90';
+    }
+    if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
+      next.map_center = 'Longitude must be between -180 and 180';
     }
 
     return next;
@@ -411,6 +444,17 @@ export const SettingsPage = () => {
           playlist: draft.features.playlist,
           offline: draft.features.offline,
           demo: draft.features.demo,
+        },
+        map: {
+          default_view: draft.map.default_view as AppConfig['map']['default_view'],
+          default_zoom: draft.map.default_zoom ? Number.parseInt(draft.map.default_zoom, 10) : null,
+          min_zoom: Number.parseInt(draft.map.min_zoom, 10),
+          max_zoom: Number.parseInt(draft.map.max_zoom, 10),
+          zoom_controls: draft.map.zoom_controls,
+          center: {
+            lat: Number.parseFloat(draft.map.center_lat),
+            lon: Number.parseFloat(draft.map.center_lon),
+          },
         },
         simulator: {
           update_interval_seconds: Number.parseInt(draft.simulator.update_interval_seconds, 10),
@@ -1229,6 +1273,141 @@ export const SettingsPage = () => {
                     <option value="false">false</option>
                     <option value="true">true</option>
                   </select>
+                </label>
+              </div>
+              <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">
+                <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
+                  World Map
+                </h3>
+                <label className="text-xs text-gray-400" title="Default map preset">
+                  Default view
+                  <select
+                    value={draft?.map.default_view || 'world'}
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            map: { ...prev.map, default_view: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                  >
+                    <option value="world">World</option>
+                    <option value="continent">Continent</option>
+                    <option value="country">Country</option>
+                    <option value="city">City</option>
+                  </select>
+                </label>
+                <label className="text-xs text-gray-400" title="Default zoom level">
+                  Default zoom
+                  <input
+                    value={draft?.map.default_zoom || ''}
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            map: { ...prev.map, default_zoom: e.target.value },
+                          }
+                      )
+                    }
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                    placeholder="2"
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs text-gray-400" title="Minimum zoom allowed">
+                    Min zoom
+                    <input
+                      value={draft?.map.min_zoom || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              map: { ...prev.map, min_zoom: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="2"
+                    />
+                  </label>
+                  <label className="text-xs text-gray-400" title="Maximum zoom allowed">
+                    Max zoom
+                    <input
+                      value={draft?.map.max_zoom || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              map: { ...prev.map, max_zoom: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="7"
+                    />
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs text-gray-400" title="Center latitude">
+                    Center lat
+                    <input
+                      value={draft?.map.center_lat || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              map: { ...prev.map, center_lat: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="20"
+                    />
+                  </label>
+                  <label className="text-xs text-gray-400" title="Center longitude">
+                    Center lon
+                    <input
+                      value={draft?.map.center_lon || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              map: { ...prev.map, center_lon: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="0"
+                    />
+                  </label>
+                </div>
+                {validationErrors.map_center && (
+                  <div className="text-status-crit text-[10px]">{validationErrors.map_center}</div>
+                )}
+                <label className="mt-2 flex items-center gap-2 text-xs text-gray-400">
+                  <input
+                    type="checkbox"
+                    checked={draft?.map.zoom_controls ?? true}
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            map: { ...prev.map, zoom_controls: e.target.checked },
+                          }
+                      )
+                    }
+                    className="h-3 w-3 rounded border border-[var(--color-border)] bg-black/30"
+                  />
+                  Show zoom controls
                 </label>
               </div>
             </div>

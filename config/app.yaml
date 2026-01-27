@@ -1,6 +1,15 @@
 app:
   name: Rackscope
   description: Datacenter Overview
+map:
+  default_view: world
+  default_zoom: 2
+  min_zoom: 2
+  max_zoom: 7
+  zoom_controls: true
+  center:
+    lat: 20
+    lon: 0
 paths:
   topology: config/topology
   templates: config/templates

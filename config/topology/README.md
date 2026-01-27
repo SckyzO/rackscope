@@ -30,6 +30,11 @@ Examples
 sites:
   - id: dc1
     name: Datacenter 1
+    description: Primary site
+    location:
+      lat: 48.8566
+      lon: 2.3522
+      address: Paris, FR
     rooms:
       - id: room-a
         name: Room A

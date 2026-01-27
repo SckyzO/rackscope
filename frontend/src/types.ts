@@ -54,6 +54,12 @@ export interface Room {
 export interface Site {
   id: string;
   name: string;
+  description?: string | null;
+  location?: {
+    lat: number;
+    lon: number;
+    address?: string | null;
+  } | null;
   rooms: Room[];
 }
 
@@ -229,6 +235,17 @@ export interface AppConfig {
   app?: {
     name?: string;
     description?: string | null;
+  };
+  map?: {
+    default_view?: 'world' | 'continent' | 'country' | 'city' | null;
+    default_zoom?: number | null;
+    min_zoom?: number | null;
+    max_zoom?: number | null;
+    zoom_controls?: boolean;
+    center?: {
+      lat: number;
+      lon: number;
+    } | null;
   };
   paths: {
     topology?: string;

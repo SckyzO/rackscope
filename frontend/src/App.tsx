@@ -12,6 +12,7 @@ import { TemplatesRackEditorPage } from './pages/TemplatesRackEditorPage';
 import { ChecksLibraryEditorPage } from './pages/ChecksLibraryEditorPage';
 import { TopologyEditorPage } from './pages/TopologyEditorPage';
 import { RackEditorPage } from './pages/RackEditorPage';
+import { WorldMapPage } from './pages/WorldMapPage';
 import { api } from './services/api';
 import type {
   RoomSummary,
@@ -892,6 +893,7 @@ function App() {
               path="/room/:roomId"
               element={<RoomPage searchQuery={searchQuery} reloadKey={reloadKey} />}
             />
+            <Route path="/topology/map" element={<WorldMapPage />} />
             <Route path="/rack/:rackId" element={<RackPage reloadKey={reloadKey} />} />
             <Route path="/templates" element={<TemplatesLibraryPage />} />
             <Route path="/templates/editor" element={<TemplatesEditorPage />} />

@@ -99,6 +99,8 @@ def load_segmented_topology(base_dir: Path) -> Topology:
         if not site_id:
             continue
         site_name = site.get("name", site_id)
+        site_description = site.get("description")
+        site_location = site.get("location")
         rooms_out = []
 
         room_entries = site.get("rooms") or []
@@ -162,7 +164,15 @@ def load_segmented_topology(base_dir: Path) -> Topology:
 
             rooms_out.append(room_out)
 
-        sites_out.append({"id": site_id, "name": site_name, "rooms": rooms_out})
+        sites_out.append(
+            {
+                "id": site_id,
+                "name": site_name,
+                "description": site_description,
+                "location": site_location,
+                "rooms": rooms_out,
+            }
+        )
 
     try:
         return Topology(**{"sites": sites_out})

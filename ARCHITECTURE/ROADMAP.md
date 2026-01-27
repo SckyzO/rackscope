@@ -79,6 +79,7 @@ Telemetry:
   - [x] UNKNOWN/aggregation policies
   - [x] Paths (topology/templates/checks)
   - [x] Feature toggles (notifications, playlist, offline, demo)
+  - [x] World map settings (default view/zoom/center)
   - [x] Notification panel size (max visible alerts)
   - [x] Validation + save/reload workflow
   - [ ] Settings UX refinement (help text, guided flows) — deferred to final pass
@@ -136,7 +137,8 @@ Telemetry:
   - [ ] Validation per file (schema + YAML lint)
 
 ## Phase 7 — Additional Views + Importers
-- [ ] World map overview (multi-DC)
+- [x] World map overview (multi-DC)
+- [ ] Offline world map tiles (self-hosted)
 - [x] Multi-DC UI support (site selector + per-site room list)
 - [ ] Slurm Status Wallboard (Aisle Compact View):
   - [ ] compact aisle view (front-only racks, no rear)

@@ -109,6 +109,22 @@ class AppInfoConfig(BaseModel):
     description: Optional[str] = Field(default="Datacenter Overview")
 
 
+class MapCenterConfig(BaseModel):
+    lat: float = Field(default=20, ge=-90, le=90)
+    lon: float = Field(default=0, ge=-180, le=180)
+
+
+class MapConfig(BaseModel):
+    default_view: Optional[Literal["world", "continent", "country", "city"]] = Field(
+        default="world"
+    )
+    default_zoom: Optional[int] = Field(default=None, ge=1, le=18)
+    min_zoom: int = Field(default=2, ge=1, le=18)
+    max_zoom: int = Field(default=7, ge=1, le=18)
+    zoom_controls: bool = True
+    center: MapCenterConfig = Field(default_factory=MapCenterConfig)
+
+
 class AppConfig(BaseModel):
     app: AppInfoConfig = Field(default_factory=AppInfoConfig)
     paths: PathsConfig
@@ -117,4 +133,5 @@ class AppConfig(BaseModel):
     telemetry: TelemetryConfig = Field(default_factory=TelemetryConfig)
     planner: PlannerConfig = Field(default_factory=PlannerConfig)
     features: FeatureConfig = Field(default_factory=FeatureConfig)
+    map: MapConfig = Field(default_factory=MapConfig)
     simulator: SimulatorConfig = Field(default_factory=SimulatorConfig)

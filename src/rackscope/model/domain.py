@@ -97,9 +97,17 @@ class Room(BaseModel):
         return v
 
 
+class SiteLocation(BaseModel):
+    lat: float = Field(..., ge=-90, le=90)
+    lon: float = Field(..., ge=-180, le=180)
+    address: Optional[str] = None
+
+
 class Site(BaseModel):
     id: str = Field(..., description="Unique identifier for the site")
     name: str = Field(..., description="Human-readable name")
+    description: Optional[str] = None
+    location: Optional["SiteLocation"] = None
     rooms: List[Room] = Field(default_factory=list)
 
     @field_validator("rooms")
