@@ -12,6 +12,7 @@ metrics:
     scope: node
     instances:
       - compute[001-010]
+    labels_only: true
     labels:
       node: $node_id
       partition: $partition
