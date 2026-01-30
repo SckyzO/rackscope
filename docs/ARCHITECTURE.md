@@ -44,6 +44,8 @@ physical rack layout without altering the existing topology model.
 - **Mapping**: `slurm.status_map` defines which statuses are OK/WARN/CRIT.
 - **Filtering**: device templates can define a `role` (compute/visu/etc) and
   the Slurm view only shows allowed roles.
+- **Optional mapping file**: `slurm.mapping_path` can map Slurm node names to
+  topology instances when naming differs.
 
 ## Data Model
 

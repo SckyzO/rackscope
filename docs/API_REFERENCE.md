@@ -139,6 +139,9 @@ Returns Slurm node states for a room.
   }
   ```
 
+Notes:
+- Slurm nodes can be mapped to topology instances via `slurm.mapping_path`.
+
 #### `GET /api/stats/prometheus`
 Prometheus heartbeat + latency stats.
 

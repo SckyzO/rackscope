@@ -33,6 +33,8 @@ The Slurm Wallboard is a compact, rack‑dense view focused on node states.
 - **Status mapping** is configurable in Settings (OK/WARN/CRIT lists).
 - **Role filter**: only devices whose template `role` is in the allowed list
   (ex: compute, visu). Unlabeled devices can be included or excluded.
+- **Optional mapping file**: map Slurm node names to topology instances
+  when they differ (Settings → Slurm mapping path).
 
 ## Editors
 - **Topology Editor**: reorder racks across aisles, save layout.

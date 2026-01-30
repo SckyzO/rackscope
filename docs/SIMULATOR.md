@@ -198,3 +198,4 @@ Supported metrics:
 - `config/app.yaml` (simulator configuration)
 - `config/simulator.yaml` (legacy config, still supported)
 - `config/simulator_overrides.yaml` (runtime overrides)
+- `config/slurm_mapping.yaml` (optional Slurm node → instance mapping)
