@@ -85,6 +85,7 @@ type ConfigDraft = {
     label_partition: string;
     roles: string[];
     include_unlabeled: boolean;
+    mapping_path: string;
     status_map: {
       ok: string;
       warn: string;
@@ -200,6 +201,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     label_partition: config.slurm?.label_partition || 'partition',
     roles: config.slurm?.roles || ['compute', 'visu'],
     include_unlabeled: config.slurm?.include_unlabeled ?? false,
+    mapping_path: config.slurm?.mapping_path || '',
     status_map: {
       ok: (config.slurm?.status_map?.ok || []).join(', '),
       warn: (config.slurm?.status_map?.warn || []).join(', '),
@@ -541,6 +543,7 @@ export const SettingsPage = () => {
           label_partition: draft.slurm.label_partition.trim(),
           roles: draft.slurm.roles,
           include_unlabeled: draft.slurm.include_unlabeled,
+          mapping_path: draft.slurm.mapping_path.trim() || null,
           status_map: {
             ok: draft.slurm.status_map.ok
               .split(',')
@@ -1558,6 +1561,26 @@ export const SettingsPage = () => {
                       className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                       placeholder="partition"
                     />
+                  </label>
+                  <label className="text-xs text-gray-400 md:col-span-2">
+                    Mapping file (optional)
+                    <input
+                      value={draft?.slurm.mapping_path || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              slurm: { ...prev.slurm, mapping_path: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="config/slurm_mapping.yaml"
+                    />
+                    <div className="mt-1 text-[10px] text-gray-500">
+                      Optional mapping from Slurm node names to topology instances.
+                    </div>
                   </label>
                 </div>
                 <label

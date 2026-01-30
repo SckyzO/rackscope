@@ -184,6 +184,7 @@ class SlurmConfig(BaseModel):
     status_map: SlurmStatusMap = Field(default_factory=SlurmStatusMap)
     roles: List[str] = Field(default_factory=lambda: ["compute", "visu"])
     include_unlabeled: bool = False
+    mapping_path: Optional[str] = None
 
 
 class AppConfig(BaseModel):

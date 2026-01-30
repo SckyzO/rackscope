@@ -43,6 +43,7 @@ slurm:
   label_node: node
   label_status: status
   label_partition: partition
+  mapping_path: config/slurm_mapping.yaml
   roles:
     - compute
     - visu

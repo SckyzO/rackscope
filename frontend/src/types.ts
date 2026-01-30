@@ -330,6 +330,7 @@ export interface AppConfig {
     label_partition?: string;
     roles?: string[];
     include_unlabeled?: boolean;
+    mapping_path?: string | null;
     status_map?: {
       ok?: string[];
       warn?: string[];

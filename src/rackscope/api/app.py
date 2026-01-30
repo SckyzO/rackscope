@@ -1499,6 +1499,24 @@ async def get_slurm_room_nodes(room_id: str):
     }
 
     slurm_cfg = APP_CONFIG.slurm
+    mapping: Dict[str, str] = {}
+    mapping_path = getattr(slurm_cfg, "mapping_path", None)
+    if mapping_path:
+        try:
+            raw_mapping = yaml.safe_load(Path(mapping_path).read_text()) or {}
+        except (OSError, yaml.YAMLError) as exc:
+            print(f"Failed to load Slurm mapping: {exc}")
+            raw_mapping = {}
+        mappings = raw_mapping.get("mappings") if isinstance(raw_mapping, dict) else []
+        if isinstance(mappings, list):
+            for item in mappings:
+                if not isinstance(item, dict):
+                    continue
+                node = item.get("node")
+                instance = item.get("instance")
+                if isinstance(node, str) and isinstance(instance, str):
+                    mapping[node] = instance
+
     query = (
         f"max by ({slurm_cfg.label_node},{slurm_cfg.label_status},{slurm_cfg.label_partition})"
         f" ({slurm_cfg.metric})"
@@ -1517,6 +1535,9 @@ async def get_slurm_room_nodes(room_id: str):
         except (TypeError, ValueError):
             continue
         node = metric.get(slurm_cfg.label_node)
+        mapped_node = mapping.get(node) if node in mapping else None
+        if mapped_node:
+            node = mapped_node
         if not node or (room_nodes and node not in room_nodes):
             continue
         raw_status = metric.get(slurm_cfg.label_status, "unknown")
