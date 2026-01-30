@@ -2,7 +2,6 @@ id: r03-01
 name: Rack Mgmt + Login
 template_id: standard-42u-air
 aisle_id: aisle-03
-u_height: 42
 devices:
 - id: r03-01-ib
   name: IB Switch

@@ -2,7 +2,6 @@ id: r01-05
 name: Rack XH3000 Compute 05
 template_id: bull-xh3000
 aisle_id: aisle-01
-u_height: 42
 devices:
 - id: r01-05-ib
   name: IB Switch XH35MQ

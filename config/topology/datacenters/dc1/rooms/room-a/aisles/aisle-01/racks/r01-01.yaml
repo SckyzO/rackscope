@@ -2,7 +2,6 @@ id: r01-01
 name: Rack XH3000 Compute 01
 template_id: bull-xh3000
 aisle_id: aisle-01
-u_height: 42
 devices:
 - id: r01-01-ib
   name: IB Switch XH35MQ
@@ -22,7 +21,10 @@ devices:
   name: XH3140 Trio 03
   template_id: bs-xh3140-trio-1u-3n
   u_position: 3
-  instance: compute[007-009]
+  instance:
+  - compute007
+  - compute008
+  - compute009
 - id: r01-01-c04
   name: XH3140 Trio 04
   template_id: bs-xh3140-trio-1u-3n
