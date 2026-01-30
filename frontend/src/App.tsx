@@ -14,6 +14,10 @@ import { TopologyEditorPage } from './pages/TopologyEditorPage';
 import { RackEditorPage } from './pages/RackEditorPage';
 import { WorldMapPage } from './pages/WorldMapPage';
 import { SlurmRoomPage } from './pages/SlurmRoomPage';
+import { SlurmOverviewPage } from './pages/SlurmOverviewPage';
+import { SlurmPartitionsPage } from './pages/SlurmPartitionsPage';
+import { SlurmNodesPage } from './pages/SlurmNodesPage';
+import { SlurmAlertsPage } from './pages/SlurmAlertsPage';
 import { api } from './services/api';
 import type {
   RoomSummary,
@@ -895,8 +899,13 @@ function App() {
               element={<RoomPage searchQuery={searchQuery} reloadKey={reloadKey} />}
             />
             <Route path="/topology/map" element={<WorldMapPage />} />
-            <Route path="/slurm" element={<SlurmRoomPage />} />
+            <Route path="/slurm" element={<SlurmOverviewPage />} />
+            <Route path="/slurm/overview" element={<SlurmOverviewPage />} />
+            <Route path="/slurm/wallboard" element={<SlurmRoomPage />} />
             <Route path="/slurm/room/:roomId" element={<SlurmRoomPage />} />
+            <Route path="/slurm/partitions" element={<SlurmPartitionsPage />} />
+            <Route path="/slurm/nodes" element={<SlurmNodesPage />} />
+            <Route path="/slurm/alerts" element={<SlurmAlertsPage />} />
             <Route path="/rack/:rackId" element={<RackPage reloadKey={reloadKey} />} />
             <Route path="/templates" element={<TemplatesLibraryPage />} />
             <Route path="/templates/editor" element={<TemplatesEditorPage />} />

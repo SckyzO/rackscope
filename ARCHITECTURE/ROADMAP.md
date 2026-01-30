@@ -140,14 +140,20 @@ Telemetry:
 - [x] World map overview (multi-DC)
 - [ ] Offline world map tiles (self-hosted)
 - [x] Multi-DC UI support (site selector + per-site room list)
-- [ ] Slurm Status Wallboard (Aisle Compact View):
-  - [ ] compact aisle view (front-only racks, no rear)
-  - [ ] layout modes: horizontal scroll / multi-row / auto-fit
-  - [ ] Slurm state -> severity/color mapping (configurable)
-  - [ ] legend + filtering by state
-  - [ ] tooltips (node state, reason, partition)
-  - [ ] view toggle: Physical vs Slurm
-  - [ ] config: `slurm_state_map` + thresholds
+- [ ] Slurm Views:
+  - [x] Slurm Wallboard (Aisle Compact View)
+    - [x] compact aisle view (front-only racks, no rear)
+    - [x] layout modes: horizontal scroll / multi-row / auto-fit
+    - [x] Slurm state -> severity/color mapping (configurable)
+    - [x] legend + filtering by state
+    - [x] tooltips (node state, reason, partition)
+    - [x] config: `slurm.status_map` + roles filter
+  - [x] Cluster Overview dashboard
+  - [x] Partitions dashboard
+  - [x] Node List dashboard
+  - [x] Alerts dashboard
+  - [x] Slurm menu with multiple dashboards
+  - [ ] Physical vs Slurm toggle (per room)
 - [ ] Compute grid view
 - [ ] Services view
 - [ ] Playlist mode (rotate rooms every X minutes)

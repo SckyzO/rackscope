@@ -47,6 +47,13 @@ physical rack layout without altering the existing topology model.
 - **Optional mapping file**: `slurm.mapping_path` can map Slurm node names to
   topology instances when naming differs.
 
+## Slurm Dashboards
+
+- **Cluster Overview**: aggregate status + severity distribution.
+- **Partitions**: per-partition status breakdowns.
+- **Node List**: nodes with topology context (site/room/rack/device).
+- **Alerts**: list of WARN/CRIT nodes for quick triage.
+
 ## Data Model
 
 ### Topology Hierarchy

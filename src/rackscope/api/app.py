@@ -15,7 +15,7 @@ import httpx
 from rackscope.model.domain import Room, Site, Topology, Rack, Device
 from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
 from rackscope.model.checks import ChecksLibrary, CheckDefinition
-from rackscope.model.config import AppConfig
+from rackscope.model.config import AppConfig, SlurmConfig
 from rackscope.model.loader import (
     load_topology,
     load_catalog,
@@ -1499,34 +1499,13 @@ async def get_slurm_room_nodes(room_id: str):
     }
 
     slurm_cfg = APP_CONFIG.slurm
-    mapping: Dict[str, str] = {}
-    mapping_path = getattr(slurm_cfg, "mapping_path", None)
-    if mapping_path:
-        try:
-            raw_mapping = yaml.safe_load(Path(mapping_path).read_text()) or {}
-        except (OSError, yaml.YAMLError) as exc:
-            print(f"Failed to load Slurm mapping: {exc}")
-            raw_mapping = {}
-        mappings = raw_mapping.get("mappings") if isinstance(raw_mapping, dict) else []
-        if isinstance(mappings, list):
-            for item in mappings:
-                if not isinstance(item, dict):
-                    continue
-                node = item.get("node")
-                instance = item.get("instance")
-                if isinstance(node, str) and isinstance(instance, str):
-                    mapping[node] = instance
+    mapping = _load_slurm_mapping(slurm_cfg)
+    results = await _fetch_slurm_results(slurm_cfg)
 
-    query = (
-        f"max by ({slurm_cfg.label_node},{slurm_cfg.label_status},{slurm_cfg.label_partition})"
-        f" ({slurm_cfg.metric})"
-    )
-
-    result = await prom_client.query(query)
-    if result.get("status") != "success":
+    if not results:
         return {"room_id": room_id, "nodes": node_states}
 
-    for item in result.get("data", {}).get("result", []):
+    for item in results:
         metric = item.get("metric", {})
         value = item.get("value", [None, "0"])[1]
         try:
@@ -1535,9 +1514,8 @@ async def get_slurm_room_nodes(room_id: str):
         except (TypeError, ValueError):
             continue
         node = metric.get(slurm_cfg.label_node)
-        mapped_node = mapping.get(node) if node in mapping else None
-        if mapped_node:
-            node = mapped_node
+        if node in mapping:
+            node = mapping[node]
         if not node or (room_nodes and node not in room_nodes):
             continue
         raw_status = metric.get(slurm_cfg.label_status, "unknown")
@@ -1566,6 +1544,180 @@ async def get_slurm_room_nodes(room_id: str):
         state["partitions"] = sorted(set(state.get("partitions", [])))
 
     return {"room_id": room_id, "nodes": node_states}
+
+
+def _collect_room_nodes(room: Room) -> set[str]:
+    nodes: set[str] = set()
+    racks: list[Rack] = []
+    for aisle in room.aisles:
+        racks.extend(aisle.racks)
+    racks.extend(room.standalone_racks)
+    for rack in racks:
+        for device in rack.devices:
+            nodes.update(_extract_device_instances(device))
+    return nodes
+
+
+async def _build_slurm_states(
+    slurm_cfg: SlurmConfig,
+    allowed_nodes: Optional[set[str]] = None,
+) -> Dict[str, Dict[str, Any]]:
+    mapping = _load_slurm_mapping(slurm_cfg)
+    results = await _fetch_slurm_results(slurm_cfg)
+    if not results:
+        return {}
+
+    node_states: Dict[str, Dict[str, Any]] = {}
+    for item in results:
+        metric = item.get("metric", {})
+        value = item.get("value", [None, "0"])[1]
+        try:
+            if float(value) <= 0:
+                continue
+        except (TypeError, ValueError):
+            continue
+        node = metric.get(slurm_cfg.label_node)
+        if node in mapping:
+            node = mapping[node]
+        if not node:
+            continue
+        if allowed_nodes is not None and node not in allowed_nodes:
+            continue
+        raw_status = metric.get(slurm_cfg.label_status, "unknown")
+        partition = metric.get(slurm_cfg.label_partition)
+        normalized_status, has_star = _normalize_slurm_status(str(raw_status))
+        severity = _slurm_severity(normalized_status, has_star)
+
+        state = node_states.setdefault(
+            node,
+            {
+                "status": normalized_status,
+                "severity": severity,
+                "status_all": None,
+                "severity_all": None,
+                "statuses": [],
+                "partitions": [],
+            },
+        )
+        state["statuses"].append(str(raw_status))
+        if partition:
+            state["partitions"].append(str(partition))
+            if str(partition) == "all":
+                state["status_all"] = normalized_status
+                state["severity_all"] = severity
+        if _severity_rank(severity) > _severity_rank(state["severity"]):
+            state["severity"] = severity
+            state["status"] = normalized_status
+
+    for node_id, state in node_states.items():
+        state["statuses"] = sorted(set(state.get("statuses", [])))
+        state["partitions"] = sorted(set(state.get("partitions", [])))
+    return node_states
+
+
+@app.get("/api/slurm/summary")
+async def get_slurm_summary(room_id: Optional[str] = None):
+    if not APP_CONFIG or not TOPOLOGY:
+        raise HTTPException(status_code=503, detail="Topology not loaded")
+
+    allowed_nodes: Optional[set[str]] = None
+    if room_id:
+        room = _find_room(room_id)
+        if not room:
+            raise HTTPException(status_code=404, detail="Room not found")
+        allowed_nodes = _collect_room_nodes(room)
+
+    slurm_cfg = APP_CONFIG.slurm
+    node_states = await _build_slurm_states(slurm_cfg, allowed_nodes)
+    by_status: Dict[str, int] = {}
+    by_severity: Dict[str, int] = {"OK": 0, "WARN": 0, "CRIT": 0, "UNKNOWN": 0}
+
+    for state in node_states.values():
+        status = state.get("status_all") or state.get("status")
+        severity = state.get("severity_all") or state.get("severity", "UNKNOWN")
+        by_status[status] = by_status.get(status, 0) + 1
+        by_severity[severity] = by_severity.get(severity, 0) + 1
+
+    return {
+        "room_id": room_id,
+        "total_nodes": len(node_states),
+        "by_status": by_status,
+        "by_severity": by_severity,
+    }
+
+
+@app.get("/api/slurm/partitions")
+async def get_slurm_partitions(room_id: Optional[str] = None):
+    if not APP_CONFIG or not TOPOLOGY:
+        raise HTTPException(status_code=503, detail="Topology not loaded")
+
+    allowed_nodes: Optional[set[str]] = None
+    if room_id:
+        room = _find_room(room_id)
+        if not room:
+            raise HTTPException(status_code=404, detail="Room not found")
+        allowed_nodes = _collect_room_nodes(room)
+
+    slurm_cfg = APP_CONFIG.slurm
+    mapping = _load_slurm_mapping(slurm_cfg)
+    results = await _fetch_slurm_results(slurm_cfg)
+    if not results:
+        return {"room_id": room_id, "partitions": {}}
+
+    partitions: Dict[str, Dict[str, int]] = {}
+    for item in results:
+        metric = item.get("metric", {})
+        value = item.get("value", [None, "0"])[1]
+        try:
+            if float(value) <= 0:
+                continue
+        except (TypeError, ValueError):
+            continue
+        node = metric.get(slurm_cfg.label_node)
+        if node in mapping:
+            node = mapping[node]
+        if not node:
+            continue
+        if allowed_nodes is not None and node not in allowed_nodes:
+            continue
+        partition = metric.get(slurm_cfg.label_partition, "unknown")
+        raw_status = metric.get(slurm_cfg.label_status, "unknown")
+        normalized_status, _ = _normalize_slurm_status(str(raw_status))
+        part = partitions.setdefault(str(partition), {})
+        part[normalized_status] = part.get(normalized_status, 0) + 1
+
+    return {"room_id": room_id, "partitions": partitions}
+
+
+@app.get("/api/slurm/nodes")
+async def get_slurm_nodes(room_id: Optional[str] = None):
+    if not APP_CONFIG or not TOPOLOGY:
+        raise HTTPException(status_code=503, detail="Topology not loaded")
+
+    allowed_nodes: Optional[set[str]] = None
+    if room_id:
+        room = _find_room(room_id)
+        if not room:
+            raise HTTPException(status_code=404, detail="Room not found")
+        allowed_nodes = _collect_room_nodes(room)
+
+    slurm_cfg = APP_CONFIG.slurm
+    node_states = await _build_slurm_states(slurm_cfg, allowed_nodes)
+    context = _build_node_context(TOPOLOGY)
+
+    payload = []
+    for node_id, state in node_states.items():
+        entry = {
+            "node": node_id,
+            "status": state.get("status_all") or state.get("status"),
+            "severity": state.get("severity_all") or state.get("severity", "UNKNOWN"),
+            "statuses": state.get("statuses", []),
+            "partitions": state.get("partitions", []),
+        }
+        entry.update(context.get(node_id, {}))
+        payload.append(entry)
+
+    return {"room_id": room_id, "nodes": payload}
 
 
 @app.get("/api/racks/{rack_id}/state")
@@ -1636,6 +1788,74 @@ def _expand_device_instances(device: Device) -> List[str]:
                 expanded.extend(_expand_nodes_pattern(value))
         return expanded
     return []
+
+
+def _build_node_context(topology: Topology) -> Dict[str, Dict[str, str]]:
+    context: Dict[str, Dict[str, str]] = {}
+    for site in topology.sites:
+        for room in site.rooms:
+            for aisle in room.aisles:
+                for rack in aisle.racks:
+                    for device in rack.devices:
+                        for node_id in _expand_device_instances(device):
+                            context[node_id] = {
+                                "site_id": site.id,
+                                "site_name": site.name,
+                                "room_id": room.id,
+                                "room_name": room.name,
+                                "rack_id": rack.id,
+                                "rack_name": rack.name,
+                                "device_id": device.id,
+                                "device_name": device.name,
+                            }
+            for rack in room.standalone_racks:
+                for device in rack.devices:
+                    for node_id in _expand_device_instances(device):
+                        context[node_id] = {
+                            "site_id": site.id,
+                            "site_name": site.name,
+                            "room_id": room.id,
+                            "room_name": room.name,
+                            "rack_id": rack.id,
+                            "rack_name": rack.name,
+                            "device_id": device.id,
+                            "device_name": device.name,
+                        }
+    return context
+
+
+def _load_slurm_mapping(slurm_cfg: SlurmConfig) -> Dict[str, str]:
+    mapping: Dict[str, str] = {}
+    mapping_path = slurm_cfg.mapping_path
+    if not mapping_path:
+        return mapping
+    try:
+        raw_mapping = yaml.safe_load(Path(mapping_path).read_text()) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        print(f"Failed to load Slurm mapping: {exc}")
+        return mapping
+    mappings = raw_mapping.get("mappings") if isinstance(raw_mapping, dict) else []
+    if not isinstance(mappings, list):
+        return mapping
+    for item in mappings:
+        if not isinstance(item, dict):
+            continue
+        node = item.get("node")
+        instance = item.get("instance")
+        if isinstance(node, str) and isinstance(instance, str):
+            mapping[node] = instance
+    return mapping
+
+
+async def _fetch_slurm_results(slurm_cfg: SlurmConfig) -> list[dict[str, Any]]:
+    query = (
+        f"max by ({slurm_cfg.label_node},{slurm_cfg.label_status},{slurm_cfg.label_partition})"
+        f" ({slurm_cfg.metric})"
+    )
+    result = await prom_client.query(query)
+    if result.get("status") != "success":
+        return []
+    return result.get("data", {}).get("result", [])
 
 
 @app.get("/api/alerts/active")

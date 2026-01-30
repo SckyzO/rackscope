@@ -36,6 +36,13 @@ The Slurm Wallboard is a compact, rack‑dense view focused on node states.
 - **Optional mapping file**: map Slurm node names to topology instances
   when they differ (Settings → Slurm mapping path).
 
+### Slurm Dashboards
+- **Cluster Overview**: severity distribution, status counts, partition highlights.
+- **Room Wallboard**: compact rack view colored by Slurm status.
+- **Partitions**: per-partition status table.
+- **Node List**: filterable node table with room/rack/device context.
+- **Alerts**: active WARN/CRIT nodes with quick location context.
+
 ## Editors
 - **Topology Editor**: reorder racks across aisles, save layout.
 - **Rack Editor**: drag devices into U slots, delete, save.

@@ -39,6 +39,7 @@ export const Sidebar = ({
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     topology: false,
     catalog: false,
+    slurm: false,
     editors: false,
     settings: false,
   });
@@ -279,7 +280,6 @@ export const Sidebar = ({
         {expandedSections.topology && (
           <div className="space-y-1.5">
             <SidebarLink to="/topology/map" icon={Map} label="World Map" depth={1} />
-            <SidebarLink to="/slurm" icon={Activity} label="Slurm Wallboard" depth={1} />
             <TreeLabel label="Datacenters" />
             {sites
               .filter((site) => (filteredRoomsBySite[site.id] || []).length > 0)
@@ -291,6 +291,23 @@ export const Sidebar = ({
                   forceExpanded={hasQuery}
                 />
               ))}
+          </div>
+        )}
+        <div className="my-2 h-px bg-[var(--color-border)]/40"></div>
+
+        <NavToggle
+          icon={Activity}
+          label="Slurm"
+          expanded={expandedSections.slurm}
+          onToggle={() => toggleSection('slurm')}
+        />
+        {expandedSections.slurm && (
+          <div className="space-y-1">
+            <SidebarLink to="/slurm/overview" icon={Activity} label="Cluster Overview" depth={1} />
+            <SidebarLink to="/slurm/wallboard" icon={Activity} label="Room Wallboard" depth={1} />
+            <SidebarLink to="/slurm/partitions" icon={Activity} label="Partitions" depth={1} />
+            <SidebarLink to="/slurm/nodes" icon={Activity} label="Node List" depth={1} />
+            <SidebarLink to="/slurm/alerts" icon={Activity} label="Alerts" depth={1} />
           </div>
         )}
         <div className="my-2 h-px bg-[var(--color-border)]/40"></div>

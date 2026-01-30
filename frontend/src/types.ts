@@ -244,6 +244,34 @@ export interface SlurmRoomNodes {
   nodes: Record<string, SlurmNodeState>;
 }
 
+export interface SlurmSummary {
+  room_id?: string | null;
+  total_nodes: number;
+  by_status: Record<string, number>;
+  by_severity: Record<string, number>;
+}
+
+export interface SlurmPartitionSummary {
+  room_id?: string | null;
+  partitions: Record<string, Record<string, number>>;
+}
+
+export interface SlurmNodeEntry {
+  node: string;
+  status: string;
+  severity: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
+  statuses: string[];
+  partitions: string[];
+  site_id?: string;
+  site_name?: string;
+  room_id?: string;
+  room_name?: string;
+  rack_id?: string;
+  rack_name?: string;
+  device_id?: string;
+  device_name?: string;
+}
+
 export interface AppConfig {
   app?: {
     name?: string;

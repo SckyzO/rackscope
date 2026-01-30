@@ -204,6 +204,18 @@ export const api = {
       `slurm.nodes.${roomId}`
     );
   },
+  getSlurmSummary: async (roomId?: string) => {
+    const params = roomId ? `?room_id=${encodeURIComponent(roomId)}` : '';
+    return fetchWithCache(`/api/slurm/summary${params}`, `slurm.summary.${roomId || 'all'}`);
+  },
+  getSlurmPartitions: async (roomId?: string) => {
+    const params = roomId ? `?room_id=${encodeURIComponent(roomId)}` : '';
+    return fetchWithCache(`/api/slurm/partitions${params}`, `slurm.partitions.${roomId || 'all'}`);
+  },
+  getSlurmNodes: async (roomId?: string) => {
+    const params = roomId ? `?room_id=${encodeURIComponent(roomId)}` : '';
+    return fetchWithCache(`/api/slurm/nodes${params}`, `slurm.nodes.${roomId || 'all'}`);
+  },
   getGlobalStats: async (): Promise<GlobalStats> => {
     return fetchWithCache('/api/stats/global', 'stats.global');
   },

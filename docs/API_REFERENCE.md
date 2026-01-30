@@ -142,6 +142,69 @@ Returns Slurm node states for a room.
 Notes:
 - Slurm nodes can be mapped to topology instances via `slurm.mapping_path`.
 
+#### `GET /api/slurm/summary`
+Returns an aggregated Slurm summary across all rooms or a single room.
+- **Query**: `room_id` (optional)
+- **Response**:
+  ```json
+  {
+    "room_id": "room-a",
+    "total_nodes": 128,
+    "by_status": {
+      "idle": 120,
+      "allocated": 4,
+      "down": 4
+    },
+    "by_severity": {
+      "OK": 120,
+      "WARN": 4,
+      "CRIT": 4,
+      "UNKNOWN": 0
+    }
+  }
+  ```
+
+#### `GET /api/slurm/partitions`
+Returns per-partition status counts.
+- **Query**: `room_id` (optional)
+- **Response**:
+  ```json
+  {
+    "room_id": "room-a",
+    "partitions": {
+      "all": { "idle": 120, "allocated": 4, "down": 4 },
+      "cpu": { "idle": 120, "allocated": 4, "down": 4 }
+    }
+  }
+  ```
+
+#### `GET /api/slurm/nodes`
+Returns a flat list of Slurm nodes with topology context.
+- **Query**: `room_id` (optional)
+- **Response**:
+  ```json
+  {
+    "room_id": "room-a",
+    "nodes": [
+      {
+        "node": "compute001",
+        "status": "idle",
+        "severity": "OK",
+        "statuses": ["idle"],
+        "partitions": ["all", "cpu"],
+        "site_id": "dc1",
+        "site_name": "Datacenter 1",
+        "room_id": "room-a",
+        "room_name": "Room A",
+        "rack_id": "r01-01",
+        "rack_name": "Rack 01",
+        "device_id": "r01-01-c01",
+        "device_name": "Compute 01"
+      }
+    ]
+  }
+  ```
+
 #### `GET /api/stats/prometheus`
 Prometheus heartbeat + latency stats.
 
