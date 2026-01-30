@@ -2,6 +2,7 @@ templates:
 - id: ib-switch-l1
   name: InfiniBand L1 (NDR 40p)
   type: network
+  role: infiniband
   u_height: 1
   layout:
     type: grid

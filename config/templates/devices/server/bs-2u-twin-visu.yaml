@@ -2,6 +2,7 @@ templates:
 - id: bs-2u-twin-visu
   name: BullSequana Visu Node (2U)
   type: server
+  role: visu
   u_height: 2
   layout:
     type: grid

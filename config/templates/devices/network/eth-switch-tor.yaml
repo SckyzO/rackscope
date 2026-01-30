@@ -2,6 +2,7 @@ templates:
 - id: eth-switch-tor
   name: Ethernet Mgmt Switch
   type: network
+  role: ethernet
   u_height: 1
   layout:
     type: grid

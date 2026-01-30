@@ -8,6 +8,15 @@ metrics:
       name: temperature
       job: node
 
+  - name: slurm_node_status
+    scope: node
+    instances:
+      - compute[001-010]
+    labels:
+      node: $node_id
+      partition: $partition
+      status: $status
+
   - name: eseries_storage_system_status
     scope: node
     instances:

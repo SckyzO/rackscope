@@ -2,6 +2,7 @@ templates:
 - id: srv-1u-mgmt
   name: Management Server 1U
   type: server
+  role: management
   u_height: 1
   layout:
     type: grid

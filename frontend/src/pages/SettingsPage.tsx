@@ -66,6 +66,7 @@ type ConfigDraft = {
     scale_factor: string;
     default_ttl_seconds: string;
     metrics_catalog_path: string;
+    metrics_catalogs: Array<{ id: string; path: string; enabled: boolean }>;
     incident_rates: {
       node_micro_failure: string;
       rack_macro_failure: string;
@@ -147,6 +148,25 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     default_ttl_seconds: String(config.simulator?.default_ttl_seconds ?? 120),
     metrics_catalog_path:
       config.simulator?.metrics_catalog_path || 'config/simulator_metrics_full.yaml',
+    metrics_catalogs:
+      config.simulator?.metrics_catalogs && config.simulator.metrics_catalogs.length > 0
+        ? config.simulator.metrics_catalogs.map((entry) => ({
+            id: entry.id,
+            path: entry.path,
+            enabled: entry.enabled ?? true,
+          }))
+        : [
+            {
+              id: 'core',
+              path: config.simulator?.metrics_catalog_path || 'config/simulator_metrics_full.yaml',
+              enabled: true,
+            },
+            {
+              id: 'slurm',
+              path: 'config/simulator_metrics_slurm.yaml',
+              enabled: false,
+            },
+          ],
     incident_rates: {
       node_micro_failure: String(config.simulator?.incident_rates?.node_micro_failure ?? 0.001),
       rack_macro_failure: String(config.simulator?.incident_rates?.rack_macro_failure ?? 0.01),
@@ -397,6 +417,9 @@ export const SettingsPage = () => {
     if (!draft || !canSave) return;
     setSaveState('saving');
     try {
+      const primaryCatalogPath =
+        draft.simulator.metrics_catalogs.find((entry) => entry.enabled && entry.path.trim())
+          ?.path ?? draft.simulator.metrics_catalog_path;
       const payload: AppConfig = {
         app: {
           name: draft.app.name,
@@ -462,7 +485,12 @@ export const SettingsPage = () => {
           scenario: draft.simulator.scenario || null,
           scale_factor: Number.parseFloat(draft.simulator.scale_factor),
           default_ttl_seconds: Number.parseInt(draft.simulator.default_ttl_seconds, 10),
-          metrics_catalog_path: draft.simulator.metrics_catalog_path,
+          metrics_catalog_path: primaryCatalogPath,
+          metrics_catalogs: draft.simulator.metrics_catalogs.map((entry) => ({
+            id: entry.id.trim(),
+            path: entry.path.trim(),
+            enabled: entry.enabled,
+          })),
           incident_rates: {
             node_micro_failure: Number.parseFloat(
               draft.simulator.incident_rates.node_micro_failure
@@ -1410,6 +1438,55 @@ export const SettingsPage = () => {
                   Show zoom controls
                 </label>
               </div>
+              <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6 md:col-span-2">
+                <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
+                  Slurm wallboard
+                </h3>
+                <label
+                  className="text-xs text-gray-400"
+                  title="Comma-separated roles to include in Slurm view"
+                >
+                  Allowed roles
+                  <input
+                    value={(draft?.slurm?.roles || []).join(', ')}
+                    onChange={(e) => {
+                      const roles = e.target.value
+                        .split(',')
+                        .map((role) => role.trim())
+                        .filter(Boolean);
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            slurm: { ...prev.slurm, roles },
+                          }
+                      );
+                    }}
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                    placeholder="compute, visu"
+                  />
+                  <div className="mt-1 text-[10px] text-gray-500">
+                    Devices outside these roles are hidden in the Slurm view.
+                  </div>
+                </label>
+                <label className="flex items-center justify-between text-xs text-gray-400">
+                  Include devices without role
+                  <input
+                    type="checkbox"
+                    checked={draft?.slurm?.include_unlabeled || false}
+                    onChange={(e) =>
+                      setDraft(
+                        (prev) =>
+                          prev && {
+                            ...prev,
+                            slurm: { ...prev.slurm, include_unlabeled: e.target.checked },
+                          }
+                      )
+                    }
+                    className="h-4 w-4"
+                  />
+                </label>
+              </div>
             </div>
           </section>
 
@@ -1574,28 +1651,128 @@ export const SettingsPage = () => {
                       className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
                     />
                   </label>
-                  <label
-                    className="text-xs text-gray-400"
-                    title="Metrics catalog file for multi-metric simulator"
-                  >
-                    Metrics catalog path
-                    <input
-                      value={draft?.simulator.metrics_catalog_path || ''}
-                      onChange={(e) =>
+                  <div className="space-y-2">
+                    <div
+                      className="text-xs text-gray-400"
+                      title="Enable multiple metric catalogs and toggle them on/off"
+                    >
+                      Metrics catalogs
+                    </div>
+                    {draft?.simulator.metrics_catalogs.map((entry, idx) => (
+                      <div
+                        key={`${entry.id}-${idx}`}
+                        className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-2 text-xs text-gray-200"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={entry.enabled}
+                          onChange={(e) =>
+                            setDraft(
+                              (prev) =>
+                                prev && {
+                                  ...prev,
+                                  simulator: {
+                                    ...prev.simulator,
+                                    metrics_catalogs: prev.simulator.metrics_catalogs.map(
+                                      (item, itemIdx) =>
+                                        itemIdx === idx
+                                          ? { ...item, enabled: e.target.checked }
+                                          : item
+                                    ),
+                                  },
+                                }
+                            )
+                          }
+                          className="h-3 w-3 rounded border border-[var(--color-border)] bg-black/30"
+                        />
+                        <input
+                          value={entry.id}
+                          onChange={(e) =>
+                            setDraft(
+                              (prev) =>
+                                prev && {
+                                  ...prev,
+                                  simulator: {
+                                    ...prev.simulator,
+                                    metrics_catalogs: prev.simulator.metrics_catalogs.map(
+                                      (item, itemIdx) =>
+                                        itemIdx === idx ? { ...item, id: e.target.value } : item
+                                    ),
+                                  },
+                                }
+                            )
+                          }
+                          className="w-24 rounded-md border border-[var(--color-border)] bg-black/40 px-2 py-1 text-[11px]"
+                          placeholder="id"
+                        />
+                        <input
+                          value={entry.path}
+                          onChange={(e) =>
+                            setDraft(
+                              (prev) =>
+                                prev && {
+                                  ...prev,
+                                  simulator: {
+                                    ...prev.simulator,
+                                    metrics_catalogs: prev.simulator.metrics_catalogs.map(
+                                      (item, itemIdx) =>
+                                        itemIdx === idx ? { ...item, path: e.target.value } : item
+                                    ),
+                                  },
+                                }
+                            )
+                          }
+                          className="flex-1 rounded-md border border-[var(--color-border)] bg-black/40 px-2 py-1 text-[11px]"
+                          placeholder="config/simulator_metrics_full.yaml"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDraft(
+                              (prev) =>
+                                prev && {
+                                  ...prev,
+                                  simulator: {
+                                    ...prev.simulator,
+                                    metrics_catalogs: prev.simulator.metrics_catalogs.filter(
+                                      (_, itemIdx) => itemIdx !== idx
+                                    ),
+                                  },
+                                }
+                            )
+                          }
+                          className="rounded-md border border-[var(--color-border)] px-2 py-1 text-[11px] text-gray-400 hover:text-white"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
                         setDraft(
                           (prev) =>
                             prev && {
                               ...prev,
                               simulator: {
                                 ...prev.simulator,
-                                metrics_catalog_path: e.target.value,
+                                metrics_catalogs: [
+                                  ...prev.simulator.metrics_catalogs,
+                                  {
+                                    id: `catalog-${prev.simulator.metrics_catalogs.length + 1}`,
+                                    path: '',
+                                    enabled: true,
+                                  },
+                                ],
                               },
                             }
                         )
                       }
-                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
-                    />
-                  </label>
+                      className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs text-gray-400 hover:text-white"
+                    >
+                      Add catalog
+                    </button>
+                  </div>
                 </div>
 
                 <div className="bg-rack-panel border-rack-border space-y-3 rounded-xl border p-6">

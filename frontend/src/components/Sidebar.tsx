@@ -235,6 +235,7 @@ export const Sidebar = ({
         <nav className="flex flex-1 flex-col items-center gap-2 py-4">
           <CollapsedLink to="/" icon={LayoutDashboard} label="Overview" />
           <CollapsedLink to="/room" icon={Globe} label="Topology" />
+          <CollapsedLink to="/slurm" icon={Activity} label="Slurm" />
           <CollapsedLink to="/templates" icon={Folder} label="Catalog" />
           <CollapsedLink to="/templates/editor" icon={Component} label="Editors" />
           <CollapsedLink to="/settings" icon={Settings} label="Settings" />
@@ -278,6 +279,7 @@ export const Sidebar = ({
         {expandedSections.topology && (
           <div className="space-y-1.5">
             <SidebarLink to="/topology/map" icon={Map} label="World Map" depth={1} />
+            <SidebarLink to="/slurm" icon={Activity} label="Slurm Wallboard" depth={1} />
             <TreeLabel label="Datacenters" />
             {sites
               .filter((site) => (filteredRoomsBySite[site.id] || []).length > 0)

@@ -94,6 +94,7 @@ export interface DeviceTemplate {
   id: string;
   name: string;
   type: string;
+  role?: string | null;
   u_height: number;
   layout: LayoutConfig;
   rear_layout?: LayoutConfig;
@@ -231,6 +232,18 @@ export interface RoomState {
   racks?: Record<string, RackState | string>;
 }
 
+export interface SlurmNodeState {
+  status: string;
+  severity: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
+  statuses: string[];
+  partitions: string[];
+}
+
+export interface SlurmRoomNodes {
+  room_id: string;
+  nodes: Record<string, SlurmNodeState>;
+}
+
 export interface AppConfig {
   app?: {
     name?: string;
@@ -294,6 +307,11 @@ export interface AppConfig {
     scale_factor?: number;
     default_ttl_seconds?: number;
     metrics_catalog_path?: string;
+    metrics_catalogs?: Array<{
+      id: string;
+      path: string;
+      enabled?: boolean;
+    }>;
     incident_rates?: {
       node_micro_failure?: number;
       rack_macro_failure?: number;
@@ -304,6 +322,19 @@ export interface AppConfig {
       aisle?: number;
     };
     overrides_path?: string;
+  };
+  slurm?: {
+    metric?: string;
+    label_node?: string;
+    label_status?: string;
+    label_partition?: string;
+    roles?: string[];
+    include_unlabeled?: boolean;
+    status_map?: {
+      ok?: string[];
+      warn?: string[];
+      crit?: string[];
+    };
   };
 }
 

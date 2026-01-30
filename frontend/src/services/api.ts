@@ -16,6 +16,7 @@ import type {
   RoomState,
   RackState,
   SimulatorOverride,
+  SlurmRoomNodes,
 } from '../types';
 
 const CACHE_PREFIX = 'rackscope.cache.';
@@ -195,6 +196,12 @@ export const api = {
     return fetchWithCache(
       `/api/rooms/${encodeURIComponent(roomId)}/layout`,
       `room.layout.${roomId}`
+    );
+  },
+  getSlurmRoomNodes: async (roomId: string): Promise<SlurmRoomNodes> => {
+    return fetchWithCache(
+      `/api/slurm/rooms/${encodeURIComponent(roomId)}/nodes`,
+      `slurm.nodes.${roomId}`
     );
   },
   getGlobalStats: async (): Promise<GlobalStats> => {

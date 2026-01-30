@@ -2,6 +2,7 @@ templates:
 - id: bs-xh3145-tiya-1u-2n
   name: BullSequana XH3145 Tiya (1U 2 Nodes)
   type: server
+  role: compute
   u_height: 1
   layout:
     type: grid

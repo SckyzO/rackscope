@@ -2,6 +2,7 @@ templates:
 - id: bs-xh3420-mato-1u-3n
   name: BullSequana XH3420 Mato (1U 3 Nodes)
   type: server
+  role: compute
   u_height: 1
   layout:
     type: grid

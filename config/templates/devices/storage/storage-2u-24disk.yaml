@@ -2,6 +2,7 @@ templates:
 - id: storage-2u-24disk
   name: Flash Array 2U (24 SFF)
   type: storage
+  role: stockage
   u_height: 2
   layout:
     type: grid

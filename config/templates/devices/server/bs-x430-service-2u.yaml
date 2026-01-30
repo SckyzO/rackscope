@@ -2,6 +2,7 @@ templates:
 - id: bs-x430-service-2u
   name: BullSequana X430 Service (2U 1 Node)
   type: server
+  role: login
   u_height: 2
   layout:
     type: grid

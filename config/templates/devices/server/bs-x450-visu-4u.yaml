@@ -2,6 +2,7 @@ templates:
 - id: bs-x450-visu-4u
   name: BullSequana X450 Visualization (4U 1 Node)
   type: server
+  role: visu
   u_height: 4
   layout:
     type: grid

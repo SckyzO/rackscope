@@ -2,6 +2,7 @@ templates:
 - id: bs-x410-accel-2u
   name: BullSequana X410 Acceleration (2U 1 Node)
   type: server
+  role: gpu
   u_height: 2
   layout:
     type: grid

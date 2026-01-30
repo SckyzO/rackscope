@@ -2,6 +2,7 @@ templates:
 - id: storage-4u-60disk
   name: High Density Drawer 4U (60 LFF)
   type: storage
+  role: stockage
   u_height: 4
   layout:
     type: grid

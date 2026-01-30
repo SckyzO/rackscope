@@ -123,3 +123,13 @@ scenarios:
     update_interval_seconds: 20
     seed: 7
     scale_factor: 0.5
+
+# Slurm wallboard helpers (optional)
+# Forces a few random nodes into specific Slurm statuses every tick.
+slurm_random_statuses:
+  drain: 1
+  down: 1
+  maint: 1
+slurm_random_match:
+  - compute*
+  - visu*

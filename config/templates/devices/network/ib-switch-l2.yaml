@@ -2,6 +2,7 @@ templates:
 - id: ib-switch-l2
   name: InfiniBand L2 (Director 2U)
   type: network
+  role: infiniband
   u_height: 2
   layout:
     type: grid

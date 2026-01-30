@@ -2,6 +2,7 @@ templates:
 - id: bs-xh3150-tino-1u-3n
   name: BullSequana XH3150 Tino (1U 3 Nodes)
   type: server
+  role: compute
   u_height: 1
   layout:
     type: grid

@@ -2,6 +2,7 @@ templates:
 - id: bs-4u-quad-gpu
   name: BullSequana X2415 (4U Quad GPU)
   type: server
+  role: gpu
   u_height: 4
   layout:
     type: grid

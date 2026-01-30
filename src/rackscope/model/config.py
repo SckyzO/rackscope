@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 import re
 
 from pydantic import BaseModel, Field, field_validator
@@ -92,6 +92,12 @@ class IncidentDurations(BaseModel):
     aisle: int = Field(default=5, ge=1)
 
 
+class SimulatorMetricsCatalog(BaseModel):
+    id: str = Field(min_length=1)
+    path: str = Field(min_length=1)
+    enabled: bool = True
+
+
 class SimulatorConfig(BaseModel):
     update_interval_seconds: int = Field(default=20, ge=1)
     seed: Optional[int] = None
@@ -102,6 +108,7 @@ class SimulatorConfig(BaseModel):
     overrides_path: str = Field(default="config/simulator_overrides.yaml", min_length=1)
     default_ttl_seconds: int = Field(default=120, ge=0)
     metrics_catalog_path: str = Field(default="config/simulator_metrics_full.yaml", min_length=1)
+    metrics_catalogs: List[SimulatorMetricsCatalog] = Field(default_factory=list)
 
 
 class AppInfoConfig(BaseModel):
@@ -125,6 +132,60 @@ class MapConfig(BaseModel):
     center: MapCenterConfig = Field(default_factory=MapCenterConfig)
 
 
+class SlurmStatusMap(BaseModel):
+    ok: List[str] = Field(
+        default_factory=lambda: ["idle", "allocated", "alloc", "completing", "comp"]
+    )
+    warn: List[str] = Field(
+        default_factory=lambda: [
+            "mixed",
+            "mix",
+            "maint",
+            "planned",
+            "plnd",
+            "reserved",
+            "resv",
+            "blocked",
+            "block",
+            "power_down",
+            "pow_dn",
+            "power_up",
+            "pow_up",
+            "powering_up",
+            "powered_down",
+            "reboot_issued",
+            "reboot_req",
+        ]
+    )
+    crit: List[str] = Field(
+        default_factory=lambda: [
+            "down",
+            "drain",
+            "drained",
+            "draining",
+            "drng",
+            "fail",
+            "failing",
+            "failg",
+            "error",
+            "unknown",
+            "unk",
+            "noresp",
+            "inval",
+        ]
+    )
+
+
+class SlurmConfig(BaseModel):
+    metric: str = Field(default="slurm_node_status", min_length=1)
+    label_node: str = Field(default="node", min_length=1)
+    label_status: str = Field(default="status", min_length=1)
+    label_partition: str = Field(default="partition", min_length=1)
+    status_map: SlurmStatusMap = Field(default_factory=SlurmStatusMap)
+    roles: List[str] = Field(default_factory=lambda: ["compute", "visu"])
+    include_unlabeled: bool = False
+
+
 class AppConfig(BaseModel):
     app: AppInfoConfig = Field(default_factory=AppInfoConfig)
     paths: PathsConfig
@@ -135,3 +196,4 @@ class AppConfig(BaseModel):
     features: FeatureConfig = Field(default_factory=FeatureConfig)
     map: MapConfig = Field(default_factory=MapConfig)
     simulator: SimulatorConfig = Field(default_factory=SimulatorConfig)
+    slurm: SlurmConfig = Field(default_factory=SlurmConfig)

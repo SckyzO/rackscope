@@ -57,6 +57,35 @@ def load_metrics_catalog(path):
         return []
     return [m for m in metrics if isinstance(m, dict)]
 
+def load_metrics_catalogs(paths):
+    merged = {}
+    for path in paths:
+        for metric in load_metrics_catalog(path):
+            name = metric.get('name')
+            if isinstance(name, str):
+                merged[name] = metric
+    return list(merged.values())
+
+def resolve_metrics_catalogs(sim_cfg):
+    catalogs = sim_cfg.get('metrics_catalogs')
+    paths = []
+    if isinstance(catalogs, list):
+        for item in catalogs:
+            if isinstance(item, str):
+                paths.append(item)
+                continue
+            if not isinstance(item, dict):
+                continue
+            if item.get('enabled') is False:
+                continue
+            path = item.get('path')
+            if isinstance(path, str) and path:
+                paths.append(path)
+    if paths:
+        return paths
+    single_path = sim_cfg.get('metrics_catalog_path', '/app/config/simulator_metrics_full.yaml')
+    return [single_path]
+
 def build_metric_registry(metric_defs):
     registry = {}
     for name, definition in metric_defs.items():
@@ -203,6 +232,7 @@ SUPPORTED_METRICS = {
     'ipmi_temperature_state': 'node',
     'ipmi_voltage_state': 'node',
     'ipmi_up': 'node',
+    'slurm_node_status': 'node',
     'eseries_exporter_collect_error': 'node',
     'eseries_storage_system_status': 'node',
     'eseries_drive_status': 'node',
@@ -221,6 +251,21 @@ BASE_LABELS = {
     'node': ['site_id', 'room_id', 'rack_id', 'chassis_id', 'node_id', 'instance', 'job'],
     'rack': ['site_id', 'room_id', 'rack_id', 'instance', 'job'],
 }
+
+SLURM_STATUS_LEVELS = [
+    'allocated',
+    'completing',
+    'down',
+    'drain',
+    'draining',
+    'fail',
+    'idle',
+    'maint',
+    'mixed',
+    'reserved',
+    'planned',
+    'unknown',
+]
 
 def normalize_metric_defs(metric_defs):
     defs = {}
@@ -300,11 +345,13 @@ def simulate():
     profiles = sim_cfg.get('profiles', {})
     seed = sim_cfg.get('seed')
     scale_factor = sim_cfg.get('scale_factor', 1.0)
+    slurm_random_statuses = sim_cfg.get('slurm_random_statuses', {}) if isinstance(sim_cfg, dict) else {}
+    slurm_random_match = sim_cfg.get('slurm_random_match', []) if isinstance(sim_cfg, dict) else []
     overrides_path = sim_cfg.get('overrides_path', '/app/config/simulator_overrides.yaml')
-    metrics_catalog_path = sim_cfg.get('metrics_catalog_path', '/app/config/simulator_metrics_full.yaml')
-    metric_defs = normalize_metric_defs(load_metrics_catalog(metrics_catalog_path))
+    metrics_catalog_paths = resolve_metrics_catalogs(sim_cfg)
+    metric_defs = normalize_metric_defs(load_metrics_catalogs(metrics_catalog_paths))
     if not metric_defs:
-        print(f"Error: No metrics catalog found at {metrics_catalog_path}")
+        print(f"Error: No metrics catalog found at {', '.join(metrics_catalog_paths)}")
         return
     global METRICS, METRICS_DEFS
     METRICS_DEFS = metric_defs
@@ -338,6 +385,24 @@ def simulate():
         # Reload topology every tick to support dynamic changes
         topo_data = load_topology_data(TOPOLOGY_PATH)
         targets = load_topology_nodes(topo_data)
+        forced_slurm_status = {}
+        if isinstance(slurm_random_statuses, dict):
+            available_nodes = [target['node_id'] for target in targets if target.get('node_id')]
+            if isinstance(slurm_random_match, list) and slurm_random_match:
+                available_nodes = [
+                    node_id
+                    for node_id in available_nodes
+                    if any(fnmatch.fnmatchcase(node_id, pattern) for pattern in slurm_random_match)
+                ]
+            random.shuffle(available_nodes)
+            cursor = 0
+            for status_name in ['drain', 'down', 'maint']:
+                count = slurm_random_statuses.get(status_name)
+                if not isinstance(count, int) or count <= 0:
+                    continue
+                for _ in range(min(count, max(0, len(available_nodes) - cursor))):
+                    forced_slurm_status[available_nodes[cursor]] = status_name
+                    cursor += 1
         rack_info = {}
         for target in targets:
             rid = target['rack_id']
@@ -473,6 +538,32 @@ def simulate():
                 set_metric_value('node_health_status', base_labels, status, {})
             if metric_enabled('up', 'node', node_id=target['node_id']):
                 set_metric_value('up', base_labels, up_val, {})
+
+            slurm_status = forced_slurm_status.get(target['node_id'], 'idle')
+            if slurm_status == 'idle':
+                if up_val == 0 or status == 2:
+                    slurm_status = 'down'
+                elif status == 1:
+                    slurm_status = 'drain'
+                elif final_load >= 70:
+                    slurm_status = 'allocated'
+            partitions = ['all', 'cpu']
+            if 'gpu' in nid:
+                partitions.append('gpu')
+            if metric_enabled('slurm_node_status', 'node', node_id=target['node_id']):
+                for partition in partitions:
+                    for status_name in SLURM_STATUS_LEVELS:
+                        value = 1 if status_name == slurm_status else 0
+                        set_metric_value(
+                            'slurm_node_status',
+                            base_labels,
+                            value,
+                            {
+                                'status': status_name,
+                                'partition': partition,
+                                'node_id': target['node_id'],
+                            },
+                        )
 
             state_value = 2 if status == 2 else 1 if status == 1 else 0
             if metric_enabled('ipmi_fan_speed_state', 'node', node_id=target['node_id']):

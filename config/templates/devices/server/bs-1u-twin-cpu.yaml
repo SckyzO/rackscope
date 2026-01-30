@@ -2,6 +2,7 @@ templates:
 - id: bs-1u-twin-cpu
   name: BullSequana X410 (1U Twin)
   type: server
+  role: compute
   u_height: 1
   layout:
     type: grid

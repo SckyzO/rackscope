@@ -24,6 +24,7 @@ class DeviceTemplate(BaseModel):
     id: str
     name: str
     type: str = "server"
+    role: Optional[str] = None
     u_height: int
     layout: LayoutConfig
     rear_layout: Optional[LayoutConfig] = None
