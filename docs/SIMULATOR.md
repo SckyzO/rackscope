@@ -26,6 +26,13 @@ simulator:
   overrides_path: config/simulator_overrides.yaml
   default_ttl_seconds: 0
   metrics_catalog_path: config/simulator_metrics_full.yaml
+  metrics_catalogs:
+    - id: core
+      path: config/simulator_metrics_full.yaml
+      enabled: true
+    - id: slurm
+      path: config/simulator_metrics_slurm.yaml
+      enabled: false
 ```
 
 ## Scenarios
@@ -68,8 +75,8 @@ warning thresholds.
 ## Metrics Catalog
 
 `simulator.metrics_catalog_path` points to a YAML file that defines which metrics
-are emitted and for which instances/racks. When empty, the simulator emits all
-known metrics.
+are emitted and for which instances/racks. You can also enable multiple catalogs
+with `simulator.metrics_catalogs` (each entry can be toggled on/off).
 
 Example (`config/simulator_metrics_examples.yaml`):
 
@@ -121,6 +128,23 @@ Notes:
     plus metric-specific tokens like `$status`, `$tray`, `$slot`, `$collector`, `$state`, `$name`.
 
 Full catalog: `config/simulator_metrics_full.yaml`.
+Slurm catalog: `config/simulator_metrics_slurm.yaml`.
+
+## Slurm Random Statuses
+
+To force a few nodes into Slurm states for demo:
+
+```yaml
+slurm_random_statuses:
+  drain: 1
+  down: 1
+  maint: 1
+slurm_random_match:
+  - compute*
+  - visu*
+```
+
+`slurm_random_match` restricts which nodes can be selected (use wildcards).
 
 ## Adding a new metric
 

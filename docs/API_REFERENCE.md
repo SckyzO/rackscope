@@ -118,6 +118,27 @@ Replace the full device list for a rack.
 #### `GET /api/stats/telemetry`
 Retrieve telemetry debug stats (query counts, cache hits/misses, last batch).
 
+---
+
+### ⚙️ Slurm Wallboard
+
+#### `GET /api/slurm/rooms/{room_id}/nodes`
+Returns Slurm node states for a room.
+- **Response**:
+  ```json
+  {
+    "room_id": "room-a",
+    "nodes": {
+      "compute001": {
+        "status": "idle",
+        "severity": "OK",
+        "statuses": ["idle"],
+        "partitions": ["all", "cpu"]
+      }
+    }
+  }
+  ```
+
 #### `GET /api/stats/prometheus`
 Prometheus heartbeat + latency stats.
 

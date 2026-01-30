@@ -25,6 +25,15 @@ Click "INSPECT" or the rack name to enter the full Rack View.
 - **Center Panel**: Front View (Compute nodes, Disks). Hover to see detailed metrics.
 - **Right Panel**: Rear View (Fans, PSUs, Cabling).
 
+### Slurm Wallboard
+The Slurm Wallboard is a compact, rack‑dense view focused on node states.
+- **Purpose**: show compute/visu nodes at a glance with Slurm status colors.
+- **Metric**: `slurm_node_status{node,partition,status}` (Prometheus).
+- **Query** (backend): `max by (node,status,partition) (slurm_node_status)`.
+- **Status mapping** is configurable in Settings (OK/WARN/CRIT lists).
+- **Role filter**: only devices whose template `role` is in the allowed list
+  (ex: compute, visu). Unlabeled devices can be included or excluded.
+
 ## Editors
 - **Topology Editor**: reorder racks across aisles, save layout.
 - **Rack Editor**: drag devices into U slots, delete, save.
