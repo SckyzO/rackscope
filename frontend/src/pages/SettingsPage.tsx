@@ -78,6 +78,19 @@ type ConfigDraft = {
     };
     overrides_path: string;
   };
+  slurm: {
+    metric: string;
+    label_node: string;
+    label_status: string;
+    label_partition: string;
+    roles: string[];
+    include_unlabeled: boolean;
+    status_map: {
+      ok: string;
+      warn: string;
+      crit: string;
+    };
+  };
 };
 
 const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
@@ -179,6 +192,19 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       aisle: String(config.simulator?.incident_durations?.aisle ?? 5),
     },
     overrides_path: config.simulator?.overrides_path || 'config/simulator_overrides.yaml',
+  },
+  slurm: {
+    metric: config.slurm?.metric || 'slurm_node_status',
+    label_node: config.slurm?.label_node || 'node',
+    label_status: config.slurm?.label_status || 'status',
+    label_partition: config.slurm?.label_partition || 'partition',
+    roles: config.slurm?.roles || ['compute', 'visu'],
+    include_unlabeled: config.slurm?.include_unlabeled ?? false,
+    status_map: {
+      ok: (config.slurm?.status_map?.ok || []).join(', '),
+      warn: (config.slurm?.status_map?.warn || []).join(', '),
+      crit: (config.slurm?.status_map?.crit || []).join(', '),
+    },
   },
 });
 
@@ -507,6 +533,28 @@ export const SettingsPage = () => {
             aisle: Number.parseInt(draft.simulator.incident_durations.aisle, 10),
           },
           overrides_path: draft.simulator.overrides_path,
+        },
+        slurm: {
+          metric: draft.slurm.metric.trim(),
+          label_node: draft.slurm.label_node.trim(),
+          label_status: draft.slurm.label_status.trim(),
+          label_partition: draft.slurm.label_partition.trim(),
+          roles: draft.slurm.roles,
+          include_unlabeled: draft.slurm.include_unlabeled,
+          status_map: {
+            ok: draft.slurm.status_map.ok
+              .split(',')
+              .map((val) => val.trim())
+              .filter(Boolean),
+            warn: draft.slurm.status_map.warn
+              .split(',')
+              .map((val) => val.trim())
+              .filter(Boolean),
+            crit: draft.slurm.status_map.crit
+              .split(',')
+              .map((val) => val.trim())
+              .filter(Boolean),
+          },
         },
       };
       await api.updateConfig(payload);
@@ -1442,6 +1490,76 @@ export const SettingsPage = () => {
                 <h3 className="font-mono text-sm tracking-widest text-gray-500 uppercase">
                   Slurm wallboard
                 </h3>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="text-xs text-gray-400">
+                    Metric name
+                    <input
+                      value={draft?.slurm.metric || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              slurm: { ...prev.slurm, metric: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="slurm_node_status"
+                    />
+                  </label>
+                  <label className="text-xs text-gray-400">
+                    Label: node
+                    <input
+                      value={draft?.slurm.label_node || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              slurm: { ...prev.slurm, label_node: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="node"
+                    />
+                  </label>
+                  <label className="text-xs text-gray-400">
+                    Label: status
+                    <input
+                      value={draft?.slurm.label_status || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              slurm: { ...prev.slurm, label_status: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="status"
+                    />
+                  </label>
+                  <label className="text-xs text-gray-400">
+                    Label: partition
+                    <input
+                      value={draft?.slurm.label_partition || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              slurm: { ...prev.slurm, label_partition: e.target.value },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="partition"
+                    />
+                  </label>
+                </div>
                 <label
                   className="text-xs text-gray-400"
                   title="Comma-separated roles to include in Slurm view"
@@ -1486,6 +1604,68 @@ export const SettingsPage = () => {
                     className="h-4 w-4"
                   />
                 </label>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <label className="text-xs text-gray-400">
+                    OK statuses
+                    <input
+                      value={draft?.slurm.status_map.ok || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              slurm: {
+                                ...prev.slurm,
+                                status_map: { ...prev.slurm.status_map, ok: e.target.value },
+                              },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="idle, allocated, alloc"
+                    />
+                  </label>
+                  <label className="text-xs text-gray-400">
+                    WARN statuses
+                    <input
+                      value={draft?.slurm.status_map.warn || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              slurm: {
+                                ...prev.slurm,
+                                status_map: { ...prev.slurm.status_map, warn: e.target.value },
+                              },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="drain, maint, mix"
+                    />
+                  </label>
+                  <label className="text-xs text-gray-400">
+                    CRIT statuses
+                    <input
+                      value={draft?.slurm.status_map.crit || ''}
+                      onChange={(e) =>
+                        setDraft(
+                          (prev) =>
+                            prev && {
+                              ...prev,
+                              slurm: {
+                                ...prev.slurm,
+                                status_map: { ...prev.slurm.status_map, crit: e.target.value },
+                              },
+                            }
+                        )
+                      }
+                      className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
+                      placeholder="down, fail"
+                    />
+                  </label>
+                </div>
               </div>
             </div>
           </section>
