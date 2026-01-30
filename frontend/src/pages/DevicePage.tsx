@@ -143,14 +143,14 @@ export const DevicePage = () => {
             <div className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
               Instances
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="custom-scrollbar flex gap-2 overflow-x-auto pb-1">
               {instanceList.map((instance, idx) => (
                 <button
                   key={`${instance}-${idx}`}
                   onClick={() => setSelectedIndex(idx)}
-                  className={`rounded-md border px-3 py-1 font-mono text-[11px] tracking-widest uppercase transition ${
+                  className={`rounded-full border px-4 py-1 font-mono text-[11px] tracking-widest whitespace-nowrap uppercase transition ${
                     idx === selectedIndex
-                      ? 'border-blue-500/50 bg-blue-500/10 text-blue-300'
+                      ? 'border-blue-500/60 bg-blue-500/15 text-blue-300'
                       : 'border-[var(--color-border)]/40 text-gray-400 hover:text-white'
                   }`}
                 >
