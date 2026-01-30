@@ -126,6 +126,7 @@ Notes:
 - `labels` can override default labels for a metric (only use labels supported by that metric).
   - Tokens: `$site_id`, `$room_id`, `$rack_id`, `$chassis_id`, `$node_id`, `$instance`, `$job`,
     plus metric-specific tokens like `$status`, `$tray`, `$slot`, `$collector`, `$state`, `$name`.
+- `labels_only: true` removes the default base labels (useful for Slurm exporters).
 
 Full catalog: `config/simulator_metrics_full.yaml`.
 Slurm catalog: `config/simulator_metrics_slurm.yaml`.
@@ -145,6 +146,9 @@ slurm_random_match:
 ```
 
 `slurm_random_match` restricts which nodes can be selected (use wildcards).
+
+These random statuses are applied on each simulator tick, so the selected
+states remain active until you change the configuration.
 
 ## Adding a new metric
 

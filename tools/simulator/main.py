@@ -94,7 +94,10 @@ def build_metric_registry(metric_defs):
             continue
         scope = definition.get('scope')
         label_templates = definition.get('labels') or {}
-        labelnames = list(BASE_LABELS.get(scope, []))
+        if definition.get('labels_only') or definition.get('include_base_labels') is False:
+            labelnames = []
+        else:
+            labelnames = list(BASE_LABELS.get(scope, []))
         for key in label_templates.keys():
             if key not in labelnames:
                 labelnames.append(key)
@@ -112,7 +115,10 @@ def _resolve_token(value, base_labels, context):
     return base_labels.get(token, "")
 
 def resolve_labels(definition, base_labels, context):
-    labels = dict(base_labels)
+    if definition.get('labels_only') or definition.get('include_base_labels') is False:
+        labels = {}
+    else:
+        labels = dict(base_labels)
     for key, template in (definition.get('labels') or {}).items():
         labels[key] = _resolve_token(template, base_labels, context)
     return labels
@@ -291,6 +297,8 @@ def normalize_metric_defs(metric_defs):
             'inst_wild': inst_wild,
             'rack_exact': rack_exact,
             'rack_wild': rack_wild,
+            'labels_only': bool(item.get('labels_only')),
+            'include_base_labels': item.get('include_base_labels', True),
         }
     return defs
 

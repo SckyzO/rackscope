@@ -1,7 +1,10 @@
 metrics:
   - name: slurm_node_status
     scope: node
-    instances: ["*"]
+    instances:
+      - compute*
+      - visu*
+    labels_only: true
     labels:
       node: $node_id
       partition: $partition
