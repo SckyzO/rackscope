@@ -33,7 +33,7 @@ const buildRackOptions = (rooms: RoomSummary[]): RackOption[] => {
   return options;
 };
 
-const normalizeInstance = (instance?: Record<number, string> | string) => {
+const normalizeInstance = (instance?: Record<number, string> | string | string[]) => {
   if (!instance) return undefined;
   return instance;
 };

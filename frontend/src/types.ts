@@ -3,8 +3,8 @@ export interface Device {
   name: string;
   template_id: string;
   u_position: number;
-  instance: Record<number, string> | string;
-  nodes?: Record<number, string> | string;
+  instance: Record<number, string> | string | string[];
+  nodes?: Record<number, string> | string | string[];
 }
 
 export interface Rack {

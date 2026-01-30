@@ -36,7 +36,10 @@ Topology is split for large deployments:
 - Device (chassis)
   - id, name, template_id
   - u_position (bottom U)
-  - instance (logical instances inside chassis, scalar or nodeset)
+  - instance (logical instances inside chassis):
+    - string nodeset: `compute[001-003]`
+    - ordered list: `[compute001, compute002, compute003]`
+    - slot map: `{1: compute001, 2: compute002, 3: compute003}`
   - nodes (deprecated alias, still accepted)
 
 ## Telemetry mapping

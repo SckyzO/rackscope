@@ -425,10 +425,14 @@ def _collect_from_rack(
 def _extract_nodes(device: Device) -> List[str]:
     if isinstance(device.instance, dict):
         return [node for node in device.instance.values() if isinstance(node, str)]
+    if isinstance(device.instance, list):
+        return [node for node in device.instance if isinstance(node, str)]
     if isinstance(device.instance, str):
         return _expand_nodes_pattern(device.instance)
     if isinstance(device.nodes, dict):
         return [node for node in device.nodes.values() if isinstance(node, str)]
+    if isinstance(device.nodes, list):
+        return [node for node in device.nodes if isinstance(node, str)]
     if isinstance(device.nodes, str):
         return _expand_nodes_pattern(device.nodes)
     return [device.id]

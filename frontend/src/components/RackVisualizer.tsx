@@ -20,8 +20,18 @@ import type {
 } from '../types';
 
 // --- Helpers ---
-const parseNodeset = (pattern?: string | Record<number, string>): Record<number, string> => {
+const parseNodeset = (
+  pattern?: string | Record<number, string> | string[]
+): Record<number, string> => {
   if (!pattern) return {};
+  if (Array.isArray(pattern)) {
+    return pattern.reduce<Record<number, string>>((acc, value, index) => {
+      if (typeof value === 'string') {
+        acc[index + 1] = value;
+      }
+      return acc;
+    }, {});
+  }
   if (typeof pattern !== 'string') return pattern;
   const match = pattern.match(/(.+)\[(\d+)-(\d+)\]/);
   if (!match) return { 1: pattern };

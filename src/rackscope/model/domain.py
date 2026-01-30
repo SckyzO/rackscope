@@ -14,10 +14,10 @@ class Device(BaseModel):
     u_position: int = Field(..., description="Bottom U position in the rack")
 
     # Prometheus identity selector for this device or its nodes.
-    # Can be a dictionary {slot_num: instance_id} or a string "node[1-4]" (parsed later).
-    instance: Union[Dict[int, str], str] = Field(default_factory=dict)
+    # Can be a dictionary {slot_num: instance_id}, a list of instances, or a string "node[1-4]".
+    instance: Union[Dict[int, str], List[str], str] = Field(default_factory=dict)
     # Backward-compat: older configs used "nodes".
-    nodes: Optional[Union[Dict[int, str], str]] = Field(
+    nodes: Optional[Union[Dict[int, str], List[str], str]] = Field(
         default=None, description="Deprecated; use instance"
     )
 

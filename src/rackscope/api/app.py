@@ -148,10 +148,14 @@ def _get_rack_height(data: dict) -> int:
 def _extract_device_instances(device: Device) -> List[str]:
     if isinstance(device.instance, dict):
         return [node for node in device.instance.values() if isinstance(node, str)]
+    if isinstance(device.instance, list):
+        return [node for node in device.instance if isinstance(node, str)]
     if isinstance(device.instance, str):
         return _expand_nodes_pattern(device.instance)
     if isinstance(device.nodes, dict):
         return [node for node in device.nodes.values() if isinstance(node, str)]
+    if isinstance(device.nodes, list):
+        return [node for node in device.nodes if isinstance(node, str)]
     if isinstance(device.nodes, str):
         return _expand_nodes_pattern(device.nodes)
     return [device.id]
@@ -1779,11 +1783,23 @@ def _expand_device_instances(device: Device) -> List[str]:
             if isinstance(value, str):
                 expanded.extend(_expand_nodes_pattern(value))
         return expanded
+    if isinstance(device.instance, list):
+        expanded: List[str] = []
+        for value in device.instance:
+            if isinstance(value, str):
+                expanded.extend(_expand_nodes_pattern(value))
+        return expanded
     if isinstance(device.nodes, str):
         return _expand_nodes_pattern(device.nodes)
     if isinstance(device.nodes, dict):
         expanded: List[str] = []
         for value in device.nodes.values():
+            if isinstance(value, str):
+                expanded.extend(_expand_nodes_pattern(value))
+        return expanded
+    if isinstance(device.nodes, list):
+        expanded: List[str] = []
+        for value in device.nodes:
             if isinstance(value, str):
                 expanded.extend(_expand_nodes_pattern(value))
         return expanded

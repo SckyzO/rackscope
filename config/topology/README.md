@@ -94,6 +94,10 @@ devices:
     name: XH3140 Trio 01
     template_id: bs-xh3140-trio-1u-3n
     u_position: 1
+    # instance can be:
+    # - nodeset string: compute[001-003]
+    # - list (ordered): [compute001, compute002, compute003]
+    # - slot map: {1: compute001, 2: compute002, 3: compute003}
     instance: compute[001-003]  # or a single instance like "esw01"
 ```
 
