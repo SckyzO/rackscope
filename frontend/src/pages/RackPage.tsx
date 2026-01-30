@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import type {
   Rack,
@@ -23,6 +23,7 @@ import { RackElevation } from '../components/RackVisualizer';
  */
 export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
   const { rackId } = useParams<{ rackId: string }>();
+  const navigate = useNavigate();
 
   const [rack, setRack] = useState<Rack | null>(null);
   const [deviceCatalog, setDeviceCatalog] = useState<Record<string, DeviceTemplate>>({});
@@ -210,6 +211,7 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
               health={healthData?.state}
               nodesData={healthData?.nodes}
               infraComponents={frontInfra}
+              onDeviceClick={(device) => navigate(`/rack/${rack.id}/device/${device.id}`)}
             />
           </div>
         </div>
@@ -228,6 +230,7 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
               isRearView={true}
               infraComponents={rearInfra}
               allowInfraOverlap={true}
+              onDeviceClick={(device) => navigate(`/rack/${rack.id}/device/${device.id}`)}
             />
           </div>
         </div>

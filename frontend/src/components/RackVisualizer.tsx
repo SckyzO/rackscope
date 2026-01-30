@@ -1,4 +1,4 @@
-import { useState, useMemo, ReactNode } from 'react';
+import { useState, useMemo, ReactNode, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Server,
@@ -18,34 +18,7 @@ import type {
   RackNodeState,
   AlertCheck,
 } from '../types';
-
-// --- Helpers ---
-const parseNodeset = (
-  pattern?: string | Record<number, string> | string[]
-): Record<number, string> => {
-  if (!pattern) return {};
-  if (Array.isArray(pattern)) {
-    return pattern.reduce<Record<number, string>>((acc, value, index) => {
-      if (typeof value === 'string') {
-        acc[index + 1] = value;
-      }
-      return acc;
-    }, {});
-  }
-  if (typeof pattern !== 'string') return pattern;
-  const match = pattern.match(/(.+)\[(\d+)-(\d+)\]/);
-  if (!match) return { 1: pattern };
-  const [, prefix, startStr, end] = match;
-  const start = parseInt(startStr);
-  const count = parseInt(end) - start + 1;
-  const padding = startStr.length;
-  const result: Record<number, string> = {};
-  for (let i = 0; i < count; i++) {
-    const num = (start + i).toString().padStart(padding, '0');
-    result[i + 1] = `${prefix}${num}`;
-  }
-  return result;
-};
+import { expandInstanceMap, type InstanceInput } from '../utils/instances';
 
 // --- Reusable HUD Tooltip Component ---
 
@@ -211,6 +184,7 @@ export const RackElevation = ({
   flipView,
   rearInfraComponents = [],
   overlay,
+  onDeviceClick,
 }: {
   rack: Rack;
   catalog: Record<string, DeviceTemplate>;
@@ -222,6 +196,7 @@ export const RackElevation = ({
   flipView?: 'front' | 'rear';
   rearInfraComponents?: (InfrastructureComponent & { slot?: number; span?: number })[];
   overlay?: ReactNode;
+  onDeviceClick?: (device: Device) => void;
 }) => {
   const uMap = new Map<number, Device>();
   rack.devices.forEach((d) => {
@@ -332,6 +307,7 @@ export const RackElevation = ({
                         nodesData={nodesData}
                         isRearView={faceRearView}
                         uPosition={u}
+                        onClick={onDeviceClick ? () => onDeviceClick(device) : undefined}
                       />
                     </div>
                   )}
@@ -479,6 +455,7 @@ export const DeviceChassis = ({
   nodesData,
   isRearView,
   uPosition,
+  onClick,
 }: {
   device: Device;
   template: DeviceTemplate;
@@ -486,9 +463,10 @@ export const DeviceChassis = ({
   nodesData?: Record<string, RackNodeState>;
   isRearView?: boolean;
   uPosition: number;
+  onClick?: () => void;
 }) => {
   const nodeMap = useMemo(
-    () => parseNodeset(device.instance || device.nodes),
+    () => expandInstanceMap((device.instance || device.nodes) as InstanceInput),
     [device.instance, device.nodes]
   );
   const chassisHealth = useMemo(() => {
@@ -525,9 +503,23 @@ export const DeviceChassis = ({
           ? 'bg-status-warn'
           : 'bg-gray-600';
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!onClick) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div
-      className={`h-full w-full border ${borderColor} ${bgColor} group relative flex rounded-[2px] transition-all duration-200 hover:z-[100] hover:scale-[1.03] hover:shadow-2xl`}
+      className={`h-full w-full border ${borderColor} ${bgColor} group relative flex rounded-[2px] transition-all duration-200 hover:z-[100] hover:scale-[1.03] hover:shadow-2xl ${
+        onClick ? 'cursor-pointer' : ''
+      }`}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
     >
       <div className={`h-full w-1.5 ${statusColor} relative shrink-0 opacity-90`}>
         <div className={`absolute inset-0 blur-[4px] ${statusColor} opacity-40`}></div>

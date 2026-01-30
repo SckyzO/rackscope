@@ -199,7 +199,16 @@ def load_topology_nodes(topo_data):
             def process_rack(rack, aisle_id):
                 for device in rack.get('devices', []):
                     nodes_map = device.get('instance') or device.get('nodes')
-                    if isinstance(nodes_map, str): nodes_map = parse_nodeset(nodes_map)
+                    if isinstance(nodes_map, str):
+                        nodes_map = parse_nodeset(nodes_map)
+                    elif isinstance(nodes_map, list):
+                        nodes_map = {
+                            idx + 1: value
+                            for idx, value in enumerate(nodes_map)
+                            if isinstance(value, str)
+                        }
+                    elif not isinstance(nodes_map, dict):
+                        nodes_map = {}
                     if not nodes_map:
                         targets.append({
                             'site_id': site['id'],

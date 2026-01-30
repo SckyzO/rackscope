@@ -430,6 +430,15 @@ class RoomAislesUpdate(BaseModel):
     aisles: Dict[str, List[str]]
 
 
+class DeviceContext(BaseModel):
+    device: Device
+    template: Optional[DeviceTemplate] = None
+    rack: Rack
+    room: Dict[str, str]
+    site: Dict[str, str]
+    aisle: Optional[Dict[str, str]] = None
+
+
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
@@ -990,6 +999,56 @@ def get_rack_details(rack_id: str):
                     return rack
 
     raise HTTPException(status_code=404, detail=f"Rack {rack_id} not found")
+
+
+@app.get("/api/racks/{rack_id}/devices/{device_id}", response_model=DeviceContext)
+def get_device_details(rack_id: str, device_id: str):
+    if not TOPOLOGY:
+        raise HTTPException(status_code=500, detail="Topology not loaded")
+
+    for site in TOPOLOGY.sites:
+        for room in site.rooms:
+            for aisle in room.aisles:
+                for rack in aisle.racks:
+                    if rack.id != rack_id:
+                        continue
+                    device = next((d for d in rack.devices if d.id == device_id), None)
+                    if device:
+                        return DeviceContext(
+                            device=device,
+                            template=CATALOG.get_device_template(device.template_id)
+                            if CATALOG
+                            else None,
+                            rack=rack,
+                            room={"id": room.id, "name": room.name},
+                            site={
+                                "id": site.id,
+                                "name": site.name,
+                                "description": site.description or "",
+                            },
+                            aisle={"id": aisle.id, "name": aisle.name},
+                        )
+            for rack in room.standalone_racks:
+                if rack.id != rack_id:
+                    continue
+                device = next((d for d in rack.devices if d.id == device_id), None)
+                if device:
+                    return DeviceContext(
+                        device=device,
+                        template=CATALOG.get_device_template(device.template_id)
+                        if CATALOG
+                        else None,
+                        rack=rack,
+                        room={"id": room.id, "name": room.name},
+                        site={
+                            "id": site.id,
+                            "name": site.name,
+                            "description": site.description or "",
+                        },
+                        aisle=None,
+                    )
+
+    raise HTTPException(status_code=404, detail=f"Device {device_id} not found in rack {rack_id}")
 
 
 @app.put("/api/topology/aisles/{aisle_id}/racks")

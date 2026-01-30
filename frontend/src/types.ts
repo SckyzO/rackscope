@@ -81,6 +81,15 @@ export interface RoomSummary {
   aisles?: AisleSummary[];
 }
 
+export interface DeviceContext {
+  device: Device;
+  template?: DeviceTemplate | null;
+  rack: Rack;
+  room: { id: string; name: string };
+  site: { id: string; name: string; description?: string };
+  aisle?: { id: string; name: string } | null;
+}
+
 // --- Catalog Types ---
 
 export interface LayoutConfig {

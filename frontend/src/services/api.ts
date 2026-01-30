@@ -6,6 +6,7 @@ import type {
   DeviceTemplate,
   RackTemplate,
   Rack,
+  DeviceContext,
   AppConfig,
   SimulatorScenario,
   ChecksLibrary,
@@ -188,6 +189,12 @@ export const api = {
   },
   getRack: async (rackId: string): Promise<Rack> => {
     return fetchWithCache(`/api/racks/${rackId}`, `rack.${rackId}`);
+  },
+  getDeviceDetails: async (rackId: string, deviceId: string): Promise<DeviceContext> => {
+    return fetchWithCache(
+      `/api/racks/${encodeURIComponent(rackId)}/devices/${encodeURIComponent(deviceId)}`,
+      `device.${rackId}.${deviceId}`
+    );
   },
   getRooms: async (): Promise<RoomSummary[]> => {
     return fetchWithCache('/api/rooms', 'rooms');

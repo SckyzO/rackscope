@@ -61,6 +61,9 @@ Get the complete physical layout of a room (aisles, racks, and their positions).
 #### `GET /api/racks/{rack_id}`
 Get the full technical details of a rack (dimensions, devices list, template).
 
+#### `GET /api/racks/{rack_id}/devices/{device_id}`
+Get the full context for a device (rack, aisle, room, site + template metadata).
+
 #### `GET /api/catalog`
 Retrieve all available hardware templates (devices and racks).
 

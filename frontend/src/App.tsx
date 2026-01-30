@@ -5,6 +5,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { NotificationHeader } from './components/NotificationHeader';
 import { RoomPage } from './pages/RoomPage';
 import { RackPage } from './pages/RackPage';
+import { DevicePage } from './pages/DevicePage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TemplatesLibraryPage } from './pages/TemplatesLibraryPage';
 import { TemplatesEditorPage } from './pages/TemplatesEditorPage';
@@ -157,7 +158,7 @@ const Layout = ({
                   type: 'device',
                   label: device.name || device.id,
                   sublabel: `${rack.name || rack.id} / Device`,
-                  to: `/rack/${rack.id}`,
+                  to: `/rack/${rack.id}/device/${device.id}`,
                 });
               }
               const instanceMatches = expandInstanceMatches(searchQuery, device.instance, 50);
@@ -167,7 +168,7 @@ const Layout = ({
                   type: 'instance',
                   label: value,
                   sublabel: `${rack.name || rack.id} / Instance`,
-                  to: `/rack/${rack.id}`,
+                  to: `/rack/${rack.id}/device/${device.id}?instance=${encodeURIComponent(value)}`,
                 });
                 if (results.length >= 30) break;
               }
@@ -194,7 +195,7 @@ const Layout = ({
                 type: 'device',
                 label: device.name || device.id,
                 sublabel: `${rack.name || rack.id} / Device`,
-                to: `/rack/${rack.id}`,
+                to: `/rack/${rack.id}/device/${device.id}`,
               });
             }
             const instanceMatches = expandInstanceMatches(searchQuery, device.instance, 50);
@@ -204,7 +205,7 @@ const Layout = ({
                 type: 'instance',
                 label: value,
                 sublabel: `${rack.name || rack.id} / Instance`,
-                to: `/rack/${rack.id}`,
+                to: `/rack/${rack.id}/device/${device.id}?instance=${encodeURIComponent(value)}`,
               });
               if (results.length >= 30) break;
             }
@@ -906,6 +907,7 @@ function App() {
             <Route path="/slurm/partitions" element={<SlurmPartitionsPage />} />
             <Route path="/slurm/nodes" element={<SlurmNodesPage />} />
             <Route path="/slurm/alerts" element={<SlurmAlertsPage />} />
+            <Route path="/rack/:rackId/device/:deviceId" element={<DevicePage />} />
             <Route path="/rack/:rackId" element={<RackPage reloadKey={reloadKey} />} />
             <Route path="/templates" element={<TemplatesLibraryPage />} />
             <Route path="/templates/editor" element={<TemplatesEditorPage />} />

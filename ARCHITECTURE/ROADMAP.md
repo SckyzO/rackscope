@@ -140,6 +140,11 @@ Telemetry:
 - [x] World map overview (multi-DC)
 - [ ] Offline world map tiles (self-hosted)
 - [x] Multi-DC UI support (site selector + per-site room list)
+- [ ] Device Detail View:
+  - [ ] route: `/rack/:rackId/device/:deviceId`
+  - [ ] instance tabs (per chassis node)
+  - [ ] show template + matrix slot + physical location
+  - [ ] optional rear view/metrics panel (future)
 - [ ] Slurm Views:
   - [x] Slurm Wallboard (Aisle Compact View)
     - [x] compact aisle view (front-only racks, no rear)
@@ -156,6 +161,11 @@ Telemetry:
   - [ ] Physical vs Slurm toggle (per room)
 - [ ] Compute grid view
 - [ ] Services view
+- [ ] Plugin system (controlled extensions, no core override):
+  - [ ] plugin manifest + versioning
+  - [ ] data sources: read-only inventory enrichers (e.g., BlueBanquise/NetBox)
+  - [ ] UI hooks: device sidebar panel / info card slots
+  - [ ] safe config + enable/disable per plugin
 - [ ] Playlist mode (rotate rooms every X minutes)
   - [ ] Header toggle (visible) + tooltip explanation
   - [ ] Settings: enable/disable, interval, mode (rooms only / rooms+racks)
