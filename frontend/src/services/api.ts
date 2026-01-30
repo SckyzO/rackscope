@@ -187,6 +187,29 @@ export const api = {
     markSuccess();
     return data;
   },
+  validateTemplate: async (payload: {
+    kind: 'device' | 'rack';
+    template: Record<string, unknown>;
+  }) => {
+    const res = await fetch('/api/catalog/templates/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      logClientError(
+        `Request failed: ${res.status} ${res.statusText}`,
+        '/api/catalog/templates/validate'
+      );
+      const detail = await res.json().catch(() => null);
+      const error = new Error(`Request failed: ${res.status}`);
+      (error as Error & { detail?: unknown }).detail = detail;
+      throw error;
+    }
+    const data = await res.json();
+    markSuccess();
+    return data;
+  },
   getRack: async (rackId: string): Promise<Rack> => {
     return fetchWithCache(`/api/racks/${rackId}`, `rack.${rackId}`);
   },

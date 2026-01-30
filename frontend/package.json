@@ -12,8 +12,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/vite": "^4.1.18",
     "chart.js": "^4.5.1",
+    "js-yaml": "^4.1.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",

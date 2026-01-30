@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import Editor, { type OnMount } from '@monaco-editor/react';
+import yaml from 'js-yaml';
 import { api } from '../services/api';
 import type { DeviceTemplate, CheckDefinition } from '../types';
 
@@ -53,11 +55,44 @@ const buildMatrix = (rows: number, cols: number) => {
   return matrix;
 };
 
+const buildPreviewMatrix = (rows: number, cols: number, matrix?: number[][]) => {
+  if (matrix && matrix.length === rows && matrix.every((row) => row.length === cols)) {
+    return matrix;
+  }
+  return buildMatrix(rows, cols);
+};
+
+const toDraftFromTemplate = (selected: DeviceTemplate): DeviceDraft => ({
+  id: selected.id,
+  name: selected.name,
+  type: selected.type || 'server',
+  u_height: String(selected.u_height || 1),
+  rows: String(selected.layout?.rows || 1),
+  cols: String(selected.layout?.cols || 1),
+  layout_type: (selected.layout?.type as DeviceDraft['layout_type']) || 'grid',
+  layout_matrix: selected.layout?.matrix,
+  rear_enabled: Boolean(selected.rear_layout),
+  rear_rows: String(selected.rear_layout?.rows || 1),
+  rear_cols: String(selected.rear_layout?.cols || 1),
+  rear_layout_type: (selected.rear_layout?.type as DeviceDraft['rear_layout_type']) || 'grid',
+  rear_layout_matrix: selected.rear_layout?.matrix,
+  rear_components: (selected.rear_components || []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    type: c.type,
+    checks: c.checks || [],
+  })),
+  checks: selected.checks || [],
+});
+
 export const TemplatesEditorPage = () => {
   const [draft, setDraft] = useState<DeviceDraft>(defaultDraft);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
+  const [yamlText, setYamlText] = useState('');
+  const [yamlErrors, setYamlErrors] = useState<string[]>([]);
+  const [yamlValidationErrors, setYamlValidationErrors] = useState<string[]>([]);
   const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
   const [checksLibrary, setChecksLibrary] = useState<CheckDefinition[]>([]);
   const [searchParams] = useSearchParams();
@@ -66,34 +101,20 @@ export const TemplatesEditorPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const unitHeight = 48;
   const minPreviewHeight = 48;
+  const yamlTimer = useRef<number | null>(null);
+  const [yamlSource, setYamlSource] = useState<'form' | 'editor'>('form');
+  const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
+  const monacoRef = useRef<Parameters<OnMount>[1] | null>(null);
 
   const applyTemplate = useCallback((selected: DeviceTemplate) => {
     setSelectedTemplateId(selected.id);
-    setDraft({
-      id: selected.id,
-      name: selected.name,
-      type: selected.type || 'server',
-      u_height: String(selected.u_height || 1),
-      rows: String(selected.layout?.rows || 1),
-      cols: String(selected.layout?.cols || 1),
-      layout_type: (selected.layout?.type as DeviceDraft['layout_type']) || 'grid',
-      layout_matrix: selected.layout?.matrix,
-      rear_enabled: Boolean(selected.rear_layout),
-      rear_rows: String(selected.rear_layout?.rows || 1),
-      rear_cols: String(selected.rear_layout?.cols || 1),
-      rear_layout_type: (selected.rear_layout?.type as DeviceDraft['rear_layout_type']) || 'grid',
-      rear_layout_matrix: selected.rear_layout?.matrix,
-      rear_components: (selected.rear_components || []).map((c) => ({
-        id: c.id,
-        name: c.name,
-        type: c.type,
-        checks: c.checks || [],
-      })),
-      checks: selected.checks || [],
-    });
+    setDraft(toDraftFromTemplate(selected));
     setIsEditing(true);
     setStatus('idle');
     setError(null);
+    setYamlErrors([]);
+    setYamlValidationErrors([]);
+    setYamlSource('form');
   }, []);
 
   useEffect(() => {
@@ -115,29 +136,7 @@ export const TemplatesEditorPage = () => {
     };
   }, [applyTemplate, initialTemplateId]);
 
-  const buildPreviewMatrix = (rows: number, cols: number, matrix?: number[][]) => {
-    if (matrix && matrix.length === rows && matrix.every((row) => row.length === cols)) {
-      return matrix;
-    }
-    return buildMatrix(rows, cols);
-  };
-
-  const matrixPreview = useMemo(() => {
-    const rows = Number.parseInt(draft.rows, 10);
-    const cols = Number.parseInt(draft.cols, 10);
-    if (!Number.isFinite(rows) || !Number.isFinite(cols) || rows <= 0 || cols <= 0) return [];
-    return buildPreviewMatrix(rows, cols, draft.layout_matrix);
-  }, [draft.rows, draft.cols, draft.layout_matrix]);
-
-  const rearMatrixPreview = useMemo(() => {
-    if (!draft.rear_enabled) return [];
-    const rows = Number.parseInt(draft.rear_rows, 10);
-    const cols = Number.parseInt(draft.rear_cols, 10);
-    if (!Number.isFinite(rows) || !Number.isFinite(cols) || rows <= 0 || cols <= 0) return [];
-    return buildPreviewMatrix(rows, cols, draft.rear_layout_matrix);
-  }, [draft.rear_rows, draft.rear_cols, draft.rear_enabled, draft.rear_layout_matrix]);
-
-  const yamlPreview = useMemo(() => {
+  const buildTemplateFromDraft = useCallback(() => {
     const rows = Number.parseInt(draft.rows, 10);
     const cols = Number.parseInt(draft.cols, 10);
     const uHeight = Number.parseInt(draft.u_height, 10);
@@ -171,8 +170,31 @@ export const TemplatesEditorPage = () => {
         checks: c.checks,
       }));
     }
-    return `templates:\n  - ${JSON.stringify(template, null, 2).replace(/\n/g, '\n    ')}`;
+    return template;
   }, [draft]);
+
+  const matrixPreview = useMemo(() => {
+    const rows = Number.parseInt(draft.rows, 10);
+    const cols = Number.parseInt(draft.cols, 10);
+    if (!Number.isFinite(rows) || !Number.isFinite(cols) || rows <= 0 || cols <= 0) return [];
+    return buildPreviewMatrix(rows, cols, draft.layout_matrix);
+  }, [draft.rows, draft.cols, draft.layout_matrix]);
+
+  const rearMatrixPreview = useMemo(() => {
+    if (!draft.rear_enabled) return [];
+    const rows = Number.parseInt(draft.rear_rows, 10);
+    const cols = Number.parseInt(draft.rear_cols, 10);
+    if (!Number.isFinite(rows) || !Number.isFinite(cols) || rows <= 0 || cols <= 0) return [];
+    return buildPreviewMatrix(rows, cols, draft.rear_layout_matrix);
+  }, [draft.rear_rows, draft.rear_cols, draft.rear_enabled, draft.rear_layout_matrix]);
+
+  const yamlPreview = useMemo(() => {
+    const template = buildTemplateFromDraft();
+    return yaml.dump(
+      { templates: [template] },
+      { noRefs: true, lineWidth: 120, quotingType: '"', forceQuotes: false }
+    );
+  }, [buildTemplateFromDraft]);
 
   const validationErrors = useMemo(() => {
     const errors: string[] = [];
@@ -190,6 +212,92 @@ export const TemplatesEditorPage = () => {
     return errors;
   }, [draft, deviceTemplates, isEditing]);
 
+  const validateYaml = useCallback(
+    async (text: string) => {
+      const nextErrors: string[] = [];
+      let parsedTemplate: Record<string, unknown> | null = null;
+      try {
+        const data = yaml.load(text);
+        if (!data || typeof data !== 'object') {
+          nextErrors.push('YAML must contain a top-level object.');
+        } else if (!Array.isArray((data as { templates?: unknown }).templates)) {
+          nextErrors.push('YAML must include templates: [ ... ].');
+        } else {
+          const templates = (data as { templates: unknown[] }).templates;
+          if (!templates.length || typeof templates[0] !== 'object' || !templates[0]) {
+            nextErrors.push('templates must include at least one template object.');
+          } else {
+            parsedTemplate = templates[0] as Record<string, unknown>;
+          }
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Invalid YAML';
+        nextErrors.push(message);
+        const mark = (err as { mark?: { line?: number; column?: number } }).mark;
+        if (mark && monacoRef.current && editorRef.current) {
+          const model = editorRef.current.getModel();
+          if (model) {
+            monacoRef.current.editor.setModelMarkers(model, 'yaml', [
+              {
+                message,
+                severity: monacoRef.current.MarkerSeverity.Error,
+                startLineNumber: (mark.line ?? 0) + 1,
+                startColumn: (mark.column ?? 0) + 1,
+                endLineNumber: (mark.line ?? 0) + 1,
+                endColumn: (mark.column ?? 0) + 2,
+              },
+            ]);
+          }
+        }
+      }
+
+      setYamlErrors(nextErrors);
+      if (nextErrors.length > 0) {
+        return;
+      }
+
+      if (monacoRef.current && editorRef.current) {
+        const model = editorRef.current.getModel();
+        if (model) {
+          monacoRef.current.editor.setModelMarkers(model, 'yaml', []);
+        }
+      }
+
+      if (parsedTemplate) {
+        try {
+          const template = parsedTemplate as DeviceTemplate;
+          setDraft(toDraftFromTemplate(template));
+        } catch {
+          // Ignore draft conversion errors.
+        }
+        try {
+          await api.validateTemplate({ kind: 'device', template: parsedTemplate });
+          setYamlValidationErrors([]);
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : 'Validation failed';
+          setYamlValidationErrors([message]);
+        }
+      }
+    },
+    [setDraft]
+  );
+
+  useEffect(() => {
+    if (!showYaml) return undefined;
+    if (yamlTimer.current) {
+      window.clearTimeout(yamlTimer.current);
+    }
+    const textToValidate = yamlSource === 'editor' ? yamlText : yamlPreview;
+    yamlTimer.current = window.setTimeout(() => {
+      validateYaml(textToValidate);
+    }, 400);
+    return () => {
+      if (yamlTimer.current) {
+        window.clearTimeout(yamlTimer.current);
+      }
+    };
+  }, [showYaml, yamlSource, yamlText, yamlPreview, validateYaml]);
+
   const canSave = validationErrors.length === 0;
   const previewHeight = (() => {
     const uHeight = Number.parseInt(draft.u_height, 10);
@@ -202,43 +310,20 @@ export const TemplatesEditorPage = () => {
     return uHeight;
   })();
 
+  const handleEditorMount: OnMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+  };
+
   const handleSave = async () => {
     if (!canSave) return;
     setStatus('saving');
     setError(null);
     try {
-      const rows = Number.parseInt(draft.rows, 10);
-      const cols = Number.parseInt(draft.cols, 10);
-      const uHeight = Number.parseInt(draft.u_height, 10);
-      const template = {
-        id: draft.id.trim(),
-        name: draft.name.trim(),
-        type: draft.type.trim() || 'server',
-        u_height: Number.isFinite(uHeight) ? uHeight : 1,
-        layout: {
-          type: draft.layout_type,
-          rows,
-          cols,
-          matrix: buildPreviewMatrix(rows, cols, draft.layout_matrix),
-        },
-        checks: draft.checks || [],
-      };
-      if (draft.rear_enabled) {
-        const rearRows = Number.parseInt(draft.rear_rows, 10);
-        const rearCols = Number.parseInt(draft.rear_cols, 10);
-        template.rear_layout = {
-          type: draft.rear_layout_type,
-          rows: rearRows,
-          cols: rearCols,
-          matrix: buildPreviewMatrix(rearRows, rearCols, draft.rear_layout_matrix),
-        };
-        template.rear_components = draft.rear_components.map((c) => ({
-          id: c.id,
-          name: c.name,
-          type: c.type,
-          checks: c.checks,
-        }));
-      }
+      const template = buildTemplateFromDraft();
+      template.id = draft.id.trim();
+      template.name = draft.name.trim();
+      template.type = draft.type.trim() || 'server';
       if (isEditing) {
         await api.updateTemplate({ kind: 'device', template });
       } else {
@@ -277,6 +362,9 @@ export const TemplatesEditorPage = () => {
               setDraft(defaultDraft);
               setStatus('idle');
               setError(null);
+              setYamlErrors([]);
+              setYamlValidationErrors([]);
+              setYamlSource('form');
             }}
             className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-[10px] font-bold tracking-widest text-gray-400 uppercase transition-colors hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
           >
@@ -284,7 +372,17 @@ export const TemplatesEditorPage = () => {
           </button>
           <button
             type="button"
-            onClick={() => setShowYaml((prev) => !prev)}
+            onClick={() =>
+              setShowYaml((prev) => {
+                const next = !prev;
+                if (next) {
+                  setYamlSource('form');
+                  setYamlErrors([]);
+                  setYamlValidationErrors([]);
+                }
+                return next;
+              })
+            }
             className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-[10px] font-bold tracking-widest text-gray-400 uppercase transition-colors hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
           >
             {showYaml ? 'Hide YAML' : 'Show YAML'}
@@ -611,9 +709,41 @@ export const TemplatesEditorPage = () => {
               <h2 className="mb-4 text-lg font-bold tracking-[0.2em] text-gray-200 uppercase">
                 YAML
               </h2>
-              <pre className="rounded-2xl border border-white/10 bg-black/30 p-4 font-mono text-[10px] whitespace-pre-wrap text-gray-300">
-                {yamlPreview}
-              </pre>
+              <div className="overflow-hidden rounded-2xl border border-white/10">
+                <Editor
+                  height="520px"
+                  defaultLanguage="yaml"
+                  value={yamlSource === 'editor' ? yamlText : yamlPreview}
+                  onMount={handleEditorMount}
+                  onChange={(value) => {
+                    setYamlSource('editor');
+                    setYamlText(value ?? '');
+                  }}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 12,
+                    wordWrap: 'on',
+                    scrollBeyondLastLine: false,
+                    tabSize: 2,
+                    padding: { top: 12, bottom: 12 },
+                  }}
+                  theme="vs-dark"
+                />
+              </div>
+              {(yamlErrors.length > 0 || yamlValidationErrors.length > 0) && (
+                <div className="mt-4 space-y-2 text-[11px]">
+                  {yamlErrors.map((message, idx) => (
+                    <div key={`yaml-error-${idx}`} className="text-status-crit">
+                      {message}
+                    </div>
+                  ))}
+                  {yamlValidationErrors.map((message, idx) => (
+                    <div key={`yaml-validate-${idx}`} className="text-status-warn">
+                      {message}
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           ) : (
             <>

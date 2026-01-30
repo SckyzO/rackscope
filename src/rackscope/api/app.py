@@ -1443,6 +1443,21 @@ def update_template(payload: TemplateWriteRequest):
     return template
 
 
+@app.post("/api/catalog/templates/validate")
+def validate_template(payload: TemplateWriteRequest):
+    try:
+        if payload.kind == "device":
+            DeviceTemplate(**payload.template)
+        else:
+            RackTemplate(**payload.template)
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=400,
+            detail={"message": "Template validation failed", "errors": e.errors()},
+        )
+    return {"status": "ok"}
+
+
 @app.get("/api/stats/global")
 async def get_global_stats():
     rack_healths: Dict[str, str] = {}
