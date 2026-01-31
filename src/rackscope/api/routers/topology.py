@@ -21,6 +21,7 @@ from rackscope.api.dependencies import (
     get_app_config,
     get_topology_optional,
 )
+from rackscope.services import topology_service
 from rackscope.api.models import (
     SiteCreate,
     RoomCreate,
@@ -48,99 +49,6 @@ def _safe_segment(value: str, fallback: str) -> str:
     value = re.sub(r"[^a-z0-9._-]+", "-", value)
     value = value.strip("-")
     return value or fallback
-
-
-def _find_rack_location(
-    rack_id: str, topology: Topology
-) -> Optional[tuple[str, str, Optional[str], bool]]:
-    """Find rack location in topology.
-
-    Returns: (site_id, room_id, aisle_id, is_standalone) or None
-    """
-    for site in topology.sites:
-        for room in site.rooms:
-            for aisle in room.aisles:
-                for rack in aisle.racks:
-                    if rack.id == rack_id:
-                        return site.id, room.id, aisle.id, False
-            for rack in room.standalone_racks:
-                if rack.id == rack_id:
-                    return site.id, room.id, None, True
-    return None
-
-
-def _find_aisle_path(
-    room_id: str, aisle_id: str, app_config: AppConfig, topology: Topology
-) -> Optional[Path]:
-    """Find path to aisle YAML file."""
-    base_dir = Path(app_config.paths.topology)
-    for site in topology.sites:
-        for room in site.rooms:
-            if room.id != room_id:
-                continue
-            for aisle in room.aisles:
-                if aisle.id == aisle_id:
-                    return (
-                        base_dir
-                        / "datacenters"
-                        / site.id
-                        / "rooms"
-                        / room.id
-                        / "aisles"
-                        / aisle.id
-                        / "aisle.yaml"
-                    )
-    return None
-
-
-def _find_rack_path(rack_id: str, app_config: AppConfig, topology: Topology) -> Optional[Path]:
-    """Find path to rack YAML file."""
-    base_dir = Path(app_config.paths.topology)
-    location = _find_rack_location(rack_id, topology)
-    if not location:
-        return None
-    site_id, room_id, aisle_id, is_standalone = location
-    if is_standalone:
-        return (
-            base_dir
-            / "datacenters"
-            / site_id
-            / "rooms"
-            / room_id
-            / "standalone_racks"
-            / f"{rack_id}.yaml"
-        )
-    return (
-        base_dir
-        / "datacenters"
-        / site_id
-        / "rooms"
-        / room_id
-        / "aisles"
-        / aisle_id
-        / "racks"
-        / f"{rack_id}.yaml"
-    )
-
-
-def _get_device_height(template_id: str, catalog: Catalog) -> int:
-    """Get device template height in U."""
-    template = catalog.get_device_template(template_id)
-    if template and template.u_height:
-        return template.u_height
-    return 1
-
-
-def _get_rack_height(data: dict, catalog: Catalog) -> int:
-    """Get rack height in U from rack data."""
-    if data.get("u_height"):
-        return int(data["u_height"])
-    template_id = data.get("template_id")
-    if template_id:
-        template = catalog.get_rack_template(template_id)
-        if template and template.u_height:
-            return template.u_height
-    return 42
 
 
 # Sites endpoints
@@ -365,7 +273,7 @@ async def update_room_aisles(
         source_path.unlink(missing_ok=True)
 
     for aisle in target_room.aisles:
-        aisle_path = _find_aisle_path(room_id, aisle.id, app_config, topology)
+        aisle_path = topology_service.get_aisle_path(room_id, aisle.id, app_config, topology)
         if not aisle_path or not aisle_path.exists():
             raise HTTPException(status_code=404, detail=f"Aisle file not found: {aisle.id}")
         data = yaml.safe_load(aisle_path.read_text()) or {}
@@ -451,7 +359,7 @@ async def update_aisle_racks(
     if not payload.racks:
         raise HTTPException(status_code=400, detail="racks list is required")
 
-    aisle_path = _find_aisle_path(payload.room_id, aisle_id, app_config, topology)
+    aisle_path = topology_service.get_aisle_path(payload.room_id, aisle_id, app_config, topology)
     if not aisle_path or not aisle_path.exists():
         raise HTTPException(status_code=404, detail="Aisle file not found")
 
@@ -498,7 +406,7 @@ async def update_rack_template(
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    rack_path = _find_rack_path(rack_id, app_config, topology)
+    rack_path = topology_service.get_rack_path(rack_id, app_config, topology)
     if not rack_path or not rack_path.exists():
         raise HTTPException(status_code=404, detail="Rack file not found")
 
@@ -577,7 +485,7 @@ async def add_rack_device(
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    rack_path = _find_rack_path(rack_id, app_config, topology)
+    rack_path = topology_service.get_rack_path(rack_id, app_config, topology)
     if not rack_path or not rack_path.exists():
         raise HTTPException(status_code=404, detail="Rack file not found")
 
@@ -591,11 +499,11 @@ async def add_rack_device(
     if any(d.get("id") == payload.id for d in devices):
         raise HTTPException(status_code=400, detail=f"Device id already exists: {payload.id}")
 
-    rack_height = _get_rack_height(data, catalog)
+    rack_height = topology_service.get_rack_height(data, catalog)
     if payload.u_position < 1 or payload.u_position > rack_height:
         raise HTTPException(status_code=400, detail="u_position out of rack bounds")
 
-    new_height = _get_device_height(payload.template_id, catalog)
+    new_height = topology_service.get_device_height(payload.template_id, catalog)
     if payload.u_position + new_height - 1 > rack_height:
         raise HTTPException(status_code=400, detail="Device does not fit in rack height")
 
@@ -605,7 +513,7 @@ async def add_rack_device(
         if not template_id:
             continue
         start = int(device.get("u_position", 0))
-        height = _get_device_height(template_id, catalog)
+        height = topology_service.get_device_height(template_id, catalog)
         if start < 1:
             continue
         for u in range(start, start + height):
@@ -645,7 +553,7 @@ async def update_rack_device(
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    rack_path = _find_rack_path(rack_id, app_config, topology)
+    rack_path = topology_service.get_rack_path(rack_id, app_config, topology)
     if not rack_path or not rack_path.exists():
         raise HTTPException(status_code=404, detail="Rack file not found")
 
@@ -655,11 +563,11 @@ async def update_rack_device(
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    rack_height = _get_rack_height(data, catalog)
+    rack_height = topology_service.get_rack_height(data, catalog)
     template_id = device.get("template_id")
     if not template_id:
         raise HTTPException(status_code=400, detail="Device template_id missing")
-    height = _get_device_height(template_id, catalog)
+    height = topology_service.get_device_height(template_id, catalog)
     if payload.u_position < 1 or payload.u_position + height - 1 > rack_height:
         raise HTTPException(status_code=400, detail="Device does not fit in rack height")
 
@@ -671,7 +579,7 @@ async def update_rack_device(
         if not other_template_id:
             continue
         start = int(other.get("u_position", 0))
-        other_height = _get_device_height(other_template_id, catalog)
+        other_height = topology_service.get_device_height(other_template_id, catalog)
         if start < 1:
             continue
         for u in range(start, start + other_height):
@@ -705,7 +613,7 @@ async def delete_rack_device(
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    rack_path = _find_rack_path(rack_id, app_config, topology)
+    rack_path = topology_service.get_rack_path(rack_id, app_config, topology)
     if not rack_path or not rack_path.exists():
         raise HTTPException(status_code=404, detail="Rack file not found")
 
@@ -734,12 +642,12 @@ async def replace_rack_devices(
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    rack_path = _find_rack_path(rack_id, app_config, topology)
+    rack_path = topology_service.get_rack_path(rack_id, app_config, topology)
     if not rack_path or not rack_path.exists():
         raise HTTPException(status_code=404, detail="Rack file not found")
 
     data = yaml.safe_load(rack_path.read_text()) or {}
-    rack_height = _get_rack_height(data, catalog)
+    rack_height = topology_service.get_rack_height(data, catalog)
 
     seen_ids: set[str] = set()
     occupied: set[int] = set()
@@ -752,7 +660,7 @@ async def replace_rack_devices(
             raise HTTPException(
                 status_code=400, detail=f"Unknown device template: {device.template_id}"
             )
-        height = _get_device_height(device.template_id, catalog)
+        height = topology_service.get_device_height(device.template_id, catalog)
         if device.u_position < 1 or device.u_position + height - 1 > rack_height:
             raise HTTPException(status_code=400, detail=f"Device {device.id} does not fit in rack")
         for u in range(device.u_position, device.u_position + height):
