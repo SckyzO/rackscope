@@ -39,6 +39,15 @@ from rackscope.api.models import (
     RoomAislesUpdate,
     DeviceContext,
 )
+from rackscope.api.routers import (
+    config,
+    simulator,
+    catalog,
+    checks,
+    topology,
+    telemetry,
+    slurm,
+)
 from pydantic import ValidationError
 
 # Global state
@@ -400,6 +409,15 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
+
+# Register routers
+app.include_router(config.router)
+app.include_router(simulator.router)
+app.include_router(catalog.router)
+app.include_router(checks.router)
+app.include_router(topology.router)
+app.include_router(telemetry.router)
+app.include_router(slurm.router)
 
 
 @app.get("/healthz")
@@ -1952,7 +1970,7 @@ async def get_active_alerts():
                         }
 
     alerts = []
-    for node_id, checks in snapshot.node_alerts.items():
+    for node_id, node_checks in snapshot.node_alerts.items():
         context = node_context.get(node_id)
         if not context:
             continue
@@ -1960,7 +1978,7 @@ async def get_active_alerts():
             {
                 "node_id": node_id,
                 "state": snapshot.node_states.get(node_id, "UNKNOWN"),
-                "checks": [{"id": cid, "severity": sev} for cid, sev in checks.items()],
+                "checks": [{"id": cid, "severity": sev} for cid, sev in node_checks.items()],
                 **context,
             }
         )
