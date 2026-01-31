@@ -6,28 +6,27 @@ Endpoints for simulator control (demo mode).
 
 import time
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any, Optional
 
 import yaml
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from rackscope.api.dependencies import get_app_config_optional
+from rackscope.model.config import AppConfig
 
 router = APIRouter(prefix="/api/simulator", tags=["simulator"])
 
 
-def _overrides_path() -> Path:
+def _overrides_path(app_config: Optional[AppConfig]) -> Path:
     """Get path to simulator overrides file."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    APP_CONFIG = app_module.APP_CONFIG
-    if APP_CONFIG and getattr(APP_CONFIG, "simulator", None):
-        return Path(APP_CONFIG.simulator.overrides_path)
+    if app_config and getattr(app_config, "simulator", None):
+        return Path(app_config.simulator.overrides_path)
     return Path("config/simulator_overrides.yaml")
 
 
-def _load_overrides() -> list[dict[str, Any]]:
+def _load_overrides(app_config: Optional[AppConfig]) -> list[dict[str, Any]]:
     """Load simulator overrides from YAML file."""
-    path = _overrides_path()
+    path = _overrides_path(app_config)
     if not path.exists():
         return []
     try:
@@ -38,9 +37,9 @@ def _load_overrides() -> list[dict[str, Any]]:
     return data.get("overrides", []) if isinstance(data, dict) else []
 
 
-def _save_overrides(overrides: list[dict[str, Any]]) -> None:
+def _save_overrides(overrides: list[dict[str, Any]], app_config: Optional[AppConfig]) -> None:
     """Save simulator overrides to YAML file."""
-    path = _overrides_path()
+    path = _overrides_path(app_config)
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {"overrides": overrides}
     with path.open("w") as f:
@@ -48,9 +47,11 @@ def _save_overrides(overrides: list[dict[str, Any]]) -> None:
 
 
 @router.get("/overrides")
-def get_simulator_overrides():
+def get_simulator_overrides(
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+):
     """Get all active simulator overrides."""
-    return {"overrides": _load_overrides()}
+    return {"overrides": _load_overrides(app_config)}
 
 
 @router.get("/scenarios")
@@ -80,13 +81,10 @@ def get_simulator_scenarios():
 
 
 @router.post("/overrides")
-def add_simulator_override(payload: dict):
+def add_simulator_override(
+    payload: dict, app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)]
+):
     """Add a new simulator override."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    APP_CONFIG = app_module.APP_CONFIG
-
     valid_metrics = {
         "up",
         "node_temperature_celsius",
@@ -127,8 +125,8 @@ def add_simulator_override(payload: dict):
         "value": value,
     }
     default_ttl = None
-    if APP_CONFIG and getattr(APP_CONFIG, "simulator", None):
-        default_ttl = getattr(APP_CONFIG.simulator, "default_ttl_seconds", None)
+    if app_config and getattr(app_config, "simulator", None):
+        default_ttl = getattr(app_config.simulator, "default_ttl_seconds", None)
     ttl_val = ttl if ttl is not None else default_ttl
     if ttl_val is not None:
         try:
@@ -139,23 +137,27 @@ def add_simulator_override(payload: dict):
             raise HTTPException(status_code=400, detail="ttl_seconds must be >= 0")
         if ttl_val > 0:
             override["expires_at"] = int(time.time()) + ttl_val
-    overrides = _load_overrides()
+    overrides = _load_overrides(app_config)
     overrides.append(override)
-    _save_overrides(overrides)
+    _save_overrides(overrides, app_config)
     return {"overrides": overrides}
 
 
 @router.delete("/overrides")
-def clear_simulator_overrides():
+def clear_simulator_overrides(
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+):
     """Clear all simulator overrides."""
-    _save_overrides([])
+    _save_overrides([], app_config)
     return {"overrides": []}
 
 
 @router.delete("/overrides/{override_id}")
-def delete_simulator_override(override_id: str):
+def delete_simulator_override(
+    override_id: str, app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)]
+):
     """Delete a specific simulator override."""
-    overrides = _load_overrides()
+    overrides = _load_overrides(app_config)
     next_overrides = [o for o in overrides if o.get("id") != override_id]
-    _save_overrides(next_overrides)
+    _save_overrides(next_overrides, app_config)
     return {"overrides": next_overrides}

@@ -4,14 +4,17 @@ Catalog Router
 Endpoints for hardware templates (devices and racks).
 """
 
+import re
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
 
-from rackscope.model.catalog import DeviceTemplate, RackTemplate
+from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
+from rackscope.model.config import AppConfig
 from rackscope.model.loader import load_catalog, dump_yaml
+from rackscope.api.dependencies import get_app_config, get_catalog_optional
 from rackscope.api.models import TemplateWriteRequest
 
 router = APIRouter(prefix="/api/catalog", tags=["catalog"])
@@ -30,38 +33,33 @@ def _find_device_template_path(templates_dir: Path, template_id: str) -> Optiona
 
 def _safe_segment(value: str, fallback: str) -> str:
     """Convert string to safe filename segment."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    return app_module._safe_segment(value, fallback)
+    value = (value or "").strip().lower()
+    if not value:
+        return fallback
+    value = re.sub(r"[^a-z0-9._-]+", "-", value)
+    value = value.strip("-")
+    return value or fallback
 
 
 @router.get("")
-def get_catalog():
+def get_catalog(catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)]):
     """Get all hardware templates (devices and racks)."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    CATALOG = app_module.CATALOG
-    return CATALOG if CATALOG else {"device_templates": [], "rack_templates": []}
+    return catalog if catalog else {"device_templates": [], "rack_templates": []}
 
 
 @router.post("/templates")
-def write_template(payload: TemplateWriteRequest):
+def write_template(
+    payload: TemplateWriteRequest,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
+):
     """Create a new hardware template."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    APP_CONFIG = app_module.APP_CONFIG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-
-    templates_dir = Path(APP_CONFIG.paths.templates)
+    templates_dir = Path(app_config.paths.templates)
     templates_dir.mkdir(parents=True, exist_ok=True)
 
     if payload.kind == "device":
         template = DeviceTemplate(**payload.template)
-        if app_module.CATALOG and app_module.CATALOG.get_device_template(template.id):
+        if catalog and catalog.get_device_template(template.id):
             raise HTTPException(
                 status_code=400,
                 detail=f"Device template already exists: {template.id}",
@@ -72,7 +70,7 @@ def write_template(payload: TemplateWriteRequest):
         filename = f"{_safe_segment(template.id, 'device')}.yaml"
     else:
         template = RackTemplate(**payload.template)
-        if app_module.CATALOG and app_module.CATALOG.get_rack_template(template.id):
+        if catalog and catalog.get_rack_template(template.id):
             raise HTTPException(
                 status_code=400, detail=f"Rack template already exists: {template.id}"
             )
@@ -88,22 +86,19 @@ def write_template(payload: TemplateWriteRequest):
     target_path.write_text(dump_yaml(data))
 
     # Reload catalog to keep in-memory state aligned.
+    from rackscope.api import app as app_module
+
     app_module.CATALOG = load_catalog(templates_dir)
 
     return template
 
 
 @router.put("/templates")
-def update_template(payload: TemplateWriteRequest):
+def update_template(
+    payload: TemplateWriteRequest, app_config: Annotated[AppConfig, Depends(get_app_config)]
+):
     """Update an existing hardware template."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    APP_CONFIG = app_module.APP_CONFIG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-
-    templates_dir = Path(APP_CONFIG.paths.templates)
+    templates_dir = Path(app_config.paths.templates)
     templates_dir.mkdir(parents=True, exist_ok=True)
 
     if payload.kind == "device":
@@ -128,6 +123,8 @@ def update_template(payload: TemplateWriteRequest):
     target_path.write_text(dump_yaml(data))
 
     # Reload catalog to keep in-memory state aligned.
+    from rackscope.api import app as app_module
+
     app_module.CATALOG = load_catalog(templates_dir)
 
     return template

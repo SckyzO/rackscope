@@ -5,38 +5,34 @@ Endpoints for health checks library management.
 """
 
 from pathlib import Path
-from typing import Dict, Any
+from typing import Annotated, Dict, Any, Optional
 
 import yaml
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import ValidationError
 
-from rackscope.model.checks import CheckDefinition
+from rackscope.model.checks import CheckDefinition, ChecksLibrary
+from rackscope.model.config import AppConfig
 from rackscope.model.loader import load_checks_library, dump_yaml
+from rackscope.api.dependencies import get_app_config, get_checks_library_optional
 
 router = APIRouter(prefix="/api/checks", tags=["checks"])
 
 
 @router.get("")
-def get_checks_library():
+def get_checks_library(
+    checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
+):
     """Get the checks library."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    CHECKS_LIBRARY = app_module.CHECKS_LIBRARY
-    return CHECKS_LIBRARY if CHECKS_LIBRARY else {"checks": []}
+    return checks_library if checks_library else {"checks": []}
 
 
 @router.get("/files")
-def get_checks_files():
+def get_checks_files(
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+):
     """Get list of checks YAML files."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    APP_CONFIG = app_module.APP_CONFIG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    base_dir = Path(APP_CONFIG.paths.checks)
+    base_dir = Path(app_config.paths.checks)
     if not base_dir.exists():
         return {"files": []}
     if base_dir.is_dir():
@@ -56,15 +52,12 @@ def get_checks_files():
 
 
 @router.get("/files/{name}")
-def read_checks_file(name: str):
+def read_checks_file(
+    name: str,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+):
     """Read a checks YAML file."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    APP_CONFIG = app_module.APP_CONFIG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    base_dir = Path(APP_CONFIG.paths.checks)
+    base_dir = Path(app_config.paths.checks)
     if base_dir.is_dir():
         target = base_dir / name
     else:
@@ -75,15 +68,16 @@ def read_checks_file(name: str):
 
 
 @router.put("/files/{name}")
-def write_checks_file(name: str, payload: Dict[str, Any]):
+def write_checks_file(
+    name: str,
+    payload: Dict[str, Any],
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+):
     """Write a checks YAML file."""
-    # Lazy import to avoid circular dependency
+    # Lazy import to avoid circular dependency (only needed for mutation)
     from rackscope.api import app as app_module
 
-    APP_CONFIG = app_module.APP_CONFIG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    base_dir = Path(APP_CONFIG.paths.checks)
+    base_dir = Path(app_config.paths.checks)
     if base_dir.is_dir():
         base_dir.mkdir(parents=True, exist_ok=True)
         target = base_dir / name

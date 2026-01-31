@@ -6,25 +6,24 @@ Endpoints for application configuration management.
 
 import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Annotated, Dict, Any
 
 import yaml
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from rackscope.api.dependencies import get_app_config_optional
 from rackscope.model.config import AppConfig
 
 router = APIRouter(prefix="/api", tags=["config"])
 
 
 @router.get("/config")
-def get_app_config():
+def get_app_config(
+    app_config: Annotated[AppConfig | None, Depends(get_app_config_optional)] = None,
+):
     """Get current application configuration."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    APP_CONFIG = app_module.APP_CONFIG
-    if APP_CONFIG:
-        return APP_CONFIG
+    if app_config:
+        return app_config
     return {
         "paths": {},
         "refresh": {"room_state_seconds": 30, "rack_state_seconds": 30},
