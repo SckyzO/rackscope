@@ -1,6 +1,7 @@
 # Rack Template Schema
 
-Rack templates describe the frame dimensions and the built-in infrastructure components like PMC (Power) and HMC (Cooling).
+Rack templates describe the frame dimensions and built-in infrastructure (u-mount)
+as well as side-mounted rack components (PDU, HMC/PMC, etc.).
 
 ## Schema Specification
 
@@ -21,6 +22,11 @@ rack_templates:
           location: string # u-mount, side-left, side-right, top, bottom
           u_position: integer # Bottom-most U (if location is u-mount)
           u_height: integer   # Number of U occupied
+      rack_components:
+        - template_id: string # Rack component template id (PDU, HMC, etc.)
+          side: string        # left | right (used when template location == side)
+          u_position: integer # Bottom-most U for placement
+          u_height: integer   # Optional override, defaults to template u_height
 ```
 
 ## Usage Example: BullSequana XH3000
@@ -39,4 +45,23 @@ infrastructure:
       location: u-mount
       u_position: 48
       u_height: 1
+
+## Usage Example: Standard Air Rack with PDUs
+
+```yaml
+infrastructure:
+  rack_components:
+    - template_id: pdu-raritan-16u
+      side: left
+      u_position: 1
+    - template_id: pdu-raritan-16u
+      side: left
+      u_position: 17
+    - template_id: pdu-raritan-16u
+      side: right
+      u_position: 1
+    - template_id: pdu-raritan-16u
+      side: right
+      u_position: 17
+```
 ```

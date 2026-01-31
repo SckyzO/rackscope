@@ -111,6 +111,7 @@ Telemetry:
 - [ ] Active infrastructure:
   - [ ] connect HMC/PMC to real Prometheus metrics
   - [ ] add gauges/charts for infra components
+  - [ ] rack component icon labels (configurable list + docs)
 - [ ] Global search UX:
   - [x] searchable datacenter/room/aisle/rack/device names
   - [x] highlight matches + keep hierarchy context

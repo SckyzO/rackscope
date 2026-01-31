@@ -65,7 +65,7 @@ rack_templates:
 ```
 
 **Example: Rack Component Template (PDU)**
-File: `templates/rack_components/pdu-raritan-16u.yaml`
+File: `templates/rack_components/pdu.yaml`
 ```yaml
 rack_component_templates:
   - id: pdu-raritan-16u
@@ -73,9 +73,18 @@ rack_component_templates:
     type: pdu
     location: side
     u_height: 16
-    checks: []
-    metrics: []
+    checks:
+      - pdu_power_present
+      - pdu_current_warn
+      - pdu_current_crit
+    metrics:
+      - power
+      - current
 ```
+
+**Notes**
+- Rack component checks are included in the planner (scope = rack) and will affect rack health.
+- Switch checks live in `config/checks/library/switch.yaml` and are assigned to network templates.
 
 ### 2. Defining Topology
 
