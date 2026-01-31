@@ -65,7 +65,7 @@ export const HUDTooltip = ({
         zIndex: 999999,
         pointerEvents: 'none',
       }}
-      className="animate-in fade-in zoom-in-95 w-80 duration-200"
+      className="animate-in fade-in zoom-in-98 w-80 duration-200 ease-out"
     >
       <div className="relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-panel)]/95 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
         {showBelow && (
@@ -180,6 +180,7 @@ export const RackElevation = ({
   nodesData,
   isRearView = false,
   infraComponents = [],
+  sideComponents = [],
   allowInfraOverlap = false,
   flipView,
   rearInfraComponents = [],
@@ -192,12 +193,14 @@ export const RackElevation = ({
   nodesData?: Record<string, RackNodeState>;
   isRearView?: boolean;
   infraComponents?: (InfrastructureComponent & { slot?: number; span?: number })[];
+  sideComponents?: (InfrastructureComponent & { slot?: number; span?: number })[];
   allowInfraOverlap?: boolean;
   flipView?: 'front' | 'rear';
   rearInfraComponents?: (InfrastructureComponent & { slot?: number; span?: number })[];
   overlay?: ReactNode;
   onDeviceClick?: (device: Device) => void;
 }) => {
+  const [tooltip, setTooltip] = useState<HUDTooltipProps | null>(null);
   const uMap = new Map<number, Device>();
   rack.devices.forEach((d) => {
     const template = catalog[d.template_id];
@@ -242,6 +245,15 @@ export const RackElevation = ({
       topSlots
     );
 
+    const leftSide = buildSideLayout(
+      sideComponents.filter((c) => c.location === 'side-left'),
+      rack.u_height
+    );
+    const rightSide = buildSideLayout(
+      sideComponents.filter((c) => c.location === 'side-right'),
+      rack.u_height
+    );
+
     return (
       <div className="relative flex h-full w-full items-stretch">
         {faceRearView && topSide.length > 0 && (
@@ -274,6 +286,7 @@ export const RackElevation = ({
             ))}
           </div>
         )}
+        {leftSide.length > 0 && <SideRail components={leftSide} totalU={rack.u_height} />}
         <div className="relative flex h-full w-full flex-col-reverse rounded-sm border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-frame)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-colors duration-500">
           {Array.from({ length: rack.u_height }).map((_, idx) => {
             const u = idx + 1;
@@ -308,6 +321,7 @@ export const RackElevation = ({
                         isRearView={faceRearView}
                         uPosition={u}
                         onClick={onDeviceClick ? () => onDeviceClick(device) : undefined}
+                        onTooltipChange={setTooltip}
                       />
                     </div>
                   )}
@@ -334,6 +348,9 @@ export const RackElevation = ({
             );
           })}
         </div>
+        {rightSide.length > 0 && (
+          <SideRail components={rightSide} totalU={rack.u_height} align="right" />
+        )}
       </div>
     );
   };
@@ -350,6 +367,7 @@ export const RackElevation = ({
             )
           : renderRackFace(isRearView, infraComponents, allowInfraOverlap)}
       </div>
+      {tooltip && <HUDTooltip {...tooltip} />}
     </div>
   );
 };
@@ -360,15 +378,17 @@ const buildSideLayout = (
 ) => {
   const used = new Array(slots + 1).fill(false);
   const withOrder = [...components].sort((a, b) => {
-    const aSlot = a.slot ?? Number.MAX_SAFE_INTEGER;
-    const bSlot = b.slot ?? Number.MAX_SAFE_INTEGER;
+    const aSlot = a.slot ?? a.u_position ?? Number.MAX_SAFE_INTEGER;
+    const bSlot = b.slot ?? b.u_position ?? Number.MAX_SAFE_INTEGER;
     if (aSlot !== bSlot) return aSlot - bSlot;
     return String(a.id).localeCompare(String(b.id));
   });
 
   return withOrder.map((component) => {
-    const span = Math.max(1, Math.min(slots, component.span ?? 1));
-    let slot = Math.max(1, Math.min(slots, component.slot ?? 1));
+    const requestedSpan = component.span ?? component.u_height ?? 1;
+    const span = Math.max(1, Math.min(slots, requestedSpan));
+    const requestedSlot = component.slot ?? component.u_position ?? 1;
+    let slot = Math.max(1, Math.min(slots, requestedSlot));
     while (slot <= slots && used[slot]) slot += 1;
     if (slot > slots) slot = slots;
     for (let i = 0; i < span; i += 1) {
@@ -377,6 +397,43 @@ const buildSideLayout = (
     }
     return { component, slot, span };
   });
+};
+
+const SideRail = ({
+  components,
+  totalU,
+  align = 'left',
+}: {
+  components: Array<{
+    component: InfrastructureComponent & { slot?: number; span?: number };
+    slot: number;
+    span: number;
+  }>;
+  totalU: number;
+  align?: 'left' | 'right';
+}) => {
+  return (
+    <div
+      className={`relative flex h-full w-[22px] shrink-0 items-stretch ${
+        align === 'left' ? 'mr-2' : 'ml-2'
+      }`}
+    >
+      <div className="absolute inset-0 rounded-[2px] border border-[var(--color-border)]/30 bg-[var(--color-rack-interior)]/40" />
+      {components.map(({ component, slot, span }) => {
+        const heightPct = (span / totalU) * 100;
+        const topPct = ((totalU - (slot + span) + 1) / totalU) * 100;
+        return (
+          <div
+            key={component.id}
+            className="absolute right-[2px] left-[2px]"
+            style={{ top: `${topPct}%`, height: `${heightPct}%` }}
+          >
+            <SideAttachment component={component} />
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 const SideAttachment = ({
@@ -456,6 +513,7 @@ export const DeviceChassis = ({
   isRearView,
   uPosition,
   onClick,
+  onTooltipChange,
 }: {
   device: Device;
   template: DeviceTemplate;
@@ -464,11 +522,14 @@ export const DeviceChassis = ({
   isRearView?: boolean;
   uPosition: number;
   onClick?: () => void;
+  onTooltipChange?: (payload: HUDTooltipProps | null) => void;
 }) => {
+  const [suppressTooltip, setSuppressTooltip] = useState(false);
   const nodeMap = useMemo(
     () => expandInstanceMap((device.instance || device.nodes) as InstanceInput),
     [device.instance, device.nodes]
   );
+  const instanceList = useMemo(() => Object.values(nodeMap).filter(Boolean) as string[], [nodeMap]);
   const chassisHealth = useMemo(() => {
     if (!nodesData) return rackHealth;
     const nodeIds = Object.values(nodeMap);
@@ -480,6 +541,18 @@ export const DeviceChassis = ({
     if (critCount > 0 || warnCount > 0) return 'WARN';
     return 'OK';
   }, [nodesData, nodeMap, rackHealth]);
+  const chassisAlerts = useMemo(() => {
+    if (!nodesData) return [];
+    const alertIds = new Set<string>();
+    for (const nodeId of instanceList) {
+      const alerts = nodesData[nodeId]?.alerts;
+      if (!Array.isArray(alerts)) continue;
+      for (const alert of alerts as AlertCheck[]) {
+        if (alert?.id) alertIds.add(alert.id);
+      }
+    }
+    return Array.from(alertIds);
+  }, [instanceList, nodesData]);
 
   const hasRearLayout = Boolean(template.rear_layout);
   if (isRearView && !hasRearLayout) {
@@ -520,6 +593,63 @@ export const DeviceChassis = ({
       tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
       onKeyDown={handleKeyDown}
+      onMouseEnter={(e) => {
+        if (suppressTooltip) return;
+        onTooltipChange?.({
+          title: device.name,
+          subtitle: 'Device',
+          status: chassisHealth,
+          details: [
+            { label: 'Template', value: template.id },
+            {
+              label: 'Instances',
+              value:
+                instanceList.length > 4
+                  ? `${instanceList.slice(0, 4).join(', ')} +${instanceList.length - 4}`
+                  : instanceList.join(', ') || 'None',
+            },
+            { label: 'Active checks', value: String(chassisAlerts.length) },
+            { label: 'Location', value: `RACK U${uPosition}`, italic: true },
+          ],
+          reasons:
+            chassisAlerts.length > 0
+              ? chassisAlerts
+              : template.checks?.length
+                ? []
+                : ['No checks configured for this device'],
+          mousePos: { x: e.clientX, y: e.clientY },
+        });
+      }}
+      onMouseMove={(e) => {
+        if (suppressTooltip) return;
+        onTooltipChange?.({
+          title: device.name,
+          subtitle: 'Device',
+          status: chassisHealth,
+          details: [
+            { label: 'Template', value: template.id },
+            {
+              label: 'Instances',
+              value:
+                instanceList.length > 4
+                  ? `${instanceList.slice(0, 4).join(', ')} +${instanceList.length - 4}`
+                  : instanceList.join(', ') || 'None',
+            },
+            { label: 'Active checks', value: String(chassisAlerts.length) },
+            { label: 'Location', value: `RACK U${uPosition}`, italic: true },
+          ],
+          reasons:
+            chassisAlerts.length > 0
+              ? chassisAlerts
+              : template.checks?.length
+                ? []
+                : ['No checks configured for this device'],
+          mousePos: { x: e.clientX, y: e.clientY },
+        });
+      }}
+      onMouseLeave={() => {
+        onTooltipChange?.(null);
+      }}
     >
       <div className={`h-full w-1.5 ${statusColor} relative shrink-0 opacity-90`}>
         <div className={`absolute inset-0 blur-[4px] ${statusColor} opacity-40`}></div>
@@ -570,6 +700,8 @@ export const DeviceChassis = ({
                   uHeight={template.u_height}
                   uPosition={uPosition}
                   chassisName={template.name}
+                  onHoverChange={setSuppressTooltip}
+                  onTooltipChange={onTooltipChange}
                 />
               );
             })
@@ -647,6 +779,8 @@ export const NodeUnit = ({
   uPosition,
   chassisName,
   nodeMetrics,
+  onHoverChange,
+  onTooltipChange,
 }: {
   nodeName?: string;
   slotNum: number;
@@ -656,9 +790,9 @@ export const NodeUnit = ({
   uPosition: number;
   chassisName: string;
   nodeMetrics?: RackNodeState;
+  onHoverChange?: (value: boolean) => void;
+  onTooltipChange?: (payload: HUDTooltipProps | null) => void;
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const Icon = type === 'network' ? RouterIcon : Server;
   const hideText = uHeight === 1;
   const reasons = Array.isArray(nodeMetrics?.alerts)
@@ -666,56 +800,75 @@ export const NodeUnit = ({
     : [];
 
   return (
-    <>
-      <div
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
-        onMouseLeave={() => setIsHovered(false)}
-        className={`group relative flex h-full cursor-help items-center justify-center border border-[var(--color-border)]/20 bg-[var(--color-node-surface)] transition-all hover:bg-[var(--color-accent-primary)]/20`}
-      >
-        {nodeName ? (
-          <div className="flex h-full w-full flex-col items-center justify-center px-1">
-            <div
-              className={`mb-1 h-1.5 w-1.5 shrink-0 rounded-full ${nodeHealth === 'OK' ? 'bg-status-ok' : nodeHealth === 'CRIT' ? 'bg-status-crit animate-pulse shadow-[0_0_8px_var(--color-status-crit)]' : 'bg-status-warn'} `}
-            ></div>
-            {!hideText && (
-              <div className="flex w-full items-center justify-center gap-1.5 overflow-hidden">
-                <Icon className="h-3 w-3 shrink-0 text-gray-400 opacity-50" />
-                <span className="truncate font-mono text-[10px] font-black tracking-tight text-[var(--color-text-base)] uppercase opacity-50 group-hover:opacity-100">
-                  {nodeName}
-                </span>
-              </div>
-            )}
-            {hideText && (
-              <span className="absolute inset-0 z-10 flex items-center justify-center truncate bg-[var(--color-node-surface)] px-1 text-[11px] font-black text-[var(--color-accent-primary)] uppercase opacity-0 transition-opacity group-hover:opacity-100">
-                {nodeName}
-              </span>
-            )}
-          </div>
-        ) : (
-          <div className="font-mono text-[8px] text-gray-400 uppercase italic opacity-20">
-            U{slotNum}
-          </div>
-        )}
-      </div>
-
-      {isHovered && (
-        <HUDTooltip
-          title={nodeName || 'UNASSIGNED'}
-          subtitle="Node Identity"
-          status={nodeHealth}
-          details={[
+    <div
+      onMouseEnter={(e) => {
+        e.stopPropagation();
+        onHoverChange?.(true);
+        onTooltipChange?.({
+          title: nodeName || 'UNASSIGNED',
+          subtitle: 'Node Identity',
+          status: nodeHealth,
+          details: [
             { label: 'Enclosure', value: chassisName },
             { label: 'Active checks', value: String(reasons.length) },
             { label: 'Physical Location', value: `RACK U${uPosition} S${slotNum}`, italic: true },
-          ]}
-          reasons={reasons}
-          metrics={
-            nodeMetrics ? { temp: nodeMetrics.temperature, power: nodeMetrics.power } : undefined
-          }
-          mousePos={mousePos}
-        />
+          ],
+          reasons,
+          metrics: nodeMetrics
+            ? { temp: nodeMetrics.temperature, power: nodeMetrics.power }
+            : undefined,
+          mousePos: { x: e.clientX, y: e.clientY },
+        });
+      }}
+      onMouseMove={(e) => {
+        e.stopPropagation();
+        onTooltipChange?.({
+          title: nodeName || 'UNASSIGNED',
+          subtitle: 'Node Identity',
+          status: nodeHealth,
+          details: [
+            { label: 'Enclosure', value: chassisName },
+            { label: 'Active checks', value: String(reasons.length) },
+            { label: 'Physical Location', value: `RACK U${uPosition} S${slotNum}`, italic: true },
+          ],
+          reasons,
+          metrics: nodeMetrics
+            ? { temp: nodeMetrics.temperature, power: nodeMetrics.power }
+            : undefined,
+          mousePos: { x: e.clientX, y: e.clientY },
+        });
+      }}
+      onMouseLeave={(e) => {
+        e.stopPropagation();
+        onHoverChange?.(false);
+        onTooltipChange?.(null);
+      }}
+      className={`group relative flex h-full cursor-help items-center justify-center border border-[var(--color-border)]/20 bg-[var(--color-node-surface)] transition-all hover:bg-[var(--color-accent-primary)]/20`}
+    >
+      {nodeName ? (
+        <div className="flex h-full w-full flex-col items-center justify-center px-1">
+          <div
+            className={`mb-1 h-1.5 w-1.5 shrink-0 rounded-full ${nodeHealth === 'OK' ? 'bg-status-ok' : nodeHealth === 'CRIT' ? 'bg-status-crit animate-pulse shadow-[0_0_8px_var(--color-status-crit)]' : 'bg-status-warn'} `}
+          ></div>
+          {!hideText && (
+            <div className="flex w-full items-center justify-center gap-1.5 overflow-hidden">
+              <Icon className="h-3 w-3 shrink-0 text-gray-400 opacity-50" />
+              <span className="truncate font-mono text-[10px] font-black tracking-tight text-[var(--color-text-base)] uppercase opacity-50 group-hover:opacity-100">
+                {nodeName}
+              </span>
+            </div>
+          )}
+          {hideText && (
+            <span className="absolute inset-0 z-10 flex items-center justify-center truncate bg-[var(--color-node-surface)] px-1 text-[11px] font-black text-[var(--color-accent-primary)] uppercase opacity-0 transition-opacity group-hover:opacity-100">
+              {nodeName}
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="font-mono text-[8px] text-gray-400 uppercase italic opacity-20">
+          U{slotNum}
+        </div>
       )}
-    </>
+    </div>
   );
 };

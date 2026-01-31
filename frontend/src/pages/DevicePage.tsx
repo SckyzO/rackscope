@@ -3,7 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { api } from '../services/api';
 import type { DeviceContext, RackNodeState, RackState } from '../types';
-import { DeviceChassis } from '../components/RackVisualizer';
+import { DeviceChassis, HUDTooltip } from '../components/RackVisualizer';
 import { expandInstanceList, expandInstanceMap, type InstanceInput } from '../utils/instances';
 
 export const DevicePage = () => {
@@ -14,6 +14,7 @@ export const DevicePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [tooltip, setTooltip] = useState<Parameters<typeof HUDTooltip>[0] | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -135,6 +136,7 @@ export const DevicePage = () => {
                 rackHealth={rackState?.state || 'UNKNOWN'}
                 nodesData={nodesData}
                 uPosition={context.device.u_position}
+                onTooltipChange={setTooltip}
               />
             </div>
           </div>
@@ -214,6 +216,7 @@ export const DevicePage = () => {
           </div>
         </div>
       </div>
+      {tooltip && <HUDTooltip {...tooltip} />}
     </div>
   );
 };
