@@ -128,6 +128,7 @@ export interface InfrastructureComponent {
   location: 'u-mount' | 'side-left' | 'side-right' | 'top' | 'bottom';
   u_position?: number;
   u_height?: number;
+  checks?: string[];
 }
 
 export interface RackComponentTemplate {

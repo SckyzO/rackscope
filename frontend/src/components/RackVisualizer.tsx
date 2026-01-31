@@ -186,6 +186,7 @@ export const RackElevation = ({
   rearInfraComponents = [],
   overlay,
   onDeviceClick,
+  pduMetrics,
 }: {
   rack: Rack;
   catalog: Record<string, DeviceTemplate>;
@@ -199,6 +200,16 @@ export const RackElevation = ({
   rearInfraComponents?: (InfrastructureComponent & { slot?: number; span?: number })[];
   overlay?: ReactNode;
   onDeviceClick?: (device: Device) => void;
+  pduMetrics?: Record<
+    string,
+    {
+      activepower_watt?: number;
+      activeenergy_wh?: number;
+      apparentpower_va?: number;
+      current_amp?: number;
+      inlet_rating_amp?: number;
+    }
+  >;
 }) => {
   const [tooltip, setTooltip] = useState<HUDTooltipProps | null>(null);
   const uMap = new Map<number, Device>();
@@ -286,7 +297,15 @@ export const RackElevation = ({
             ))}
           </div>
         )}
-        {leftSide.length > 0 && <SideRail components={leftSide} totalU={rack.u_height} />}
+        {leftSide.length > 0 && (
+          <SideRail
+            components={leftSide}
+            totalU={rack.u_height}
+            rackName={rack.name}
+            onTooltipChange={setTooltip}
+            pduMetrics={pduMetrics}
+          />
+        )}
         <div className="relative flex h-full w-full flex-col-reverse rounded-sm border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-frame)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-colors duration-500">
           {Array.from({ length: rack.u_height }).map((_, idx) => {
             const u = idx + 1;
@@ -349,7 +368,14 @@ export const RackElevation = ({
           })}
         </div>
         {rightSide.length > 0 && (
-          <SideRail components={rightSide} totalU={rack.u_height} align="right" />
+          <SideRail
+            components={rightSide}
+            totalU={rack.u_height}
+            align="right"
+            rackName={rack.name}
+            onTooltipChange={setTooltip}
+            pduMetrics={pduMetrics}
+          />
         )}
       </div>
     );
@@ -403,6 +429,9 @@ const SideRail = ({
   components,
   totalU,
   align = 'left',
+  rackName,
+  onTooltipChange,
+  pduMetrics,
 }: {
   components: Array<{
     component: InfrastructureComponent & { slot?: number; span?: number };
@@ -411,10 +440,22 @@ const SideRail = ({
   }>;
   totalU: number;
   align?: 'left' | 'right';
+  rackName?: string;
+  onTooltipChange?: (payload: HUDTooltipProps | null) => void;
+  pduMetrics?: Record<
+    string,
+    {
+      activepower_watt?: number;
+      activeenergy_wh?: number;
+      apparentpower_va?: number;
+      current_amp?: number;
+      inlet_rating_amp?: number;
+    }
+  >;
 }) => {
   return (
     <div
-      className={`relative flex h-full w-[22px] shrink-0 items-stretch ${
+      className={`relative flex h-full w-[28px] shrink-0 items-stretch ${
         align === 'left' ? 'mr-2' : 'ml-2'
       }`}
     >
@@ -428,7 +469,12 @@ const SideRail = ({
             className="absolute right-[2px] left-[2px]"
             style={{ top: `${topPct}%`, height: `${heightPct}%` }}
           >
-            <SideAttachment component={component} />
+            <SideAttachment
+              component={component}
+              rackName={rackName}
+              onTooltipChange={onTooltipChange}
+              pduMetrics={pduMetrics}
+            />
           </div>
         );
       })}
@@ -440,10 +486,25 @@ const SideAttachment = ({
   component,
   horizontal = false,
   style,
+  rackName,
+  onTooltipChange,
+  pduMetrics,
 }: {
   component: InfrastructureComponent & { slot?: number; span?: number };
   horizontal?: boolean;
   style?: React.CSSProperties;
+  rackName?: string;
+  onTooltipChange?: (payload: HUDTooltipProps | null) => void;
+  pduMetrics?: Record<
+    string,
+    {
+      activepower_watt?: number;
+      activeenergy_wh?: number;
+      apparentpower_va?: number;
+      current_amp?: number;
+      inlet_rating_amp?: number;
+    }
+  >;
 }) => {
   const accent =
     component.type === 'power'
@@ -466,14 +527,107 @@ const SideAttachment = ({
           : component.type === 'network'
             ? RouterIcon
             : Box;
+  const pduEntries = component.type === 'power' ? Object.values(pduMetrics || {}) : [];
+  const hasPduMetrics = component.type === 'power' && pduEntries.length > 0;
+  const totalPower = pduEntries.reduce((sum, pdu) => sum + (pdu.activepower_watt || 0), 0);
+  const totalEnergy = pduEntries.reduce((sum, pdu) => sum + (pdu.activeenergy_wh || 0), 0);
+  const maxCurrent = pduEntries.reduce((max, pdu) => Math.max(max, pdu.current_amp || 0), 0);
   return (
     <div
       className={`border bg-[var(--color-node-surface)]/70 ${accent} rounded-[2px] ${layout} flex items-center justify-center px-1 font-mono text-[8px] tracking-widest uppercase shadow-[inset_0_0_12px_rgba(0,0,0,0.25)]`}
       style={style}
+      onMouseEnter={(e) => {
+        const details = [
+          { label: 'Rack', value: rackName || 'Unknown' },
+          { label: 'Type', value: component.type.toUpperCase() },
+          {
+            label: 'Location',
+            value:
+              component.location === 'side-left' || component.location === 'side-right'
+                ? 'SIDE'
+                : 'U-MOUNT',
+          },
+        ];
+        if (hasPduMetrics) {
+          details.push({
+            label: 'Power',
+            value: `${(totalPower / 1000).toFixed(2)} kW`,
+          });
+          details.push({
+            label: 'Energy (1h)',
+            value: `${(totalEnergy / 1000).toFixed(1)} kWh`,
+          });
+          details.push({
+            label: 'Peak Current',
+            value: `${maxCurrent.toFixed(1)} A`,
+          });
+        }
+        const checkReasons =
+          component.checks && component.checks.length > 0
+            ? component.checks
+            : ['No checks configured for this component'];
+        onTooltipChange?.({
+          title: component.name,
+          subtitle: component.type === 'power' ? 'PDU' : 'Rack Component',
+          status: 'OK',
+          details,
+          reasons: checkReasons,
+          mousePos: { x: e.clientX, y: e.clientY },
+        });
+      }}
+      onMouseMove={(e) => {
+        const details = [
+          { label: 'Rack', value: rackName || 'Unknown' },
+          { label: 'Type', value: component.type.toUpperCase() },
+          {
+            label: 'Location',
+            value:
+              component.location === 'side-left' || component.location === 'side-right'
+                ? 'SIDE'
+                : 'U-MOUNT',
+          },
+        ];
+        if (hasPduMetrics) {
+          details.push({
+            label: 'Power',
+            value: `${(totalPower / 1000).toFixed(2)} kW`,
+          });
+          details.push({
+            label: 'Energy (1h)',
+            value: `${(totalEnergy / 1000).toFixed(1)} kWh`,
+          });
+          details.push({
+            label: 'Peak Current',
+            value: `${maxCurrent.toFixed(1)} A`,
+          });
+        }
+        const checkReasons =
+          component.checks && component.checks.length > 0
+            ? component.checks
+            : ['No checks configured for this component'];
+        onTooltipChange?.({
+          title: component.name,
+          subtitle: component.type === 'power' ? 'PDU' : 'Rack Component',
+          status: 'OK',
+          details,
+          reasons: checkReasons,
+          mousePos: { x: e.clientX, y: e.clientY },
+        });
+      }}
+      onMouseLeave={() => {
+        onTooltipChange?.(null);
+      }}
     >
       <div className={`flex items-center gap-1 ${horizontal ? '' : 'flex-col'} truncate`}>
         <Icon className="h-3 w-3 opacity-70" />
-        <span className="truncate">{component.name}</span>
+        <span
+          className="truncate"
+          style={
+            horizontal ? undefined : { writingMode: 'vertical-rl', transform: 'rotate(180deg)' }
+          }
+        >
+          {component.type === 'power' ? 'PDU' : component.name}
+        </span>
       </div>
     </div>
   );

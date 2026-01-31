@@ -34,6 +34,7 @@ const toInfraComponent = (
   location,
   u_position: ref.u_position,
   u_height: ref.u_height ?? template.u_height,
+  checks: template.checks,
 });
 
 export const resolveRackComponents = (

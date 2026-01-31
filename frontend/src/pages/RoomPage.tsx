@@ -444,6 +444,7 @@ export const RoomPage = ({
                     infraComponents={viewSide === 'rear' ? rearInfra : frontInfra}
                     sideComponents={sideInfra}
                     allowInfraOverlap={viewSide === 'rear'}
+                    pduMetrics={selectedMetrics?.pdu}
                     overlay={
                       <button
                         type="button"

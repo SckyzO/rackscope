@@ -250,6 +250,7 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
               nodesData={healthData?.nodes}
               infraComponents={frontInfra}
               sideComponents={sideInfra}
+              pduMetrics={healthData?.infra_metrics?.pdu}
               onDeviceClick={(device) => navigate(`/rack/${rack.id}/device/${device.id}`)}
             />
           </div>
@@ -270,6 +271,7 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
               infraComponents={rearInfra}
               sideComponents={sideInfra}
               allowInfraOverlap={true}
+              pduMetrics={healthData?.infra_metrics?.pdu}
               onDeviceClick={(device) => navigate(`/rack/${rack.id}/device/${device.id}`)}
             />
           </div>
