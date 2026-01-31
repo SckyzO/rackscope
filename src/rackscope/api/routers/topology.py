@@ -6,13 +6,21 @@ Endpoints for topology management (sites, rooms, aisles, racks, devices).
 
 import re
 from pathlib import Path
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Annotated
 
 import yaml
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
-from rackscope.model.domain import Site, Room, Rack
+from rackscope.model.domain import Site, Room, Rack, Topology
+from rackscope.model.catalog import Catalog
+from rackscope.model.config import AppConfig
 from rackscope.model.loader import load_topology, dump_yaml
+from rackscope.api.dependencies import (
+    get_topology,
+    get_catalog,
+    get_app_config,
+    get_topology_optional,
+)
 from rackscope.api.models import (
     SiteCreate,
     RoomCreate,
@@ -42,18 +50,14 @@ def _safe_segment(value: str, fallback: str) -> str:
     return value or fallback
 
 
-def _find_rack_location(rack_id: str) -> Optional[tuple[str, str, Optional[str], bool]]:
+def _find_rack_location(
+    rack_id: str, topology: Topology
+) -> Optional[tuple[str, str, Optional[str], bool]]:
     """Find rack location in topology.
 
     Returns: (site_id, room_id, aisle_id, is_standalone) or None
     """
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    TOPOLOGY = app_module.TOPOLOGY
-    if not TOPOLOGY:
-        return None
-    for site in TOPOLOGY.sites:
+    for site in topology.sites:
         for room in site.rooms:
             for aisle in room.aisles:
                 for rack in aisle.racks:
@@ -65,17 +69,12 @@ def _find_rack_location(rack_id: str) -> Optional[tuple[str, str, Optional[str],
     return None
 
 
-def _find_aisle_path(room_id: str, aisle_id: str) -> Optional[Path]:
+def _find_aisle_path(
+    room_id: str, aisle_id: str, app_config: AppConfig, topology: Topology
+) -> Optional[Path]:
     """Find path to aisle YAML file."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    APP_CONFIG = app_module.APP_CONFIG
-    TOPOLOGY = app_module.TOPOLOGY
-    if not APP_CONFIG or not TOPOLOGY:
-        return None
-    base_dir = Path(APP_CONFIG.paths.topology)
-    for site in TOPOLOGY.sites:
+    base_dir = Path(app_config.paths.topology)
+    for site in topology.sites:
         for room in site.rooms:
             if room.id != room_id:
                 continue
@@ -94,16 +93,10 @@ def _find_aisle_path(room_id: str, aisle_id: str) -> Optional[Path]:
     return None
 
 
-def _find_rack_path(rack_id: str) -> Optional[Path]:
+def _find_rack_path(rack_id: str, app_config: AppConfig, topology: Topology) -> Optional[Path]:
     """Find path to rack YAML file."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    APP_CONFIG = app_module.APP_CONFIG
-    if not APP_CONFIG:
-        return None
-    base_dir = Path(APP_CONFIG.paths.topology)
-    location = _find_rack_location(rack_id)
+    base_dir = Path(app_config.paths.topology)
+    location = _find_rack_location(rack_id, topology)
     if not location:
         return None
     site_id, room_id, aisle_id, is_standalone = location
@@ -130,30 +123,21 @@ def _find_rack_path(rack_id: str) -> Optional[Path]:
     )
 
 
-def _get_device_height(template_id: str) -> int:
+def _get_device_height(template_id: str, catalog: Catalog) -> int:
     """Get device template height in U."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    CATALOG = app_module.CATALOG
-    if CATALOG:
-        template = CATALOG.get_device_template(template_id)
-        if template and template.u_height:
-            return template.u_height
+    template = catalog.get_device_template(template_id)
+    if template and template.u_height:
+        return template.u_height
     return 1
 
 
-def _get_rack_height(data: dict) -> int:
+def _get_rack_height(data: dict, catalog: Catalog) -> int:
     """Get rack height in U from rack data."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    CATALOG = app_module.CATALOG
     if data.get("u_height"):
         return int(data["u_height"])
     template_id = data.get("template_id")
-    if template_id and CATALOG:
-        template = CATALOG.get_rack_template(template_id)
+    if template_id:
+        template = catalog.get_rack_template(template_id)
         if template and template.u_height:
             return template.u_height
     return 42
@@ -163,30 +147,24 @@ def _get_rack_height(data: dict) -> int:
 
 
 @router.get("/api/sites", response_model=List[Site])
-def get_sites():
+async def get_sites(topology: Annotated[Optional[Topology], Depends(get_topology_optional)]):
     """Get all sites."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    TOPOLOGY = app_module.TOPOLOGY
-    return TOPOLOGY.sites if TOPOLOGY else []
+    return topology.sites if topology else []
 
 
 @router.post("/api/topology/sites")
-def create_site(payload: SiteCreate):
+async def create_site(
+    payload: SiteCreate, app_config: Annotated[AppConfig, Depends(get_app_config)]
+):
     """Create a new site."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
-
-    APP_CONFIG = app_module.APP_CONFIG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
 
     name = payload.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="Site name is required")
 
-    base_dir = Path(APP_CONFIG.paths.topology)
+    base_dir = Path(app_config.paths.topology)
     sites_path = base_dir / "sites.yaml"
     if not sites_path.exists():
         raise HTTPException(status_code=404, detail="Topology sites file not found")
@@ -205,7 +183,7 @@ def create_site(payload: SiteCreate):
 
     (base_dir / "datacenters" / site_id / "rooms").mkdir(parents=True, exist_ok=True)
 
-    app_module.TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {"site": site_entry}
 
 
@@ -213,20 +191,18 @@ def create_site(payload: SiteCreate):
 
 
 @router.post("/api/topology/sites/{site_id}/rooms")
-def create_room(site_id: str, payload: RoomCreate):
+async def create_room(
+    site_id: str, payload: RoomCreate, app_config: Annotated[AppConfig, Depends(get_app_config)]
+):
     """Create a new room under a site."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
-
-    APP_CONFIG = app_module.APP_CONFIG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
 
     name = payload.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="Room name is required")
 
-    base_dir = Path(APP_CONFIG.paths.topology)
+    base_dir = Path(app_config.paths.topology)
     sites_path = base_dir / "sites.yaml"
     if not sites_path.exists():
         raise HTTPException(status_code=404, detail="Topology sites file not found")
@@ -260,20 +236,16 @@ def create_room(site_id: str, payload: RoomCreate):
     }
     (room_dir / "room.yaml").write_text(dump_yaml(room_payload))
 
-    app_module.TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {"room": room_payload, "site_id": site_id}
 
 
 @router.get("/api/rooms", response_model=List[dict])
-def get_rooms():
+async def get_rooms(topology: Annotated[Optional[Topology], Depends(get_topology_optional)]):
     """Get all rooms with hierarchy."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    TOPOLOGY = app_module.TOPOLOGY
     rooms = []
-    if TOPOLOGY:
-        for site in TOPOLOGY.sites:
+    if topology:
+        for site in topology.sites:
             for room in site.rooms:
                 # Build hierarchy for sidebar
                 aisles_summary = []
@@ -303,16 +275,9 @@ def get_rooms():
 
 
 @router.get("/api/rooms/{room_id}/layout", response_model=Room)
-def get_room_layout(room_id: str):
+async def get_room_layout(room_id: str, topology: Annotated[Topology, Depends(get_topology)]):
     """Get room layout details."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    TOPOLOGY = app_module.TOPOLOGY
-    if not TOPOLOGY:
-        raise HTTPException(status_code=500, detail="Topology not loaded")
-
-    for site in TOPOLOGY.sites:
+    for site in topology.sites:
         for room in site.rooms:
             if room.id == room_id:
                 return room
@@ -321,21 +286,19 @@ def get_room_layout(room_id: str):
 
 
 @router.put("/api/topology/rooms/{room_id}/aisles")
-def update_room_aisles(room_id: str, payload: RoomAislesUpdate):
+async def update_room_aisles(
+    room_id: str,
+    payload: RoomAislesUpdate,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    topology: Annotated[Topology, Depends(get_topology)],
+):
     """Reorganize aisles and racks in a room."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    APP_CONFIG = app_module.APP_CONFIG
-    TOPOLOGY = app_module.TOPOLOGY
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    if not TOPOLOGY:
-        raise HTTPException(status_code=500, detail="Topology not loaded")
-
     target_room = None
     target_site_id = None
-    for site in TOPOLOGY.sites:
+    for site in topology.sites:
         for room in site.rooms:
             if room.id == room_id:
                 target_room = room
@@ -362,7 +325,7 @@ def update_room_aisles(room_id: str, payload: RoomAislesUpdate):
                     status_code=400, detail=f"Unknown rack id in payload: {rack_id}"
                 )
 
-    base_dir = Path(APP_CONFIG.paths.topology)
+    base_dir = Path(app_config.paths.topology)
     for rack_id, current_aisle in current_map.items():
         target_aisle = None
         for aisle_id, racks in requested_aisles.items():
@@ -402,14 +365,14 @@ def update_room_aisles(room_id: str, payload: RoomAislesUpdate):
         source_path.unlink(missing_ok=True)
 
     for aisle in target_room.aisles:
-        aisle_path = _find_aisle_path(room_id, aisle.id)
+        aisle_path = _find_aisle_path(room_id, aisle.id, app_config, topology)
         if not aisle_path or not aisle_path.exists():
             raise HTTPException(status_code=404, detail=f"Aisle file not found: {aisle.id}")
         data = yaml.safe_load(aisle_path.read_text()) or {}
         data["racks"] = requested_aisles.get(aisle.id, [])
         aisle_path.write_text(dump_yaml(data))
 
-    app_module.TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {"status": "ok", "room_id": room_id}
 
 
@@ -417,27 +380,25 @@ def update_room_aisles(room_id: str, payload: RoomAislesUpdate):
 
 
 @router.post("/api/topology/rooms/{room_id}/aisles/create")
-def create_room_aisles(room_id: str, payload: RoomAislesCreate):
+async def create_room_aisles(
+    room_id: str,
+    payload: RoomAislesCreate,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    topology: Annotated[Topology, Depends(get_topology)],
+):
     """Create new aisles in a room."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    APP_CONFIG = app_module.APP_CONFIG
-    TOPOLOGY = app_module.TOPOLOGY
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    if not TOPOLOGY:
-        raise HTTPException(status_code=500, detail="Topology not loaded")
-
     target_site_id = None
-    for site in TOPOLOGY.sites:
+    for site in topology.sites:
         if any(room.id == room_id for room in site.rooms):
             target_site_id = site.id
             break
     if not target_site_id:
         raise HTTPException(status_code=404, detail="Room not found")
 
-    base_dir = Path(APP_CONFIG.paths.topology)
+    base_dir = Path(app_config.paths.topology)
     room_dir = base_dir / "datacenters" / target_site_id / "rooms" / room_id
     room_path = room_dir / "room.yaml"
     if not room_path.exists():
@@ -472,26 +433,25 @@ def create_room_aisles(room_id: str, payload: RoomAislesCreate):
             dump_yaml({"id": aisle["id"], "name": aisle["name"], "racks": []})
         )
 
-    app_module.TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {"room_id": room_id, "aisles": new_aisles}
 
 
 @router.put("/api/topology/aisles/{aisle_id}/racks")
-def update_aisle_racks(aisle_id: str, payload: AisleOrderUpdate):
+async def update_aisle_racks(
+    aisle_id: str,
+    payload: AisleOrderUpdate,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    topology: Annotated[Topology, Depends(get_topology)],
+):
     """Update rack ordering in an aisle."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    APP_CONFIG = app_module.APP_CONFIG
-    TOPOLOGY = app_module.TOPOLOGY
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    if not TOPOLOGY:
-        raise HTTPException(status_code=500, detail="Topology not loaded")
     if not payload.racks:
         raise HTTPException(status_code=400, detail="racks list is required")
 
-    aisle_path = _find_aisle_path(payload.room_id, aisle_id)
+    aisle_path = _find_aisle_path(payload.room_id, aisle_id, app_config, topology)
     if not aisle_path or not aisle_path.exists():
         raise HTTPException(status_code=404, detail="Aisle file not found")
 
@@ -500,7 +460,7 @@ def update_aisle_racks(aisle_id: str, payload: AisleOrderUpdate):
     aisle_path.write_text(dump_yaml(data))
 
     # Reload topology to keep in-memory state aligned.
-    app_module.TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {"status": "ok", "aisle_id": aisle_id, "racks": payload.racks}
 
 
@@ -508,18 +468,11 @@ def update_aisle_racks(aisle_id: str, payload: AisleOrderUpdate):
 
 
 @router.get("/api/racks/{rack_id}", response_model=Rack)
-def get_rack_details(rack_id: str):
+async def get_rack_details(rack_id: str, topology: Annotated[Topology, Depends(get_topology)]):
     """Get rack details and devices."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    TOPOLOGY = app_module.TOPOLOGY
-    if not TOPOLOGY:
-        raise HTTPException(status_code=500, detail="Topology not loaded")
-
     # Linear search (slow but ok for MVP)
     # In production, we would index racks by ID on load
-    for site in TOPOLOGY.sites:
+    for site in topology.sites:
         for room in site.rooms:
             # Check aisles
             for aisle in room.aisles:
@@ -535,15 +488,17 @@ def get_rack_details(rack_id: str):
 
 
 @router.put("/api/topology/racks/{rack_id}/template")
-def update_rack_template(rack_id: str, payload: RackTemplateUpdate):
+async def update_rack_template(
+    rack_id: str,
+    payload: RackTemplateUpdate,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    topology: Annotated[Topology, Depends(get_topology)],
+):
     """Update rack template."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    APP_CONFIG = app_module.APP_CONFIG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    rack_path = _find_rack_path(rack_id)
+    rack_path = _find_rack_path(rack_id, app_config, topology)
     if not rack_path or not rack_path.exists():
         raise HTTPException(status_code=404, detail="Rack file not found")
 
@@ -554,7 +509,7 @@ def update_rack_template(rack_id: str, payload: RackTemplateUpdate):
         data.pop("template_id", None)
     rack_path.write_text(dump_yaml(data))
 
-    app_module.TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {"status": "ok", "rack_id": rack_id, "template_id": payload.template_id}
 
 
@@ -562,17 +517,14 @@ def update_rack_template(rack_id: str, payload: RackTemplateUpdate):
 
 
 @router.get("/api/racks/{rack_id}/devices/{device_id}", response_model=DeviceContext)
-def get_device_details(rack_id: str, device_id: str):
+async def get_device_details(
+    rack_id: str,
+    device_id: str,
+    topology: Annotated[Topology, Depends(get_topology)],
+    catalog: Annotated[Catalog, Depends(get_catalog)],
+):
     """Get device details with context."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
-
-    TOPOLOGY = app_module.TOPOLOGY
-    CATALOG = app_module.CATALOG
-    if not TOPOLOGY:
-        raise HTTPException(status_code=500, detail="Topology not loaded")
-
-    for site in TOPOLOGY.sites:
+    for site in topology.sites:
         for room in site.rooms:
             for aisle in room.aisles:
                 for rack in aisle.racks:
@@ -582,9 +534,7 @@ def get_device_details(rack_id: str, device_id: str):
                     if device:
                         return DeviceContext(
                             device=device,
-                            template=CATALOG.get_device_template(device.template_id)
-                            if CATALOG
-                            else None,
+                            template=catalog.get_device_template(device.template_id),
                             rack=rack,
                             room={"id": room.id, "name": room.name},
                             site={
@@ -601,9 +551,7 @@ def get_device_details(rack_id: str, device_id: str):
                 if device:
                     return DeviceContext(
                         device=device,
-                        template=CATALOG.get_device_template(device.template_id)
-                        if CATALOG
-                        else None,
+                        template=catalog.get_device_template(device.template_id),
                         rack=rack,
                         room={"id": room.id, "name": room.name},
                         site={
@@ -618,23 +566,22 @@ def get_device_details(rack_id: str, device_id: str):
 
 
 @router.post("/api/topology/racks/{rack_id}/devices")
-def add_rack_device(rack_id: str, payload: RackDeviceCreate):
+async def add_rack_device(
+    rack_id: str,
+    payload: RackDeviceCreate,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    catalog: Annotated[Catalog, Depends(get_catalog)],
+    topology: Annotated[Topology, Depends(get_topology)],
+):
     """Add a device to a rack."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    APP_CONFIG = app_module.APP_CONFIG
-    CATALOG = app_module.CATALOG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    if not CATALOG:
-        raise HTTPException(status_code=500, detail="Catalog not loaded")
-
-    rack_path = _find_rack_path(rack_id)
+    rack_path = _find_rack_path(rack_id, app_config, topology)
     if not rack_path or not rack_path.exists():
         raise HTTPException(status_code=404, detail="Rack file not found")
 
-    if not CATALOG.get_device_template(payload.template_id):
+    if not catalog.get_device_template(payload.template_id):
         raise HTTPException(
             status_code=400, detail=f"Unknown device template: {payload.template_id}"
         )
@@ -644,11 +591,11 @@ def add_rack_device(rack_id: str, payload: RackDeviceCreate):
     if any(d.get("id") == payload.id for d in devices):
         raise HTTPException(status_code=400, detail=f"Device id already exists: {payload.id}")
 
-    rack_height = _get_rack_height(data)
+    rack_height = _get_rack_height(data, catalog)
     if payload.u_position < 1 or payload.u_position > rack_height:
         raise HTTPException(status_code=400, detail="u_position out of rack bounds")
 
-    new_height = _get_device_height(payload.template_id)
+    new_height = _get_device_height(payload.template_id, catalog)
     if payload.u_position + new_height - 1 > rack_height:
         raise HTTPException(status_code=400, detail="Device does not fit in rack height")
 
@@ -658,7 +605,7 @@ def add_rack_device(rack_id: str, payload: RackDeviceCreate):
         if not template_id:
             continue
         start = int(device.get("u_position", 0))
-        height = _get_device_height(template_id)
+        height = _get_device_height(template_id, catalog)
         if start < 1:
             continue
         for u in range(start, start + height):
@@ -681,24 +628,24 @@ def add_rack_device(rack_id: str, payload: RackDeviceCreate):
     data["devices"] = devices
     rack_path.write_text(dump_yaml(data))
 
-    app_module.TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {"status": "ok", "rack_id": rack_id, "device_id": payload.id}
 
 
 @router.put("/api/topology/racks/{rack_id}/devices/{device_id}")
-def update_rack_device(rack_id: str, device_id: str, payload: RackDeviceUpdate):
+async def update_rack_device(
+    rack_id: str,
+    device_id: str,
+    payload: RackDeviceUpdate,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    catalog: Annotated[Catalog, Depends(get_catalog)],
+    topology: Annotated[Topology, Depends(get_topology)],
+):
     """Update device position in rack."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    APP_CONFIG = app_module.APP_CONFIG
-    CATALOG = app_module.CATALOG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    if not CATALOG:
-        raise HTTPException(status_code=500, detail="Catalog not loaded")
-
-    rack_path = _find_rack_path(rack_id)
+    rack_path = _find_rack_path(rack_id, app_config, topology)
     if not rack_path or not rack_path.exists():
         raise HTTPException(status_code=404, detail="Rack file not found")
 
@@ -708,11 +655,11 @@ def update_rack_device(rack_id: str, device_id: str, payload: RackDeviceUpdate):
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    rack_height = _get_rack_height(data)
+    rack_height = _get_rack_height(data, catalog)
     template_id = device.get("template_id")
     if not template_id:
         raise HTTPException(status_code=400, detail="Device template_id missing")
-    height = _get_device_height(template_id)
+    height = _get_device_height(template_id, catalog)
     if payload.u_position < 1 or payload.u_position + height - 1 > rack_height:
         raise HTTPException(status_code=400, detail="Device does not fit in rack height")
 
@@ -724,7 +671,7 @@ def update_rack_device(rack_id: str, device_id: str, payload: RackDeviceUpdate):
         if not other_template_id:
             continue
         start = int(other.get("u_position", 0))
-        other_height = _get_device_height(other_template_id)
+        other_height = _get_device_height(other_template_id, catalog)
         if start < 1:
             continue
         for u in range(start, start + other_height):
@@ -738,7 +685,7 @@ def update_rack_device(rack_id: str, device_id: str, payload: RackDeviceUpdate):
     data["devices"] = devices
     rack_path.write_text(dump_yaml(data))
 
-    app_module.TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {
         "status": "ok",
         "rack_id": rack_id,
@@ -748,16 +695,17 @@ def update_rack_device(rack_id: str, device_id: str, payload: RackDeviceUpdate):
 
 
 @router.delete("/api/topology/racks/{rack_id}/devices/{device_id}")
-def delete_rack_device(rack_id: str, device_id: str):
+async def delete_rack_device(
+    rack_id: str,
+    device_id: str,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    topology: Annotated[Topology, Depends(get_topology)],
+):
     """Remove device from rack."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    APP_CONFIG = app_module.APP_CONFIG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-
-    rack_path = _find_rack_path(rack_id)
+    rack_path = _find_rack_path(rack_id, app_config, topology)
     if not rack_path or not rack_path.exists():
         raise HTTPException(status_code=404, detail="Rack file not found")
 
@@ -770,29 +718,28 @@ def delete_rack_device(rack_id: str, device_id: str):
     data["devices"] = next_devices
     rack_path.write_text(dump_yaml(data))
 
-    app_module.TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {"status": "ok", "rack_id": rack_id, "device_id": device_id}
 
 
 @router.put("/api/topology/racks/{rack_id}/devices")
-def replace_rack_devices(rack_id: str, payload: RackDevicesUpdate):
+async def replace_rack_devices(
+    rack_id: str,
+    payload: RackDevicesUpdate,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    catalog: Annotated[Catalog, Depends(get_catalog)],
+    topology: Annotated[Topology, Depends(get_topology)],
+):
     """Replace all devices in a rack."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    APP_CONFIG = app_module.APP_CONFIG
-    CATALOG = app_module.CATALOG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    if not CATALOG:
-        raise HTTPException(status_code=500, detail="Catalog not loaded")
-
-    rack_path = _find_rack_path(rack_id)
+    rack_path = _find_rack_path(rack_id, app_config, topology)
     if not rack_path or not rack_path.exists():
         raise HTTPException(status_code=404, detail="Rack file not found")
 
     data = yaml.safe_load(rack_path.read_text()) or {}
-    rack_height = _get_rack_height(data)
+    rack_height = _get_rack_height(data, catalog)
 
     seen_ids: set[str] = set()
     occupied: set[int] = set()
@@ -801,11 +748,11 @@ def replace_rack_devices(rack_id: str, payload: RackDevicesUpdate):
         if device.id in seen_ids:
             raise HTTPException(status_code=400, detail=f"Duplicate device id: {device.id}")
         seen_ids.add(device.id)
-        if not CATALOG.get_device_template(device.template_id):
+        if not catalog.get_device_template(device.template_id):
             raise HTTPException(
                 status_code=400, detail=f"Unknown device template: {device.template_id}"
             )
-        height = _get_device_height(device.template_id)
+        height = _get_device_height(device.template_id, catalog)
         if device.u_position < 1 or device.u_position + height - 1 > rack_height:
             raise HTTPException(status_code=400, detail=f"Device {device.id} does not fit in rack")
         for u in range(device.u_position, device.u_position + height):
@@ -817,5 +764,5 @@ def replace_rack_devices(rack_id: str, payload: RackDevicesUpdate):
 
     data["devices"] = [d.model_dump() for d in payload.devices]
     rack_path.write_text(dump_yaml(data))
-    app_module.TOPOLOGY = load_topology(APP_CONFIG.paths.topology)
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {"status": "ok", "rack_id": rack_id, "devices": len(payload.devices)}
