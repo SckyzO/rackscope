@@ -30,7 +30,7 @@ from rackscope.api.routers import (
     telemetry,
     slurm,
 )
-from rackscope.services.slurm_service import expand_device_instances
+from rackscope.services.instance_service import expand_device_instances
 
 # Global state
 TOPOLOGY: Optional[Topology] = None

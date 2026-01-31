@@ -11,8 +11,8 @@ import yaml
 
 from rackscope.model.config import SlurmConfig
 from rackscope.model.domain import Room, Rack, Device, Topology
-from rackscope.telemetry.planner import _expand_nodes_pattern
 from rackscope.utils.aggregation import severity_rank as _severity_rank
+from rackscope.services.instance_service import expand_device_instances as _expand_device_instances
 
 
 def normalize_slurm_status(raw_status: str) -> tuple[str, bool]:
@@ -87,41 +87,15 @@ def severity_rank(severity: str) -> int:
 def expand_device_instances(device: Device) -> List[str]:
     """Expand device instance patterns to node names.
 
+    Wrapper around instance_service.expand_device_instances for backward compatibility.
+
     Args:
         device: The device to expand
 
     Returns:
         List of node names
     """
-    if isinstance(device.instance, str):
-        return _expand_nodes_pattern(device.instance)
-    if isinstance(device.instance, dict):
-        expanded: List[str] = []
-        for value in device.instance.values():
-            if isinstance(value, str):
-                expanded.extend(_expand_nodes_pattern(value))
-        return expanded
-    if isinstance(device.instance, list):
-        expanded: List[str] = []
-        for value in device.instance:
-            if isinstance(value, str):
-                expanded.extend(_expand_nodes_pattern(value))
-        return expanded
-    if isinstance(device.nodes, str):
-        return _expand_nodes_pattern(device.nodes)
-    if isinstance(device.nodes, dict):
-        expanded: List[str] = []
-        for value in device.nodes.values():
-            if isinstance(value, str):
-                expanded.extend(_expand_nodes_pattern(value))
-        return expanded
-    if isinstance(device.nodes, list):
-        expanded: List[str] = []
-        for value in device.nodes:
-            if isinstance(value, str):
-                expanded.extend(_expand_nodes_pattern(value))
-        return expanded
-    return []
+    return _expand_device_instances(device)
 
 
 def collect_room_nodes(room: Room) -> Set[str]:
