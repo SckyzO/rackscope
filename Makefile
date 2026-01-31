@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: up down restart logs build lint test clean
+.PHONY: up down restart logs build lint test clean coverage typecheck complexity quality shell-backend shell-frontend watch-logs
 
 # Docker Stack Management
 up:
@@ -18,7 +18,7 @@ logs:
 build:
 	docker compose build
 
-# Local Quality Tools (Requires local venv if not using docker exec)
+# Code Quality Tools
 lint:
 	docker compose exec backend ruff check .
 	docker compose exec backend ruff format --check .
@@ -29,6 +29,30 @@ lint:
 test:
 	docker compose exec backend pytest
 
+coverage:
+	docker compose exec backend pytest --cov=rackscope --cov-report=term --cov-report=html
+	@echo "Coverage report generated: htmlcov/index.html"
+
+typecheck:
+	docker compose exec backend /home/appuser/.local/bin/mypy src/rackscope
+
+complexity:
+	docker compose exec backend /home/appuser/.local/bin/radon cc src/rackscope -a -nc
+
+quality: lint typecheck complexity coverage
+	@echo "✅ All quality checks complete!"
+
+# Development Helpers
+shell-backend:
+	docker compose exec backend bash
+
+shell-frontend:
+	docker compose exec frontend sh
+
+watch-logs:
+	docker compose logs -f backend frontend
+
+# Cleanup
 clean:
 	docker compose down -v
-	rm -rf __pycache__ .pytest_cache .venv frontend/node_modules
+	rm -rf __pycache__ .pytest_cache .venv frontend/node_modules htmlcov .coverage .mypy_cache

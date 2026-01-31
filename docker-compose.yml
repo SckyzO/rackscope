@@ -12,6 +12,9 @@ services:
     volumes:
       - ./src:/app/src
       - ./config:/app/config
+      - ./tests:/app/tests
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./mypy.ini:/app/mypy.ini
     environment:
       - RACKSCOPE_APP_CONFIG=/app/config/app.yaml
     command: uvicorn rackscope.api.app:app --host 0.0.0.0 --port 8000 --reload
