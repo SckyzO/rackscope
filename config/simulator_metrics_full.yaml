@@ -154,6 +154,7 @@ metrics:
     scope: rack
     racks: ["*"]
     labels:
+      rack_id: $rack_id
       pduid: $pduid
       pduname: $pduname
       inletid: $inletid
@@ -164,6 +165,7 @@ metrics:
     scope: rack
     racks: ["*"]
     labels:
+      rack_id: $rack_id
       pduid: $pduid
       pduname: $pduname
       inletid: $inletid
@@ -174,6 +176,7 @@ metrics:
     scope: rack
     racks: ["*"]
     labels:
+      rack_id: $rack_id
       pduid: $pduid
       pduname: $pduname
       inletid: $inletid
@@ -182,6 +185,7 @@ metrics:
     scope: rack
     racks: ["*"]
     labels:
+      rack_id: $rack_id
       pduid: $pduid
       pduname: $pduname
       inletid: $inletid
@@ -190,6 +194,7 @@ metrics:
     scope: rack
     racks: ["*"]
     labels:
+      rack_id: $rack_id
       pduid: $pduid
       pduname: $pduname
       inletid: $inletid

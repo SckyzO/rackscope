@@ -256,6 +256,15 @@ def _collect_check_targets(
                 if rack_template and rack_template.checks:
                     for check_id in rack_template.checks:
                         add_targets(check_id, rack_nodes, rack_chassis, [rack.id])
+                if rack_template and rack_template.infrastructure.rack_components:
+                    for component_ref in rack_template.infrastructure.rack_components:
+                        component_template = catalog.get_rack_component_template(
+                            component_ref.template_id
+                        )
+                        if not component_template or not component_template.checks:
+                            continue
+                        for check_id in component_template.checks:
+                            add_targets(check_id, rack_nodes, rack_chassis, [rack.id])
 
     return {
         check_id: {

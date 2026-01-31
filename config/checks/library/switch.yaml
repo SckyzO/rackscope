@@ -1,0 +1,55 @@
+checks:
+  - id: switch_up
+    name: Switch up
+    scope: node
+    kind: network
+    expr: up{instance=~"$instances"} == 0
+    output: numeric
+    rules:
+      - severity: CRIT
+        op: "=="
+        value: 1
+
+  - id: switch_temp_warn
+    name: Switch temperature warn
+    scope: node
+    kind: network
+    expr: node_temperature_celsius{instance=~"$instances"}
+    output: numeric
+    rules:
+      - severity: WARN
+        op: ">"
+        value: 45
+
+  - id: switch_temp_crit
+    name: Switch temperature crit
+    scope: node
+    kind: network
+    expr: node_temperature_celsius{instance=~"$instances"}
+    output: numeric
+    rules:
+      - severity: CRIT
+        op: ">"
+        value: 60
+
+  - id: switch_power_warn
+    name: Switch power warn
+    scope: node
+    kind: network
+    expr: node_power_watts{instance=~"$instances"}
+    output: numeric
+    rules:
+      - severity: WARN
+        op: ">"
+        value: 1000
+
+  - id: switch_power_crit
+    name: Switch power crit
+    scope: node
+    kind: network
+    expr: node_power_watts{instance=~"$instances"}
+    output: numeric
+    rules:
+      - severity: CRIT
+        op: ">"
+        value: 1500

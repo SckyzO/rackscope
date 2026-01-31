@@ -3,6 +3,7 @@ templates:
   name: BullSequana XH35MQ IB Switch (1U)
   type: network
   role: infiniband
+  role: infiniband
   u_height: 1
   layout:
     type: grid
@@ -12,3 +13,9 @@ templates:
       - [1]
   checks:
   - node_up
+  checks:
+    - switch_up
+    - switch_temp_warn
+    - switch_temp_crit
+    - switch_power_warn
+    - switch_power_crit

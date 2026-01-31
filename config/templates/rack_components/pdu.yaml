@@ -5,5 +5,10 @@ rack_component_templates:
   model: Raritan
   location: side
   u_height: 16
-  checks: []
-  metrics: []
+  checks:
+    - pdu_power_present
+    - pdu_current_warn
+    - pdu_current_crit
+  metrics:
+    - power
+    - current

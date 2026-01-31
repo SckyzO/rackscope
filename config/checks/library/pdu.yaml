@@ -1,0 +1,33 @@
+checks:
+  - id: pdu_power_present
+    name: PDU power present
+    scope: rack
+    kind: power
+    expr: sum by (rack_id) (raritan_pdu_activepower_watt{rack_id=~"$racks", inletid="I1"}) or on() vector(0)
+    output: numeric
+    rules:
+      - severity: WARN
+        op: ==
+        value: 0
+
+  - id: pdu_current_warn
+    name: PDU current high (warn)
+    scope: rack
+    kind: power
+    expr: max by (rack_id) (raritan_pdu_current_ampere{rack_id=~"$racks", inletid="I1"})
+    output: numeric
+    rules:
+      - severity: WARN
+        op: ">"
+        value: 16
+
+  - id: pdu_current_crit
+    name: PDU current high (crit)
+    scope: rack
+    kind: power
+    expr: max by (rack_id) (raritan_pdu_current_ampere{rack_id=~"$racks", inletid="I1"})
+    output: numeric
+    rules:
+      - severity: CRIT
+        op: ">"
+        value: 20

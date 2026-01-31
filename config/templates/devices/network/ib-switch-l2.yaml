@@ -3,6 +3,7 @@ templates:
   name: InfiniBand L2 (Director 2U)
   type: network
   role: infiniband
+  role: infiniband
   u_height: 2
   layout:
     type: grid
@@ -18,3 +19,9 @@ templates:
       - [901, 902, 903, 904]
   checks:
   - node_up
+  checks:
+    - switch_up
+    - switch_temp_warn
+    - switch_temp_crit
+    - switch_power_warn
+    - switch_power_crit
