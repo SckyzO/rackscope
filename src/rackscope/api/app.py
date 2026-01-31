@@ -31,6 +31,11 @@ from rackscope.api.routers import (
     slurm,
 )
 from rackscope.services.slurm_service import expand_device_instances
+from rackscope.logging_config import setup_logging, get_logger
+
+# Setup logging
+setup_logging()
+logger = get_logger(__name__)
 
 # Global state
 TOPOLOGY: Optional[Topology] = None
@@ -187,13 +192,17 @@ async def lifespan(app: FastAPI):
             CHECKS_LIBRARY = load_checks_library(checks_path)
             APP_CONFIG = None
             PLANNER = TelemetryPlanner()
-        print(f"Loaded topology with {len(TOPOLOGY.sites)} sites")
-        print(
-            f"Loaded catalog with {len(CATALOG.device_templates)} devices and {len(CATALOG.rack_templates)} racks"
+        logger.info(
+            "Configuration loaded successfully",
+            extra={
+                "sites": len(TOPOLOGY.sites),
+                "device_templates": len(CATALOG.device_templates),
+                "rack_templates": len(CATALOG.rack_templates),
+                "checks": len(CHECKS_LIBRARY.checks),
+            },
         )
-        print(f"Loaded checks library with {len(CHECKS_LIBRARY.checks)} checks")
     except Exception as e:
-        print(f"Failed to load configuration: {e}")
+        logger.error(f"Failed to load configuration: {e}", exc_info=True)
         TOPOLOGY = Topology()
         CATALOG = Catalog()
         CHECKS_LIBRARY = ChecksLibrary()
@@ -208,7 +217,7 @@ async def lifespan(app: FastAPI):
             try:
                 await prom_client.ping()
             except Exception as e:
-                print(f"Prometheus heartbeat error: {e}")
+                logger.warning(f"Prometheus heartbeat error: {e}")
             await asyncio.sleep(heartbeat_seconds)
 
     PROMETHEUS_HEARTBEAT = asyncio.create_task(_heartbeat())
