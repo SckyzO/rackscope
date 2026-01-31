@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Union
+import logging
 
 import yaml
 from pydantic import ValidationError
@@ -10,6 +11,8 @@ from rackscope.model.domain import Topology
 from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate, RackComponentTemplate
 from rackscope.model.checks import ChecksLibrary, CheckDefinition
 from rackscope.model.config import AppConfig
+
+logger = logging.getLogger(__name__)
 
 
 class InvalidFormatError(ValueError):
@@ -48,7 +51,7 @@ def load_catalog(templates_dir: Union[str, Path]) -> Catalog:
                         catalog.rack_component_templates.append(RackComponentTemplate(**t_data))
 
         except Exception as e:
-            print(f"Warning: Failed to load template file {yaml_file}: {e}")
+            logger.warning(f"Failed to load template file {yaml_file}: {e}")
 
     return catalog
 
@@ -119,7 +122,7 @@ def load_segmented_topology(base_dir: Path) -> Topology:
                 continue
             room_path = base_dir / "datacenters" / site_id / "rooms" / room_id / "room.yaml"
             if not room_path.exists():
-                print(f"Warning: Missing room file {room_path}")
+                logger.warning(f"Missing room file: {room_path}")
                 continue
             room_data = yaml.safe_load(room_path.read_text()) or {}
 
@@ -148,7 +151,7 @@ def load_segmented_topology(base_dir: Path) -> Topology:
                     / "aisle.yaml"
                 )
                 if not aisle_path.exists():
-                    print(f"Warning: Missing aisle file {aisle_path}")
+                    logger.warning(f"Missing aisle file: {aisle_path}")
                     continue
                 aisle_data = yaml.safe_load(aisle_path.read_text()) or {}
                 aisle_out = {
@@ -220,7 +223,7 @@ def _load_rack_ref(
             / f"{rack_ref}.yaml"
         )
     if not rack_path.exists():
-        print(f"Warning: Missing rack file {rack_path}")
+        logger.warning(f"Missing rack file: {rack_path}")
         return None
     return yaml.safe_load(rack_path.read_text()) or None
 
@@ -230,7 +233,7 @@ def _load_checks_file(path: Path, library: ChecksLibrary) -> None:
         with path.open("r") as f:
             data = yaml.safe_load(f)
     except yaml.YAMLError as e:
-        print(f"Warning: Failed to parse checks file {path}: {e}")
+        logger.warning(f"Failed to parse checks file {path}: {e}")
         return
 
     if not data:
@@ -256,7 +259,7 @@ def _load_checks_file(path: Path, library: ChecksLibrary) -> None:
         try:
             library.checks.append(CheckDefinition(**c))
         except Exception as e:
-            print(f"Warning: Failed to load check in {path}: {e}")
+            logger.warning(f"Failed to load check in {path}: {e}")
 
 
 def load_checks_library(path: Union[str, Path]) -> ChecksLibrary:

@@ -3,9 +3,12 @@ from __future__ import annotations
 import os
 import time
 import asyncio
+import logging
 import httpx
 from collections import deque
 from typing import Dict, Any, Tuple, Optional
+
+logger = logging.getLogger(__name__)
 
 # Default to internal docker network hostname if not set
 PROMETHEUS_URL = os.getenv("PROMETHEUS_URL", "http://prometheus:9090")
@@ -97,7 +100,7 @@ class PrometheusClient:
             response.raise_for_status()
             return response.json()
         except Exception as e:
-            print(f"Prometheus query error: {e}")
+            logger.error(f"Prometheus query error: {e}")
             return {"status": "error", "error": str(e)}
         finally:
             duration_ms = (time.perf_counter() - start) * 1000.0
@@ -129,9 +132,11 @@ class PrometheusClient:
             "ts": time.time() * 1000.0,
         }
         if self._debug_stats:
-            print(
-                "Telemetry batch: ids=%s queries=%s max_ids=%s"
-                % (total_ids, query_count, max_ids_per_query)
+            logger.debug(
+                "Telemetry batch: ids=%s queries=%s max_ids=%s",
+                total_ids,
+                query_count,
+                max_ids_per_query,
             )
 
     def get_telemetry_stats(self) -> Dict[str, Any]:
@@ -182,7 +187,7 @@ class PrometheusClient:
                         results[node_id]["power"] = val
 
         except Exception as e:
-            print(f"Error fetching node metrics: {e}")
+            logger.error(f"Error fetching node metrics: {e}")
 
         return results
 
@@ -233,12 +238,12 @@ class PrometheusClient:
                 *[self.query(query) for query in queries.values()], return_exceptions=True
             )
         except Exception as e:
-            print(f"Error fetching PDU metrics: {e}")
+            logger.error(f"Error fetching PDU metrics: {e}")
             return results
 
         for metric_key, response in zip(queries.keys(), responses):
             if isinstance(response, Exception):
-                print(f"Error fetching PDU metric {metric_key}: {response}")
+                logger.error(f"Error fetching PDU metric {metric_key}: {response}")
                 continue
             if not isinstance(response, dict) or response.get("status") != "success":
                 continue

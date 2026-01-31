@@ -7,12 +7,15 @@ Endpoints for simulator control (demo mode).
 import time
 from pathlib import Path
 from typing import Annotated, Any, Optional
+import logging
 
 import yaml
 from fastapi import APIRouter, Depends, HTTPException
 
 from rackscope.api.dependencies import get_app_config_optional
 from rackscope.model.config import AppConfig
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/simulator", tags=["simulator"])
 
@@ -32,7 +35,7 @@ def _load_overrides(app_config: Optional[AppConfig]) -> list[dict[str, Any]]:
     try:
         data = yaml.safe_load(path.read_text()) or {}
     except yaml.YAMLError as exc:
-        print(f"Failed to load overrides: {exc}")
+        logger.warning(f"Failed to load overrides: {exc}")
         return []
     return data.get("overrides", []) if isinstance(data, dict) else []
 
@@ -63,7 +66,7 @@ def get_simulator_scenarios():
     try:
         data = yaml.safe_load(sim_path.read_text()) or {}
     except yaml.YAMLError as exc:
-        print(f"Failed to load simulator scenarios: {exc}")
+        logger.warning(f"Failed to load simulator scenarios: {exc}")
         return {"scenarios": []}
     scenarios = data.get("scenarios") if isinstance(data, dict) else {}
     if not isinstance(scenarios, dict):
