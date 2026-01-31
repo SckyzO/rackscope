@@ -12,7 +12,7 @@ import yaml
 import httpx
 
 from rackscope.model.domain import Room, Site, Topology, Rack, Device
-from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
+from rackscope.model.catalog import Catalog
 from rackscope.model.checks import ChecksLibrary, CheckDefinition
 from rackscope.model.config import AppConfig, SlurmConfig
 from rackscope.model.loader import (
@@ -26,7 +26,6 @@ from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import _expand_nodes_pattern
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
 from rackscope.api.models import (
-    TemplateWriteRequest,
     SiteCreate,
     RoomCreate,
     RoomAislesCreate,
@@ -134,16 +133,6 @@ def _find_rack_path(rack_id: str) -> Optional[Path]:
         / "racks"
         / f"{rack_id}.yaml"
     )
-
-
-def _find_device_template_path(templates_dir: Path, template_id: str) -> Optional[Path]:
-    devices_dir = templates_dir / "devices"
-    if not devices_dir.exists():
-        return None
-    matches = list(devices_dir.rglob(f"{template_id}.yaml"))
-    if not matches:
-        return None
-    return matches[0]
 
 
 def _get_device_height(template_id: str) -> int:
@@ -425,10 +414,6 @@ def healthz() -> dict[str, str]:
 
 
 @app.get("/api/catalog")
-def get_catalog():
-    return CATALOG if CATALOG else {"device_templates": [], "rack_templates": []}
-
-
 @app.get("/api/checks")
 def get_checks_library():
     return CHECKS_LIBRARY if CHECKS_LIBRARY else {"checks": []}
@@ -1127,96 +1112,6 @@ def replace_rack_devices(rack_id: str, payload: RackDevicesUpdate):
 
 
 @app.post("/api/catalog/templates")
-def write_template(payload: TemplateWriteRequest):
-    global CATALOG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    templates_dir = Path(APP_CONFIG.paths.templates)
-    templates_dir.mkdir(parents=True, exist_ok=True)
-
-    if payload.kind == "device":
-        template = DeviceTemplate(**payload.template)
-        if CATALOG and CATALOG.get_device_template(template.id):
-            raise HTTPException(
-                status_code=400, detail=f"Device template already exists: {template.id}"
-            )
-        type_dir = _safe_segment(template.type, "other")
-        target_dir = templates_dir / "devices" / type_dir
-        key = "templates"
-        filename = f"{_safe_segment(template.id, 'device')}.yaml"
-    else:
-        template = RackTemplate(**payload.template)
-        if CATALOG and CATALOG.get_rack_template(template.id):
-            raise HTTPException(
-                status_code=400, detail=f"Rack template already exists: {template.id}"
-            )
-        target_dir = templates_dir / "racks"
-        key = "rack_templates"
-        filename = f"{_safe_segment(template.id, 'rack')}.yaml"
-
-    target_dir.mkdir(parents=True, exist_ok=True)
-    target_path = target_dir / filename
-    if target_path.exists():
-        raise HTTPException(status_code=400, detail=f"Template file already exists: {target_path}")
-    data = {key: [template.model_dump()]}
-    target_path.write_text(dump_yaml(data))
-
-    # Reload catalog to keep in-memory state aligned.
-    CATALOG = load_catalog(templates_dir)
-
-    return template
-
-
-@app.put("/api/catalog/templates")
-def update_template(payload: TemplateWriteRequest):
-    global CATALOG
-    if not APP_CONFIG:
-        raise HTTPException(status_code=500, detail="App config not loaded")
-    templates_dir = Path(APP_CONFIG.paths.templates)
-    templates_dir.mkdir(parents=True, exist_ok=True)
-
-    if payload.kind == "device":
-        template = DeviceTemplate(**payload.template)
-        type_dir = _safe_segment(template.type, "other")
-        target_dir = templates_dir / "devices" / type_dir
-        key = "templates"
-        filename = f"{_safe_segment(template.id, 'device')}.yaml"
-        existing_path = _find_device_template_path(templates_dir, template.id)
-        target_path = target_dir / filename
-        if existing_path and existing_path != target_path:
-            existing_path.unlink(missing_ok=True)
-    else:
-        template = RackTemplate(**payload.template)
-        target_dir = templates_dir / "racks"
-        key = "rack_templates"
-        filename = f"{_safe_segment(template.id, 'rack')}.yaml"
-        target_path = target_dir / filename
-
-    target_dir.mkdir(parents=True, exist_ok=True)
-    data = {key: [template.model_dump()]}
-    target_path.write_text(dump_yaml(data))
-
-    # Reload catalog to keep in-memory state aligned.
-    CATALOG = load_catalog(templates_dir)
-
-    return template
-
-
-@app.post("/api/catalog/templates/validate")
-def validate_template(payload: TemplateWriteRequest):
-    try:
-        if payload.kind == "device":
-            DeviceTemplate(**payload.template)
-        else:
-            RackTemplate(**payload.template)
-    except ValidationError as e:
-        raise HTTPException(
-            status_code=400,
-            detail={"message": "Template validation failed", "errors": e.errors()},
-        )
-    return {"status": "ok"}
-
-
 @app.get("/api/stats/global")
 async def get_global_stats():
     rack_healths: Dict[str, str] = {}
