@@ -31,6 +31,7 @@ from rackscope.api.routers import (
     slurm,
 )
 from rackscope.services.instance_service import expand_device_instances
+from rackscope.services import telemetry_service
 
 # Global state
 TOPOLOGY: Optional[Topology] = None
@@ -41,83 +42,7 @@ PLANNER: Optional[TelemetryPlanner] = None
 PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
 
 
-def _extract_device_instances(device: Device) -> List[str]:
-    if isinstance(device.instance, dict):
-        return [node for node in device.instance.values() if isinstance(node, str)]
-    if isinstance(device.instance, list):
-        return [node for node in device.instance if isinstance(node, str)]
-    if isinstance(device.instance, str):
-        return _expand_nodes_pattern(device.instance)
-    if isinstance(device.nodes, dict):
-        return [node for node in device.nodes.values() if isinstance(node, str)]
-    if isinstance(device.nodes, list):
-        return [node for node in device.nodes if isinstance(node, str)]
-    if isinstance(device.nodes, str):
-        return _expand_nodes_pattern(device.nodes)
-    return [device.id]
-
-
-def _collect_check_targets(
-    topology: Topology,
-    catalog: Catalog,
-    checks: ChecksLibrary,
-) -> Dict[str, Dict[str, List[str]]]:
-    check_by_id = {c.id: c for c in checks.checks}
-    targets: Dict[str, Dict[str, set[str]]] = {}
-
-    def add_targets(check_id: str, nodes: List[str], chassis: List[str], racks: List[str]) -> None:
-        check = check_by_id.get(check_id)
-        if not check:
-            return
-        bucket = targets.setdefault(check_id, {"node": set(), "chassis": set(), "rack": set()})
-        if check.scope == "node":
-            bucket["node"].update(nodes)
-        elif check.scope == "chassis":
-            bucket["chassis"].update(chassis)
-        elif check.scope == "rack":
-            bucket["rack"].update(racks)
-
-    for site in topology.sites:
-        for room in site.rooms:
-            racks = []
-            for aisle in room.aisles:
-                racks.extend(aisle.racks)
-            racks.extend(room.standalone_racks)
-            for rack in racks:
-                rack_nodes: List[str] = []
-                rack_chassis: List[str] = []
-                for device in rack.devices:
-                    nodes = _extract_device_instances(device)
-                    rack_nodes.extend(nodes)
-                    rack_chassis.append(device.id)
-                    device_template = catalog.get_device_template(device.template_id)
-                    if device_template and device_template.checks:
-                        for check_id in device_template.checks:
-                            add_targets(check_id, nodes, [device.id], [rack.id])
-                rack_template = (
-                    catalog.get_rack_template(rack.template_id) if rack.template_id else None
-                )
-                if rack_template and rack_template.checks:
-                    for check_id in rack_template.checks:
-                        add_targets(check_id, rack_nodes, rack_chassis, [rack.id])
-                if rack_template and rack_template.infrastructure.rack_components:
-                    for component_ref in rack_template.infrastructure.rack_components:
-                        component_template = catalog.get_rack_component_template(
-                            component_ref.template_id
-                        )
-                        if not component_template or not component_template.checks:
-                            continue
-                        for check_id in component_template.checks:
-                            add_targets(check_id, rack_nodes, rack_chassis, [rack.id])
-
-    return {
-        check_id: {
-            "node": sorted(list(values.get("node", set()))),
-            "chassis": sorted(list(values.get("chassis", set()))),
-            "rack": sorted(list(values.get("rack", set()))),
-        }
-        for check_id, values in targets.items()
-    }
+# Telemetry helper functions now in telemetry_service
 
 
 def apply_config(app_config: AppConfig) -> None:
@@ -240,7 +165,7 @@ def healthz() -> dict[str, str]:
 async def get_active_alerts():
     if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
         return {"alerts": []}
-    targets_by_check = _collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
+    targets_by_check = telemetry_service.collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
     snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
 
     node_context: Dict[str, Dict[str, str]] = {}

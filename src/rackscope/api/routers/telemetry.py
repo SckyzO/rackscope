@@ -21,6 +21,7 @@ from rackscope.api.dependencies import (
     get_planner_optional,
 )
 from rackscope.utils.aggregation import aggregate_states
+from rackscope.services import telemetry_service
 
 router = APIRouter(tags=["telemetry"])
 
@@ -39,7 +40,7 @@ async def get_global_stats(
 
     rack_healths: Dict[str, str] = {}
     if topology and checks_library and planner:
-        targets_by_check = app_module._collect_check_targets(topology, catalog, checks_library)
+        targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
         snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
         rack_healths = snapshot.rack_states
     else:
@@ -117,7 +118,7 @@ async def get_room_state(
 
     if not topology or not checks_library or not planner:
         return {"room_id": room_id, "state": "UNKNOWN", "racks": {}}
-    targets_by_check = app_module._collect_check_targets(topology, catalog, checks_library)
+    targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
     snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
     rack_healths = snapshot.rack_states
 
@@ -158,7 +159,7 @@ async def get_rack_state(
 
     if not topology or not checks_library or not planner:
         return {"rack_id": rack_id, "state": "UNKNOWN", "metrics": {}, "nodes": {}}
-    targets_by_check = app_module._collect_check_targets(topology, catalog, checks_library)
+    targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
     snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
     nodes_metrics = await prom_client.get_node_metrics(rack_id)
     pdu_metrics = await prom_client.get_pdu_metrics(rack_id)
