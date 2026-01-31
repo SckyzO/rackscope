@@ -22,6 +22,7 @@ from rackscope.api.dependencies import (
     get_topology_optional,
 )
 from rackscope.services import topology_service
+from rackscope.utils.validation import safe_segment
 from rackscope.api.models import (
     SiteCreate,
     RoomCreate,
@@ -36,19 +37,6 @@ from rackscope.api.models import (
 )
 
 router = APIRouter(tags=["topology"])
-
-
-# Helper functions
-
-
-def _safe_segment(value: str, fallback: str) -> str:
-    """Convert string to safe filename segment."""
-    value = (value or "").strip().lower()
-    if not value:
-        return fallback
-    value = re.sub(r"[^a-z0-9._-]+", "-", value)
-    value = value.strip("-")
-    return value or fallback
 
 
 # Sites endpoints
@@ -79,7 +67,7 @@ async def create_site(
 
     data = yaml.safe_load(sites_path.read_text()) or {}
     sites = data.get("sites") or []
-    site_id = _safe_segment(payload.id or name, "site")
+    site_id = safe_segment(payload.id or name, "site")
 
     if any(site.get("id") == site_id for site in sites):
         raise HTTPException(status_code=400, detail="Site id already exists")
@@ -121,7 +109,7 @@ async def create_room(
     if not site_entry:
         raise HTTPException(status_code=404, detail="Site not found")
 
-    room_id = _safe_segment(payload.id or name, "room")
+    room_id = safe_segment(payload.id or name, "room")
     rooms = site_entry.get("rooms") or []
     if any(room.get("id") == room_id for room in rooms):
         raise HTTPException(status_code=400, detail="Room id already exists in site")
@@ -326,7 +314,7 @@ async def create_room_aisles(
         raw_id = aisle.get("id") or name
         if not name:
             raise HTTPException(status_code=400, detail="Aisle name is required")
-        aisle_id = _safe_segment(raw_id, "aisle")
+        aisle_id = safe_segment(raw_id, "aisle")
         if aisle_id in existing_ids or any(a.get("id") == aisle_id for a in new_aisles):
             raise HTTPException(status_code=400, detail=f"Aisle id already exists: {aisle_id}")
         new_aisles.append({"id": aisle_id, "name": name})
