@@ -30,7 +30,7 @@ from rackscope.api.routers import (
     telemetry,
     slurm,
 )
-from rackscope.api.routers.slurm import _expand_device_instances
+from rackscope.services.slurm_service import expand_device_instances
 
 # Global state
 TOPOLOGY: Optional[Topology] = None
@@ -249,7 +249,7 @@ async def get_active_alerts():
             for aisle in room.aisles:
                 for rack in aisle.racks:
                     for device in rack.devices:
-                        for node_id in _expand_device_instances(device):
+                        for node_id in expand_device_instances(device):
                             node_context[node_id] = {
                                 "site_id": site.id,
                                 "site_name": site.name,
@@ -262,7 +262,7 @@ async def get_active_alerts():
                             }
             for rack in room.standalone_racks:
                 for device in rack.devices:
-                    for node_id in _expand_device_instances(device):
+                    for node_id in expand_device_instances(device):
                         node_context[node_id] = {
                             "site_id": site.id,
                             "site_name": site.name,
