@@ -5,7 +5,7 @@ import asyncio
 import time
 import re
 from contextlib import asynccontextmanager, suppress
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -26,8 +26,20 @@ from rackscope.model.loader import (
 from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import _expand_nodes_pattern
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
-from pydantic import BaseModel, ValidationError
-from typing import Literal
+from rackscope.api.models import (
+    TemplateWriteRequest,
+    SiteCreate,
+    RoomCreate,
+    RoomAislesCreate,
+    AisleOrderUpdate,
+    RackTemplateUpdate,
+    RackDeviceCreate,
+    RackDeviceUpdate,
+    RackDevicesUpdate,
+    RoomAislesUpdate,
+    DeviceContext,
+)
+from pydantic import ValidationError
 
 # Global state
 TOPOLOGY: Optional[Topology] = None
@@ -388,64 +400,6 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
-
-
-class TemplateWriteRequest(BaseModel):
-    kind: Literal["device", "rack"]
-    template: Dict[str, Any]
-
-
-class SiteCreate(BaseModel):
-    id: Optional[str] = None
-    name: str
-
-
-class RoomCreate(BaseModel):
-    id: Optional[str] = None
-    name: str
-    description: Optional[str] = None
-
-
-class RoomAislesCreate(BaseModel):
-    aisles: List[Dict[str, str]]
-
-
-class AisleOrderUpdate(BaseModel):
-    room_id: str
-    racks: List[str]
-
-
-class RackTemplateUpdate(BaseModel):
-    template_id: Optional[str] = None
-
-
-class RackDeviceCreate(BaseModel):
-    id: str
-    name: str
-    template_id: str
-    u_position: int
-    instance: Optional[Union[Dict[int, str], str]] = None
-
-
-class RackDeviceUpdate(BaseModel):
-    u_position: int
-
-
-class RackDevicesUpdate(BaseModel):
-    devices: List[Device]
-
-
-class RoomAislesUpdate(BaseModel):
-    aisles: Dict[str, List[str]]
-
-
-class DeviceContext(BaseModel):
-    device: Device
-    template: Optional[DeviceTemplate] = None
-    rack: Rack
-    room: Dict[str, str]
-    site: Dict[str, str]
-    aisle: Optional[Dict[str, str]] = None
 
 
 @app.get("/healthz")

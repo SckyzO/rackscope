@@ -8,11 +8,13 @@ from rackscope.model.loader import load_topology
 
 client = TestClient(app)
 
+
 def _load_topology():
     config_path = Path("config/topology")
     if config_path.exists():
         return load_topology(config_path)
     return load_topology(Path("config/topology/topology.yaml"))
+
 
 def _first_room_id():
     topo = _load_topology()
@@ -20,6 +22,7 @@ def _first_room_id():
         for room in site.rooms:
             return room.id
     return None
+
 
 def _first_rack_id():
     topo = _load_topology()
@@ -32,10 +35,12 @@ def _first_rack_id():
                 return rack.id
     return None
 
+
 def test_healthz():
     response = client.get("/healthz")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
 
 def test_get_sites():
     # Note: this depends on TOPOLOGY being loaded on startup
@@ -44,10 +49,12 @@ def test_get_sites():
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
+
 def test_get_rooms():
     response = client.get("/api/rooms")
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
 
 def test_get_room_state():
     room_id = _first_room_id()
@@ -58,6 +65,7 @@ def test_get_room_state():
     body = response.json()
     assert "state" in body
     assert isinstance(body.get("racks", {}), dict)
+
 
 def test_get_rack_state():
     rack_id = _first_rack_id()
