@@ -6,6 +6,7 @@ Business logic for Slurm data processing.
 
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Set
+import logging
 
 import yaml
 
@@ -13,6 +14,8 @@ from rackscope.model.config import SlurmConfig
 from rackscope.model.domain import Room, Rack, Device, Topology
 from rackscope.utils.aggregation import severity_rank as _severity_rank
 from rackscope.services.instance_service import expand_device_instances as _expand_device_instances
+
+logger = logging.getLogger(__name__)
 
 
 def normalize_slurm_status(raw_status: str) -> tuple[str, bool]:
@@ -176,7 +179,7 @@ def load_slurm_mapping(slurm_cfg: SlurmConfig) -> Dict[str, str]:
     try:
         raw_mapping = yaml.safe_load(Path(mapping_path).read_text()) or {}
     except (OSError, yaml.YAMLError) as exc:
-        print(f"Failed to load Slurm mapping: {exc}")
+        logger.warning(f"Failed to load Slurm mapping from {mapping_path}: {exc}")
         return mapping
     mappings = raw_mapping.get("mappings") if isinstance(raw_mapping, dict) else []
     if not isinstance(mappings, list):
