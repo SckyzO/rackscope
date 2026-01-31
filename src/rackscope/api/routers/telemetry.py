@@ -20,21 +20,9 @@ from rackscope.api.dependencies import (
     get_app_config_optional,
     get_planner_optional,
 )
+from rackscope.utils.aggregation import aggregate_states
 
 router = APIRouter(tags=["telemetry"])
-
-
-def aggregate_states(states: List[str]) -> str:
-    """Aggregate multiple state values into a single state."""
-    if not states:
-        return "UNKNOWN"
-    if "CRIT" in states:
-        return "CRIT"
-    if "WARN" in states:
-        return "WARN"
-    if "UNKNOWN" in states:
-        return "UNKNOWN"
-    return "OK"
 
 
 @router.get("/api/stats/global")

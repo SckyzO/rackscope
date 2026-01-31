@@ -12,6 +12,7 @@ import yaml
 from rackscope.model.config import SlurmConfig
 from rackscope.model.domain import Room, Rack, Device, Topology
 from rackscope.telemetry.planner import _expand_nodes_pattern
+from rackscope.utils.aggregation import severity_rank as _severity_rank
 
 
 def normalize_slurm_status(raw_status: str) -> tuple[str, bool]:
@@ -72,13 +73,15 @@ def calculate_slurm_severity(
 def severity_rank(severity: str) -> int:
     """Get numeric rank for severity level.
 
+    Wrapper around aggregation.severity_rank for backward compatibility.
+
     Args:
         severity: The severity level
 
     Returns:
         Numeric rank (0-3)
     """
-    return {"UNKNOWN": 0, "OK": 1, "WARN": 2, "CRIT": 3}.get(severity, 0)
+    return _severity_rank(severity)
 
 
 def expand_device_instances(device: Device) -> List[str]:
