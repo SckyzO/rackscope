@@ -1805,6 +1805,7 @@ async def get_rack_state(rack_id: str):
     targets_by_check = _collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
     snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
     nodes_metrics = await prom_client.get_node_metrics(rack_id)
+    pdu_metrics = await prom_client.get_pdu_metrics(rack_id)
 
     # Calculate Node States and Aggregate Rack State
     processed_nodes = {}
@@ -1844,6 +1845,7 @@ async def get_rack_state(rack_id: str):
         "rack_id": rack_id,
         "state": rack_state,
         "metrics": {"temperature": avg_temp, "power": total_power},
+        "infra_metrics": {"pdu": pdu_metrics},
         "nodes": processed_nodes,
     }
 

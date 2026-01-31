@@ -130,6 +130,25 @@ export interface InfrastructureComponent {
   u_height?: number;
 }
 
+export interface RackComponentTemplate {
+  id: string;
+  name: string;
+  type: string;
+  model?: string;
+  role?: string;
+  location: 'side' | 'u-mount' | 'front' | 'rear';
+  u_height: number;
+  checks?: string[];
+  metrics?: string[];
+}
+
+export interface RackComponentRef {
+  template_id: string;
+  u_position: number;
+  u_height?: number;
+  side?: 'left' | 'right';
+}
+
 export interface RackTemplate {
   id: string;
   name: string;
@@ -139,6 +158,7 @@ export interface RackTemplate {
     front_components?: InfrastructureComponent[];
     rear_components?: InfrastructureComponent[];
     side_components?: InfrastructureComponent[];
+    rack_components?: RackComponentRef[];
   };
   checks?: string[];
 }
@@ -146,6 +166,7 @@ export interface RackTemplate {
 export interface Catalog {
   device_templates: DeviceTemplate[];
   rack_templates: RackTemplate[];
+  rack_component_templates: RackComponentTemplate[];
 }
 
 export interface CheckDefinition {
@@ -231,6 +252,18 @@ export interface RackState {
   metrics?: {
     temperature?: number;
     power?: number;
+  };
+  infra_metrics?: {
+    pdu?: Record<
+      string,
+      {
+        activepower_watt?: number;
+        activeenergy_wh?: number;
+        apparentpower_va?: number;
+        current_amp?: number;
+        inlet_rating_amp?: number;
+      }
+    >;
   };
   nodes?: Record<string, RackNodeState>;
 }

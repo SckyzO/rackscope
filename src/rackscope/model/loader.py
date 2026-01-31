@@ -7,7 +7,7 @@ import yaml
 from pydantic import ValidationError
 
 from rackscope.model.domain import Topology
-from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
+from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate, RackComponentTemplate
 from rackscope.model.checks import ChecksLibrary, CheckDefinition
 from rackscope.model.config import AppConfig
 
@@ -41,6 +41,11 @@ def load_catalog(templates_dir: Union[str, Path]) -> Catalog:
                 if "rack_templates" in data:
                     for t_data in data["rack_templates"]:
                         catalog.rack_templates.append(RackTemplate(**t_data))
+
+                # Load Rack Component Templates
+                if "rack_component_templates" in data:
+                    for t_data in data["rack_component_templates"]:
+                        catalog.rack_component_templates.append(RackComponentTemplate(**t_data))
 
         except Exception as e:
             print(f"Warning: Failed to load template file {yaml_file}: {e}")

@@ -217,6 +217,43 @@ class PrometheusClient:
 
         return health_map
 
+    async def get_pdu_metrics(self, rack_id: str) -> Dict[str, Dict[str, float]]:
+        """Fetch inlet-level PDU metrics for a rack."""
+        queries = {
+            "activepower_watt": f'raritan_pdu_activepower_watt{{rack_id="{rack_id}", inletid!=""}}',
+            "activeenergy_wh": f'raritan_pdu_activeenergy_watthour_total{{rack_id="{rack_id}", inletid!=""}}',
+            "apparentpower_va": f'raritan_pdu_apparentpower_voltampere{{rack_id="{rack_id}", inletid!=""}}',
+            "current_amp": f'raritan_pdu_current_ampere{{rack_id="{rack_id}", inletid!=""}}',
+            "inlet_rating_amp": f'raritan_pdu_inletrating{{rack_id="{rack_id}", inletid!=""}}',
+        }
+
+        results: Dict[str, Dict[str, float]] = {}
+        try:
+            responses = await asyncio.gather(
+                *[self.query(query) for query in queries.values()], return_exceptions=True
+            )
+        except Exception as e:
+            print(f"Error fetching PDU metrics: {e}")
+            return results
+
+        for metric_key, response in zip(queries.keys(), responses):
+            if isinstance(response, Exception):
+                print(f"Error fetching PDU metric {metric_key}: {response}")
+                continue
+            if not isinstance(response, dict) or response.get("status") != "success":
+                continue
+            for item in response.get("data", {}).get("result", []):
+                metric = item.get("metric", {})
+                pduname = metric.get("pduname") or metric.get("pduid") or "pdu"
+                try:
+                    value = float(item.get("value", [None, "0"])[1])
+                except (TypeError, ValueError):
+                    continue
+                entry = results.setdefault(pduname, {})
+                entry[metric_key] = value
+
+        return results
+
 
 # Global instance
 client = PrometheusClient()

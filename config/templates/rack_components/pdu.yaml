@@ -1,0 +1,9 @@
+rack_component_templates:
+- id: pdu-raritan-16u
+  name: PDU Raritan
+  type: pdu
+  model: Raritan
+  location: side
+  u_height: 16
+  checks: []
+  metrics: []

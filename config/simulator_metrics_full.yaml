@@ -149,3 +149,48 @@ metrics:
       region: demo
       sequana_rack_id: $rack_id
       sequana_type: liquid
+
+  - name: raritan_pdu_activeenergy_watthour_total
+    scope: rack
+    racks: ["*"]
+    labels:
+      pduid: $pduid
+      pduname: $pduname
+      inletid: $inletid
+      inletname: $inletname
+      outletid: $outletid
+      outletname: $outletname
+  - name: raritan_pdu_activepower_watt
+    scope: rack
+    racks: ["*"]
+    labels:
+      pduid: $pduid
+      pduname: $pduname
+      inletid: $inletid
+      inletname: $inletname
+      outletid: $outletid
+      outletname: $outletname
+  - name: raritan_pdu_apparentpower_voltampere
+    scope: rack
+    racks: ["*"]
+    labels:
+      pduid: $pduid
+      pduname: $pduname
+      inletid: $inletid
+      inletname: $inletname
+  - name: raritan_pdu_current_ampere
+    scope: rack
+    racks: ["*"]
+    labels:
+      pduid: $pduid
+      pduname: $pduname
+      inletid: $inletid
+      inletname: $inletname
+  - name: raritan_pdu_inletrating
+    scope: rack
+    racks: ["*"]
+    labels:
+      pduid: $pduid
+      pduname: $pduname
+      inletid: $inletid
+      inletname: $inletname

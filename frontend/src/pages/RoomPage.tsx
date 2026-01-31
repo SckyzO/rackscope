@@ -1,10 +1,18 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
-import type { Room, Rack, DeviceTemplate, RackTemplate, RackState } from '../types';
+import type {
+  Room,
+  Rack,
+  DeviceTemplate,
+  RackTemplate,
+  RackComponentTemplate,
+  RackState,
+} from '../types';
 import { Box, Zap, Thermometer, Maximize2 } from 'lucide-react';
 import { RackElevation, HUDTooltip } from '../components/RackVisualizer';
 import { matchesInstanceValue, matchesText } from '../utils/search';
+import { resolveRackComponents } from '../utils/rackComponents';
 
 export const RoomPage = ({
   searchQuery = '',
@@ -17,6 +25,9 @@ export const RoomPage = ({
   const [room, setRoom] = useState<Room | null>(null);
   const [catalog, setCatalog] = useState<Record<string, DeviceTemplate>>({});
   const [rackTemplates, setRackTemplates] = useState<Record<string, RackTemplate>>({});
+  const [rackComponentTemplates, setRackComponentTemplates] = useState<
+    Record<string, RackComponentTemplate>
+  >({});
   const [loading, setLoading] = useState(true);
   const [selectedRack, setSelectedRack] = useState<Rack | null>(null);
   const [viewSide, setViewSide] = useState<'front' | 'rear'>('front');
@@ -40,6 +51,7 @@ export const RoomPage = ({
         setRoom(roomData);
         const deviceTemplates = catalogData.device_templates || [];
         const rackTemplates = catalogData.rack_templates || [];
+        const rackComponentTemplates = catalogData.rack_component_templates || [];
         const catMap = deviceTemplates.reduce<Record<string, DeviceTemplate>>(
           (acc, t) => ({ ...acc, [t.id]: t }),
           {}
@@ -50,6 +62,10 @@ export const RoomPage = ({
           {}
         );
         setRackTemplates(rackMap);
+        const rackComponentMap = rackComponentTemplates.reduce<
+          Record<string, RackComponentTemplate>
+        >((acc, t) => ({ ...acc, [t.id]: t }), {});
+        setRackComponentTemplates(rackComponentMap);
         const nextRefresh = Number(configData?.refresh?.room_state_seconds) || 30;
         setRefreshMs(Math.max(10000, nextRefresh * 1000));
       } catch (err: unknown) {
@@ -115,12 +131,31 @@ export const RoomPage = ({
   const selectedRackTemplate = selectedRack?.template_id
     ? rackTemplates[selectedRack.template_id]
     : null;
-  const frontInfra = selectedRackTemplate?.infrastructure.front_components?.length
+  const resolvedRackComponents = selectedRackTemplate
+    ? resolveRackComponents(
+        selectedRackTemplate.infrastructure.rack_components,
+        rackComponentTemplates
+      )
+    : { front: [], rear: [], side: [], main: [] };
+  const baseInfra = selectedRackTemplate?.infrastructure.components || [];
+  const frontInfraBase = selectedRackTemplate?.infrastructure.front_components?.length
     ? selectedRackTemplate.infrastructure.front_components
-    : selectedRackTemplate?.infrastructure.components || [];
-  const rearInfra = selectedRackTemplate?.infrastructure.rear_components?.length
+    : baseInfra;
+  const rearInfraBase = selectedRackTemplate?.infrastructure.rear_components?.length
     ? selectedRackTemplate.infrastructure.rear_components
-    : selectedRackTemplate?.infrastructure.components || [];
+    : baseInfra;
+  const sideInfraBase = selectedRackTemplate?.infrastructure.side_components || [];
+  const frontInfra = [
+    ...frontInfraBase,
+    ...resolvedRackComponents.main,
+    ...resolvedRackComponents.front,
+  ];
+  const rearInfra = [
+    ...rearInfraBase,
+    ...resolvedRackComponents.main,
+    ...resolvedRackComponents.rear,
+  ];
+  const sideInfra = [...sideInfraBase, ...resolvedRackComponents.side];
 
   const filteredAisles = useMemo(() => {
     if (!hasQuery || !room) return room?.aisles || [];
@@ -407,6 +442,7 @@ export const RoomPage = ({
                     nodesData={selectedNodesData}
                     isRearView={viewSide === 'rear'}
                     infraComponents={viewSide === 'rear' ? rearInfra : frontInfra}
+                    sideComponents={sideInfra}
                     allowInfraOverlap={viewSide === 'rear'}
                     overlay={
                       <button

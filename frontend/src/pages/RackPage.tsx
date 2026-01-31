@@ -5,12 +5,14 @@ import type {
   Rack,
   DeviceTemplate,
   RackTemplate,
+  RackComponentTemplate,
   InfrastructureComponent,
   RackState,
   RackNodeState,
 } from '../types';
 import { ChevronLeft, Activity, Zap, Thermometer, ShieldCheck } from 'lucide-react';
-import { RackElevation } from '../components/RackVisualizer';
+import { HUDTooltip, RackElevation } from '../components/RackVisualizer';
+import { resolveRackComponents } from '../utils/rackComponents';
 
 /**
  * RackPage Component
@@ -27,6 +29,9 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
 
   const [rack, setRack] = useState<Rack | null>(null);
   const [deviceCatalog, setDeviceCatalog] = useState<Record<string, DeviceTemplate>>({});
+  const [rackComponentTemplates, setRackComponentTemplates] = useState<
+    Record<string, RackComponentTemplate>
+  >({});
   const [rackTemplate, setRackTemplate] = useState<RackTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +56,13 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
         const devCat = catalogData.device_templates || [];
         setDeviceCatalog(
           devCat.reduce<Record<string, DeviceTemplate>>((acc, t) => ({ ...acc, [t.id]: t }), {})
+        );
+        const componentCat = catalogData.rack_component_templates || [];
+        setRackComponentTemplates(
+          componentCat.reduce<Record<string, RackComponentTemplate>>(
+            (acc, t) => ({ ...acc, [t.id]: t }),
+            {}
+          )
         );
 
         // Find specific rack template if assigned
@@ -98,12 +110,28 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
       <div className="text-status-crit p-12 font-mono">ERR :: {error || 'RACK_NOT_FOUND'}</div>
     );
 
-  const frontInfra = rackTemplate?.infrastructure.front_components?.length
+  const resolvedRackComponents = rackTemplate
+    ? resolveRackComponents(rackTemplate.infrastructure.rack_components, rackComponentTemplates)
+    : { front: [], rear: [], side: [], main: [] };
+  const baseInfra = rackTemplate?.infrastructure.components || [];
+  const frontInfraBase = rackTemplate?.infrastructure.front_components?.length
     ? rackTemplate.infrastructure.front_components
-    : rackTemplate?.infrastructure.components || [];
-  const rearInfra = rackTemplate?.infrastructure.rear_components?.length
+    : baseInfra;
+  const rearInfraBase = rackTemplate?.infrastructure.rear_components?.length
     ? rackTemplate.infrastructure.rear_components
-    : rackTemplate?.infrastructure.components || [];
+    : baseInfra;
+  const sideInfraBase = rackTemplate?.infrastructure.side_components || [];
+  const frontInfra = [
+    ...frontInfraBase,
+    ...resolvedRackComponents.main,
+    ...resolvedRackComponents.front,
+  ];
+  const rearInfra = [
+    ...rearInfraBase,
+    ...resolvedRackComponents.main,
+    ...resolvedRackComponents.rear,
+  ];
+  const sideInfra = [...sideInfraBase, ...resolvedRackComponents.side];
 
   return (
     <div className="flex h-full flex-col bg-[var(--color-bg-base)] p-8">
@@ -166,27 +194,37 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
 
           {rackTemplate && (
             <div className="flex flex-col gap-4">
-              {rackTemplate.infrastructure.front_components &&
-                rackTemplate.infrastructure.front_components.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="font-mono text-[9px] text-gray-500 uppercase">Front</div>
-                    {rackTemplate.infrastructure.front_components.map((comp) => (
-                      <InfraComponentCard key={comp.id} component={comp} />
-                    ))}
-                  </div>
-                )}
+              {frontInfra.length > 0 && (
+                <div className="space-y-2">
+                  <div className="font-mono text-[9px] text-gray-500 uppercase">Front</div>
+                  {frontInfra.map((comp) => (
+                    <InfraComponentCard
+                      key={comp.id}
+                      component={comp}
+                      pduMetrics={healthData?.infra_metrics?.pdu}
+                    />
+                  ))}
+                </div>
+              )}
 
-              {rackTemplate.infrastructure.rear_components &&
-              rackTemplate.infrastructure.rear_components.length > 0 ? (
+              {rearInfra.length > 0 ? (
                 <div className="space-y-2">
                   <div className="font-mono text-[9px] text-gray-500 uppercase">Rear</div>
-                  {rackTemplate.infrastructure.rear_components.map((comp) => (
-                    <InfraComponentCard key={comp.id} component={comp} />
+                  {rearInfra.map((comp) => (
+                    <InfraComponentCard
+                      key={comp.id}
+                      component={comp}
+                      pduMetrics={healthData?.infra_metrics?.pdu}
+                    />
                   ))}
                 </div>
               ) : (
-                rackTemplate.infrastructure.components.map((comp) => (
-                  <InfraComponentCard key={comp.id} component={comp} />
+                baseInfra.map((comp) => (
+                  <InfraComponentCard
+                    key={comp.id}
+                    component={comp}
+                    pduMetrics={healthData?.infra_metrics?.pdu}
+                  />
                 ))
               )}
             </div>
@@ -211,6 +249,7 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
               health={healthData?.state}
               nodesData={healthData?.nodes}
               infraComponents={frontInfra}
+              sideComponents={sideInfra}
               onDeviceClick={(device) => navigate(`/rack/${rack.id}/device/${device.id}`)}
             />
           </div>
@@ -229,6 +268,7 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
               nodesData={healthData?.nodes}
               isRearView={true}
               infraComponents={rearInfra}
+              sideComponents={sideInfra}
               allowInfraOverlap={true}
               onDeviceClick={(device) => navigate(`/rack/${rack.id}/device/${device.id}`)}
             />
@@ -242,7 +282,18 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
 /**
  * Visual card for Infrastructure components (HMC, PMC, RMC)
  */
-const InfraComponentCard = ({ component }: { component: InfrastructureComponent }) => {
+type PduMetric =
+  NonNullable<RackState['infra_metrics']>['pdu'] extends Record<string, infer T> ? T : never;
+
+const InfraComponentCard = ({
+  component,
+  pduMetrics,
+}: {
+  component: InfrastructureComponent;
+  pduMetrics?: Record<string, PduMetric>;
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   let Icon = ShieldCheck;
   let accentColor = 'border-gray-700 text-gray-400';
 
@@ -259,33 +310,85 @@ const InfraComponentCard = ({ component }: { component: InfrastructureComponent 
     accentColor = 'border-purple-500/30 text-purple-500/70';
   }
 
+  const pduEntries = pduMetrics ? Object.entries(pduMetrics) : [];
+  const totalPower = pduEntries.reduce((acc, [, val]) => acc + (val.activepower_watt || 0), 0);
+  const totalCurrent = pduEntries.reduce((acc, [, val]) => acc + (val.current_amp || 0), 0);
+  const totalApparent = pduEntries.reduce((acc, [, val]) => acc + (val.apparentpower_va || 0), 0);
+  const totalEnergy = pduEntries.reduce((acc, [, val]) => acc + (val.activeenergy_wh || 0), 0);
+  const hasPduMetrics = component.type === 'power' && pduEntries.length > 0;
+
   return (
-    <div
-      className={`rounded-lg border bg-white/5 p-3 ${accentColor} group flex cursor-help flex-col gap-2 transition-colors hover:bg-white/10`}
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4" />
-          <span className="text-[10px] font-bold tracking-tight uppercase">{component.name}</span>
+    <>
+      <div
+        className={`rounded-lg border bg-white/5 p-3 ${accentColor} group flex cursor-help flex-col gap-2 transition-colors hover:bg-white/10`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <Icon className="h-4 w-4" />
+            <span className="text-[10px] font-bold tracking-tight uppercase">{component.name}</span>
+          </div>
+          {component.role && (
+            <span className="rounded bg-black/40 px-1 text-[8px] text-gray-500 uppercase">
+              {component.role}
+            </span>
+          )}
         </div>
-        {component.role && (
-          <span className="rounded bg-black/40 px-1 text-[8px] text-gray-500 uppercase">
-            {component.role}
-          </span>
+        <div className="flex items-end justify-between">
+          <div className="font-mono text-[9px] text-gray-500">
+            {component.location === 'u-mount' ? `U${component.u_position}` : 'Zero-U'}
+          </div>
+          <div className="max-w-[80px] truncate font-mono text-[8px] text-gray-600">
+            {component.model}
+          </div>
+        </div>
+        {hasPduMetrics && (
+          <div className="flex items-center justify-between font-mono text-[9px] text-gray-400">
+            <span>{(totalPower / 1000).toFixed(1)} kW</span>
+            <span>{pduEntries.length} PDU</span>
+          </div>
         )}
-      </div>
-      <div className="flex items-end justify-between">
-        <div className="font-mono text-[9px] text-gray-500">
-          {component.location === 'u-mount' ? `U${component.u_position}` : 'Zero-U'}
-        </div>
-        <div className="max-w-[80px] truncate font-mono text-[8px] text-gray-600">
-          {component.model}
+        {/* Minimalist Health Bar for the component */}
+        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-gray-800">
+          <div className="bg-status-ok h-full w-full opacity-50 transition-opacity group-hover:opacity-100"></div>
         </div>
       </div>
-      {/* Minimalist Health Bar for the component */}
-      <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-gray-800">
-        <div className="bg-status-ok h-full w-full opacity-50 transition-opacity group-hover:opacity-100"></div>
-      </div>
-    </div>
+
+      {isHovered && component.type === 'power' && (
+        <HUDTooltip
+          title={component.name}
+          subtitle="Power Distribution"
+          status="OK"
+          details={[
+            {
+              label: 'Power',
+              value: hasPduMetrics ? `${(totalPower / 1000).toFixed(1)} kW` : '--',
+            },
+            {
+              label: 'Current',
+              value: hasPduMetrics ? `${totalCurrent.toFixed(1)} A` : '--',
+            },
+            {
+              label: 'Apparent',
+              value: hasPduMetrics ? `${(totalApparent / 1000).toFixed(1)} kVA` : '--',
+            },
+            {
+              label: 'Energy',
+              value: hasPduMetrics ? `${(totalEnergy / 1000).toFixed(0)} kWh` : '--',
+            },
+          ]}
+          reasons={
+            hasPduMetrics
+              ? pduEntries.map(
+                  ([name, value]) => `${name}: ${(value.activepower_watt || 0).toFixed(0)} W`
+                )
+              : ['No PDU metrics available']
+          }
+          mousePos={mousePos}
+        />
+      )}
+    </>
   );
 };

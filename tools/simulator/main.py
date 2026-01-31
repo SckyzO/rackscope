@@ -234,6 +234,7 @@ def load_topology_nodes(topo_data):
     return targets
 
 active_incidents = {'aisles': {}, 'racks': {}}
+pdu_energy_state = {}
 
 SUPPORTED_METRICS = {
     'node_temperature_celsius': 'node',
@@ -260,6 +261,11 @@ SUPPORTED_METRICS = {
     'sequana3_hyc_state_info': 'rack',
     'sequana3_hyc_leak_sensor_pump': 'rack',
     'sequana3_hyc_tmp_pcb_cel': 'rack',
+    'raritan_pdu_activeenergy_watthour_total': 'rack',
+    'raritan_pdu_activepower_watt': 'rack',
+    'raritan_pdu_apparentpower_voltampere': 'rack',
+    'raritan_pdu_current_ampere': 'rack',
+    'raritan_pdu_inletrating': 'rack',
 }
 
 BASE_LABELS = {
@@ -679,6 +685,108 @@ def simulate():
                 set_metric_value('sequana3_hyc_leak_sensor_pump', base_labels, round(leak, 2), context)
             if metric_enabled('sequana3_hyc_tmp_pcb_cel', 'rack', rack_id=rack_id):
                 set_metric_value('sequana3_hyc_tmp_pcb_cel', base_labels, round(board_temp, 1), context)
+
+        for rack_id, info in rack_info.items():
+            if not (
+                metric_enabled('raritan_pdu_activepower_watt', 'rack', rack_id=rack_id)
+                or metric_enabled('raritan_pdu_activeenergy_watthour_total', 'rack', rack_id=rack_id)
+                or metric_enabled('raritan_pdu_apparentpower_voltampere', 'rack', rack_id=rack_id)
+                or metric_enabled('raritan_pdu_current_ampere', 'rack', rack_id=rack_id)
+                or metric_enabled('raritan_pdu_inletrating', 'rack', rack_id=rack_id)
+            ):
+                continue
+
+            base_labels = {
+                'site_id': info.get('site_id'),
+                'room_id': info.get('room_id'),
+                'rack_id': rack_id,
+                'instance': f"pdu-{rack_id}",
+                'job': 'pdu',
+            }
+
+            random.seed(f"pdu-{rack_id}-{tick}")
+            for idx in range(1, 3):
+                pduid = str(idx)
+                pduname = f"pdu{idx}-{rack_id}"
+                inlet_ctx = {
+                    'pduid': pduid,
+                    'pduname': pduname,
+                    'inletid': 'I1',
+                    'inletname': 'inlet-A',
+                }
+
+                power_watt = random.uniform(1500, 4200)
+                apparent_va = power_watt * random.uniform(1.02, 1.08)
+                current_amp = power_watt / 230.0
+                rating_amp = 16 if idx % 2 == 0 else 20
+
+                energy_key = (rack_id, pduid, 'inlet')
+                prev_energy = pdu_energy_state.get(energy_key, random.uniform(800000, 1600000))
+                energy_wh = prev_energy + (power_watt * (update_interval / 3600.0))
+                pdu_energy_state[energy_key] = energy_wh
+
+                if metric_enabled('raritan_pdu_activepower_watt', 'rack', rack_id=rack_id):
+                    set_metric_value(
+                        'raritan_pdu_activepower_watt',
+                        base_labels,
+                        round(power_watt, 1),
+                        inlet_ctx,
+                    )
+                if metric_enabled('raritan_pdu_apparentpower_voltampere', 'rack', rack_id=rack_id):
+                    set_metric_value(
+                        'raritan_pdu_apparentpower_voltampere',
+                        base_labels,
+                        round(apparent_va, 1),
+                        inlet_ctx,
+                    )
+                if metric_enabled('raritan_pdu_current_ampere', 'rack', rack_id=rack_id):
+                    set_metric_value(
+                        'raritan_pdu_current_ampere',
+                        base_labels,
+                        round(current_amp, 2),
+                        inlet_ctx,
+                    )
+                if metric_enabled('raritan_pdu_inletrating', 'rack', rack_id=rack_id):
+                    set_metric_value(
+                        'raritan_pdu_inletrating',
+                        base_labels,
+                        rating_amp,
+                        inlet_ctx,
+                    )
+                if metric_enabled('raritan_pdu_activeenergy_watthour_total', 'rack', rack_id=rack_id):
+                    set_metric_value(
+                        'raritan_pdu_activeenergy_watthour_total',
+                        base_labels,
+                        round(energy_wh, 1),
+                        inlet_ctx,
+                    )
+
+                for outlet_id in range(1, 4):
+                    outlet_ctx = {
+                        'pduid': pduid,
+                        'pduname': pduname,
+                        'outletid': str(outlet_id),
+                        'outletname': f"outlet-{outlet_id}",
+                    }
+                    outlet_power = power_watt * random.uniform(0.05, 0.25)
+                    outlet_energy_key = (rack_id, pduid, f"outlet-{outlet_id}")
+                    outlet_prev_energy = pdu_energy_state.get(outlet_energy_key, random.uniform(50000, 200000))
+                    outlet_energy = outlet_prev_energy + (outlet_power * (update_interval / 3600.0))
+                    pdu_energy_state[outlet_energy_key] = outlet_energy
+                    if metric_enabled('raritan_pdu_activepower_watt', 'rack', rack_id=rack_id):
+                        set_metric_value(
+                            'raritan_pdu_activepower_watt',
+                            base_labels,
+                            round(outlet_power, 1),
+                            outlet_ctx,
+                        )
+                    if metric_enabled('raritan_pdu_activeenergy_watthour_total', 'rack', rack_id=rack_id):
+                        set_metric_value(
+                            'raritan_pdu_activeenergy_watthour_total',
+                            base_labels,
+                            round(outlet_energy, 1),
+                            outlet_ctx,
+                        )
 
         time.sleep(update_interval)
 

@@ -10,6 +10,11 @@ All configuration resides in YAML files. The default location is `config/`.
 
 Templates describe **what** your hardware looks like physically.
 
+Optional naming convention (not required, but recommended for consistency):
+- Rack templates: `config/templates/racks/rack-<name>.yaml`
+- Rack components (PDU/HMC/etc): `config/templates/rack_components/rack-component-<name>.yaml`
+- Device templates: `config/templates/devices/<type>/<device-name>.yaml`
+
 **Example: A 2U Server with 4 Nodes (Quad)**
 File: `templates/devices/my-server.yaml`
 ```yaml
@@ -50,13 +55,26 @@ rack_templates:
           location: u-mount
           u_position: 40
           u_height: 3
-      side_components:
-        - id: pdu-left
-          type: power
-          location: side-left
-        - id: pdu-right
-          type: power
-          location: side-right
+      rack_components:
+        - template_id: pdu-raritan-16u
+          side: left
+          u_position: 1
+        - template_id: pdu-raritan-16u
+          side: right
+          u_position: 1
+```
+
+**Example: Rack Component Template (PDU)**
+File: `templates/rack_components/pdu-raritan-16u.yaml`
+```yaml
+rack_component_templates:
+  - id: pdu-raritan-16u
+    name: PDU Raritan
+    type: pdu
+    location: side
+    u_height: 16
+    checks: []
+    metrics: []
 ```
 
 ### 2. Defining Topology
