@@ -4,9 +4,22 @@ Telemetry Router
 Endpoints for telemetry data, health states, and alerts.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional, Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from rackscope.model.domain import Topology
+from rackscope.model.catalog import Catalog
+from rackscope.model.checks import ChecksLibrary
+from rackscope.model.config import AppConfig
+from rackscope.telemetry.planner import TelemetryPlanner
+from rackscope.api.dependencies import (
+    get_topology_optional,
+    get_catalog_optional,
+    get_checks_library_optional,
+    get_app_config_optional,
+    get_planner_optional,
+)
 
 router = APIRouter(tags=["telemetry"])
 
@@ -25,21 +38,21 @@ def aggregate_states(states: List[str]) -> str:
 
 
 @router.get("/api/stats/global")
-async def get_global_stats():
+async def get_global_stats(
+    topology: Annotated[Optional[Topology], Depends(get_topology_optional)],
+    catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
+    checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
+    planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
+):
     """Get global system statistics."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
     from rackscope.telemetry.prometheus import client as prom_client
 
-    TOPOLOGY = app_module.TOPOLOGY
-    CATALOG = app_module.CATALOG
-    CHECKS_LIBRARY = app_module.CHECKS_LIBRARY
-    PLANNER = app_module.PLANNER
-
     rack_healths: Dict[str, str] = {}
-    if TOPOLOGY and CHECKS_LIBRARY and PLANNER:
-        targets_by_check = app_module._collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
-        snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
+    if topology and checks_library and planner:
+        targets_by_check = app_module._collect_check_targets(topology, catalog, checks_library)
+        snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
         rack_healths = snapshot.rack_states
     else:
         rack_healths = await prom_client.get_rack_health_summary()
@@ -48,8 +61,8 @@ async def get_global_stats():
     crit_alerts = 0
     warn_alerts = 0
 
-    if TOPOLOGY:
-        for site in TOPOLOGY.sites:
+    if topology:
+        for site in topology.sites:
             for room in site.rooms:
                 for aisle in room.aisles:
                     total_racks += len(aisle.racks)
@@ -68,7 +81,7 @@ async def get_global_stats():
         global_status = "WARN"
 
     return {
-        "total_rooms": len(TOPOLOGY.sites[0].rooms) if TOPOLOGY and TOPOLOGY.sites else 0,
+        "total_rooms": len(topology.sites[0].rooms) if topology and topology.sites else 0,
         "total_racks": total_racks,
         "active_alerts": crit_alerts + warn_alerts,
         "crit_count": crit_alerts,
@@ -78,17 +91,16 @@ async def get_global_stats():
 
 
 @router.get("/api/stats/prometheus")
-def get_prometheus_stats():
+def get_prometheus_stats(
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+):
     """Get Prometheus client statistics."""
-    # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
     from rackscope.telemetry.prometheus import client as prom_client
 
-    APP_CONFIG = app_module.APP_CONFIG
     stats = prom_client.get_latency_stats()
     heartbeat_seconds = 60
-    if APP_CONFIG:
-        heartbeat_seconds = max(10, APP_CONFIG.telemetry.prometheus_heartbeat_seconds)
+    if app_config:
+        heartbeat_seconds = max(10, app_config.telemetry.prometheus_heartbeat_seconds)
     stats["heartbeat_seconds"] = heartbeat_seconds
     last_ts = stats.get("last_ts")
     stats["next_ts"] = (last_ts + heartbeat_seconds * 1000) if last_ts else None
@@ -104,26 +116,27 @@ def get_telemetry_stats():
 
 
 @router.get("/api/rooms/{room_id}/state")
-async def get_room_state(room_id: str):
+async def get_room_state(
+    room_id: str,
+    topology: Annotated[Optional[Topology], Depends(get_topology_optional)],
+    catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
+    checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
+    planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
+):
     """Get room health state and rack states."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
-    TOPOLOGY = app_module.TOPOLOGY
-    CATALOG = app_module.CATALOG
-    CHECKS_LIBRARY = app_module.CHECKS_LIBRARY
-    PLANNER = app_module.PLANNER
-
-    if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
+    if not topology or not checks_library or not planner:
         return {"room_id": room_id, "state": "UNKNOWN", "racks": {}}
-    targets_by_check = app_module._collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
-    snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
+    targets_by_check = app_module._collect_check_targets(topology, catalog, checks_library)
+    snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
     rack_healths = snapshot.rack_states
 
     room_status = "OK"
     rack_ids = []
-    if TOPOLOGY:
-        for site in TOPOLOGY.sites:
+    if topology:
+        for site in topology.sites:
             for room in site.rooms:
                 if room.id == room_id:
                     for aisle in room.aisles:
@@ -143,21 +156,22 @@ async def get_room_state(room_id: str):
 
 
 @router.get("/api/racks/{rack_id}/state")
-async def get_rack_state(rack_id: str):
+async def get_rack_state(
+    rack_id: str,
+    topology: Annotated[Optional[Topology], Depends(get_topology_optional)],
+    catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
+    checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
+    planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
+):
     """Get rack health state and device metrics."""
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
     from rackscope.telemetry.prometheus import client as prom_client
 
-    TOPOLOGY = app_module.TOPOLOGY
-    CATALOG = app_module.CATALOG
-    CHECKS_LIBRARY = app_module.CHECKS_LIBRARY
-    PLANNER = app_module.PLANNER
-
-    if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
+    if not topology or not checks_library or not planner:
         return {"rack_id": rack_id, "state": "UNKNOWN", "metrics": {}, "nodes": {}}
-    targets_by_check = app_module._collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
-    snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
+    targets_by_check = app_module._collect_check_targets(topology, catalog, checks_library)
+    snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
     nodes_metrics = await prom_client.get_node_metrics(rack_id)
     pdu_metrics = await prom_client.get_pdu_metrics(rack_id)
 
