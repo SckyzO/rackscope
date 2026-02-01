@@ -15,9 +15,7 @@ from pydantic import ValidationError
 logger = logging.getLogger(__name__)
 
 
-async def validation_error_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
+async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """Handle Pydantic validation errors.
 
     Args:
@@ -46,9 +44,7 @@ async def validation_error_handler(
     )
 
 
-async def pydantic_validation_error_handler(
-    request: Request, exc: ValidationError
-) -> JSONResponse:
+async def pydantic_validation_error_handler(request: Request, exc: ValidationError) -> JSONResponse:
     """Handle generic Pydantic validation errors.
 
     Args:

@@ -49,9 +49,7 @@ def normalize_slurm_status(raw_status: str) -> tuple[str, bool]:
     return aliases.get(status, status), has_star
 
 
-def calculate_slurm_severity(
-    status: str, has_star: bool, status_map: Any
-) -> str:
+def calculate_slurm_severity(status: str, has_star: bool, status_map: Any) -> str:
     """Map Slurm status to severity level.
 
     Args:

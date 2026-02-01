@@ -4,7 +4,7 @@ Telemetry Router
 Endpoints for telemetry data, health states, and alerts.
 """
 
-from typing import Dict, List, Optional, Annotated
+from typing import Dict, Optional, Annotated
 
 from fastapi import APIRouter, Depends
 
@@ -35,12 +35,13 @@ async def get_global_stats(
 ):
     """Get global system statistics."""
     # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
     from rackscope.telemetry.prometheus import client as prom_client
 
     rack_healths: Dict[str, str] = {}
     if topology and checks_library and planner:
-        targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
+        targets_by_check = telemetry_service.collect_check_targets(
+            topology, catalog, checks_library
+        )
         snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
         rack_healths = snapshot.rack_states
     else:
@@ -114,7 +115,6 @@ async def get_room_state(
 ):
     """Get room health state and rack states."""
     # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
 
     if not topology or not checks_library or not planner:
         return {"room_id": room_id, "state": "UNKNOWN", "racks": {}}
@@ -154,7 +154,6 @@ async def get_rack_state(
 ):
     """Get rack health state and device metrics."""
     # Lazy import to avoid circular dependency
-    from rackscope.api import app as app_module
     from rackscope.telemetry.prometheus import client as prom_client
 
     if not topology or not checks_library or not planner:

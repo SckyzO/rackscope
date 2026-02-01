@@ -7,7 +7,7 @@ Unit tests for topology business logic.
 import pytest
 from pathlib import Path
 
-from rackscope.model.domain import Topology, Site, Room, Aisle, Rack, Device
+from rackscope.model.domain import Topology, Site, Room, Aisle, Rack
 from rackscope.model.catalog import (
     Catalog,
     DeviceTemplate,
@@ -153,13 +153,9 @@ def test_find_rack_location_not_found(sample_topology):
 
 def test_get_aisle_path_found(sample_app_config, sample_topology):
     """Test getting path to aisle YAML file."""
-    path = topology_service.get_aisle_path(
-        "room1", "aisle1", sample_app_config, sample_topology
-    )
+    path = topology_service.get_aisle_path("room1", "aisle1", sample_app_config, sample_topology)
     assert path is not None
-    expected = Path(
-        "config/topology/datacenters/site1/rooms/room1/aisles/aisle1/aisle.yaml"
-    )
+    expected = Path("config/topology/datacenters/site1/rooms/room1/aisles/aisle1/aisle.yaml")
     assert path == expected
 
 
@@ -175,9 +171,7 @@ def test_get_rack_path_aisle_rack(sample_app_config, sample_topology):
     """Test getting path to rack YAML file for aisle rack."""
     path = topology_service.get_rack_path("rack1", sample_app_config, sample_topology)
     assert path is not None
-    expected = Path(
-        "config/topology/datacenters/site1/rooms/room1/aisles/aisle1/racks/rack1.yaml"
-    )
+    expected = Path("config/topology/datacenters/site1/rooms/room1/aisles/aisle1/racks/rack1.yaml")
     assert path == expected
 
 
@@ -185,9 +179,7 @@ def test_get_rack_path_standalone(sample_app_config, sample_topology):
     """Test getting path to rack YAML file for standalone rack."""
     path = topology_service.get_rack_path("rack3", sample_app_config, sample_topology)
     assert path is not None
-    expected = Path(
-        "config/topology/datacenters/site1/rooms/room1/standalone_racks/rack3.yaml"
-    )
+    expected = Path("config/topology/datacenters/site1/rooms/room1/standalone_racks/rack3.yaml")
     assert path == expected
 
 

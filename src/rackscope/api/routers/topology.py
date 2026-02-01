@@ -4,7 +4,6 @@ Topology Router
 Endpoints for topology management (sites, rooms, aisles, racks, devices).
 """
 
-import re
 from pathlib import Path
 from typing import List, Optional, Dict, Annotated
 

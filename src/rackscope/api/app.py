@@ -35,6 +35,7 @@ from rackscope.services.instance_service import expand_device_instances
 from rackscope.services import telemetry_service
 from rackscope.logging_config import setup_logging, get_logger
 from rackscope.api import exceptions
+from rackscope.api.middleware import RequestLoggingMiddleware
 
 # Setup logging
 setup_logging()
@@ -156,6 +157,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
+
+# Register middleware
+app.add_middleware(RequestLoggingMiddleware)
 
 # Register exception handlers
 app.add_exception_handler(RequestValidationError, exceptions.validation_error_handler)
