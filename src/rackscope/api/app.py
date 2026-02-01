@@ -3,12 +3,14 @@ from __future__ import annotations
 import os
 import asyncio
 from contextlib import asynccontextmanager, suppress
-from typing import List, Optional, Dict
+from typing import Optional, Dict
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+from pydantic import ValidationError
 import httpx
 
-from rackscope.model.domain import Topology, Device
+from rackscope.model.domain import Topology
 from rackscope.model.catalog import Catalog
 from rackscope.model.checks import ChecksLibrary
 from rackscope.model.config import AppConfig
@@ -19,7 +21,6 @@ from rackscope.model.loader import (
     load_app_config,
 )
 from rackscope.telemetry.prometheus import client as prom_client
-from rackscope.telemetry.planner import _expand_nodes_pattern
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
 from rackscope.api.routers import (
     config,
@@ -33,6 +34,7 @@ from rackscope.api.routers import (
 from rackscope.services.instance_service import expand_device_instances
 from rackscope.services import telemetry_service
 from rackscope.logging_config import setup_logging, get_logger
+from rackscope.api import exceptions
 
 # Setup logging
 setup_logging()
@@ -154,6 +156,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
+
+# Register exception handlers
+app.add_exception_handler(RequestValidationError, exceptions.validation_error_handler)
+app.add_exception_handler(ValidationError, exceptions.pydantic_validation_error_handler)
+app.add_exception_handler(Exception, exceptions.generic_exception_handler)
 
 # Register routers
 app.include_router(config.router)
