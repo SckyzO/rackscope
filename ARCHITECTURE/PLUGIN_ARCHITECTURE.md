@@ -632,6 +632,456 @@ class KubernetesPlugin(RackscopePlugin):
 
 ---
 
+## Dashboard & Widget System
+
+### Overview
+
+A flexible dashboard/widget system allows users to compose custom views tailored to their datacenter operations. Widgets are self-contained UI components that can be provided by core or plugins.
+
+**Key Features**:
+- 📊 **Customizable Dashboards** - Users create personalized views
+- 🧩 **Plugin Widgets** - Plugins contribute widgets (Slurm dashboard, etc.)
+- 📐 **Responsive Layout** - Grid-based, drag-and-drop
+- 💾 **Persistent Config** - Save dashboard layouts
+- 🔄 **Real-time Updates** - WebSocket or polling
+- 🎨 **Themed Components** - Consistent design (Tailwind + shadcn)
+
+### Architecture
+
+```
+Dashboard System
+├── Dashboard Manager
+│   ├── Dashboard CRUD (create, read, update, delete)
+│   ├── Layout engine (grid positioning)
+│   └── Persistence (localStorage + backend)
+│
+├── Widget Registry
+│   ├── Core widgets (topology, health, metrics)
+│   ├── Plugin widgets (Slurm, custom)
+│   └── Widget metadata (size hints, config schema)
+│
+└── Widget Runtime
+    ├── Lifecycle (mount, update, unmount)
+    ├── Props/config injection
+    ├── Event bus (inter-widget communication)
+    └── Data fetching (API calls, subscriptions)
+```
+
+### Widget Definition
+
+**Widget Interface**:
+```typescript
+// frontend/src/types/widget.ts
+
+interface WidgetMetadata {
+  id: string;                    // "slurm-partition-chart"
+  name: string;                  // "Slurm Partition Usage"
+  category: string;              // "workload", "health", "metrics"
+  description: string;
+  icon?: string;                 // Icon name or component
+  defaultSize: {                 // Grid units
+    width: number;               // 1-12 columns
+    height: number;              // 1-N rows
+  };
+  configSchema?: JSONSchema;     // Widget-specific config
+  requiredPlugins?: string[];    // ["workload-slurm"]
+}
+
+interface WidgetProps {
+  config: Record<string, any>;   // User config
+  dashboardContext: {            // Shared dashboard state
+    timeRange?: TimeRange;
+    selectedRoom?: string;
+    refreshInterval?: number;
+  };
+  onConfigChange: (config: Record<string, any>) => void;
+  onResize?: (size: {width: number, height: number}) => void;
+}
+
+interface Widget {
+  metadata: WidgetMetadata;
+  component: React.ComponentType<WidgetProps>;
+}
+```
+
+### Core Widgets
+
+**Built-in widgets provided by core**:
+
+1. **Topology Overview** (`topology-overview`)
+   - Site/room health heatmap
+   - Config: `{view: "heatmap" | "list"}`
+
+2. **Rack Health Grid** (`rack-health-grid`)
+   - Visual rack grid with health colors
+   - Config: `{room_id: string, layout: "grid" | "list"}`
+
+3. **Active Alerts** (`active-alerts`)
+   - List of CRIT/WARN alerts
+   - Config: `{severity: ["CRIT", "WARN"], limit: 10}`
+
+4. **Metrics Chart** (`metrics-chart`)
+   - Time-series chart for any metric
+   - Config: `{metric: string, aggregation: "avg" | "sum"}`
+
+5. **Device List** (`device-list`)
+   - Filterable device table
+   - Config: `{room_id?: string, device_type?: string}`
+
+6. **System Health** (`system-health`)
+   - Global health indicators (OK/WARN/CRIT counts)
+   - Config: `{refresh_seconds: 30}`
+
+### Plugin Widgets
+
+**Plugins register widgets via metadata**:
+
+```python
+# src/rackscope/plugins/workload/slurm/plugin.py
+
+class SlurmPlugin(RackscopePlugin):
+    def register_widgets(self) -> List[WidgetDefinition]:
+        """Provide Slurm-specific widgets"""
+        return [
+            WidgetDefinition(
+                id="slurm-partition-chart",
+                name="Slurm Partition Usage",
+                category="workload",
+                component_path="slurm/widgets/PartitionChart.tsx",
+                default_size={"width": 6, "height": 4},
+                config_schema={
+                    "type": "object",
+                    "properties": {
+                        "partition": {"type": "string"},
+                        "chart_type": {"enum": ["bar", "pie"]}
+                    }
+                }
+            ),
+            WidgetDefinition(
+                id="slurm-node-status",
+                name="Slurm Node Status",
+                category="workload",
+                component_path="slurm/widgets/NodeStatus.tsx",
+                default_size={"width": 6, "height": 3},
+            ),
+            WidgetDefinition(
+                id="slurm-job-queue",
+                name="Job Queue",
+                category="workload",
+                component_path="slurm/widgets/JobQueue.tsx",
+                default_size={"width": 12, "height": 6},
+            ),
+        ]
+```
+
+**Frontend loads plugin widgets dynamically**:
+```typescript
+// frontend/src/lib/widgetLoader.ts
+
+async function loadPluginWidgets(): Promise<Widget[]> {
+  // Fetch available plugins from API
+  const plugins = await fetch("/api/plugins").then(r => r.json());
+
+  const widgets: Widget[] = [];
+
+  for (const plugin of plugins.enabled) {
+    // Get widget definitions from plugin
+    const widgetDefs = await fetch(`/api/plugins/${plugin.id}/widgets`)
+      .then(r => r.json());
+
+    for (const def of widgetDefs) {
+      // Dynamic import of widget component
+      const module = await import(
+        `../plugins/${plugin.id}/widgets/${def.component}`
+      );
+
+      widgets.push({
+        metadata: def.metadata,
+        component: module.default,
+      });
+    }
+  }
+
+  return widgets;
+}
+```
+
+### Dashboard Configuration
+
+**Dashboard Schema**:
+```typescript
+interface Dashboard {
+  id: string;
+  name: string;
+  description?: string;
+  isDefault?: boolean;          // User's default dashboard
+  isShared?: boolean;           // Shared across users
+  owner?: string;               // User ID
+  layout: WidgetLayout[];
+  filters?: DashboardFilters;   // Global filters
+  refreshInterval?: number;     // Auto-refresh (seconds)
+}
+
+interface WidgetLayout {
+  id: string;                   // Unique widget instance ID
+  widgetType: string;           // "slurm-partition-chart"
+  position: {
+    x: number;                  // Grid column (0-11)
+    y: number;                  // Grid row
+    width: number;              // Columns (1-12)
+    height: number;             // Rows
+  };
+  config: Record<string, any>;  // Widget-specific config
+}
+
+interface DashboardFilters {
+  timeRange?: {
+    start: string;
+    end: string;
+  };
+  rooms?: string[];             // Filter to specific rooms
+  severity?: string[];          // Filter alerts by severity
+}
+```
+
+**Example Dashboard Config**:
+```json
+{
+  "id": "ops-overview",
+  "name": "Operations Overview",
+  "isDefault": true,
+  "layout": [
+    {
+      "id": "widget-1",
+      "widgetType": "system-health",
+      "position": {"x": 0, "y": 0, "width": 3, "height": 2},
+      "config": {"refresh_seconds": 30}
+    },
+    {
+      "id": "widget-2",
+      "widgetType": "active-alerts",
+      "position": {"x": 3, "y": 0, "width": 9, "height": 2},
+      "config": {"severity": ["CRIT", "WARN"], "limit": 10}
+    },
+    {
+      "id": "widget-3",
+      "widgetType": "slurm-partition-chart",
+      "position": {"x": 0, "y": 2, "width": 6, "height": 4},
+      "config": {"chart_type": "bar"}
+    },
+    {
+      "id": "widget-4",
+      "widgetType": "rack-health-grid",
+      "position": {"x": 6, "y": 2, "width": 6, "height": 4},
+      "config": {"room_id": "room1", "layout": "grid"}
+    }
+  ],
+  "refreshInterval": 60
+}
+```
+
+### Persistence & API
+
+**Dashboard Management Endpoints**:
+
+```
+GET    /api/dashboards              # List user's dashboards
+GET    /api/dashboards/{id}         # Get specific dashboard
+POST   /api/dashboards              # Create new dashboard
+PUT    /api/dashboards/{id}         # Update dashboard
+DELETE /api/dashboards/{id}         # Delete dashboard
+POST   /api/dashboards/{id}/clone   # Duplicate dashboard
+GET    /api/dashboards/default      # Get user's default
+PUT    /api/dashboards/{id}/default # Set as default
+```
+
+**Widget Catalog Endpoint**:
+```
+GET /api/widgets                    # List all available widgets
+{
+  "core": [
+    {"id": "system-health", "name": "System Health", ...},
+    {"id": "active-alerts", ...}
+  ],
+  "plugins": {
+    "workload-slurm": [
+      {"id": "slurm-partition-chart", ...},
+      {"id": "slurm-node-status", ...}
+    ]
+  }
+}
+```
+
+**Storage Strategy**:
+1. **User Dashboards** → Database (PostgreSQL, SQLite)
+2. **Shared Dashboards** → Database (team/org level)
+3. **Default Templates** → YAML files in `config/dashboards/`
+4. **Cache** → localStorage (frontend performance)
+
+### Layout Engine
+
+**Grid System** (12 columns):
+```typescript
+// Using react-grid-layout or custom implementation
+
+<GridLayout
+  cols={12}
+  rowHeight={60}
+  width={1200}
+  isDraggable={editMode}
+  isResizable={editMode}
+  onLayoutChange={handleLayoutChange}
+>
+  {widgets.map(widget => (
+    <WidgetContainer
+      key={widget.id}
+      data-grid={widget.position}
+    >
+      <Widget {...widget} />
+    </WidgetContainer>
+  ))}
+</GridLayout>
+```
+
+**Responsive Breakpoints**:
+- Desktop (>1200px): 12 columns
+- Tablet (768-1200px): 6 columns
+- Mobile (<768px): 1 column (stacked)
+
+### Widget Communication
+
+**Event Bus Pattern**:
+```typescript
+// Widgets can communicate via event bus
+
+interface WidgetEvent {
+  source: string;               // Widget ID that emitted event
+  type: string;                 // Event type
+  payload: any;                 // Event data
+}
+
+// Example: Room selection propagation
+function RackHealthWidget({config, eventBus}: WidgetProps) {
+  const handleRackClick = (rackId: string) => {
+    // Emit event when rack is clicked
+    eventBus.emit({
+      source: "rack-health-grid",
+      type: "rack.selected",
+      payload: {rackId}
+    });
+  };
+
+  // Listen to room selection from other widgets
+  useEffect(() => {
+    const unsubscribe = eventBus.on("room.selected", (event) => {
+      setSelectedRoom(event.payload.roomId);
+    });
+    return unsubscribe;
+  }, []);
+}
+```
+
+**Shared Context** (Dashboard-level state):
+```typescript
+// Dashboard provides shared context to all widgets
+const dashboardContext = {
+  timeRange: {start: "now-1h", end: "now"},
+  selectedRoom: "room1",
+  refreshInterval: 60,
+  filters: {severity: ["CRIT", "WARN"]}
+};
+
+// Widgets read from context
+function MetricsWidget({dashboardContext}: WidgetProps) {
+  const {timeRange, selectedRoom} = dashboardContext;
+  // Fetch metrics for selected room and time range
+}
+```
+
+### User Experience
+
+**Dashboard Builder** (Edit Mode):
+1. **Widget Palette** - Sidebar with available widgets
+2. **Drag & Drop** - Add widgets to grid
+3. **Resize Handles** - Adjust widget size
+4. **Config Panel** - Click widget → settings panel
+5. **Save/Cancel** - Persist changes
+
+**View Mode**:
+1. **Full-screen widgets** - Click to expand
+2. **Auto-refresh** - Configurable interval
+3. **Dashboard switcher** - Quick switch between dashboards
+4. **Share** - Generate shareable link
+
+**Templates**:
+```yaml
+# config/dashboards/default-ops.yaml
+name: Operations Overview
+description: Default dashboard for datacenter operations
+is_template: true
+layout:
+  - widget_type: system-health
+    position: {x: 0, y: 0, width: 3, height: 2}
+  - widget_type: active-alerts
+    position: {x: 3, y: 0, width: 9, height: 2}
+    config:
+      severity: [CRIT, WARN]
+      limit: 10
+```
+
+### Example Use Cases
+
+**1. Operations Team Dashboard**:
+- System health overview
+- Active alerts (CRIT/WARN)
+- Slurm job queue
+- Rack health heatmap
+
+**2. Capacity Planning Dashboard**:
+- Power usage trends (PDU metrics)
+- Compute utilization (Slurm)
+- Available U-space per rack
+- Growth projections
+
+**3. Executive Dashboard**:
+- High-level health indicators
+- Uptime SLA metrics
+- Cost per rack
+- Incident summary
+
+**4. Room-Specific Dashboard**:
+- Single room focus
+- All racks in room
+- Environmental (temp, humidity)
+- Power distribution
+
+### Implementation Phases
+
+**Phase 7A: Dashboard Foundation** (3-4 days)
+1. Dashboard data model & API
+2. Grid layout engine
+3. Widget registry
+4. Basic core widgets (3-4)
+
+**Phase 7B: Widget System** (2-3 days)
+1. Widget lifecycle
+2. Config/props injection
+3. Event bus
+4. Storage (localStorage + API)
+
+**Phase 7C: Dashboard Builder** (3-4 days)
+1. Edit mode UI
+2. Widget palette
+3. Drag & drop
+4. Config panel
+
+**Phase 7D: Plugin Widgets** (1-2 days per plugin)
+1. Slurm widgets
+2. Plugin widget loader
+3. Dynamic imports
+
+---
+
 ## Benefits
 
 ### For Users
@@ -688,6 +1138,8 @@ class KubernetesPlugin(RackscopePlugin):
 
 ## Questions to Resolve
 
+### Plugin System
+
 1. **Plugin Distribution**:
    - Bundled with core? (`rackscope[slurm]`)
    - Separate packages? (`rackscope-plugin-slurm`)
@@ -705,6 +1157,38 @@ class KubernetesPlugin(RackscopePlugin):
 4. **Backwards Compatibility**:
    - Support old API during transition?
    - Migration timeline?
+
+### Dashboard & Widgets
+
+5. **Dashboard Storage**:
+   - Database backend (PostgreSQL, SQLite)?
+   - File-based (YAML)?
+   - Hybrid (templates in files, user dashboards in DB)?
+
+6. **Widget Communication**:
+   - Event bus pattern (pub/sub)?
+   - Shared context only?
+   - Both?
+
+7. **Layout Library**:
+   - Use react-grid-layout?
+   - Custom implementation?
+   - CSS Grid + state management?
+
+8. **Default Dashboards**:
+   - Ship with pre-built templates?
+   - Which templates (ops, exec, capacity)?
+   - User can customize or clone?
+
+9. **Dashboard Sharing**:
+   - User-level only?
+   - Team/org-level sharing?
+   - Public dashboards (read-only)?
+
+10. **Widget Refresh Strategy**:
+    - Per-widget refresh interval?
+    - Dashboard-level interval?
+    - WebSocket for real-time updates?
 
 ---
 
