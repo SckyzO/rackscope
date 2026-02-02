@@ -12,6 +12,14 @@ from fastapi.testclient import TestClient
 from rackscope.api.app import app
 from rackscope.model.config import AppConfig, PathsConfig, SlurmConfig
 from rackscope.model.domain import Aisle, Device, Rack, Room, Site, Topology
+from rackscope.plugins.registry import registry
+from rackscope.plugins.slurm import SlurmPlugin
+
+# Register Slurm plugin for tests
+if not registry.get_plugin("slurm"):
+    slurm_plugin = SlurmPlugin()
+    registry.register(slurm_plugin)
+    slurm_plugin.register_routes(app)
 
 client = TestClient(app)
 

@@ -24,13 +24,13 @@ from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
 from rackscope.plugins.registry import registry as plugin_registry
 from rackscope.plugins.simulator import SimulatorPlugin
+from rackscope.plugins.slurm import SlurmPlugin
 from rackscope.api.routers import (
     config,
     catalog,
     checks,
     topology,
     telemetry,
-    slurm,
     plugins,
 )
 from rackscope.services.instance_service import expand_device_instances
@@ -160,6 +160,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to register Simulator plugin: {e}", exc_info=True)
 
+    try:
+        slurm_plugin = SlurmPlugin()
+        plugin_registry.register(slurm_plugin)
+        logger.info("Registered Slurm plugin")
+    except Exception as e:
+        logger.error(f"Failed to register Slurm plugin: {e}", exc_info=True)
+
     # Initialize plugin system
     try:
         await plugin_registry.initialize(app)
@@ -195,11 +202,11 @@ app.add_exception_handler(Exception, exceptions.generic_exception_handler)
 # Register routers
 app.include_router(config.router)
 # Simulator router now registered as plugin
+# Slurm router now registered as plugin
 app.include_router(catalog.router)
 app.include_router(checks.router)
 app.include_router(topology.router)
 app.include_router(telemetry.router)
-app.include_router(slurm.router)
 app.include_router(plugins.router)
 
 
