@@ -14,6 +14,7 @@ from rackscope.model.checks import ChecksLibrary
 from rackscope.model.config import AppConfig
 from rackscope.telemetry.planner import TelemetryPlanner
 from rackscope.services import topology_service
+from rackscope.services.instance_service import expand_device_instances
 from rackscope.api.dependencies import (
     get_topology_optional,
     get_catalog_optional,
@@ -187,7 +188,21 @@ async def get_rack_state(
 
     node_states = []
 
-    for node_id, m in nodes_metrics.items():
+    # Get all nodes from this rack (from snapshot or metrics)
+    all_node_ids = set(nodes_metrics.keys()) | set(snapshot.node_states.keys())
+
+    # Filter to only nodes that belong to this rack
+    rack_node_ids = set()
+    if rack:
+        for device in rack.devices:
+            rack_node_ids.update(expand_device_instances(device))
+
+    # Only process nodes that belong to this rack
+    relevant_nodes = all_node_ids & rack_node_ids if rack_node_ids else all_node_ids
+
+    for node_id in relevant_nodes:
+        m = nodes_metrics.get(node_id, {})
+
         # Support various metric naming conventions
         temp = (
             m.get("temperature")
