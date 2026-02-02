@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Rackscope is a **Prometheus-first physical infrastructure monitoring dashboard** for data centers and HPC environments. It provides visual monitoring of the physical hierarchy (Site → Room → Aisle → Rack → Device → Instance) **without owning a CMDB or collecting metrics itself**.
 
-**Current Development Phase**: Phase 5 completed, Phase 6 (Backend Plugin Architecture) and Phase 7 (Frontend Rebuild) planned
+**Current Development Phase**: Phase 6 (Backend Plugin Architecture) completed, Phase 7 (Frontend Rebuild) planned
 
 ### Core Philosophy (NON-NEGOTIABLE)
 
@@ -217,6 +217,38 @@ make build
 
 **Backend runs on**: `http://localhost:8000`
 **API docs**: `http://localhost:8000/docs` (Swagger UI)
+
+#### Plugin System
+
+**Location**: `src/rackscope/plugins/`
+
+The backend now uses a **plugin architecture** to separate core functionality from optional features:
+
+**Core System** (always active):
+- Physical topology visualization
+- Prometheus telemetry integration
+- Health checks and alerting
+- YAML editors
+
+**Plugins** (can be enabled/disabled):
+- `SimulatorPlugin`: Demo mode with metric overrides and test scenarios
+- `SlurmPlugin`: Workload manager integration (node states, partitions, job tracking)
+
+**Plugin Infrastructure:**
+- `plugins/base.py`: RackscopePlugin abstract base class, MenuSection/MenuItem models
+- `plugins/registry.py`: PluginRegistry for lifecycle management (register, initialize, shutdown)
+- `api/routers/plugins.py`: API endpoints for plugin discovery (`/api/plugins`, `/api/plugins/menu`)
+
+**Plugin Capabilities:**
+- Register custom API routes via `register_routes(app)`
+- Contribute menu sections via `register_menu_sections()` for frontend navigation
+- Lifecycle hooks: `on_startup()`, `on_shutdown()`
+- Dynamic menu ordering (Workload=50, Simulator=200)
+
+**Adding a New Plugin:**
+1. Create `src/rackscope/plugins/{name}/plugin.py` implementing `RackscopePlugin`
+2. Register in `api/app.py` lifespan: `registry.register(YourPlugin())`
+3. Plugin routes and menu sections are auto-registered during `initialize()`
 
 ### Frontend (React / TypeScript / Vite)
 
@@ -770,14 +802,14 @@ Rackscope follows a phased development plan:
 - **Phase 3**: ✅ Service Layer (business logic separation)
 - **Phase 4**: ✅ Logging & Error Handling (structured logging, error tracking)
 - **Phase 5**: ✅ Test Coverage (36% → 66%, 251 tests)
+- **Phase 6**: ✅ Backend Plugin Architecture (7 days, 311 tests)
+  - ✅ Generic metrics collection (template-driven, removed 105 lines of hardcoded queries)
+  - ✅ Plugin foundation (RackscopePlugin, PluginRegistry, menu system)
+  - ✅ SimulatorPlugin (demo mode with overrides)
+  - ✅ SlurmPlugin (workload manager integration)
+  - See `ARCHITECTURE/plans/CONSOLIDATED_ROADMAP.md`
 
 ### Planned Phases
-- **Phase 6**: 📅 Backend Plugin Architecture (1 week)
-  - Extract simulator and Slurm as plugins
-  - Create plugin base class and registry
-  - Fix template system (remove hardcoded metrics)
-  - Generic metrics collection from RackComponentTemplate
-  - See `ARCHITECTURE/phases/PHASE_6_BACKEND_PLAN.md`
 
 - **Phase 7**: 📅 Frontend Rebuild (3 weeks)
   - React + Tailwind CSS + shadcn/ui
