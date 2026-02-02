@@ -1,0 +1,219 @@
+"""Simulator Plugin - Demo mode for rackscope."""
+
+import time
+from pathlib import Path
+from typing import Annotated, Any, Optional
+import logging
+
+import yaml
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
+
+from rackscope.plugins.base import RackscopePlugin, MenuSection, MenuItem
+from rackscope.api.dependencies import get_app_config_optional
+from rackscope.model.config import AppConfig
+
+logger = logging.getLogger(__name__)
+
+
+class SimulatorPlugin(RackscopePlugin):
+    """
+    Simulator Plugin
+
+    Provides demo/testing capabilities with metric overrides and scenarios.
+    """
+
+    def __init__(self):
+        self._router = APIRouter(prefix="/api/simulator", tags=["simulator"])
+        self._setup_routes()
+
+    @property
+    def plugin_id(self) -> str:
+        return "simulator"
+
+    @property
+    def plugin_name(self) -> str:
+        return "Simulator"
+
+    @property
+    def version(self) -> str:
+        return "1.0.0"
+
+    @property
+    def description(self) -> str:
+        return "Demo mode with metric overrides and test scenarios"
+
+    @property
+    def author(self) -> str:
+        return "Rackscope Team"
+
+    def _setup_routes(self) -> None:
+        """Setup all simulator routes."""
+
+        @self._router.get("/overrides")
+        def get_simulator_overrides(
+            app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+        ):
+            """Get all active simulator overrides."""
+            return {"overrides": self._load_overrides(app_config)}
+
+        @self._router.get("/scenarios")
+        def get_simulator_scenarios():
+            """Get available simulator scenarios."""
+            sim_path = Path("config/simulator.yaml")
+            if not sim_path.exists():
+                return {"scenarios": []}
+            try:
+                data = yaml.safe_load(sim_path.read_text()) or {}
+            except yaml.YAMLError as exc:
+                logger.warning(f"Failed to load simulator scenarios: {exc}")
+                return {"scenarios": []}
+            scenarios = data.get("scenarios") if isinstance(data, dict) else {}
+            if not isinstance(scenarios, dict):
+                return {"scenarios": []}
+            payload = []
+            for name in sorted(scenarios.keys()):
+                entry = scenarios.get(name) if isinstance(scenarios.get(name), dict) else {}
+                payload.append(
+                    {
+                        "name": name,
+                        "description": entry.get("description")
+                        if isinstance(entry, dict)
+                        else None,
+                    }
+                )
+            return {"scenarios": payload}
+
+        @self._router.post("/overrides")
+        def add_simulator_override(
+            payload: dict,
+            app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+        ):
+            """Add a new simulator override."""
+            valid_metrics = {
+                "up",
+                "node_temperature_celsius",
+                "node_power_watts",
+                "node_load_percent",
+                "node_health_status",
+                "rack_down",
+            }
+            instance = payload.get("instance")
+            rack_id = payload.get("rack_id")
+            metric = payload.get("metric")
+            value = payload.get("value")
+            ttl = payload.get("ttl_seconds")
+            if not metric:
+                raise HTTPException(status_code=400, detail="metric is required")
+            if metric not in valid_metrics:
+                raise HTTPException(status_code=400, detail="metric is not supported")
+            if not instance and not rack_id:
+                raise HTTPException(status_code=400, detail="instance or rack_id is required")
+            if rack_id and metric != "rack_down":
+                raise HTTPException(status_code=400, detail="rack overrides only support rack_down")
+            if instance and metric == "rack_down":
+                raise HTTPException(status_code=400, detail="rack_down requires rack_id")
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="value must be numeric")
+            if metric == "node_health_status" and value not in (0, 1, 2):
+                raise HTTPException(status_code=400, detail="node_health_status must be 0, 1, or 2")
+            if metric == "up" and value not in (0, 1):
+                raise HTTPException(status_code=400, detail="up must be 0 or 1")
+            override_id = (
+                payload.get("id") or f"{(instance or rack_id)}-{metric}-{int(time.time())}"
+            )
+            override = {
+                "id": override_id,
+                "instance": instance,
+                "rack_id": rack_id,
+                "metric": metric,
+                "value": value,
+            }
+            default_ttl = None
+            if app_config and getattr(app_config, "simulator", None):
+                default_ttl = getattr(app_config.simulator, "default_ttl_seconds", None)
+            ttl_val = ttl if ttl is not None else default_ttl
+            if ttl_val is not None:
+                try:
+                    ttl_val = int(ttl_val)
+                except (TypeError, ValueError):
+                    raise HTTPException(status_code=400, detail="ttl_seconds must be int")
+                if ttl_val < 0:
+                    raise HTTPException(status_code=400, detail="ttl_seconds must be >= 0")
+                if ttl_val > 0:
+                    override["expires_at"] = int(time.time()) + ttl_val
+            overrides = self._load_overrides(app_config)
+            overrides.append(override)
+            self._save_overrides(overrides, app_config)
+            return {"overrides": overrides}
+
+        @self._router.delete("/overrides")
+        def clear_simulator_overrides(
+            app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+        ):
+            """Clear all simulator overrides."""
+            self._save_overrides([], app_config)
+            return {"overrides": []}
+
+        @self._router.delete("/overrides/{override_id}")
+        def delete_simulator_override(
+            override_id: str,
+            app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+        ):
+            """Delete a specific simulator override."""
+            overrides = self._load_overrides(app_config)
+            next_overrides = [o for o in overrides if o.get("id") != override_id]
+            self._save_overrides(next_overrides, app_config)
+            return {"overrides": next_overrides}
+
+    def _overrides_path(self, app_config: Optional[AppConfig]) -> Path:
+        """Get path to simulator overrides file."""
+        if app_config and getattr(app_config, "simulator", None):
+            return Path(app_config.simulator.overrides_path)
+        return Path("config/simulator_overrides.yaml")
+
+    def _load_overrides(self, app_config: Optional[AppConfig]) -> list[dict[str, Any]]:
+        """Load simulator overrides from YAML file."""
+        path = self._overrides_path(app_config)
+        if not path.exists():
+            return []
+        try:
+            data = yaml.safe_load(path.read_text()) or {}
+        except yaml.YAMLError as exc:
+            logger.warning(f"Failed to load overrides: {exc}")
+            return []
+        return data.get("overrides", []) if isinstance(data, dict) else []
+
+    def _save_overrides(
+        self, overrides: list[dict[str, Any]], app_config: Optional[AppConfig]
+    ) -> None:
+        """Save simulator overrides to YAML file."""
+        path = self._overrides_path(app_config)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {"overrides": overrides}
+        with path.open("w") as f:
+            yaml.safe_dump(payload, f, sort_keys=False)
+
+    def register_routes(self, app: FastAPI) -> None:
+        """Register simulator routes."""
+        app.include_router(self._router)
+
+    def register_menu_sections(self):
+        """Register simulator menu section."""
+        return [
+            MenuSection(
+                id="simulator",
+                label="Simulator",
+                icon="Sparkles",
+                order=200,
+                items=[
+                    MenuItem(
+                        id="simulator-control",
+                        label="Control Panel",
+                        path="/simulator",
+                        icon="Sliders",
+                    ),
+                ],
+            )
+        ]

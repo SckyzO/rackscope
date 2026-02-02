@@ -23,9 +23,9 @@ from rackscope.model.loader import (
 from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
 from rackscope.plugins.registry import registry as plugin_registry
+from rackscope.plugins.simulator import SimulatorPlugin
 from rackscope.api.routers import (
     config,
-    simulator,
     catalog,
     checks,
     topology,
@@ -152,6 +152,14 @@ async def lifespan(app: FastAPI):
 
     PROMETHEUS_HEARTBEAT = asyncio.create_task(_heartbeat())
 
+    # Register plugins
+    try:
+        simulator_plugin = SimulatorPlugin()
+        plugin_registry.register(simulator_plugin)
+        logger.info("Registered Simulator plugin")
+    except Exception as e:
+        logger.error(f"Failed to register Simulator plugin: {e}", exc_info=True)
+
     # Initialize plugin system
     try:
         await plugin_registry.initialize(app)
@@ -186,7 +194,7 @@ app.add_exception_handler(Exception, exceptions.generic_exception_handler)
 
 # Register routers
 app.include_router(config.router)
-app.include_router(simulator.router)
+# Simulator router now registered as plugin
 app.include_router(catalog.router)
 app.include_router(checks.router)
 app.include_router(topology.router)
