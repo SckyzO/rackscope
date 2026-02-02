@@ -35,9 +35,6 @@ async def get_global_stats(
     planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
 ):
     """Get global system statistics."""
-    # Lazy import to avoid circular dependency
-    from rackscope.telemetry.prometheus import client as prom_client
-
     rack_healths: Dict[str, str] = {}
     if topology and checks_library and planner:
         targets_by_check = telemetry_service.collect_check_targets(
@@ -46,7 +43,8 @@ async def get_global_stats(
         snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
         rack_healths = snapshot.rack_states
     else:
-        rack_healths = await prom_client.get_rack_health_summary()
+        # Without planner/checks, we can't evaluate health properly
+        rack_healths = {}
 
     total_racks = 0
     crit_alerts = 0
@@ -166,11 +164,16 @@ async def get_rack_state(
 
     targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
     snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
-    nodes_metrics = await prom_client.get_node_metrics(rack_id)
 
-    # Collect component metrics (PDU, switches, etc.) using template-driven approach
+    # Collect metrics using template-driven approach
+    nodes_metrics = {}
     component_metrics = {}
     if rack and catalog:
+        # Collect device metrics (nodes)
+        nodes_metrics = await metrics_service.collect_rack_devices_metrics(
+            rack=rack, catalog=catalog, prom_client=prom_client
+        )
+        # Collect component metrics (PDU, switches, etc.)
         component_metrics = await metrics_service.collect_rack_component_metrics(
             rack=rack, catalog=catalog, prom_client=prom_client
         )
@@ -185,8 +188,13 @@ async def get_rack_state(
     node_states = []
 
     for node_id, m in nodes_metrics.items():
-        temp = m.get("temperature")
-        power = m.get("power")
+        # Support various metric naming conventions
+        temp = (
+            m.get("temperature")
+            or m.get("node_temperature_celsius")
+            or m.get("ipmi_temperature_celsius")
+        )
+        power = m.get("power") or m.get("node_power_watts") or m.get("ipmi_power_watts")
 
         if power is not None:
             total_power += power

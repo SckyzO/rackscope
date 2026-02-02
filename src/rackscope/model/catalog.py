@@ -30,6 +30,7 @@ class DeviceTemplate(BaseModel):
     rear_layout: Optional[LayoutConfig] = None
     rear_components: List[DeviceRearComponent] = Field(default_factory=list)
     checks: List[str] = Field(default_factory=list)
+    metrics: List[str] = Field(default_factory=list)  # Metrics to collect for this device type
 
 
 # --- Rack Infrastructure Templates ---

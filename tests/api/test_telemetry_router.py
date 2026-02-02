@@ -423,16 +423,16 @@ async def test_get_rack_state_success(
     app.dependency_overrides[get_planner_optional] = override_planner(mock_planner)
 
     with (
-        patch("rackscope.telemetry.prometheus.client") as mock_client,
-        patch("rackscope.services.metrics_service.collect_rack_component_metrics") as mock_collect,
+        patch("rackscope.services.metrics_service.collect_rack_devices_metrics") as mock_devices,
+        patch(
+            "rackscope.services.metrics_service.collect_rack_component_metrics"
+        ) as mock_components,
     ):
-        mock_client.get_node_metrics = AsyncMock(
-            return_value={
-                "node01": {"temperature": 65.0, "power": 250.0},
-                "node02": {"temperature": 70.0, "power": 300.0},
-            }
-        )
-        mock_collect.return_value = {"pdu-left": {"activepower_watt": 550.0}}
+        mock_devices.return_value = {
+            "node01": {"node_temperature_celsius": 65.0, "node_power_watts": 250.0},
+            "node02": {"node_temperature_celsius": 70.0, "node_power_watts": 300.0},
+        }
+        mock_components.return_value = {"pdu-left": {"activepower_watt": 550.0}}
 
         response = client.get("/api/racks/rack01/state")
 
@@ -469,11 +469,13 @@ async def test_get_rack_state_with_alerts(mock_topology, mock_catalog, mock_chec
     app.dependency_overrides[get_planner_optional] = override_planner(planner)
 
     with (
-        patch("rackscope.telemetry.prometheus.client") as mock_client,
-        patch("rackscope.services.metrics_service.collect_rack_component_metrics") as mock_collect,
+        patch("rackscope.services.metrics_service.collect_rack_devices_metrics") as mock_devices,
+        patch(
+            "rackscope.services.metrics_service.collect_rack_component_metrics"
+        ) as mock_components,
     ):
-        mock_client.get_node_metrics = AsyncMock(return_value={"node01": {"temperature": 85.0}})
-        mock_collect.return_value = {}
+        mock_devices.return_value = {"node01": {"node_temperature_celsius": 85.0}}
+        mock_components.return_value = {}
 
         response = client.get("/api/racks/rack01/state")
 
@@ -519,11 +521,13 @@ async def test_get_rack_state_no_metrics(
     app.dependency_overrides[get_planner_optional] = override_planner(mock_planner)
 
     with (
-        patch("rackscope.telemetry.prometheus.client") as mock_client,
-        patch("rackscope.services.metrics_service.collect_rack_component_metrics") as mock_collect,
+        patch("rackscope.services.metrics_service.collect_rack_devices_metrics") as mock_devices,
+        patch(
+            "rackscope.services.metrics_service.collect_rack_component_metrics"
+        ) as mock_components,
     ):
-        mock_client.get_node_metrics = AsyncMock(return_value={})
-        mock_collect.return_value = {}
+        mock_devices.return_value = {}
+        mock_components.return_value = {}
 
         response = client.get("/api/racks/rack01/state")
 

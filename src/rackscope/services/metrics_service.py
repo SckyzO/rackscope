@@ -1,16 +1,17 @@
 """
-Generic metrics collection service for rack components.
+Generic metrics collection service for rack components and devices.
 
-This service replaces hardcoded metric collection (like get_pdu_metrics) with
-a template-driven approach where metrics are defined in RackComponentTemplate.
+This service replaces hardcoded metric collection (like get_pdu_metrics, get_node_metrics)
+with a template-driven approach where metrics are defined in templates.
 """
 
 import asyncio
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
-from rackscope.model.catalog import Catalog, RackComponentRef, RackComponentTemplate
-from rackscope.model.domain import Rack
+from rackscope.model.catalog import Catalog, RackComponentRef, RackComponentTemplate, DeviceTemplate
+from rackscope.model.domain import Rack, Device
+from rackscope.services.instance_service import expand_device_instances
 from rackscope.telemetry.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
@@ -213,5 +214,170 @@ async def collect_rack_component_metrics(
 
         if metrics:
             all_metrics[component_id] = metrics
+
+    return all_metrics
+
+
+# --- Device Metrics Collection ---
+
+
+async def collect_device_metrics(
+    device: Device,
+    rack_id: str,
+    template: DeviceTemplate,
+    prom_client: PrometheusClient,
+) -> Dict[str, Dict[str, float]]:
+    """
+    Collect metrics for a single device based on its template.
+
+    This function replaces hardcoded get_node_metrics() logic.
+
+    Args:
+        device: The device to collect metrics for
+        rack_id: ID of the rack containing the device
+        template: Device template with metrics list
+        prom_client: Prometheus client
+
+    Returns:
+        Dictionary mapping instance names to their metrics
+        Example: {
+            "node01": {"temperature": 65.0, "power": 250.0},
+            "node02": {"temperature": 70.0, "power": 300.0}
+        }
+    """
+    if not template.metrics:
+        return {}
+
+    # Get all instances for this device
+    instances = expand_device_instances(device)
+
+    # Build queries for all metrics
+    queries = {}
+    for metric_name in template.metrics:
+        query = build_device_metric_query(
+            metric_name=metric_name,
+            rack_id=rack_id,
+            instances=instances,
+        )
+        if query:
+            queries[metric_name] = query
+
+    # Execute all queries in parallel
+    all_instances_metrics: Dict[str, Dict[str, float]] = {}
+    try:
+        responses = await asyncio.gather(
+            *[prom_client.query(query) for query in queries.values()],
+            return_exceptions=True,
+        )
+    except Exception as e:
+        logger.error(f"Error fetching device metrics for {device.id}: {e}")
+        return all_instances_metrics
+
+    # Parse responses - extract per-instance values
+    for metric_name, response in zip(queries.keys(), responses):
+        if isinstance(response, Exception):
+            logger.error(f"Error fetching metric {metric_name} for {device.id}: {response}")
+            continue
+
+        # Parse Prometheus response to get per-instance values
+        if not isinstance(response, dict) or response.get("status") != "success":
+            continue
+
+        result_data = response.get("data", {}).get("result", [])
+        for item in result_data:
+            metric_labels = item.get("metric", {})
+            instance_name = metric_labels.get("instance") or metric_labels.get("node_id")
+
+            if not instance_name:
+                continue
+
+            try:
+                value_str = item.get("value", [None, "0"])[1]
+                value = float(value_str)
+            except (TypeError, ValueError, IndexError) as e:
+                logger.debug(f"Failed to parse metric value: {e}")
+                continue
+
+            # Add metric to instance
+            if instance_name not in all_instances_metrics:
+                all_instances_metrics[instance_name] = {}
+            all_instances_metrics[instance_name][metric_name] = value
+
+    return all_instances_metrics
+
+
+def build_device_metric_query(
+    metric_name: str,
+    rack_id: str,
+    instances: List[str],
+) -> Optional[str]:
+    """
+    Build a Prometheus query for a device metric.
+
+    Args:
+        metric_name: Name of the metric (e.g., "node_temperature_celsius")
+        rack_id: ID of the rack containing the device
+        instances: List of instance names for the device
+
+    Returns:
+        PromQL query string or None if metric cannot be queried
+    """
+    if not instances:
+        return None
+
+    # Build instance filter (regex or list)
+    if len(instances) == 1:
+        instance_filter = f'instance="{instances[0]}"'
+    else:
+        # Use regex for multiple instances
+        instance_pattern = "|".join(instances)
+        instance_filter = f'instance=~"{instance_pattern}"'
+
+    # Build query with rack_id and instance filters
+    query = f'{metric_name}{{rack_id="{rack_id}", {instance_filter}}}'
+
+    return query
+
+
+async def collect_rack_devices_metrics(
+    rack: Rack,
+    catalog: Catalog,
+    prom_client: PrometheusClient,
+) -> Dict[str, Dict[str, float]]:
+    """
+    Collect metrics for all devices in a rack.
+
+    This function replaces the old hardcoded get_node_metrics() approach.
+
+    Args:
+        rack: The rack to collect metrics for
+        catalog: Catalog containing device templates
+        prom_client: Prometheus client
+
+    Returns:
+        Dictionary mapping instance names to their metrics
+        Example: {
+            "node01": {"temperature": 65.0, "power": 250.0},
+            "node02": {"temperature": 70.0, "power": 300.0}
+        }
+    """
+    all_metrics: Dict[str, Dict[str, float]] = {}
+
+    for device in rack.devices:
+        # Get device template
+        template = catalog.get_device_template(device.template_id)
+        if not template or not template.metrics:
+            continue
+
+        # Collect metrics for this device (returns per-instance metrics)
+        device_metrics = await collect_device_metrics(
+            device=device,
+            rack_id=rack.id,
+            template=template,
+            prom_client=prom_client,
+        )
+
+        # Merge device metrics into all_metrics
+        all_metrics.update(device_metrics)
 
     return all_metrics
