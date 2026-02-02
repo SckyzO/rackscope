@@ -161,7 +161,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     scale_factor: String(config.simulator?.scale_factor ?? 1.0),
     default_ttl_seconds: String(config.simulator?.default_ttl_seconds ?? 120),
     metrics_catalog_path:
-      config.simulator?.metrics_catalog_path || 'config/simulator_metrics_full.yaml',
+      config.simulator?.metrics_catalog_path || 'config/plugins/simulator/metrics_full.yaml',
     metrics_catalogs:
       config.simulator?.metrics_catalogs && config.simulator.metrics_catalogs.length > 0
         ? config.simulator.metrics_catalogs.map((entry) => ({
@@ -172,12 +172,12 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
         : [
             {
               id: 'core',
-              path: config.simulator?.metrics_catalog_path || 'config/simulator_metrics_full.yaml',
+              path: config.simulator?.metrics_catalog_path || 'config/plugins/simulator/metrics_full.yaml',
               enabled: true,
             },
             {
               id: 'slurm',
-              path: 'config/simulator_metrics_slurm.yaml',
+              path: 'config/plugins/simulator/metrics_slurm.yaml',
               enabled: false,
             },
           ],
@@ -192,7 +192,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       rack: String(config.simulator?.incident_durations?.rack ?? 3),
       aisle: String(config.simulator?.incident_durations?.aisle ?? 5),
     },
-    overrides_path: config.simulator?.overrides_path || 'config/simulator_overrides.yaml',
+    overrides_path: config.simulator?.overrides_path || 'config/plugins/simulator/overrides.yaml',
   },
   slurm: {
     metric: config.slurm?.metric || 'slurm_node_status',
@@ -1576,7 +1576,7 @@ export const SettingsPage = () => {
                         )
                       }
                       className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200"
-                      placeholder="config/slurm_mapping.yaml"
+                      placeholder="config/plugins/slurm/node_mapping.yaml"
                     />
                     <div className="mt-1 text-[10px] text-gray-500">
                       Optional mapping from Slurm node names to topology instances.
@@ -1728,7 +1728,7 @@ export const SettingsPage = () => {
                   </label>
                   <label
                     className="text-xs text-gray-400"
-                    title="Scenario name from simulator.yaml"
+                    title="Scenario name from scenarios.yaml"
                   >
                     Scenario
                     <select
@@ -1926,7 +1926,7 @@ export const SettingsPage = () => {
                             )
                           }
                           className="flex-1 rounded-md border border-[var(--color-border)] bg-black/40 px-2 py-1 text-[11px]"
-                          placeholder="config/simulator_metrics_full.yaml"
+                          placeholder="config/plugins/simulator/metrics_full.yaml"
                         />
                         <button
                           type="button"

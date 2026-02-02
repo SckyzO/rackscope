@@ -10,7 +10,7 @@ from prometheus_client import start_http_server, Gauge
 
 # Configuration Paths
 TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology")
-SIMULATOR_CONFIG_PATH = os.getenv("SIMULATOR_CONFIG", "/app/config/simulator.yaml")
+SIMULATOR_CONFIG_PATH = os.getenv("SIMULATOR_CONFIG", "/app/config/plugins/simulator/scenarios.yaml")
 APP_CONFIG_PATH = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
 METRICS_LIBRARY_PATH = os.getenv("METRICS_LIBRARY", "/app/config/metrics/library")
 
@@ -188,7 +188,7 @@ def resolve_metrics_catalogs(sim_cfg):
                 paths.append(path)
     if paths:
         return paths
-    single_path = sim_cfg.get("metrics_catalog_path", "/app/config/simulator_metrics_full.yaml")
+    single_path = sim_cfg.get("metrics_catalog_path", "/app/config/plugins/simulator/metrics_full.yaml")
     return [single_path]
 
 

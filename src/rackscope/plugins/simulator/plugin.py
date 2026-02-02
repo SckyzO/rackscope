@@ -88,7 +88,7 @@ class SimulatorPlugin(RackscopePlugin):
         @self._router.get("/status")
         async def get_simulator_status():
             """Get simulator status and configuration."""
-            sim_path = Path("config/simulator.yaml")
+            sim_path = Path("config/plugins/simulator/scenarios.yaml")
 
             # Check if simulator is running by trying to reach port 9000
             running = False
@@ -243,7 +243,7 @@ class SimulatorPlugin(RackscopePlugin):
         @self._router.get("/scenarios")
         def get_simulator_scenarios():
             """Get available simulator scenarios."""
-            sim_path = Path("config/simulator.yaml")
+            sim_path = Path("config/plugins/simulator/scenarios.yaml")
             if not sim_path.exists():
                 return {"scenarios": []}
             try:

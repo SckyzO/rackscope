@@ -43,7 +43,7 @@ slurm:
   label_node: node
   label_status: status
   label_partition: partition
-  mapping_path: config/slurm_mapping.yaml
+  mapping_path: config/plugins/slurm/node_mapping.yaml
   roles:
     - compute
     - visu
@@ -105,13 +105,13 @@ simulator:
   incident_durations:
     rack: 3
     aisle: 5
-  overrides_path: config/simulator_overrides.yaml
+  overrides_path: config/plugins/simulator/overrides.yaml
   default_ttl_seconds: 0
-  metrics_catalog_path: config/simulator_metrics_full.yaml
+  metrics_catalog_path: config/plugins/simulator/metrics_full.yaml
   metrics_catalogs:
     - id: core
-      path: config/simulator_metrics_full.yaml
+      path: config/plugins/simulator/metrics_full.yaml
       enabled: true
     - id: slurm
-      path: config/simulator_metrics_slurm.yaml
+      path: config/plugins/simulator/metrics_slurm.yaml
       enabled: true

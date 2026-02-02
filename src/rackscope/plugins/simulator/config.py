@@ -46,7 +46,7 @@ class SimulatorPluginConfig(BaseModel):
         description="Incident duration configuration"
     )
     overrides_path: str = Field(
-        default="config/simulator_overrides.yaml",
+        default="config/plugins/simulator/overrides.yaml",
         min_length=1,
         description="Path to overrides file"
     )
@@ -56,7 +56,7 @@ class SimulatorPluginConfig(BaseModel):
         description="Default TTL for overrides in seconds"
     )
     metrics_catalog_path: str = Field(
-        default="config/simulator_metrics_full.yaml",
+        default="config/plugins/simulator/metrics_full.yaml",
         min_length=1,
         description="Path to metrics catalog"
     )

@@ -106,9 +106,9 @@ class SimulatorConfig(BaseModel):
     scale_factor: float = Field(default=1.0, ge=0.0)
     incident_rates: IncidentRates = Field(default_factory=IncidentRates)
     incident_durations: IncidentDurations = Field(default_factory=IncidentDurations)
-    overrides_path: str = Field(default="config/simulator_overrides.yaml", min_length=1)
+    overrides_path: str = Field(default="config/plugins/simulator/overrides.yaml", min_length=1)
     default_ttl_seconds: int = Field(default=120, ge=0)
-    metrics_catalog_path: str = Field(default="config/simulator_metrics_full.yaml", min_length=1)
+    metrics_catalog_path: str = Field(default="config/plugins/simulator/metrics_full.yaml", min_length=1)
     metrics_catalogs: List[SimulatorMetricsCatalog] = Field(default_factory=list)
 
 

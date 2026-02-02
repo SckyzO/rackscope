@@ -394,11 +394,11 @@ config/topology/
   - Checks define: id, kind, scope (node/chassis/rack), PromQL expr, rules (thresholds → severity)
 
 #### Other Files
-- `slurm_mapping.yaml`: Optional mapping from Slurm node names to topology instance names
-- `simulator.yaml`: Simulator scenarios (demo-small, full-ok, etc.)
-- `simulator_overrides.yaml`: Runtime overrides for simulated metrics
-- `simulator_metrics_full.yaml`: Full metrics catalog for simulator
-- `simulator_metrics_slurm.yaml`: Slurm metrics catalog for simulator
+- `plugins/simulator/scenarios.yaml`: Simulator scenarios (demo-small, full-ok, etc.)
+- `plugins/simulator/overrides.yaml`: Runtime overrides for simulated metrics
+- `plugins/simulator/metrics_full.yaml`: Full metrics catalog for simulator
+- `plugins/simulator/metrics_slurm.yaml`: Slurm metrics catalog for simulator
+- `plugins/slurm/node_mapping.yaml`: Optional mapping from Slurm node names to topology instance names
 
 ### Simulator
 

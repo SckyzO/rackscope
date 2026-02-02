@@ -23,21 +23,21 @@ simulator:
   incident_durations:
     rack: 3
     aisle: 5
-  overrides_path: config/simulator_overrides.yaml
+  overrides_path: config/plugins/simulator/overrides.yaml
   default_ttl_seconds: 0
-  metrics_catalog_path: config/simulator_metrics_full.yaml
+  metrics_catalog_path: config/plugins/simulator/metrics_full.yaml
   metrics_catalogs:
     - id: core
-      path: config/simulator_metrics_full.yaml
+      path: config/plugins/simulator/metrics_full.yaml
       enabled: true
     - id: slurm
-      path: config/simulator_metrics_slurm.yaml
+      path: config/plugins/simulator/metrics_slurm.yaml
       enabled: false
 ```
 
 ## Scenarios
 
-Scenarios live in `config/simulator.yaml` and override simulator settings. You can
+Scenarios live in `config/plugins/simulator/scenarios.yaml` and override simulator settings. You can
 select a scenario via `simulator.scenario` in `app.yaml`. When a scenario is set,
 the base `incident_rates` are not inherited unless the scenario explicitly defines
 them.
@@ -78,7 +78,7 @@ warning thresholds.
 are emitted and for which instances/racks. You can also enable multiple catalogs
 with `simulator.metrics_catalogs` (each entry can be toggled on/off).
 
-Example (`config/simulator_metrics_examples.yaml`):
+Example (`config/plugins/simulator/metrics_examples.yaml`):
 
 ```yaml
 metrics:
@@ -128,8 +128,8 @@ Notes:
     plus metric-specific tokens like `$status`, `$tray`, `$slot`, `$collector`, `$state`, `$name`.
 - `labels_only: true` removes the default base labels (useful for Slurm exporters).
 
-Full catalog: `config/simulator_metrics_full.yaml`.
-Slurm catalog: `config/simulator_metrics_slurm.yaml`.
+Full catalog: `config/plugins/simulator/metrics_full.yaml`.
+Slurm catalog: `config/plugins/simulator/metrics_slurm.yaml`.
 
 ## Slurm Random Statuses
 
@@ -152,7 +152,7 @@ states remain active until you change the configuration.
 
 ## Adding a new metric
 
-1) Add the metric to your catalog YAML (`config/simulator_metrics_full.yaml`).
+1) Add the metric to your catalog YAML (`config/plugins/simulator/metrics_full.yaml`).
 2) Implement its value generation in `tools/simulator/main.py`:
    - add the metric name to `SUPPORTED_METRICS`
    - emit its values in the simulation loop (with `set_metric_value`)
@@ -200,6 +200,8 @@ Supported metrics:
 ## Files
 
 - `config/app.yaml` (simulator configuration)
-- `config/simulator.yaml` (legacy config, still supported)
-- `config/simulator_overrides.yaml` (runtime overrides)
-- `config/slurm_mapping.yaml` (optional Slurm node → instance mapping)
+- `config/plugins/simulator/scenarios.yaml` (scenario definitions)
+- `config/plugins/simulator/overrides.yaml` (runtime overrides)
+- `config/plugins/simulator/metrics_full.yaml` (full metrics catalog)
+- `config/plugins/simulator/metrics_slurm.yaml` (Slurm metrics catalog)
+- `config/plugins/slurm/node_mapping.yaml` (optional Slurm node → instance mapping)

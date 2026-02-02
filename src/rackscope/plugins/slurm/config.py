@@ -92,6 +92,6 @@ class SlurmPluginConfig(BaseModel):
         description="Include devices without role label"
     )
     mapping_path: Optional[str] = Field(
-        default=None,
+        default="config/plugins/slurm/node_mapping.yaml",
         description="Path to Slurm node to instance mapping file"
     )
