@@ -13,6 +13,7 @@ from rackscope.model.catalog import Catalog
 from rackscope.model.checks import ChecksLibrary
 from rackscope.model.config import AppConfig
 from rackscope.telemetry.planner import TelemetryPlanner
+from rackscope.services import topology_service
 from rackscope.api.dependencies import (
     get_topology_optional,
     get_catalog_optional,
@@ -154,14 +155,25 @@ async def get_rack_state(
 ):
     """Get rack health state and device metrics."""
     # Lazy import to avoid circular dependency
+    from rackscope.services import metrics_service
     from rackscope.telemetry.prometheus import client as prom_client
 
     if not topology or not checks_library or not planner:
         return {"rack_id": rack_id, "state": "UNKNOWN", "metrics": {}, "nodes": {}}
+
+    # Find the rack in topology
+    rack = topology_service.find_rack_by_id(topology, rack_id)
+
     targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
     snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
     nodes_metrics = await prom_client.get_node_metrics(rack_id)
-    pdu_metrics = await prom_client.get_pdu_metrics(rack_id)
+
+    # Collect component metrics (PDU, switches, etc.) using template-driven approach
+    component_metrics = {}
+    if rack and catalog:
+        component_metrics = await metrics_service.collect_rack_component_metrics(
+            rack=rack, catalog=catalog, prom_client=prom_client
+        )
 
     # Calculate Node States and Aggregate Rack State
     processed_nodes = {}
@@ -201,6 +213,6 @@ async def get_rack_state(
         "rack_id": rack_id,
         "state": rack_state,
         "metrics": {"temperature": avg_temp, "power": total_power},
-        "infra_metrics": {"pdu": pdu_metrics},
+        "infra_metrics": {"components": component_metrics},
         "nodes": processed_nodes,
     }
