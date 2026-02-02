@@ -4,9 +4,7 @@ Tests for Simulator Router
 Tests for simulator control endpoints (demo mode).
 """
 
-import tempfile
 from pathlib import Path
-from unittest.mock import Mock
 
 import pytest
 import yaml
@@ -43,8 +41,10 @@ def mock_app_config_with_simulator(tmp_path):
 
 def override_app_config(config):
     """Override get_app_config_optional dependency."""
+
     async def _get_app_config_optional():
         return config
+
     return _get_app_config_optional
 
 
@@ -54,12 +54,14 @@ def override_app_config(config):
 def test_get_simulator_scenarios_success(tmp_path):
     """Test getting simulator scenarios."""
     # Create YAML content
-    yaml_content = yaml.safe_dump({
-        "scenarios": {
-            "normal": {"description": "Normal operation"},
-            "crisis": {"description": "Multiple failures"},
+    yaml_content = yaml.safe_dump(
+        {
+            "scenarios": {
+                "normal": {"description": "Normal operation"},
+                "crisis": {"description": "Multiple failures"},
+            }
         }
-    })
+    )
 
     # Mock Path methods
     with pytest.MonkeyPatch.context() as m:
@@ -113,11 +115,9 @@ def test_get_simulator_overrides_success(mock_app_config_with_simulator):
     # Write some overrides
     overrides_path = Path(mock_app_config_with_simulator.simulator.overrides_path)
     overrides_path.write_text(
-        yaml.safe_dump({
-            "overrides": [
-                {"id": "override1", "instance": "node01", "metric": "up", "value": 0}
-            ]
-        })
+        yaml.safe_dump(
+            {"overrides": [{"id": "override1", "instance": "node01", "metric": "up", "value": 0}]}
+        )
     )
 
     response = client.get("/api/simulator/overrides")
@@ -382,12 +382,14 @@ def test_clear_simulator_overrides(mock_app_config_with_simulator):
     # Add some overrides first
     overrides_path = Path(mock_app_config_with_simulator.simulator.overrides_path)
     overrides_path.write_text(
-        yaml.safe_dump({
-            "overrides": [
-                {"id": "override1", "instance": "node01", "metric": "up", "value": 0},
-                {"id": "override2", "instance": "node02", "metric": "up", "value": 0},
-            ]
-        })
+        yaml.safe_dump(
+            {
+                "overrides": [
+                    {"id": "override1", "instance": "node01", "metric": "up", "value": 0},
+                    {"id": "override2", "instance": "node02", "metric": "up", "value": 0},
+                ]
+            }
+        )
     )
 
     response = client.delete("/api/simulator/overrides")
@@ -415,12 +417,14 @@ def test_delete_simulator_override_by_id(mock_app_config_with_simulator):
     # Add some overrides
     overrides_path = Path(mock_app_config_with_simulator.simulator.overrides_path)
     overrides_path.write_text(
-        yaml.safe_dump({
-            "overrides": [
-                {"id": "override1", "instance": "node01", "metric": "up", "value": 0},
-                {"id": "override2", "instance": "node02", "metric": "up", "value": 0},
-            ]
-        })
+        yaml.safe_dump(
+            {
+                "overrides": [
+                    {"id": "override1", "instance": "node01", "metric": "up", "value": 0},
+                    {"id": "override2", "instance": "node02", "metric": "up", "value": 0},
+                ]
+            }
+        )
     )
 
     response = client.delete("/api/simulator/overrides/override1")
@@ -441,11 +445,9 @@ def test_delete_simulator_override_not_found(mock_app_config_with_simulator):
 
     overrides_path = Path(mock_app_config_with_simulator.simulator.overrides_path)
     overrides_path.write_text(
-        yaml.safe_dump({
-            "overrides": [
-                {"id": "override1", "instance": "node01", "metric": "up", "value": 0}
-            ]
-        })
+        yaml.safe_dump(
+            {"overrides": [{"id": "override1", "instance": "node01", "metric": "up", "value": 0}]}
+        )
     )
 
     response = client.delete("/api/simulator/overrides/nonexistent")

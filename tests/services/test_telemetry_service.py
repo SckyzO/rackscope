@@ -138,7 +138,9 @@ def simple_checks_library():
     checks = [
         CheckDefinition(id="node_temp_check", name="Node Temperature", scope="node", expr="..."),
         CheckDefinition(id="node_power_check", name="Node Power", scope="node", expr="..."),
-        CheckDefinition(id="storage_health_check", name="Storage Health", scope="chassis", expr="..."),
+        CheckDefinition(
+            id="storage_health_check", name="Storage Health", scope="chassis", expr="..."
+        ),
         CheckDefinition(id="rack_power_check", name="Rack Power", scope="rack", expr="..."),
     ]
     return ChecksLibrary(checks=checks)

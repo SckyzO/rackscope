@@ -334,7 +334,9 @@ def test_get_telemetry_stats():
 
 
 @pytest.mark.asyncio
-async def test_get_room_state_success(mock_topology, mock_catalog, mock_checks_library, mock_planner):
+async def test_get_room_state_success(
+    mock_topology, mock_catalog, mock_checks_library, mock_planner
+):
     """Test getting room health state."""
     app.dependency_overrides[get_topology_optional] = override_topology(mock_topology)
     app.dependency_overrides[get_catalog_optional] = override_catalog(mock_catalog)
@@ -409,7 +411,9 @@ async def test_get_room_state_no_planner():
 
 
 @pytest.mark.asyncio
-async def test_get_rack_state_success(mock_topology, mock_catalog, mock_checks_library, mock_planner):
+async def test_get_rack_state_success(
+    mock_topology, mock_catalog, mock_checks_library, mock_planner
+):
     """Test getting rack health state."""
     app.dependency_overrides[get_topology_optional] = override_topology(mock_topology)
     app.dependency_overrides[get_catalog_optional] = override_catalog(mock_catalog)
@@ -497,7 +501,9 @@ async def test_get_rack_state_no_planner():
 
 
 @pytest.mark.asyncio
-async def test_get_rack_state_no_metrics(mock_topology, mock_catalog, mock_checks_library, mock_planner):
+async def test_get_rack_state_no_metrics(
+    mock_topology, mock_catalog, mock_checks_library, mock_planner
+):
     """Test rack state when nodes have no metrics."""
     app.dependency_overrides[get_topology_optional] = override_topology(mock_topology)
     app.dependency_overrides[get_catalog_optional] = override_catalog(mock_catalog)

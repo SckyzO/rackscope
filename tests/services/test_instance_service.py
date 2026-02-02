@@ -4,8 +4,6 @@ Tests for Instance Service
 Tests for device instance expansion and node pattern matching.
 """
 
-import pytest
-
 from rackscope.model.domain import Device
 from rackscope.services.instance_service import expand_device_instances, expand_nodes_pattern
 

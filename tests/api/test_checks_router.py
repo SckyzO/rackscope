@@ -4,8 +4,6 @@ Tests for Checks Router
 Tests for health checks library management endpoints.
 """
 
-from pathlib import Path
-
 import pytest
 import yaml
 from fastapi.testclient import TestClient
@@ -77,7 +75,9 @@ def override_checks_library(library):
 
 def test_get_checks_library_success(mock_checks_library):
     """Test getting checks library."""
-    app.dependency_overrides[get_checks_library_optional] = override_checks_library(mock_checks_library)
+    app.dependency_overrides[get_checks_library_optional] = override_checks_library(
+        mock_checks_library
+    )
 
     response = client.get("/api/checks")
 
@@ -253,17 +253,19 @@ def test_write_checks_file_success(mock_app_config, temp_checks_dir):
 
     app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
 
-    content = yaml.safe_dump({
-        "checks": [
-            {
-                "id": "node_up",
-                "name": "Node Up",
-                "scope": "node",
-                "expr": "up",
-                "rules": [{"op": "==", "value": 1, "severity": "OK"}],
-            }
-        ]
-    })
+    content = yaml.safe_dump(
+        {
+            "checks": [
+                {
+                    "id": "node_up",
+                    "name": "Node Up",
+                    "scope": "node",
+                    "expr": "up",
+                    "rules": [{"op": "==", "value": 1, "severity": "OK"}],
+                }
+            ]
+        }
+    )
 
     response = client.put("/api/checks/files/nodes.yaml", json={"content": content})
 
@@ -290,19 +292,21 @@ def test_write_checks_file_with_kinds_format(mock_app_config, temp_checks_dir):
 
     app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
 
-    content = yaml.safe_dump({
-        "kinds": {
-            "node": [
-                {
-                    "id": "node_up",
-                    "name": "Node Up",
-                    "scope": "node",
-                    "expr": "up",
-                    "rules": [{"op": "==", "value": 1, "severity": "OK"}],
-                }
-            ]
+    content = yaml.safe_dump(
+        {
+            "kinds": {
+                "node": [
+                    {
+                        "id": "node_up",
+                        "name": "Node Up",
+                        "scope": "node",
+                        "expr": "up",
+                        "rules": [{"op": "==", "value": 1, "severity": "OK"}],
+                    }
+                ]
+            }
         }
-    })
+    )
 
     response = client.put("/api/checks/files/nodes.yaml", json={"content": content})
 
@@ -368,17 +372,19 @@ def test_write_checks_file_empty_rules(mock_app_config):
     """Test error when check has empty rules."""
     app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
 
-    content = yaml.safe_dump({
-        "checks": [
-            {
-                "id": "node_up",
-                "name": "Node Up",
-                "scope": "node",
-                "expr": "up",
-                "rules": [],  # Empty rules
-            }
-        ]
-    })
+    content = yaml.safe_dump(
+        {
+            "checks": [
+                {
+                    "id": "node_up",
+                    "name": "Node Up",
+                    "scope": "node",
+                    "expr": "up",
+                    "rules": [],  # Empty rules
+                }
+            ]
+        }
+    )
 
     response = client.put("/api/checks/files/test.yaml", json={"content": content})
 
@@ -394,24 +400,26 @@ def test_write_checks_file_duplicate_id(mock_app_config):
     """Test error when checks have duplicate IDs."""
     app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
 
-    content = yaml.safe_dump({
-        "checks": [
-            {
-                "id": "test_check",
-                "name": "Test 1",
-                "scope": "node",
-                "expr": "up",
-                "rules": [{"op": "==", "value": 1, "severity": "OK"}],
-            },
-            {
-                "id": "test_check",  # Duplicate ID
-                "name": "Test 2",
-                "scope": "node",
-                "expr": "up",
-                "rules": [{"op": "==", "value": 1, "severity": "OK"}],
-            },
-        ]
-    })
+    content = yaml.safe_dump(
+        {
+            "checks": [
+                {
+                    "id": "test_check",
+                    "name": "Test 1",
+                    "scope": "node",
+                    "expr": "up",
+                    "rules": [{"op": "==", "value": 1, "severity": "OK"}],
+                },
+                {
+                    "id": "test_check",  # Duplicate ID
+                    "name": "Test 2",
+                    "scope": "node",
+                    "expr": "up",
+                    "rules": [{"op": "==", "value": 1, "severity": "OK"}],
+                },
+            ]
+        }
+    )
 
     response = client.put("/api/checks/files/test.yaml", json={"content": content})
 
@@ -440,17 +448,19 @@ def test_write_checks_file_single_file_mode(tmp_path):
     app.dependency_overrides[get_app_config] = override_app_config(config)
     app_module.CHECKS_LIBRARY = None
 
-    content = yaml.safe_dump({
-        "checks": [
-            {
-                "id": "test",
-                "name": "Test",
-                "scope": "node",
-                "expr": "up",
-                "rules": [{"op": "==", "value": 1, "severity": "OK"}],
-            }
-        ]
-    })
+    content = yaml.safe_dump(
+        {
+            "checks": [
+                {
+                    "id": "test",
+                    "name": "Test",
+                    "scope": "node",
+                    "expr": "up",
+                    "rules": [{"op": "==", "value": 1, "severity": "OK"}],
+                }
+            ]
+        }
+    )
 
     response = client.put("/api/checks/files/any-name.yaml", json={"content": content})
 

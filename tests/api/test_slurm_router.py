@@ -4,8 +4,7 @@ Tests for Slurm Router
 Tests for Slurm-specific endpoints and dashboards.
 """
 
-from typing import Optional
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -337,7 +336,9 @@ def test_get_slurm_nodes_success(mock_topology, mock_app_config):
     with patch(
         "rackscope.services.slurm_service.build_slurm_states", AsyncMock(return_value=mock_states)
     ):
-        with patch("rackscope.services.slurm_service.build_node_context", return_value=mock_context):
+        with patch(
+            "rackscope.services.slurm_service.build_node_context", return_value=mock_context
+        ):
             response = client.get("/api/slurm/nodes")
 
     assert response.status_code == 200

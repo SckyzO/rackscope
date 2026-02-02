@@ -4,10 +4,6 @@ Tests for Catalog Router
 Tests for hardware template management endpoints.
 """
 
-import tempfile
-from pathlib import Path
-from unittest.mock import Mock
-
 import pytest
 import yaml
 from fastapi.testclient import TestClient
@@ -320,17 +316,19 @@ def test_update_device_template_success(mock_app_config, temp_templates_dir):
     device_dir.mkdir(parents=True)
     device_file = device_dir / "test_server.yaml"
     device_file.write_text(
-        yaml.safe_dump({
-            "templates": [
-                {
-                    "id": "test_server",
-                    "name": "Old Name",
-                    "type": "server",
-                    "u_height": 1,
-                    "layout": {"type": "grid", "rows": 1, "cols": 1, "matrix": [[1]]},
-                }
-            ]
-        })
+        yaml.safe_dump(
+            {
+                "templates": [
+                    {
+                        "id": "test_server",
+                        "name": "Old Name",
+                        "type": "server",
+                        "u_height": 1,
+                        "layout": {"type": "grid", "rows": 1, "cols": 1, "matrix": [[1]]},
+                    }
+                ]
+            }
+        )
     )
 
     app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
@@ -371,7 +369,9 @@ def test_update_rack_template_success(mock_app_config, temp_templates_dir):
     racks_dir = temp_templates_dir / "racks"
     rack_file = racks_dir / "test_rack.yaml"
     rack_file.write_text(
-        yaml.safe_dump({"rack_templates": [{"id": "test_rack", "name": "Old Name", "u_height": 42}]})
+        yaml.safe_dump(
+            {"rack_templates": [{"id": "test_rack", "name": "Old Name", "u_height": 42}]}
+        )
     )
 
     app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
@@ -410,17 +410,19 @@ def test_update_device_template_moves_file(mock_app_config, temp_templates_dir):
     old_dir.mkdir(parents=True)
     old_file = old_dir / "test_device.yaml"
     old_file.write_text(
-        yaml.safe_dump({
-            "templates": [
-                {
-                    "id": "test_device",
-                    "name": "Test Device",
-                    "type": "server",
-                    "u_height": 1,
-                    "layout": {"type": "grid", "rows": 1, "cols": 1, "matrix": [[1]]},
-                }
-            ]
-        })
+        yaml.safe_dump(
+            {
+                "templates": [
+                    {
+                        "id": "test_device",
+                        "name": "Test Device",
+                        "type": "server",
+                        "u_height": 1,
+                        "layout": {"type": "grid", "rows": 1, "cols": 1, "matrix": [[1]]},
+                    }
+                ]
+            }
+        )
     )
 
     app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
