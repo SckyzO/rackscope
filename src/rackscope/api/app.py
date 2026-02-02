@@ -13,11 +13,13 @@ import httpx
 from rackscope.model.domain import Topology
 from rackscope.model.catalog import Catalog
 from rackscope.model.checks import ChecksLibrary
+from rackscope.model.metrics import MetricsLibrary
 from rackscope.model.config import AppConfig
 from rackscope.model.loader import (
     load_topology,
     load_catalog,
     load_checks_library,
+    load_metrics_library,
     load_app_config,
 )
 from rackscope.telemetry.prometheus import client as prom_client
@@ -47,6 +49,7 @@ logger = get_logger(__name__)
 TOPOLOGY: Optional[Topology] = None
 CATALOG: Optional[Catalog] = None
 CHECKS_LIBRARY: Optional[ChecksLibrary] = None
+METRICS_LIBRARY: Optional[MetricsLibrary] = None
 APP_CONFIG: Optional[AppConfig] = None
 PLANNER: Optional[TelemetryPlanner] = None
 PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
@@ -56,11 +59,12 @@ PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
 
 
 def apply_config(app_config: AppConfig) -> None:
-    global TOPOLOGY, CATALOG, CHECKS_LIBRARY, APP_CONFIG, PLANNER
+    global TOPOLOGY, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY, APP_CONFIG, PLANNER
     APP_CONFIG = app_config
     TOPOLOGY = load_topology(app_config.paths.topology)
     CATALOG = load_catalog(app_config.paths.templates)
     CHECKS_LIBRARY = load_checks_library(app_config.paths.checks)
+    METRICS_LIBRARY = load_metrics_library(app_config.paths.metrics)
     base_url = APP_CONFIG.telemetry.prometheus_url or prom_client.base_url
     auth = None
     if APP_CONFIG.telemetry.basic_auth_user:
@@ -100,7 +104,7 @@ def apply_config(app_config: AppConfig) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global TOPOLOGY, CATALOG, CHECKS_LIBRARY, APP_CONFIG
+    global TOPOLOGY, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY, APP_CONFIG
     global PLANNER, PROMETHEUS_HEARTBEAT
     app_config_path = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
 
@@ -117,9 +121,13 @@ async def lifespan(app: FastAPI):
             checks_path = os.getenv(
                 "RACKSCOPE_CHECKS", os.path.join(config_dir, "checks", "library")
             )
+            metrics_path = os.getenv(
+                "RACKSCOPE_METRICS", os.path.join(config_dir, "metrics", "library")
+            )
             TOPOLOGY = load_topology(config_path)
             CATALOG = load_catalog(templates_dir)
             CHECKS_LIBRARY = load_checks_library(checks_path)
+            METRICS_LIBRARY = load_metrics_library(metrics_path)
             APP_CONFIG = None
             PLANNER = TelemetryPlanner()
         logger.info(
@@ -129,6 +137,7 @@ async def lifespan(app: FastAPI):
                 "device_templates": len(CATALOG.device_templates),
                 "rack_templates": len(CATALOG.rack_templates),
                 "checks": len(CHECKS_LIBRARY.checks),
+                "metrics": len(METRICS_LIBRARY.metrics),
             },
         )
     except Exception as e:
@@ -136,6 +145,7 @@ async def lifespan(app: FastAPI):
         TOPOLOGY = Topology()
         CATALOG = Catalog()
         CHECKS_LIBRARY = ChecksLibrary()
+        METRICS_LIBRARY = MetricsLibrary()
         APP_CONFIG = None
         PLANNER = TelemetryPlanner()
     heartbeat_seconds = 60

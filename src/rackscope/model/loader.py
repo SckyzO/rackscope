@@ -11,6 +11,7 @@ from rackscope.model.domain import Topology
 from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate, RackComponentTemplate
 from rackscope.model.checks import ChecksLibrary, CheckDefinition
 from rackscope.model.config import AppConfig
+from rackscope.model.metrics import MetricsLibrary, MetricDefinition
 
 logger = logging.getLogger(__name__)
 
@@ -298,3 +299,65 @@ def load_app_config(path: Union[str, Path]) -> AppConfig:
         return AppConfig(**data)
     except ValidationError as e:
         raise InvalidFormatError(f"Validation failed for {path}:\n{e}")
+
+
+def _load_metrics_file(path: Path, library: MetricsLibrary) -> None:
+    """Load metrics from a single YAML file into library."""
+    try:
+        with path.open("r") as f:
+            data = yaml.safe_load(f)
+    except yaml.YAMLError as e:
+        logger.warning(f"Failed to parse metrics file {path}: {e}")
+        return
+
+    if not data:
+        return
+
+    # Support single metric or list of metrics
+    metrics = []
+    if isinstance(data, dict):
+        if "metrics" in data:
+            # Multiple metrics in one file
+            metrics.extend(data.get("metrics") or [])
+        elif "id" in data:
+            # Single metric definition
+            metrics.append(data)
+
+    for m in metrics:
+        try:
+            library.metrics.append(MetricDefinition(**m))
+        except Exception as e:
+            logger.warning(f"Failed to load metric in {path}: {e}")
+
+
+def load_metrics_library(path: Union[str, Path]) -> MetricsLibrary:
+    """
+    Load a metrics library from YAML files.
+
+    Similar to load_checks_library(), recursively loads YAML files
+    and validates them against MetricDefinition schema.
+
+    Args:
+        path: Path to metrics library directory or single file
+
+    Returns:
+        MetricsLibrary with all loaded metric definitions
+    """
+    path = Path(path)
+    library = MetricsLibrary()
+
+    if not path.exists():
+        logger.warning(f"Metrics library path not found: {path}")
+        return library
+
+    if path.is_dir():
+        # Recursively load all YAML files
+        files = sorted(path.rglob("*.yaml")) + sorted(path.rglob("*.yml"))
+        for file_path in files:
+            _load_metrics_file(file_path, library)
+        logger.info(f"Loaded {len(library.metrics)} metrics from {path}")
+        return library
+
+    # Single file
+    _load_metrics_file(path, library)
+    return library

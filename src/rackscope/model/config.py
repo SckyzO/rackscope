@@ -10,6 +10,7 @@ class PathsConfig(BaseModel):
     topology: str = Field(min_length=1)
     templates: str = Field(min_length=1)
     checks: str = Field(min_length=1)
+    metrics: str = Field(default="config/metrics/library", min_length=1)
 
 
 class RefreshConfig(BaseModel):
