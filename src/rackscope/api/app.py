@@ -22,6 +22,7 @@ from rackscope.model.loader import (
 )
 from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
+from rackscope.plugins.registry import registry as plugin_registry
 from rackscope.api.routers import (
     config,
     simulator,
@@ -30,6 +31,7 @@ from rackscope.api.routers import (
     topology,
     telemetry,
     slurm,
+    plugins,
 )
 from rackscope.services.instance_service import expand_device_instances
 from rackscope.services import telemetry_service
@@ -149,7 +151,23 @@ async def lifespan(app: FastAPI):
             await asyncio.sleep(heartbeat_seconds)
 
     PROMETHEUS_HEARTBEAT = asyncio.create_task(_heartbeat())
+
+    # Initialize plugin system
+    try:
+        await plugin_registry.initialize(app)
+        logger.info(f"Plugin system initialized with {plugin_registry.count()} plugin(s)")
+    except Exception as e:
+        logger.error(f"Failed to initialize plugin system: {e}", exc_info=True)
+
     yield
+
+    # Shutdown plugin system
+    try:
+        await plugin_registry.shutdown()
+        logger.info("Plugin system shutdown complete")
+    except Exception as e:
+        logger.error(f"Error during plugin system shutdown: {e}", exc_info=True)
+
     if PROMETHEUS_HEARTBEAT:
         PROMETHEUS_HEARTBEAT.cancel()
         with suppress(asyncio.CancelledError):
@@ -174,6 +192,7 @@ app.include_router(checks.router)
 app.include_router(topology.router)
 app.include_router(telemetry.router)
 app.include_router(slurm.router)
+app.include_router(plugins.router)
 
 
 @app.get("/healthz")
