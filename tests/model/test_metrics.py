@@ -1,6 +1,5 @@
 """Tests for metrics library models and loader."""
 
-import pytest
 from pathlib import Path
 import tempfile
 import yaml

@@ -34,6 +34,7 @@ from rackscope.api.routers import (
     topology,
     telemetry,
     plugins,
+    metrics,
 )
 from rackscope.services.instance_service import expand_device_instances
 from rackscope.services import telemetry_service
@@ -217,6 +218,7 @@ app.include_router(catalog.router)
 app.include_router(checks.router)
 app.include_router(topology.router)
 app.include_router(telemetry.router)
+app.include_router(metrics.router)
 app.include_router(plugins.router)
 
 
