@@ -22,11 +22,12 @@ Instructions for AI coding assistants (located at **project root** for auto-dete
 
 Long-term vision and architecture plans:
 
+- **[plans/CONSOLIDATED_ROADMAP.md](./plans/CONSOLIDATED_ROADMAP.md)** - ⭐ **Unified roadmap** (Phases 1-9, current working document)
 - **[plans/ROADMAP.md](./plans/ROADMAP.md)** - Project roadmap and milestones
-- **[plans/REFACTORING_ROADMAP.md](./plans/REFACTORING_ROADMAP.md)** - Refactoring roadmap and progress tracking
+- **[plans/REFACTORING_ROADMAP.md](./plans/REFACTORING_ROADMAP.md)** - Original refactoring plan (Phases 1-5 completed)
+- **[plans/PLUGIN_ARCHITECTURE.md](./plans/PLUGIN_ARCHITECTURE.md)** - Plugin system architecture design
 - **[plans/FOUNDATION_PLAN.md](./plans/FOUNDATION_PLAN.md)** - Foundation architecture plan
 - **[plans/LOGICAL_ARCHITECTURE_PLAN.md](./plans/LOGICAL_ARCHITECTURE_PLAN.md)** - Logical architecture design
-- **[plans/PLUGIN_ARCHITECTURE.md](./plans/PLUGIN_ARCHITECTURE.md)** - Plugin system architecture ⭐
 
 ## 🏗️ Implementation Phases
 
@@ -90,11 +91,12 @@ PROJECT_ROOT/
     │   └── PHASE_7_FRONTEND_PLAN.md # 🎯 Next: Frontend rebuild
     │
     ├── plans/                   # Strategic architecture plans
+    │   ├── CONSOLIDATED_ROADMAP.md  # ⭐ Unified roadmap (Phases 1-9)
     │   ├── ROADMAP.md           # Project roadmap
-    │   ├── REFACTORING_ROADMAP.md  # Refactoring progress tracking
+    │   ├── REFACTORING_ROADMAP.md  # Original refactoring (Phases 1-5)
+    │   ├── PLUGIN_ARCHITECTURE.md  # Plugin system design
     │   ├── FOUNDATION_PLAN.md   # Foundation architecture
-    │   ├── LOGICAL_ARCHITECTURE_PLAN.md
-    │   └── PLUGIN_ARCHITECTURE.md  # ⭐ Plugin system design
+    │   └── LOGICAL_ARCHITECTURE_PLAN.md
     │
     └── reference/               # Technical reference documentation
         ├── CHECKS_LIBRARY.md    # Health check system
@@ -110,9 +112,18 @@ project root for automatic detection by AI coding assistants.
 
 **Last Completed**: Phase 5 - Test Coverage (36% → 66%, 251 tests)
 
+**Active Roadmap**: [plans/CONSOLIDATED_ROADMAP.md](./plans/CONSOLIDATED_ROADMAP.md)
+
 **Next Steps**:
-1. Phase 6 - Backend refactoring (plugin architecture)
-2. Phase 7 - Frontend rebuild (React + Tailwind + shadcn)
+1. **Phase 6** - Backend Plugin Architecture (1 week)
+   - Extract Simulator and Slurm as plugins
+   - Fix template system (remove hardcoded PDU/switch metrics)
+   - Create plugin registry and base class
+2. **Phase 7** - Frontend Rebuild (3 weeks)
+   - React + Tailwind CSS + shadcn/ui
+   - Dynamic plugin menu system
+   - Core views + Editors
+3. **Phase 8-9** - Performance optimization + Cleanup (3-4 days)
 
 ---
 
