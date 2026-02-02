@@ -15,10 +15,11 @@ Rackscope is a **Physical Infrastructure Monitoring** dashboard designed for Hig
 ### 1. Backend (Python / FastAPI)
 - **Role**: API Gateway, Topology Loader, Telemetry Aggregator.
 - **Key Modules**:
-    - `model/`: Pydantic models for the domain (Rack, Device, Template).
+    - `model/`: Pydantic models for the domain (Rack, Device, Template, Metrics).
     - `loader.py`: Recursively loads YAML configuration from `config/`.
     - `telemetry/`: PromQL planner, async Prometheus client (`httpx`), cache/dedup.
     - `api/`: REST endpoints served by Uvicorn.
+    - `plugins/`: Plugin system for optional features (Slurm, Simulator).
 
 ### 2. Frontend (React / Vite)
 - **Role**: Single Page Application (SPA) for visualization.
@@ -53,6 +54,138 @@ physical rack layout without altering the existing topology model.
 - **Partitions**: per-partition status breakdowns.
 - **Node List**: nodes with topology context (site/room/rack/device).
 - **Alerts**: list of WARN/CRIT nodes for quick triage.
+
+## Plugin Architecture
+
+Rackscope uses a plugin architecture to separate **core features** (always active) from **optional features** (plugins).
+
+### Core vs Plugins
+
+**Core** (always active):
+- Physical topology visualization
+- Prometheus telemetry integration
+- Health checks and alerting
+- Configuration editors
+
+**Plugins** (optional):
+- **SimulatorPlugin**: Demo mode with metrics generation
+- **SlurmPlugin**: Workload manager integration
+- Future: IPMI direct access, Redfish, custom dashboards
+
+### Plugin Lifecycle
+
+```
+1. Registration  → Plugin registered with PluginRegistry
+2. Initialization → Routes registered, on_startup() called
+3. Runtime       → Serve endpoints, contribute menu sections
+4. Shutdown      → on_shutdown() called for cleanup
+```
+
+### Plugin Components
+
+Each plugin can:
+- **Register API routes** via `register_routes(app)`
+- **Contribute menu sections** via `register_menu_sections()`
+- **React to lifecycle events** via `on_startup()` / `on_shutdown()`
+
+**Example**:
+```python
+class SlurmPlugin(RackscopePlugin):
+    @property
+    def plugin_id(self) -> str:
+        return "workload-slurm"
+
+    def register_routes(self, app: FastAPI) -> None:
+        app.include_router(slurm_router)
+
+    def register_menu_sections(self) -> List[MenuSection]:
+        return [
+            MenuSection(
+                id="workload",
+                label="Workload",
+                icon="Zap",
+                order=50,
+                items=[MenuItem(id="overview", label="Overview", path="/slurm/overview")]
+            )
+        ]
+```
+
+See [PLUGINS.md](PLUGINS.md) for plugin development guide.
+
+## Metrics Library System
+
+The Metrics Library defines how metrics are collected, displayed, and visualized.
+
+### Metrics vs Checks
+
+| Aspect | Checks | Metrics |
+|--------|--------|---------|
+| Purpose | Health monitoring (OK/WARN/CRIT) | Data visualization (charts, trends) |
+| Location | `config/checks/library/` | `config/metrics/library/` |
+| Output | Boolean or numeric → severity | Time series data |
+| Display | Status badges, alerts | Charts, gauges, graphs |
+
+### Metric Definition
+
+Each metric is defined in a YAML file:
+
+```yaml
+# config/metrics/library/node_cpu_usage.yaml
+id: node_cpu_usage
+name: Node CPU Usage
+description: CPU usage percentage (100 - idle time)
+metric: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle",instance="{instance}"}[5m])) * 100)
+labels:
+  instance: "{instance}"
+display:
+  unit: "%"
+  chart_type: area
+  color: "#3b82f6"
+  time_ranges: [1h, 6h, 24h, 7d]
+  default_range: 6h
+  aggregation: avg
+  thresholds:
+    warn: 80
+    crit: 95
+category: performance
+tags: [compute, cpu, node_exporter]
+```
+
+### Template Integration
+
+Templates reference metrics by ID:
+
+```yaml
+# config/templates/devices/server/my-server.yaml
+templates:
+  - id: my-server
+    metrics:
+      - node_cpu_usage
+      - node_power_watts
+      - node_temperature_celsius
+```
+
+### Template-Driven Collection
+
+The backend uses **generic metrics collection** based on templates:
+
+```python
+# No hardcoded queries! All driven by metric definitions
+async def collect_device_metrics(device, template, metrics_library):
+    for metric_id in template.metrics:
+        metric_def = metrics_library.get_metric(metric_id)
+        query = build_query(metric_def, device.instances)
+        data = await prometheus.query(query)
+        # ... process and return
+```
+
+**Benefits**:
+- No hardcoded Prometheus queries in code
+- Easy to add new metrics (just create YAML file)
+- Consistent display across UI
+- Reusable metric definitions
+
+See [METRICS.md](METRICS.md) for complete metrics documentation.
 
 ## Data Model
 

@@ -231,6 +231,129 @@ Delete a specific override.
 
 ---
 
+### 🧩 Plugins
+
+#### `GET /api/plugins`
+List all registered plugins with metadata.
+- **Response**:
+  ```json
+  {
+    "plugins": [
+      {
+        "id": "workload-slurm",
+        "name": "Slurm Workload Manager",
+        "version": "1.0.0",
+        "description": "Slurm cluster monitoring",
+        "author": "Rackscope Team"
+      },
+      {
+        "id": "simulator",
+        "name": "Metrics Simulator",
+        "version": "1.0.0",
+        "description": "Demo mode with scenarios",
+        "author": "Rackscope Team"
+      }
+    ]
+  }
+  ```
+
+#### `GET /api/plugins/menu`
+Get aggregated navigation menu sections from all plugins.
+- **Response**:
+  ```json
+  {
+    "sections": [
+      {
+        "id": "workload",
+        "label": "Workload",
+        "icon": "Zap",
+        "order": 50,
+        "items": [
+          {
+            "id": "slurm-overview",
+            "label": "Overview",
+            "path": "/slurm/overview",
+            "icon": null
+          }
+        ]
+      }
+    ]
+  }
+  ```
+
+---
+
+### 📊 Metrics Library
+
+#### `GET /api/metrics/library`
+Get all metrics from the library.
+- **Response**:
+  ```json
+  {
+    "metrics": [
+      {
+        "id": "node_cpu_usage",
+        "name": "Node CPU Usage",
+        "description": "CPU usage percentage",
+        "metric": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+        "labels": { "instance": "{instance}" },
+        "display": {
+          "unit": "%",
+          "chart_type": "area",
+          "color": "#3b82f6",
+          "time_ranges": ["1h", "6h", "24h"],
+          "default_range": "6h",
+          "aggregation": "avg",
+          "thresholds": { "warn": 80, "crit": 95 }
+        },
+        "category": "performance",
+        "tags": ["compute", "cpu"]
+      }
+    ]
+  }
+  ```
+
+#### `GET /api/metrics/library/{metric_id}`
+Get a specific metric by ID.
+- **Example**: `/api/metrics/library/node_cpu_usage`
+
+#### `POST /api/metrics/data`
+Query metric data with parameters.
+- **Request**:
+  ```json
+  {
+    "metric_id": "node_cpu_usage",
+    "targets": ["compute001", "compute002"],
+    "time_range": "6h",
+    "aggregation": "avg"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "metric_id": "node_cpu_usage",
+    "data": {
+      "compute001": [
+        [1675000000, 45.2],
+        [1675003600, 48.1]
+      ]
+    },
+    "unit": "%",
+    "color": "#3b82f6"
+  }
+  ```
+
+#### `GET /api/metrics/files`
+List all metric files in the library.
+
+#### `GET /api/metrics/files/{filename}`
+Get the raw YAML content of a metric file.
+
+#### `PUT /api/metrics/files/{filename}`
+Update a metric file (validated).
+
+---
+
 ## Development
 
 The API server runs on port `8000` inside the Docker container.

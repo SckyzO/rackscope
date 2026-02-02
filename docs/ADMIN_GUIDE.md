@@ -86,6 +86,52 @@ rack_component_templates:
 - Rack component checks are included in the planner (scope = rack) and will affect rack health.
 - Switch checks live in `config/checks/library/switch.yaml` and are assigned to network templates.
 
+### Metrics
+
+Metrics define how data is visualized (charts, gauges, trends). They are defined in `config/metrics/library/` and referenced by templates.
+
+**Example: Node Power Metric**
+File: `config/metrics/library/node_power_watts.yaml`
+```yaml
+id: node_power_watts
+name: Node Power Consumption
+description: Power consumption in watts from IPMI sensors
+metric: ipmi_power_watts{instance="{instance}"}
+labels:
+  instance: "{instance}"
+display:
+  unit: "W"
+  chart_type: area
+  color: "#f59e0b"
+  time_ranges:
+    - 1h
+    - 6h
+    - 24h
+    - 7d
+  default_range: 24h
+  aggregation: avg
+  thresholds:
+    warn: 300
+    crit: 350
+category: power
+tags:
+  - compute
+  - hardware
+  - ipmi
+```
+
+**Referencing metrics in templates**:
+```yaml
+templates:
+  - id: my-server
+    metrics:
+      - node_power_watts
+      - node_cpu_usage
+      - node_temperature_celsius
+```
+
+See [METRICS.md](METRICS.md) for complete metrics documentation.
+
 ### 2. Defining Topology
 
 The topology describes **where** your hardware is located.
@@ -189,14 +235,101 @@ You can assign instances using:
     ```
 `nodes:` is still accepted as a deprecated alias for `instance:`.
 
-## Adding Metrics
+## Plugin Management
 
-The backend is pre-configured to query:
-- `node_temperature_celsius`
-- `node_power_watts`
-- `node_health_status`
+Rackscope uses a plugin architecture to separate core features from optional integrations.
 
-Ensure your Prometheus exporters expose these metrics with a `node_id` label matching the hostnames defined in your topology.
+### Activating Plugins
+
+Plugins are registered in `src/rackscope/api/app.py`:
+
+```python
+from rackscope.plugins.registry import registry
+from rackscope.plugins.simulator import SimulatorPlugin
+from rackscope.plugins.slurm import SlurmPlugin
+
+# Register plugins during startup
+registry.register(SimulatorPlugin())
+registry.register(SlurmPlugin())
+```
+
+### Built-in Plugins
+
+**SimulatorPlugin** (`simulator`)
+- Generates realistic Prometheus metrics for demos
+- Enabled via `features.demo: true` in `config/app.yaml`
+- Configuration: `simulator` section in `app.yaml`
+
+**SlurmPlugin** (`workload-slurm`)
+- Slurm workload manager integration
+- Enabled via `slurm` section in `config/app.yaml`
+- Configuration: `slurm` section with metric name, labels, status mapping
+
+### Plugin Configuration
+
+Example `config/app.yaml`:
+
+```yaml
+# Enable demo mode (activates SimulatorPlugin)
+features:
+  demo: true
+
+# Simulator configuration
+simulator:
+  scenario: demo-small
+  seed: 42
+  update_interval_seconds: 20
+
+# Slurm configuration
+slurm:
+  metric: slurm_node_status
+  label_node: node
+  label_status: status
+  label_partition: partition
+  status_map:
+    OK: [idle, completing, allocated, mixed]
+    WARN: [drain, drained, draining, reserved]
+    CRIT: [down, down*, fail, failing, error, unknown]
+  mapping_path: config/slurm_mapping.yaml  # Optional
+```
+
+See [PLUGINS.md](PLUGINS.md) for plugin development guide.
+
+## Defining Metrics
+
+Metrics are defined in `config/metrics/library/` as YAML files. Each metric specifies:
+- Prometheus query
+- Display configuration (unit, color, chart type)
+- Aggregation method
+- Optional thresholds
+
+**Example**:
+```yaml
+id: node_cpu_usage
+name: Node CPU Usage
+metric: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+display:
+  unit: "%"
+  chart_type: area
+  color: "#3b82f6"
+  thresholds:
+    warn: 80
+    crit: 95
+category: performance
+```
+
+**Reference metrics in templates**:
+```yaml
+templates:
+  - id: my-server
+    metrics:
+      - node_cpu_usage
+      - node_power_watts
+```
+
+Ensure your Prometheus exporters expose these metrics with labels matching your topology (e.g., `instance` label matching hostnames).
+
+See [METRICS.md](METRICS.md) for complete documentation.
 
 ## Telemetry Refresh & Cache
 
