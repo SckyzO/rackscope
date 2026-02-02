@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Literal, List
+from typing import Optional, Literal, List, Dict, Any
 import re
 
 from pydantic import BaseModel, Field, field_validator
@@ -197,5 +197,19 @@ class AppConfig(BaseModel):
     planner: PlannerConfig = Field(default_factory=PlannerConfig)
     features: FeatureConfig = Field(default_factory=FeatureConfig)
     map: MapConfig = Field(default_factory=MapConfig)
-    simulator: SimulatorConfig = Field(default_factory=SimulatorConfig)
-    slurm: SlurmConfig = Field(default_factory=SlurmConfig)
+
+    # Plugin configuration (new format - recommended)
+    plugins: Dict[str, Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Plugin-specific configuration. Each plugin validates its own config."
+    )
+
+    # Legacy plugin configuration (deprecated - kept for backward compatibility)
+    simulator: Optional[SimulatorConfig] = Field(
+        default=None,
+        description="DEPRECATED: Use plugins.simulator instead"
+    )
+    slurm: Optional[SlurmConfig] = Field(
+        default=None,
+        description="DEPRECATED: Use plugins.slurm instead"
+    )

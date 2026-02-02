@@ -1,0 +1,130 @@
+# Example app.yaml with NEW plugin configuration format
+# This is the recommended format for plugin configuration
+
+app:
+  name: Rackscope
+  description: Datacenter Overview
+
+map:
+  default_view: world
+  default_zoom: 4
+  min_zoom: 2
+  max_zoom: 7
+  zoom_controls: true
+  center:
+    lat: 20
+    lon: 0
+
+paths:
+  topology: config/topology
+  templates: config/templates
+  checks: config/checks/library
+
+refresh:
+  room_state_seconds: 30
+  rack_state_seconds: 30
+
+cache:
+  ttl_seconds: 60
+
+telemetry:
+  prometheus_url: http://prometheus:9090
+  identity_label: instance
+  rack_label: rack_id
+  chassis_label: chassis_id
+  job_regex: node|rackscope-simulator
+  prometheus_heartbeat_seconds: 30
+  prometheus_latency_window: 20
+  debug_stats: false
+
+planner:
+  unknown_state: UNKNOWN
+  cache_ttl_seconds: 60
+  max_ids_per_query: 300
+
+features:
+  notifications: true
+  notifications_max_visible: 10
+  playlist: false
+  offline: false
+  demo: true
+
+# NEW FORMAT - Plugin Configuration
+# Each plugin declares its own configuration here
+plugins:
+  # Simulator Plugin Configuration
+  simulator:
+    enabled: true
+    update_interval_seconds: 20
+    seed: null
+    scenario: full-ok
+    scale_factor: 1.0
+    incident_rates:
+      node_micro_failure: 0.001
+      rack_macro_failure: 0.01
+      aisle_cooling_failure: 0.005
+    incident_durations:
+      rack: 3
+      aisle: 5
+    overrides_path: config/simulator_overrides.yaml
+    default_ttl_seconds: 120
+    metrics_catalog_path: config/simulator_metrics_full.yaml
+    metrics_catalogs:
+      - id: core
+        path: config/simulator_metrics_full.yaml
+        enabled: true
+      - id: slurm
+        path: config/simulator_metrics_slurm.yaml
+        enabled: true
+
+  # Slurm Plugin Configuration
+  slurm:
+    enabled: true
+    metric: slurm_node_status
+    label_node: node
+    label_status: status
+    label_partition: partition
+    mapping_path: config/slurm_mapping.yaml
+    roles:
+      - compute
+      - visu
+    include_unlabeled: false
+    status_map:
+      ok:
+        - idle
+        - allocated
+        - alloc
+        - completing
+        - comp
+      warn:
+        - mixed
+        - mix
+        - maint
+        - planned
+        - plnd
+        - reserved
+        - resv
+        - blocked
+        - block
+        - power_down
+        - pow_dn
+        - power_up
+        - pow_up
+        - powering_up
+        - powered_down
+        - reboot_issued
+        - reboot_req
+      crit:
+        - down
+        - drain
+        - drained
+        - draining
+        - drng
+        - fail
+        - failing
+        - failg
+        - error
+        - unknown
+        - unk
+        - noresp
+        - inval

@@ -1,11 +1,16 @@
 """Slurm Workload Plugin - Job scheduling and monitoring."""
 
+import logging
 from typing import Optional, Dict, Any
 
 from fastapi import APIRouter, FastAPI, HTTPException
 
 from rackscope.plugins.base import RackscopePlugin, MenuSection, MenuItem
 from rackscope.services import slurm_service, topology_service
+from rackscope.model.config import AppConfig
+from .config import SlurmPluginConfig
+
+logger = logging.getLogger(__name__)
 
 
 class SlurmPlugin(RackscopePlugin):
@@ -18,6 +23,7 @@ class SlurmPlugin(RackscopePlugin):
 
     def __init__(self):
         self._router = APIRouter(tags=["slurm"])
+        self.config: Optional[SlurmPluginConfig] = None
         self._setup_routes()
 
     @property
@@ -39,6 +45,40 @@ class SlurmPlugin(RackscopePlugin):
     @property
     def author(self) -> str:
         return "Rackscope Team"
+
+    def _load_config(self, app_config: Optional[AppConfig]) -> SlurmPluginConfig:
+        """
+        Load Slurm configuration from app config.
+
+        Supports both new format (plugins.slurm) and legacy format (slurm).
+        """
+        raw_config = {}
+
+        if app_config:
+            # Try new format first (recommended)
+            if hasattr(app_config, 'plugins') and 'slurm' in app_config.plugins:
+                raw_config = app_config.plugins['slurm']
+                logger.info("Loading Slurm config from plugins.slurm (new format)")
+            # Fallback to legacy format
+            elif hasattr(app_config, 'slurm') and app_config.slurm:
+                raw_config = app_config.slurm.model_dump()
+                logger.warning(
+                    "Loading Slurm config from legacy format. "
+                    "Please migrate to plugins.slurm in app.yaml"
+                )
+
+        # Validate and create config with defaults
+        return SlurmPluginConfig(**raw_config)
+
+    async def on_startup(self) -> None:
+        """Initialize Slurm plugin and load configuration."""
+        from rackscope.api.app import APP_CONFIG
+
+        self.config = self._load_config(APP_CONFIG)
+        logger.info(
+            f"Slurm plugin started (metric={self.config.metric}, "
+            f"roles={self.config.roles})"
+        )
 
     def _setup_routes(self) -> None:
         """Setup all Slurm routes."""

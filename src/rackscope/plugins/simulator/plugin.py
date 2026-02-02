@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from rackscope.plugins.base import RackscopePlugin, MenuSection, MenuItem
 from rackscope.api.dependencies import get_app_config_optional
 from rackscope.model.config import AppConfig
+from .config import SimulatorPluginConfig
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class SimulatorPlugin(RackscopePlugin):
 
     def __init__(self):
         self._router = APIRouter(prefix="/api/simulator", tags=["simulator"])
+        self.config: Optional[SimulatorPluginConfig] = None
         self._setup_routes()
 
     @property
@@ -45,6 +47,40 @@ class SimulatorPlugin(RackscopePlugin):
     @property
     def author(self) -> str:
         return "Rackscope Team"
+
+    def _load_config(self, app_config: Optional[AppConfig]) -> SimulatorPluginConfig:
+        """
+        Load simulator configuration from app config.
+
+        Supports both new format (plugins.simulator) and legacy format (simulator).
+        """
+        raw_config = {}
+
+        if app_config:
+            # Try new format first (recommended)
+            if hasattr(app_config, 'plugins') and 'simulator' in app_config.plugins:
+                raw_config = app_config.plugins['simulator']
+                logger.info("Loading simulator config from plugins.simulator (new format)")
+            # Fallback to legacy format
+            elif hasattr(app_config, 'simulator') and app_config.simulator:
+                raw_config = app_config.simulator.model_dump()
+                logger.warning(
+                    "Loading simulator config from legacy format. "
+                    "Please migrate to plugins.simulator in app.yaml"
+                )
+
+        # Validate and create config with defaults
+        return SimulatorPluginConfig(**raw_config)
+
+    async def on_startup(self) -> None:
+        """Initialize simulator plugin and load configuration."""
+        from rackscope.api.app import APP_CONFIG
+
+        self.config = self._load_config(APP_CONFIG)
+        logger.info(
+            f"Simulator plugin started (scenario={self.config.scenario}, "
+            f"interval={self.config.update_interval_seconds}s)"
+        )
 
     def _setup_routes(self) -> None:
         """Setup all simulator routes."""
