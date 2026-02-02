@@ -1,0 +1,25 @@
+id: ipmi_up
+name: IPMI Exporter Up
+description: IPMI exporter availability (1=up, 0=down)
+metric: ipmi_up{instance="{instance}"}
+labels:
+  instance: "{instance}"
+display:
+  unit: "bool"
+  chart_type: line
+  color: "#10b981"
+  time_ranges:
+    - 1h
+    - 6h
+    - 24h
+    - 7d
+  default_range: 24h
+  aggregation: avg
+  thresholds:
+    crit: 0
+category: health
+tags:
+  - compute
+  - hardware
+  - ipmi
+  - availability

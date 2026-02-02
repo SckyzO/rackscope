@@ -239,7 +239,7 @@ def test_add_simulator_override_invalid_metric(mock_app_config_with_simulator):
     )
 
     assert response.status_code == 400
-    assert "not supported" in response.json()["detail"]
+    assert "Unsupported metric" in response.json()["detail"]
 
     app.dependency_overrides.clear()
 
@@ -464,5 +464,187 @@ def test_delete_simulator_override_not_found(mock_app_config_with_simulator):
     # Should still return remaining overrides
     data = response.json()
     assert len(data["overrides"]) == 1
+
+    app.dependency_overrides.clear()
+
+
+# Test GET /api/simulator/status
+
+
+def test_get_simulator_status_not_running():
+    """Test getting simulator status when not running."""
+    response = client.get("/api/simulator/status")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "running" in data
+    assert data["running"] is False
+    assert "endpoint" in data
+    assert data["endpoint"] == "http://localhost:9000/metrics"
+
+
+# Test GET /api/simulator/metrics
+
+
+def test_get_available_metrics_from_library(mock_app_config_with_simulator):
+    """Test getting available metrics from metrics library."""
+    from rackscope.api import app as app_module
+    from rackscope.model.loader import load_metrics_library
+
+    # Load actual metrics library
+    app_module.METRICS_LIBRARY = load_metrics_library("config/metrics/library")
+
+    response = client.get("/api/simulator/metrics")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "metrics" in data
+    assert len(data["metrics"]) >= 5  # We created 5 metrics
+
+    # Check structure
+    if data["metrics"]:
+        metric = data["metrics"][0]
+        assert "id" in metric
+        assert "name" in metric
+        assert "unit" in metric
+        assert "category" in metric
+
+
+def test_get_available_metrics_fallback():
+    """Test getting metrics when library not loaded."""
+    from rackscope.api import app as app_module
+
+    # Clear metrics library
+    original = app_module.METRICS_LIBRARY
+    app_module.METRICS_LIBRARY = None
+
+    response = client.get("/api/simulator/metrics")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "metrics" in data
+    assert len(data["metrics"]) >= 1  # Should have fallback metrics
+
+    # Restore
+    app_module.METRICS_LIBRARY = original
+
+
+# Test POST /api/simulator/incidents
+
+
+def test_trigger_incident_rack_down(mock_app_config_with_simulator):
+    """Test triggering rack down incident."""
+    app.dependency_overrides[get_app_config_optional] = override_app_config(
+        mock_app_config_with_simulator
+    )
+
+    response = client.post(
+        "/api/simulator/incidents",
+        json={"type": "rack_down", "target_id": "r01-01", "duration": 300},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "triggered"
+    assert data["incident_type"] == "rack_down"
+    assert data["target_id"] == "r01-01"
+    assert data["duration"] == 300
+    assert "expires_at" in data
+
+    # Verify override was created
+    overrides_path = Path(mock_app_config_with_simulator.simulator.overrides_path)
+    overrides_data = yaml.safe_load(overrides_path.read_text())
+    assert len(overrides_data["overrides"]) == 1
+    override = overrides_data["overrides"][0]
+    assert override["rack_id"] == "r01-01"
+    assert override["metric"] == "rack_down"
+    assert override["value"] == 1
+
+    app.dependency_overrides.clear()
+
+
+def test_trigger_incident_rack_down_permanent(mock_app_config_with_simulator):
+    """Test triggering permanent rack down incident."""
+    app.dependency_overrides[get_app_config_optional] = override_app_config(
+        mock_app_config_with_simulator
+    )
+
+    response = client.post(
+        "/api/simulator/incidents",
+        json={"type": "rack_down", "target_id": "r01-01", "duration": 0},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    # When duration is 0, expires_at should be None (no expiration)
+    assert data.get("expires_at") is None
+
+    app.dependency_overrides.clear()
+
+
+def test_trigger_incident_aisle_cooling(mock_app_config_with_simulator):
+    """Test triggering aisle cooling failure."""
+    app.dependency_overrides[get_app_config_optional] = override_app_config(
+        mock_app_config_with_simulator
+    )
+
+    response = client.post(
+        "/api/simulator/incidents",
+        json={"type": "aisle_cooling", "target_id": "aisle-a", "duration": 600},
+    )
+
+    # Currently not implemented
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "not_implemented"
+
+    app.dependency_overrides.clear()
+
+
+def test_trigger_incident_missing_type(mock_app_config_with_simulator):
+    """Test error when type is missing."""
+    app.dependency_overrides[get_app_config_optional] = override_app_config(
+        mock_app_config_with_simulator
+    )
+
+    response = client.post("/api/simulator/incidents", json={"target_id": "r01-01"})
+
+    assert response.status_code == 400
+    assert "type and target_id are required" in response.json()["detail"]
+
+    app.dependency_overrides.clear()
+
+
+def test_trigger_incident_invalid_type(mock_app_config_with_simulator):
+    """Test error with invalid incident type."""
+    app.dependency_overrides[get_app_config_optional] = override_app_config(
+        mock_app_config_with_simulator
+    )
+
+    response = client.post(
+        "/api/simulator/incidents",
+        json={"type": "invalid_type", "target_id": "r01-01"},
+    )
+
+    assert response.status_code == 400
+    assert "rack_down" in response.json()["detail"]
+    assert "aisle_cooling" in response.json()["detail"]
+
+    app.dependency_overrides.clear()
+
+
+def test_trigger_incident_negative_duration(mock_app_config_with_simulator):
+    """Test error with negative duration."""
+    app.dependency_overrides[get_app_config_optional] = override_app_config(
+        mock_app_config_with_simulator
+    )
+
+    response = client.post(
+        "/api/simulator/incidents",
+        json={"type": "rack_down", "target_id": "r01-01", "duration": -100},
+    )
+
+    assert response.status_code == 400
+    assert "non-negative" in response.json()["detail"]
 
     app.dependency_overrides.clear()

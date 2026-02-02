@@ -1,0 +1,22 @@
+id: rack_down
+name: Rack Down
+description: Rack failure status for simulation (1=down, 0=up)
+metric: rack_down
+labels:
+  rack_id: "{rack_id}"
+display:
+  unit: "bool"
+  chart_type: line
+  color: "#ef4444"
+  time_ranges:
+    - 1h
+    - 6h
+    - 24h
+  default_range: 6h
+  aggregation: max
+  thresholds:
+    crit: 1
+category: health
+tags:
+  - infrastructure
+  - simulation

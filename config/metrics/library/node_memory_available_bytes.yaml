@@ -1,0 +1,24 @@
+id: node_memory_available_bytes
+name: Node Memory Available
+description: Available memory in bytes
+metric: node_memory_MemAvailable_bytes{instance="{instance}"}
+labels:
+  instance: "{instance}"
+display:
+  unit: "bytes"
+  chart_type: line
+  color: "#10b981"
+  time_ranges:
+    - 1h
+    - 6h
+    - 24h
+    - 7d
+  default_range: 6h
+  aggregation: avg
+  format:
+    decimals: 0
+category: performance
+tags:
+  - compute
+  - memory
+  - node_exporter

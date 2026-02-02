@@ -1,0 +1,25 @@
+id: node_cpu_usage
+name: Node CPU Usage
+description: CPU usage percentage (100 - idle time)
+metric: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle",instance="{instance}"}[5m])) * 100)
+labels:
+  instance: "{instance}"
+display:
+  unit: "%"
+  chart_type: area
+  color: "#3b82f6"
+  time_ranges:
+    - 1h
+    - 6h
+    - 24h
+    - 7d
+  default_range: 6h
+  aggregation: avg
+  thresholds:
+    warn: 80
+    crit: 95
+category: performance
+tags:
+  - compute
+  - cpu
+  - node_exporter

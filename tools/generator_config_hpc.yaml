@@ -1,0 +1,179 @@
+version: "1.0"
+description: "HPC cluster topology - 3 aisles, 15 racks, ~600 nodes"
+
+node_counters:
+  compute: 1
+  gpu: 1
+  visu: 1
+  storage: 1
+  io: 1
+  login: 1
+  mgmt: 1
+
+sites:
+  - id: dc1
+    name: "Main Datacenter"
+    location:
+      generate: true
+      country: "FR"
+
+    rooms:
+      - id: room-a
+        name: "HPC Cluster Room A"
+
+        aisles:
+          # AISLE 01: COMPUTE (6 CPU + 4 GPU Racks)
+          - id: aisle-01
+            name: "Aisle 01 (Compute)"
+            racks:
+              # 6 CPU Racks (40 nodes each = 240 compute nodes)
+              - count: 6
+                id_pattern: "r01-{rack_num:02d}"
+                name_pattern: "Rack CPU {rack_num:02d}"
+                template_id: "bull-xh3000"
+                u_height: 48
+                devices:
+                  # Top switches
+                  - template_id: "ib-switch-l1"
+                    count: 1
+                    u_start: 42
+                    name_pattern: "isw-l1-{rack_num:02d}"
+                    id_pattern: "{rack_id}-isw"
+                  - template_id: "eth-switch-tor"
+                    count: 1
+                    u_start: 41
+                    name_pattern: "esw-{rack_num:02d}"
+                    id_pattern: "{rack_id}-esw"
+                  # 20x 1U Twin (2 nodes) = 40 nodes/rack
+                  - template_id: "bs-1u-twin-cpu"
+                    count: 20
+                    u_start: 1
+                    u_step: 2
+                    name_pattern: "Compute Encl {i:02d}"
+                    id_pattern: "{rack_id}-c{i:02d}"
+                    nodes_pattern: "compute[{start:03d}-{end:03d}]"
+                    nodes_per_device: 2
+
+              # 4 GPU Racks (40 nodes each = 160 GPU nodes)
+              - count: 4
+                id_pattern: "r01-{rack_num:02d}"
+                name_pattern: "Rack GPU {rack_num:02d}"
+                template_id: "bull-xh3000"
+                u_height: 48
+                devices:
+                  # Top switches
+                  - template_id: "ib-switch-l1"
+                    count: 1
+                    u_start: 42
+                    name_pattern: "isw-l1-{rack_num:02d}"
+                    id_pattern: "{rack_id}-isw"
+                  - template_id: "eth-switch-tor"
+                    count: 1
+                    u_start: 41
+                    name_pattern: "esw-{rack_num:02d}"
+                    id_pattern: "{rack_id}-esw"
+                  # 10x 4U Quad GPU = 40 nodes/rack
+                  - template_id: "bs-4u-quad-gpu"
+                    count: 10
+                    u_start: 1
+                    u_step: 4
+                    name_pattern: "GPU Encl {i:02d}"
+                    id_pattern: "{rack_id}-g{i:02d}"
+                    nodes_pattern: "gpu[{start:03d}-{end:03d}]"
+                    nodes_per_device: 4
+
+          # AISLE 02: STORAGE (4 Racks)
+          - id: aisle-02
+            name: "Aisle 02 (Storage)"
+            racks:
+              - count: 4
+                id_pattern: "r02-{rack_num:02d}"
+                name_pattern: "Rack Storage {rack_num:02d}"
+                template_id: "standard-42u-air"
+                u_height: 42
+                devices:
+                  # Top switch
+                  - template_id: "eth-switch-tor"
+                    count: 1
+                    u_start: 42
+                    name_pattern: "esw-stor-{rack_num:02d}"
+                    id_pattern: "{rack_id}-esw"
+                  # 2 I/O nodes
+                  - template_id: "srv-1u-mgmt"
+                    count: 1
+                    u_start: 25
+                    name_pattern: "io-node-{rack_num}-a"
+                    id_pattern: "{rack_id}-gw1"
+                    nodes_pattern: "io{rack_num}a"
+                    nodes_per_device: 1
+                  - template_id: "srv-1u-mgmt"
+                    count: 1
+                    u_start: 26
+                    name_pattern: "io-node-{rack_num}-b"
+                    id_pattern: "{rack_id}-gw2"
+                    nodes_pattern: "io{rack_num}b"
+                    nodes_per_device: 1
+                  # 1 NetApp controller (24 disks)
+                  - template_id: "storage-2u-24disk"
+                    count: 1
+                    u_start: 23
+                    name_pattern: "NetApp Controller"
+                    id_pattern: "{rack_id}-netapp"
+                    nodes_pattern: "ssd-r{rack_num}[01-24]"
+                    nodes_per_device: 24
+                  # 5 Disk arrays (60 disks each)
+                  - template_id: "storage-4u-60disk"
+                    count: 5
+                    u_start: 1
+                    u_step: 4
+                    name_pattern: "Disk Array {i}"
+                    id_pattern: "{rack_id}-da{i}"
+                    nodes_pattern: "hdd-r{rack_num}-d{i}[01-60]"
+                    nodes_per_device: 60
+
+          # AISLE 03: MANAGEMENT (1 Rack)
+          - id: aisle-03
+            name: "Aisle 03 (Services)"
+            racks:
+              - count: 1
+                id_pattern: "r03-01"
+                name_pattern: "Rack Mgmt 01"
+                template_id: "standard-42u-air"
+                u_height: 42
+                devices:
+                  # L2 Core switch
+                  - template_id: "ib-switch-l2"
+                    count: 1
+                    u_start: 41
+                    name_pattern: "isw-l2-01 (Core)"
+                    id_pattern: "r03-01-isw-l2"
+                  # 2 Management nodes
+                  - template_id: "srv-1u-mgmt"
+                    count: 2
+                    u_start: 20
+                    u_step: 1
+                    name_pattern: "mngt{i:02d}"
+                    id_pattern: "mngt{i:02d}"
+                    nodes_pattern: "mngt{i:02d}"
+                    nodes_per_device: 1
+                    node_counter_start: 1
+                  # 4 Login nodes
+                  - template_id: "srv-1u-mgmt"
+                    count: 4
+                    u_start: 16
+                    u_step: 1
+                    name_pattern: "login{i:02d}"
+                    id_pattern: "login{i:02d}"
+                    nodes_pattern: "login{i:02d}"
+                    nodes_per_device: 1
+                    node_counter_start: 1
+                  # 6 Visu chassis (2 nodes each = 12 visu nodes)
+                  - template_id: "bs-2u-twin-visu"
+                    count: 6
+                    u_start: 4
+                    u_step: 2
+                    name_pattern: "Visu Chassis {i}"
+                    id_pattern: "visu-ch-{i}"
+                    nodes_pattern: "visu[{start:02d}-{end:02d}]"
+                    nodes_per_device: 2
+                    node_counter_start: 1

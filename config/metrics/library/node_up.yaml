@@ -1,0 +1,23 @@
+id: node_up
+name: Node Up
+description: Node availability status (1=up, 0=down)
+metric: up
+labels:
+  instance: "{instance}"
+display:
+  unit: "bool"
+  chart_type: line
+  color: "#10b981"
+  time_ranges:
+    - 1h
+    - 6h
+    - 24h
+    - 7d
+  default_range: 24h
+  aggregation: avg
+  thresholds:
+    crit: 0
+category: health
+tags:
+  - compute
+  - availability

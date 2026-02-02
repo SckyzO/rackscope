@@ -1,0 +1,25 @@
+id: node_network_transmit_bytes
+name: Node Network Transmit Rate
+description: Network transmit throughput in bytes per second (excluding loopback)
+metric: rate(node_network_transmit_bytes_total{instance="{instance}",device!~"lo|veth.*"}[5m])
+labels:
+  instance: "{instance}"
+display:
+  unit: "bytes/s"
+  chart_type: line
+  color: "#f97316"
+  time_ranges:
+    - 1h
+    - 6h
+    - 24h
+    - 7d
+  default_range: 6h
+  aggregation: avg
+  format:
+    decimals: 0
+category: network
+tags:
+  - compute
+  - network
+  - bandwidth
+  - node_exporter

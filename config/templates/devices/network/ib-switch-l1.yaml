@@ -3,25 +3,30 @@ templates:
   name: InfiniBand L1 (NDR 40p)
   type: network
   role: infiniband
-  role: infiniband
   u_height: 1
   layout:
     type: grid
     rows: 1
     cols: 1
     matrix:
-      - [1]
+    - - 1
   rear_layout:
     type: grid
     rows: 1
     cols: 2
     matrix:
-      - [901, 902]
+    - - 901
+      - 902
   checks:
+  - switch_up
+  - switch_temp_warn
+  - switch_temp_crit
+  - switch_power_warn
+  - switch_power_crit
+  metrics:
   - node_up
-  checks:
-    - switch_up
-    - switch_temp_warn
-    - switch_temp_crit
-    - switch_power_warn
-    - switch_power_crit
+  - node_temperature
+  - node_power
+  - switch_port_status
+  - switch_port_traffic_in
+  - switch_port_traffic_out

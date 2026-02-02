@@ -1,0 +1,24 @@
+id: eseries_storage_system_status
+name: E-Series System Status
+description: E-Series storage system status (0=optimal, 1=failed)
+metric: eseries_storage_system_status{instance="{instance}",status="failed"}
+labels:
+  instance: "{instance}"
+display:
+  unit: "bool"
+  chart_type: line
+  color: "#dc2626"
+  time_ranges:
+    - 1h
+    - 6h
+    - 24h
+    - 7d
+  default_range: 24h
+  aggregation: max
+  thresholds:
+    crit: 1
+category: health
+tags:
+  - storage
+  - eseries
+  - system

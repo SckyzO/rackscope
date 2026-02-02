@@ -1,0 +1,26 @@
+id: slurm_node_status
+name: Slurm Node Status
+description: Slurm node status by partition (allocated, idle, down, drain, etc.)
+metric: slurm_node_status{node="{instance}"}
+labels:
+  node: "{instance}"
+display:
+  unit: "enum"
+  chart_type: line
+  color: "#8b5cf6"
+  time_ranges:
+    - 1h
+    - 6h
+    - 24h
+    - 7d
+  default_range: 24h
+  aggregation: max
+  thresholds:
+    warn: 1
+    crit: 2
+category: scheduler
+tags:
+  - compute
+  - slurm
+  - hpc
+  - workload

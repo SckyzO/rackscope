@@ -191,6 +191,78 @@ docker compose exec frontend npm install
 make build
 ```
 
+## AI Development Tools
+
+### Context7 for Documentation Access
+
+**IMPORTANT**: When working with external libraries, frameworks, or implementing features based on specific technologies, **ALWAYS use Context7 MCP** to access official documentation and best practices.
+
+**Use Context7 for:**
+- Looking up official API documentation (Prometheus, React, FastAPI, etc.)
+- Finding code examples from official sources
+- Understanding best practices for specific libraries
+- Getting up-to-date syntax and patterns
+- Verifying metric names and PromQL queries
+
+**Example workflow:**
+```
+User: "Add CPU metrics from node_exporter"
+→ Use Context7 to query Prometheus node_exporter documentation
+→ Get actual metric names (node_cpu_seconds_total, etc.)
+→ Implement with real metric names, not guessed ones
+```
+
+**How to use:**
+1. Use `mcp__plugin_context7_context7__resolve-library-id` to find the library
+2. Use `mcp__plugin_context7_context7__query-docs` with specific questions
+3. Implement based on actual documentation, not assumptions
+
+**NEVER guess or invent:**
+- Metric names
+- API endpoints
+- Configuration formats
+- Library APIs
+
+**ALWAYS verify with Context7 first.**
+
+### Frontend Design Skill
+
+**IMPORTANT**: When working on UI/UX design, frontend components, or visual layouts, **ALWAYS use the /frontend-design skill** for production-grade design quality.
+
+**Use /frontend-design for:**
+- Creating new UI components
+- Designing page layouts
+- Implementing visual features
+- Building forms and interactive elements
+- Styling and theming
+- Responsive design
+
+**Example workflow:**
+```
+User: "Create a metrics dashboard page"
+→ Invoke /frontend-design skill
+→ Get distinctive, polished design with proper spacing, colors, accessibility
+→ Avoid generic AI aesthetics
+```
+
+**The /frontend-design skill:**
+- Produces production-grade, distinctive designs
+- Avoids generic AI aesthetics
+- Ensures proper accessibility
+- Uses project's design system (Tailwind CSS, dark mode first-class)
+- Creates polished, professional interfaces
+
+**When NOT to use /frontend-design:**
+- Backend API changes
+- Configuration file updates
+- Testing or linting
+- Database/data model work
+
+**Call the skill using:**
+```
+Skill tool with skill="frontend-design"
+```
+
 ## Architecture
 
 ### Backend (Python / FastAPI)

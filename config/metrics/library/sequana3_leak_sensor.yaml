@@ -1,0 +1,28 @@
+id: sequana3_leak_sensor
+name: Sequana3 Leak Sensor
+description: Sequana3 liquid cooling leak detection sensor
+metric: sequana3_hyc_leak_sensor_pump{rack_id="{rack_id}"}
+labels:
+  rack_id: "{rack_id}"
+display:
+  unit: "bool"
+  chart_type: line
+  color: "#dc2626"
+  time_ranges:
+    - 1h
+    - 6h
+    - 24h
+    - 7d
+  default_range: 24h
+  aggregation: max
+  thresholds:
+    crit: 1
+  format:
+    decimals: 2
+category: cooling
+tags:
+  - infrastructure
+  - liquid
+  - sequana3
+  - cooling
+  - safety

@@ -10,5 +10,7 @@ rack_component_templates:
     - pdu_current_warn
     - pdu_current_crit
   metrics:
-    - power
-    - current
+    - pdu_active_power
+    - pdu_current
+    - pdu_energy_total
+    - pdu_voltage

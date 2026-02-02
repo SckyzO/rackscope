@@ -13,6 +13,7 @@ services:
       - ./src:/app/src
       - ./config:/app/config
       - ./tests:/app/tests
+      - ./tools:/app/tools
       - ./pyproject.toml:/app/pyproject.toml
       - ./mypy.ini:/app/mypy.ini
     environment:

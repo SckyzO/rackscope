@@ -1,0 +1,25 @@
+id: node_memory_used_percent
+name: Node Memory Usage
+description: Memory usage percentage (1 - available/total)
+metric: (1 - (node_memory_MemAvailable_bytes{instance="{instance}"} / node_memory_MemTotal_bytes{instance="{instance}"})) * 100
+labels:
+  instance: "{instance}"
+display:
+  unit: "%"
+  chart_type: area
+  color: "#8b5cf6"
+  time_ranges:
+    - 1h
+    - 6h
+    - 24h
+    - 7d
+  default_range: 6h
+  aggregation: avg
+  thresholds:
+    warn: 85
+    crit: 95
+category: performance
+tags:
+  - compute
+  - memory
+  - node_exporter

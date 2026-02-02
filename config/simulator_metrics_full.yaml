@@ -14,6 +14,78 @@ metrics:
   - name: up
     scope: node
     instances: ["*"]
+
+  # Node Exporter: CPU metrics
+  - name: node_cpu_seconds_total
+    scope: node
+    instances: ["*"]
+    labels:
+      mode: idle
+      cpu: $cpu
+
+  # Node Exporter: Memory metrics
+  - name: node_memory_MemTotal_bytes
+    scope: node
+    instances: ["*"]
+  - name: node_memory_MemAvailable_bytes
+    scope: node
+    instances: ["*"]
+
+  # Node Exporter: Filesystem metrics
+  - name: node_filesystem_size_bytes
+    scope: node
+    instances: ["*"]
+    labels:
+      mountpoint: /
+      fstype: ext4
+  - name: node_filesystem_avail_bytes
+    scope: node
+    instances: ["*"]
+    labels:
+      mountpoint: /
+      fstype: ext4
+
+  # Node Exporter: Disk I/O metrics
+  - name: node_disk_read_bytes_total
+    scope: node
+    instances: ["*"]
+    labels:
+      device: sda
+  - name: node_disk_written_bytes_total
+    scope: node
+    instances: ["*"]
+    labels:
+      device: sda
+
+  # Node Exporter: Network metrics
+  - name: node_network_receive_bytes_total
+    scope: node
+    instances: ["*"]
+    labels:
+      device: eth0
+  - name: node_network_transmit_bytes_total
+    scope: node
+    instances: ["*"]
+    labels:
+      device: eth0
+
+  # Switch port metrics
+  - name: switch_port_oper_status
+    scope: node
+    instances: ["*isw*", "*esw*"]
+    labels:
+      port: $port
+  - name: switch_port_in_octets
+    scope: node
+    instances: ["*isw*", "*esw*"]
+    labels:
+      port: $port
+  - name: switch_port_out_octets
+    scope: node
+    instances: ["*isw*", "*esw*"]
+    labels:
+      port: $port
+
   - name: ipmi_fan_speed_state
     scope: node
     instances: ["*"]
@@ -42,6 +114,15 @@ metrics:
   - name: ipmi_up
     scope: node
     instances: ["*"]
+
+  # Slurm workload manager metrics
+  - name: slurm_node_status
+    scope: node
+    instances: ["*"]
+    labels:
+      status: $status
+      partition: $partition
+      node_id: $node_id
 
   - name: eseries_exporter_collect_error
     scope: node
@@ -191,6 +272,15 @@ metrics:
       inletid: $inletid
       inletname: $inletname
   - name: raritan_pdu_inletrating
+    scope: rack
+    racks: ["*"]
+    labels:
+      rack_id: $rack_id
+      pduid: $pduid
+      pduname: $pduname
+      inletid: $inletid
+      inletname: $inletname
+  - name: raritan_pdu_voltage_volt
     scope: rack
     racks: ["*"]
     labels:
