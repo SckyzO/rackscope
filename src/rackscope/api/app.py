@@ -253,16 +253,56 @@ async def get_active_alerts():
                             "device_name": device.name,
                         }
 
+    # Build rack context
+    rack_context: Dict[str, Dict[str, str]] = {}
+    for site in TOPOLOGY.sites:
+        for room in site.rooms:
+            for aisle in room.aisles:
+                for rack in aisle.racks:
+                    rack_context[rack.id] = {
+                        "site_id": site.id,
+                        "site_name": site.name,
+                        "room_id": room.id,
+                        "room_name": room.name,
+                        "rack_name": rack.name,
+                    }
+            for rack in room.standalone_racks:
+                rack_context[rack.id] = {
+                    "site_id": site.id,
+                    "site_name": site.name,
+                    "room_id": room.id,
+                    "room_name": room.name,
+                    "rack_name": rack.name,
+                }
+
     alerts = []
+
+    # Node-level alerts
     for node_id, node_checks in snapshot.node_alerts.items():
         context = node_context.get(node_id)
         if not context:
             continue
         alerts.append(
             {
+                "type": "node",
                 "node_id": node_id,
                 "state": snapshot.node_states.get(node_id, "UNKNOWN"),
                 "checks": [{"id": cid, "severity": sev} for cid, sev in node_checks.items()],
+                **context,
+            }
+        )
+
+    # Rack-level alerts
+    for rack_id, rack_checks in snapshot.rack_alerts.items():
+        context = rack_context.get(rack_id)
+        if not context:
+            continue
+        alerts.append(
+            {
+                "type": "rack",
+                "rack_id": rack_id,
+                "state": snapshot.rack_states.get(rack_id, "UNKNOWN"),
+                "checks": [{"id": cid, "severity": sev} for cid, sev in rack_checks.items()],
                 **context,
             }
         )

@@ -214,12 +214,14 @@ async def get_rack_state(
         }
 
     rack_state = snapshot.rack_states.get(rack_id, aggregate_states(node_states))
+    rack_alerts = snapshot.rack_alerts.get(rack_id, {})
 
     avg_temp = total_temp / temp_count if temp_count > 0 else 0
 
     return {
         "rack_id": rack_id,
         "state": rack_state,
+        "checks": [{"id": cid, "severity": sev} for cid, sev in rack_alerts.items()],
         "metrics": {"temperature": avg_temp, "power": total_power},
         "infra_metrics": {"components": component_metrics},
         "nodes": processed_nodes,

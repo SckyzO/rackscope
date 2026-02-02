@@ -32,6 +32,8 @@ class PlannerSnapshot:
     rack_states: Dict[str, str] = field(default_factory=dict)
     rack_nodes: Dict[str, List[str]] = field(default_factory=dict)
     node_alerts: Dict[str, Dict[str, str]] = field(default_factory=dict)
+    chassis_alerts: Dict[str, Dict[str, str]] = field(default_factory=dict)
+    rack_alerts: Dict[str, Dict[str, str]] = field(default_factory=dict)
 
 
 class TelemetryPlanner:
@@ -76,6 +78,8 @@ class TelemetryPlanner:
         chassis_states: Dict[str, str] = {}
         rack_states: Dict[str, str] = {}
         node_alerts: Dict[str, Dict[str, str]] = {}
+        chassis_alerts: Dict[str, Dict[str, str]] = {}
+        rack_alerts: Dict[str, Dict[str, str]] = {}
 
         seen_nodes: set[str] = set()
         seen_chassis: set[str] = set()
@@ -104,9 +108,19 @@ class TelemetryPlanner:
                 elif check.scope == "chassis":
                     seen_chassis.add(key)
                     chassis_states[key] = _max_severity(chassis_states.get(key), severity)
+                    if severity in ("WARN", "CRIT"):
+                        chassis_alerts.setdefault(key, {})
+                        current = chassis_alerts[key].get(check.id)
+                        if _max_severity(current, severity) == severity:
+                            chassis_alerts[key][check.id] = severity
                 elif check.scope == "rack":
                     seen_racks.add(key)
                     rack_states[key] = _max_severity(rack_states.get(key), severity)
+                    if severity in ("WARN", "CRIT"):
+                        rack_alerts.setdefault(key, {})
+                        current = rack_alerts[key].get(check.id)
+                        if _max_severity(current, severity) == severity:
+                            rack_alerts[key][check.id] = severity
 
         _apply_unknown(node_ids, seen_nodes, node_states, self.config.unknown_state)
         _apply_unknown(chassis_ids, seen_chassis, chassis_states, self.config.unknown_state)
@@ -133,6 +147,8 @@ class TelemetryPlanner:
             rack_states=rack_states,
             rack_nodes=rack_nodes,
             node_alerts=node_alerts,
+            chassis_alerts=chassis_alerts,
+            rack_alerts=rack_alerts,
         )
         return self._snapshot
 
