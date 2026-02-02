@@ -9,14 +9,24 @@ Start here to understand the project:
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - High-level architecture overview
 - **[NOTES.md](./NOTES.md)** - Working notes and implementation details
 
+### 🤖 AI Agent Guidelines
+
+Instructions for AI coding assistants:
+
+- **[AGENTS.md](./AGENTS.md)** - Working agreement for all coding agents (strict rules)
+- **[CLAUDE.md](./CLAUDE.md)** - Claude Code specific guidance and environment setup
+- **[GEMINI.md](./GEMINI.md)** - Gemini CLI working agreement
+- **[prompt.md](./prompt.md)** - Repository bootstrap prompt for new AI sessions
+
 ## 📋 Strategic Plans
 
 Long-term vision and architecture plans:
 
 - **[plans/ROADMAP.md](./plans/ROADMAP.md)** - Project roadmap and milestones
+- **[plans/REFACTORING_ROADMAP.md](./plans/REFACTORING_ROADMAP.md)** - Refactoring roadmap and progress tracking
 - **[plans/FOUNDATION_PLAN.md](./plans/FOUNDATION_PLAN.md)** - Foundation architecture plan
 - **[plans/LOGICAL_ARCHITECTURE_PLAN.md](./plans/LOGICAL_ARCHITECTURE_PLAN.md)** - Logical architecture design
-- **[plans/PLUGIN_ARCHITECTURE.md](./plans/PLUGIN_ARCHITECTURE.md)** - Plugin system architecture
+- **[plans/PLUGIN_ARCHITECTURE.md](./plans/PLUGIN_ARCHITECTURE.md)** - Plugin system architecture ⭐
 
 ## 🏗️ Implementation Phases
 
@@ -24,6 +34,7 @@ Detailed phase-by-phase implementation plans:
 
 ### Completed Phases
 
+- **[phases/BASELINE_METRICS.md](./phases/BASELINE_METRICS.md)** - Baseline metrics before refactoring
 - **[phases/PHASE_1_BACKEND_ROUTER_SPLIT.md](./phases/PHASE_1_BACKEND_ROUTER_SPLIT.md)** - Backend router organization
 - **[phases/PHASE_2_DEPENDENCY_INJECTION.md](./phases/PHASE_2_DEPENDENCY_INJECTION.md)** - Dependency injection implementation
 - **[phases/PHASE_3_SERVICE_LAYER.md](./phases/PHASE_3_SERVICE_LAYER.md)** - Service layer architecture
@@ -42,6 +53,7 @@ Technical reference for specific subsystems:
 - **[reference/CHECKS_LIBRARY.md](./reference/CHECKS_LIBRARY.md)** - Health check system and library
 - **[reference/IMPORTERS.md](./reference/IMPORTERS.md)** - Data import system documentation
 - **[reference/VIEW_MODEL.md](./reference/VIEW_MODEL.md)** - View model layer specification
+- **[reference/TESTING.md](./reference/TESTING.md)** - Testing strategy and guidelines
 
 ## 🎯 Architectural Decisions
 
@@ -58,10 +70,16 @@ ARCHITECTURE/
 ├── NOTES.md                     # Working notes
 ├── README_PRIVATE.md            # Private notes
 │
+├── AGENTS.md                    # 🤖 AI agent working agreement (strict rules)
+├── CLAUDE.md                    # 🤖 Claude Code specific guidance
+├── GEMINI.md                    # 🤖 Gemini CLI working agreement
+├── prompt.md                    # 🤖 Repository bootstrap prompt
+│
 ├── decisions/                   # Architectural decisions
 │   └── ADR.md                   # Architectural Decision Records
 │
 ├── phases/                      # Phase-by-phase implementation plans
+│   ├── BASELINE_METRICS.md      # Pre-refactoring baseline metrics
 │   ├── PHASE_1_BACKEND_ROUTER_SPLIT.md
 │   ├── PHASE_2_DEPENDENCY_INJECTION.md
 │   ├── PHASE_3_SERVICE_LAYER.md
@@ -72,14 +90,16 @@ ARCHITECTURE/
 │
 ├── plans/                       # Strategic architecture plans
 │   ├── ROADMAP.md               # Project roadmap
+│   ├── REFACTORING_ROADMAP.md   # Refactoring progress tracking
 │   ├── FOUNDATION_PLAN.md       # Foundation architecture
 │   ├── LOGICAL_ARCHITECTURE_PLAN.md
-│   └── PLUGIN_ARCHITECTURE.md   # Plugin system design
+│   └── PLUGIN_ARCHITECTURE.md   # ⭐ Plugin system design
 │
 └── reference/                   # Technical reference documentation
     ├── CHECKS_LIBRARY.md        # Health check system
     ├── IMPORTERS.md             # Import system
-    └── VIEW_MODEL.md            # View model layer
+    ├── VIEW_MODEL.md            # View model layer
+    └── TESTING.md               # Testing strategy and guidelines
 ```
 
 ## 🚀 Current Status
