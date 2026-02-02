@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Rackscope is a **Prometheus-first physical infrastructure monitoring dashboard** for data centers and HPC environments. It provides visual monitoring of the physical hierarchy (Site → Room → Aisle → Rack → Device → Instance) **without owning a CMDB or collecting metrics itself**.
 
-**Current Development Phase**: Phase 6 (Configuration Editor)
+**Current Development Phase**: Phase 5 completed, Phase 6 (Backend Plugin Architecture) and Phase 7 (Frontend Rebuild) planned
 
 ### Core Philosophy (NON-NEGOTIABLE)
 
@@ -506,22 +506,27 @@ Target audience: NOC operators, N1/N2 sysadmins, MCO teams.
 
 ## Development Workflow
 
-### Current Phase: Phase 6 (Configuration Editor)
+### Current Status: Between Phases
 
-We are building **safe editing of topology, templates, and checks from the UI**.
+**Phase 5 completed**: Test coverage improvements (36% → 66%, 251 tests)
 
-**Active Work:**
-- Backend writer endpoints (POST/PUT/DELETE for topology/templates/checks)
-- Template designer UI (visual grid editor + form-based properties)
-- Topology editor (drag & drop racks, wizard for datacenter/room/aisle creation)
-- Rack editor (place/remove devices with collision detection)
+**Next phases planned**:
 
-**When working on Phase 6 features:**
-1. Backend endpoints must **validate** before writing YAML
-2. Use `model/loader.py` functions: `load_topology()`, `load_catalog()`, `load_checks_library()`, `dump_yaml()`
-3. After writes, **reload global state** (`TOPOLOGY = load_topology(...)`)
-4. Frontend forms must **validate** before submitting
-5. Provide **clear error messages** for validation failures
+**Phase 6 - Backend Plugin Architecture Refactoring** (1 week):
+- Extract simulator as plugin
+- Extract Slurm as plugin
+- Create plugin base class and registry
+- Fix template system (remove hardcoded PDU/switch metrics)
+- Generic metrics collection based on RackComponentTemplate
+- See `ARCHITECTURE/phases/PHASE_6_BACKEND_PLAN.md` for details
+
+**Phase 7 - Frontend Rebuild** (3 weeks):
+- Full frontend rebuild with React + Tailwind CSS + shadcn/ui
+- Pixel perfect design
+- Dynamic plugin menu system
+- Core views: Overview, Map, Room, Rack, Device
+- Editors: Topology, Templates, Checks, Settings
+- See `ARCHITECTURE/phases/PHASE_7_FRONTEND_PLAN.md` for details
 
 ### Standard Development Workflow
 
@@ -663,17 +668,37 @@ docker compose exec backend pytest
 
 ## Important Files to Reference
 
+### At Project Root (Auto-detected by AI)
 - **AGENTS.md**: **STRICT RULES** for AI-assisted development (READ FIRST)
+- **CLAUDE.md**: This file - Claude Code specific guidance
+- **GEMINI.md**: Gemini CLI working agreement
+- **prompt.md**: Repository bootstrap prompt
+
+### Standard Project Files
+- **README.md**: Project readme
 - **CONTRIBUTING.md**: Contribution guidelines
-- **docs/ARCHITECTURE.md**: High-level architecture overview
+- **CHANGELOG.md**: Project changelog
+- **pyproject.toml**: Python dependencies and build configuration
+- **frontend/package.json**: Frontend dependencies and scripts
+- **config/app.yaml**: Central application configuration
+
+### Architecture Documentation (ARCHITECTURE/)
+- **ARCHITECTURE/README.md**: Index of all architecture documentation
+- **ARCHITECTURE/ARCHITECTURE.md**: High-level architecture overview
+- **ARCHITECTURE/NOTES.md**: Working notes
+- **ARCHITECTURE/plans/ROADMAP.md**: Development roadmap
+- **ARCHITECTURE/plans/PLUGIN_ARCHITECTURE.md**: Plugin system design
+- **ARCHITECTURE/phases/PHASE_6_BACKEND_PLAN.md**: Backend refactoring plan (next phase)
+- **ARCHITECTURE/phases/PHASE_7_FRONTEND_PLAN.md**: Frontend rebuild plan
+- **ARCHITECTURE/reference/CHECKS_LIBRARY.md**: Health check system
+- **ARCHITECTURE/reference/VIEW_MODEL.md**: View model specification
+- **ARCHITECTURE/reference/TESTING.md**: Testing strategy
+
+### User Documentation (docs/)
 - **docs/API_REFERENCE.md**: REST API documentation
 - **docs/ADMIN_GUIDE.md**: Configuration and deployment guide
 - **docs/USER_GUIDE.md**: End-user documentation
 - **docs/SIMULATOR.md**: Simulator configuration and usage
-- **pyproject.toml**: Python dependencies and build configuration
-- **frontend/package.json**: Frontend dependencies and scripts
-- **config/app.yaml**: Central application configuration
-- **ARCHITECTURE/ROADMAP.md**: Development roadmap (private, DO NOT COMMIT)
 
 ## Critical Implementation Notes
 
@@ -738,15 +763,33 @@ The theme is managed by `ThemeContext` and persisted to localStorage:
 
 Rackscope follows a phased development plan:
 
+### Completed Phases
 - **Phase 0**: ✅ Foundations (name, decisions, view model)
-- **Phase 1**: ✅ Viewer MVP (room/rack views, notifications, playlist)
-- **Phase 2**: ✅ Templates + Density (advanced visuals, simulator)
-- **Phase 3**: ✅ Telemetry Foundation (checks library, planner, vector queries)
-- **Phase 4**: ✅ Config & Segmentation (app.yaml, multi-DC support, room layouts)
-- **Phase 5**: 🚧 Visual Completion (rear views, infrastructure, search)
-- **Phase 6**: 🚧 Configuration Editor (ACTIVE — topology/template/checks editors)
-- **Phase 7**: 📅 Additional Views + Importers (device detail, compute grid, CMDB exporters)
-- **Phase 8**: 📅 Production Hardening (optional auth, RBAC)
+- **Phase 1**: ✅ Backend Router Split (organized API endpoints)
+- **Phase 2**: ✅ Dependency Injection (clean architecture)
+- **Phase 3**: ✅ Service Layer (business logic separation)
+- **Phase 4**: ✅ Logging & Error Handling (structured logging, error tracking)
+- **Phase 5**: ✅ Test Coverage (36% → 66%, 251 tests)
+
+### Planned Phases
+- **Phase 6**: 📅 Backend Plugin Architecture (1 week)
+  - Extract simulator and Slurm as plugins
+  - Create plugin base class and registry
+  - Fix template system (remove hardcoded metrics)
+  - Generic metrics collection from RackComponentTemplate
+  - See `ARCHITECTURE/phases/PHASE_6_BACKEND_PLAN.md`
+
+- **Phase 7**: 📅 Frontend Rebuild (3 weeks)
+  - React + Tailwind CSS + shadcn/ui
+  - Dynamic plugin menu system
+  - Core views: Overview, Map, Room, Rack, Device
+  - Editors: Topology, Templates, Checks, Settings
+  - See `ARCHITECTURE/phases/PHASE_7_FRONTEND_PLAN.md`
+
+- **Phase 8+**: 📅 Future enhancements
+  - Additional views and importers
+  - Production hardening (auth, RBAC)
+  - Performance optimizations
 
 ## Code Quality Tools
 
@@ -892,15 +935,30 @@ make up && make test
 
 ## Notes
 
+### Architecture & Documentation
+- **ARCHITECTURE/ directory**: Contains all architectural documentation (decisions, phases, plans, references)
+- **Architecture docs are organized**: See `ARCHITECTURE/README.md` for complete index
+- **Phase plans available**: Phase 6 (Backend) and Phase 7 (Frontend) plans are in `ARCHITECTURE/phases/`
+- **Plugin architecture**: See `ARCHITECTURE/plans/PLUGIN_ARCHITECTURE.md` for plugin system design
+
+### Development
+- **English only**: Code, comments, and commit messages must be in English
+- **Small commits, single intent per commit**
+- **Run `make lint` after changes** to catch syntax/lint errors early
+- **Validate with Docker Compose stack** regularly (check logs, rebuild when needed)
+- **Refactoring roadmap**: See `ARCHITECTURE/plans/REFACTORING_ROADMAP.md` for progress tracking
+
+### Backend & Telemetry
 - The backend uses **global state** which is reloaded when files are modified via API endpoints
 - The **telemetry planner** caches snapshots based on `planner.cache_ttl_seconds` to avoid excessive Prometheus queries
-- The frontend **proxies API calls** through Vite dev server to avoid CORS issues
-- **Dark mode is first-class**: Always test UI changes in both light and dark themes
-- **Never commit files from ARCHITECTURE/ directory**: These are private design documents (will be removed from git history after Phase 10)
-- **English only**: Code, comments, and commit messages must be in English
-- **Refresh intervals default to 60s+**: Lower values increase Prometheus load
 - **Prometheus query optimization is critical**: The planner batches queries to avoid per-device explosion
 - **Template-scoped checks**: Only checks referenced by templates are executed (if no checks → "no checks configured")
 - **UNKNOWN handling**: Configurable via `planner.unknown_state` (default: "UNKNOWN")
+- **Refresh intervals default to 60s+**: Lower values increase Prometheus load
+
+### Frontend
+- The frontend **proxies API calls** through Vite dev server to avoid CORS issues
+- **Dark mode is first-class**: Always test UI changes in both light and dark themes
+
+### Integrations
 - **Slurm integration is optional**: Only activated when `slurm` config section is present
-- **Refactoring in progress**: See `REFACTORING_ROADMAP.md` for ongoing code quality improvements
