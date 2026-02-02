@@ -49,7 +49,8 @@ The goal is to transform Rackscope from a monolithic application into a **plugin
 | 4 | Logging & Error Handling | 2-3 days | LOW | ✅ COMPLETE |
 | 5 | Test Coverage (36% → 66%) | 4-5 days | LOW | ✅ COMPLETE |
 | 6 | Backend Plugin Architecture | 7 days | HIGH | ✅ COMPLETE |
-| **7** | **Frontend Rebuild** | **3 weeks** | **HIGH** | **🎯 NEXT** |
+| **6.5** | **Metrics Library System** | **2-3 days** | **LOW** | **🎯 NEXT** |
+| 7 | Frontend Rebuild | 3 weeks | HIGH | 📅 PLANNED |
 | 8 | Performance Optimizations | 2-3 days | LOW | 📅 PLANNED |
 | 9 | Documentation & Cleanup | 2 days | LOW | 📅 PLANNED |
 
@@ -352,6 +353,112 @@ make up && make test      # Verify system still works
 - Template-driven metrics (zero hardcoding)
 - Extensible plugin API for future integrations
 - Foundation ready for Phase 7 frontend rebuild
+
+---
+
+## 🎯 Phase 6.5: Metrics Library System (NEXT)
+
+**Goal**: Implement metrics library before Phase 7 to enable UI debugging with real data.
+
+**Duration**: 2-3 days
+**Risk**: LOW (additive changes, no breaking modifications)
+**Priority**: HIGH (enables Phase 7 chart development)
+
+### Why This Phase?
+
+**Problem**: Phase 6 created generic metrics collection, but no metric definitions exist yet.
+- Templates have `metrics: []` (empty)
+- No standardized way to define metrics
+- No display configuration (units, colors, time ranges)
+- Simulator hardcodes metric list
+
+**Solution**: Create metrics library (like checks library) before building UI.
+
+**Benefits**:
+- ✅ Test backend metric collection independently
+- ✅ Debug Prometheus queries before UI work
+- ✅ Validate metric definitions early
+- ✅ Make simulator generic (any metric override)
+- ✅ **Phase 7 can focus on UI** without backend blockers
+
+### Architecture
+
+```
+config/metrics/library/          ← New
+  ├── node_temperature.yaml
+  ├── node_power.yaml
+  ├── rack_power.yaml
+  └── pdu_current.yaml
+
+src/rackscope/
+  ├── model/metrics.py            ← New: MetricDefinition models
+  ├── api/routers/metrics.py      ← New: /api/metrics/* endpoints
+  └── plugins/simulator/plugin.py ← Refactor: dynamic metrics
+```
+
+### Metric Definition Format
+
+```yaml
+id: node_temperature
+name: Node Temperature
+description: "CPU/IPMI temperature sensor"
+metric: node_temperature_celsius
+labels:
+  instance: "{instance}"
+display:
+  unit: "°C"
+  chart_type: line
+  color: "#ef4444"
+  time_ranges: [1h, 6h, 24h, 7d]
+  default_range: 24h
+  aggregation: avg
+  thresholds:
+    warn: 70
+    crit: 85
+category: temperature
+tags: [compute, hardware]
+```
+
+### Implementation Plan
+
+**Day 1**: Core models & loader (4-5h)
+- Create `model/metrics.py` with Pydantic models
+- Extend `loader.py` with `load_metrics_library()`
+- Update `app.py` to load metrics on startup
+- Write model tests
+
+**Day 2**: API endpoints & data collection (4-5h)
+- Create `api/routers/metrics.py`
+- Implement `/api/metrics/library` endpoint
+- Implement `/api/metrics/data` query endpoint
+- Write API tests
+
+**Day 3**: Default metrics + simulator refactor (4-5h)
+- Create default metrics (node temp/power/load, rack power, PDU)
+- Refactor simulator to use metrics library dynamically
+- Add `/api/simulator/metrics` discovery endpoint
+- Update device templates with metric references
+- Integration tests
+
+### Success Criteria
+
+After Phase 6.5:
+- ✅ Metrics library loaded and accessible via API
+- ✅ Can query metric data via `/api/metrics/data`
+- ✅ Simulator discovers metrics dynamically
+- ✅ Templates reference metric IDs
+- ✅ 320+ tests passing
+- ✅ Ready for Phase 7 chart implementation
+
+### Deliverables
+
+- **Models**: `MetricDefinition`, `MetricsLibrary`
+- **API**: 3 new endpoints for metrics
+- **Content**: 5-10 default metrics
+- **Refactor**: Simulator now generic
+- **Docs**: ADR-007-METRICS-LIBRARY.md
+
+See: `ARCHITECTURE/phases/PHASE_6.5_METRICS_LIBRARY.md` for detailed plan
 
 ---
 

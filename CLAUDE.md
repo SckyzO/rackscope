@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Rackscope is a **Prometheus-first physical infrastructure monitoring dashboard** for data centers and HPC environments. It provides visual monitoring of the physical hierarchy (Site → Room → Aisle → Rack → Device → Instance) **without owning a CMDB or collecting metrics itself**.
 
-**Current Development Phase**: Phase 6 (Backend Plugin Architecture) completed, Phase 7 (Frontend Rebuild) planned
+**Current Development Phase**: Phase 6 completed, Phase 6.5 (Metrics Library) next, Phase 7 (Frontend Rebuild) planned
 
 ### Core Philosophy (NON-NEGOTIABLE)
 
@@ -808,6 +808,14 @@ Rackscope follows a phased development plan:
   - ✅ SimulatorPlugin (demo mode with overrides)
   - ✅ SlurmPlugin (workload manager integration)
   - See `ARCHITECTURE/plans/CONSOLIDATED_ROADMAP.md`
+
+### Current Phase
+- **Phase 6.5**: 🎯 Metrics Library System (2-3 days, before Phase 7)
+  - Define metrics in YAML library (like checks)
+  - API endpoints for metric discovery and data query
+  - Refactor simulator to use metrics dynamically
+  - Enable UI debugging with real metric data
+  - See `ARCHITECTURE/phases/PHASE_6.5_METRICS_LIBRARY.md`
 
 ### Planned Phases
 
