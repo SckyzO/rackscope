@@ -175,7 +175,7 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
             <span className="text-status-warn font-mono text-2xl">
               {healthData?.nodes
                 ? Object.values(healthData.nodes as Record<string, RackNodeState>).reduce(
-                    (acc, node) => acc + (node.alerts?.length ?? 0),
+                    (acc, node) => acc + (node.checks?.length ?? 0),
                     0
                   )
                 : 0}

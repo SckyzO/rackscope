@@ -245,6 +245,7 @@ export interface RackNodeState {
   state?: string;
   temperature?: number;
   power?: number;
+  checks?: AlertCheck[];
   alerts?: AlertCheck[];
 }
 

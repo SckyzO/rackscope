@@ -218,6 +218,7 @@ async def get_rack_state(
             temp_count += 1
 
         state = snapshot.node_states.get(node_id, "UNKNOWN")
+        checks = snapshot.node_checks.get(node_id, {})
         alerts = snapshot.node_alerts.get(node_id, {})
 
         node_states.append(state)
@@ -225,10 +226,12 @@ async def get_rack_state(
             "state": state,
             "temperature": temp if temp is not None else 0,
             "power": power if power is not None else 0,
+            "checks": [{"id": cid, "severity": sev} for cid, sev in checks.items()],
             "alerts": [{"id": cid, "severity": sev} for cid, sev in alerts.items()],
         }
 
     rack_state = snapshot.rack_states.get(rack_id, aggregate_states(node_states))
+    rack_checks_dict = snapshot.rack_checks.get(rack_id, {})
     rack_alerts = snapshot.rack_alerts.get(rack_id, {})
 
     avg_temp = total_temp / temp_count if temp_count > 0 else 0
@@ -236,7 +239,8 @@ async def get_rack_state(
     return {
         "rack_id": rack_id,
         "state": rack_state,
-        "checks": [{"id": cid, "severity": sev} for cid, sev in rack_alerts.items()],
+        "checks": [{"id": cid, "severity": sev} for cid, sev in rack_checks_dict.items()],
+        "alerts": [{"id": cid, "severity": sev} for cid, sev in rack_alerts.items()],
         "metrics": {"temperature": avg_temp, "power": total_power},
         "infra_metrics": {"components": component_metrics},
         "nodes": processed_nodes,

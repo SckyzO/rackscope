@@ -695,6 +695,19 @@ export const DeviceChassis = ({
     if (critCount > 0 || warnCount > 0) return 'WARN';
     return 'OK';
   }, [nodesData, nodeMap, rackHealth]);
+  const chassisChecks = useMemo(() => {
+    if (!nodesData) return [];
+    const checkIds = new Set<string>();
+    for (const nodeId of instanceList) {
+      const checks = nodesData[nodeId]?.checks;
+      if (!Array.isArray(checks)) continue;
+      for (const check of checks as AlertCheck[]) {
+        if (check?.id) checkIds.add(check.id);
+      }
+    }
+    return Array.from(checkIds);
+  }, [instanceList, nodesData]);
+
   const chassisAlerts = useMemo(() => {
     if (!nodesData) return [];
     const alertIds = new Set<string>();
@@ -762,7 +775,7 @@ export const DeviceChassis = ({
                   ? `${instanceList.slice(0, 4).join(', ')} +${instanceList.length - 4}`
                   : instanceList.join(', ') || 'None',
             },
-            { label: 'Active checks', value: String(chassisAlerts.length) },
+            { label: 'Active checks', value: String(chassisChecks.length) },
             { label: 'Location', value: `RACK U${uPosition}`, italic: true },
           ],
           reasons:
@@ -789,7 +802,7 @@ export const DeviceChassis = ({
                   ? `${instanceList.slice(0, 4).join(', ')} +${instanceList.length - 4}`
                   : instanceList.join(', ') || 'None',
             },
-            { label: 'Active checks', value: String(chassisAlerts.length) },
+            { label: 'Active checks', value: String(chassisChecks.length) },
             { label: 'Location', value: `RACK U${uPosition}`, italic: true },
           ],
           reasons:
@@ -949,6 +962,9 @@ export const NodeUnit = ({
 }) => {
   const Icon = type === 'network' ? RouterIcon : Server;
   const hideText = uHeight === 1;
+  const activeChecks = Array.isArray(nodeMetrics?.checks)
+    ? (nodeMetrics.checks as AlertCheck[]).map((check) => check?.id).filter(Boolean)
+    : [];
   const reasons = Array.isArray(nodeMetrics?.alerts)
     ? (nodeMetrics.alerts as AlertCheck[]).map((alert) => alert?.id).filter(Boolean)
     : [];
@@ -964,7 +980,7 @@ export const NodeUnit = ({
           status: nodeHealth,
           details: [
             { label: 'Enclosure', value: chassisName },
-            { label: 'Active checks', value: String(reasons.length) },
+            { label: 'Active checks', value: String(activeChecks.length) },
             { label: 'Physical Location', value: `RACK U${uPosition} S${slotNum}`, italic: true },
           ],
           reasons,
@@ -982,7 +998,7 @@ export const NodeUnit = ({
           status: nodeHealth,
           details: [
             { label: 'Enclosure', value: chassisName },
-            { label: 'Active checks', value: String(reasons.length) },
+            { label: 'Active checks', value: String(activeChecks.length) },
             { label: 'Physical Location', value: `RACK U${uPosition} S${slotNum}`, italic: true },
           ],
           reasons,

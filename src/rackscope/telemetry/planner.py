@@ -31,6 +31,9 @@ class PlannerSnapshot:
     chassis_states: Dict[str, str] = field(default_factory=dict)
     rack_states: Dict[str, str] = field(default_factory=dict)
     rack_nodes: Dict[str, List[str]] = field(default_factory=dict)
+    node_checks: Dict[str, Dict[str, str]] = field(default_factory=dict)
+    chassis_checks: Dict[str, Dict[str, str]] = field(default_factory=dict)
+    rack_checks: Dict[str, Dict[str, str]] = field(default_factory=dict)
     node_alerts: Dict[str, Dict[str, str]] = field(default_factory=dict)
     chassis_alerts: Dict[str, Dict[str, str]] = field(default_factory=dict)
     rack_alerts: Dict[str, Dict[str, str]] = field(default_factory=dict)
@@ -77,6 +80,9 @@ class TelemetryPlanner:
         node_states: Dict[str, str] = {}
         chassis_states: Dict[str, str] = {}
         rack_states: Dict[str, str] = {}
+        node_checks: Dict[str, Dict[str, str]] = {}
+        chassis_checks: Dict[str, Dict[str, str]] = {}
+        rack_checks: Dict[str, Dict[str, str]] = {}
         node_alerts: Dict[str, Dict[str, str]] = {}
         chassis_alerts: Dict[str, Dict[str, str]] = {}
         rack_alerts: Dict[str, Dict[str, str]] = {}
@@ -100,6 +106,12 @@ class TelemetryPlanner:
                 if check.scope == "node":
                     seen_nodes.add(key)
                     node_states[key] = _max_severity(node_states.get(key), severity)
+                    # Store all check results
+                    node_checks.setdefault(key, {})
+                    current = node_checks[key].get(check.id)
+                    if _max_severity(current, severity) == severity:
+                        node_checks[key][check.id] = severity
+                    # Store alerts separately for WARN/CRIT
                     if severity in ("WARN", "CRIT"):
                         node_alerts.setdefault(key, {})
                         current = node_alerts[key].get(check.id)
@@ -108,6 +120,12 @@ class TelemetryPlanner:
                 elif check.scope == "chassis":
                     seen_chassis.add(key)
                     chassis_states[key] = _max_severity(chassis_states.get(key), severity)
+                    # Store all check results
+                    chassis_checks.setdefault(key, {})
+                    current = chassis_checks[key].get(check.id)
+                    if _max_severity(current, severity) == severity:
+                        chassis_checks[key][check.id] = severity
+                    # Store alerts separately for WARN/CRIT
                     if severity in ("WARN", "CRIT"):
                         chassis_alerts.setdefault(key, {})
                         current = chassis_alerts[key].get(check.id)
@@ -116,6 +134,12 @@ class TelemetryPlanner:
                 elif check.scope == "rack":
                     seen_racks.add(key)
                     rack_states[key] = _max_severity(rack_states.get(key), severity)
+                    # Store all check results
+                    rack_checks.setdefault(key, {})
+                    current = rack_checks[key].get(check.id)
+                    if _max_severity(current, severity) == severity:
+                        rack_checks[key][check.id] = severity
+                    # Store alerts separately for WARN/CRIT
                     if severity in ("WARN", "CRIT"):
                         rack_alerts.setdefault(key, {})
                         current = rack_alerts[key].get(check.id)
@@ -146,6 +170,9 @@ class TelemetryPlanner:
             chassis_states=chassis_states,
             rack_states=rack_states,
             rack_nodes=rack_nodes,
+            node_checks=node_checks,
+            chassis_checks=chassis_checks,
+            rack_checks=rack_checks,
             node_alerts=node_alerts,
             chassis_alerts=chassis_alerts,
             rack_alerts=rack_alerts,

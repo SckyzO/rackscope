@@ -1,1 +1,6 @@
-overrides: []
+overrides:
+- id: compute001-up-1770032278
+  instance: compute001
+  rack_id: null
+  metric: up
+  value: 0.0
