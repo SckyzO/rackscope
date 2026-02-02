@@ -761,15 +761,322 @@ services:
 
 ---
 
-## Next Steps After Phase 7
+## Plugin Frontend Integration
 
-1. **Polish & UX improvements**
-2. **Add plugin UIs** (Slurm dashboards)
-3. **Performance optimization**
-4. **Documentation**
-5. **User testing & feedback**
+**Status**: 🎯 CRITICAL for Phase 7
+
+### Current Situation (Phase 6 Completed)
+
+✅ **Backend**: Plugins provide API routes
+- SimulatorPlugin → `/api/simulator/*`
+- SlurmPlugin → `/api/slurm/*`
+
+❌ **Frontend**: Plugin UI still in core
+- `/slurm/overview`, `/slurm/nodes` → Hardcoded in `frontend/src/pages/`
+- `/simulator` → Hardcoded in `frontend/src/pages/`
+
+**Goal**: Plugins should provide their own React components, loaded dynamically by the core.
 
 ---
 
-*Plan Version: 1.0*
+### Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│           Frontend Core (React)                 │
+├─────────────────────────────────────────────────┤
+│  1. Fetch /api/plugins/menu                     │
+│  2. Build menu dynamically                      │
+│  3. Register plugin routes                      │
+│  4. Load plugin components (lazy)               │
+├─────────────────────────────────────────────────┤
+│  Plugin A Frontend (Slurm)                      │
+│  ├─ /slurm/overview    → Overview.tsx           │
+│  ├─ /slurm/nodes       → Nodes.tsx              │
+│  └─ /slurm/partitions  → Partitions.tsx         │
+├─────────────────────────────────────────────────┤
+│  Plugin B Frontend (Simulator)                  │
+│  └─ /simulator         → ControlPanel.tsx       │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+### Implementation Strategy
+
+#### Step 1: Plugin Directory Structure
+
+```
+frontend/src/
+├── core/                       # Core views (always active)
+│   ├── components/
+│   ├── pages/
+│   │   ├── Overview.tsx       # Site overview
+│   │   ├── WorldMap.tsx       # Map view
+│   │   ├── Room.tsx           # Room visualization
+│   │   ├── Rack.tsx           # Rack view
+│   │   └── editors/           # YAML editors
+│   └── settings/
+│       └── Plugins.tsx        # NEW: Plugin settings UI
+│
+└── plugins/                    # Plugin views (loaded dynamically)
+    ├── slurm/
+    │   ├── Overview.tsx       # Slurm dashboard
+    │   ├── Nodes.tsx          # Node list
+    │   ├── Partitions.tsx     # Partition stats
+    │   └── components/        # Shared Slurm components
+    │
+    └── simulator/
+        ├── ControlPanel.tsx   # Simulator UI
+        └── components/        # Simulator widgets
+```
+
+#### Step 2: Dynamic Route Registration
+
+**`src/core/router.tsx`**:
+```typescript
+import { lazy, Suspense } from 'react';
+import { createBrowserRouter } from 'react-router-dom';
+
+// Fetch plugin menu from backend
+const pluginsResponse = await fetch('/api/plugins/menu');
+const { sections } = await pluginsResponse.json();
+
+// Core routes (always active)
+const coreRoutes = [
+  { path: '/', element: <Overview /> },
+  { path: '/map', element: <WorldMap /> },
+  { path: '/room/:id', element: <Room /> },
+  { path: '/rack/:id', element: <Rack /> },
+  // ...
+];
+
+// Plugin routes (dynamic)
+const pluginRoutes = sections.flatMap(section =>
+  section.items.map(item => ({
+    path: item.path,
+    element: (
+      <Suspense fallback={<Loading />}>
+        {loadPluginComponent(section.id, item.component)}
+      </Suspense>
+    ),
+  }))
+);
+
+// Combine routes
+export const router = createBrowserRouter([
+  ...coreRoutes,
+  ...pluginRoutes,
+]);
+```
+
+#### Step 3: Plugin Component Loader
+
+**`src/core/pluginLoader.ts`**:
+```typescript
+import { lazy } from 'react';
+
+/**
+ * Dynamically load plugin component
+ * @param pluginId - Plugin identifier (e.g., "slurm")
+ * @param componentPath - Component path (e.g., "Overview")
+ */
+export function loadPluginComponent(pluginId: string, componentPath: string) {
+  // Map plugin ID to directory
+  const pluginMap: Record<string, string> = {
+    slurm: '@/plugins/slurm',
+    simulator: '@/plugins/simulator',
+  };
+
+  const pluginDir = pluginMap[pluginId];
+  if (!pluginDir) {
+    console.warn(`Unknown plugin: ${pluginId}`);
+    return lazy(() => import('@/core/pages/NotFound'));
+  }
+
+  // Dynamically import component
+  return lazy(() => import(`${pluginDir}/${componentPath}.tsx`));
+}
+```
+
+#### Step 4: Settings > Plugins UI
+
+**`src/core/settings/Plugins.tsx`**:
+```tsx
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Switch } from '@/components/ui/switch';
+import { Card } from '@/components/ui/card';
+
+export function PluginsSettings() {
+  const { data: plugins } = useQuery({
+    queryKey: ['plugins'],
+    queryFn: () => fetch('/api/plugins').then(r => r.json()),
+  });
+
+  const togglePlugin = useMutation({
+    mutationFn: (pluginId: string, enabled: boolean) =>
+      fetch(`/api/plugins/${pluginId}/toggle`, {
+        method: 'POST',
+        body: JSON.stringify({ enabled }),
+      }),
+  });
+
+  return (
+    <div className="space-y-4">
+      <h2>Plugins</h2>
+
+      {/* Core System (always active) */}
+      <Card className="p-4 opacity-50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold">Core System</h3>
+            <p className="text-sm text-muted-foreground">
+              Topology, Health Checks, Editors
+            </p>
+          </div>
+          <Switch checked disabled />
+        </div>
+      </Card>
+
+      {/* Active Plugins */}
+      {plugins?.plugins.map(plugin => (
+        <Card key={plugin.id} className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">{plugin.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                {plugin.description}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                v{plugin.version} by {plugin.author}
+              </p>
+            </div>
+            <Switch
+              checked={plugin.enabled}
+              onCheckedChange={(enabled) =>
+                togglePlugin.mutate(plugin.id, enabled)
+              }
+            />
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+```
+
+#### Step 5: Dynamic Menu Navigation
+
+**`src/core/components/Sidebar.tsx`**:
+```tsx
+import { useQuery } from '@tanstack/react-query';
+import { NavLink } from 'react-router-dom';
+import * as Icons from 'lucide-react';
+
+export function Sidebar() {
+  const { data: menu } = useQuery({
+    queryKey: ['plugins-menu'],
+    queryFn: () => fetch('/api/plugins/menu').then(r => r.json()),
+  });
+
+  return (
+    <nav>
+      {/* Core sections (hardcoded) */}
+      <NavSection title="Overview">
+        <NavItem to="/" icon="Home" label="Dashboard" />
+        <NavItem to="/map" icon="Globe" label="World Map" />
+      </NavSection>
+
+      {/* Plugin sections (dynamic) */}
+      {menu?.sections.map(section => {
+        const Icon = Icons[section.icon] || Icons.Package;
+        return (
+          <NavSection key={section.id} title={section.label} icon={<Icon />}>
+            {section.items.map(item => {
+              const ItemIcon = Icons[item.icon] || Icons.Circle;
+              return (
+                <NavItem
+                  key={item.id}
+                  to={item.path}
+                  icon={<ItemIcon />}
+                  label={item.label}
+                />
+              );
+            })}
+          </NavSection>
+        );
+      })}
+    </nav>
+  );
+}
+```
+
+---
+
+### Backend Changes Needed
+
+Add plugin enable/disable endpoint:
+
+**`src/rackscope/api/routers/plugins.py`**:
+```python
+@router.post("/api/plugins/{plugin_id}/toggle")
+async def toggle_plugin(plugin_id: str, payload: dict):
+    """Enable or disable a plugin."""
+    enabled = payload.get("enabled", True)
+
+    plugin = registry.get_plugin(plugin_id)
+    if not plugin:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+
+    # Save to config file
+    # TODO: Persist to app.yaml or plugins.yaml
+
+    return {"plugin_id": plugin_id, "enabled": enabled}
+```
+
+---
+
+### Migration Plan
+
+**Week 1**: Core views
+- ✅ Setup React + Tailwind + shadcn
+- ✅ Build core layouts and navigation
+- ✅ Implement Overview, Map, Room, Rack views
+
+**Week 2**: Editors + Plugin infrastructure
+- ✅ Build YAML editors
+- ✅ Implement dynamic plugin loading
+- ✅ Build Settings > Plugins UI
+- ✅ Create pluginLoader utility
+
+**Week 3**: Plugin UIs
+- ✅ Migrate Slurm views to `plugins/slurm/`
+- ✅ Migrate Simulator to `plugins/simulator/`
+- ✅ Test dynamic loading and enable/disable
+- ✅ Polish and final testing
+
+---
+
+### Testing Strategy
+
+1. **Plugin Loading**: Verify components load correctly
+2. **Enable/Disable**: Test toggling plugins in settings
+3. **Menu Updates**: Ensure menu reflects active plugins
+4. **Routing**: Validate plugin routes work
+5. **Lazy Loading**: Check bundle splitting
+
+---
+
+## Next Steps After Phase 7
+
+1. **Polish & UX improvements**
+2. **Performance optimization** (bundle analysis, code splitting)
+3. **Documentation** (user guide, developer docs)
+4. **User testing & feedback**
+5. **Additional plugins** (PBS, Kubernetes, NetBox sync)
+
+---
+
+*Plan Version: 1.1*
 *Created: 2026-02-01*
+*Updated: 2026-02-02 (Added Plugin Frontend Integration)*
