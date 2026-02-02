@@ -11,12 +11,12 @@ Start here to understand the project:
 
 ### 🤖 AI Agent Guidelines
 
-Instructions for AI coding assistants:
+Instructions for AI coding assistants (located at **project root** for auto-detection):
 
-- **[AGENTS.md](./AGENTS.md)** - Working agreement for all coding agents (strict rules)
-- **[CLAUDE.md](./CLAUDE.md)** - Claude Code specific guidance and environment setup
-- **[GEMINI.md](./GEMINI.md)** - Gemini CLI working agreement
-- **[prompt.md](./prompt.md)** - Repository bootstrap prompt for new AI sessions
+- **[../AGENTS.md](../AGENTS.md)** - Working agreement for all coding agents (strict rules)
+- **[../CLAUDE.md](../CLAUDE.md)** - Claude Code specific guidance and environment setup
+- **[../GEMINI.md](../GEMINI.md)** - Gemini CLI working agreement
+- **[../prompt.md](../prompt.md)** - Repository bootstrap prompt for new AI sessions
 
 ## 📋 Strategic Plans
 
@@ -64,42 +64,46 @@ Records of key architectural decisions:
 ## 📁 Directory Structure
 
 ```
-ARCHITECTURE/
-├── README.md                    # This file - index of all documentation
-├── ARCHITECTURE.md              # High-level architecture overview
-├── NOTES.md                     # Working notes
-├── README_PRIVATE.md            # Private notes
+PROJECT_ROOT/
+├── AGENTS.md                    # 🤖 AI agent working agreement (at root for auto-detection)
+├── CLAUDE.md                    # 🤖 Claude Code guidance (at root for auto-detection)
+├── GEMINI.md                    # 🤖 Gemini CLI guidance (at root for auto-detection)
+├── prompt.md                    # 🤖 Bootstrap prompt (at root for easy access)
 │
-├── AGENTS.md                    # 🤖 AI agent working agreement (strict rules)
-├── CLAUDE.md                    # 🤖 Claude Code specific guidance
-├── GEMINI.md                    # 🤖 Gemini CLI working agreement
-├── prompt.md                    # 🤖 Repository bootstrap prompt
-│
-├── decisions/                   # Architectural decisions
-│   └── ADR.md                   # Architectural Decision Records
-│
-├── phases/                      # Phase-by-phase implementation plans
-│   ├── BASELINE_METRICS.md      # Pre-refactoring baseline metrics
-│   ├── PHASE_1_BACKEND_ROUTER_SPLIT.md
-│   ├── PHASE_2_DEPENDENCY_INJECTION.md
-│   ├── PHASE_3_SERVICE_LAYER.md
-│   ├── PHASE_4_LOGGING_ERROR_HANDLING.md
-│   ├── PHASE_5_TEST_COVERAGE.md
-│   ├── PHASE_6_BACKEND_PLAN.md  # 🎯 Next: Backend refactoring
-│   └── PHASE_7_FRONTEND_PLAN.md # 🎯 Next: Frontend rebuild
-│
-├── plans/                       # Strategic architecture plans
-│   ├── ROADMAP.md               # Project roadmap
-│   ├── REFACTORING_ROADMAP.md   # Refactoring progress tracking
-│   ├── FOUNDATION_PLAN.md       # Foundation architecture
-│   ├── LOGICAL_ARCHITECTURE_PLAN.md
-│   └── PLUGIN_ARCHITECTURE.md   # ⭐ Plugin system design
-│
-└── reference/                   # Technical reference documentation
-    ├── CHECKS_LIBRARY.md        # Health check system
-    ├── IMPORTERS.md             # Import system
-    ├── VIEW_MODEL.md            # View model layer
-    └── TESTING.md               # Testing strategy and guidelines
+└── ARCHITECTURE/
+    ├── README.md                # This file - index of all documentation
+    ├── ARCHITECTURE.md          # High-level architecture overview
+    ├── NOTES.md                 # Working notes
+    ├── README_PRIVATE.md        # Private notes
+    │
+    ├── decisions/               # Architectural decisions
+    │   └── ADR.md               # Architectural Decision Records
+    │
+    ├── phases/                  # Phase-by-phase implementation plans
+    │   ├── BASELINE_METRICS.md  # Pre-refactoring baseline metrics
+    │   ├── PHASE_1_BACKEND_ROUTER_SPLIT.md
+    │   ├── PHASE_2_DEPENDENCY_INJECTION.md
+    │   ├── PHASE_3_SERVICE_LAYER.md
+    │   ├── PHASE_4_LOGGING_ERROR_HANDLING.md
+    │   ├── PHASE_5_TEST_COVERAGE.md
+    │   ├── PHASE_6_BACKEND_PLAN.md  # 🎯 Next: Backend refactoring
+    │   └── PHASE_7_FRONTEND_PLAN.md # 🎯 Next: Frontend rebuild
+    │
+    ├── plans/                   # Strategic architecture plans
+    │   ├── ROADMAP.md           # Project roadmap
+    │   ├── REFACTORING_ROADMAP.md  # Refactoring progress tracking
+    │   ├── FOUNDATION_PLAN.md   # Foundation architecture
+    │   ├── LOGICAL_ARCHITECTURE_PLAN.md
+    │   └── PLUGIN_ARCHITECTURE.md  # ⭐ Plugin system design
+    │
+    └── reference/               # Technical reference documentation
+        ├── CHECKS_LIBRARY.md    # Health check system
+        ├── IMPORTERS.md         # Import system
+        ├── VIEW_MODEL.md        # View model layer
+        └── TESTING.md           # Testing strategy and guidelines
+
+Note: AI agent files (AGENTS.md, CLAUDE.md, GEMINI.md, prompt.md) are kept at
+project root for automatic detection by AI coding assistants.
 ```
 
 ## 🚀 Current Status
