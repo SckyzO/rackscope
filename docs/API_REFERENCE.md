@@ -30,20 +30,43 @@ Returns aggregated statistics for the entire datacenter.
 Returns the aggregated health status of a specific room.
 - **Status**: `OK`, `WARN`, `CRIT`, `UNKNOWN`.
 
-#### `GET /api/racks/{rack_id}/state`
+#### `GET /api/racks/{rack_id}/state?include_metrics=false`
 Returns the health and metrics for a specific rack and all its nodes.
-- **Response**:
-  ```json
-  {
-    "rack_id": "r01-01",
-    "state": "OK",
-    "metrics": { "temperature": 24.5, "power": 12500 },
-    "nodes": {
-      "compute001": { "state": "OK", "temperature": 23.1, "power": 250 },
-      ...
+
+**Query Parameters:**
+- `include_metrics` (boolean, default: `false`): Include detailed device and component metrics.
+  - `false`: Returns only health states and checks (faster, ~30ms)
+  - `true`: Returns health states + temperature, power, PDU metrics (slower, ~743ms)
+
+**Performance:**
+- Without metrics: ~30-40ms response time
+- With metrics: ~743ms response time (20+ Prometheus queries)
+- Use `include_metrics=true` only on detail views (RackPage, DevicePage)
+
+**Response:**
+```json
+{
+  "rack_id": "r01-01",
+  "state": "OK",
+  "checks": [{"id": "sequana3_leak", "severity": "OK"}],
+  "alerts": [],
+  "metrics": { "temperature": 24.5, "power": 12500 },
+  "infra_metrics": {
+    "components": {
+      "pdu-left": {"activepower_watt": 1234.5, "current_amp": 5.2}
+    }
+  },
+  "nodes": {
+    "compute001": {
+      "state": "OK",
+      "temperature": 23.1,
+      "power": 250,
+      "checks": [{"id": "node_up", "severity": "OK"}],
+      "alerts": []
     }
   }
-  ```
+}
+```
 
 ---
 

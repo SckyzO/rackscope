@@ -840,6 +840,46 @@ snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check
 rack_state = snapshot.rack_states.get(rack_id, "UNKNOWN")
 ```
 
+### Conditional Metrics Loading
+
+**CRITICAL**: To avoid performance degradation, metrics are loaded **conditionally** based on view requirements.
+
+The `/api/racks/{rack_id}/state` endpoint accepts an `include_metrics` parameter:
+
+**Performance Impact:**
+- `include_metrics=false` (default): ~30-40ms response time
+  - Returns only health states and checks
+  - Suitable for rack grids, lists, and overview pages
+- `include_metrics=true`: ~743ms response time
+  - Returns health + temperature, power, PDU metrics (20+ Prometheus queries)
+  - Required for detail views with metric displays
+
+**Frontend Usage:**
+```typescript
+// Fast: Health states only (default)
+const state = await api.getRackState(rackId);
+
+// Slow: Health + metrics (use only on detail views)
+const stateWithMetrics = await api.getRackState(rackId, true);
+```
+
+**View-Level Guidelines:**
+- **RoomPage (rack grid)**: ❌ No metrics - displays health states only
+- **RoomPage (selected rack panel)**: ✅ With metrics - displays temp/power/PDU
+- **RackPage (detail view)**: ✅ With metrics - displays all metrics + components
+- **DevicePage (detail view)**: ✅ With metrics - displays instance-level metrics
+
+**Template-Driven Metrics:**
+Metrics are defined in templates, not hardcoded:
+- `DeviceTemplate.metrics`: List of metric names (e.g., `["node_temperature", "node_power"]`)
+- `RackComponentTemplate.metrics`: List of component metrics (e.g., `["pdu_active_power", "pdu_current"]`)
+- Completely modular - add/remove metrics per template as needed
+
+**Cache Strategy:**
+- Cache TTL: 5 seconds (balance between freshness and performance)
+- Separate cache keys for requests with/without metrics
+- Room/rack state cached independently
+
 ### Frontend Proxy
 
 The Vite dev server proxies `/api` requests to the backend to avoid CORS issues.
@@ -849,7 +889,17 @@ The Vite dev server proxies `/api` requests to the backend to avoid CORS issues.
 // frontend/src/services/api.ts
 export const api = {
   getRooms: () => fetch('/api/rooms').then(r => r.json()),
-  getRackState: (rackId: string) => fetch(`/api/racks/${rackId}/state`).then(r => r.json()),
+
+  // Conditional metrics loading (default: false for performance)
+  getRackState: (rackId: string, includeMetrics: boolean = false) => {
+    const url = `/api/racks/${rackId}/state${includeMetrics ? '?include_metrics=true' : ''}`;
+    return fetchWithCache(url, `rack.${rackId}.state${includeMetrics ? '.metrics' : ''}`, 5000);
+  },
+
+  // Room state with short cache TTL
+  getRoomState: (roomId: string) => {
+    return fetchWithCache(`/api/rooms/${roomId}/state`, `room.${roomId}.state`, 5000);
+  },
   // ...
 }
 ```
@@ -1064,9 +1114,16 @@ make up && make test
 - The backend uses **global state** which is reloaded when files are modified via API endpoints
 - The **telemetry planner** caches snapshots based on `planner.cache_ttl_seconds` to avoid excessive Prometheus queries
 - **Prometheus query optimization is critical**: The planner batches queries to avoid per-device explosion
+- **Conditional metrics loading**: Use `include_metrics=false` (default) for performance - only load metrics on detail views
+  - Without metrics: ~30-40ms response time (health states only)
+  - With metrics: ~743ms response time (health + temperature/power/PDU)
+  - RoomPage grid, lists: ❌ No metrics
+  - RackPage, DevicePage, Room panel: ✅ With metrics
+- **Template-driven metrics**: Metrics defined in `DeviceTemplate.metrics` and `RackComponentTemplate.metrics` - no hardcoded queries
 - **Template-scoped checks**: Only checks referenced by templates are executed (if no checks → "no checks configured")
 - **UNKNOWN handling**: Configurable via `planner.unknown_state` (default: "UNKNOWN")
 - **Refresh intervals default to 60s+**: Lower values increase Prometheus load
+- **Cache strategy**: 5-second TTL for room/rack state (balance between freshness and performance)
 
 ### Frontend
 - The frontend **proxies API calls** through Vite dev server to avoid CORS issues

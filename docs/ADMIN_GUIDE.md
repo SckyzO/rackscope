@@ -347,3 +347,29 @@ Typical guidance (hardware monitoring):
 - Increase `max_ids_per_query` (e.g., 200–300) to reduce query count.
 
 If you need "live" every refresh, keep TTL <= refresh interval.
+
+### Conditional Metrics Loading
+
+To optimize performance, Rackscope uses **conditional metrics loading**. The `/api/racks/{rack_id}/state` endpoint accepts an `include_metrics` parameter:
+
+**Performance Impact:**
+- `include_metrics=false` (default): ~30-40ms response
+  - Returns only health states and checks
+  - Suitable for rack grids, lists, and overview pages
+- `include_metrics=true`: ~743ms response
+  - Returns health + detailed metrics (temperature, power, PDU data)
+  - Required for detail views with metric displays
+
+**Frontend Implementation:**
+The frontend automatically requests metrics only on detail views:
+- ❌ **RoomPage (rack grid)**: No metrics - displays health states only
+- ✅ **RoomPage (selected rack panel)**: With metrics - displays temp/power/PDU
+- ✅ **RackPage (detail view)**: With metrics - displays all metrics + components
+- ✅ **DevicePage (detail view)**: With metrics - displays instance-level metrics
+
+**Template-Driven Metrics:**
+Metrics are defined in templates, not hardcoded:
+- `DeviceTemplate.metrics`: List of metric names (e.g., `["node_temperature", "node_power"]`)
+- `RackComponentTemplate.metrics`: Component metrics (e.g., `["pdu_active_power", "pdu_current"]`)
+
+This design ensures that metrics collection scales with your topology - add/remove metrics per template as needed.
