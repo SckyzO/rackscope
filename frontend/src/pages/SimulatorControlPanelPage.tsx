@@ -161,26 +161,37 @@ export const SimulatorControlPanelPage: React.FC = () => {
             <>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {scenarios.map((scenario) => {
-                  const isActive = activeScenario === scenario.id;
-                  const isSelected = selectedScenario === scenario.id;
+                  const isActive = activeScenario === scenario.name;
+                  const isSelected = selectedScenario === scenario.name;
 
                   return (
                     <button
-                      key={scenario.id}
-                      onClick={() => setSelectedScenario(scenario.id)}
+                      key={scenario.name}
+                      onClick={() => setSelectedScenario(scenario.name)}
                       className={`relative rounded-lg border px-4 py-3 text-left transition ${
                         isSelected
-                          ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                          ? 'border-[var(--color-accent)]'
                           : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/50'
                       }`}
-                      style={{ backgroundColor: isSelected ? undefined : 'var(--color-bg-elevated)' }}
+                      style={{
+                        backgroundColor: 'var(--color-bg-elevated)',
+                      }}
                     >
+                      {isSelected && (
+                        <div
+                          className="absolute inset-0 rounded-lg pointer-events-none"
+                          style={{
+                            backgroundColor: 'var(--color-accent)',
+                            opacity: 0.1,
+                          }}
+                        />
+                      )}
                       {isActive && (
-                        <div className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-text-inverse)' }}>
+                        <div className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider z-10" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-text-inverse)' }}>
                           CURRENT
                         </div>
                       )}
-                      <div className="flex items-center gap-2">
+                      <div className="relative flex items-center gap-2">
                         <Play
                           className="h-4 w-4"
                           style={{ color: isSelected ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
