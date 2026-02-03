@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { NotificationHeader } from './components/NotificationHeader';
+import { ThemeSelector } from './components/ThemeSelector';
 import { DashboardOverview } from './components/dashboard/DashboardOverview';
 import { RoomPage } from './pages/RoomPage';
 import { RackPage } from './pages/RackPage';
@@ -277,7 +278,8 @@ const Layout = ({
               )}
             </div>
           </div>
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-3">
+            <ThemeSelector />
             <NotificationHeader />
           </div>
         </header>
