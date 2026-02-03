@@ -7,8 +7,8 @@ paths:
   checks: config/checks/library
   metrics: config/metrics/library
 refresh:
-  room_state_seconds: 30
-  rack_state_seconds: 30
+  room_state_seconds: 60
+  rack_state_seconds: 60
 cache:
   ttl_seconds: 60
 telemetry:
