@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { ComponentType } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../services/api';
-import type { RoomSummary, AisleSummary, Site, PrometheusStats } from '../types';
+import type { RoomSummary, AisleSummary, Site, PrometheusStats, MenuSection } from '../types';
 import { matchesInstanceValue, matchesText } from '../utils/search';
 import {
   LayoutDashboard,
@@ -16,11 +16,39 @@ import {
   Home,
   Columns2,
   Map,
-  SlidersHorizontal,
-  Palette,
-  FileText,
   BookOpen,
+  Zap,
+  Sparkles,
+  Server,
+  HardDrive,
+  Sliders,
+  Columns,
+  AlertTriangle,
 } from 'lucide-react';
+
+// Icon mapping for plugin menu sections
+const getIconComponent = (iconName: string): ComponentType<{ className?: string }> => {
+  const icons: Record<string, ComponentType<{ className?: string }>> = {
+    Zap,
+    Activity,
+    Server,
+    HardDrive,
+    Sparkles,
+    Sliders,
+    LayoutDashboard,
+    Globe,
+    Map,
+    Home,
+    Columns,
+    Columns2,
+    Component,
+    Folder,
+    BookOpen,
+    Settings,
+    AlertTriangle,
+  };
+  return icons[iconName] || Activity;
+};
 
 export const Sidebar = ({
   collapsed,
@@ -36,21 +64,21 @@ export const Sidebar = ({
   const [now, setNow] = useState(() => Date.now());
   const [appName, setAppName] = useState('Rackscope');
   const [appDescription, setAppDescription] = useState('Datacenter Overview');
+  const [pluginSections, setPluginSections] = useState<MenuSection[]>([]);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     topology: false,
     catalog: false,
-    slurm: false,
     editors: false,
-    settings: false,
   });
 
   useEffect(() => {
-    Promise.all([api.getRooms(), api.getSites(), api.getConfig()])
-      .then(([roomsData, sitesData, configData]) => {
+    Promise.all([api.getRooms(), api.getSites(), api.getConfig(), api.getPluginsMenu()])
+      .then(([roomsData, sitesData, configData, menuData]) => {
         const safeRooms = Array.isArray(roomsData) ? roomsData : [];
         const safeSites = Array.isArray(sitesData) ? sitesData : [];
         setRooms(safeRooms);
         setSites(safeSites);
+        setPluginSections(menuData?.sections || []);
         const nextRefresh = Number(configData?.telemetry?.prometheus_heartbeat_seconds) || 30;
         setRefreshSeconds(Math.max(10, nextRefresh));
         if (configData?.app?.name) setAppName(configData.app.name);
@@ -235,8 +263,7 @@ export const Sidebar = ({
         </div>
         <nav className="flex flex-1 flex-col items-center gap-2 py-4">
           <CollapsedLink to="/" icon={LayoutDashboard} label="Overview" />
-          <CollapsedLink to="/room" icon={Globe} label="Topology" />
-          <CollapsedLink to="/slurm" icon={Activity} label="Slurm" />
+          <CollapsedLink to="/topology/map" icon={Globe} label="Topology" />
           <CollapsedLink to="/templates" icon={Folder} label="Catalog" />
           <CollapsedLink to="/templates/editor" icon={Component} label="Editors" />
           <CollapsedLink to="/settings" icon={Settings} label="Settings" />
@@ -295,22 +322,31 @@ export const Sidebar = ({
         )}
         <div className="my-2 h-px bg-[var(--color-border)]/40"></div>
 
-        <NavToggle
-          icon={Activity}
-          label="Slurm"
-          expanded={expandedSections.slurm}
-          onToggle={() => toggleSection('slurm')}
-        />
-        {expandedSections.slurm && (
-          <div className="space-y-1">
-            <SidebarLink to="/slurm/overview" icon={Activity} label="Cluster Overview" depth={1} />
-            <SidebarLink to="/slurm/wallboard" icon={Activity} label="Room Wallboard" depth={1} />
-            <SidebarLink to="/slurm/partitions" icon={Activity} label="Partitions" depth={1} />
-            <SidebarLink to="/slurm/nodes" icon={Activity} label="Node List" depth={1} />
-            <SidebarLink to="/slurm/alerts" icon={Activity} label="Alerts" depth={1} />
+        {/* Plugin Sections (dynamic) */}
+        {pluginSections.map((section) => (
+          <div key={section.id}>
+            <NavToggle
+              icon={getIconComponent(section.icon)}
+              label={section.label}
+              expanded={expandedSections[section.id]}
+              onToggle={() => toggleSection(section.id)}
+            />
+            {expandedSections[section.id] && (
+              <div className="space-y-1">
+                {section.items.map((item) => (
+                  <SidebarLink
+                    key={item.id}
+                    to={item.path}
+                    icon={getIconComponent(item.icon)}
+                    label={item.label}
+                    depth={1}
+                  />
+                ))}
+              </div>
+            )}
+            <div className="my-2 h-px bg-[var(--color-border)]/40"></div>
           </div>
-        )}
-        <div className="my-2 h-px bg-[var(--color-border)]/40"></div>
+        ))}
 
         <NavToggle
           icon={Folder}
@@ -358,26 +394,7 @@ export const Sidebar = ({
         )}
         <div className="my-2 h-px bg-[var(--color-border)]/40"></div>
 
-        <NavToggle
-          icon={Settings}
-          label="Settings"
-          expanded={expandedSections.settings}
-          onToggle={() => toggleSection('settings')}
-        />
-        {expandedSections.settings && (
-          <div className="space-y-1">
-            <SidebarLink
-              to="/settings#configuration"
-              icon={SlidersHorizontal}
-              label="Application"
-              depth={1}
-            />
-            <SidebarLink to="/settings#appearance" icon={Palette} label="Appearance" depth={1} />
-            <SidebarLink to="/settings#simulator" icon={Activity} label="Simulator" depth={1} />
-            <SidebarLink to="/settings#telemetry" icon={Activity} label="Telemetry" depth={1} />
-            <SidebarLink to="/settings#system" icon={FileText} label="Logs" depth={1} />
-          </div>
-        )}
+        <SidebarLink to="/settings" icon={Settings} label="Settings" />
       </nav>
 
       {/* Footer Status */}

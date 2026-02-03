@@ -53,6 +53,31 @@ class SlurmStatusMap(BaseModel):
         ],
         description="Statuses mapped to CRIT severity"
     )
+    info: List[str] = Field(
+        default_factory=list,
+        description="Statuses mapped to INFO severity (custom level)"
+    )
+
+
+class SeverityColors(BaseModel):
+    """Colors for severity levels (hex format)."""
+
+    ok: str = Field(
+        default="#22c55e",
+        description="Color for OK severity (green)"
+    )
+    warn: str = Field(
+        default="#f59e0b",
+        description="Color for WARN severity (orange)"
+    )
+    crit: str = Field(
+        default="#ef4444",
+        description="Color for CRIT severity (red)"
+    )
+    info: str = Field(
+        default="#3b82f6",
+        description="Color for INFO severity (blue)"
+    )
 
 
 class SlurmPluginConfig(BaseModel):
@@ -82,6 +107,10 @@ class SlurmPluginConfig(BaseModel):
     status_map: SlurmStatusMap = Field(
         default_factory=SlurmStatusMap,
         description="Mapping of Slurm statuses to severity levels"
+    )
+    severity_colors: SeverityColors = Field(
+        default_factory=SeverityColors,
+        description="Colors for severity levels"
     )
     roles: List[str] = Field(
         default_factory=lambda: ["compute", "visu"],

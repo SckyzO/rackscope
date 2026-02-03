@@ -124,54 +124,87 @@ metrics:
       partition: $partition
       node_id: $node_id
 
+  # E-Series metrics - ONLY for storage devices in racks r02-01 to r02-04
   - name: eseries_exporter_collect_error
     scope: node
-    instances: ["*"]
+    instances:
+      - hdd-r02-01-d*
+      - hdd-r02-02-d*
+      - hdd-r02-03-d*
+      - hdd-r02-04-d*
     labels:
       collector: all
   - name: eseries_storage_system_status
     scope: node
-    instances: ["*"]
+    instances:
+      - hdd-r02-01-d*
+      - hdd-r02-02-d*
+      - hdd-r02-03-d*
+      - hdd-r02-04-d*
     labels:
       status: $status
   - name: eseries_drive_status
     scope: node
-    instances: ["*"]
+    instances:
+      - hdd-r02-01-d*
+      - hdd-r02-02-d*
+      - hdd-r02-03-d*
+      - hdd-r02-04-d*
     labels:
       status: $status
       tray: $tray
       slot: $slot
   - name: eseries_battery_status
     scope: node
-    instances: ["*"]
+    instances:
+      - hdd-r02-01-d*
+      - hdd-r02-02-d*
+      - hdd-r02-03-d*
+      - hdd-r02-04-d*
     labels:
       status: $status
       tray: $tray
       slot: $slot
   - name: eseries_fan_status
     scope: node
-    instances: ["*"]
+    instances:
+      - hdd-r02-01-d*
+      - hdd-r02-02-d*
+      - hdd-r02-03-d*
+      - hdd-r02-04-d*
     labels:
       status: $status
       tray: $tray
       slot: $slot
   - name: eseries_power_supply_status
     scope: node
-    instances: ["*"]
+    instances:
+      - hdd-r02-01-d*
+      - hdd-r02-02-d*
+      - hdd-r02-03-d*
+      - hdd-r02-04-d*
     labels:
       status: $status
       tray: $tray
       slot: $slot
   - name: eseries_cache_memory_dimm_status
     scope: node
-    instances: ["*"]
+    instances:
+      - hdd-r02-01-d*
+      - hdd-r02-02-d*
+      - hdd-r02-03-d*
+      - hdd-r02-04-d*
     labels:
       status: $status
       tray: $tray
       slot: $slot
   - name: eseries_thermal_sensor_status
     scope: node
-    instances: ["*"]
+    instances:
+      - hdd-r02-01-d*
+      - hdd-r02-02-d*
+      - hdd-r02-03-d*
+      - hdd-r02-04-d*
     labels:
       status: $status
       tray: $tray

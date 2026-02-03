@@ -43,6 +43,7 @@ export const RoomPage = ({
       if (!roomId) return;
       setLoading(true);
       try {
+        // Load structural data first (fast)
         const [roomData, catalogData, configData] = await Promise.all([
           api.getRoomLayout(roomId),
           api.getCatalog(),
@@ -68,10 +69,19 @@ export const RoomPage = ({
         setRackComponentTemplates(rackComponentMap);
         const nextRefresh = Number(configData?.refresh?.room_state_seconds) || 30;
         setRefreshMs(Math.max(10000, nextRefresh * 1000));
+
+        setLoading(false);
+
+        // Load health data after page is displayed (from cache if available)
+        try {
+          const healthDataInitial = await api.getRoomState(roomId);
+          setHealthMap(healthDataInitial?.racks || {});
+        } catch (healthErr) {
+          console.error('Failed to load initial health data', healthErr);
+        }
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to load room';
         setError(message);
-      } finally {
         setLoading(false);
       }
     };
@@ -79,7 +89,7 @@ export const RoomPage = ({
   }, [roomId]);
 
   useEffect(() => {
-    if (!room) return;
+    if (!room || loading) return;
     const fetchHealth = async () => {
       try {
         const data = await api.getRoomState(room.id);
@@ -89,10 +99,10 @@ export const RoomPage = ({
         setHealthMap({});
       }
     };
-    fetchHealth();
+    // Don't fetch immediately since we already loaded in the first useEffect
     const interval = setInterval(fetchHealth, refreshMs);
     return () => clearInterval(interval);
-  }, [room, refreshMs, reloadKey]);
+  }, [room, refreshMs, reloadKey, loading]);
 
   useEffect(() => {
     if (!selectedRack) {
@@ -102,7 +112,8 @@ export const RoomPage = ({
     let active = true;
     const fetchSelected = async () => {
       try {
-        const data = await api.getRackState(selectedRack.id);
+        // Request metrics since RoomPage selected rack panel displays temperature, power, and PDU data
+        const data = await api.getRackState(selectedRack.id, true);
         if (active) {
           setSelectedRackHealth(data);
         }

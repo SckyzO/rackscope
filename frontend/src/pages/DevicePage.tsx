@@ -37,7 +37,8 @@ export const DevicePage = () => {
     const fetchState = async () => {
       if (!rackId) return;
       try {
-        const state = await api.getRackState(rackId);
+        // Request metrics since DevicePage can display instance-level metrics (temperature, power, etc.)
+        const state = await api.getRackState(rackId, true);
         setRackState(state);
       } catch {
         // Ignore rack state errors for the device page.

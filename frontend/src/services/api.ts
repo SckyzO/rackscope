@@ -18,6 +18,7 @@ import type {
   RackState,
   SimulatorOverride,
   SlurmRoomNodes,
+  PluginsMenuResponse,
 } from '../types';
 
 const CACHE_PREFIX = 'rackscope.cache.';
@@ -312,10 +313,14 @@ export const api = {
     return data;
   },
   getRoomState: async (roomId: string): Promise<RoomState> => {
-    return fetchWithCache(`/api/rooms/${roomId}/state`, `room.state.${roomId}`);
+    // Cache with very short TTL (5s) for performance while keeping data fresh
+    return fetchWithCache(`/api/rooms/${roomId}/state`, `room.${roomId}.state`, 5000);
   },
-  getRackState: async (rackId: string): Promise<RackState> => {
-    return fetchWithCache(`/api/racks/${rackId}/state`, `rack.state.${rackId}`);
+  getRackState: async (rackId: string, includeMetrics: boolean = false): Promise<RackState> => {
+    // Cache with very short TTL (5s) for performance while keeping data fresh
+    const url = `/api/racks/${rackId}/state${includeMetrics ? '?include_metrics=true' : ''}`;
+    const cacheKey = `rack.${rackId}.state${includeMetrics ? '.metrics' : ''}`;
+    return fetchWithCache(url, cacheKey, 5000);
   },
   updateAisleRacks: async (aisleId: string, roomId: string, racks: string[]) => {
     const res = await fetch(`/api/topology/aisles/${encodeURIComponent(aisleId)}/racks`, {
@@ -518,6 +523,23 @@ export const api = {
     const data = await res.json();
     writeCache('simulator.overrides', data);
     return data;
+  },
+  getPluginsMenu: async (): Promise<PluginsMenuResponse> => {
+    // Don't cache plugins menu - needs to be fresh for enabled/disabled state changes
+    try {
+      const res = await fetch('/api/plugins/menu');
+      if (!res.ok) {
+        logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/plugins/menu');
+        throw new Error(`Request failed: ${res.status}`);
+      }
+      const data = await res.json();
+      markSuccess();
+      return data as PluginsMenuResponse;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Network error';
+      logClientError(message, '/api/plugins/menu');
+      throw err instanceof Error ? err : new Error('Network error');
+    }
   },
   getLastSuccessTs: () => {
     const meta = readJSON(META_KEY);

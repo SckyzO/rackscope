@@ -38,12 +38,13 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
   const [healthData, setHealthData] = useState<RackState | null>(null);
   const [refreshMs, setRefreshMs] = useState(30000);
 
-  // 1. Fetch Rack Details & Catalog
+  // 1. Fetch Rack Details & Catalog (fast, non-blocking)
   useEffect(() => {
     const fetchData = async () => {
       if (!rackId) return;
       setLoading(true);
       try {
+        // Load structural data first (fast)
         const [rackData, catalogData, configData] = await Promise.all([
           api.getRack(rackId),
           api.getCatalog(),
@@ -73,31 +74,42 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
         }
         const nextRefresh = Number(configData?.refresh?.rack_state_seconds) || 30;
         setRefreshMs(Math.max(10000, nextRefresh * 1000));
+
+        setLoading(false);
+
+        // Load health data after page is displayed (from cache if available)
+        // Request metrics since RackPage displays power, temperature, and PDU data
+        try {
+          const healthDataInitial = await api.getRackState(rackId, true);
+          setHealthData(healthDataInitial);
+        } catch (healthErr) {
+          console.error('Failed to load initial health data', healthErr);
+        }
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to load rack';
         setError(message);
-      } finally {
         setLoading(false);
       }
     };
     fetchData();
   }, [rackId, reloadKey]);
 
-  // 2. Telemetry Polling
+  // 2. Telemetry Polling (starts after initial load)
   useEffect(() => {
-    if (!rackId) return;
+    if (!rackId || loading) return;
     const fetchHealth = async () => {
       try {
-        const data = await api.getRackState(rackId);
+        // Request metrics since RackPage displays power, temperature, and PDU data
+        const data = await api.getRackState(rackId, true);
         setHealthData(data);
       } catch (e) {
         console.error('Failed to fetch rack health', e);
       }
     };
-    fetchHealth();
+    // Don't fetch immediately since we already loaded in the first useEffect
     const interval = setInterval(fetchHealth, refreshMs);
     return () => clearInterval(interval);
-  }, [rackId, refreshMs, reloadKey]);
+  }, [rackId, refreshMs, reloadKey, loading]);
 
   if (loading)
     return (

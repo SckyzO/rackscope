@@ -33,7 +33,9 @@ const expandPattern = (pattern: string): string[] => {
 const buildSlotMap = (device: Device, template?: DeviceTemplate): Record<number, string> => {
   const instance = device.instance || device.nodes;
   if (!instance) return {};
-  if (typeof instance === 'object') {
+
+  // Handle explicit object mapping (e.g., {1: "node1", 2: "node2"})
+  if (typeof instance === 'object' && !Array.isArray(instance)) {
     return Object.entries(instance).reduce<Record<number, string>>((acc, [key, value]) => {
       if (typeof value === 'string') {
         acc[Number(key)] = value;
@@ -41,9 +43,13 @@ const buildSlotMap = (device: Device, template?: DeviceTemplate): Record<number,
       return acc;
     }, {});
   }
+
   if (!template) return {};
   const slotOrder = template.layout.matrix.flat().filter((slot) => slot > 0);
-  const expanded = expandPattern(instance);
+
+  // Handle array or string pattern
+  const expanded = Array.isArray(instance) ? instance : expandPattern(instance);
+
   return slotOrder.reduce<Record<number, string>>((acc, slot, idx) => {
     if (expanded[idx]) acc[slot] = expanded[idx];
     return acc;
@@ -98,14 +104,14 @@ export const SlurmRoomPage = () => {
       try {
         const cfg = await api.getConfig();
         const nextRefresh = Number(cfg?.refresh?.room_state_seconds) || 30;
-        const roles = Array.isArray(cfg?.slurm?.roles) ? cfg.slurm?.roles : undefined;
+        const roles = Array.isArray(cfg?.plugins?.slurm?.roles) ? cfg.plugins.slurm?.roles : undefined;
         if (active) {
           setRefreshMs(Math.max(10, nextRefresh) * 1000);
           if (roles && roles.length > 0) {
             setSlurmRoles(roles.map((role) => role.toLowerCase()));
           }
-          if (typeof cfg?.slurm?.include_unlabeled === 'boolean') {
-            setIncludeUnlabeled(cfg.slurm.include_unlabeled);
+          if (typeof cfg?.plugins?.slurm?.include_unlabeled === 'boolean') {
+            setIncludeUnlabeled(cfg.plugins.slurm.include_unlabeled);
           }
         }
       } catch (err) {

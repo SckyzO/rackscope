@@ -57,7 +57,16 @@ class SlurmPlugin(RackscopePlugin):
         if app_config:
             # Try new format first (recommended)
             if hasattr(app_config, 'plugins') and 'slurm' in app_config.plugins:
-                raw_config = app_config.plugins['slurm']
+                slurm_cfg = app_config.plugins['slurm']
+                # Convert to dict, handling both dict and BaseModel
+                if hasattr(slurm_cfg, 'model_dump'):
+                    raw_config = slurm_cfg.model_dump()
+                elif hasattr(slurm_cfg, 'dict'):
+                    raw_config = slurm_cfg.dict()
+                elif isinstance(slurm_cfg, dict):
+                    raw_config = dict(slurm_cfg)
+                else:
+                    raw_config = {}
                 logger.info("Loading Slurm config from plugins.slurm (new format)")
             # Fallback to legacy format
             elif hasattr(app_config, 'slurm') and app_config.slurm:
@@ -66,6 +75,20 @@ class SlurmPlugin(RackscopePlugin):
                     "Loading Slurm config from legacy format. "
                     "Please migrate to plugins.slurm in app.yaml"
                 )
+
+        # Ensure status_map.info exists (for backwards compatibility)
+        if 'status_map' in raw_config and isinstance(raw_config['status_map'], dict):
+            if 'info' not in raw_config['status_map']:
+                raw_config['status_map']['info'] = []
+
+        # Ensure severity_colors exists with defaults
+        if 'severity_colors' not in raw_config or raw_config['severity_colors'] is None:
+            raw_config['severity_colors'] = {
+                'ok': '#22c55e',
+                'warn': '#f59e0b',
+                'crit': '#ef4444',
+                'info': '#3b82f6'
+            }
 
         # Validate and create config with defaults
         return SlurmPluginConfig(**raw_config)
@@ -117,7 +140,7 @@ class SlurmPlugin(RackscopePlugin):
                 for node in room_nodes
             }
 
-            slurm_cfg = APP_CONFIG.slurm
+            slurm_cfg = self.config
             mapping = slurm_service.load_slurm_mapping(slurm_cfg)
             results = await slurm_service.fetch_slurm_results(slurm_cfg)
 
@@ -186,7 +209,7 @@ class SlurmPlugin(RackscopePlugin):
                     raise HTTPException(status_code=404, detail="Room not found")
                 allowed_nodes = slurm_service.collect_room_nodes(room)
 
-            slurm_cfg = APP_CONFIG.slurm
+            slurm_cfg = self.config
             node_states = await slurm_service.build_slurm_states(slurm_cfg, allowed_nodes)
             by_status: Dict[str, int] = {}
             by_severity: Dict[str, int] = {"OK": 0, "WARN": 0, "CRIT": 0, "UNKNOWN": 0}
@@ -222,7 +245,7 @@ class SlurmPlugin(RackscopePlugin):
                     raise HTTPException(status_code=404, detail="Room not found")
                 allowed_nodes = slurm_service.collect_room_nodes(room)
 
-            slurm_cfg = APP_CONFIG.slurm
+            slurm_cfg = self.config
             mapping = slurm_service.load_slurm_mapping(slurm_cfg)
             results = await slurm_service.fetch_slurm_results(slurm_cfg)
             if not results:
@@ -270,7 +293,7 @@ class SlurmPlugin(RackscopePlugin):
                     raise HTTPException(status_code=404, detail="Room not found")
                 allowed_nodes = slurm_service.collect_room_nodes(room)
 
-            slurm_cfg = APP_CONFIG.slurm
+            slurm_cfg = self.config
             node_states = await slurm_service.build_slurm_states(slurm_cfg, allowed_nodes)
             context = slurm_service.build_node_context(TOPOLOGY)
 
@@ -294,6 +317,15 @@ class SlurmPlugin(RackscopePlugin):
 
     def register_menu_sections(self):
         """Register Slurm menu section."""
+        # Reload config from APP_CONFIG to get latest enabled state
+        from rackscope.api.app import APP_CONFIG
+
+        current_config = self._load_config(APP_CONFIG)
+
+        # Only return menu sections if plugin is enabled
+        if not current_config.enabled:
+            return []
+
         return [
             MenuSection(
                 id="workload",
@@ -308,6 +340,12 @@ class SlurmPlugin(RackscopePlugin):
                         icon="Activity",
                     ),
                     MenuItem(
+                        id="slurm-wallboard",
+                        label="Room Wallboard",
+                        path="/slurm/wallboard",
+                        icon="Columns",
+                    ),
+                    MenuItem(
                         id="slurm-partitions",
                         label="Partitions",
                         path="/slurm/partitions",
@@ -318,6 +356,12 @@ class SlurmPlugin(RackscopePlugin):
                         label="Nodes",
                         path="/slurm/nodes",
                         icon="HardDrive",
+                    ),
+                    MenuItem(
+                        id="slurm-alerts",
+                        label="Alerts",
+                        path="/slurm/alerts",
+                        icon="AlertTriangle",
                     ),
                 ],
             )

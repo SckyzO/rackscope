@@ -424,3 +424,22 @@ export interface SimulatorOverride {
   value: number;
   expires_at?: number | null;
 }
+
+export interface MenuItem {
+  id: string;
+  label: string;
+  path: string;
+  icon: string;
+}
+
+export interface MenuSection {
+  id: string;
+  label: string;
+  icon: string;
+  items: MenuItem[];
+  order: number;
+}
+
+export interface PluginsMenuResponse {
+  sections: MenuSection[];
+}

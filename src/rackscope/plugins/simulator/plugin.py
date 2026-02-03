@@ -400,6 +400,15 @@ class SimulatorPlugin(RackscopePlugin):
 
     def register_menu_sections(self):
         """Register simulator menu section."""
+        # Reload config from APP_CONFIG to get latest enabled state
+        from rackscope.api.app import APP_CONFIG
+
+        current_config = self._load_config(APP_CONFIG)
+
+        # Only return menu sections if plugin is enabled
+        if not current_config.enabled:
+            return []
+
         return [
             MenuSection(
                 id="simulator",

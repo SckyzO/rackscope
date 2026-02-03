@@ -23,7 +23,18 @@ def get_app_config(
 ):
     """Get current application configuration."""
     if app_config:
-        return app_config
+        # Enrich plugins config with actual plugin configurations
+        from rackscope.plugins.registry import registry
+
+        enriched_config = app_config.model_dump()
+
+        if registry and hasattr(registry, '_plugins'):
+            for plugin_id, plugin in registry._plugins.items():
+                if hasattr(plugin, 'config') and plugin.config:
+                    # Replace the raw dict with the actual config from the plugin
+                    enriched_config['plugins'][plugin_id] = plugin.config.model_dump()
+
+        return enriched_config
     return {
         "paths": {},
         "refresh": {"room_state_seconds": 30, "rack_state_seconds": 30},

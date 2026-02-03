@@ -151,8 +151,14 @@ async def get_rack_state(
     catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
     checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
     planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
+    include_metrics: bool = False,
 ):
-    """Get rack health state and device metrics."""
+    """Get rack health state and device metrics.
+
+    Args:
+        rack_id: Rack identifier
+        include_metrics: Include detailed metrics (CPU, RAM, etc.). Default: False for faster response.
+    """
     # Lazy import to avoid circular dependency
     from rackscope.services import metrics_service
     from rackscope.telemetry.prometheus import client as prom_client
@@ -166,10 +172,10 @@ async def get_rack_state(
     targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
     snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
 
-    # Collect metrics using template-driven approach
+    # Collect metrics only if requested (to avoid performance impact)
     nodes_metrics = {}
     component_metrics = {}
-    if rack and catalog:
+    if include_metrics and rack and catalog:
         # Collect device metrics (nodes)
         nodes_metrics = await metrics_service.collect_rack_devices_metrics(
             rack=rack, catalog=catalog, prom_client=prom_client
