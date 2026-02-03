@@ -35,6 +35,7 @@ from rackscope.api.routers import (
     telemetry,
     plugins,
     metrics,
+    system,
 )
 from rackscope.services.instance_service import expand_device_instances
 from rackscope.services import telemetry_service
@@ -212,6 +213,7 @@ app.add_exception_handler(Exception, exceptions.generic_exception_handler)
 
 # Register routers
 app.include_router(config.router)
+app.include_router(system.router)
 # Simulator router now registered as plugin
 # Slurm router now registered as plugin
 app.include_router(catalog.router)

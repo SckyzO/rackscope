@@ -20,7 +20,6 @@ import { SlurmOverviewPage } from './pages/SlurmOverviewPage';
 import { SlurmPartitionsPage } from './pages/SlurmPartitionsPage';
 import { SlurmNodesPage } from './pages/SlurmNodesPage';
 import { SlurmAlertsPage } from './pages/SlurmAlertsPage';
-import { SimulatorPage } from './pages/SimulatorPage';
 import { api } from './services/api';
 import type { Site } from './types';
 import { expandInstanceMatches, matchesText } from './utils/search';
@@ -291,7 +290,6 @@ const Layout = ({
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [reloadKey, setReloadKey] = useState(0);
 
   return (
     <BrowserRouter>
@@ -317,7 +315,6 @@ function App() {
             <Route path="/slurm/partitions" element={<SlurmPartitionsPage />} />
             <Route path="/slurm/nodes" element={<SlurmNodesPage />} />
             <Route path="/slurm/alerts" element={<SlurmAlertsPage />} />
-            <Route path="/simulator" element={<SimulatorPage />} />
             <Route path="/rack/:rackId/device/:deviceId" element={<DevicePage />} />
             <Route path="/rack/:rackId" element={<RackPage reloadKey={reloadKey} />} />
             <Route path="/templates" element={<TemplatesLibraryPage />} />

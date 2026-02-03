@@ -1,0 +1,61 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: src/Dockerfile
+      args:
+        UID: "${UID:-1000}"
+        GID: "${GID:-1000}"
+    user: "${UID:-1000}:${GID:-1000}"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+      - ./config:/app/config
+      - ./tests:/app/tests
+      - ./tools:/app/tools
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./mypy.ini:/app/mypy.ini
+    environment:
+      - RACKSCOPE_APP_CONFIG=/app/config/app.yaml
+    command: uvicorn rackscope.api.app:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.47.2-jammy
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    depends_on:
+      - frontend
+    command: ["sleep", "infinity"]
+
+  simulator:
+    build:
+      context: ./tools/simulator
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./config:/app/config:ro
+    environment:
+      - TOPOLOGY_FILE=/app/config/topology
+      - SIMULATOR_CONFIG=/app/config/plugins/simulator/scenarios.yaml
+      - SIMULATOR_APP_CONFIG=/app/config/app.yaml
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./tools/simulator/prometheus.yml:/etc/prometheus/prometheus.yml:ro

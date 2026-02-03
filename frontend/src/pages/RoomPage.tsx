@@ -106,14 +106,15 @@ export const RoomPage = ({
 
   useEffect(() => {
     if (!selectedRack) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedRackHealth(null);
       return;
     }
     let active = true;
     const fetchSelected = async () => {
       try {
-        // Request metrics since RoomPage selected rack panel displays temperature, power, and PDU data
-        const data = await api.getRackState(selectedRack.id, true);
+        // No metrics needed - RoomPage panel shows only health states
+        const data = await api.getRackState(selectedRack.id, false);
         if (active) {
           setSelectedRackHealth(data);
         }
@@ -124,7 +125,7 @@ export const RoomPage = ({
         }
       }
     };
-    fetchSelected();
+    void fetchSelected();
     const interval = setInterval(fetchSelected, refreshMs);
     return () => {
       active = false;

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rackscope - Mission Control Dashboard Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --color-bg-base: #0a0f1a;
+      --color-bg-panel: #0f1419;
+      --color-border: #1f2937;
+      --color-accent: #3b82f6;
+      --color-accent-primary: #3b82f6;
+      --color-text-base: #e5e7eb;
+      --color-status-ok: #10b981;
+      --color-status-warn: #f59e0b;
+      --color-status-crit: #ef4444;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--color-bg-base);
+      color: var(--color-text-base);
+      overflow: hidden;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.3);
+      border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(156, 163, 175, 0.5);
+    }
+
+    .status-glow-ok {
+      box-shadow: 0 0 8px var(--color-status-ok);
+    }
+
+    .status-glow-warn {
+      box-shadow: 0 0 8px var(--color-status-warn);
+    }
+
+    .status-glow-crit {
+      box-shadow: 0 0 8px var(--color-status-crit);
+    }
+
+    .card-hover {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .nav-item {
+      transition: all 0.2s;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-item.active {
+      background: rgba(59, 130, 246, 0.12);
+      border-color: rgba(59, 130, 246, 0.2);
+      color: var(--color-accent);
+    }
+
+    .section-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+
+    .section-content.expanded {
+      max-height: 500px;
+    }
+
+    .chevron {
+      transition: transform 0.2s;
+    }
+
+    .chevron.rotated {
+      transform: rotate(90deg);
+    }
+  </style>
+</head>
+<body>
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-72 border-r border-[var(--color-border)] bg-[var(--color-bg-panel)] flex flex-col shrink-0">
+      <!-- Branding -->
+      <div class="flex h-20 items-center border-b border-[var(--color-border)] px-5">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/20">
+            <svg class="h-5 w-5 text-[var(--color-accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-lg font-black tracking-tight uppercase text-white">Rackscope</h1>
+            <p class="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">Mission Control</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 overflow-y-auto custom-scrollbar px-3 py-4 space-y-1.5">
+        <!-- Core Section (No Collapse) -->
+        <a href="#overview" class="nav-item active flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-semibold border border-transparent">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
+          </svg>
+          Overview
+        </a>
+
+        <div class="my-2 h-px bg-[var(--color-border)]/40"></div>
+
+        <!-- Workload Section (Collapsible) -->
+        <div>
+          <button onclick="toggleSection('workload')" class="nav-item flex w-full items-center justify-between px-3 py-2 rounded-lg text-[12px] font-semibold text-gray-500">
+            <span class="flex items-center gap-2.5">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Workload
+            </span>
+            <svg id="chevron-workload" class="chevron h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <div id="section-workload" class="section-content">
+            <div class="space-y-1 mt-1">
+              <a href="#cluster" class="nav-item flex items-center gap-2.5 px-6 py-2 rounded-lg text-[12px] font-semibold text-gray-500 border border-transparent">
+                Cluster Overview
+              </a>
+              <a href="#partitions" class="nav-item flex items-center gap-2.5 px-6 py-2 rounded-lg text-[12px] font-semibold text-gray-500 border border-transparent">
+                Partitions
+              </a>
+              <a href="#nodes" class="nav-item flex items-center gap-2.5 px-6 py-2 rounded-lg text-[12px] font-semibold text-gray-500 border border-transparent">
+                Nodes
+              </a>
+              <a href="#alerts" class="nav-item flex items-center gap-2.5 px-6 py-2 rounded-lg text-[12px] font-semibold text-gray-500 border border-transparent">
+                Alerts
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="my-2 h-px bg-[var(--color-border)]/40"></div>
+
+        <!-- Infrastructure Section (Collapsible) -->
+        <div>
+          <button onclick="toggleSection('infrastructure')" class="nav-item flex w-full items-center justify-between px-3 py-2 rounded-lg text-[12px] font-semibold text-gray-500">
+            <span class="flex items-center gap-2.5">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Infrastructure
+            </span>
+            <svg id="chevron-infrastructure" class="chevron h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <div id="section-infrastructure" class="section-content">
+            <div class="space-y-1 mt-1">
+              <a href="#rooms" class="nav-item flex items-center gap-2.5 px-6 py-2 rounded-lg text-[12px] font-semibold text-gray-500 border border-transparent">
+                Rooms
+              </a>
+              <a href="#racks" class="nav-item flex items-center gap-2.5 px-6 py-2 rounded-lg text-[12px] font-semibold text-gray-500 border border-transparent">
+                Racks
+              </a>
+              <a href="#devices" class="nav-item flex items-center gap-2.5 px-6 py-2 rounded-lg text-[12px] font-semibold text-gray-500 border border-transparent">
+                Devices
+              </a>
+              <a href="#templates" class="nav-item flex items-center gap-2.5 px-6 py-2 rounded-lg text-[12px] font-semibold text-gray-500 border border-transparent">
+                Templates
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="my-2 h-px bg-[var(--color-border)]/40"></div>
+
+        <!-- System Section (No Collapse) -->
+        <a href="#settings" class="nav-item flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-semibold text-gray-500 border border-transparent">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Settings
+        </a>
+      </nav>
+
+      <!-- Footer Status -->
+      <div class="border-t border-[var(--color-border)] bg-[var(--color-bg-panel)]/70 p-4">
+        <div class="space-y-1 px-3 pb-3 font-mono text-[9px] tracking-[0.2em] text-gray-500 uppercase">
+          <div class="flex items-center justify-between">
+            <span>Next scrape</span>
+            <span class="text-gray-400">28s</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Latency</span>
+            <span class="text-gray-400">42 ms</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 rounded-full border border-[var(--color-accent)]/15 bg-[var(--color-accent)]/8 px-3 py-2">
+          <div class="h-2 w-2 animate-pulse rounded-full bg-[var(--color-status-ok)] status-glow-ok"></div>
+          <span class="font-mono text-[9px] font-bold tracking-tighter text-[var(--color-accent)] uppercase">
+            System Online
+          </span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-hidden bg-[var(--color-bg-base)] relative">
+      <!-- Grid Background -->
+      <div class="absolute inset-0 bg-[linear-gradient(to_right,rgba(128,128,128,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(128,128,128,0.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none"></div>
+
+      <!-- Header -->
+      <header class="relative z-10 flex h-20 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-panel)]/80 backdrop-blur-xl px-5">
+        <div class="flex items-center gap-4">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-[var(--color-accent)] to-[#0b1f3a] shadow-[0_0_16px_rgba(59,130,246,0.35)]">
+            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="h-2 w-2 rounded-full bg-[var(--color-status-ok)] status-glow-ok"></div>
+            <span class="text-[11px] font-bold tracking-[0.2em] text-gray-400 uppercase">Live</span>
+          </div>
+        </div>
+        <div class="flex-1 max-w-[700px] px-6">
+          <div class="relative">
+            <svg class="absolute top-1/2 left-3.5 h-4.5 w-4.5 -translate-y-1/2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search datacenter / room / rack / device"
+              class="h-12 w-full rounded-xl border border-[var(--color-border)] bg-black/30 pl-11 pr-4 text-[13px] text-gray-300 placeholder:text-gray-500 focus:border-[var(--color-accent)]/50 focus:outline-none"
+            />
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="flex h-9 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-black/30 px-3 font-mono text-[10px] tracking-widest text-gray-400 uppercase hover:border-[var(--color-accent)]/30 hover:text-[var(--color-accent)]">
+            Reload
+          </button>
+        </div>
+      </header>
+
+      <!-- Dashboard Content -->
+      <div class="h-[calc(100%-5rem)] overflow-y-auto custom-scrollbar p-10">
+        <!-- Hero Section -->
+        <div class="mb-10">
+          <div class="mb-6 flex flex-col gap-2">
+            <div class="font-mono text-[10px] tracking-[0.45em] text-gray-500 uppercase">Mission Control</div>
+            <h1 class="text-5xl font-black tracking-tighter text-[var(--color-accent-primary)] uppercase">Overview</h1>
+            <div class="flex items-center gap-3 font-mono text-[11px] tracking-[0.3em] text-gray-500 uppercase">
+              <span>Global Infrastructure Status</span>
+              <span class="h-1 w-1 rounded-full bg-gray-600"></span>
+              <span class="text-gray-400">DC1 Datacenter</span>
+              <span class="h-1 w-1 rounded-full bg-gray-600"></span>
+              <span class="text-gray-400">42 checks / 156 devices</span>
+            </div>
+          </div>
+
+          <!-- Status Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Global Status -->
+            <div class="card-hover relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 group">
+              <div class="relative z-10">
+                <div class="mb-3 flex items-center justify-between">
+                  <div class="font-mono text-[10px] font-bold tracking-[0.3em] text-gray-500 uppercase">Global Status</div>
+                  <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/5 bg-black/30">
+                    <svg class="h-5 w-5 text-[var(--color-accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="font-mono text-3xl font-black text-[var(--color-status-ok)]">OPTIMAL</div>
+              </div>
+              <div class="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </div>
+
+            <!-- Active Alerts -->
+            <div class="card-hover relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 group">
+              <div class="relative z-10">
+                <div class="mb-3 flex items-center justify-between">
+                  <div class="font-mono text-[10px] font-bold tracking-[0.3em] text-gray-500 uppercase">Active Alerts</div>
+                  <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/5 bg-black/30">
+                    <svg class="h-5 w-5 text-[var(--color-status-warn)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="flex items-baseline gap-3">
+                  <div class="font-mono text-3xl font-black text-white">12</div>
+                  <div class="font-mono text-[11px] text-gray-500 uppercase">
+                    <span class="text-[var(--color-status-crit)]">3</span> CRIT /
+                    <span class="text-[var(--color-status-warn)]">9</span> WARN
+                  </div>
+                </div>
+              </div>
+              <div class="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </div>
+
+            <!-- Managed Racks -->
+            <div class="card-hover relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 group">
+              <div class="relative z-10">
+                <div class="mb-3 flex items-center justify-between">
+                  <div class="font-mono text-[10px] font-bold tracking-[0.3em] text-gray-500 uppercase">Managed Racks</div>
+                  <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/5 bg-black/30">
+                    <svg class="h-5 w-5 text-[var(--color-accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="flex items-baseline gap-3">
+                  <div class="font-mono text-3xl font-black text-white">248</div>
+                  <div class="font-mono text-[11px] text-gray-500 uppercase">3 sites / 12 rooms</div>
+                </div>
+              </div>
+              <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </div>
+
+            <!-- Prometheus -->
+            <div class="card-hover relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 group">
+              <div class="relative z-10">
+                <div class="mb-3 flex items-center justify-between">
+                  <div class="font-mono text-[10px] font-bold tracking-[0.3em] text-gray-500 uppercase">Prometheus</div>
+                  <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-white/5 bg-black/30">
+                    <svg class="h-5 w-5 text-[var(--color-accent-primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="flex items-baseline gap-2">
+                  <div class="font-mono text-3xl font-black text-white">42</div>
+                  <div class="font-mono text-[13px] tracking-[0.2em] text-gray-500 uppercase">ms</div>
+                </div>
+                <div class="mt-2 font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">avg query time</div>
+              </div>
+              <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two-Column Layout -->
+        <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_480px] gap-6">
+          <!-- Rooms List -->
+          <section class="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6">
+            <div class="mb-6 flex items-center justify-between">
+              <div>
+                <div class="font-mono text-[10px] tracking-[0.35em] text-gray-500 uppercase">Infrastructure</div>
+                <h2 class="font-mono text-xl font-black tracking-tight text-gray-200 uppercase">Rooms</h2>
+              </div>
+              <div class="font-mono text-[11px] text-gray-500 uppercase">4 Rooms</div>
+            </div>
+            <div class="space-y-2">
+              <a href="#" class="group flex items-center justify-between gap-4 rounded-xl border border-transparent bg-black/20 px-5 py-4 hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-accent-primary)]/5 transition-all">
+                <div class="flex flex-col gap-1.5">
+                  <span class="text-sm font-bold text-gray-200 group-hover:text-[var(--color-accent-primary)] transition-colors">Room A</span>
+                  <span class="font-mono text-[10px] tracking-widest text-gray-500 uppercase">62 racks</span>
+                </div>
+                <div class="flex items-center gap-4 font-mono text-[11px] uppercase">
+                  <span class="text-[var(--color-status-crit)]">2</span>
+                  <span class="text-[var(--color-status-warn)]">5</span>
+                  <span class="text-[var(--color-status-ok)]">54</span>
+                  <span class="text-gray-600">1</span>
+                  <svg class="h-4 w-4 text-gray-500 group-hover:text-[var(--color-accent-primary)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 17L17 7M17 7H7M17 7v10" />
+                  </svg>
+                </div>
+              </a>
+            </div>
+          </section>
+
+          <!-- Alerts + Telemetry -->
+          <aside class="space-y-6">
+            <!-- Active Alerts -->
+            <div class="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6">
+              <div class="mb-6 flex items-center justify-between">
+                <div>
+                  <div class="font-mono text-[10px] tracking-[0.35em] text-gray-500 uppercase">Monitoring</div>
+                  <h2 class="font-mono text-xl font-black tracking-tight text-gray-200 uppercase">Active Alerts</h2>
+                </div>
+                <div class="font-mono text-[11px] text-gray-500 uppercase">12 total</div>
+              </div>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/20 px-4 py-3">
+                  <div class="min-w-0 flex-1">
+                    <div class="truncate text-sm font-bold text-gray-200">compute-node-042</div>
+                    <div class="truncate font-mono text-[10px] tracking-widest text-gray-500 uppercase">DC1 / Room A / Rack 12</div>
+                  </div>
+                  <div class="shrink-0 rounded-full border border-[var(--color-status-crit)]/40 bg-[var(--color-status-crit)]/10 px-3 py-1 font-mono text-[10px] font-black tracking-widest uppercase text-[var(--color-status-crit)]">
+                    CRIT
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Prometheus Telemetry -->
+            <div class="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6">
+              <div class="mb-6 flex items-center justify-between">
+                <div>
+                  <div class="font-mono text-[10px] tracking-[0.35em] text-gray-500 uppercase">Telemetry</div>
+                  <h2 class="font-mono text-xl font-black tracking-tight text-gray-200 uppercase">Prometheus</h2>
+                </div>
+                <div class="font-mono text-[10px] text-gray-500 uppercase">2 in flight</div>
+              </div>
+
+              <!-- Chart -->
+              <div class="mb-4 h-32 rounded-xl border border-white/5 bg-black/30 p-3">
+                <canvas id="promChart"></canvas>
+              </div>
+
+              <!-- Stats Grid -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-xl border border-white/5 bg-black/20 p-3">
+                  <div class="font-mono text-[9px] tracking-[0.2em] text-gray-500 uppercase">Queries</div>
+                  <div class="mt-2 font-mono text-xl font-black text-white">1,024</div>
+                </div>
+                <div class="rounded-xl border border-white/5 bg-black/20 p-3">
+                  <div class="font-mono text-[9px] tracking-[0.2em] text-gray-500 uppercase">Cache Hits</div>
+                  <div class="mt-2 font-mono text-xl font-black text-[var(--color-status-ok)]">856</div>
+                </div>
+                <div class="rounded-xl border border-white/5 bg-black/20 p-3">
+                  <div class="font-mono text-[9px] tracking-[0.2em] text-gray-500 uppercase">Cache Misses</div>
+                  <div class="mt-2 font-mono text-xl font-black text-[var(--color-status-warn)]">168</div>
+                </div>
+                <div class="rounded-xl border border-white/5 bg-black/20 p-3">
+                  <div class="font-mono text-[9px] tracking-[0.2em] text-gray-500 uppercase">Last Batch</div>
+                  <div class="mt-2 font-mono text-[11px] text-gray-300">248 ids / 12 q</div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Sidebar collapsible sections
+    function toggleSection(sectionId) {
+      const section = document.getElementById(`section-${sectionId}`);
+      const chevron = document.getElementById(`chevron-${sectionId}`);
+
+      if (section.classList.contains('expanded')) {
+        section.classList.remove('expanded');
+        chevron.classList.remove('rotated');
+      } else {
+        section.classList.add('expanded');
+        chevron.classList.add('rotated');
+      }
+    }
+
+    // Initialize Chart.js
+    const ctx = document.getElementById('promChart').getContext('2d');
+    const promChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['T-20', 'T-19', 'T-18', 'T-17', 'T-16', 'T-15', 'T-14', 'T-13', 'T-12', 'T-11', 'T-10', 'T-9', 'T-8', 'T-7', 'T-6', 'T-5', 'T-4', 'T-3', 'T-2', 'T-1'],
+        datasets: [{
+          label: 'Query Time (ms)',
+          data: [45, 42, 48, 41, 43, 46, 42, 40, 44, 42, 41, 45, 43, 42, 44, 41, 43, 42, 41, 42],
+          borderColor: 'rgb(59, 130, 246)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: 'rgb(59, 130, 246)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            borderColor: 'rgba(59, 130, 246, 0.5)',
+            borderWidth: 1,
+            padding: 12,
+            displayColors: false,
+            callbacks: {
+              label: function(context) {
+                return Math.round(context.parsed.y) + ' ms';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            display: false
+          },
+          y: {
+            display: true,
+            grid: {
+              color: 'rgba(255, 255, 255, 0.05)',
+              drawBorder: false
+            },
+            ticks: {
+              color: 'rgba(156, 163, 175, 0.6)',
+              font: {
+                family: "'JetBrains Mono', monospace",
+                size: 10
+              },
+              callback: function(value) {
+                return value + 'ms';
+              }
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

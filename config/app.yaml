@@ -34,8 +34,8 @@ features:
   notifications: true
   notifications_max_visible: 10
   playlist: false
-  offline: false
-  demo: true
+  offline: true
+  demo: false
 map:
   default_view: world
   default_zoom: 4
@@ -114,25 +114,16 @@ plugins:
       - unk
       - noresp
       - inval
+      info: []
+    severity_colors:
+      ok: '#22c55e'
+      warn: '#f59e0b'
+      crit: '#ef4444'
+      info: '#3b82f6'
     roles:
     - compute
     - visu
     include_unlabeled: false
     mapping_path: config/plugins/slurm/node_mapping.yaml
-simulator:
-  update_interval_seconds: 20
-  seed: null
-  scenario: full-ok
-  scale_factor: 1.0
-  incident_rates:
-    node_micro_failure: 0.001
-    rack_macro_failure: 0.01
-    aisle_cooling_failure: 0.005
-  incident_durations:
-    rack: 3
-    aisle: 5
-  overrides_path: config/plugins/simulator/overrides.yaml
-  default_ttl_seconds: 120
-  metrics_catalog_path: config/plugins/simulator/metrics_full.yaml
-  metrics_catalogs: []
+simulator: null
 slurm: null

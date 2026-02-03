@@ -541,6 +541,22 @@ export const api = {
       throw err instanceof Error ? err : new Error('Network error');
     }
   },
+  restartBackend: async (): Promise<{ status: string; message: string }> => {
+    try {
+      const res = await fetch('/api/system/restart', { method: 'POST' });
+      if (!res.ok) {
+        logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/system/restart');
+        throw new Error(`Request failed: ${res.status}`);
+      }
+      const data = await res.json();
+      markSuccess();
+      return data as { status: string; message: string };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Network error';
+      logClientError(message, '/api/system/restart');
+      throw err instanceof Error ? err : new Error('Network error');
+    }
+  },
   getLastSuccessTs: () => {
     const meta = readJSON(META_KEY);
     return meta?.lastSuccess || null;
