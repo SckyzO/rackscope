@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, ChevronDown, ChevronRight } from 'lucide-react';
 import { FormField } from '../common/FormField';
-import { FormSection } from '../common/FormSection';
 import { FormToggle } from '../common/FormToggle';
 import type { ConfigDraft } from '../useSettingsConfig';
 
@@ -15,6 +14,8 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   draft,
   setDraft,
 }) => {
+  const [simulatorSettingsOpen, setSimulatorSettingsOpen] = useState(false);
+  const [slurmSettingsOpen, setSlurmSettingsOpen] = useState(false);
 
   const updateSimulator = (field: string, value: string | boolean) => {
     setDraft((prev) => {
@@ -101,7 +102,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Global Warning */}
       <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-4">
         <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-orange-400">
@@ -118,10 +119,27 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
       </div>
 
       {/* Simulator Plugin */}
-      <FormSection
-        title="Simulator Plugin"
-        description="Metrics simulator for testing without real hardware"
+      <div
+        className="rounded-xl border border-[var(--color-border)] p-6"
+        style={{ backgroundColor: 'var(--color-bg-panel)' }}
       >
+        <div className="mb-4">
+          <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-primary)' }}>
+            Simulator Plugin
+          </h3>
+          <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            Metrics simulator for testing without real hardware
+          </p>
+        </div>
+
+        <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+          <p className="text-xs" style={{ color: 'var(--color-text-base)' }}>
+            <strong>Note:</strong> The simulator only works when using <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs">docker-compose-dev.yaml</code>.
+            Make sure to start the stack with <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs">make up</code> or{' '}
+            <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs">docker compose up -d</code>.
+          </p>
+        </div>
+
         <FormToggle
           label="Enable Simulator"
           description="Activate simulator plugin for demo mode"
@@ -129,8 +147,23 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           onChange={(value) => updateSimulator('enabled', value)}
         />
 
-        {draft.plugins.simulator.enabled && (
-          <>
+        <button
+          type="button"
+          onClick={() => setSimulatorSettingsOpen(!simulatorSettingsOpen)}
+          disabled={!draft.plugins.simulator.enabled}
+          className="mt-4 flex items-center gap-2 text-sm font-medium transition"
+          style={{
+            color: draft.plugins.simulator.enabled ? 'var(--color-text-secondary)' : 'var(--color-text-muted)',
+            opacity: draft.plugins.simulator.enabled ? 1 : 0.5,
+            cursor: draft.plugins.simulator.enabled ? 'pointer' : 'not-allowed',
+          }}
+        >
+          {simulatorSettingsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          Advanced Settings
+        </button>
+
+        {simulatorSettingsOpen && draft.plugins.simulator.enabled && (
+          <div className="mt-4 space-y-4 rounded-lg border border-[var(--color-border)] p-4" style={{ backgroundColor: 'var(--color-bg-elevated)' }}>
             <FormField
               label="Update Interval (seconds)"
               value={draft.plugins.simulator.update_interval_seconds}
@@ -160,15 +193,24 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 Open Control Panel
               </Link>
             </div>
-          </>
+          </div>
         )}
-      </FormSection>
+      </div>
 
       {/* Slurm Plugin */}
-      <FormSection
-        title="Slurm Plugin"
-        description="Workload manager integration for HPC clusters"
+      <div
+        className="rounded-xl border border-[var(--color-border)] p-6"
+        style={{ backgroundColor: 'var(--color-bg-panel)' }}
       >
+        <div className="mb-4">
+          <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-primary)' }}>
+            Slurm Plugin
+          </h3>
+          <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+            Workload manager integration for HPC clusters
+          </p>
+        </div>
+
         <FormToggle
           label="Enable Slurm Integration"
           description="Activate Slurm plugin for HPC views"
@@ -176,8 +218,23 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           onChange={(value) => updateSlurm('enabled', value)}
         />
 
-        {draft.plugins.slurm.enabled && (
-          <>
+        <button
+          type="button"
+          onClick={() => setSlurmSettingsOpen(!slurmSettingsOpen)}
+          disabled={!draft.plugins.slurm.enabled}
+          className="mt-4 flex items-center gap-2 text-sm font-medium transition"
+          style={{
+            color: draft.plugins.slurm.enabled ? 'var(--color-text-secondary)' : 'var(--color-text-muted)',
+            opacity: draft.plugins.slurm.enabled ? 1 : 0.5,
+            cursor: draft.plugins.slurm.enabled ? 'pointer' : 'not-allowed',
+          }}
+        >
+          {slurmSettingsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          Advanced Settings
+        </button>
+
+        {slurmSettingsOpen && draft.plugins.slurm.enabled && (
+          <div className="mt-4 space-y-4 rounded-lg border border-[var(--color-border)] p-4" style={{ backgroundColor: 'var(--color-bg-elevated)' }}>
             <FormField
               label="Metric Name"
               value={draft.plugins.slurm.metric}
@@ -382,9 +439,9 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 <li>• Alerts dashboard for WARN/CRIT nodes</li>
               </ul>
             </div>
-          </>
+          </div>
         )}
-      </FormSection>
+      </div>
     </div>
   );
 };
