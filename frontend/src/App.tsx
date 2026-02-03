@@ -290,6 +290,7 @@ const Layout = ({
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [reloadKey] = useState(0);
 
   return (
     <BrowserRouter>
