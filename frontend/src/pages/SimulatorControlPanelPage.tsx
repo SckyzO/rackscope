@@ -7,7 +7,9 @@ export const SimulatorControlPanelPage: React.FC = () => {
   const [scenarios, setScenarios] = useState<SimulatorScenario[]>([]);
   const [overrides, setOverrides] = useState<SimulatorOverride[]>([]);
   const [activeScenario, setActiveScenario] = useState<string>('');
+  const [selectedScenario, setSelectedScenario] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(false);
   const [showAddOverride, setShowAddOverride] = useState(false);
   const [newOverride, setNewOverride] = useState({
     instance: '',
@@ -24,7 +26,9 @@ export const SimulatorControlPanelPage: React.FC = () => {
       ]);
       setScenarios(scenariosData.scenarios || []);
       setOverrides(overridesData.overrides || []);
-      setActiveScenario(config.plugins?.simulator?.scenario || '');
+      const currentScenario = config.plugins?.simulator?.scenario || '';
+      setActiveScenario(currentScenario);
+      setSelectedScenario(currentScenario);
     } catch (err) {
       console.error('Failed to load simulator data:', err);
     } finally {
@@ -36,7 +40,10 @@ export const SimulatorControlPanelPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  const handleSetScenario = async (scenarioId: string) => {
+  const handleApplyScenario = async () => {
+    if (selectedScenario === activeScenario) return;
+
+    setApplying(true);
     try {
       const config = await api.getConfig();
       const updatedConfig = {
@@ -45,12 +52,12 @@ export const SimulatorControlPanelPage: React.FC = () => {
           ...config.plugins,
           simulator: {
             ...config.plugins.simulator,
-            scenario: scenarioId,
+            scenario: selectedScenario,
           },
         },
       };
       await api.updateConfig(updatedConfig);
-      setActiveScenario(scenarioId);
+      setActiveScenario(selectedScenario);
 
       // Trigger backend restart to apply scenario change
       try {
@@ -58,8 +65,14 @@ export const SimulatorControlPanelPage: React.FC = () => {
       } catch (err) {
         console.warn('Failed to restart backend:', err);
       }
+
+      // Wait a bit then reload to show new state
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (err) {
-      console.error('Failed to set scenario:', err);
+      console.error('Failed to apply scenario:', err);
+      setApplying(false);
     }
   };
 
@@ -124,9 +137,16 @@ export const SimulatorControlPanelPage: React.FC = () => {
         {/* Scenarios Section */}
         <div className="rounded-xl border border-[var(--color-border)] p-6" style={{ backgroundColor: 'var(--color-bg-panel)' }}>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-primary)' }}>
-              Active Scenario
-            </h2>
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-primary)' }}>
+                Test Scenarios
+              </h2>
+              {activeScenario && (
+                <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                  Currently applied: <span className="font-bold" style={{ color: 'var(--color-accent)' }}>{activeScenario}</span>
+                </p>
+              )}
+            </div>
             <button
               onClick={loadData}
               className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-1 text-xs font-medium transition hover:border-[var(--color-accent)]"
@@ -138,35 +158,64 @@ export const SimulatorControlPanelPage: React.FC = () => {
           </div>
 
           {scenarios.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3">
-              {scenarios.map((scenario) => (
-                <button
-                  key={scenario.id}
-                  onClick={() => handleSetScenario(scenario.id)}
-                  className={`rounded-lg border px-4 py-3 text-left transition ${
-                    activeScenario === scenario.id
-                      ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10'
-                      : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/50'
-                  }`}
-                  style={{ backgroundColor: activeScenario === scenario.id ? undefined : 'var(--color-bg-elevated)' }}
-                >
-                  <div className="flex items-center gap-2">
-                    <Play
-                      className="h-4 w-4"
-                      style={{ color: activeScenario === scenario.id ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
-                    />
-                    <div>
-                      <div className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                        {scenario.name}
+            <>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {scenarios.map((scenario) => {
+                  const isActive = activeScenario === scenario.id;
+                  const isSelected = selectedScenario === scenario.id;
+
+                  return (
+                    <button
+                      key={scenario.id}
+                      onClick={() => setSelectedScenario(scenario.id)}
+                      className={`relative rounded-lg border px-4 py-3 text-left transition ${
+                        isSelected
+                          ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10'
+                          : 'border-[var(--color-border)] hover:border-[var(--color-accent)]/50'
+                      }`}
+                      style={{ backgroundColor: isSelected ? undefined : 'var(--color-bg-elevated)' }}
+                    >
+                      {isActive && (
+                        <div className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-text-inverse)' }}>
+                          CURRENT
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <Play
+                          className="h-4 w-4"
+                          style={{ color: isSelected ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+                        />
+                        <div>
+                          <div className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                            {scenario.name}
+                          </div>
+                          <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                            {scenario.description}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                        {scenario.description}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Apply Changes Button */}
+              <button
+                onClick={handleApplyScenario}
+                disabled={selectedScenario === activeScenario || applying}
+                className={`w-full rounded-lg px-4 py-3 text-sm font-bold uppercase tracking-wider transition ${
+                  selectedScenario === activeScenario || applying
+                    ? 'cursor-not-allowed opacity-50'
+                    : ''
+                }`}
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'var(--color-text-inverse)',
+                }}
+              >
+                {applying ? 'Applying & Restarting...' : 'Apply Changes (Restart Required)'}
+              </button>
+            </>
           ) : (
             <div className="text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
               No scenarios available
@@ -175,8 +224,8 @@ export const SimulatorControlPanelPage: React.FC = () => {
 
           <div className="mt-4 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3">
             <p className="text-xs" style={{ color: 'var(--color-text-base)' }}>
-              <strong>Note:</strong> Changing scenarios requires a backend restart. The system will restart
-              automatically after selection.
+              <strong>Note:</strong> Changing scenarios requires a backend restart. Select a scenario
+              and click "Apply Changes" to restart the backend and activate the new configuration.
             </p>
           </div>
         </div>
