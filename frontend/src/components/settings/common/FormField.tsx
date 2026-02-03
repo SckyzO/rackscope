@@ -21,7 +21,7 @@ export const FormField: React.FC<FormFieldProps> = ({
 }) => {
   return (
     <div className={`space-y-2 ${className}`}>
-      <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">
+      <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
         {label}
       </label>
       <input
@@ -30,7 +30,8 @@ export const FormField: React.FC<FormFieldProps> = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2 text-sm text-white focus:border-blue-500 focus:outline-none disabled:opacity-50"
+        className="w-full rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm focus:border-[var(--color-accent)] focus:outline-none disabled:opacity-50"
+        style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
       />
     </div>
   );

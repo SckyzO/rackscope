@@ -110,7 +110,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
         <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-orange-400">
           ⚠️ Backend Restart Required
         </h4>
-        <p className="text-xs text-gray-300">
+        <p className="text-xs text-[var(--color-text-base)]">
           Enabling or disabling plugins requires a backend restart to take effect.
           Run <code className="rounded bg-gray-800 px-2 py-1 font-mono text-xs">make restart</code> or{' '}
           <code className="rounded bg-gray-800 px-2 py-1 font-mono text-xs">
@@ -150,7 +150,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             {/* Scenario Selection */}
             {scenarios.length > 0 && (
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
                   Active Scenario
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -164,10 +164,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                       className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-left transition hover:border-blue-500"
                     >
                       <div className="flex items-center gap-2">
-                        <Play className="h-4 w-4 text-gray-500" />
+                        <Play className="h-4 w-4 text-[var(--color-text-muted)]" />
                         <div>
-                          <div className="text-sm font-bold text-white">{scenario.name}</div>
-                          <div className="text-xs text-gray-500">{scenario.description}</div>
+                          <div className="text-sm font-bold text-[var(--color-text-primary)]">{scenario.name}</div>
+                          <div className="text-xs text-[var(--color-text-muted)]">{scenario.description}</div>
                         </div>
                       </div>
                     </button>
@@ -179,12 +179,12 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             {/* Overrides Management */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
                   Metric Overrides
                 </label>
                 <button
                   onClick={() => setShowAddOverride(!showAddOverride)}
-                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1 text-xs font-bold uppercase text-white hover:bg-blue-700"
+                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1 text-xs font-bold uppercase text-[var(--color-text-primary)] hover:bg-blue-700"
                 >
                   <Plus className="h-3 w-3" />
                   Add Override
@@ -219,13 +219,13 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                   <div className="flex gap-2">
                     <button
                       onClick={handleAddOverride}
-                      className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-bold uppercase text-white hover:bg-green-700"
+                      className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-bold uppercase text-[var(--color-text-primary)] hover:bg-green-700"
                     >
                       Add Override
                     </button>
                     <button
                       onClick={() => setShowAddOverride(false)}
-                      className="flex-1 rounded-lg bg-gray-700 px-4 py-2 text-sm font-bold uppercase text-white hover:bg-gray-600"
+                      className="flex-1 rounded-lg bg-gray-700 px-4 py-2 text-sm font-bold uppercase text-[var(--color-text-primary)] hover:bg-gray-600"
                     >
                       Cancel
                     </button>
@@ -245,7 +245,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                         <span className="mx-2 text-gray-600">→</span>
                         <span className="text-yellow-400">{override.metric}</span>
                         <span className="mx-2 text-gray-600">=</span>
-                        <span className="text-white">{override.value}</span>
+                        <span className="text-[var(--color-text-primary)]">{override.value}</span>
                       </div>
                       <button
                         onClick={() => handleDeleteOverride(override.id)}
@@ -259,7 +259,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               )}
 
               {overrides.length === 0 && !showAddOverride && (
-                <div className="text-center text-sm text-gray-500">
+                <div className="text-center text-sm text-[var(--color-text-muted)]">
                   No active overrides. Click "Add Override" to create one.
                 </div>
               )}
@@ -269,7 +269,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-yellow-400">
                 ⚠️ Demo Mode Redundancy
               </h4>
-              <p className="text-xs text-gray-300">
+              <p className="text-xs text-[var(--color-text-base)]">
                 The <strong>features.demo</strong> setting is currently redundant with this plugin.
                 When simulator is enabled, demo mode is automatically active.
               </p>
@@ -329,7 +329,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-blue-400">
                 Slurm Features
               </h4>
-              <ul className="space-y-2 text-xs text-gray-300">
+              <ul className="space-y-2 text-xs text-[var(--color-text-base)]">
                 <li>• Wallboard view with compact aisle layout</li>
                 <li>• Cluster overview with partition status</li>
                 <li>• Node list with topology context</li>

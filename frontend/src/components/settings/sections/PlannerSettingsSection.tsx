@@ -55,7 +55,7 @@ export const PlannerSettingsSection: React.FC<PlannerSettingsSectionProps> = ({
         <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-blue-400">
           Performance Tips
         </h4>
-        <ul className="space-y-2 text-xs text-gray-300">
+        <ul className="space-y-2 text-xs text-[var(--color-text-base)]">
           <li>• Increase <strong>Cache TTL</strong> to reduce Prometheus load</li>
           <li>• Increase <strong>Max IDs</strong> to batch more queries together</li>
           <li>• Match Cache TTL with UI refresh intervals for best UX</li>

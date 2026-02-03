@@ -387,7 +387,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 </div>
               </div>
               <div className="flex items-baseline gap-3">
-                <div className="font-mono text-3xl font-black tabular-nums text-white">
+                <div className="font-mono text-3xl font-black tabular-nums text-[var(--color-text-primary)]">
                   {globalStats?.active_alerts || 0}
                 </div>
                 <div className="font-mono text-[11px] tabular-nums tracking-[0.2em] text-gray-500 uppercase">
@@ -411,7 +411,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 </div>
               </div>
               <div className="flex items-baseline gap-3">
-                <div className="font-mono text-3xl font-black tabular-nums text-white">
+                <div className="font-mono text-3xl font-black tabular-nums text-[var(--color-text-primary)]">
                   {globalStats?.total_racks || 0}
                 </div>
                 <div className="font-mono text-[11px] tabular-nums tracking-[0.2em] text-gray-500 uppercase">
@@ -434,7 +434,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
-                <div className="font-mono text-3xl font-black tabular-nums text-white">
+                <div className="font-mono text-3xl font-black tabular-nums text-[var(--color-text-primary)]">
                   {promStats?.avg_ms ? Math.round(promStats.avg_ms) : '--'}
                 </div>
                 <div className="font-mono text-[13px] tracking-[0.2em] text-gray-500 uppercase">ms</div>
@@ -590,7 +590,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 <div className="font-mono text-[9px] tracking-[0.2em] text-gray-500 uppercase">
                   Queries
                 </div>
-                <div className="mt-2 font-mono text-xl font-black tabular-nums text-white">
+                <div className="mt-2 font-mono text-xl font-black tabular-nums text-[var(--color-text-primary)]">
                   {telemetryStats?.query_count ?? 0}
                 </div>
               </div>

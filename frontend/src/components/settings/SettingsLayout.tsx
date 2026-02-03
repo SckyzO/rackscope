@@ -30,8 +30,8 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
       {/* Header */}
       <header className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black uppercase tracking-tighter text-white">Settings</h1>
-          <p className="mt-1 font-mono text-xs tracking-wider text-gray-500 uppercase">
+          <h1 className="text-3xl font-black uppercase tracking-tighter" style={{ color: 'var(--color-text-primary)' }}>Settings</h1>
+          <p className="mt-1 font-mono text-xs tracking-wider uppercase" style={{ color: 'var(--color-text-muted)' }}>
             Application Configuration
           </p>
         </div>
@@ -42,11 +42,12 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
           disabled={saving || saved}
           className={`flex items-center gap-2 rounded-lg px-6 py-3 font-mono text-sm font-bold uppercase tracking-wider transition ${
             saved
-              ? 'bg-green-600 text-white'
+              ? 'bg-green-600'
               : saving
                 ? 'bg-gray-700 text-gray-400'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-blue-600 hover:bg-blue-700'
           }`}
+          style={saved || !saving ? { color: 'var(--color-text-inverse)' } : {}}
         >
           {saved ? (
             <>
