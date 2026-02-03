@@ -90,6 +90,8 @@ def apply_config(app_config: AppConfig) -> None:
         cert=cert,
         latency_window=APP_CONFIG.telemetry.prometheus_latency_window,
         debug_stats=APP_CONFIG.telemetry.debug_stats,
+        health_checks_ttl=APP_CONFIG.cache.health_checks_ttl_seconds,
+        metrics_ttl=APP_CONFIG.cache.metrics_ttl_seconds,
     )
     PLANNER = TelemetryPlanner(
         PlannerConfig(

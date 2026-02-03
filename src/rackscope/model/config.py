@@ -19,7 +19,9 @@ class RefreshConfig(BaseModel):
 
 
 class CacheConfig(BaseModel):
-    ttl_seconds: int = Field(default=30, ge=1)
+    ttl_seconds: int = Field(default=30, ge=1)  # Deprecated, kept for backward compatibility
+    health_checks_ttl_seconds: int = Field(default=30, ge=1)  # TTL for health checks
+    metrics_ttl_seconds: int = Field(default=120, ge=1)  # TTL for detailed metrics
 
 
 class TelemetryConfig(BaseModel):

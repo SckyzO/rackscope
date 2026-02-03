@@ -10,7 +10,9 @@ refresh:
   room_state_seconds: 60
   rack_state_seconds: 60
 cache:
-  ttl_seconds: 60
+  ttl_seconds: 60  # Deprecated, kept for backward compatibility
+  health_checks_ttl_seconds: 30  # TTL for health checks (shorter for fresher data)
+  metrics_ttl_seconds: 120  # TTL for detailed metrics (longer, less critical)
 telemetry:
   prometheus_url: http://prometheus:9090
   identity_label: instance

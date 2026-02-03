@@ -94,7 +94,7 @@ class TelemetryPlanner:
         for check, query in queries:
             if not query:
                 continue
-            result = await prom_client.query(query)
+            result = await prom_client.query(query, cache_type='health')
             if result.get("status") != "success":
                 continue
             for item in result.get("data", {}).get("result", []):
