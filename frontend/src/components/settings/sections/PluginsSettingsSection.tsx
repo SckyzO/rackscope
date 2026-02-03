@@ -297,7 +297,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
                 Status Mapping (Drag & Drop to Reorganize)
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-4 gap-3">
                 {(['ok', 'warn', 'crit', 'info'] as const).map((severity) => (
                   <div
                     key={severity}
