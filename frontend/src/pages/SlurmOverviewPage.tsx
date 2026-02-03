@@ -11,12 +11,14 @@ import {
 } from 'chart.js';
 import type { RoomSummary, SlurmPartitionSummary, SlurmSummary } from '../types';
 import { api } from '../services/api';
+import { useSlurmConfig } from '../hooks/useSlurmConfig';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
 const severityOrder = ['OK', 'WARN', 'CRIT', 'UNKNOWN'];
 
 export const SlurmOverviewPage = () => {
+  const { severityColors } = useSlurmConfig();
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [roomFilter, setRoomFilter] = useState<string>('');
   const [summary, setSummary] = useState<SlurmSummary | null>(null);
@@ -57,13 +59,18 @@ export const SlurmOverviewPage = () => {
       datasets: [
         {
           data: severityOrder.map((key) => data[key] || 0),
-          backgroundColor: ['#22c55e', '#f59e0b', '#ef4444', '#6b7280'],
+          backgroundColor: [
+            severityColors.ok,
+            severityColors.warn,
+            severityColors.crit,
+            '#6b7280', // UNKNOWN (gray)
+          ],
           borderColor: 'rgba(255,255,255,0.08)',
           borderWidth: 1,
         },
       ],
     };
-  }, [summary]);
+  }, [summary, severityColors]);
 
   const statusChart = useMemo(() => {
     const data = summary?.by_status || {};
@@ -74,11 +81,11 @@ export const SlurmOverviewPage = () => {
         {
           label: 'Nodes',
           data: labels.map((key) => data[key] || 0),
-          backgroundColor: '#3b82f6',
+          backgroundColor: severityColors.info,
         },
       ],
     };
-  }, [summary]);
+  }, [summary, severityColors]);
 
   const topPartitions = useMemo(() => {
     if (!partitions?.partitions) return [];
