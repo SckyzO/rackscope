@@ -50,7 +50,6 @@ plugins:
     enabled: true
     update_interval_seconds: 20
     seed: null
-    scenario: full-ok
     scale_factor: 1
     incident_rates:
       node_micro_failure: 0.001

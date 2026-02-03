@@ -21,6 +21,7 @@ import { SlurmOverviewPage } from './pages/SlurmOverviewPage';
 import { SlurmPartitionsPage } from './pages/SlurmPartitionsPage';
 import { SlurmNodesPage } from './pages/SlurmNodesPage';
 import { SlurmAlertsPage } from './pages/SlurmAlertsPage';
+import { SimulatorControlPanelPage } from './pages/SimulatorControlPanelPage';
 import { api } from './services/api';
 import type { Site } from './types';
 import { expandInstanceMatches, matchesText } from './utils/search';
@@ -311,6 +312,7 @@ function App() {
               element={<RoomPage searchQuery={searchQuery} reloadKey={reloadKey} />}
             />
             <Route path="/topology/map" element={<WorldMapPage />} />
+            <Route path="/simulator" element={<SimulatorControlPanelPage />} />
             <Route path="/slurm" element={<SlurmOverviewPage />} />
             <Route path="/slurm/overview" element={<SlurmOverviewPage />} />
             <Route path="/slurm/wallboard" element={<SlurmRoomPage />} />

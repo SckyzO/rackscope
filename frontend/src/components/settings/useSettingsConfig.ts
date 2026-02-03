@@ -69,6 +69,12 @@ export type ConfigDraft = {
       label_status: string;
       label_partition: string;
       mapping_path: string;
+      severity_colors: {
+        ok: string;
+        warn: string;
+        crit: string;
+        info: string;
+      };
     };
   };
 };
@@ -140,6 +146,12 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       label_status: config.plugins?.slurm?.label_status || 'status',
       label_partition: config.plugins?.slurm?.label_partition || 'partition',
       mapping_path: config.plugins?.slurm?.mapping_path || '',
+      severity_colors: {
+        ok: config.plugins?.slurm?.severity_colors?.ok || '#22c55e',
+        warn: config.plugins?.slurm?.severity_colors?.warn || '#f59e0b',
+        crit: config.plugins?.slurm?.severity_colors?.crit || '#ef4444',
+        info: config.plugins?.slurm?.severity_colors?.info || '#3b82f6',
+      },
     },
   },
 });
@@ -213,6 +225,12 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
       label_status: draft.plugins.slurm.label_status,
       label_partition: draft.plugins.slurm.label_partition,
       mapping_path: draft.plugins.slurm.mapping_path,
+      severity_colors: {
+        ok: draft.plugins.slurm.severity_colors.ok,
+        warn: draft.plugins.slurm.severity_colors.warn,
+        crit: draft.plugins.slurm.severity_colors.crit,
+        info: draft.plugins.slurm.severity_colors.info,
+      },
     },
   },
 });

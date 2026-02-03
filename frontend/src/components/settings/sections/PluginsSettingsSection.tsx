@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Trash2, Plus } from 'lucide-react';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ExternalLink } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
 import { FormToggle } from '../common/FormToggle';
-import { api } from '../../../services/api';
 import type { ConfigDraft } from '../useSettingsConfig';
-import type { SimulatorScenario, SimulatorOverride } from '../../../types';
 
 interface PluginsSettingsSectionProps {
   draft: ConfigDraft;
@@ -16,60 +15,6 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   draft,
   setDraft,
 }) => {
-  const [scenarios, setScenarios] = useState<SimulatorScenario[]>([]);
-  const [overrides, setOverrides] = useState<SimulatorOverride[]>([]);
-  const [showAddOverride, setShowAddOverride] = useState(false);
-  const [newOverride, setNewOverride] = useState({
-    instance: '',
-    metric: 'up',
-    value: '0',
-  });
-
-  const loadSimulatorData = useCallback(async () => {
-    try {
-      const [scenariosData, overridesData] = await Promise.all([
-        api.getSimulatorScenarios(),
-        api.getSimulatorOverrides(),
-      ]);
-      setScenarios(scenariosData.scenarios || []);
-      setOverrides(overridesData.overrides || []);
-    } catch (err) {
-      console.error('Failed to load simulator data:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (draft.plugins.simulator.enabled) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      void loadSimulatorData();
-    }
-  }, [draft.plugins.simulator.enabled, loadSimulatorData]);
-
-  const handleAddOverride = async () => {
-    try {
-      await api.addSimulatorOverride({
-        instance: newOverride.instance || null,
-        rack_id: null,
-        metric: newOverride.metric,
-        value: parseFloat(newOverride.value),
-        ttl_seconds: 0,
-      });
-      await loadSimulatorData();
-      setShowAddOverride(false);
-      setNewOverride({ instance: '', metric: 'up', value: '0' });
-    } catch (err) {
-      console.error('Failed to add override:', err);
-    }
-  };
-
-  const handleDeleteOverride = async (overrideId: string) => {
-    try {
-      await api.deleteSimulatorOverride(overrideId);
-      await loadSimulatorData();
-    } catch (err) {
-      console.error('Failed to delete override:', err);
-    }
-  };
 
   const updateSimulator = (field: string, value: string | boolean) => {
     setDraft((prev) => {
@@ -87,7 +32,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
     });
   };
 
-  const updateSlurm = (field: string, value: string | boolean) => {
+  const updateSlurm = (field: string, value: string | boolean | Record<string, string>) => {
     setDraft((prev) => {
       if (!prev) return prev;
       return {
@@ -97,6 +42,25 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           slurm: {
             ...prev.plugins.slurm,
             [field]: value,
+          },
+        },
+      };
+    });
+  };
+
+  const updateSlurmColor = (severity: 'ok' | 'warn' | 'crit' | 'info', color: string) => {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        plugins: {
+          ...prev.plugins,
+          slurm: {
+            ...prev.plugins.slurm,
+            severity_colors: {
+              ...prev.plugins.slurm.severity_colors,
+              [severity]: color,
+            },
           },
         },
       };
@@ -147,132 +111,21 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               placeholder="Leave empty for random"
             />
 
-            {/* Scenario Selection */}
-            {scenarios.length > 0 && (
-              <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                  Active Scenario
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {scenarios.map((scenario) => (
-                    <button
-                      key={scenario.id}
-                      onClick={() => {
-                        // TODO: Update scenario via API
-                        console.log('Switch to scenario:', scenario.id);
-                      }}
-                      className="rounded-lg border border-gray-700 bg-gray-800 px-4 py-3 text-left transition hover:border-blue-500"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Play className="h-4 w-4 text-[var(--color-text-muted)]" />
-                        <div>
-                          <div className="text-sm font-bold text-[var(--color-text-primary)]">{scenario.name}</div>
-                          <div className="text-xs text-[var(--color-text-muted)]">{scenario.description}</div>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Overrides Management */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">
-                  Metric Overrides
-                </label>
-                <button
-                  onClick={() => setShowAddOverride(!showAddOverride)}
-                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-1 text-xs font-bold uppercase text-[var(--color-text-primary)] hover:bg-blue-700"
-                >
-                  <Plus className="h-3 w-3" />
-                  Add Override
-                </button>
-              </div>
-
-              {showAddOverride && (
-                <div className="rounded-lg border border-gray-700 bg-gray-800 p-4 space-y-3">
-                  <FormField
-                    label="Instance (node name)"
-                    value={newOverride.instance}
-                    onChange={(value) =>
-                      setNewOverride((prev) => ({ ...prev, instance: value }))
-                    }
-                    placeholder="compute001"
-                  />
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField
-                      label="Metric"
-                      value={newOverride.metric}
-                      onChange={(value) => setNewOverride((prev) => ({ ...prev, metric: value }))}
-                      placeholder="up"
-                    />
-                    <FormField
-                      label="Value"
-                      value={newOverride.value}
-                      onChange={(value) => setNewOverride((prev) => ({ ...prev, value: value }))}
-                      type="number"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleAddOverride}
-                      className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-bold uppercase text-[var(--color-text-primary)] hover:bg-green-700"
-                    >
-                      Add Override
-                    </button>
-                    <button
-                      onClick={() => setShowAddOverride(false)}
-                      className="flex-1 rounded-lg bg-gray-700 px-4 py-2 text-sm font-bold uppercase text-[var(--color-text-primary)] hover:bg-gray-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {overrides.length > 0 && (
-                <div className="space-y-2">
-                  {overrides.map((override) => (
-                    <div
-                      key={override.id}
-                      className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-800 px-4 py-3"
-                    >
-                      <div className="font-mono text-sm">
-                        <span className="text-blue-400">{override.instance || override.rack_id}</span>
-                        <span className="mx-2 text-gray-600">→</span>
-                        <span className="text-yellow-400">{override.metric}</span>
-                        <span className="mx-2 text-gray-600">=</span>
-                        <span className="text-[var(--color-text-primary)]">{override.value}</span>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteOverride(override.id)}
-                        className="text-red-500 hover:text-red-400"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {overrides.length === 0 && !showAddOverride && (
-                <div className="text-center text-sm text-[var(--color-text-muted)]">
-                  No active overrides. Click "Add Override" to create one.
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-4">
-              <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-yellow-400">
-                ⚠️ Demo Mode Redundancy
+            <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
+              <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-blue-400">
+                Simulator Control Panel
               </h4>
-              <p className="text-xs text-[var(--color-text-base)]">
-                The <strong>features.demo</strong> setting is currently redundant with this plugin.
-                When simulator is enabled, demo mode is automatically active.
+              <p className="text-xs text-[var(--color-text-base)] mb-3">
+                Manage test scenarios and metric overrides from the dedicated control panel.
               </p>
+              <Link
+                to="/simulator"
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold uppercase transition"
+                style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-text-inverse)' }}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open Control Panel
+              </Link>
             </div>
           </>
         )}
@@ -324,6 +177,87 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               onChange={(value) => updateSlurm('mapping_path', value)}
               placeholder="config/plugins/slurm/node_mapping.yaml"
             />
+
+            {/* Severity Colors */}
+            <div className="space-y-3">
+              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                Severity Colors
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-3">
+                  <label className="text-xs" style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}>
+                    OK
+                  </label>
+                  <input
+                    type="color"
+                    value={draft.plugins.slurm.severity_colors.ok}
+                    onChange={(e) => updateSlurmColor('ok', e.target.value)}
+                    className="h-10 w-full rounded border border-[var(--color-border)] cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={draft.plugins.slurm.severity_colors.ok}
+                    onChange={(e) => updateSlurmColor('ok', e.target.value)}
+                    className="w-24 rounded border border-[var(--color-border)] px-2 py-1 font-mono text-xs"
+                    style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-xs" style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}>
+                    WARN
+                  </label>
+                  <input
+                    type="color"
+                    value={draft.plugins.slurm.severity_colors.warn}
+                    onChange={(e) => updateSlurmColor('warn', e.target.value)}
+                    className="h-10 w-full rounded border border-[var(--color-border)] cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={draft.plugins.slurm.severity_colors.warn}
+                    onChange={(e) => updateSlurmColor('warn', e.target.value)}
+                    className="w-24 rounded border border-[var(--color-border)] px-2 py-1 font-mono text-xs"
+                    style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-xs" style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}>
+                    CRIT
+                  </label>
+                  <input
+                    type="color"
+                    value={draft.plugins.slurm.severity_colors.crit}
+                    onChange={(e) => updateSlurmColor('crit', e.target.value)}
+                    className="h-10 w-full rounded border border-[var(--color-border)] cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={draft.plugins.slurm.severity_colors.crit}
+                    onChange={(e) => updateSlurmColor('crit', e.target.value)}
+                    className="w-24 rounded border border-[var(--color-border)] px-2 py-1 font-mono text-xs"
+                    style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-xs" style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}>
+                    INFO
+                  </label>
+                  <input
+                    type="color"
+                    value={draft.plugins.slurm.severity_colors.info}
+                    onChange={(e) => updateSlurmColor('info', e.target.value)}
+                    className="h-10 w-full rounded border border-[var(--color-border)] cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={draft.plugins.slurm.severity_colors.info}
+                    onChange={(e) => updateSlurmColor('info', e.target.value)}
+                    className="w-24 rounded border border-[var(--color-border)] px-2 py-1 font-mono text-xs"
+                    style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                  />
+                </div>
+              </div>
+            </div>
 
             <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
               <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-blue-400">
