@@ -157,7 +157,7 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
             <ChevronLeft className="h-3 w-3" /> Back to Floor Plan
           </Link>
           <div className="flex items-center gap-4">
-            <h1 className="text-4xl font-black tracking-tighter text-white uppercase italic">
+            <h1 className="text-4xl font-black tracking-tighter text-[var(--color-text-primary)] uppercase italic">
               {rack.name}
             </h1>
             <div className="rounded border border-blue-500/20 bg-blue-500/10 px-2 py-1 font-mono text-[10px] text-blue-400">
@@ -169,7 +169,7 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
         <div className="flex gap-6">
           <div className="flex flex-col items-end">
             <span className="font-mono text-[10px] text-gray-500 uppercase">Avg Power</span>
-            <span className="font-mono text-2xl text-white">
+            <span className="font-mono text-2xl text-[var(--color-text-primary)]">
               {(healthData?.metrics?.power / 1000 || 0).toFixed(1)}{' '}
               <span className="text-xs text-gray-500">kW</span>
             </span>

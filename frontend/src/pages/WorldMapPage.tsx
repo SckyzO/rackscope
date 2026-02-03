@@ -97,7 +97,7 @@ export const WorldMapPage = () => {
             <MapPin className="h-3 w-3 text-[var(--color-accent)]" />
             Global Infrastructure Map
           </div>
-          <h1 className="text-2xl font-black tracking-tighter text-white uppercase italic">
+          <h1 className="text-2xl font-black tracking-tighter text-[var(--color-text-primary)] uppercase italic">
             Datacenter World Map
           </h1>
           <p className="mt-2 max-w-xl text-sm text-gray-400">
@@ -145,7 +145,7 @@ export const WorldMapPage = () => {
                       <div className="text-xs font-bold tracking-[0.2em] text-gray-500 uppercase">
                         Datacenter
                       </div>
-                      <div className="text-lg font-bold text-white">{site.name}</div>
+                      <div className="text-lg font-bold text-[var(--color-text-primary)]">{site.name}</div>
                       {site.description && (
                         <div className="text-xs text-gray-400">{site.description}</div>
                       )}
@@ -160,7 +160,7 @@ export const WorldMapPage = () => {
                       <div className="space-y-1">
                         {(site.rooms || []).map((room) => (
                           <div key={room.id} className="flex items-center justify-between">
-                            <span className="text-sm text-white">{room.name}</span>
+                            <span className="text-sm text-[var(--color-text-primary)]">{room.name}</span>
                             <Link
                               to={`/room/${room.id}`}
                               className="text-xs font-semibold text-[var(--color-accent)]"

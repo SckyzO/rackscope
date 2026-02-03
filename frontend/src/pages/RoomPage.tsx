@@ -241,10 +241,10 @@ export const RoomPage = ({
               Infrastructure
             </Link>
             <span>/</span>
-            <span className="text-white">{room.name}</span>
+            <span className="text-[var(--color-text-primary)]">{room.name}</span>
           </nav>
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-black tracking-tighter text-white uppercase italic">
+            <h1 className="text-2xl font-black tracking-tighter text-[var(--color-text-primary)] uppercase italic">
               {room.name}
             </h1>
             <div className="h-4 w-[1px] bg-white/10"></div>
@@ -402,7 +402,7 @@ export const RoomPage = ({
                         to={`/rack/${selectedRack.id}`}
                         className="group flex items-center gap-3 transition-colors hover:text-blue-400"
                       >
-                        <h2 className="text-xl font-bold tracking-tighter text-white uppercase group-hover:text-blue-400">
+                        <h2 className="text-xl font-bold tracking-tighter text-[var(--color-text-primary)] uppercase group-hover:text-blue-400">
                           {selectedRack.name}
                         </h2>
                         <Maximize2 className="h-4 w-4 opacity-50 transition-opacity group-hover:opacity-100" />
@@ -424,7 +424,7 @@ export const RoomPage = ({
                           <Thermometer className="h-3 w-3" />
                           <span className="text-[8px] uppercase">Temp</span>
                         </div>
-                        <div className="font-mono text-sm text-white">
+                        <div className="font-mono text-sm text-[var(--color-text-primary)]">
                           {selectedMetrics?.temperature
                             ? selectedMetrics.temperature.toFixed(1)
                             : '--'}
@@ -436,7 +436,7 @@ export const RoomPage = ({
                           <Zap className="h-3 w-3" />
                           <span className="text-[8px] uppercase">Pwr</span>
                         </div>
-                        <div className="font-mono text-sm text-white">
+                        <div className="font-mono text-sm text-[var(--color-text-primary)]">
                           {selectedMetrics?.power
                             ? (selectedMetrics.power / 1000).toFixed(1)
                             : '--'}
@@ -469,12 +469,12 @@ export const RoomPage = ({
                           className={`absolute inset-y-0.5 left-0.5 w-1/2 rounded-[4px] border border-white/12 bg-white/12 shadow-[0_0_10px_rgba(255,255,255,0.08)] transition-transform duration-300 ${viewSide === 'rear' ? 'translate-x-full' : ''}`}
                         />
                         <span
-                          className={`relative z-10 inline-flex w-1/2 items-center justify-center ${viewSide === 'front' ? 'text-white' : ''}`}
+                          className={`relative z-10 inline-flex w-1/2 items-center justify-center ${viewSide === 'front' ? 'text-[var(--color-text-primary)]' : ''}`}
                         >
                           Front
                         </span>
                         <span
-                          className={`relative z-10 inline-flex w-1/2 items-center justify-center ${viewSide === 'rear' ? 'text-white' : ''}`}
+                          className={`relative z-10 inline-flex w-1/2 items-center justify-center ${viewSide === 'rear' ? 'text-[var(--color-text-primary)]' : ''}`}
                         >
                           Rear
                         </span>

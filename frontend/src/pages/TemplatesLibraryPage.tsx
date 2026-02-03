@@ -190,7 +190,7 @@ export const TemplatesLibraryPage = () => {
             <>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xl font-black text-white">{selectedTemplate.name}</div>
+                  <div className="text-xl font-black text-[var(--color-text-primary)]">{selectedTemplate.name}</div>
                   <div className="font-mono text-[10px] tracking-widest text-gray-500 uppercase">
                     {selectedTemplate.id}
                   </div>

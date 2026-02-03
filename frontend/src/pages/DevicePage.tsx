@@ -105,7 +105,7 @@ export const DevicePage = () => {
             <ChevronLeft className="h-3 w-3" /> Back to Rack
           </Link>
           <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic">
+            <h1 className="text-3xl font-black tracking-tighter text-[var(--color-text-primary)] uppercase italic">
               {context.device.name}
             </h1>
             <div className="rounded border border-blue-500/20 bg-blue-500/10 px-2 py-1 font-mono text-[10px] text-blue-400">
@@ -154,7 +154,7 @@ export const DevicePage = () => {
                   className={`rounded-full border px-4 py-1 font-mono text-[11px] tracking-widest whitespace-nowrap uppercase transition ${
                     idx === selectedIndex
                       ? 'border-blue-500/60 bg-blue-500/15 text-blue-300'
-                      : 'border-[var(--color-border)]/40 text-gray-400 hover:text-white'
+                      : 'border-[var(--color-border)]/40 text-gray-400 hover:text-[var(--color-text-primary)]'
                   }`}
                 >
                   {instance}
@@ -204,10 +204,10 @@ export const DevicePage = () => {
               {Object.entries(nodeMap).map(([slot, value]) => (
                 <div
                   key={`${slot}-${value}`}
-                  className="rounded-md border border-[var(--color-border)]/40 bg-[var(--color-bg-base)]/50 px-3 py-2 text-white"
+                  className="rounded-md border border-[var(--color-border)]/40 bg-[var(--color-bg-base)]/50 px-3 py-2 text-[var(--color-text-primary)]"
                 >
                   <span className="text-gray-500">Slot {slot}</span>
-                  <div className="mt-1 truncate text-[12px] text-white">{value}</div>
+                  <div className="mt-1 truncate text-[12px] text-[var(--color-text-primary)]">{value}</div>
                 </div>
               ))}
               {Object.keys(nodeMap).length === 0 && (
@@ -225,6 +225,6 @@ export const DevicePage = () => {
 const Detail = ({ label, value, mono }: { label: string; value: string; mono?: boolean }) => (
   <div className="space-y-1">
     <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">{label}</div>
-    <div className={`text-[13px] font-semibold text-white ${mono ? 'font-mono' : ''}`}>{value}</div>
+    <div className={`text-[13px] font-semibold text-[var(--color-text-primary)] ${mono ? 'font-mono' : ''}`}>{value}</div>
   </div>
 );
