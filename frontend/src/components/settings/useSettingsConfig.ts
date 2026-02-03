@@ -69,6 +69,12 @@ export type ConfigDraft = {
       label_status: string;
       label_partition: string;
       mapping_path: string;
+      status_map: {
+        ok: string[];
+        warn: string[];
+        crit: string[];
+        info: string[];
+      };
       severity_colors: {
         ok: string;
         warn: string;
@@ -146,6 +152,12 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       label_status: config.plugins?.slurm?.label_status || 'status',
       label_partition: config.plugins?.slurm?.label_partition || 'partition',
       mapping_path: config.plugins?.slurm?.mapping_path || '',
+      status_map: {
+        ok: config.plugins?.slurm?.status_map?.ok || ['idle', 'allocated', 'alloc', 'completing', 'comp'],
+        warn: config.plugins?.slurm?.status_map?.warn || ['mixed', 'mix', 'maint', 'planned', 'plnd', 'reserved', 'resv'],
+        crit: config.plugins?.slurm?.status_map?.crit || ['down', 'drain', 'drained', 'draining', 'drng', 'fail', 'failing', 'failg', 'error'],
+        info: config.plugins?.slurm?.status_map?.info || [],
+      },
       severity_colors: {
         ok: config.plugins?.slurm?.severity_colors?.ok || '#22c55e',
         warn: config.plugins?.slurm?.severity_colors?.warn || '#f59e0b',
@@ -225,6 +237,12 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
       label_status: draft.plugins.slurm.label_status,
       label_partition: draft.plugins.slurm.label_partition,
       mapping_path: draft.plugins.slurm.mapping_path,
+      status_map: {
+        ok: draft.plugins.slurm.status_map.ok,
+        warn: draft.plugins.slurm.status_map.warn,
+        crit: draft.plugins.slurm.status_map.crit,
+        info: draft.plugins.slurm.status_map.info,
+      },
       severity_colors: {
         ok: draft.plugins.slurm.severity_colors.ok,
         warn: draft.plugins.slurm.severity_colors.warn,

@@ -67,6 +67,56 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
     });
   };
 
+  const addSlurmStatus = (severity: 'ok' | 'warn' | 'crit' | 'info', status: string) => {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      const trimmedStatus = status.trim().toLowerCase();
+      if (!trimmedStatus) return prev;
+
+      // Check if status already exists in any severity
+      const allStatuses = [
+        ...prev.plugins.slurm.status_map.ok,
+        ...prev.plugins.slurm.status_map.warn,
+        ...prev.plugins.slurm.status_map.crit,
+        ...prev.plugins.slurm.status_map.info,
+      ];
+      if (allStatuses.includes(trimmedStatus)) return prev;
+
+      return {
+        ...prev,
+        plugins: {
+          ...prev.plugins,
+          slurm: {
+            ...prev.plugins.slurm,
+            status_map: {
+              ...prev.plugins.slurm.status_map,
+              [severity]: [...prev.plugins.slurm.status_map[severity], trimmedStatus],
+            },
+          },
+        },
+      };
+    });
+  };
+
+  const removeSlurmStatus = (severity: 'ok' | 'warn' | 'crit' | 'info', status: string) => {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        plugins: {
+          ...prev.plugins,
+          slurm: {
+            ...prev.plugins.slurm,
+            status_map: {
+              ...prev.plugins.slurm.status_map,
+              [severity]: prev.plugins.slurm.status_map[severity].filter((s) => s !== status),
+            },
+          },
+        },
+      };
+    });
+  };
+
   return (
     <div className="space-y-8">
       {/* Global Warning */}
@@ -257,6 +307,70 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Status Mapping */}
+            <div className="space-y-3">
+              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                Status Mapping (Slurm Status → Severity)
+              </label>
+              <div className="space-y-4">
+                {(['ok', 'warn', 'crit', 'info'] as const).map((severity) => (
+                  <div key={severity} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <label
+                        className="text-xs font-bold uppercase"
+                        style={{ color: draft.plugins.slurm.severity_colors[severity], minWidth: '60px' }}
+                      >
+                        {severity}
+                      </label>
+                      <div className="flex-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                        {draft.plugins.slurm.status_map[severity].length} status(es)
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {draft.plugins.slurm.status_map[severity].map((status) => (
+                        <div
+                          key={status}
+                          className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 py-1.5"
+                          style={{ backgroundColor: 'var(--color-bg-elevated)' }}
+                        >
+                          <span className="text-xs font-mono" style={{ color: 'var(--color-text-base)' }}>
+                            {status}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeSlurmStatus(severity, status)}
+                            className="text-red-500 hover:text-red-400"
+                          >
+                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Add status..."
+                          className="w-32 rounded border border-[var(--color-border)] px-2 py-1 text-xs"
+                          style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              const input = e.currentTarget;
+                              addSlurmStatus(severity, input.value);
+                              input.value = '';
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                Type a Slurm status name and press Enter to add it. Click X to remove.
+              </p>
             </div>
 
             <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
