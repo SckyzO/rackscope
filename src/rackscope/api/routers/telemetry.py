@@ -251,3 +251,54 @@ async def get_rack_state(
         "infra_metrics": {"components": component_metrics},
         "nodes": processed_nodes,
     }
+
+
+@router.get("/api/devices/{rack_id}/{device_id}/metrics")
+async def get_device_metrics(
+    rack_id: str,
+    device_id: str,
+    topology: Annotated[Optional[Topology], Depends(get_topology_optional)],
+    catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
+):
+    """Get detailed metrics for a specific device.
+
+    This endpoint loads only the metrics for the specified device,
+    making it much faster than loading all rack metrics.
+
+    Args:
+        rack_id: Rack identifier
+        device_id: Device identifier within the rack
+
+    Returns:
+        Dictionary with device metrics per instance
+    """
+    # Lazy import to avoid circular dependency
+    from rackscope.services import metrics_service
+    from rackscope.telemetry.prometheus import client as prom_client
+
+    if not topology or not catalog:
+        return {"device_id": device_id, "rack_id": rack_id, "metrics": {}}
+
+    # Find the rack and device in topology
+    rack = topology_service.find_rack_by_id(topology, rack_id)
+    if not rack:
+        return {"device_id": device_id, "rack_id": rack_id, "metrics": {}}
+
+    device = next((d for d in rack.devices if d.id == device_id), None)
+    if not device:
+        return {"device_id": device_id, "rack_id": rack_id, "metrics": {}}
+
+    # Get device template
+    template = catalog.get_device_template(device.template_id)
+    if not template or not template.metrics:
+        return {"device_id": device_id, "rack_id": rack_id, "metrics": {}}
+
+    # Collect metrics for this device only
+    device_metrics = await metrics_service.collect_device_metrics(
+        device=device,
+        rack_id=rack_id,
+        template=template,
+        prom_client=prom_client,
+    )
+
+    return {"device_id": device_id, "rack_id": rack_id, "metrics": device_metrics}

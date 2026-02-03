@@ -35,17 +35,39 @@ export const DevicePage = () => {
 
   useEffect(() => {
     const fetchState = async () => {
-      if (!rackId) return;
+      if (!rackId || !deviceId) return;
       try {
-        // Request metrics since DevicePage can display instance-level metrics (temperature, power, etc.)
-        const state = await api.getRackState(rackId, true);
-        setRackState(state);
+        // Fetch device metrics only (much faster than loading all rack metrics)
+        const metricsData = await api.getDeviceMetrics(rackId, deviceId);
+
+        // Also get health state without metrics for checks/alerts
+        const healthState = await api.getRackState(rackId, false);
+
+        // Merge metrics into rack state format for compatibility
+        const mergedState = {
+          ...healthState,
+          nodes: healthState.nodes || {},
+        };
+
+        // Add metrics from device-specific endpoint
+        Object.keys(metricsData.metrics).forEach((instance) => {
+          if (mergedState.nodes[instance]) {
+            const instanceMetrics = metricsData.metrics[instance];
+            mergedState.nodes[instance] = {
+              ...mergedState.nodes[instance],
+              temperature: instanceMetrics.temperature || 0,
+              power: instanceMetrics.power || 0,
+            };
+          }
+        });
+
+        setRackState(mergedState);
       } catch {
         // Ignore rack state errors for the device page.
       }
     };
     fetchState();
-  }, [rackId]);
+  }, [rackId, deviceId]);
 
   const instanceList = useMemo(() => {
     if (!context) return [];

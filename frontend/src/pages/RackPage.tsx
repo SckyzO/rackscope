@@ -78,9 +78,9 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
         setLoading(false);
 
         // Load health data after page is displayed (from cache if available)
-        // Request metrics since RackPage displays power, temperature, and PDU data
+        // Only load health checks, not metrics (much faster)
         try {
-          const healthDataInitial = await api.getRackState(rackId, true);
+          const healthDataInitial = await api.getRackState(rackId, false);
           setHealthData(healthDataInitial);
         } catch (healthErr) {
           console.error('Failed to load initial health data', healthErr);
@@ -99,8 +99,8 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
     if (!rackId || loading) return;
     const fetchHealth = async () => {
       try {
-        // Request metrics since RackPage displays power, temperature, and PDU data
-        const data = await api.getRackState(rackId, true);
+        // Only load health checks, not metrics (much faster)
+        const data = await api.getRackState(rackId, false);
         setHealthData(data);
       } catch (e) {
         console.error('Failed to fetch rack health', e);

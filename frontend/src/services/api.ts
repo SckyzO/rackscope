@@ -322,6 +322,12 @@ export const api = {
     const cacheKey = `rack.${rackId}.state${includeMetrics ? '.metrics' : ''}`;
     return fetchWithCache(url, cacheKey, 5000);
   },
+  getDeviceMetrics: async (rackId: string, deviceId: string): Promise<{ device_id: string; rack_id: string; metrics: Record<string, Record<string, number>> }> => {
+    // Fetch detailed metrics for a specific device (lazy-loaded)
+    const url = `/api/devices/${rackId}/${deviceId}/metrics`;
+    const cacheKey = `device.${rackId}.${deviceId}.metrics`;
+    return fetchWithCache(url, cacheKey, 60000); // 60s cache for metrics
+  },
   updateAisleRacks: async (aisleId: string, roomId: string, racks: string[]) => {
     const res = await fetch(`/api/topology/aisles/${encodeURIComponent(aisleId)}/racks`, {
       method: 'PUT',
