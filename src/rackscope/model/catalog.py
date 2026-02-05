@@ -24,9 +24,11 @@ class DeviceTemplate(BaseModel):
     id: str
     name: str
     type: str = "server"
+    storage_type: Optional[str] = None  # For storage devices: eseries, netapp, ddn, ibm, etc.
     role: Optional[str] = None
     u_height: int
-    layout: LayoutConfig
+    layout: Optional[LayoutConfig] = None  # For compute/network devices
+    disk_layout: Optional[LayoutConfig] = None  # For storage devices (disk grid)
     rear_layout: Optional[LayoutConfig] = None
     rear_components: List[DeviceRearComponent] = Field(default_factory=list)
     checks: List[str] = Field(default_factory=list)

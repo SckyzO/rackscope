@@ -57,6 +57,12 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
           onChange={(value) => update('paths', 'checks', value)}
           placeholder="config/checks"
         />
+        <FormField
+          label="Metrics Path"
+          value={draft.paths.metrics}
+          onChange={(value) => update('paths', 'metrics', value)}
+          placeholder="config/metrics/library"
+        />
       </FormSection>
 
       <FormSection title="Refresh Intervals" description="UI refresh intervals in seconds">
@@ -74,11 +80,23 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         />
       </FormSection>
 
-      <FormSection title="Cache" description="Prometheus query cache TTL">
+      <FormSection title="Cache" description="Prometheus query cache TTL (two-level caching)">
         <FormField
-          label="TTL (seconds)"
+          label="Legacy TTL (seconds)"
           value={draft.cache.ttl_seconds}
           onChange={(value) => update('cache', 'ttl_seconds', value)}
+          type="number"
+        />
+        <FormField
+          label="Health Checks TTL (seconds)"
+          value={draft.cache.health_checks_ttl_seconds}
+          onChange={(value) => update('cache', 'health_checks_ttl_seconds', value)}
+          type="number"
+        />
+        <FormField
+          label="Metrics TTL (seconds)"
+          value={draft.cache.metrics_ttl_seconds}
+          onChange={(value) => update('cache', 'metrics_ttl_seconds', value)}
           type="number"
         />
       </FormSection>

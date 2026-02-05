@@ -83,7 +83,7 @@ class TelemetryConfig(BaseModel):
 class PlannerConfig(BaseModel):
     unknown_state: Literal["OK", "WARN", "CRIT", "UNKNOWN"] = "UNKNOWN"
     cache_ttl_seconds: int = Field(default=30, ge=1)
-    max_ids_per_query: int = Field(default=50, ge=1)
+    max_ids_per_query: int = Field(default=200, ge=1)
 
 
 class FeatureConfig(BaseModel):

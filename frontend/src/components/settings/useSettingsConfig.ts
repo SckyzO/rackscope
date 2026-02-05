@@ -20,6 +20,7 @@ export type ConfigDraft = {
     topology: string;
     templates: string;
     checks: string;
+    metrics: string;
   };
   refresh: {
     room_state_seconds: string;
@@ -27,6 +28,8 @@ export type ConfigDraft = {
   };
   cache: {
     ttl_seconds: string;
+    health_checks_ttl_seconds: string;
+    metrics_ttl_seconds: string;
   };
   telemetry: {
     prometheus_url: string;
@@ -61,6 +64,25 @@ export type ConfigDraft = {
       enabled: boolean;
       update_interval_seconds: string;
       seed: string;
+      scenario: string;
+      scale_factor: string;
+      incident_rates: {
+        node_micro_failure: string;
+        rack_macro_failure: string;
+        aisle_cooling_failure: string;
+      };
+      incident_durations: {
+        rack: string;
+        aisle: string;
+      };
+      overrides_path: string;
+      default_ttl_seconds: string;
+      metrics_catalog_path: string;
+      metrics_catalogs: Array<{
+        id: string;
+        path: string;
+        enabled: boolean;
+      }>;
     };
     slurm: {
       enabled: boolean;
@@ -69,6 +91,8 @@ export type ConfigDraft = {
       label_status: string;
       label_partition: string;
       mapping_path: string;
+      roles: string[];
+      include_unlabeled: boolean;
       status_map: {
         ok: string[];
         warn: string[];
@@ -103,6 +127,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     topology: config.paths?.topology || '',
     templates: config.paths?.templates || '',
     checks: config.paths?.checks || '',
+    metrics: config.paths?.metrics || '',
   },
   refresh: {
     room_state_seconds: String(config.refresh?.room_state_seconds ?? 60),
@@ -110,6 +135,8 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
   },
   cache: {
     ttl_seconds: String(config.cache?.ttl_seconds ?? 60),
+    health_checks_ttl_seconds: String(config.cache?.health_checks_ttl_seconds ?? 30),
+    metrics_ttl_seconds: String(config.cache?.metrics_ttl_seconds ?? 120),
   },
   telemetry: {
     prometheus_url: config.telemetry?.prometheus_url || '',
@@ -130,7 +157,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
   planner: {
     unknown_state: config.planner?.unknown_state || 'UNKNOWN',
     cache_ttl_seconds: String(config.planner?.cache_ttl_seconds ?? 60),
-    max_ids_per_query: String(config.planner?.max_ids_per_query ?? 300),
+    max_ids_per_query: String(config.planner?.max_ids_per_query ?? 200),
   },
   features: {
     notifications: config.features?.notifications ?? false,
@@ -144,6 +171,21 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       enabled: config.plugins?.simulator?.enabled ?? false,
       update_interval_seconds: String(config.plugins?.simulator?.update_interval_seconds ?? 20),
       seed: String(config.plugins?.simulator?.seed ?? ''),
+      scenario: config.plugins?.simulator?.scenario || 'full-ok',
+      scale_factor: String(config.plugins?.simulator?.scale_factor ?? 1.0),
+      incident_rates: {
+        node_micro_failure: String(config.plugins?.simulator?.incident_rates?.node_micro_failure ?? 0.001),
+        rack_macro_failure: String(config.plugins?.simulator?.incident_rates?.rack_macro_failure ?? 0.01),
+        aisle_cooling_failure: String(config.plugins?.simulator?.incident_rates?.aisle_cooling_failure ?? 0.005),
+      },
+      incident_durations: {
+        rack: String(config.plugins?.simulator?.incident_durations?.rack ?? 3),
+        aisle: String(config.plugins?.simulator?.incident_durations?.aisle ?? 5),
+      },
+      overrides_path: config.plugins?.simulator?.overrides_path || 'config/plugins/simulator/overrides.yaml',
+      default_ttl_seconds: String(config.plugins?.simulator?.default_ttl_seconds ?? 120),
+      metrics_catalog_path: config.plugins?.simulator?.metrics_catalog_path || 'config/plugins/simulator/metrics_full.yaml',
+      metrics_catalogs: config.plugins?.simulator?.metrics_catalogs || [],
     },
     slurm: {
       enabled: config.plugins?.slurm?.enabled ?? false,
@@ -152,6 +194,8 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       label_status: config.plugins?.slurm?.label_status || 'status',
       label_partition: config.plugins?.slurm?.label_partition || 'partition',
       mapping_path: config.plugins?.slurm?.mapping_path || '',
+      roles: config.plugins?.slurm?.roles || [],
+      include_unlabeled: config.plugins?.slurm?.include_unlabeled ?? false,
       status_map: {
         ok: config.plugins?.slurm?.status_map?.ok || ['idle', 'allocated', 'alloc', 'completing', 'comp'],
         warn: config.plugins?.slurm?.status_map?.warn || ['mixed', 'mix', 'maint', 'planned', 'plnd', 'reserved', 'resv'],
@@ -188,6 +232,7 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
     topology: draft.paths.topology,
     templates: draft.paths.templates,
     checks: draft.paths.checks,
+    metrics: draft.paths.metrics,
   },
   refresh: {
     room_state_seconds: parseInt(draft.refresh.room_state_seconds, 10) || 60,
@@ -195,6 +240,8 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
   },
   cache: {
     ttl_seconds: parseInt(draft.cache.ttl_seconds, 10) || 60,
+    health_checks_ttl_seconds: parseInt(draft.cache.health_checks_ttl_seconds, 10) || 30,
+    metrics_ttl_seconds: parseInt(draft.cache.metrics_ttl_seconds, 10) || 120,
   },
   telemetry: {
     prometheus_url: draft.telemetry.prometheus_url,
@@ -215,7 +262,7 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
   planner: {
     unknown_state: draft.planner.unknown_state,
     cache_ttl_seconds: parseInt(draft.planner.cache_ttl_seconds, 10) || 60,
-    max_ids_per_query: parseInt(draft.planner.max_ids_per_query, 10) || 300,
+    max_ids_per_query: parseInt(draft.planner.max_ids_per_query, 10) || 200,
   },
   features: {
     notifications: draft.features.notifications,
@@ -229,6 +276,21 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
       enabled: draft.plugins.simulator.enabled,
       update_interval_seconds: parseInt(draft.plugins.simulator.update_interval_seconds, 10) || 20,
       seed: draft.plugins.simulator.seed ? parseInt(draft.plugins.simulator.seed, 10) : null,
+      scenario: draft.plugins.simulator.scenario,
+      scale_factor: parseFloat(draft.plugins.simulator.scale_factor) || 1.0,
+      incident_rates: {
+        node_micro_failure: parseFloat(draft.plugins.simulator.incident_rates.node_micro_failure) || 0.001,
+        rack_macro_failure: parseFloat(draft.plugins.simulator.incident_rates.rack_macro_failure) || 0.01,
+        aisle_cooling_failure: parseFloat(draft.plugins.simulator.incident_rates.aisle_cooling_failure) || 0.005,
+      },
+      incident_durations: {
+        rack: parseInt(draft.plugins.simulator.incident_durations.rack, 10) || 3,
+        aisle: parseInt(draft.plugins.simulator.incident_durations.aisle, 10) || 5,
+      },
+      overrides_path: draft.plugins.simulator.overrides_path,
+      default_ttl_seconds: parseInt(draft.plugins.simulator.default_ttl_seconds, 10) || 120,
+      metrics_catalog_path: draft.plugins.simulator.metrics_catalog_path,
+      metrics_catalogs: draft.plugins.simulator.metrics_catalogs,
     },
     slurm: {
       enabled: draft.plugins.slurm.enabled,
@@ -237,6 +299,8 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
       label_status: draft.plugins.slurm.label_status,
       label_partition: draft.plugins.slurm.label_partition,
       mapping_path: draft.plugins.slurm.mapping_path,
+      roles: draft.plugins.slurm.roles,
+      include_unlabeled: draft.plugins.slurm.include_unlabeled,
       status_map: {
         ok: draft.plugins.slurm.status_map.ok,
         warn: draft.plugins.slurm.status_map.warn,

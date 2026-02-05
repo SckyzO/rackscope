@@ -103,9 +103,11 @@ export interface DeviceTemplate {
   id: string;
   name: string;
   type: string;
+  storage_type?: string | null;  // For storage devices: eseries, netapp, ddn, ibm, etc.
   role?: string | null;
   u_height: number;
-  layout: LayoutConfig;
+  layout?: LayoutConfig;  // For compute/network devices
+  disk_layout?: LayoutConfig;  // For storage devices (disk grid)
   rear_layout?: LayoutConfig;
   rear_components?: DeviceRearComponent[];
   checks?: string[];

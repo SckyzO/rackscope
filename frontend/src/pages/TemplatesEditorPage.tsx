@@ -190,10 +190,89 @@ export const TemplatesEditorPage = () => {
 
   const yamlPreview = useMemo(() => {
     const template = buildTemplateFromDraft();
-    return yaml.dump(
+
+    // Generate YAML in block style
+    let yamlText = yaml.dump(
       { templates: [template] },
-      { noRefs: true, lineWidth: 120, quotingType: '"', forceQuotes: false }
+      {
+        noRefs: true,
+        lineWidth: 120,
+        quotingType: '"',
+        forceQuotes: false,
+      }
     );
+
+    // Post-process: Convert matrix arrays to compact flow style
+    // Convert blocks like:
+    //   matrix:
+    //   - - 1
+    //     - 2
+    //   - - 3
+    //     - 4
+    // Into:
+    //   matrix:
+    //   - [1, 2]
+    //   - [3, 4]
+
+    const lines = yamlText.split('\n');
+    const result: string[] = [];
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Check if this is a "matrix:" line
+      if (line.trim() === 'matrix:' || line.match(/^\s+matrix:\s*$/)) {
+        result.push(line);
+        i++;
+
+        const baseIndent = line.match(/^(\s*)/)?.[1].length || 0;
+        const matrixIndent = baseIndent + 2;
+
+        // Process matrix rows
+        while (i < lines.length) {
+          const matrixLine = lines[i];
+          const currentIndent = matrixLine.match(/^(\s*)/)?.[1].length || 0;
+
+          // If we've moved to a new key (less or equal indent), break
+          if (matrixLine.trim() && currentIndent <= baseIndent) {
+            break;
+          }
+
+          // Check if this is the start of a matrix row (- - number pattern)
+          if (matrixLine.match(/^\s+- - \d+/)) {
+            const numbers: string[] = [];
+            const rowIndent = matrixLine.match(/^(\s*)/)?.[1] || '';
+
+            // Collect all numbers in this row
+            let j = i;
+            while (j < lines.length) {
+              const numLine = lines[j];
+              const numMatch = numLine.match(/^\s+- (\d+)$/);
+              if (numMatch) {
+                numbers.push(numMatch[1]);
+                j++;
+              } else {
+                break;
+              }
+            }
+
+            // Write the row in flow style
+            result.push(`${rowIndent}- [${numbers.join(', ')}]`);
+            i = j;
+          } else {
+            // Not a matrix row, just add the line
+            result.push(matrixLine);
+            i++;
+          }
+        }
+      } else {
+        result.push(line);
+        i++;
+      }
+    }
+
+    return result.join('\n');
   }, [buildTemplateFromDraft]);
 
   const validationErrors = useMemo(() => {

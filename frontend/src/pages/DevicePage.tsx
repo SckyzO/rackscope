@@ -89,8 +89,13 @@ export const DevicePage = () => {
 
   const template = context?.template;
   const matrixSlots = useMemo(() => {
-    if (!template?.layout?.matrix) return [];
-    return template.layout.matrix.flat();
+    if (!template) return [];
+    // For storage devices, use disk_layout if available, otherwise fallback to layout
+    const deviceLayout = template.type === 'storage' && template.disk_layout
+      ? template.disk_layout
+      : template.layout;
+    if (!deviceLayout?.matrix) return [];
+    return deviceLayout.matrix.flat();
   }, [template]);
   const selectedInstance = instanceList[selectedIndex] || '';
   const selectedMatrixSlot =
@@ -160,6 +165,7 @@ export const DevicePage = () => {
                 nodesData={nodesData}
                 uPosition={context.device.u_position}
                 onTooltipChange={setTooltip}
+                detailView={true}
               />
             </div>
           </div>
@@ -199,7 +205,20 @@ export const DevicePage = () => {
               />
               <Detail label="Template ID" value={template.id} mono />
               <Detail label="Template Name" value={template.name} />
-              <Detail label="Layout" value={`${template.layout.rows}x${template.layout.cols}`} />
+              {(() => {
+                const deviceLayout = template.type === 'storage' && template.disk_layout
+                  ? template.disk_layout
+                  : template.layout;
+                return (
+                  <Detail
+                    label={template.type === 'storage' ? 'Disk Layout' : 'Layout'}
+                    value={`${deviceLayout?.rows || 1}x${deviceLayout?.cols || 1}`}
+                  />
+                );
+              })()}
+              {template.type === 'storage' && template.storage_type && (
+                <Detail label="Storage Type" value={template.storage_type} />
+              )}
               <Detail label="Role" value={template.role || 'default'} />
             </div>
           </div>

@@ -45,7 +45,12 @@ const buildSlotMap = (device: Device, template?: DeviceTemplate): Record<number,
   }
 
   if (!template) return {};
-  const slotOrder = template.layout.matrix.flat().filter((slot) => slot > 0);
+  // For storage devices, use disk_layout if available, otherwise fallback to layout
+  const deviceLayout = template.type === 'storage' && template.disk_layout
+    ? template.disk_layout
+    : template.layout;
+  if (!deviceLayout?.matrix) return {};
+  const slotOrder = deviceLayout.matrix.flat().filter((slot) => slot > 0);
 
   // Handle array or string pattern
   const expanded = Array.isArray(instance) ? instance : expandPattern(instance);
@@ -271,14 +276,22 @@ export const SlurmRoomPage = () => {
                                 gridRow: `${start} / span ${template.u_height}`,
                               }}
                             >
-                              <div
-                                className="grid h-full w-full gap-[2px]"
-                                style={{
-                                  gridTemplateRows: `repeat(${template.layout.rows}, 1fr)`,
-                                  gridTemplateColumns: `repeat(${template.layout.cols}, 1fr)`,
-                                }}
-                              >
-                                {template.layout.matrix.flat().map((slot, idx) => {
+                              {(() => {
+                                // For storage devices, use disk_layout if available, otherwise fallback to layout
+                                const deviceLayout = template.type === 'storage' && template.disk_layout
+                                  ? template.disk_layout
+                                  : template.layout;
+                                if (!deviceLayout) return null;
+
+                                return (
+                                  <div
+                                    className="grid h-full w-full gap-[2px]"
+                                    style={{
+                                      gridTemplateRows: `repeat(${deviceLayout.rows}, 1fr)`,
+                                      gridTemplateColumns: `repeat(${deviceLayout.cols}, 1fr)`,
+                                    }}
+                                  >
+                                    {deviceLayout.matrix.flat().map((slot, idx) => {
                                   const nodeName = slotMap[slot];
                                   const nodeState = nodeName
                                     ? slurmNodes?.nodes[nodeName]
@@ -322,8 +335,10 @@ export const SlurmRoomPage = () => {
                                       onMouseLeave={() => setHover(null)}
                                     />
                                   );
-                                })}
-                              </div>
+                                    })}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           );
                         })}

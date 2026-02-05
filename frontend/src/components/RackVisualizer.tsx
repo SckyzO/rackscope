@@ -668,6 +668,7 @@ export const DeviceChassis = ({
   uPosition,
   onClick,
   onTooltipChange,
+  detailView = false,
 }: {
   device: Device;
   template: DeviceTemplate;
@@ -677,6 +678,7 @@ export const DeviceChassis = ({
   uPosition: number;
   onClick?: () => void;
   onTooltipChange?: (payload: HUDTooltipProps | null) => void;
+  detailView?: boolean;
 }) => {
   const [suppressTooltip, setSuppressTooltip] = useState(false);
   const nodeMap = useMemo(
@@ -725,8 +727,21 @@ export const DeviceChassis = ({
   if (isRearView && !hasRearLayout) {
     return null;
   }
-  const layout = isRearView && hasRearLayout ? template.rear_layout : template.layout;
-  const isHighDensity = layout.cols > 8 && template.type !== 'network';
+  // For storage devices, use disk_layout if available, otherwise fallback to layout
+  const frontLayout = template.type === 'storage' && template.disk_layout
+    ? template.disk_layout
+    : template.layout;
+  const layout = isRearView && hasRearLayout ? template.rear_layout : frontLayout;
+
+  // Safety check: layout should never be null for a valid device
+  if (!layout) {
+    console.error('Device template missing layout configuration:', template);
+    return null;
+  }
+
+  // For storage in detail view, force full grid display (not high density mode)
+  const forceFullGrid = detailView && template.type === 'storage';
+  const isHighDensity = !forceFullGrid && layout.cols > 8 && template.type !== 'network';
 
   let borderColor = 'border-[var(--color-border)]/30';
   let bgColor = 'bg-[var(--color-device-surface)]';
@@ -836,7 +851,7 @@ export const DeviceChassis = ({
               nodesData={nodesData || {}}
               label={
                 template.type === 'storage'
-                  ? template.layout.rows > 1
+                  ? (frontLayout?.rows || 1) > 1
                     ? `DRAWER ${rIdx + 1}`
                     : 'STORAGE ARRAY'
                   : template.name
@@ -869,6 +884,7 @@ export const DeviceChassis = ({
                   chassisName={template.name}
                   onHoverChange={setSuppressTooltip}
                   onTooltipChange={onTooltipChange}
+                  hideText={forceFullGrid}
                 />
               );
             })
@@ -948,6 +964,7 @@ export const NodeUnit = ({
   nodeMetrics,
   onHoverChange,
   onTooltipChange,
+  hideText: hideTextProp,
 }: {
   nodeName?: string;
   slotNum: number;
@@ -959,9 +976,10 @@ export const NodeUnit = ({
   nodeMetrics?: RackNodeState;
   onHoverChange?: (value: boolean) => void;
   onTooltipChange?: (payload: HUDTooltipProps | null) => void;
+  hideText?: boolean;
 }) => {
   const Icon = type === 'network' ? RouterIcon : Server;
-  const hideText = uHeight === 1;
+  const hideText = hideTextProp !== undefined ? hideTextProp : uHeight === 1;
   const activeChecks = Array.isArray(nodeMetrics?.checks)
     ? (nodeMetrics.checks as AlertCheck[]).map((check) => check?.id).filter(Boolean)
     : [];
@@ -1018,7 +1036,7 @@ export const NodeUnit = ({
       {nodeName ? (
         <div className="flex h-full w-full flex-col items-center justify-center px-1">
           <div
-            className={`mb-1 h-1.5 w-1.5 shrink-0 rounded-full ${nodeHealth === 'OK' ? 'bg-status-ok' : nodeHealth === 'CRIT' ? 'bg-status-crit animate-pulse shadow-[0_0_8px_var(--color-status-crit)]' : 'bg-status-warn'} `}
+            className={`${hideText ? 'h-2 w-2' : 'mb-1 h-1.5 w-1.5'} shrink-0 rounded-full ${nodeHealth === 'OK' ? 'bg-status-ok' : nodeHealth === 'CRIT' ? 'bg-status-crit animate-pulse shadow-[0_0_8px_var(--color-status-crit)]' : 'bg-status-warn'} `}
           ></div>
           {!hideText && (
             <div className="flex w-full items-center justify-center gap-1.5 overflow-hidden">
@@ -1027,11 +1045,6 @@ export const NodeUnit = ({
                 {nodeName}
               </span>
             </div>
-          )}
-          {hideText && (
-            <span className="absolute inset-0 z-10 flex items-center justify-center truncate bg-[var(--color-node-surface)] px-1 text-[11px] font-black text-[var(--color-accent-primary)] uppercase opacity-0 transition-opacity group-hover:opacity-100">
-              {nodeName}
-            </span>
           )}
         </div>
       ) : (

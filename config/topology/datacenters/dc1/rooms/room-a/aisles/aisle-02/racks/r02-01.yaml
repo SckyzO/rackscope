@@ -15,7 +15,7 @@ devices:
   name: Disk Array 01
   template_id: storage-4u-60disk
   u_position: 1
-  instance: hdd-r02-01-d1[01-60]
+  instance: r02-01-da01
 - id: r02-01-da02
   name: Disk Array 02
   template_id: storage-4u-60disk

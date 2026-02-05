@@ -52,8 +52,8 @@ plugins:
     enabled: true
     update_interval_seconds: 20
     seed: null
-    scenario: full-ok  # Use a default scenario to reduce metric count
-    scale_factor: 1.0
+    scenario: full-ok
+    scale_factor: 1
     incident_rates:
       node_micro_failure: 0.001
       rack_macro_failure: 0.01
@@ -68,16 +68,21 @@ plugins:
   slurm:
     enabled: true
     metric: slurm_node_status
-    label_node: test_node
+    label_node: node_id
     label_status: status
     label_partition: partition
+    mapping_path: config/plugins/slurm/node_mapping.yaml
+    roles:
+    - compute
+    - visu
+    include_unlabeled: false
     status_map:
       ok:
-      - idle
       - allocated
       - alloc
       - completing
       - comp
+      - idle
       warn:
       - mixed
       - mix
@@ -116,10 +121,5 @@ plugins:
       warn: '#f59e0b'
       crit: '#ef4444'
       info: '#3b82f6'
-    roles:
-    - compute
-    - visu
-    include_unlabeled: false
-    mapping_path: config/plugins/slurm/node_mapping.yaml
 simulator: null
 slurm: null

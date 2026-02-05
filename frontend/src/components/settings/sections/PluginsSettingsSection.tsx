@@ -17,7 +17,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   const [simulatorSettingsOpen, setSimulatorSettingsOpen] = useState(false);
   const [slurmSettingsOpen, setSlurmSettingsOpen] = useState(false);
 
-  const updateSimulator = (field: string, value: string | boolean) => {
+  const updateSimulator = (field: string, value: string | boolean | Record<string, string> | Array<any>) => {
     setDraft((prev) => {
       if (!prev) return prev;
       return {
@@ -33,7 +33,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
     });
   };
 
-  const updateSlurm = (field: string, value: string | boolean | Record<string, string>) => {
+  const updateSlurm = (field: string, value: string | boolean | Record<string, string> | Array<any>) => {
     setDraft((prev) => {
       if (!prev) return prev;
       return {
@@ -176,6 +176,143 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               onChange={(value) => updateSimulator('seed', value)}
               placeholder="Leave empty for random"
             />
+            <FormField
+              label="Scenario"
+              value={draft.plugins.simulator.scenario}
+              onChange={(value) => updateSimulator('scenario', value)}
+              placeholder="full-ok, demo-small, random-demo-small"
+            />
+            <FormField
+              label="Scale Factor"
+              value={draft.plugins.simulator.scale_factor}
+              onChange={(value) => updateSimulator('scale_factor', value)}
+              type="number"
+            />
+
+            {/* Incident Rates */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                Incident Rates (0.0 - 1.0)
+              </label>
+              <FormField
+                label="Node Micro Failure"
+                value={draft.plugins.simulator.incident_rates.node_micro_failure}
+                onChange={(value) => updateSimulator('incident_rates', { ...draft.plugins.simulator.incident_rates, node_micro_failure: value })}
+                type="number"
+              />
+              <FormField
+                label="Rack Macro Failure"
+                value={draft.plugins.simulator.incident_rates.rack_macro_failure}
+                onChange={(value) => updateSimulator('incident_rates', { ...draft.plugins.simulator.incident_rates, rack_macro_failure: value })}
+                type="number"
+              />
+              <FormField
+                label="Aisle Cooling Failure"
+                value={draft.plugins.simulator.incident_rates.aisle_cooling_failure}
+                onChange={(value) => updateSimulator('incident_rates', { ...draft.plugins.simulator.incident_rates, aisle_cooling_failure: value })}
+                type="number"
+              />
+            </div>
+
+            {/* Incident Durations */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                Incident Durations (seconds)
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  label="Rack"
+                  value={draft.plugins.simulator.incident_durations.rack}
+                  onChange={(value) => updateSimulator('incident_durations', { ...draft.plugins.simulator.incident_durations, rack: value })}
+                  type="number"
+                />
+                <FormField
+                  label="Aisle"
+                  value={draft.plugins.simulator.incident_durations.aisle}
+                  onChange={(value) => updateSimulator('incident_durations', { ...draft.plugins.simulator.incident_durations, aisle: value })}
+                  type="number"
+                />
+              </div>
+            </div>
+
+            <FormField
+              label="Overrides Path"
+              value={draft.plugins.simulator.overrides_path}
+              onChange={(value) => updateSimulator('overrides_path', value)}
+              placeholder="config/plugins/simulator/overrides.yaml"
+            />
+            <FormField
+              label="Default TTL (seconds)"
+              value={draft.plugins.simulator.default_ttl_seconds}
+              onChange={(value) => updateSimulator('default_ttl_seconds', value)}
+              type="number"
+            />
+            <FormField
+              label="Metrics Catalog Path"
+              value={draft.plugins.simulator.metrics_catalog_path}
+              onChange={(value) => updateSimulator('metrics_catalog_path', value)}
+              placeholder="config/plugins/simulator/metrics_full.yaml"
+            />
+
+            {/* Metrics Catalogs */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                Metrics Catalogs (Multi-file support)
+              </label>
+              <div className="space-y-2">
+                {draft.plugins.simulator.metrics_catalogs.map((catalog, index) => (
+                  <div key={index} className="flex items-center gap-2 rounded border border-[var(--color-border)] p-3" style={{ backgroundColor: 'var(--color-bg-panel)' }}>
+                    <FormToggle
+                      label=""
+                      checked={catalog.enabled}
+                      onChange={(value) => {
+                        const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
+                        newCatalogs[index].enabled = value;
+                        updateSimulator('metrics_catalogs', newCatalogs);
+                      }}
+                    />
+                    <FormField
+                      label="ID"
+                      value={catalog.id}
+                      onChange={(value) => {
+                        const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
+                        newCatalogs[index].id = value;
+                        updateSimulator('metrics_catalogs', newCatalogs);
+                      }}
+                    />
+                    <FormField
+                      label="Path"
+                      value={catalog.path}
+                      onChange={(value) => {
+                        const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
+                        newCatalogs[index].path = value;
+                        updateSimulator('metrics_catalogs', newCatalogs);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newCatalogs = draft.plugins.simulator.metrics_catalogs.filter((_, i) => i !== index);
+                        updateSimulator('metrics_catalogs', newCatalogs);
+                      }}
+                      className="rounded bg-red-600 px-3 py-2 text-xs font-bold uppercase text-white hover:bg-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newCatalogs = [...draft.plugins.simulator.metrics_catalogs, { id: '', path: '', enabled: true }];
+                    updateSimulator('metrics_catalogs', newCatalogs);
+                  }}
+                  className="rounded bg-blue-600 px-4 py-2 text-xs font-bold uppercase text-white hover:bg-blue-700"
+                >
+                  Add Catalog
+                </button>
+              </div>
+            </div>
 
             <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
               <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-blue-400">
@@ -266,6 +403,56 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               value={draft.plugins.slurm.mapping_path}
               onChange={(value) => updateSlurm('mapping_path', value)}
               placeholder="config/plugins/slurm/node_mapping.yaml"
+            />
+
+            {/* Roles */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                Roles (filter by device role)
+              </label>
+              <div className="space-y-2">
+                {draft.plugins.slurm.roles.map((role, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <FormField
+                      label=""
+                      value={role}
+                      onChange={(value) => {
+                        const newRoles = [...draft.plugins.slurm.roles];
+                        newRoles[index] = value;
+                        updateSlurm('roles', newRoles);
+                      }}
+                      placeholder="compute, visu, login, etc."
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newRoles = draft.plugins.slurm.roles.filter((_, i) => i !== index);
+                        updateSlurm('roles', newRoles);
+                      }}
+                      className="rounded bg-red-600 px-3 py-2 text-xs font-bold uppercase text-white hover:bg-red-700"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newRoles = [...draft.plugins.slurm.roles, ''];
+                    updateSlurm('roles', newRoles);
+                  }}
+                  className="rounded bg-blue-600 px-4 py-2 text-xs font-bold uppercase text-white hover:bg-blue-700"
+                >
+                  Add Role
+                </button>
+              </div>
+            </div>
+
+            <FormToggle
+              label="Include Unlabeled Nodes"
+              description="Include nodes without role labels in Slurm views"
+              checked={draft.plugins.slurm.include_unlabeled}
+              onChange={(value) => updateSlurm('include_unlabeled', value)}
             />
 
             {/* Severity Colors */}

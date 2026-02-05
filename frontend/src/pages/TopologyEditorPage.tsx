@@ -478,10 +478,12 @@ export const TopologyEditorPage = () => {
                   className="min-h-[240px] space-y-2 rounded-2xl border border-dashed border-white/10 bg-black/20 p-3"
                   onDragOver={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     e.dataTransfer.dropEffect = 'move';
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     const dragged = e.dataTransfer.getData('text/plain');
                     handleDropOnAisle(aisle.id, dragged || null);
                   }}
@@ -498,16 +500,22 @@ export const TopologyEditorPage = () => {
                           e.dataTransfer.setData('text/plain', rackId);
                           e.dataTransfer.effectAllowed = 'move';
                         }}
+                        onDragEnd={() => {
+                          setDraggingId(null);
+                        }}
                         onDragOver={(e) => {
                           e.preventDefault();
+                          e.stopPropagation();
                           e.dataTransfer.dropEffect = 'move';
                         }}
                         onDrop={(e) => {
                           e.preventDefault();
+                          e.stopPropagation();
                           const dragged = e.dataTransfer.getData('text/plain');
                           handleDropOnRack(aisle.id, rackId, dragged || null);
                         }}
                         onClick={() => setSelectedRackId(rackId)}
+                        style={{ userSelect: 'none', WebkitUserDrag: 'element' }}
                         className={`flex cursor-grab items-center justify-between rounded-2xl border px-4 py-3 transition-colors ${
                           isSelected
                             ? 'border-blue-400/60 bg-blue-500/10'
@@ -525,6 +533,8 @@ export const TopologyEditorPage = () => {
                         <select
                           defaultValue=""
                           onChange={(e) => handleTemplateChange(rackId, e.target.value)}
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
                           className="rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1 text-[11px] text-gray-200"
                         >
                           <option value="">No template</option>

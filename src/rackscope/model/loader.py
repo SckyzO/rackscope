@@ -58,9 +58,25 @@ def load_catalog(templates_dir: Union[str, Path]) -> Catalog:
 
 
 def dump_yaml(data: dict) -> str:
-    """Stable YAML dump for config writes."""
-    return yaml.safe_dump(
+    """Stable YAML dump for config writes with compact matrix formatting."""
+
+    class CompactMatrixDumper(yaml.SafeDumper):
+        """Custom YAML dumper that formats matrices (lists of lists) in flow style."""
+        pass
+
+    def represent_list(dumper, data):
+        """Represent lists with flow style for matrices (lists of numbers)."""
+        # Check if this is a list of numbers (matrix row) - use flow style [1, 2, 3]
+        if data and all(isinstance(item, (int, float)) for item in data):
+            return dumper.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=True)
+        # Otherwise use default block style
+        return dumper.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=False)
+
+    CompactMatrixDumper.add_representer(list, represent_list)
+
+    return yaml.dump(
         data,
+        Dumper=CompactMatrixDumper,
         sort_keys=False,
         default_flow_style=False,
     )

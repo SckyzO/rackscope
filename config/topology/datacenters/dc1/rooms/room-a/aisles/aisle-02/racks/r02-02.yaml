@@ -15,32 +15,32 @@ devices:
   name: Disk Array 01
   template_id: storage-4u-60disk
   u_position: 1
-  instance: hdd-r02-02-d1[01-60]
+  instance: r02-02-da01
 - id: r02-02-da02
   name: Disk Array 02
   template_id: storage-4u-60disk
   u_position: 5
-  instance: hdd-r02-02-d2[01-60]
+  instance: r02-02-da02
 - id: r02-02-da03
   name: Disk Array 03
   template_id: storage-4u-60disk
   u_position: 9
-  instance: hdd-r02-02-d3[01-60]
+  instance: r02-02-da03
 - id: r02-02-da04
   name: Disk Array 04
   template_id: storage-4u-60disk
   u_position: 13
-  instance: hdd-r02-02-d4[01-60]
+  instance: r02-02-da04
 - id: r02-02-da05
   name: Disk Array 05
   template_id: storage-4u-60disk
   u_position: 17
-  instance: hdd-r02-02-d5[01-60]
+  instance: r02-02-da05
 - id: r02-02-da06
   name: Disk Array 06
   template_id: storage-4u-60disk
   u_position: 21
-  instance: hdd-r02-02-d6[01-60]
+  instance: r02-02-da06
 - id: r02-02-s01
   name: Service 01
   template_id: bs-x430-service-2u

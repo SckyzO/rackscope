@@ -9,14 +9,13 @@ templates:
     rows: 1
     cols: 1
     matrix:
-    - - 1
+    - [1]
   rear_layout:
     type: grid
     rows: 1
     cols: 2
     matrix:
-    - - 901
-      - 902
+    - [901, 902]
   checks:
   - switch_up
   - switch_temp_warn
@@ -27,6 +26,3 @@ templates:
   - node_up
   - node_temperature
   - node_power
-  - switch_port_status
-  - switch_port_traffic_in
-  - switch_port_traffic_out

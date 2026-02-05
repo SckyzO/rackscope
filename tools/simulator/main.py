@@ -2,6 +2,7 @@ import time
 import random
 import yaml
 import os
+import sys
 import math
 import re
 import fnmatch
@@ -10,6 +11,7 @@ from prometheus_client import start_http_server, Gauge
 
 # Configuration Paths
 TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology")
+TEMPLATES_PATH = os.getenv("TEMPLATES_PATH", "/app/config/templates")
 SIMULATOR_CONFIG_PATH = os.getenv("SIMULATOR_CONFIG", "/app/config/plugins/simulator/scenarios.yaml")
 APP_CONFIG_PATH = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
 METRICS_LIBRARY_PATH = os.getenv("METRICS_LIBRARY", "/app/config/metrics/library")
@@ -342,15 +344,44 @@ def parse_nodeset(pattern):
     return nodes
 
 
-def load_topology_nodes(topo_data):
+def load_device_templates(templates_dir):
+    """Load device templates to check instance_type."""
+    templates = {}
+    templates_path = os.path.join(templates_dir, "devices")
+    if not os.path.exists(templates_path):
+        print(f"Warning: templates path does not exist: {templates_path}")
+        return templates
+
+    for root, _, files in os.walk(templates_path):
+        for file in files:
+            if file.endswith(".yaml"):
+                file_path = os.path.join(root, file)
+                data = load_yaml(file_path) or {}
+                for template in data.get("templates", []):
+                    templates[template["id"]] = template
+
+    print(f"Loaded {len(templates)} device templates")
+    storage_templates = {k: v for k, v in templates.items() if v.get("type") == "storage"}
+    print(f"Found {len(storage_templates)} storage templates: {list(storage_templates.keys())}")
+    return templates
+
+
+def load_topology_nodes(topo_data, device_templates=None):
     targets = []
     if not topo_data:
         return []
+
+    device_templates = device_templates or {}
+
     for site in topo_data.get("sites", []):
         for room in site.get("rooms", []):
 
             def process_rack(rack, aisle_id):
                 for device in rack.get("devices", []):
+                    template_id = device.get("template_id")
+                    template = device_templates.get(template_id, {})
+                    device_type = template.get("type", "server")
+
                     nodes_map = device.get("instance") or device.get("nodes")
                     if isinstance(nodes_map, str):
                         nodes_map = parse_nodeset(nodes_map)
@@ -362,7 +393,33 @@ def load_topology_nodes(topo_data):
                         }
                     elif not isinstance(nodes_map, dict):
                         nodes_map = {}
-                    if not nodes_map:
+
+                    # For storage arrays (type=storage), create only 1 instance (the controller)
+                    # Drives will be represented as labels in metrics
+                    if device_type == "storage" and nodes_map:
+                        # Get the number of slots for storage metrics from disk_layout (or fallback to layout)
+                        disk_layout = template.get("disk_layout") or template.get("layout", {})
+                        matrix = disk_layout.get("matrix", [[]])
+                        slot_count = sum(len(row) for row in matrix)
+                        storage_type = template.get("storage_type", "generic")
+
+                        print(f"Creating storage target: device={device['id']}, slots={slot_count}, type={device_type}, storage_type={storage_type}")
+
+                        targets.append(
+                            {
+                                "site_id": site["id"],
+                                "room_id": room["id"],
+                                "aisle_id": aisle_id,
+                                "rack_id": rack["id"],
+                                "chassis_id": device["id"],
+                                "node_id": device["id"],
+                                "device_type": "storage",
+                                "storage_type": storage_type,
+                                "slot_count": slot_count,
+                                "template_id": template_id,
+                            }
+                        )
+                    elif not nodes_map:
                         targets.append(
                             {
                                 "site_id": site["id"],
@@ -621,18 +678,30 @@ def simulate():
         return False
 
     def build_base_labels(target):
-        base_labels = {k: v for k, v in target.items() if k != "aisle_id"}
-        base_labels["instance"] = target["node_id"]
-        base_labels["job"] = "node"
+        # Only include labels that are in BASE_LABELS for "node" scope
+        # BASE_LABELS["node"] = ["site_id", "room_id", "rack_id", "chassis_id", "node_id", "instance", "job"]
+        base_labels = {
+            "site_id": target.get("site_id", ""),
+            "room_id": target.get("room_id", ""),
+            "rack_id": target.get("rack_id", ""),
+            "chassis_id": target.get("chassis_id", ""),
+            "node_id": target.get("node_id", ""),
+            "instance": target["node_id"],
+            "job": "node",
+        }
         return base_labels
 
     print(f"Starting simulation loop (Interval: {update_interval}s)")
+
+    # Load device templates once
+    device_templates = load_device_templates(TEMPLATES_PATH)
+
     tick = 0
 
     while True:
         # Reload topology every tick to support dynamic changes
         topo_data = load_topology_data(TOPOLOGY_PATH)
-        targets = load_topology_nodes(topo_data)
+        targets = load_topology_nodes(topo_data, device_templates)
         forced_slurm_status = {}
         if isinstance(slurm_random_statuses, dict):
             available_nodes = [target["node_id"] for target in targets if target.get("node_id")]
@@ -703,8 +772,45 @@ def simulate():
             nid = target["node_id"].lower()
             aid = target["aisle_id"]
             rid = target["rack_id"]
+            is_storage = target.get("device_type") == "storage"
 
             random.seed(nid + str(tick // 2))
+
+            # --- Skip compute-specific metrics for storage devices ---
+            if is_storage:
+                # For storage arrays, only generate eseries metrics
+                slot_count = target.get("slot_count", 60)
+
+                # Generate eseries metrics for storage controller and drives
+                if metric_enabled("eseries_storage_system_status", "node", node_id=target["node_id"]):
+                    # Controller status (0 = optimal, 1 = degraded, 2 = failed)
+                    controller_status = 0 if random.random() > 0.02 else (1 if random.random() > 0.5 else 2)
+                    set_metric_value(
+                        "eseries_storage_system_status",
+                        base_labels,
+                        controller_status,
+                        {"status": "optimal" if controller_status == 0 else ("degraded" if controller_status == 1 else "failed")},
+                    )
+
+                if metric_enabled("eseries_drive_status", "node", node_id=target["node_id"]):
+                    # Generate metrics for all drives
+                    for drive_slot in range(1, slot_count + 1):
+                        # Random drive failures (1% chance)
+                        drive_status_label = "optimal"
+                        drive_crit_value = 0
+                        if random.random() < 0.01:
+                            drive_status_label = "failed"
+                            drive_crit_value = 1
+
+                        set_metric_value(
+                            "eseries_drive_status",
+                            base_labels,
+                            drive_crit_value,
+                            {"status": drive_status_label, "drive_id": str(drive_slot), "slot": str(drive_slot)},
+                        )
+
+                # Skip the rest of compute-specific logic
+                continue
 
             # --- Determine Profile ---
             prof_name = (
@@ -1056,6 +1162,8 @@ def simulate():
             status_label = "optimal" if status == 0 else "failed"
             warn_value = 1 if status in (1, 2) else 0
             crit_value = 1 if status == 2 else 0
+
+            # E-Series metrics
             if metric_enabled("eseries_exporter_collect_error", "node", node_id=target["node_id"]):
                 set_metric_value(
                     "eseries_exporter_collect_error", base_labels, warn_value, {"collector": "all"}
@@ -1066,50 +1174,6 @@ def simulate():
                     base_labels,
                     crit_value,
                     {"status": status_label},
-                )
-            if metric_enabled("eseries_drive_status", "node", node_id=target["node_id"]):
-                set_metric_value(
-                    "eseries_drive_status",
-                    base_labels,
-                    crit_value,
-                    {"status": status_label, "tray": "0", "slot": "0"},
-                )
-            if metric_enabled("eseries_battery_status", "node", node_id=target["node_id"]):
-                set_metric_value(
-                    "eseries_battery_status",
-                    base_labels,
-                    crit_value,
-                    {"status": status_label, "tray": "0", "slot": "0"},
-                )
-            if metric_enabled("eseries_fan_status", "node", node_id=target["node_id"]):
-                set_metric_value(
-                    "eseries_fan_status",
-                    base_labels,
-                    warn_value,
-                    {"status": status_label, "tray": "0", "slot": "0"},
-                )
-            if metric_enabled("eseries_power_supply_status", "node", node_id=target["node_id"]):
-                set_metric_value(
-                    "eseries_power_supply_status",
-                    base_labels,
-                    crit_value,
-                    {"status": status_label, "tray": "0", "slot": "0"},
-                )
-            if metric_enabled(
-                "eseries_cache_memory_dimm_status", "node", node_id=target["node_id"]
-            ):
-                set_metric_value(
-                    "eseries_cache_memory_dimm_status",
-                    base_labels,
-                    warn_value,
-                    {"status": status_label, "tray": "0", "slot": "0"},
-                )
-            if metric_enabled("eseries_thermal_sensor_status", "node", node_id=target["node_id"]):
-                set_metric_value(
-                    "eseries_thermal_sensor_status",
-                    base_labels,
-                    warn_value,
-                    {"status": status_label, "tray": "0", "slot": "0"},
                 )
 
         for rack_id, info in rack_info.items():

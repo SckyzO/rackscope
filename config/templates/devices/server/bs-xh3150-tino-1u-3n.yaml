@@ -9,9 +9,7 @@ templates:
     rows: 1
     cols: 3
     matrix:
-    - - 1
-      - 2
-      - 3
+    - [1, 2, 3]
   checks:
   - node_up
   - node_recent_reboot
