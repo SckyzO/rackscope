@@ -16,31 +16,43 @@ devices:
   template_id: storage-4u-60disk
   u_position: 1
   instance: da01-r02-01
+  labels:
+    tray: "99"
 - id: r02-01-da02
   name: Disk Array 02 (Shelf 1)
   template_id: storage-4u-60disk
   u_position: 5
   instance: da02-r02-01
+  labels:
+    tray: "01"
 - id: r02-01-da03
   name: Disk Array 03 (Shelf 2)
   template_id: storage-4u-60disk
   u_position: 9
   instance: da03-r02-01
+  labels:
+    tray: "02"
 - id: r02-01-da04
   name: Disk Array 04 (Shelf 3)
   template_id: storage-4u-60disk
   u_position: 13
   instance: da04-r02-01
+  labels:
+    tray: "03"
 - id: r02-01-da05
   name: Disk Array 05 (Shelf 4)
   template_id: storage-4u-60disk
   u_position: 17
   instance: da05-r02-01
+  labels:
+    tray: "04"
 - id: r02-01-da06
   name: Disk Array 06 (Shelf 5)
   template_id: storage-4u-60disk
   u_position: 21
   instance: da06-r02-01
+  labels:
+    tray: "05"
 - id: r02-01-s01
   name: Service 01
   template_id: bs-x430-service-2u

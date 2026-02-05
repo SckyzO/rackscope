@@ -5,6 +5,7 @@ export interface Device {
   u_position: number;
   instance: Record<number, string> | string | string[];
   nodes?: Record<number, string> | string | string[];
+  labels?: Record<string, string>;
 }
 
 export interface Rack {
