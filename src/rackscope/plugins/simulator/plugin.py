@@ -82,6 +82,14 @@ class SimulatorPlugin(RackscopePlugin):
             f"interval={self.config.update_interval_seconds}s)"
         )
 
+    async def on_config_reload(self, app_config: AppConfig) -> None:
+        """Reload simulator configuration when app config changes."""
+        self.config = self._load_config(app_config)
+        logger.info(
+            f"Simulator plugin configuration reloaded (scenario={self.config.scenario}, "
+            f"enabled={self.config.enabled})"
+        )
+
     def _setup_routes(self) -> None:
         """Setup all simulator routes."""
 

@@ -103,6 +103,14 @@ class SlurmPlugin(RackscopePlugin):
             f"roles={self.config.roles})"
         )
 
+    async def on_config_reload(self, app_config: AppConfig) -> None:
+        """Reload Slurm configuration when app config changes."""
+        self.config = self._load_config(app_config)
+        logger.info(
+            f"Slurm plugin configuration reloaded (metric={self.config.metric}, "
+            f"label_node={self.config.label_node}, enabled={self.config.enabled})"
+        )
+
     def _setup_routes(self) -> None:
         """Setup all Slurm routes."""
 

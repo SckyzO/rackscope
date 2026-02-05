@@ -60,7 +60,7 @@ PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
 # Telemetry helper functions now in telemetry_service
 
 
-def apply_config(app_config: AppConfig) -> None:
+async def apply_config(app_config: AppConfig) -> None:
     global TOPOLOGY, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY, APP_CONFIG, PLANNER
     APP_CONFIG = app_config
     TOPOLOGY = load_topology(app_config.paths.topology)
@@ -104,6 +104,9 @@ def apply_config(app_config: AppConfig) -> None:
             max_ids_per_query=APP_CONFIG.planner.max_ids_per_query,
         )
     )
+    # Reload plugins with new configuration
+    await plugin_registry.reload_plugins(app_config)
+    logger.info("Configuration applied successfully")
 
 
 @asynccontextmanager
@@ -115,7 +118,7 @@ async def lifespan(app: FastAPI):
     try:
         if os.path.exists(app_config_path):
             APP_CONFIG = load_app_config(app_config_path)
-            apply_config(APP_CONFIG)
+            await apply_config(APP_CONFIG)
         else:
             config_dir = os.getenv("RACKSCOPE_CONFIG_DIR", "config")
             config_path = os.getenv(

@@ -99,7 +99,7 @@ def get_app_config(
 
 
 @router.put("/config")
-def update_app_config(payload: AppConfig):
+async def update_app_config(payload: AppConfig):
     """Update application configuration."""
     from rackscope.api.app import apply_config
 
@@ -107,7 +107,7 @@ def update_app_config(payload: AppConfig):
     config_path.parent.mkdir(parents=True, exist_ok=True)
     with config_path.open("w") as f:
         yaml.safe_dump(payload.model_dump(), f, sort_keys=False)
-    apply_config(payload)
+    await apply_config(payload)
     return payload
 
 

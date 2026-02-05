@@ -52,13 +52,25 @@ plugins:
     enabled: true
     update_interval_seconds: 20
     seed: null
+    scenario: null
+    scale_factor: 1.0
+    incident_rates:
+      node_micro_failure: 0.001
+      rack_macro_failure: 0.01
+      aisle_cooling_failure: 0.005
+    incident_durations:
+      rack: 3
+      aisle: 5
+    overrides_path: config/plugins/simulator/overrides.yaml
+    default_ttl_seconds: 120
+    metrics_catalog_path: config/plugins/simulator/metrics_full.yaml
+    metrics_catalogs: []
   slurm:
     enabled: true
     metric: slurm_node_status
-    label_node: node
+    label_node: test_node
     label_status: status
     label_partition: partition
-    mapping_path: config/plugins/slurm/node_mapping.yaml
     status_map:
       ok:
       - idle
@@ -104,5 +116,10 @@ plugins:
       warn: '#f59e0b'
       crit: '#ef4444'
       info: '#3b82f6'
+    roles:
+    - compute
+    - visu
+    include_unlabeled: false
+    mapping_path: config/plugins/slurm/node_mapping.yaml
 simulator: null
 slurm: null

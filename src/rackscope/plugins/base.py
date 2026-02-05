@@ -5,9 +5,12 @@ Plugins extend Rackscope with optional features without modifying core code.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
 from pydantic import BaseModel
 from fastapi import FastAPI
+
+if TYPE_CHECKING:
+    from rackscope.model.config import AppConfig
 
 
 class MenuItem(BaseModel):
@@ -186,6 +189,24 @@ class RackscopePlugin(ABC):
         Example:
             async def on_shutdown(self) -> None:
                 await self.db_connection.close()
+        """
+        pass
+
+    async def on_config_reload(self, app_config: "AppConfig") -> None:
+        """
+        Called when the application configuration is reloaded.
+
+        Use this to update plugin state based on new configuration.
+        This allows hot-reloading configuration without restarting the backend.
+
+        Args:
+            app_config: The new application configuration
+
+        Example:
+            async def on_config_reload(self, app_config: AppConfig) -> None:
+                if app_config.plugins and app_config.plugins.slurm:
+                    self.config = app_config.plugins.slurm
+                    logger.info(f"Reloaded Slurm config: metric={self.config.metric}")
         """
         pass
 

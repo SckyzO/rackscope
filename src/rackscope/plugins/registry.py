@@ -5,11 +5,14 @@ The PluginRegistry maintains the list of loaded plugins and handles their lifecy
 """
 
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 from fastapi import FastAPI
 
 from rackscope.plugins.base import RackscopePlugin, MenuSection
+
+if TYPE_CHECKING:
+    from rackscope.model.config import AppConfig
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +205,29 @@ class PluginRegistry:
             Number of registered plugins
         """
         return len(self._plugins)
+
+    async def reload_plugins(self, app_config: "AppConfig") -> None:
+        """
+        Reload all plugins with new configuration.
+
+        Calls on_config_reload() for each plugin to allow them to update their
+        state based on the new configuration. This enables hot-reloading without
+        restarting the backend.
+
+        Args:
+            app_config: The new application configuration
+        """
+        logger.info(f"Reloading {len(self._plugins)} plugin(s) with new configuration")
+
+        for plugin_id, plugin in self._plugins.items():
+            try:
+                logger.debug(f"Reloading plugin: {plugin_id}")
+                await plugin.on_config_reload(app_config)
+            except Exception as e:
+                logger.error(f"Error reloading plugin {plugin_id}: {e}", exc_info=True)
+                # Continue with other plugins even if one fails
+
+        logger.info("Plugin configuration reload complete")
 
 
 # Global plugin registry instance
