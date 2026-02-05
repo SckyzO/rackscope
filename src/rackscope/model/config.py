@@ -52,8 +52,9 @@ class TelemetryConfig(BaseModel):
     @field_validator("basic_auth_password")
     @classmethod
     def validate_basic_auth_password(cls, value: Optional[str], info) -> Optional[str]:
-        if value is None:
-            return value
+        # Treat empty strings as None
+        if not value:
+            return None
         user = info.data.get("basic_auth_user")
         if not user:
             raise ValueError("basic_auth_user is required when basic_auth_password is set")
@@ -62,11 +63,20 @@ class TelemetryConfig(BaseModel):
     @field_validator("tls_key_file")
     @classmethod
     def validate_tls_key_file(cls, value: Optional[str], info) -> Optional[str]:
-        if value is None:
-            return value
+        # Treat empty strings as None
+        if not value:
+            return None
         cert = info.data.get("tls_cert_file")
         if not cert:
             raise ValueError("tls_cert_file is required when tls_key_file is set")
+        return value
+
+    @field_validator("basic_auth_user", "tls_cert_file", "tls_ca_file", "prometheus_url")
+    @classmethod
+    def validate_optional_string(cls, value: Optional[str]) -> Optional[str]:
+        """Convert empty strings to None for optional string fields."""
+        if value == "":
+            return None
         return value
 
 

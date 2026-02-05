@@ -25,12 +25,32 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
     Returns:
         Structured JSON error response
     """
+    # Clean errors to make them JSON-serializable
+    errors = []
+    for error in exc.errors():
+        cleaned_error = {
+            "type": error.get("type"),
+            "loc": error.get("loc"),
+            "msg": error.get("msg"),
+            "input": error.get("input"),
+        }
+        # Convert context exceptions to strings
+        if "ctx" in error and error["ctx"]:
+            cleaned_ctx = {}
+            for key, value in error["ctx"].items():
+                if isinstance(value, Exception):
+                    cleaned_ctx[key] = str(value)
+                else:
+                    cleaned_ctx[key] = value
+            cleaned_error["ctx"] = cleaned_ctx
+        errors.append(cleaned_error)
+
     logger.warning(
         f"Validation error on {request.method} {request.url.path}",
         extra={
             "method": request.method,
             "path": request.url.path,
-            "errors": exc.errors(),
+            "errors": errors,
         },
     )
 
@@ -38,7 +58,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "error": "Validation error",
-            "detail": exc.errors(),
+            "detail": errors,
             "path": request.url.path,
         },
     )
