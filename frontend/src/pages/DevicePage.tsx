@@ -97,28 +97,12 @@ export const DevicePage = () => {
     if (!deviceLayout?.matrix) return [];
     return deviceLayout.matrix.flat();
   }, [template]);
-  const selectedInstance = instanceList[selectedIndex] || '';
-  const selectedMatrixSlot =
-    selectedIndex >= 0 && selectedIndex < matrixSlots.length ? matrixSlots[selectedIndex] : null;
 
-  if (loading) {
-    return (
-      <div className="animate-pulse p-12 font-mono text-blue-500">
-        LDR :: LOADING_DEVICE_CONTEXT...
-      </div>
-    );
-  }
-
-  if (error || !context || !template) {
-    return (
-      <div className="text-status-crit p-12 font-mono">ERR :: {error || 'DEVICE_NOT_FOUND'}</div>
-    );
-  }
-
-  const chassisHeight = Math.max(180, template.u_height * 32);
-
-  // For storage devices, create virtual node IDs per slot
+  // IMPORTANT: nodeMap must be computed BEFORE conditional returns to avoid hook order issues
   const nodeMap = useMemo(() => {
+    if (!context || !template) return {};
+
+    // For storage devices, create virtual node IDs per slot
     if (template.type === 'storage') {
       const instanceInput = context.device.instance || context.device.nodes;
       // Get the single instance name (storage arrays have 1 controller instance)
@@ -152,8 +136,27 @@ export const DevicePage = () => {
 
     // For non-storage devices, use standard expansion
     return expandInstanceMap((context.device.instance || context.device.nodes) as InstanceInput);
-  }, [context.device.instance, context.device.nodes, context.device.id, template.type, template.disk_layout, template.layout]);
+  }, [context, template]);
 
+  const selectedInstance = instanceList[selectedIndex] || '';
+  const selectedMatrixSlot =
+    selectedIndex >= 0 && selectedIndex < matrixSlots.length ? matrixSlots[selectedIndex] : null;
+
+  if (loading) {
+    return (
+      <div className="animate-pulse p-12 font-mono text-blue-500">
+        LDR :: LOADING_DEVICE_CONTEXT...
+      </div>
+    );
+  }
+
+  if (error || !context || !template) {
+    return (
+      <div className="text-status-crit p-12 font-mono">ERR :: {error || 'DEVICE_NOT_FOUND'}</div>
+    );
+  }
+
+  const chassisHeight = Math.max(180, template.u_height * 32);
   const nodesData = rackState?.nodes as Record<string, RackNodeState> | undefined;
 
   return (
