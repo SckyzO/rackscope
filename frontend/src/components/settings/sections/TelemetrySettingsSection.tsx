@@ -13,6 +13,14 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
   draft,
   setDraft,
 }) => {
+  // Track if auth and TLS client cert are enabled
+  const [authEnabled, setAuthEnabled] = React.useState(
+    !!(draft.telemetry.basic_auth_user || draft.telemetry.basic_auth_password)
+  );
+  const [tlsClientCertEnabled, setTlsClientCertEnabled] = React.useState(
+    !!(draft.telemetry.tls_cert_file || draft.telemetry.tls_key_file)
+  );
+
   const update = (field: string, value: string | boolean) => {
     setDraft((prev) => {
       if (!prev) return prev;
@@ -24,6 +32,42 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
         },
       };
     });
+  };
+
+  const toggleAuth = (enabled: boolean) => {
+    setAuthEnabled(enabled);
+    if (!enabled) {
+      // Clear auth fields when disabled
+      setDraft((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          telemetry: {
+            ...prev.telemetry,
+            basic_auth_user: '',
+            basic_auth_password: '',
+          },
+        };
+      });
+    }
+  };
+
+  const toggleTlsClientCert = (enabled: boolean) => {
+    setTlsClientCertEnabled(enabled);
+    if (!enabled) {
+      // Clear TLS client cert fields when disabled
+      setDraft((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          telemetry: {
+            ...prev.telemetry,
+            tls_cert_file: '',
+            tls_key_file: '',
+          },
+        };
+      });
+    }
   };
 
   return (
@@ -85,46 +129,68 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
       </FormSection>
 
       <FormSection title="Authentication (Optional)">
-        <FormField
-          label="Basic Auth Username"
-          value={draft.telemetry.basic_auth_user}
-          onChange={(value) => update('basic_auth_user', value)}
-          placeholder="username"
+        <FormToggle
+          label="Enable Authentication"
+          description="Enable basic authentication for Prometheus"
+          checked={authEnabled}
+          onChange={toggleAuth}
         />
-        <FormField
-          label="Basic Auth Password"
-          value={draft.telemetry.basic_auth_password}
-          onChange={(value) => update('basic_auth_password', value)}
-          type="text"
-          placeholder="password"
-        />
+        {authEnabled && (
+          <>
+            <FormField
+              label="Basic Auth Username"
+              value={draft.telemetry.basic_auth_user}
+              onChange={(value) => update('basic_auth_user', value)}
+              placeholder="username"
+            />
+            <FormField
+              label="Basic Auth Password"
+              value={draft.telemetry.basic_auth_password}
+              onChange={(value) => update('basic_auth_password', value)}
+              type="password"
+              placeholder="password"
+            />
+          </>
+        )}
       </FormSection>
 
       <FormSection title="TLS Configuration (Optional)">
         <FormToggle
           label="TLS Verify"
-          description="Verify TLS certificates"
+          description="Verify server TLS certificates"
           checked={draft.telemetry.tls_verify}
           onChange={(value) => update('tls_verify', value)}
         />
-        <FormField
-          label="CA File Path"
-          value={draft.telemetry.tls_ca_file}
-          onChange={(value) => update('tls_ca_file', value)}
-          placeholder="/path/to/ca.crt"
+        {draft.telemetry.tls_verify && (
+          <FormField
+            label="CA File Path (optional)"
+            value={draft.telemetry.tls_ca_file}
+            onChange={(value) => update('tls_ca_file', value)}
+            placeholder="/path/to/ca.crt"
+          />
+        )}
+        <FormToggle
+          label="Enable TLS Client Certificate"
+          description="Use client certificate for mutual TLS authentication"
+          checked={tlsClientCertEnabled}
+          onChange={toggleTlsClientCert}
         />
-        <FormField
-          label="Client Certificate Path"
-          value={draft.telemetry.tls_cert_file}
-          onChange={(value) => update('tls_cert_file', value)}
-          placeholder="/path/to/client.crt"
-        />
-        <FormField
-          label="Client Key Path"
-          value={draft.telemetry.tls_key_file}
-          onChange={(value) => update('tls_key_file', value)}
-          placeholder="/path/to/client.key"
-        />
+        {tlsClientCertEnabled && (
+          <>
+            <FormField
+              label="Client Certificate Path"
+              value={draft.telemetry.tls_cert_file}
+              onChange={(value) => update('tls_cert_file', value)}
+              placeholder="/path/to/client.crt"
+            />
+            <FormField
+              label="Client Key Path"
+              value={draft.telemetry.tls_key_file}
+              onChange={(value) => update('tls_key_file', value)}
+              placeholder="/path/to/client.key"
+            />
+          </>
+        )}
       </FormSection>
     </div>
   );
