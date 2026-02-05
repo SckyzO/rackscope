@@ -52,7 +52,7 @@ plugins:
     enabled: true
     update_interval_seconds: 20
     seed: null
-    scenario: null
+    scenario: full-ok  # Use a default scenario to reduce metric count
     scale_factor: 1.0
     incident_rates:
       node_micro_failure: 0.001
