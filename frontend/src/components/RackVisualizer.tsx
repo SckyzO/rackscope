@@ -681,10 +681,42 @@ export const DeviceChassis = ({
   detailView?: boolean;
 }) => {
   const [suppressTooltip, setSuppressTooltip] = useState(false);
-  const nodeMap = useMemo(
-    () => expandInstanceMap((device.instance || device.nodes) as InstanceInput),
-    [device.instance, device.nodes]
-  );
+  const nodeMap = useMemo(() => {
+    // For storage devices, create virtual node IDs per slot
+    if (template.type === 'storage') {
+      const instanceInput = device.instance || device.nodes;
+      // Get the single instance name (storage arrays have 1 controller instance)
+      let instanceName: string;
+      if (typeof instanceInput === 'string') {
+        instanceName = instanceInput;
+      } else if (Array.isArray(instanceInput) && instanceInput.length > 0) {
+        instanceName = instanceInput[0];
+      } else if (instanceInput && typeof instanceInput === 'object') {
+        const values = Object.values(instanceInput);
+        instanceName = values[0] || 'unknown';
+      } else {
+        instanceName = device.id;
+      }
+
+      // Get disk layout (or fallback to layout)
+      const diskLayout = template.disk_layout || template.layout;
+      if (!diskLayout?.matrix) {
+        return { 1: instanceName };
+      }
+
+      // Create virtual node map: {slot: "instance:slotN"}
+      const virtualNodeMap: Record<number, string> = {};
+      diskLayout.matrix.flat().forEach((slotNum) => {
+        if (slotNum > 0) {
+          virtualNodeMap[slotNum] = `${instanceName}:slot${slotNum}`;
+        }
+      });
+      return virtualNodeMap;
+    }
+
+    // For non-storage devices, use standard expansion
+    return expandInstanceMap((device.instance || device.nodes) as InstanceInput);
+  }, [device.instance, device.nodes, device.id, template.type, template.disk_layout, template.layout]);
   const instanceList = useMemo(() => Object.values(nodeMap).filter(Boolean) as string[], [nodeMap]);
   const chassisHealth = useMemo(() => {
     if (!nodesData) return rackHealth;

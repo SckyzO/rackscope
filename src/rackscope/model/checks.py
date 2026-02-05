@@ -20,6 +20,11 @@ class CheckDefinition(BaseModel):
     selectors: List[str] = Field(default_factory=list)
     rules: List[CheckRule] = Field(default_factory=list)
     kind: Optional[str] = None
+    # For storage arrays: expand into virtual nodes per label value (e.g., slot, drive_id)
+    expand_by_label: Optional[str] = Field(
+        default=None,
+        description="Label name to expand into virtual nodes (e.g., 'slot' for per-drive checks)"
+    )
 
 
 class ChecksLibrary(BaseModel):

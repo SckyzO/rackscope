@@ -116,9 +116,44 @@ export const DevicePage = () => {
   }
 
   const chassisHeight = Math.max(180, template.u_height * 32);
-  const nodeMap = expandInstanceMap(
-    (context.device.instance || context.device.nodes) as InstanceInput
-  );
+
+  // For storage devices, create virtual node IDs per slot
+  const nodeMap = useMemo(() => {
+    if (template.type === 'storage') {
+      const instanceInput = context.device.instance || context.device.nodes;
+      // Get the single instance name (storage arrays have 1 controller instance)
+      let instanceName: string;
+      if (typeof instanceInput === 'string') {
+        instanceName = instanceInput;
+      } else if (Array.isArray(instanceInput) && instanceInput.length > 0) {
+        instanceName = instanceInput[0];
+      } else if (instanceInput && typeof instanceInput === 'object') {
+        const values = Object.values(instanceInput);
+        instanceName = values[0] || 'unknown';
+      } else {
+        instanceName = context.device.id;
+      }
+
+      // Get disk layout (or fallback to layout)
+      const diskLayout = template.disk_layout || template.layout;
+      if (!diskLayout?.matrix) {
+        return { 1: instanceName };
+      }
+
+      // Create virtual node map: {slot: "instance:slotN"}
+      const virtualNodeMap: Record<number, string> = {};
+      diskLayout.matrix.flat().forEach((slotNum) => {
+        if (slotNum > 0) {
+          virtualNodeMap[slotNum] = `${instanceName}:slot${slotNum}`;
+        }
+      });
+      return virtualNodeMap;
+    }
+
+    // For non-storage devices, use standard expansion
+    return expandInstanceMap((context.device.instance || context.device.nodes) as InstanceInput);
+  }, [context.device.instance, context.device.nodes, context.device.id, template.type, template.disk_layout, template.layout]);
+
   const nodesData = rackState?.nodes as Record<string, RackNodeState> | undefined;
 
   return (
