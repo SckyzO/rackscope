@@ -1,3 +1,15 @@
+# E-Series Storage Array Architecture:
+# - 1 controller instance (head) + N shelves
+# - Instance format: da{N}-{rack_id}
+#   * da01-{rack_id} → head (tray=99)
+#   * da02-{rack_id} → shelf 1 (tray=01)
+#   * da03-{rack_id} → shelf 2 (tray=02), etc.
+# - Disks identified by metric labels:
+#   * slot="1", slot="2", etc. (disk position)
+#   * status="optimal", "failed", etc.
+#   * tray="99" (head), "01" (shelf 1), "02" (shelf 2), etc.
+# - Prometheus metrics: 1 instance = 1 controller, N drive metrics with labels
+
 templates:
 - id: storage-2u-24disk
   name: Flash Array 2U (24 SFF)

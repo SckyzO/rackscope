@@ -403,7 +403,10 @@ def load_topology_nodes(topo_data, device_templates=None):
                         slot_count = sum(len(row) for row in matrix)
                         storage_type = template.get("storage_type", "generic")
 
-                        print(f"Creating storage target: device={device['id']}, slots={slot_count}, type={device_type}, storage_type={storage_type}")
+                        # Get the instance name (should be a single value, e.g., da01-r02-01)
+                        instance_name = list(nodes_map.values())[0] if nodes_map else device["id"]
+
+                        print(f"Creating storage target: device={device['id']}, instance={instance_name}, slots={slot_count}, type={device_type}, storage_type={storage_type}")
 
                         targets.append(
                             {
@@ -412,7 +415,7 @@ def load_topology_nodes(topo_data, device_templates=None):
                                 "aisle_id": aisle_id,
                                 "rack_id": rack["id"],
                                 "chassis_id": device["id"],
-                                "node_id": device["id"],
+                                "node_id": instance_name,
                                 "device_type": "storage",
                                 "storage_type": storage_type,
                                 "slot_count": slot_count,
@@ -793,6 +796,22 @@ def simulate():
                     )
 
                 if metric_enabled("eseries_drive_status", "node", node_id=target["node_id"]):
+                    # Determine tray number from instance name (E-Series architecture)
+                    # da01-* → tray=99 (head/controller)
+                    # da02-* → tray=01 (shelf 1)
+                    # da03-* → tray=02 (shelf 2), etc.
+                    tray_num = "99"  # Default for head
+                    instance_name = target["node_id"]
+                    if instance_name.startswith("da"):
+                        try:
+                            array_num = int(instance_name.split("-")[0][2:])  # Extract number from "daNNN"
+                            if array_num == 1:
+                                tray_num = "99"  # Head
+                            else:
+                                tray_num = str(array_num - 1).zfill(2)  # Shelf (da02→01, da03→02, etc.)
+                        except (ValueError, IndexError):
+                            pass  # Keep default tray=99
+
                     # Generate metrics for all drives
                     for drive_slot in range(1, slot_count + 1):
                         # Random drive failures (1% chance)
@@ -806,7 +825,7 @@ def simulate():
                             "eseries_drive_status",
                             base_labels,
                             drive_crit_value,
-                            {"status": drive_status_label, "drive_id": str(drive_slot), "slot": str(drive_slot)},
+                            {"status": drive_status_label, "drive_id": str(drive_slot), "slot": str(drive_slot), "tray": tray_num},
                         )
 
                 # Skip the rest of compute-specific logic

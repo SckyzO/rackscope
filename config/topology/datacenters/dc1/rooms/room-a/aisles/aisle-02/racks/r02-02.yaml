@@ -12,35 +12,35 @@ devices:
   template_id: eth-switch-tor
   u_position: 40
 - id: r02-02-da01
-  name: Disk Array 01
+  name: Disk Array 01 (Head)
   template_id: storage-4u-60disk
   u_position: 1
-  instance: r02-02-da01
+  instance: da01-r02-02
 - id: r02-02-da02
-  name: Disk Array 02
+  name: Disk Array 02 (Shelf 1)
   template_id: storage-4u-60disk
   u_position: 5
-  instance: r02-02-da02
+  instance: da02-r02-02
 - id: r02-02-da03
-  name: Disk Array 03
+  name: Disk Array 03 (Shelf 2)
   template_id: storage-4u-60disk
   u_position: 9
-  instance: r02-02-da03
+  instance: da03-r02-02
 - id: r02-02-da04
-  name: Disk Array 04
+  name: Disk Array 04 (Shelf 3)
   template_id: storage-4u-60disk
   u_position: 13
-  instance: r02-02-da04
+  instance: da04-r02-02
 - id: r02-02-da05
-  name: Disk Array 05
+  name: Disk Array 05 (Shelf 4)
   template_id: storage-4u-60disk
   u_position: 17
-  instance: r02-02-da05
+  instance: da05-r02-02
 - id: r02-02-da06
-  name: Disk Array 06
+  name: Disk Array 06 (Shelf 5)
   template_id: storage-4u-60disk
   u_position: 21
-  instance: r02-02-da06
+  instance: da06-r02-02
 - id: r02-02-s01
   name: Service 01
   template_id: bs-x430-service-2u
