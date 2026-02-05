@@ -18,6 +18,32 @@ These principles are **strict rules** that must NEVER be violated:
 4. **NOT a CMDB**: This is a visualization layer. External CMDBs (NetBox, RacksDB, BlueBanquise) are inputs via importers.
 5. **NOT replacing Prometheus/Alertmanager/Grafana**: This complements them with physical views.
 6. **HPC-native**: Support for high-density chassis (Twins, Quads, Blades), liquid cooling (HMC), and shared infrastructure.
+7. **🚨 GENERIC CORE - VENDOR-AGNOSTIC 🚨**: The core system MUST remain generic and vendor-agnostic. **NEVER hardcode vendor-specific logic** (E-Series, DDN, NetApp, IBM, Slurm, etc.) in the core codebase. Vendor-specific behavior belongs in:
+   - **Configuration files** (checks, templates, metrics)
+   - **Plugin system** (optional vendor integrations)
+   - **Documentation** (examples for specific vendors)
+
+   ❌ **NEVER DO THIS:**
+   ```python
+   # WRONG: Hardcoded E-Series logic in core
+   if metric_name == "eseries_drive_status":
+       query = f'eseries_drive_status{{instance="{instance}",slot="{slot}"}}'
+   ```
+
+   ✅ **DO THIS INSTEAD:**
+   ```python
+   # RIGHT: Generic logic driven by configuration
+   if check.expand_by_label:
+       query = f'{check.expr}{{instance="{instance}",{check.expand_by_label}="{label_value}"}}'
+   ```
+
+   **Examples of generic design:**
+   - Storage arrays: Use `expand_by_label` field in checks (works for E-Series slot, DDN drive, NetApp disk)
+   - Workload managers: Plugin system for Slurm, PBS, LSF
+   - Device types: Template-driven (`type: storage`, `storage_type: eseries` in config, not code)
+   - Metrics: Configuration-driven in YAML, never hardcoded in Python/TypeScript
+
+   **If you catch yourself writing vendor-specific code in core modules, STOP and refactor to be generic.**
 
 ### What Rackscope IS and IS NOT
 
