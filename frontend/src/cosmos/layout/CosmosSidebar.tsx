@@ -33,6 +33,8 @@ import {
   User,
   CalendarDays,
   Users,
+  Columns,
+  Rows,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -189,6 +191,26 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
 
         <SectionLabel label="Monitoring" collapsed={collapsed} />
         <NavItem to="/cosmos/views/worldmap" icon={Globe} label="World Map" collapsed={collapsed} />
+
+        <SectionLabel label="Rack Variants" collapsed={collapsed} />
+        <NavItem
+          to="/cosmos/views/rack-v1/r01-01"
+          icon={LayoutGrid}
+          label="V1 · Maximized"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/views/rack-v2/r01-01"
+          icon={Columns}
+          label="V2 · Workbench"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/views/rack-v3/r01-01"
+          icon={Rows}
+          label="V3 · Side by Side"
+          collapsed={collapsed}
+        />
 
         <SectionLabel label="Rackscope" collapsed={collapsed} />
         <NavItem

@@ -57,6 +57,9 @@ import { CosmosWorldMapPage } from './pages/views/CosmosWorldMapPage';
 import { CosmosRoomPage } from './pages/views/CosmosRoomPage';
 import { CosmosRackPage } from './pages/views/CosmosRackPage';
 import { CosmosDevicePage } from './pages/views/CosmosDevicePage';
+import { CosmosRackV1 } from './pages/views/CosmosRackV1';
+import { CosmosRackV2 } from './pages/views/CosmosRackV2';
+import { CosmosRackV3 } from './pages/views/CosmosRackV3';
 
 // Rackscope-specific
 import { HealthStatusPage } from './pages/rackscope/HealthStatusPage';
@@ -123,6 +126,9 @@ export const CosmosRouter = () => (
       <Route path="views/worldmap" element={<CosmosWorldMapPage />} />
       <Route path="views/room/:roomId" element={<CosmosRoomPage />} />
       <Route path="views/rack/:rackId" element={<CosmosRackPage />} />
+      <Route path="views/rack-v1/:rackId" element={<CosmosRackV1 />} />
+      <Route path="views/rack-v2/:rackId" element={<CosmosRackV2 />} />
+      <Route path="views/rack-v3/:rackId" element={<CosmosRackV3 />} />
       <Route path="views/device/:rackId/:deviceId" element={<CosmosDevicePage />} />
 
       {/* Rackscope UI Components */}
