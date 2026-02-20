@@ -1,72 +1,17 @@
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap") layer(base);
-
-@custom-variant dark (&:is(.dark *));
-
-@theme {
-  --font-outfit: Outfit, sans-serif;
-
-  /* Brand */
-  --color-brand-25: #f2f7ff;
-  --color-brand-50: #ecf3ff;
-  --color-brand-100: #dde9ff;
-  --color-brand-200: #c2d6ff;
-  --color-brand-300: #9cb9ff;
-  --color-brand-400: #7592ff;
-  --color-brand-500: #465fff;
-  --color-brand-600: #3641f5;
-  --color-brand-700: #2a31d8;
-  --color-brand-800: #252dae;
-  --color-brand-900: #262e89;
-  --color-brand-950: #161950;
-
-  /* Gray */
-  --color-gray-25: #fcfcfd;
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f2f4f7;
-  --color-gray-200: #e4e7ec;
-  --color-gray-300: #d0d5dd;
-  --color-gray-400: #98a2b3;
-  --color-gray-500: #667085;
-  --color-gray-600: #475467;
-  --color-gray-700: #344054;
-  --color-gray-800: #1d2939;
-  --color-gray-900: #101828;
-  --color-gray-950: #0c111d;
-  --color-gray-dark: #1a2231;
-
-  /* Status */
-  --color-success-25: #f6fef9;
-  --color-success-50: #ecfdf3;
-  --color-success-500: #12b76a;
-  --color-success-600: #039855;
-  --color-error-25: #fffbfa;
-  --color-error-50: #fef3f2;
-  --color-error-500: #f04438;
-  --color-error-600: #d92d20;
-  --color-warning-25: #fffcf5;
-  --color-warning-50: #fffaeb;
-  --color-warning-500: #f79009;
-  --color-warning-600: #dc6803;
-
-  /* Shadows */
-  --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
-  --shadow-theme-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.1), 0px 1px 2px 0px rgba(16, 24, 40, 0.06);
-  --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
-  --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
-  --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08), 0px 8px 8px -4px rgba(16, 24, 40, 0.03);
-  --shadow-focus-ring: 0px 0px 0px 4px rgba(70, 95, 255, 0.12);
-}
+/* Cosmos theme — additional styles only.
+   All design tokens (brand, success, error, warning, shadows, dark variant)
+   are now in index.css so Tailwind generates utility classes globally. */
 
 .cosmos-root {
-  font-family: var(--font-outfit);
+  font-family: 'Outfit', system-ui, sans-serif;
   background: white;
-  color: var(--color-gray-900);
+  color: #101828;
 }
 
 .cosmos-root.dark {
   color-scheme: dark;
   background: var(--color-gray-dark);
-  color: var(--color-gray-100);
+  color: #e4e7ec;
 }
 
 .cosmos-scrollbar::-webkit-scrollbar {
@@ -77,15 +22,15 @@
   background: transparent;
 }
 .cosmos-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--color-gray-200);
+  background: #e4e7ec;
   border-radius: 3px;
 }
 .dark .cosmos-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--color-gray-700);
+  background: #344054;
 }
 .cosmos-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--color-gray-300);
+  background: #d0d5dd;
 }
 .dark .cosmos-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--color-gray-600);
+  background: #475467;
 }

@@ -1,26 +1,78 @@
 @import 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap';
 @import 'leaflet/dist/leaflet.css';
+
+/* Class-based dark mode — used by both Rackscope (ThemeContext) and Cosmos */
+@custom-variant dark (&:is(.dark *));
+
 @import 'tailwindcss';
 
 @theme {
   --font-sans: 'Outfit', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Status Colors */
+  /* Rackscope Status Colors */
   --color-status-ok: #10b981;
   --color-status-warn: #f59e0b;
   --color-status-crit: #ef4444;
   --color-status-unknown: #6b7280;
 
-  /* Shadow Tokens */
+  /* Rackscope Shadow Tokens */
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-card-hover: 0 10px 25px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.2);
 
-  /* Theme Variables */
+  /* Rackscope Theme Variables */
   --color-rack-dark: var(--color-bg-base);
   --color-rack-panel: var(--color-bg-panel);
   --color-rack-border: var(--color-border);
   --color-accent-primary: var(--color-accent);
+
+  /* ── Cosmos / TailAdmin Design Tokens ──────────────────────────────── */
+
+  /* Brand (TailAdmin blue) */
+  --color-brand-25: #f2f7ff;
+  --color-brand-50: #ecf3ff;
+  --color-brand-100: #dde9ff;
+  --color-brand-200: #c2d6ff;
+  --color-brand-300: #9cb9ff;
+  --color-brand-400: #7592ff;
+  --color-brand-500: #465fff;
+  --color-brand-600: #3641f5;
+  --color-brand-700: #2a31d8;
+  --color-brand-800: #252dae;
+  --color-brand-900: #262e89;
+  --color-brand-950: #161950;
+
+  /* Gray Dark (TailAdmin dark bg) */
+  --color-gray-dark: #1a2231;
+
+  /* Success */
+  --color-success-25: #f6fef9;
+  --color-success-50: #ecfdf3;
+  --color-success-100: #d1fadf;
+  --color-success-500: #12b76a;
+  --color-success-600: #039855;
+
+  /* Error */
+  --color-error-25: #fffbfa;
+  --color-error-50: #fef3f2;
+  --color-error-100: #fee4e2;
+  --color-error-500: #f04438;
+  --color-error-600: #d92d20;
+
+  /* Warning */
+  --color-warning-25: #fffcf5;
+  --color-warning-50: #fffaeb;
+  --color-warning-100: #fef0c7;
+  --color-warning-500: #f79009;
+  --color-warning-600: #dc6803;
+
+  /* TailAdmin Shadows */
+  --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+  --shadow-theme-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.1), 0px 1px 2px 0px rgba(16, 24, 40, 0.06);
+  --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
+  --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
+  --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08), 0px 8px 8px -4px rgba(16, 24, 40, 0.03);
+  --shadow-focus-ring: 0px 0px 0px 4px rgba(70, 95, 255, 0.12);
 }
 
 body {
