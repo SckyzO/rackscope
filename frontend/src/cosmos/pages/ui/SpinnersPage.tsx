@@ -19,7 +19,7 @@ export const SpinnersPage = () => (
         <div className="flex flex-wrap items-center gap-6">
           {[['h-4 w-4 border-2', 'XS'], ['h-6 w-6 border-2', 'SM'], ['h-8 w-8 border-[3px]', 'MD'], ['h-10 w-10 border-4', 'LG'], ['h-12 w-12 border-4', 'XL']].map(([cls, label]) => (
             <div key={label} className="flex flex-col items-center gap-2">
-              <div className={`animate-spin rounded-full border-gray-200 border-t-brand-500 dark:border-gray-700 ${cls}`} />
+              <div className={`animate-spin rounded-full border-gray-200 border-t-brand-500 dark:border-gray-700 dark:border-t-brand-500 ${cls}`} />
               <span className="text-[10px] text-gray-400">{label}</span>
             </div>
           ))}
@@ -28,13 +28,16 @@ export const SpinnersPage = () => (
       <SectionCard title="Spinner Colors" desc="Status and brand color variants">
         <div className="flex flex-wrap items-center gap-6">
           {[
-            ['border-t-brand-500', 'Brand'],
-            ['border-t-success-500', 'Success'],
-            ['border-t-warning-500', 'Warning'],
-            ['border-t-error-500', 'Error'],
-          ].map(([cls, label]) => (
+            { top: '#465fff', label: 'Brand' },
+            { top: '#12b76a', label: 'Success' },
+            { top: '#f79009', label: 'Warning' },
+            { top: '#f04438', label: 'Error' },
+          ].map(({ top, label }) => (
             <div key={label} className="flex flex-col items-center gap-2">
-              <div className={`h-8 w-8 animate-spin rounded-full border-[3px] border-gray-200 dark:border-gray-700 ${cls}`} />
+              <div
+                className="h-8 w-8 animate-spin rounded-full border-[3px]"
+                style={{ borderColor: 'rgba(75,85,99,0.3)', borderTopColor: top }}
+              />
               <span className="text-[10px] text-gray-400">{label}</span>
             </div>
           ))}

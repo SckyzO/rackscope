@@ -166,6 +166,7 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
         <SectionLabel label="Pages" collapsed={collapsed} />
         <NavItem to="/cosmos/profile" icon={User} label="Profile" collapsed={collapsed} />
         <NavItem to="/cosmos/calendar" icon={CalendarDays} label="Calendar" collapsed={collapsed} />
+        <NavItem to="/cosmos/notifications" icon={Bell} label="Notifications" collapsed={collapsed} />
         <NavItem to="/cosmos/ui/avatars" icon={Users} label="Avatars" collapsed={collapsed} />
 
         <SectionLabel label="Auth" collapsed={collapsed} />

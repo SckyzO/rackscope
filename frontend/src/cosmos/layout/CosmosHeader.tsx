@@ -28,6 +28,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/cosmos/tables': 'Data Tables',
   '/cosmos/profile': 'Profile',
   '/cosmos/calendar': 'Calendar',
+  '/cosmos/notifications': 'Notifications',
   '/cosmos/auth/signin': 'Sign In',
   '/cosmos/auth/signup': 'Sign Up',
 };

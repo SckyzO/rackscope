@@ -38,6 +38,7 @@ import { SignUpPage } from './pages/auth/SignUpPage';
 // Free template pages
 import { ProfilePage } from './pages/ProfilePage';
 import { CalendarPage } from './pages/CalendarPage';
+import { NotificationsFullPage } from './pages/NotificationsFullPage';
 
 export const CosmosRouter = () => (
   <Routes>
@@ -79,6 +80,7 @@ export const CosmosRouter = () => (
       {/* Free template pages */}
       <Route path="profile" element={<ProfilePage />} />
       <Route path="calendar" element={<CalendarPage />} />
+      <Route path="notifications" element={<NotificationsFullPage />} />
 
       {/* 404 */}
       <Route path="*" element={<NotFoundPage />} />
