@@ -90,6 +90,8 @@ class TelemetryPlanner:
         seen_nodes: set[str] = set()
         seen_chassis: set[str] = set()
         seen_racks: set[str] = set()
+        # Maps virtual node key → parent instance key for state propagation
+        virtual_node_parents: Dict[str, str] = {}
 
         for check, query in queries:
             if not query:
@@ -99,52 +101,69 @@ class TelemetryPlanner:
                 continue
             for item in result.get("data", {}).get("result", []):
                 labels = item.get("metric") or {}
-                key = _extract_key(check, labels, self.config)
-                if not key:
-                    continue
+
+                if check.expand_by_label:
+                    # Virtual node: one state per (instance, label_value) pair
+                    instance = labels.get(self.config.identity_label)
+                    label_value = labels.get(check.expand_by_label)
+                    if not instance or label_value is None:
+                        continue
+                    key = f"{instance}:{check.expand_by_label}{label_value}"
+                    virtual_node_parents[key] = instance
+                    effective_scope = "node"
+                else:
+                    key = _extract_key(check, labels, self.config)
+                    if not key:
+                        continue
+                    effective_scope = check.scope
+
                 severity = _evaluate_rules(check, item.get("value"))
-                if check.scope == "node":
+
+                if effective_scope == "node":
                     seen_nodes.add(key)
                     node_states[key] = _max_severity(node_states.get(key), severity)
-                    # Store all check results
                     node_checks.setdefault(key, {})
                     current = node_checks[key].get(check.id)
                     if _max_severity(current, severity) == severity:
                         node_checks[key][check.id] = severity
-                    # Store alerts separately for WARN/CRIT
                     if severity in ("WARN", "CRIT"):
                         node_alerts.setdefault(key, {})
                         current = node_alerts[key].get(check.id)
                         if _max_severity(current, severity) == severity:
                             node_alerts[key][check.id] = severity
-                elif check.scope == "chassis":
+                elif effective_scope == "chassis":
                     seen_chassis.add(key)
                     chassis_states[key] = _max_severity(chassis_states.get(key), severity)
-                    # Store all check results
                     chassis_checks.setdefault(key, {})
                     current = chassis_checks[key].get(check.id)
                     if _max_severity(current, severity) == severity:
                         chassis_checks[key][check.id] = severity
-                    # Store alerts separately for WARN/CRIT
                     if severity in ("WARN", "CRIT"):
                         chassis_alerts.setdefault(key, {})
                         current = chassis_alerts[key].get(check.id)
                         if _max_severity(current, severity) == severity:
                             chassis_alerts[key][check.id] = severity
-                elif check.scope == "rack":
+                elif effective_scope == "rack":
                     seen_racks.add(key)
                     rack_states[key] = _max_severity(rack_states.get(key), severity)
-                    # Store all check results
                     rack_checks.setdefault(key, {})
                     current = rack_checks[key].get(check.id)
                     if _max_severity(current, severity) == severity:
                         rack_checks[key][check.id] = severity
-                    # Store alerts separately for WARN/CRIT
                     if severity in ("WARN", "CRIT"):
                         rack_alerts.setdefault(key, {})
                         current = rack_alerts[key].get(check.id)
                         if _max_severity(current, severity) == severity:
                             rack_alerts[key][check.id] = severity
+
+        # Propagate virtual node WARN/CRIT states to their parent instance
+        # so rack aggregation reflects individual unit failures
+        for vn_key, parent_instance in virtual_node_parents.items():
+            vn_state = node_states.get(vn_key)
+            if vn_state in ("WARN", "CRIT"):
+                node_states[parent_instance] = _max_severity(
+                    node_states.get(parent_instance), vn_state
+                )
 
         _apply_unknown(node_ids, seen_nodes, node_states, self.config.unknown_state)
         _apply_unknown(chassis_ids, seen_chassis, chassis_states, self.config.unknown_state)
