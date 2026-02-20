@@ -203,8 +203,16 @@ async def get_rack_state(
         for device in rack.devices:
             rack_node_ids.update(expand_device_instances(device))
 
-    # Only process nodes that belong to this rack
-    relevant_nodes = all_node_ids & rack_node_ids if rack_node_ids else all_node_ids
+    # Only process nodes that belong to this rack.
+    # Virtual nodes use the format "instance:labelvalue" — match on the base instance part.
+    if rack_node_ids:
+        relevant_nodes = set()
+        for node_id in all_node_ids:
+            base = node_id.split(":")[0] if ":" in node_id else node_id
+            if base in rack_node_ids:
+                relevant_nodes.add(node_id)
+    else:
+        relevant_nodes = all_node_ids
 
     for node_id in relevant_nodes:
         m = nodes_metrics.get(node_id, {})
