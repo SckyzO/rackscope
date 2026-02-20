@@ -60,6 +60,7 @@ import { CosmosDevicePage } from './pages/views/CosmosDevicePage';
 import { CosmosRackV1 } from './pages/views/CosmosRackV1';
 import { CosmosRackV2 } from './pages/views/CosmosRackV2';
 import { CosmosRackV3 } from './pages/views/CosmosRackV3';
+import { CosmosRackV4 } from './pages/views/CosmosRackV4';
 
 // Rackscope-specific
 import { HealthStatusPage } from './pages/rackscope/HealthStatusPage';
@@ -129,6 +130,7 @@ export const CosmosRouter = () => (
       <Route path="views/rack-v1/:rackId" element={<CosmosRackV1 />} />
       <Route path="views/rack-v2/:rackId" element={<CosmosRackV2 />} />
       <Route path="views/rack-v3/:rackId" element={<CosmosRackV3 />} />
+      <Route path="views/rack-v4/:rackId" element={<CosmosRackV4 />} />
       <Route path="views/device/:rackId/:deviceId" element={<CosmosDevicePage />} />
 
       {/* Rackscope UI Components */}

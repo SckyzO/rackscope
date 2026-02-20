@@ -35,6 +35,7 @@ import {
   Users,
   Columns,
   Rows,
+  List,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -209,6 +210,12 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
           to="/cosmos/views/rack-v3/r01-01"
           icon={Rows}
           label="V3 · Side by Side"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/views/rack-v4/r01-01"
+          icon={List}
+          label="V4 · USlot List"
           collapsed={collapsed}
         />
 

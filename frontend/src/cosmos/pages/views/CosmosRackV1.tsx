@@ -16,6 +16,7 @@ const VARIANT_LINKS = [
   { label: 'V1', path: 'rack-v1', title: 'Maximized' },
   { label: 'V2', path: 'rack-v2', title: 'Workbench' },
   { label: 'V3', path: 'rack-v3', title: 'Side by Side' },
+  { label: 'V4', path: 'rack-v4', title: 'USlot List' },
 ] as const;
 
 export const CosmosRackV1 = () => {

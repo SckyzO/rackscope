@@ -11,16 +11,20 @@
   --color-bg-base: #f9fafb;
   --color-bg-panel: #fff;
   --color-bg-elevated: #fff;
-  --color-border: #e4e7ec;
+  --color-border: #d0d5dd;
   --color-text-base: #101828;
   --color-text-primary: #101828;
   --color-text-secondary: #667085;
   --color-text-muted: #98a2b3;
   --color-accent: #465fff;
-  --color-rack-interior: #f2f4f7;
-  --color-rack-frame: #d0d5dd;
-  --color-device-surface: #fff;
-  --color-node-surface: #f9fafb;
+
+  /* Rack visualization — light mode: enough contrast to see rack structure */
+  --color-rack-interior: #c8d0de;
+  --color-rack-frame: #8896ab;
+  --color-device-surface: #eef1f7;
+  --color-node-surface: #dde3ee;
+  --color-empty-slot: #b0bccf;
+  --color-accent-primary: #465fff;
 }
 
 .cosmos-root.dark {
@@ -37,10 +41,14 @@
   --color-text-secondary: #98a2b3;
   --color-text-muted: #667085;
   --color-accent: #465fff;
-  --color-rack-interior: #1d2939;
-  --color-rack-frame: #344054;
-  --color-device-surface: #1d2939;
-  --color-node-surface: #101828;
+
+  /* Rack visualization — dark mode: proper dark rack aesthetic */
+  --color-rack-interior: #0d1420;
+  --color-rack-frame: #1e3a5f;
+  --color-device-surface: #1a2535;
+  --color-node-surface: #111827;
+  --color-empty-slot: #0d1420;
+  --color-accent-primary: #465fff;
 }
 
 .cosmos-scrollbar::-webkit-scrollbar {
