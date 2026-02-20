@@ -7,7 +7,6 @@ import {
   LineChart,
   HeartPulse,
   Globe,
-  Building2,
   LayoutGrid,
   Tag,
   AlertTriangle,
@@ -190,7 +189,6 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
 
         <SectionLabel label="Monitoring" collapsed={collapsed} />
         <NavItem to="/cosmos/views/worldmap" icon={Globe} label="World Map" collapsed={collapsed} />
-        <NavItem to="/cosmos/views/room" icon={Building2} label="Rooms" collapsed={collapsed} />
 
         <SectionLabel label="Rackscope" collapsed={collapsed} />
         <NavItem

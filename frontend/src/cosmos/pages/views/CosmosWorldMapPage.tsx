@@ -103,14 +103,14 @@ export const CosmosWorldMapPage = () => {
                       <div className="mt-2 space-y-1">
                         <div className="text-xs font-semibold text-gray-600">Rooms:</div>
                         {site.rooms.map((room) => (
-                          <a
+                          <Link
                             key={room.id}
-                            href={`/cosmos/views/room/${room.id}`}
+                            to={`/cosmos/views/room/${room.id}`}
                             className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
                           >
                             <ExternalLink className="h-3 w-3" />
                             {room.name}
-                          </a>
+                          </Link>
                         ))}
                       </div>
                     )}
