@@ -315,7 +315,6 @@ export const CosmosRackV2 = () => {
             sideComponents={sideInfra}
             allowInfraOverlap={face === 'rear'}
             pduMetrics={health?.infra_metrics?.pdu}
-            fullWidth
             onDeviceClick={handleDeviceClick}
           />
         </div>

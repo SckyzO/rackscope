@@ -197,7 +197,6 @@ export const CosmosRackV3 = () => {
                 sideComponents={sideInfra}
                 allowInfraOverlap={isRear}
                 pduMetrics={health?.infra_metrics?.pdu}
-                fullWidth
                 onDeviceClick={(device) => navigate(`/cosmos/views/device/${rack.id}/${device.id}`)}
               />
             </div>

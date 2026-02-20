@@ -332,12 +332,7 @@ export const RackElevation = ({
                   {isDeviceStart && template && (
                     <div
                       className="absolute right-0.5 bottom-0 left-0.5 z-20"
-                      style={{
-                        height:
-                          template.u_height === 1
-                            ? '100%'
-                            : `calc(${template.u_height} * 100% + ${template.u_height - 1}px)`,
-                      }}
+                      style={{ height: `calc(${template.u_height} * 100%)` }}
                     >
                       <DeviceChassis
                         device={device}
@@ -357,12 +352,7 @@ export const RackElevation = ({
                       className={`absolute right-0.5 bottom-0 left-0.5 z-30 ${
                         infraStart.hasCollision ? 'ring-2 ring-[var(--color-status-crit)]/70' : ''
                       }`}
-                      style={{
-                        height:
-                          infraStart.height === 1
-                            ? '100%'
-                            : `calc(${infraStart.height} * 100% + ${infraStart.height - 1}px)`,
-                      }}
+                      style={{ height: `calc(${infraStart.height} * 100%)` }}
                     >
                       <InfraOverlay
                         component={infraStart.component}
