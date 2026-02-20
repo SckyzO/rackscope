@@ -1,9 +1,9 @@
-@import 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap';
+@import 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap';
 @import 'leaflet/dist/leaflet.css';
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: 'Space Grotesk', system-ui, sans-serif;
+  --font-sans: 'Outfit', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   /* Status Colors */
@@ -11,6 +11,10 @@
   --color-status-warn: #f59e0b;
   --color-status-crit: #ef4444;
   --color-status-unknown: #6b7280;
+
+  /* Shadow Tokens */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 10px 25px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.2);
 
   /* Theme Variables */
   --color-rack-dark: var(--color-bg-base);

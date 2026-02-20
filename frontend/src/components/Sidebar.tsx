@@ -51,6 +51,12 @@ const getIconComponent = (iconName: string): ComponentType<{ className?: string 
   return icons[iconName] || Activity;
 };
 
+const SidebarSectionLabel = ({ label }: { label: string }) => (
+  <div className="mt-4 mb-1 px-3 text-[10px] font-semibold tracking-widest text-gray-500/70 uppercase">
+    {label}
+  </div>
+);
+
 export const Sidebar = ({
   collapsed,
   searchQuery = '',
@@ -284,20 +290,21 @@ export const Sidebar = ({
             <Activity className="h-5 w-5 text-[var(--color-accent)]" />
           </div>
           <div>
-            <h1 className="text-lg font-black tracking-tight text-[var(--color-text-base)] uppercase">
+            <h1 className="text-base font-bold tracking-tight text-[var(--color-text-base)]">
               {appName}
             </h1>
-            <p className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
+            <p className="text-[11px] text-gray-500">
               {appDescription || 'Datacenter Overview'}
             </p>
           </div>
         </div>
       </div>
 
-      <nav className="custom-scrollbar flex-1 space-y-1.5 overflow-y-auto px-3 py-4">
+      <nav className="custom-scrollbar flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
+        <SidebarSectionLabel label="Main" />
         <SidebarLink to="/" icon={LayoutDashboard} label="Overview" />
-        <div className="my-2 h-px bg-[var(--color-border)]/40"></div>
 
+        <SidebarSectionLabel label="Infrastructure" />
         <NavToggle
           icon={Globe}
           label="Topology"
@@ -320,9 +327,9 @@ export const Sidebar = ({
               ))}
           </div>
         )}
-        <div className="my-2 h-px bg-[var(--color-border)]/40"></div>
 
         {/* Plugin Sections (dynamic) */}
+        {pluginSections.length > 0 && <SidebarSectionLabel label="Workload" />}
         {pluginSections.map((section) => (
           <div key={section.id}>
             <NavToggle
@@ -332,7 +339,7 @@ export const Sidebar = ({
               onToggle={() => toggleSection(section.id)}
             />
             {expandedSections[section.id] && (
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {section.items.map((item) => (
                   <SidebarLink
                     key={item.id}
@@ -344,10 +351,10 @@ export const Sidebar = ({
                 ))}
               </div>
             )}
-            <div className="my-2 h-px bg-[var(--color-border)]/40"></div>
           </div>
         ))}
 
+        <SidebarSectionLabel label="Tools" />
         <NavToggle
           icon={Folder}
           label="Catalog"
@@ -366,7 +373,6 @@ export const Sidebar = ({
             <SidebarLink to="/checks/library" icon={BookOpen} label="Checks" depth={1} />
           </div>
         )}
-        <div className="my-2 h-px bg-[var(--color-border)]/40"></div>
 
         <NavToggle
           icon={Component}
@@ -392,14 +398,14 @@ export const Sidebar = ({
             <SidebarLink to="/checks/library" icon={BookOpen} label="Checks Editor" depth={1} />
           </div>
         )}
-        <div className="my-2 h-px bg-[var(--color-border)]/40"></div>
 
+        <SidebarSectionLabel label="System" />
         <SidebarLink to="/settings" icon={Settings} label="Settings" />
       </nav>
 
       {/* Footer Status */}
       <div className="relative z-10 border-t border-[var(--color-border)] bg-[var(--color-bg-panel)]/70 p-4 backdrop-blur-sm">
-        <div className="space-y-1 px-3 pb-3 font-mono text-[9px] tracking-[0.2em] text-gray-500 uppercase">
+        <div className="space-y-1 px-3 pb-3 text-[11px] text-gray-500">
           <div className="flex items-center justify-between">
             <span>Next Prometheus scrape</span>
             <span className="text-gray-400">
@@ -442,7 +448,7 @@ const SidebarLink = ({
   return (
     <Link
       to={to}
-      className={`flex items-center gap-2.5 py-2 pr-3 ${padding} rounded-lg text-[12px] font-semibold transition-all duration-200 ${
+      className={`flex items-center gap-2.5 py-2 pr-3 ${padding} rounded-lg text-[13px] font-medium transition-all duration-200 ${
         isActive
           ? 'border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/12 text-[var(--color-accent)]'
           : 'text-gray-500 hover:bg-white/5 hover:text-[var(--color-text-base)]'
@@ -473,7 +479,7 @@ const NavToggle = ({
   return (
     <button
       onClick={disabled ? undefined : onToggle}
-      className={`flex w-full items-center justify-between py-2 pr-3 ${padding} rounded-lg text-[12px] font-semibold transition-all duration-200 ${
+      className={`flex w-full items-center justify-between py-2 pr-3 ${padding} rounded-lg text-[13px] font-medium transition-all duration-200 ${
         disabled
           ? 'cursor-default text-gray-600'
           : 'text-gray-500 hover:bg-white/5 hover:text-[var(--color-text-base)]'
@@ -546,7 +552,7 @@ const SiteTreeItem = ({
           onClick={() => {
             if (!forceExpanded) setIsExpanded(!isExpanded);
           }}
-          className="flex flex-1 items-center gap-2 rounded-lg py-2 pr-3 pl-3 text-[12px] font-semibold text-gray-500 transition-all hover:bg-white/5 hover:text-[var(--color-text-base)]"
+          className="flex flex-1 items-center gap-2 rounded-lg py-2 pr-3 pl-3 text-[13px] font-medium text-gray-500 transition-all hover:bg-white/5 hover:text-[var(--color-text-base)]"
         >
           <Globe className="h-4 w-4 opacity-50" />
           <span className="truncate">{site.name}</span>
@@ -593,7 +599,7 @@ const RoomTreeItem = ({
       <div className="group flex items-center gap-1">
         <Link
           to={`/room/${room.id}`}
-          className={`flex flex-1 items-center gap-2 rounded-lg py-2 pr-3 pl-3 text-[12px] font-semibold transition-all ${
+          className={`flex flex-1 items-center gap-2 rounded-lg py-2 pr-3 pl-3 text-[13px] font-medium transition-all ${
             isActive
               ? 'border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/12 text-[var(--color-accent)]'
               : 'text-gray-500 hover:bg-white/5 hover:text-[var(--color-text-base)]'
