@@ -1,4 +1,12 @@
-const SectionCard = ({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) => (
+const SectionCard = ({
+  title,
+  desc,
+  children,
+}: {
+  title: string;
+  desc?: string;
+  children: React.ReactNode;
+}) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
     <div className="mb-5">
       <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
@@ -14,16 +22,24 @@ export const BadgesPage = () => (
   <div className="space-y-6">
     <div>
       <h2 className="text-xl font-bold text-gray-900 dark:text-white">Badges</h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Small count and labeling components</p>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Small count and labeling components
+      </p>
     </div>
     <div className="grid gap-6 lg:grid-cols-2">
       <SectionCard title="Light Badges" desc="Subtle background with colored text">
         <div className="flex flex-wrap gap-2">
           <span className={`${base} bg-brand-50 text-brand-500 dark:bg-brand-500/15`}>New</span>
-          <span className={`${base} bg-success-50 text-success-500 dark:bg-success-500/15`}>Active</span>
-          <span className={`${base} bg-warning-50 text-warning-500 dark:bg-warning-500/15`}>Pending</span>
+          <span className={`${base} bg-success-50 text-success-500 dark:bg-success-500/15`}>
+            Active
+          </span>
+          <span className={`${base} bg-warning-50 text-warning-500 dark:bg-warning-500/15`}>
+            Pending
+          </span>
           <span className={`${base} bg-error-50 text-error-500 dark:bg-error-500/15`}>Error</span>
-          <span className={`${base} bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300`}>Default</span>
+          <span className={`${base} bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300`}>
+            Default
+          </span>
         </div>
       </SectionCard>
       <SectionCard title="Solid Badges" desc="Filled background">
@@ -38,10 +54,26 @@ export const BadgesPage = () => (
       <SectionCard title="Light with Left Icon" desc="Badge with indicator dot before text">
         <div className="flex flex-wrap gap-2">
           {[
-            { label: 'Online', dot: 'bg-success-500', cls: 'bg-success-50 text-success-500 dark:bg-success-500/15' },
-            { label: 'Busy', dot: 'bg-warning-500', cls: 'bg-warning-50 text-warning-500 dark:bg-warning-500/15' },
-            { label: 'Offline', dot: 'bg-gray-400', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300' },
-            { label: 'Critical', dot: 'bg-error-500', cls: 'bg-error-50 text-error-500 dark:bg-error-500/15' },
+            {
+              label: 'Online',
+              dot: 'bg-success-500',
+              cls: 'bg-success-50 text-success-500 dark:bg-success-500/15',
+            },
+            {
+              label: 'Busy',
+              dot: 'bg-warning-500',
+              cls: 'bg-warning-50 text-warning-500 dark:bg-warning-500/15',
+            },
+            {
+              label: 'Offline',
+              dot: 'bg-gray-400',
+              cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+            },
+            {
+              label: 'Critical',
+              dot: 'bg-error-500',
+              cls: 'bg-error-50 text-error-500 dark:bg-error-500/15',
+            },
           ].map((b) => (
             <span key={b.label} className={`${base} ${b.cls}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${b.dot}`} />
@@ -67,17 +99,31 @@ export const BadgesPage = () => (
       </SectionCard>
       <SectionCard title="Rounded vs Pill" desc="Different border radius styles">
         <div className="flex flex-wrap gap-2">
-          <span className="inline-flex items-center rounded-md bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-500 dark:bg-brand-500/15">Rounded</span>
-          <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-500 dark:bg-brand-500/15">Pill</span>
-          <span className="inline-flex items-center rounded bg-brand-500 px-2.5 py-1 text-xs font-medium text-white">Square</span>
+          <span className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium">
+            Rounded
+          </span>
+          <span className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium">
+            Pill
+          </span>
+          <span className="bg-brand-500 inline-flex items-center rounded px-2.5 py-1 text-xs font-medium text-white">
+            Square
+          </span>
         </div>
       </SectionCard>
       <SectionCard title="Sizes" desc="Small, medium, and large badges">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-medium text-brand-500 dark:bg-brand-500/15">XS</span>
-          <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-500 dark:bg-brand-500/15">SM</span>
-          <span className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-500 dark:bg-brand-500/15">MD</span>
-          <span className="inline-flex items-center rounded-full bg-brand-50 px-4 py-2 text-base font-medium text-brand-500 dark:bg-brand-500/15">LG</span>
+          <span className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium">
+            XS
+          </span>
+          <span className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium">
+            SM
+          </span>
+          <span className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium">
+            MD
+          </span>
+          <span className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 inline-flex items-center rounded-full px-4 py-2 text-base font-medium">
+            LG
+          </span>
         </div>
       </SectionCard>
     </div>

@@ -45,7 +45,14 @@ interface NavItemProps {
   depth?: boolean;
 }
 
-const NavItem = ({ to, icon: Icon, label, collapsed, end = false, depth = false }: NavItemProps) => (
+const NavItem = ({
+  to,
+  icon: Icon,
+  label,
+  collapsed,
+  end = false,
+  depth = false,
+}: NavItemProps) => (
   <NavLink
     to={to}
     end={end}
@@ -81,50 +88,51 @@ interface CosmosSidebarProps {
 export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProps) => {
   const [uiOpen, setUiOpen] = useState(true);
 
-  const uiItems: Array<{ to: string; icon: ComponentType<{ className?: string }>; label: string }> = [
-    { to: '/cosmos/ui/buttons-group', icon: LayoutGrid, label: 'Buttons Group' },
-    { to: '/cosmos/ui/badges', icon: Tag, label: 'Badges' },
-    { to: '/cosmos/ui/alerts', icon: AlertTriangle, label: 'Alerts' },
-    { to: '/cosmos/ui/cards', icon: CreditCard, label: 'Cards' },
-    { to: '/cosmos/ui/carousel', icon: ImageIcon, label: 'Carousel' },
-    { to: '/cosmos/ui/dropdowns', icon: ChevronDown, label: 'Dropdowns' },
-    { to: '/cosmos/ui/links', icon: LinkIcon, label: 'Links' },
-    { to: '/cosmos/ui/list', icon: List, label: 'List' },
-    { to: '/cosmos/ui/modals', icon: MessageSquare, label: 'Modals' },
-    { to: '/cosmos/ui/notifications', icon: Bell, label: 'Notifications' },
-    { to: '/cosmos/ui/pagination', icon: MoreHorizontal, label: 'Pagination' },
-    { to: '/cosmos/ui/popovers', icon: MessageSquare, label: 'Popovers' },
-    { to: '/cosmos/ui/progress-bar', icon: Gauge, label: 'Progress Bar' },
-    { to: '/cosmos/ui/ribbons', icon: Award, label: 'Ribbons' },
-    { to: '/cosmos/ui/spinners', icon: Loader2, label: 'Spinners' },
-    { to: '/cosmos/ui/tabs', icon: PanelTop, label: 'Tabs' },
-    { to: '/cosmos/ui/tooltips', icon: Info, label: 'Tooltips' },
-    { to: '/cosmos/ui/form-elements', icon: FormInput, label: 'Form Elements' },
-    { to: '/cosmos/ui/avatars', icon: Users, label: 'Avatars' },
-    // New generic
-    { to: '/cosmos/ui/accordion', icon: ChevronDown, label: 'Accordion' },
-    { to: '/cosmos/ui/stepper', icon: MoreHorizontal, label: 'Stepper' },
-    { to: '/cosmos/ui/timeline', icon: Activity, label: 'Timeline' },
-    { to: '/cosmos/ui/skeleton', icon: Loader2, label: 'Skeleton' },
-    { to: '/cosmos/ui/empty-state', icon: Info, label: 'Empty State' },
-    { to: '/cosmos/ui/toast', icon: Bell, label: 'Toast' },
-    { to: '/cosmos/ui/drawer', icon: PanelTop, label: 'Drawer' },
-    { to: '/cosmos/ui/stats-cards', icon: BarChart2, label: 'Stats Cards' },
-    { to: '/cosmos/ui/tag-input', icon: Tag, label: 'Tag Input' },
-    { to: '/cosmos/ui/range-slider', icon: Gauge, label: 'Range Slider' },
-    { to: '/cosmos/ui/otp-input', icon: FormInput, label: 'OTP Input' },
-  ];
+  const uiItems: Array<{ to: string; icon: ComponentType<{ className?: string }>; label: string }> =
+    [
+      { to: '/cosmos/ui/buttons-group', icon: LayoutGrid, label: 'Buttons Group' },
+      { to: '/cosmos/ui/badges', icon: Tag, label: 'Badges' },
+      { to: '/cosmos/ui/alerts', icon: AlertTriangle, label: 'Alerts' },
+      { to: '/cosmos/ui/cards', icon: CreditCard, label: 'Cards' },
+      { to: '/cosmos/ui/carousel', icon: ImageIcon, label: 'Carousel' },
+      { to: '/cosmos/ui/dropdowns', icon: ChevronDown, label: 'Dropdowns' },
+      { to: '/cosmos/ui/links', icon: LinkIcon, label: 'Links' },
+      { to: '/cosmos/ui/list', icon: List, label: 'List' },
+      { to: '/cosmos/ui/modals', icon: MessageSquare, label: 'Modals' },
+      { to: '/cosmos/ui/notifications', icon: Bell, label: 'Notifications' },
+      { to: '/cosmos/ui/pagination', icon: MoreHorizontal, label: 'Pagination' },
+      { to: '/cosmos/ui/popovers', icon: MessageSquare, label: 'Popovers' },
+      { to: '/cosmos/ui/progress-bar', icon: Gauge, label: 'Progress Bar' },
+      { to: '/cosmos/ui/ribbons', icon: Award, label: 'Ribbons' },
+      { to: '/cosmos/ui/spinners', icon: Loader2, label: 'Spinners' },
+      { to: '/cosmos/ui/tabs', icon: PanelTop, label: 'Tabs' },
+      { to: '/cosmos/ui/tooltips', icon: Info, label: 'Tooltips' },
+      { to: '/cosmos/ui/form-elements', icon: FormInput, label: 'Form Elements' },
+      { to: '/cosmos/ui/avatars', icon: Users, label: 'Avatars' },
+      // New generic
+      { to: '/cosmos/ui/accordion', icon: ChevronDown, label: 'Accordion' },
+      { to: '/cosmos/ui/stepper', icon: MoreHorizontal, label: 'Stepper' },
+      { to: '/cosmos/ui/timeline', icon: Activity, label: 'Timeline' },
+      { to: '/cosmos/ui/skeleton', icon: Loader2, label: 'Skeleton' },
+      { to: '/cosmos/ui/empty-state', icon: Info, label: 'Empty State' },
+      { to: '/cosmos/ui/toast', icon: Bell, label: 'Toast' },
+      { to: '/cosmos/ui/drawer', icon: PanelTop, label: 'Drawer' },
+      { to: '/cosmos/ui/stats-cards', icon: BarChart2, label: 'Stats Cards' },
+      { to: '/cosmos/ui/tag-input', icon: Tag, label: 'Tag Input' },
+      { to: '/cosmos/ui/range-slider', icon: Gauge, label: 'Range Slider' },
+      { to: '/cosmos/ui/otp-input', icon: FormInput, label: 'OTP Input' },
+    ];
 
   return (
     <aside
-      className={`cosmos-scrollbar flex flex-col overflow-y-auto border-r border-gray-200 bg-white transition-all duration-300 dark:border-gray-800 dark:bg-gray-dark ${
+      className={`cosmos-scrollbar dark:bg-gray-dark flex flex-col overflow-y-auto border-r border-gray-200 bg-white transition-all duration-300 dark:border-gray-800 ${
         collapsed ? 'w-[90px]' : 'w-[290px]'
       }`}
     >
       {/* Logo + collapse toggle */}
       <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-white">
+          <div className="bg-brand-500 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white">
             <Activity className="h-5 w-5" />
           </div>
           {!collapsed && (
@@ -156,7 +164,9 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
             >
               <LayoutGrid className="h-5 w-5 shrink-0" />
               <span className="flex-1 text-left">Components</span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${uiOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${uiOpen ? 'rotate-180' : ''}`}
+              />
             </button>
             {uiOpen && (
               <div className="mt-1 ml-3 space-y-0.5 border-l-2 border-gray-200 pl-3 dark:border-gray-800">
@@ -167,7 +177,12 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
             )}
           </>
         ) : (
-          <NavItem to="/cosmos/ui/buttons-group" icon={LayoutGrid} label="UI" collapsed={collapsed} />
+          <NavItem
+            to="/cosmos/ui/buttons-group"
+            icon={LayoutGrid}
+            label="UI"
+            collapsed={collapsed}
+          />
         )}
 
         <SectionLabel label="Navigation" collapsed={collapsed} />
@@ -178,10 +193,30 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
         <NavItem to="/cosmos/views/room" icon={Building2} label="Rooms" collapsed={collapsed} />
 
         <SectionLabel label="Rackscope" collapsed={collapsed} />
-        <NavItem to="/cosmos/rackscope/health" icon={HeartPulse} label="Health Status" collapsed={collapsed} />
-        <NavItem to="/cosmos/rackscope/alerts" icon={AlertTriangle} label="Alert Feed" collapsed={collapsed} />
-        <NavItem to="/cosmos/rackscope/metrics" icon={BarChart2} label="Metrics" collapsed={collapsed} />
-        <NavItem to="/cosmos/rackscope/infra-nav" icon={Home} label="Infra Navigation" collapsed={collapsed} />
+        <NavItem
+          to="/cosmos/rackscope/health"
+          icon={HeartPulse}
+          label="Health Status"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/rackscope/alerts"
+          icon={AlertTriangle}
+          label="Alert Feed"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/rackscope/metrics"
+          icon={BarChart2}
+          label="Metrics"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/rackscope/infra-nav"
+          icon={Home}
+          label="Infra Navigation"
+          collapsed={collapsed}
+        />
         <NavItem to="/cosmos/rackscope/slurm" icon={Activity} label="Slurm" collapsed={collapsed} />
 
         <SectionLabel label="Charts" collapsed={collapsed} />
@@ -193,7 +228,12 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
         <SectionLabel label="Pages" collapsed={collapsed} />
         <NavItem to="/cosmos/profile" icon={User} label="Profile" collapsed={collapsed} />
         <NavItem to="/cosmos/calendar" icon={CalendarDays} label="Calendar" collapsed={collapsed} />
-        <NavItem to="/cosmos/notifications" icon={Bell} label="Notifications" collapsed={collapsed} />
+        <NavItem
+          to="/cosmos/notifications"
+          icon={Bell}
+          label="Notifications"
+          collapsed={collapsed}
+        />
         <NavItem to="/cosmos/ui/avatars" icon={Users} label="Avatars" collapsed={collapsed} />
 
         <SectionLabel label="Auth" collapsed={collapsed} />
@@ -206,7 +246,7 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
         <div className="shrink-0 border-t border-gray-200 px-5 py-3 dark:border-gray-800">
           <a
             href="/"
-            className="text-xs text-gray-400 transition-colors hover:text-brand-500 dark:text-gray-500 dark:hover:text-brand-400"
+            className="hover:text-brand-500 dark:hover:text-brand-400 text-xs text-gray-400 transition-colors dark:text-gray-500"
           >
             ← Back to Rackscope
           </a>

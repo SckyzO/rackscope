@@ -25,7 +25,16 @@ import type {
 } from '../../types';
 
 // Register Chart.js components
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface DashboardOverviewProps {
   searchQuery?: string;
@@ -72,14 +81,15 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [roomsData, stats, sitesData, alertsData, promData, telemetryData] = await Promise.all([
-          api.getRooms(),
-          api.getGlobalStats(),
-          api.getSites(),
-          api.getActiveAlerts(),
-          api.getPrometheusStats(),
-          api.getTelemetryStats(),
-        ]);
+        const [roomsData, stats, sitesData, alertsData, promData, telemetryData] =
+          await Promise.all([
+            api.getRooms(),
+            api.getGlobalStats(),
+            api.getSites(),
+            api.getActiveAlerts(),
+            api.getPrometheusStats(),
+            api.getTelemetryStats(),
+          ]);
         const safeRooms = Array.isArray(roomsData) ? roomsData : [];
         const safeSites = Array.isArray(sitesData) ? sitesData : [];
         setRooms(safeRooms);
@@ -319,11 +329,15 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               {currentSite && siteAlertSummary && (
                 <>
                   <span className="h-1 w-1 rounded-full bg-gray-600"></span>
-                  <span>{siteAlertSummary.checks} checks · {siteAlertSummary.devices} devices</span>
+                  <span>
+                    {siteAlertSummary.checks} checks · {siteAlertSummary.devices} devices
+                  </span>
                 </>
               )}
               <span className="h-1 w-1 rounded-full bg-gray-600"></span>
-              <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              <span>
+                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
             </div>
           </div>
         </div>
@@ -331,18 +345,19 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         {/* Status Cards Grid */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* Global Status */}
-          <div className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 transition-all hover:-translate-y-1" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <div
+            className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 transition-all hover:-translate-y-1"
+            style={{ boxShadow: 'var(--shadow-card)' }}
+          >
             <div className="relative z-10">
               <div className="mb-3 flex items-center justify-between">
-                <div className="text-sm font-medium text-gray-400">
-                  Global Status
-                </div>
+                <div className="text-sm font-medium text-gray-400">Global Status</div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-accent)]/10">
                   <Activity className="h-5 w-5 text-[var(--color-accent)]" />
                 </div>
               </div>
               <div
-                className={`font-mono text-3xl font-black tabular-nums tracking-tight ${
+                className={`font-mono text-3xl font-black tracking-tight tabular-nums ${
                   globalStats?.status === 'CRIT'
                     ? 'text-status-crit'
                     : globalStats?.status === 'WARN'
@@ -369,21 +384,22 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
 
           {/* Active Alerts */}
-          <div className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 transition-all hover:-translate-y-1" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <div
+            className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 transition-all hover:-translate-y-1"
+            style={{ boxShadow: 'var(--shadow-card)' }}
+          >
             <div className="relative z-10">
               <div className="mb-3 flex items-center justify-between">
-                <div className="text-sm font-medium text-gray-400">
-                  Active Alerts
-                </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-warn/10">
-                  <AlertTriangle className="h-5 w-5 text-status-warn" />
+                <div className="text-sm font-medium text-gray-400">Active Alerts</div>
+                <div className="bg-status-warn/10 flex h-10 w-10 items-center justify-center rounded-xl">
+                  <AlertTriangle className="text-status-warn h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-3">
-                <div className="font-mono text-3xl font-black tabular-nums text-[var(--color-text-primary)]">
+                <div className="font-mono text-3xl font-black text-[var(--color-text-primary)] tabular-nums">
                   {globalStats?.active_alerts || 0}
                 </div>
-                <div className="font-mono text-[11px] tabular-nums tracking-[0.2em] text-gray-500 uppercase">
+                <div className="font-mono text-[11px] tracking-[0.2em] text-gray-500 uppercase tabular-nums">
                   <span className="text-status-crit">{globalStats?.crit_count || 0}</span> CRIT /{' '}
                   <span className="text-status-warn">{globalStats?.warn_count || 0}</span> WARN
                 </div>
@@ -393,21 +409,22 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
 
           {/* Managed Racks */}
-          <div className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 transition-all hover:-translate-y-1" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <div
+            className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 transition-all hover:-translate-y-1"
+            style={{ boxShadow: 'var(--shadow-card)' }}
+          >
             <div className="relative z-10">
               <div className="mb-3 flex items-center justify-between">
-                <div className="text-sm font-medium text-gray-400">
-                  Managed Racks
-                </div>
+                <div className="text-sm font-medium text-gray-400">Managed Racks</div>
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-accent)]/10">
                   <MapIcon className="h-5 w-5 text-[var(--color-accent)]" />
                 </div>
               </div>
               <div className="flex items-baseline gap-3">
-                <div className="font-mono text-3xl font-black tabular-nums text-[var(--color-text-primary)]">
+                <div className="font-mono text-3xl font-black text-[var(--color-text-primary)] tabular-nums">
                   {globalStats?.total_racks || 0}
                 </div>
-                <div className="font-mono text-[11px] tabular-nums tracking-[0.2em] text-gray-500 uppercase">
+                <div className="font-mono text-[11px] tracking-[0.2em] text-gray-500 uppercase tabular-nums">
                   {sites.length} sites / {globalStats?.total_rooms || 0} rooms
                 </div>
               </div>
@@ -416,23 +433,26 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </div>
 
           {/* Prometheus Performance */}
-          <div className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 transition-all hover:-translate-y-1" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <div
+            className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6 transition-all hover:-translate-y-1"
+            style={{ boxShadow: 'var(--shadow-card)' }}
+          >
             <div className="relative z-10">
               <div className="mb-3 flex items-center justify-between">
-                <div className="text-sm font-medium text-gray-400">
-                  Prometheus
-                </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-status-ok/10">
-                  <Database className="h-5 w-5 text-status-ok" />
+                <div className="text-sm font-medium text-gray-400">Prometheus</div>
+                <div className="bg-status-ok/10 flex h-10 w-10 items-center justify-center rounded-xl">
+                  <Database className="text-status-ok h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
-                <div className="font-mono text-3xl font-black tabular-nums text-[var(--color-text-primary)]">
+                <div className="font-mono text-3xl font-black text-[var(--color-text-primary)] tabular-nums">
                   {promStats?.avg_ms ? Math.round(promStats.avg_ms) : '--'}
                 </div>
-                <div className="font-mono text-[13px] tracking-[0.2em] text-gray-500 uppercase">ms</div>
+                <div className="font-mono text-[13px] tracking-[0.2em] text-gray-500 uppercase">
+                  ms
+                </div>
               </div>
-              <div className="mt-2 font-mono text-[10px] tabular-nums tracking-[0.2em] text-gray-500 uppercase">
+              <div className="mt-2 font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase tabular-nums">
                 avg query time
               </div>
             </div>
@@ -469,13 +489,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               <div className="text-[11px] font-semibold tracking-widest text-gray-500 uppercase">
                 Infrastructure
               </div>
-              <h2 className="mt-0.5 text-lg font-semibold text-gray-200">
-                Rooms
-              </h2>
+              <h2 className="mt-0.5 text-lg font-semibold text-gray-200">Rooms</h2>
             </div>
-            <div className="text-xs font-medium text-gray-500">
-              {roomSummaries.length} rooms
-            </div>
+            <div className="text-xs font-medium text-gray-500">{roomSummaries.length} rooms</div>
           </div>
 
           <div className="space-y-2">
@@ -489,11 +505,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   <span className="text-sm font-bold text-gray-200 transition-colors group-hover:text-[var(--color-accent-primary)]">
                     {room.name}
                   </span>
-                  <span className="font-mono text-[10px] tabular-nums tracking-widest text-gray-500 uppercase">
+                  <span className="font-mono text-[10px] tracking-widest text-gray-500 uppercase tabular-nums">
                     {totals.total} racks
                   </span>
                 </div>
-                <div className="flex items-center gap-4 font-mono text-[11px] tabular-nums uppercase">
+                <div className="flex items-center gap-4 font-mono text-[11px] uppercase tabular-nums">
                   <span className="text-status-crit">{totals.crit}</span>
                   <span className="text-status-warn">{totals.warn}</span>
                   <span className="text-status-ok">{totals.ok}</span>
@@ -514,13 +530,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 <div className="text-[11px] font-semibold tracking-widest text-gray-500 uppercase">
                   Monitoring
                 </div>
-                <h2 className="mt-0.5 text-lg font-semibold text-gray-200">
-                  Active Alerts
-                </h2>
+                <h2 className="mt-0.5 text-lg font-semibold text-gray-200">Active Alerts</h2>
               </div>
-              <div className="text-xs font-medium text-gray-500">
-                {activeAlerts.length} total
-              </div>
+              <div className="text-xs font-medium text-gray-500">{activeAlerts.length} total</div>
             </div>
 
             {deviceAlerts.length === 0 ? (
@@ -536,7 +548,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                     className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/20 px-4 py-3 transition-all hover:border-[var(--color-accent-primary)]/30 hover:bg-[var(--color-accent-primary)]/5"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-bold text-gray-200">{item.device_name}</div>
+                      <div className="truncate text-sm font-bold text-gray-200">
+                        {item.device_name}
+                      </div>
                       <div className="truncate font-mono text-[10px] tracking-widest text-gray-500 uppercase">
                         {item.site_name} / {item.room_name} / {item.rack_name}
                       </div>
@@ -563,9 +577,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 <div className="text-[11px] font-semibold tracking-widest text-gray-500 uppercase">
                   Telemetry
                 </div>
-                <h2 className="mt-0.5 text-lg font-semibold text-gray-200">
-                  Prometheus
-                </h2>
+                <h2 className="mt-0.5 text-lg font-semibold text-gray-200">Prometheus</h2>
               </div>
               <div className="text-xs font-medium text-gray-500">
                 {telemetryStats?.in_flight ?? 0} in flight
@@ -580,34 +592,26 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                <div className="text-xs font-medium text-gray-500 uppercase">
-                  Queries
-                </div>
-                <div className="mt-2 font-mono text-xl font-black tabular-nums text-[var(--color-text-primary)]">
+                <div className="text-xs font-medium text-gray-500 uppercase">Queries</div>
+                <div className="mt-2 font-mono text-xl font-black text-[var(--color-text-primary)] tabular-nums">
                   {telemetryStats?.query_count ?? 0}
                 </div>
               </div>
               <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                <div className="text-xs font-medium text-gray-500 uppercase">
-                  Cache Hits
-                </div>
-                <div className="mt-2 font-mono text-xl font-black tabular-nums text-status-ok">
+                <div className="text-xs font-medium text-gray-500 uppercase">Cache Hits</div>
+                <div className="text-status-ok mt-2 font-mono text-xl font-black tabular-nums">
                   {telemetryStats?.cache_hits ?? 0}
                 </div>
               </div>
               <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                <div className="text-xs font-medium text-gray-500 uppercase">
-                  Cache Misses
-                </div>
-                <div className="mt-2 font-mono text-xl font-black tabular-nums text-status-warn">
+                <div className="text-xs font-medium text-gray-500 uppercase">Cache Misses</div>
+                <div className="text-status-warn mt-2 font-mono text-xl font-black tabular-nums">
                   {telemetryStats?.cache_misses ?? 0}
                 </div>
               </div>
               <div className="rounded-xl border border-white/5 bg-black/20 p-3">
-                <div className="text-xs font-medium text-gray-500 uppercase">
-                  Last Batch
-                </div>
-                <div className="mt-2 font-mono text-[11px] tabular-nums text-gray-300">
+                <div className="text-xs font-medium text-gray-500 uppercase">Last Batch</div>
+                <div className="mt-2 font-mono text-[11px] text-gray-300 tabular-nums">
                   {telemetryStats?.last_batch
                     ? `${telemetryStats.last_batch.total_ids} ids / ${telemetryStats.last_batch.query_count} q`
                     : '--'}

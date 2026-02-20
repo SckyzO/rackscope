@@ -21,7 +21,10 @@ export const FormField: React.FC<FormFieldProps> = ({
 }) => {
   return (
     <div className={`space-y-2 ${className}`}>
-      <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+      <label
+        className="block text-xs font-bold tracking-wider uppercase"
+        style={{ color: 'var(--color-text-secondary)' }}
+      >
         {label}
       </label>
       <input

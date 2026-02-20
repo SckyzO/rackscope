@@ -1,6 +1,5 @@
 @import 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap';
 @import 'leaflet/dist/leaflet.css';
-
 @import 'tailwindcss';
 
 /* Class-based dark mode — MUST be after @import 'tailwindcss' to override
@@ -18,8 +17,8 @@
   --color-status-unknown: #6b7280;
 
   /* Rackscope Shadow Tokens */
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-card-hover: 0 10px 25px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.2);
+  --shadow-card: 0 1px 3px rgb(0 0 0 / 40%), 0 1px 2px rgb(0 0 0 / 30%);
+  --shadow-card-hover: 0 10px 25px rgb(0 0 0 / 50%), 0 4px 6px rgb(0 0 0 / 20%);
 
   /* Rackscope Theme Variables */
   --color-rack-dark: var(--color-bg-base);
@@ -68,12 +67,12 @@
   --color-warning-600: #dc6803;
 
   /* TailAdmin Shadows */
-  --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
-  --shadow-theme-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.1), 0px 1px 2px 0px rgba(16, 24, 40, 0.06);
-  --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
-  --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
-  --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08), 0px 8px 8px -4px rgba(16, 24, 40, 0.03);
-  --shadow-focus-ring: 0px 0px 0px 4px rgba(70, 95, 255, 0.12);
+  --shadow-theme-xs: 0px 1px 2px 0px rgb(16 24 40 / 5%);
+  --shadow-theme-sm: 0px 1px 3px 0px rgb(16 24 40 / 10%), 0px 1px 2px 0px rgb(16 24 40 / 6%);
+  --shadow-theme-md: 0px 4px 8px -2px rgb(16 24 40 / 10%), 0px 2px 4px -2px rgb(16 24 40 / 6%);
+  --shadow-theme-lg: 0px 12px 16px -4px rgb(16 24 40 / 8%), 0px 4px 6px -2px rgb(16 24 40 / 3%);
+  --shadow-theme-xl: 0px 20px 24px -4px rgb(16 24 40 / 8%), 0px 8px 8px -4px rgb(16 24 40 / 3%);
+  --shadow-focus-ring: 0px 0px 0px 4px rgb(70 95 255 / 12%);
 }
 
 body {

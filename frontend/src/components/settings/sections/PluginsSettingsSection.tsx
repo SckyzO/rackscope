@@ -17,7 +17,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   const [simulatorSettingsOpen, setSimulatorSettingsOpen] = useState(false);
   const [slurmSettingsOpen, setSlurmSettingsOpen] = useState(false);
 
-  const updateSimulator = (field: string, value: string | boolean | Record<string, string> | Array<unknown>) => {
+  const updateSimulator = (
+    field: string,
+    value: string | boolean | Record<string, string> | Array<unknown>
+  ) => {
     setDraft((prev) => {
       if (!prev) return prev;
       return {
@@ -33,7 +36,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
     });
   };
 
-  const updateSlurm = (field: string, value: string | boolean | Record<string, string> | Array<unknown>) => {
+  const updateSlurm = (
+    field: string,
+    value: string | boolean | Record<string, string> | Array<unknown>
+  ) => {
     setDraft((prev) => {
       if (!prev) return prev;
       return {
@@ -105,12 +111,12 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
     <div className="space-y-6">
       {/* Global Warning */}
       <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-4">
-        <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-orange-400">
+        <h4 className="mb-2 font-mono text-xs font-bold tracking-wider text-orange-400 uppercase">
           ⚠️ Backend Restart Required
         </h4>
         <p className="text-xs text-[var(--color-text-base)]">
-          Enabling or disabling plugins requires a backend restart to take effect.
-          Run <code className="rounded bg-gray-800 px-2 py-1 font-mono text-xs">make restart</code> or{' '}
+          Enabling or disabling plugins requires a backend restart to take effect. Run{' '}
+          <code className="rounded bg-gray-800 px-2 py-1 font-mono text-xs">make restart</code> or{' '}
           <code className="rounded bg-gray-800 px-2 py-1 font-mono text-xs">
             docker compose restart backend
           </code>{' '}
@@ -124,7 +130,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
         style={{ backgroundColor: 'var(--color-bg-panel)' }}
       >
         <div className="mb-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-primary)' }}>
+          <h3
+            className="text-sm font-bold tracking-wider uppercase"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
             Simulator Plugin
           </h3>
           <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
@@ -134,9 +143,16 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
         <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
           <p className="text-xs" style={{ color: 'var(--color-text-base)' }}>
-            <strong>Note:</strong> The simulator only works when using <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs">docker-compose-dev.yaml</code>.
-            Make sure to start the stack with <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs">make up</code> or{' '}
-            <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs">docker compose up -d</code>.
+            <strong>Note:</strong> The simulator only works when using{' '}
+            <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs">
+              docker-compose-dev.yaml
+            </code>
+            . Make sure to start the stack with{' '}
+            <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs">make up</code> or{' '}
+            <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs">
+              docker compose up -d
+            </code>
+            .
           </p>
         </div>
 
@@ -153,17 +169,26 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           disabled={!draft.plugins.simulator.enabled}
           className="mt-4 flex items-center gap-2 text-sm font-medium transition"
           style={{
-            color: draft.plugins.simulator.enabled ? 'var(--color-text-secondary)' : 'var(--color-text-muted)',
+            color: draft.plugins.simulator.enabled
+              ? 'var(--color-text-secondary)'
+              : 'var(--color-text-muted)',
             opacity: draft.plugins.simulator.enabled ? 1 : 0.5,
             cursor: draft.plugins.simulator.enabled ? 'pointer' : 'not-allowed',
           }}
         >
-          {simulatorSettingsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          {simulatorSettingsOpen ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
           Advanced Settings
         </button>
 
         {simulatorSettingsOpen && draft.plugins.simulator.enabled && (
-          <div className="mt-4 space-y-4 rounded-lg border border-[var(--color-border)] p-4" style={{ backgroundColor: 'var(--color-bg-elevated)' }}>
+          <div
+            className="mt-4 space-y-4 rounded-lg border border-[var(--color-border)] p-4"
+            style={{ backgroundColor: 'var(--color-bg-elevated)' }}
+          >
             <FormField
               label="Update Interval (seconds)"
               value={draft.plugins.simulator.update_interval_seconds}
@@ -191,45 +216,76 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* Incident Rates */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+              <label
+                className="block text-xs font-bold tracking-wider uppercase"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
                 Incident Rates (0.0 - 1.0)
               </label>
               <FormField
                 label="Node Micro Failure"
                 value={draft.plugins.simulator.incident_rates.node_micro_failure}
-                onChange={(value) => updateSimulator('incident_rates', { ...draft.plugins.simulator.incident_rates, node_micro_failure: value })}
+                onChange={(value) =>
+                  updateSimulator('incident_rates', {
+                    ...draft.plugins.simulator.incident_rates,
+                    node_micro_failure: value,
+                  })
+                }
                 type="number"
               />
               <FormField
                 label="Rack Macro Failure"
                 value={draft.plugins.simulator.incident_rates.rack_macro_failure}
-                onChange={(value) => updateSimulator('incident_rates', { ...draft.plugins.simulator.incident_rates, rack_macro_failure: value })}
+                onChange={(value) =>
+                  updateSimulator('incident_rates', {
+                    ...draft.plugins.simulator.incident_rates,
+                    rack_macro_failure: value,
+                  })
+                }
                 type="number"
               />
               <FormField
                 label="Aisle Cooling Failure"
                 value={draft.plugins.simulator.incident_rates.aisle_cooling_failure}
-                onChange={(value) => updateSimulator('incident_rates', { ...draft.plugins.simulator.incident_rates, aisle_cooling_failure: value })}
+                onChange={(value) =>
+                  updateSimulator('incident_rates', {
+                    ...draft.plugins.simulator.incident_rates,
+                    aisle_cooling_failure: value,
+                  })
+                }
                 type="number"
               />
             </div>
 
             {/* Incident Durations */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+              <label
+                className="block text-xs font-bold tracking-wider uppercase"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
                 Incident Durations (seconds)
               </label>
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   label="Rack"
                   value={draft.plugins.simulator.incident_durations.rack}
-                  onChange={(value) => updateSimulator('incident_durations', { ...draft.plugins.simulator.incident_durations, rack: value })}
+                  onChange={(value) =>
+                    updateSimulator('incident_durations', {
+                      ...draft.plugins.simulator.incident_durations,
+                      rack: value,
+                    })
+                  }
                   type="number"
                 />
                 <FormField
                   label="Aisle"
                   value={draft.plugins.simulator.incident_durations.aisle}
-                  onChange={(value) => updateSimulator('incident_durations', { ...draft.plugins.simulator.incident_durations, aisle: value })}
+                  onChange={(value) =>
+                    updateSimulator('incident_durations', {
+                      ...draft.plugins.simulator.incident_durations,
+                      aisle: value,
+                    })
+                  }
                   type="number"
                 />
               </div>
@@ -256,12 +312,19 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* Metrics Catalogs */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+              <label
+                className="block text-xs font-bold tracking-wider uppercase"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
                 Metrics Catalogs (Multi-file support)
               </label>
               <div className="space-y-2">
                 {draft.plugins.simulator.metrics_catalogs.map((catalog, index) => (
-                  <div key={index} className="flex items-center gap-2 rounded border border-[var(--color-border)] p-3" style={{ backgroundColor: 'var(--color-bg-panel)' }}>
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 rounded border border-[var(--color-border)] p-3"
+                    style={{ backgroundColor: 'var(--color-bg-panel)' }}
+                  >
                     <FormToggle
                       label=""
                       checked={catalog.enabled}
@@ -292,10 +355,12 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        const newCatalogs = draft.plugins.simulator.metrics_catalogs.filter((_, i) => i !== index);
+                        const newCatalogs = draft.plugins.simulator.metrics_catalogs.filter(
+                          (_, i) => i !== index
+                        );
                         updateSimulator('metrics_catalogs', newCatalogs);
                       }}
-                      className="rounded bg-red-600 px-3 py-2 text-xs font-bold uppercase text-white hover:bg-red-700"
+                      className="rounded bg-red-600 px-3 py-2 text-xs font-bold text-white uppercase hover:bg-red-700"
                     >
                       Remove
                     </button>
@@ -304,10 +369,13 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    const newCatalogs = [...draft.plugins.simulator.metrics_catalogs, { id: '', path: '', enabled: true }];
+                    const newCatalogs = [
+                      ...draft.plugins.simulator.metrics_catalogs,
+                      { id: '', path: '', enabled: true },
+                    ];
                     updateSimulator('metrics_catalogs', newCatalogs);
                   }}
-                  className="rounded bg-blue-600 px-4 py-2 text-xs font-bold uppercase text-white hover:bg-blue-700"
+                  className="rounded bg-blue-600 px-4 py-2 text-xs font-bold text-white uppercase hover:bg-blue-700"
                 >
                   Add Catalog
                 </button>
@@ -315,16 +383,19 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             </div>
 
             <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
-              <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-blue-400">
+              <h4 className="mb-2 font-mono text-xs font-bold tracking-wider text-blue-400 uppercase">
                 Simulator Control Panel
               </h4>
-              <p className="text-xs text-[var(--color-text-base)] mb-3">
+              <p className="mb-3 text-xs text-[var(--color-text-base)]">
                 Manage test scenarios and metric overrides from the dedicated control panel.
               </p>
               <Link
                 to="/simulator"
                 className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold uppercase transition"
-                style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-text-inverse)' }}
+                style={{
+                  backgroundColor: 'var(--color-accent)',
+                  color: 'var(--color-text-inverse)',
+                }}
               >
                 <ExternalLink className="h-4 w-4" />
                 Open Control Panel
@@ -340,7 +411,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
         style={{ backgroundColor: 'var(--color-bg-panel)' }}
       >
         <div className="mb-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-primary)' }}>
+          <h3
+            className="text-sm font-bold tracking-wider uppercase"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
             Slurm Plugin
           </h3>
           <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
@@ -361,17 +435,26 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           disabled={!draft.plugins.slurm.enabled}
           className="mt-4 flex items-center gap-2 text-sm font-medium transition"
           style={{
-            color: draft.plugins.slurm.enabled ? 'var(--color-text-secondary)' : 'var(--color-text-muted)',
+            color: draft.plugins.slurm.enabled
+              ? 'var(--color-text-secondary)'
+              : 'var(--color-text-muted)',
             opacity: draft.plugins.slurm.enabled ? 1 : 0.5,
             cursor: draft.plugins.slurm.enabled ? 'pointer' : 'not-allowed',
           }}
         >
-          {slurmSettingsOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          {slurmSettingsOpen ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
           Advanced Settings
         </button>
 
         {slurmSettingsOpen && draft.plugins.slurm.enabled && (
-          <div className="mt-4 space-y-4 rounded-lg border border-[var(--color-border)] p-4" style={{ backgroundColor: 'var(--color-bg-elevated)' }}>
+          <div
+            className="mt-4 space-y-4 rounded-lg border border-[var(--color-border)] p-4"
+            style={{ backgroundColor: 'var(--color-bg-elevated)' }}
+          >
             <FormField
               label="Metric Name"
               value={draft.plugins.slurm.metric}
@@ -407,7 +490,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* Roles */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+              <label
+                className="block text-xs font-bold tracking-wider uppercase"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
                 Roles (filter by device role)
               </label>
               <div className="space-y-2">
@@ -429,7 +515,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                         const newRoles = draft.plugins.slurm.roles.filter((_, i) => i !== index);
                         updateSlurm('roles', newRoles);
                       }}
-                      className="rounded bg-red-600 px-3 py-2 text-xs font-bold uppercase text-white hover:bg-red-700"
+                      className="rounded bg-red-600 px-3 py-2 text-xs font-bold text-white uppercase hover:bg-red-700"
                     >
                       Remove
                     </button>
@@ -441,7 +527,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                     const newRoles = [...draft.plugins.slurm.roles, ''];
                     updateSlurm('roles', newRoles);
                   }}
-                  className="rounded bg-blue-600 px-4 py-2 text-xs font-bold uppercase text-white hover:bg-blue-700"
+                  className="rounded bg-blue-600 px-4 py-2 text-xs font-bold text-white uppercase hover:bg-blue-700"
                 >
                   Add Role
                 </button>
@@ -457,80 +543,107 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* Severity Colors */}
             <div className="space-y-3">
-              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+              <label
+                className="block text-xs font-bold tracking-wider uppercase"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
                 Severity Colors
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex items-center gap-3">
-                  <label className="text-xs" style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}>
+                  <label
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}
+                  >
                     OK
                   </label>
                   <input
                     type="color"
                     value={draft.plugins.slurm.severity_colors.ok}
                     onChange={(e) => updateSlurmColor('ok', e.target.value)}
-                    className="h-10 w-full rounded border border-[var(--color-border)] cursor-pointer"
+                    className="h-10 w-full cursor-pointer rounded border border-[var(--color-border)]"
                   />
                   <input
                     type="text"
                     value={draft.plugins.slurm.severity_colors.ok}
                     onChange={(e) => updateSlurmColor('ok', e.target.value)}
                     className="w-24 rounded border border-[var(--color-border)] px-2 py-1 font-mono text-xs"
-                    style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                    style={{
+                      backgroundColor: 'var(--color-bg-elevated)',
+                      color: 'var(--color-text-base)',
+                    }}
                   />
                 </div>
                 <div className="flex items-center gap-3">
-                  <label className="text-xs" style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}>
+                  <label
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}
+                  >
                     WARN
                   </label>
                   <input
                     type="color"
                     value={draft.plugins.slurm.severity_colors.warn}
                     onChange={(e) => updateSlurmColor('warn', e.target.value)}
-                    className="h-10 w-full rounded border border-[var(--color-border)] cursor-pointer"
+                    className="h-10 w-full cursor-pointer rounded border border-[var(--color-border)]"
                   />
                   <input
                     type="text"
                     value={draft.plugins.slurm.severity_colors.warn}
                     onChange={(e) => updateSlurmColor('warn', e.target.value)}
                     className="w-24 rounded border border-[var(--color-border)] px-2 py-1 font-mono text-xs"
-                    style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                    style={{
+                      backgroundColor: 'var(--color-bg-elevated)',
+                      color: 'var(--color-text-base)',
+                    }}
                   />
                 </div>
                 <div className="flex items-center gap-3">
-                  <label className="text-xs" style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}>
+                  <label
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}
+                  >
                     CRIT
                   </label>
                   <input
                     type="color"
                     value={draft.plugins.slurm.severity_colors.crit}
                     onChange={(e) => updateSlurmColor('crit', e.target.value)}
-                    className="h-10 w-full rounded border border-[var(--color-border)] cursor-pointer"
+                    className="h-10 w-full cursor-pointer rounded border border-[var(--color-border)]"
                   />
                   <input
                     type="text"
                     value={draft.plugins.slurm.severity_colors.crit}
                     onChange={(e) => updateSlurmColor('crit', e.target.value)}
                     className="w-24 rounded border border-[var(--color-border)] px-2 py-1 font-mono text-xs"
-                    style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                    style={{
+                      backgroundColor: 'var(--color-bg-elevated)',
+                      color: 'var(--color-text-base)',
+                    }}
                   />
                 </div>
                 <div className="flex items-center gap-3">
-                  <label className="text-xs" style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}>
+                  <label
+                    className="text-xs"
+                    style={{ color: 'var(--color-text-muted)', minWidth: '60px' }}
+                  >
                     INFO
                   </label>
                   <input
                     type="color"
                     value={draft.plugins.slurm.severity_colors.info}
                     onChange={(e) => updateSlurmColor('info', e.target.value)}
-                    className="h-10 w-full rounded border border-[var(--color-border)] cursor-pointer"
+                    className="h-10 w-full cursor-pointer rounded border border-[var(--color-border)]"
                   />
                   <input
                     type="text"
                     value={draft.plugins.slurm.severity_colors.info}
                     onChange={(e) => updateSlurmColor('info', e.target.value)}
                     className="w-24 rounded border border-[var(--color-border)] px-2 py-1 font-mono text-xs"
-                    style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                    style={{
+                      backgroundColor: 'var(--color-bg-elevated)',
+                      color: 'var(--color-text-base)',
+                    }}
                   />
                 </div>
               </div>
@@ -538,7 +651,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* Status Mapping */}
             <div className="space-y-3">
-              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+              <label
+                className="block text-xs font-bold tracking-wider uppercase"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
                 Status Mapping (Drag & Drop to Reorganize)
               </label>
               <div className="grid grid-cols-4 gap-3">
@@ -561,7 +677,12 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                       e.preventDefault();
                       e.currentTarget.style.opacity = '1';
                       const status = e.dataTransfer.getData('status');
-                      const fromSeverity = e.dataTransfer.getData('fromSeverity') as 'ok' | 'warn' | 'crit' | 'info' | null;
+                      const fromSeverity = e.dataTransfer.getData('fromSeverity') as
+                        | 'ok'
+                        | 'warn'
+                        | 'crit'
+                        | 'info'
+                        | null;
                       if (status) {
                         moveSlurmStatus(status, fromSeverity || null, severity);
                       }
@@ -569,7 +690,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                   >
                     <div className="mb-3 flex items-center justify-between">
                       <div
-                        className="text-xs font-bold uppercase tracking-wider"
+                        className="text-xs font-bold tracking-wider uppercase"
                         style={{ color: draft.plugins.slurm.severity_colors[severity] }}
                       >
                         {severity}
@@ -578,7 +699,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                         {draft.plugins.slurm.status_map[severity].length}
                       </div>
                     </div>
-                    <div className="space-y-2 min-h-[100px]">
+                    <div className="min-h-[100px] space-y-2">
                       {draft.plugins.slurm.status_map[severity].map((status) => (
                         <div
                           key={status}
@@ -591,17 +712,31 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                           onDragEnd={(e) => {
                             e.currentTarget.style.opacity = '1';
                           }}
-                          className="flex items-center gap-2 rounded border border-[var(--color-border)] px-3 py-2 cursor-move transition hover:border-[var(--color-accent)]"
+                          className="flex cursor-move items-center gap-2 rounded border border-[var(--color-border)] px-3 py-2 transition hover:border-[var(--color-accent)]"
                           style={{
                             backgroundColor: 'var(--color-bg-panel)',
                             borderLeftWidth: '3px',
                             borderLeftColor: draft.plugins.slurm.severity_colors[severity],
                           }}
                         >
-                          <svg className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                          <svg
+                            className="h-4 w-4 flex-shrink-0"
+                            style={{ color: 'var(--color-text-muted)' }}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke="currentColor"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 8h16M4 16h16"
+                            />
                           </svg>
-                          <span className="flex-1 text-xs font-mono" style={{ color: 'var(--color-text-base)' }}>
+                          <span
+                            className="flex-1 font-mono text-xs"
+                            style={{ color: 'var(--color-text-base)' }}
+                          >
                             {status}
                           </span>
                         </div>
@@ -616,7 +751,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             </div>
 
             <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
-              <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-blue-400">
+              <h4 className="mb-2 font-mono text-xs font-bold tracking-wider text-blue-400 uppercase">
                 Slurm Features
               </h4>
               <ul className="space-y-2 text-xs text-[var(--color-text-base)]">

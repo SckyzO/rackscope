@@ -10,10 +10,13 @@ export const CosmosWorldMapPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getSites().then((data) => {
-      setSites(Array.isArray(data) ? data : []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    api
+      .getSites()
+      .then((data) => {
+        setSites(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   const geoSites = sites.filter((s) => s.location?.lat && s.location?.lon);
@@ -29,8 +32,8 @@ export const CosmosWorldMapPage = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-500 dark:bg-brand-500/15">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-500" />
+          <span className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium">
+            <span className="bg-brand-500 h-1.5 w-1.5 animate-pulse rounded-full" />
             Live
           </span>
         </div>
@@ -43,7 +46,10 @@ export const CosmosWorldMapPage = () => {
           { label: 'With location', value: geoSites.length },
           { label: 'Rooms', value: sites.reduce((acc, s) => acc + (s.rooms?.length ?? 0), 0) },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+          <div
+            key={s.label}
+            className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+          >
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{s.value}</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">{s.label}</p>
           </div>
@@ -51,10 +57,13 @@ export const CosmosWorldMapPage = () => {
       </div>
 
       {/* Map */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800" style={{ height: '500px' }}>
+      <div
+        className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800"
+        style={{ height: '500px' }}
+      >
         {loading ? (
           <div className="flex h-full items-center justify-center bg-gray-50 dark:bg-gray-900">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-brand-500 dark:border-gray-700" />
+            <div className="border-t-brand-500 h-8 w-8 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
           </div>
         ) : (
           <MapContainer
@@ -86,7 +95,8 @@ export const CosmosWorldMapPage = () => {
                     )}
                     {site.location?.address && (
                       <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
-                        <MapPin className="h-3 w-3" />{site.location.address}
+                        <MapPin className="h-3 w-3" />
+                        {site.location.address}
                       </div>
                     )}
                     {site.rooms && site.rooms.length > 0 && (
@@ -98,7 +108,8 @@ export const CosmosWorldMapPage = () => {
                             href={`/cosmos/views/room/${room.id}`}
                             className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
                           >
-                            <ExternalLink className="h-3 w-3" />{room.name}
+                            <ExternalLink className="h-3 w-3" />
+                            {room.name}
                           </a>
                         ))}
                       </div>
@@ -124,11 +135,14 @@ export const CosmosWorldMapPage = () => {
             </div>
           ) : (
             sites.map((site) => (
-              <div key={site.id} className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-500/15">
-                  <Building2 className="h-4 w-4 text-brand-500" />
+              <div
+                key={site.id}
+                className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/5"
+              >
+                <div className="bg-brand-50 dark:bg-brand-500/15 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+                  <Building2 className="text-brand-500 h-4 w-4" />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{site.name}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {site.rooms?.length ?? 0} room{(site.rooms?.length ?? 0) !== 1 ? 's' : ''}
@@ -140,7 +154,7 @@ export const CosmosWorldMapPage = () => {
                     <Link
                       key={room.id}
                       to={`/cosmos/views/room/${room.id}`}
-                      className="rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:border-brand-500 hover:text-brand-500 dark:border-gray-700 dark:text-gray-400 dark:hover:border-brand-500"
+                      className="hover:border-brand-500 hover:text-brand-500 dark:hover:border-brand-500 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-gray-700 dark:text-gray-400"
                     >
                       {room.name}
                     </Link>

@@ -24,7 +24,7 @@ class Device(BaseModel):
     # Additional Prometheus labels for matching metrics (e.g., tray="02" for E-Series shelves)
     labels: Optional[Dict[str, str]] = Field(
         default=None,
-        description="Additional Prometheus labels for metric matching (tray, enclosure_id, etc.)"
+        description="Additional Prometheus labels for metric matching (tray, enclosure_id, etc.)",
     )
 
     @field_validator("instance", mode="before")

@@ -22,9 +22,7 @@ export const SettingsPage: React.FC = () => {
   if (loading || !draft) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="animate-pulse font-mono text-blue-500">
-          LDR :: LOADING_CONFIGURATION...
-        </div>
+        <div className="animate-pulse font-mono text-blue-500">LDR :: LOADING_CONFIGURATION...</div>
       </div>
     );
   }

@@ -11,7 +11,9 @@ from prometheus_client import start_http_server, Gauge
 # Configuration Paths
 TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology")
 TEMPLATES_PATH = os.getenv("TEMPLATES_PATH", "/app/config/templates")
-SIMULATOR_CONFIG_PATH = os.getenv("SIMULATOR_CONFIG", "/app/config/plugins/simulator/scenarios.yaml")
+SIMULATOR_CONFIG_PATH = os.getenv(
+    "SIMULATOR_CONFIG", "/app/config/plugins/simulator/scenarios.yaml"
+)
 APP_CONFIG_PATH = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
 METRICS_LIBRARY_PATH = os.getenv("METRICS_LIBRARY", "/app/config/metrics/library")
 
@@ -189,7 +191,9 @@ def resolve_metrics_catalogs(sim_cfg):
                 paths.append(path)
     if paths:
         return paths
-    single_path = sim_cfg.get("metrics_catalog_path", "/app/config/plugins/simulator/metrics_full.yaml")
+    single_path = sim_cfg.get(
+        "metrics_catalog_path", "/app/config/plugins/simulator/metrics_full.yaml"
+    )
     return [single_path]
 
 
@@ -405,7 +409,9 @@ def load_topology_nodes(topo_data, device_templates=None):
                         # Get the instance name (should be a single value, e.g., da01-r02-01)
                         instance_name = list(nodes_map.values())[0] if nodes_map else device["id"]
 
-                        print(f"Creating storage target: device={device['id']}, instance={instance_name}, slots={slot_count}, type={device_type}, storage_type={storage_type}")
+                        print(
+                            f"Creating storage target: device={device['id']}, instance={instance_name}, slots={slot_count}, type={device_type}, storage_type={storage_type}"
+                        )
 
                         targets.append(
                             {
@@ -784,14 +790,22 @@ def simulate():
                 slot_count = target.get("slot_count", 60)
 
                 # Generate eseries metrics for storage controller and drives
-                if metric_enabled("eseries_storage_system_status", "node", node_id=target["node_id"]):
+                if metric_enabled(
+                    "eseries_storage_system_status", "node", node_id=target["node_id"]
+                ):
                     # Controller status (0 = optimal, 1 = degraded, 2 = failed)
-                    controller_status = 0 if random.random() > 0.02 else (1 if random.random() > 0.5 else 2)
+                    controller_status = (
+                        0 if random.random() > 0.02 else (1 if random.random() > 0.5 else 2)
+                    )
                     set_metric_value(
                         "eseries_storage_system_status",
                         base_labels,
                         controller_status,
-                        {"status": "optimal" if controller_status == 0 else ("degraded" if controller_status == 1 else "failed")},
+                        {
+                            "status": "optimal"
+                            if controller_status == 0
+                            else ("degraded" if controller_status == 1 else "failed")
+                        },
                     )
 
                 if metric_enabled("eseries_drive_status", "node", node_id=target["node_id"]):
@@ -803,11 +817,15 @@ def simulate():
                     instance_name = target["node_id"]
                     if instance_name.startswith("da"):
                         try:
-                            array_num = int(instance_name.split("-")[0][2:])  # Extract number from "daNNN"
+                            array_num = int(
+                                instance_name.split("-")[0][2:]
+                            )  # Extract number from "daNNN"
                             if array_num == 1:
                                 tray_num = "99"  # Head
                             else:
-                                tray_num = str(array_num - 1).zfill(2)  # Shelf (da02→01, da03→02, etc.)
+                                tray_num = str(array_num - 1).zfill(
+                                    2
+                                )  # Shelf (da02→01, da03→02, etc.)
                         except (ValueError, IndexError):
                             pass  # Keep default tray=99
 
@@ -824,7 +842,12 @@ def simulate():
                             "eseries_drive_status",
                             base_labels,
                             drive_crit_value,
-                            {"status": drive_status_label, "drive_id": str(drive_slot), "slot": str(drive_slot), "tray": tray_num},
+                            {
+                                "status": drive_status_label,
+                                "drive_id": str(drive_slot),
+                                "slot": str(drive_slot),
+                                "tray": tray_num,
+                            },
                         )
 
                 # Skip the rest of compute-specific logic

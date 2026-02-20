@@ -58,11 +58,11 @@ class SimulatorPlugin(RackscopePlugin):
 
         if app_config:
             # Try new format first (recommended)
-            if hasattr(app_config, 'plugins') and 'simulator' in app_config.plugins:
-                raw_config = app_config.plugins['simulator']
+            if hasattr(app_config, "plugins") and "simulator" in app_config.plugins:
+                raw_config = app_config.plugins["simulator"]
                 logger.info("Loading simulator config from plugins.simulator (new format)")
             # Fallback to legacy format
-            elif hasattr(app_config, 'simulator') and app_config.simulator:
+            elif hasattr(app_config, "simulator") and app_config.simulator:
                 raw_config = app_config.simulator.model_dump()
                 logger.warning(
                     "Loading simulator config from legacy format. "

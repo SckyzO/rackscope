@@ -293,9 +293,7 @@ export const Sidebar = ({
             <h1 className="text-base font-bold tracking-tight text-[var(--color-text-base)]">
               {appName}
             </h1>
-            <p className="text-[11px] text-gray-500">
-              {appDescription || 'Datacenter Overview'}
-            </p>
+            <p className="text-[11px] text-gray-500">{appDescription || 'Datacenter Overview'}</p>
           </div>
         </div>
       </div>

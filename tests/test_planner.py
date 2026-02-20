@@ -21,8 +21,11 @@ def test_expand_nodes_pattern():
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+
 def _make_topology(instance: str = "da01") -> Topology:
-    device = Device(id="dev1", name="Storage", template_id="eseries", u_position=1, instance=instance)
+    device = Device(
+        id="dev1", name="Storage", template_id="eseries", u_position=1, instance=instance
+    )
     rack = Rack(id="rack01", name="Rack 01", devices=[device])
     aisle = Aisle(id="aisle-a", name="Aisle A", racks=[rack])
     room = Room(id="room1", name="Room 1", aisles=[aisle], standalone_racks=[])
@@ -60,6 +63,7 @@ def _metric(instance: str, slot: str, status: str = "failed", value: str = "1") 
 
 # ── Basic virtual node creation ───────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_expand_by_label_creates_virtual_nodes():
     """Virtual nodes are created per label value when expand_by_label is set."""
@@ -68,10 +72,14 @@ async def test_expand_by_label_creates_virtual_nodes():
     planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
 
     with patch("rackscope.telemetry.planner.prom_client") as mock_client:
-        mock_client.query = AsyncMock(return_value=_prom_ok([
-            _metric("da01", "3"),
-            _metric("da01", "7"),
-        ]))
+        mock_client.query = AsyncMock(
+            return_value=_prom_ok(
+                [
+                    _metric("da01", "3"),
+                    _metric("da01", "7"),
+                ]
+            )
+        )
         mock_client.record_planner_batch = lambda **_: None
         snapshot = await planner.get_snapshot(topology, checks)
 
@@ -97,6 +105,7 @@ async def test_expand_by_label_stores_check_and_alert():
 
 # ── Discovery: absent slots shown as OK ──────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_discovery_populates_ok_slots():
     """Slots discovered by discovery_expr but absent from main query get expand_absent_state."""
@@ -108,14 +117,16 @@ async def test_discovery_populates_ok_slots():
     planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
 
     # Discovery finds slots 1-5; main query finds slot 3 as failed
-    discovery_result = _prom_ok([
-        _metric("da01", "1", "optimal", "1"),
-        _metric("da01", "2", "optimal", "1"),
-        _metric("da01", "3", "optimal", "0"),
-        _metric("da01", "3", "failed", "1"),
-        _metric("da01", "4", "optimal", "1"),
-        _metric("da01", "5", "optimal", "1"),
-    ])
+    discovery_result = _prom_ok(
+        [
+            _metric("da01", "1", "optimal", "1"),
+            _metric("da01", "2", "optimal", "1"),
+            _metric("da01", "3", "optimal", "0"),
+            _metric("da01", "3", "failed", "1"),
+            _metric("da01", "4", "optimal", "1"),
+            _metric("da01", "5", "optimal", "1"),
+        ]
+    )
     main_result = _prom_ok([_metric("da01", "3", "failed", "1")])
 
     call_count = 0
@@ -161,6 +172,7 @@ async def test_no_discovery_leaves_absent_slots_as_unknown():
 
 # ── Parent propagation ────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_propagation_crit_virtual_node_makes_parent_crit():
     """CRIT virtual nodes propagate their state to the parent instance."""
@@ -193,6 +205,7 @@ async def test_propagation_no_bad_nodes_parent_stays_unknown():
 
 # ── Threshold ─────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_threshold_below_limit_downgrades_to_warn():
     """With threshold=3, only 2 CRIT disks → parent is WARN not CRIT."""
@@ -201,10 +214,14 @@ async def test_threshold_below_limit_downgrades_to_warn():
     planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
 
     with patch("rackscope.telemetry.planner.prom_client") as mock_client:
-        mock_client.query = AsyncMock(return_value=_prom_ok([
-            _metric("da01", "1"),
-            _metric("da01", "2"),
-        ]))
+        mock_client.query = AsyncMock(
+            return_value=_prom_ok(
+                [
+                    _metric("da01", "1"),
+                    _metric("da01", "2"),
+                ]
+            )
+        )
         mock_client.record_planner_batch = lambda **_: None
         snapshot = await planner.get_snapshot(topology, checks)
 
@@ -222,11 +239,15 @@ async def test_threshold_at_limit_keeps_crit():
     planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
 
     with patch("rackscope.telemetry.planner.prom_client") as mock_client:
-        mock_client.query = AsyncMock(return_value=_prom_ok([
-            _metric("da01", "1"),
-            _metric("da01", "2"),
-            _metric("da01", "3"),
-        ]))
+        mock_client.query = AsyncMock(
+            return_value=_prom_ok(
+                [
+                    _metric("da01", "1"),
+                    _metric("da01", "2"),
+                    _metric("da01", "3"),
+                ]
+            )
+        )
         mock_client.record_planner_batch = lambda **_: None
         snapshot = await planner.get_snapshot(topology, checks)
 

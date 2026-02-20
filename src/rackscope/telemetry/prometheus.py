@@ -85,10 +85,10 @@ class PrometheusClient:
         now = time.monotonic()
 
         # Select cache and TTL based on cache_type
-        if cache_type == 'health':
+        if cache_type == "health":
             cache = self._health_cache
             ttl = self.health_checks_ttl
-        elif cache_type == 'metrics':
+        elif cache_type == "metrics":
             cache = self._metrics_cache
             ttl = self.metrics_ttl
         else:

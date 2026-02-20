@@ -174,17 +174,26 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       scenario: config.plugins?.simulator?.scenario || 'full-ok',
       scale_factor: String(config.plugins?.simulator?.scale_factor ?? 1.0),
       incident_rates: {
-        node_micro_failure: String(config.plugins?.simulator?.incident_rates?.node_micro_failure ?? 0.001),
-        rack_macro_failure: String(config.plugins?.simulator?.incident_rates?.rack_macro_failure ?? 0.01),
-        aisle_cooling_failure: String(config.plugins?.simulator?.incident_rates?.aisle_cooling_failure ?? 0.005),
+        node_micro_failure: String(
+          config.plugins?.simulator?.incident_rates?.node_micro_failure ?? 0.001
+        ),
+        rack_macro_failure: String(
+          config.plugins?.simulator?.incident_rates?.rack_macro_failure ?? 0.01
+        ),
+        aisle_cooling_failure: String(
+          config.plugins?.simulator?.incident_rates?.aisle_cooling_failure ?? 0.005
+        ),
       },
       incident_durations: {
         rack: String(config.plugins?.simulator?.incident_durations?.rack ?? 3),
         aisle: String(config.plugins?.simulator?.incident_durations?.aisle ?? 5),
       },
-      overrides_path: config.plugins?.simulator?.overrides_path || 'config/plugins/simulator/overrides.yaml',
+      overrides_path:
+        config.plugins?.simulator?.overrides_path || 'config/plugins/simulator/overrides.yaml',
       default_ttl_seconds: String(config.plugins?.simulator?.default_ttl_seconds ?? 120),
-      metrics_catalog_path: config.plugins?.simulator?.metrics_catalog_path || 'config/plugins/simulator/metrics_full.yaml',
+      metrics_catalog_path:
+        config.plugins?.simulator?.metrics_catalog_path ||
+        'config/plugins/simulator/metrics_full.yaml',
       metrics_catalogs: config.plugins?.simulator?.metrics_catalogs || [],
     },
     slurm: {
@@ -197,9 +206,33 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       roles: config.plugins?.slurm?.roles || [],
       include_unlabeled: config.plugins?.slurm?.include_unlabeled ?? false,
       status_map: {
-        ok: config.plugins?.slurm?.status_map?.ok || ['idle', 'allocated', 'alloc', 'completing', 'comp'],
-        warn: config.plugins?.slurm?.status_map?.warn || ['mixed', 'mix', 'maint', 'planned', 'plnd', 'reserved', 'resv'],
-        crit: config.plugins?.slurm?.status_map?.crit || ['down', 'drain', 'drained', 'draining', 'drng', 'fail', 'failing', 'failg', 'error'],
+        ok: config.plugins?.slurm?.status_map?.ok || [
+          'idle',
+          'allocated',
+          'alloc',
+          'completing',
+          'comp',
+        ],
+        warn: config.plugins?.slurm?.status_map?.warn || [
+          'mixed',
+          'mix',
+          'maint',
+          'planned',
+          'plnd',
+          'reserved',
+          'resv',
+        ],
+        crit: config.plugins?.slurm?.status_map?.crit || [
+          'down',
+          'drain',
+          'drained',
+          'draining',
+          'drng',
+          'fail',
+          'failing',
+          'failg',
+          'error',
+        ],
         info: config.plugins?.slurm?.status_map?.info || [],
       },
       severity_colors: {
@@ -279,9 +312,12 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
       scenario: draft.plugins.simulator.scenario,
       scale_factor: parseFloat(draft.plugins.simulator.scale_factor) || 1.0,
       incident_rates: {
-        node_micro_failure: parseFloat(draft.plugins.simulator.incident_rates.node_micro_failure) || 0.001,
-        rack_macro_failure: parseFloat(draft.plugins.simulator.incident_rates.rack_macro_failure) || 0.01,
-        aisle_cooling_failure: parseFloat(draft.plugins.simulator.incident_rates.aisle_cooling_failure) || 0.005,
+        node_micro_failure:
+          parseFloat(draft.plugins.simulator.incident_rates.node_micro_failure) || 0.001,
+        rack_macro_failure:
+          parseFloat(draft.plugins.simulator.incident_rates.rack_macro_failure) || 0.01,
+        aisle_cooling_failure:
+          parseFloat(draft.plugins.simulator.incident_rates.aisle_cooling_failure) || 0.005,
       },
       incident_durations: {
         rack: parseInt(draft.plugins.simulator.incident_durations.rack, 10) || 3,

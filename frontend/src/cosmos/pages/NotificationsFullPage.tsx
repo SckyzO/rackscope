@@ -4,14 +4,94 @@ import { Bell, CheckCheck, Trash2, Settings, Filter } from 'lucide-react';
 type NotifType = 'all' | 'unread' | 'mentions' | 'tasks';
 
 const NOTIFICATIONS = [
-  { id: 1, type: 'request', name: 'Alex Johnson', initials: 'AJ', color: 'bg-brand-500', action: 'requests permission to change', target: 'Rackscope — Monitoring Project', time: '5 min ago', unread: true },
-  { id: 2, type: 'mention', name: 'Sarah Williams', initials: 'SW', color: 'bg-success-500', action: 'mentioned you in a comment on', target: 'Phase 7 Frontend Plan', time: '12 min ago', unread: true },
-  { id: 3, type: 'task', name: 'Michael Chen', initials: 'MC', color: 'bg-warning-500', action: 'assigned a new task to you:', target: 'Build Cosmos Theme', time: '1h ago', unread: true },
-  { id: 4, type: 'request', name: 'Emily Davis', initials: 'ED', color: 'bg-error-500', action: 'requests permission to change', target: 'Backend API Configuration', time: '2h ago', unread: false },
-  { id: 5, type: 'mention', name: 'James Wilson', initials: 'JW', color: 'bg-brand-500', action: 'replied to your comment on', target: 'expand_by_label PR review', time: '3h ago', unread: false },
-  { id: 6, type: 'task', name: 'Lisa Anderson', initials: 'LA', color: 'bg-success-500', action: 'completed task assigned by you:', target: 'CSS Design Token Migration', time: '5h ago', unread: false },
-  { id: 7, type: 'request', name: 'David Martinez', initials: 'DM', color: 'bg-warning-500', action: 'requests permission to change', target: 'Prometheus Configuration', time: '1d ago', unread: false },
-  { id: 8, type: 'mention', name: 'Jennifer Lee', initials: 'JL', color: 'bg-error-500', action: 'mentioned you in', target: 'Infrastructure Review Meeting notes', time: '1d ago', unread: false },
+  {
+    id: 1,
+    type: 'request',
+    name: 'Alex Johnson',
+    initials: 'AJ',
+    color: 'bg-brand-500',
+    action: 'requests permission to change',
+    target: 'Rackscope — Monitoring Project',
+    time: '5 min ago',
+    unread: true,
+  },
+  {
+    id: 2,
+    type: 'mention',
+    name: 'Sarah Williams',
+    initials: 'SW',
+    color: 'bg-success-500',
+    action: 'mentioned you in a comment on',
+    target: 'Phase 7 Frontend Plan',
+    time: '12 min ago',
+    unread: true,
+  },
+  {
+    id: 3,
+    type: 'task',
+    name: 'Michael Chen',
+    initials: 'MC',
+    color: 'bg-warning-500',
+    action: 'assigned a new task to you:',
+    target: 'Build Cosmos Theme',
+    time: '1h ago',
+    unread: true,
+  },
+  {
+    id: 4,
+    type: 'request',
+    name: 'Emily Davis',
+    initials: 'ED',
+    color: 'bg-error-500',
+    action: 'requests permission to change',
+    target: 'Backend API Configuration',
+    time: '2h ago',
+    unread: false,
+  },
+  {
+    id: 5,
+    type: 'mention',
+    name: 'James Wilson',
+    initials: 'JW',
+    color: 'bg-brand-500',
+    action: 'replied to your comment on',
+    target: 'expand_by_label PR review',
+    time: '3h ago',
+    unread: false,
+  },
+  {
+    id: 6,
+    type: 'task',
+    name: 'Lisa Anderson',
+    initials: 'LA',
+    color: 'bg-success-500',
+    action: 'completed task assigned by you:',
+    target: 'CSS Design Token Migration',
+    time: '5h ago',
+    unread: false,
+  },
+  {
+    id: 7,
+    type: 'request',
+    name: 'David Martinez',
+    initials: 'DM',
+    color: 'bg-warning-500',
+    action: 'requests permission to change',
+    target: 'Prometheus Configuration',
+    time: '1d ago',
+    unread: false,
+  },
+  {
+    id: 8,
+    type: 'mention',
+    name: 'Jennifer Lee',
+    initials: 'JL',
+    color: 'bg-error-500',
+    action: 'mentioned you in',
+    target: 'Infrastructure Review Meeting notes',
+    time: '1d ago',
+    unread: false,
+  },
 ];
 
 const TAB_LABELS: { key: NotifType; label: string }[] = [
@@ -40,7 +120,9 @@ export const NotificationsFullPage = () => {
     return true;
   });
 
-  const unreadCount = NOTIFICATIONS.filter((n) => n.unread && !readAll && !dismissed.includes(n.id)).length;
+  const unreadCount = NOTIFICATIONS.filter(
+    (n) => n.unread && !readAll && !dismissed.includes(n.id)
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -49,7 +131,9 @@ export const NotificationsFullPage = () => {
         <div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {unreadCount > 0 ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'All caught up!'}
+            {unreadCount > 0
+              ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
+              : 'All caught up!'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -74,7 +158,14 @@ export const NotificationsFullPage = () => {
       <div className="border-b border-gray-200 dark:border-gray-800">
         <div className="flex gap-1">
           {TAB_LABELS.map(({ key, label }) => {
-            const count = key === 'unread' ? unreadCount : key === 'mentions' ? NOTIFICATIONS.filter((n) => n.type === 'mention').length : key === 'tasks' ? NOTIFICATIONS.filter((n) => n.type === 'task').length : NOTIFICATIONS.length;
+            const count =
+              key === 'unread'
+                ? unreadCount
+                : key === 'mentions'
+                  ? NOTIFICATIONS.filter((n) => n.type === 'mention').length
+                  : key === 'tasks'
+                    ? NOTIFICATIONS.filter((n) => n.type === 'task').length
+                    : NOTIFICATIONS.length;
             return (
               <button
                 key={key}
@@ -82,7 +173,9 @@ export const NotificationsFullPage = () => {
                 className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${tab === key ? 'border-brand-500 text-brand-500' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
               >
                 {label}
-                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${tab === key ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${tab === key ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}
+                >
                   {count}
                 </span>
               </button>
@@ -98,8 +191,12 @@ export const NotificationsFullPage = () => {
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
               <Bell className="h-7 w-7 text-gray-400" />
             </div>
-            <h3 className="mt-4 text-base font-semibold text-gray-900 dark:text-white">No notifications</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">You're all caught up. Check back later.</p>
+            <h3 className="mt-4 text-base font-semibold text-gray-900 dark:text-white">
+              No notifications
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              You're all caught up. Check back later.
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -109,20 +206,23 @@ export const NotificationsFullPage = () => {
                 className={`flex items-start gap-4 px-5 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${n.unread && !readAll ? 'bg-brand-25 dark:bg-brand-500/5' : ''}`}
               >
                 {/* Avatar */}
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${n.color}`}>
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${n.color}`}
+                >
                   {n.initials}
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm text-gray-700 dark:text-gray-300">
                     <span className="font-semibold text-gray-900 dark:text-white">{n.name}</span>{' '}
-                    {n.action}{' '}
-                    <span className="font-medium text-brand-500">{n.target}</span>
+                    {n.action} <span className="text-brand-500 font-medium">{n.target}</span>
                   </p>
                   <div className="mt-1.5 flex items-center gap-3">
                     <span className="text-xs text-gray-400">{n.time}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${TYPE_BADGE[n.type]}`}>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${TYPE_BADGE[n.type]}`}
+                    >
                       {n.type}
                     </span>
                   </div>
@@ -130,12 +230,10 @@ export const NotificationsFullPage = () => {
 
                 {/* Actions */}
                 <div className="flex shrink-0 items-center gap-2">
-                  {n.unread && !readAll && (
-                    <span className="h-2 w-2 rounded-full bg-brand-500" />
-                  )}
+                  {n.unread && !readAll && <span className="bg-brand-500 h-2 w-2 rounded-full" />}
                   <button
                     onClick={() => setDismissed([...dismissed, n.id])}
-                    className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-error-500 dark:hover:bg-white/10"
+                    className="hover:text-error-500 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/10"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -152,7 +250,7 @@ export const NotificationsFullPage = () => {
               <p className="text-xs text-gray-400">
                 Showing {visible.length} of {NOTIFICATIONS.length} notifications
               </p>
-              <button className="text-xs font-medium text-brand-500 hover:text-brand-600">
+              <button className="text-brand-500 hover:text-brand-600 text-xs font-medium">
                 Load more
               </button>
             </div>

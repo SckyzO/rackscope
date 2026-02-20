@@ -52,12 +52,16 @@ export const PlannerSettingsSection: React.FC<PlannerSettingsSectionProps> = ({
       </FormSection>
 
       <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
-        <h4 className="mb-2 font-mono text-xs font-bold uppercase tracking-wider text-blue-400">
+        <h4 className="mb-2 font-mono text-xs font-bold tracking-wider text-blue-400 uppercase">
           Performance Tips
         </h4>
         <ul className="space-y-2 text-xs text-[var(--color-text-base)]">
-          <li>• Increase <strong>Cache TTL</strong> to reduce Prometheus load</li>
-          <li>• Increase <strong>Max IDs</strong> to batch more queries together</li>
+          <li>
+            • Increase <strong>Cache TTL</strong> to reduce Prometheus load
+          </li>
+          <li>
+            • Increase <strong>Max IDs</strong> to batch more queries together
+          </li>
           <li>• Match Cache TTL with UI refresh intervals for best UX</li>
         </ul>
       </div>

@@ -34,33 +34,30 @@ class SimulatorPluginConfig(BaseModel):
 
     enabled: bool = Field(default=True, description="Enable simulator plugin")
     update_interval_seconds: int = Field(default=20, ge=1, description="Update interval in seconds")
-    seed: Optional[int] = Field(default=None, description="Random seed for deterministic simulation")
+    seed: Optional[int] = Field(
+        default=None, description="Random seed for deterministic simulation"
+    )
     scenario: Optional[str] = Field(default=None, description="Scenario name to load")
     scale_factor: float = Field(default=1.0, ge=0.0, description="Scale factor for incidents")
     incident_rates: IncidentRates = Field(
-        default_factory=IncidentRates,
-        description="Incident rate configuration"
+        default_factory=IncidentRates, description="Incident rate configuration"
     )
     incident_durations: IncidentDurations = Field(
-        default_factory=IncidentDurations,
-        description="Incident duration configuration"
+        default_factory=IncidentDurations, description="Incident duration configuration"
     )
     overrides_path: str = Field(
         default="config/plugins/simulator/overrides.yaml",
         min_length=1,
-        description="Path to overrides file"
+        description="Path to overrides file",
     )
     default_ttl_seconds: int = Field(
-        default=120,
-        ge=0,
-        description="Default TTL for overrides in seconds"
+        default=120, ge=0, description="Default TTL for overrides in seconds"
     )
     metrics_catalog_path: str = Field(
         default="config/plugins/simulator/metrics_full.yaml",
         min_length=1,
-        description="Path to metrics catalog"
+        description="Path to metrics catalog",
     )
     metrics_catalogs: List[SimulatorMetricsCatalog] = Field(
-        default_factory=list,
-        description="List of metrics catalogs"
+        default_factory=list, description="List of metrics catalogs"
     )

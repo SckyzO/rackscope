@@ -91,9 +91,8 @@ export const DevicePage = () => {
   const matrixSlots = useMemo(() => {
     if (!template) return [];
     // For storage devices, use disk_layout if available, otherwise fallback to layout
-    const deviceLayout = template.type === 'storage' && template.disk_layout
-      ? template.disk_layout
-      : template.layout;
+    const deviceLayout =
+      template.type === 'storage' && template.disk_layout ? template.disk_layout : template.layout;
     if (!deviceLayout?.matrix) return [];
     return deviceLayout.matrix.flat();
   }, [template]);
@@ -244,9 +243,10 @@ export const DevicePage = () => {
               <Detail label="Template ID" value={template.id} mono />
               <Detail label="Template Name" value={template.name} />
               {(() => {
-                const deviceLayout = template.type === 'storage' && template.disk_layout
-                  ? template.disk_layout
-                  : template.layout;
+                const deviceLayout =
+                  template.type === 'storage' && template.disk_layout
+                    ? template.disk_layout
+                    : template.layout;
                 return (
                   <Detail
                     label={template.type === 'storage' ? 'Disk Layout' : 'Layout'}
@@ -286,7 +286,9 @@ export const DevicePage = () => {
                   className="rounded-md border border-[var(--color-border)]/40 bg-[var(--color-bg-base)]/50 px-3 py-2 text-[var(--color-text-primary)]"
                 >
                   <span className="text-gray-500">Slot {slot}</span>
-                  <div className="mt-1 truncate text-[12px] text-[var(--color-text-primary)]">{value}</div>
+                  <div className="mt-1 truncate text-[12px] text-[var(--color-text-primary)]">
+                    {value}
+                  </div>
                 </div>
               ))}
               {Object.keys(nodeMap).length === 0 && (
@@ -304,6 +306,10 @@ export const DevicePage = () => {
 const Detail = ({ label, value, mono }: { label: string; value: string; mono?: boolean }) => (
   <div className="space-y-1">
     <div className="text-[10px] font-bold tracking-widest text-gray-500 uppercase">{label}</div>
-    <div className={`text-[13px] font-semibold text-[var(--color-text-primary)] ${mono ? 'font-mono' : ''}`}>{value}</div>
+    <div
+      className={`text-[13px] font-semibold text-[var(--color-text-primary)] ${mono ? 'font-mono' : ''}`}
+    >
+      {value}
+    </div>
   </div>
 );

@@ -28,11 +28,7 @@ import { SimulatorControlPanelPage } from './pages/SimulatorControlPanelPage';
 import { api } from './services/api';
 import type { Site } from './types';
 import { expandInstanceMatches, matchesText } from './utils/search';
-import {
-  Search,
-  PanelLeftClose,
-  PanelLeftOpen,
-} from 'lucide-react';
+import { Search, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 // Layout global
 const Layout = ({
@@ -292,7 +288,6 @@ const Layout = ({
     </div>
   );
 };
-
 
 // Rackscope main app — Layout + all existing routes
 const RackscopeApp = () => {

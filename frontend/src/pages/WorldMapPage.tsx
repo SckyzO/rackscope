@@ -145,7 +145,9 @@ export const WorldMapPage = () => {
                       <div className="text-xs font-bold tracking-[0.2em] text-gray-500 uppercase">
                         Datacenter
                       </div>
-                      <div className="text-lg font-bold text-[var(--color-text-primary)]">{site.name}</div>
+                      <div className="text-lg font-bold text-[var(--color-text-primary)]">
+                        {site.name}
+                      </div>
                       {site.description && (
                         <div className="text-xs text-gray-400">{site.description}</div>
                       )}
@@ -160,7 +162,9 @@ export const WorldMapPage = () => {
                       <div className="space-y-1">
                         {(site.rooms || []).map((room) => (
                           <div key={room.id} className="flex items-center justify-between">
-                            <span className="text-sm text-[var(--color-text-primary)]">{room.name}</span>
+                            <span className="text-sm text-[var(--color-text-primary)]">
+                              {room.name}
+                            </span>
                             <Link
                               to={`/room/${room.id}`}
                               className="text-xs font-semibold text-[var(--color-accent)]"

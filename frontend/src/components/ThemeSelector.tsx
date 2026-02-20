@@ -7,7 +7,11 @@ export const ThemeSelector: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const accents: Array<{ value: 'blue' | 'green' | 'purple' | 'orange' | 'cyan'; label: string; color: string }> = [
+  const accents: Array<{
+    value: 'blue' | 'green' | 'purple' | 'orange' | 'cyan';
+    label: string;
+    color: string;
+  }> = [
     { value: 'blue', label: 'Blue', color: '#3b82f6' },
     { value: 'green', label: 'Green', color: '#10b981' },
     { value: 'purple', label: 'Purple', color: '#8b5cf6' },
@@ -33,7 +37,7 @@ export const ThemeSelector: React.FC = () => {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 rounded-lg bg-[var(--color-bg-panel)] border border-[var(--color-border)] px-3 py-2 text-sm transition hover:border-[var(--color-accent)]"
+        className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-panel)] px-3 py-2 text-sm transition hover:border-[var(--color-accent)]"
         title="Theme Settings"
       >
         <Palette className="h-4 w-4" style={{ color: 'var(--color-accent)' }} />
@@ -41,10 +45,10 @@ export const ThemeSelector: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-panel)] shadow-xl z-50">
+        <div className="absolute top-full right-0 z-50 mt-2 w-64 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-panel)] shadow-xl">
           {/* Mode Section */}
           <div className="border-b border-[var(--color-border)] p-4">
-            <div className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+            <div className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">
               Theme Mode
             </div>
             <div className="flex gap-2">
@@ -81,7 +85,7 @@ export const ThemeSelector: React.FC = () => {
 
           {/* Accent Color Section */}
           <div className="p-4">
-            <div className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">
+            <div className="mb-3 text-xs font-bold tracking-wider text-gray-500 uppercase">
               Accent Color
             </div>
             <div className="grid grid-cols-5 gap-2">

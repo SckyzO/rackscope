@@ -25,7 +25,7 @@ export const CosmosLayout = () => {
   }, [isDark]);
 
   return (
-    <div className={`cosmos-root${isDark ? ' dark' : ''}`}>
+    <div className={isDark ? 'cosmos-root dark' : 'cosmos-root'}>
       <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
         <CosmosSidebar
           collapsed={sidebarCollapsed}

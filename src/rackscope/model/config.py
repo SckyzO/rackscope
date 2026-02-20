@@ -120,7 +120,9 @@ class SimulatorConfig(BaseModel):
     incident_durations: IncidentDurations = Field(default_factory=IncidentDurations)
     overrides_path: str = Field(default="config/plugins/simulator/overrides.yaml", min_length=1)
     default_ttl_seconds: int = Field(default=120, ge=0)
-    metrics_catalog_path: str = Field(default="config/plugins/simulator/metrics_full.yaml", min_length=1)
+    metrics_catalog_path: str = Field(
+        default="config/plugins/simulator/metrics_full.yaml", min_length=1
+    )
     metrics_catalogs: List[SimulatorMetricsCatalog] = Field(default_factory=list)
 
 
@@ -213,15 +215,13 @@ class AppConfig(BaseModel):
     # Plugin configuration (new format - recommended)
     plugins: Dict[str, Dict[str, Any]] = Field(
         default_factory=dict,
-        description="Plugin-specific configuration. Each plugin validates its own config."
+        description="Plugin-specific configuration. Each plugin validates its own config.",
     )
 
     # Legacy plugin configuration (deprecated - kept for backward compatibility)
     simulator: Optional[SimulatorConfig] = Field(
-        default=None,
-        description="DEPRECATED: Use plugins.simulator instead"
+        default=None, description="DEPRECATED: Use plugins.simulator instead"
     )
     slurm: Optional[SlurmConfig] = Field(
-        default=None,
-        description="DEPRECATED: Use plugins.slurm instead"
+        default=None, description="DEPRECATED: Use plugins.slurm instead"
     )

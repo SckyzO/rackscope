@@ -1,4 +1,12 @@
-const SectionCard = ({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) => (
+const SectionCard = ({
+  title,
+  desc,
+  children,
+}: {
+  title: string;
+  desc?: string;
+  children: React.ReactNode;
+}) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
     <div className="mb-5">
       <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
@@ -18,7 +26,8 @@ const CardContent = ({ title = 'Card Title' }: { title?: string }) => (
   <div className="mt-8">
     <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h4>
     <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-      Lorem ipsum dolor sit amet consectetur. Eget nulla suscipit arcu rutrum amet vel nec fringilla vulputate.
+      Lorem ipsum dolor sit amet consectetur. Eget nulla suscipit arcu rutrum amet vel nec fringilla
+      vulputate.
     </p>
   </div>
 );
@@ -27,14 +36,15 @@ export const RibbonsPage = () => (
   <div className="space-y-6">
     <div>
       <h2 className="text-xl font-bold text-gray-900 dark:text-white">Ribbons</h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Corner and edge label decorations</p>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Corner and edge label decorations
+      </p>
     </div>
     <div className="grid gap-6 lg:grid-cols-2">
-
       {/* 1 — Rounded Ribbon */}
       <SectionCard title="Rounded Ribbon" desc="Simple pill-style badge at top-left">
         <CardBase>
-          <span className="absolute left-3 top-3 rounded-full bg-brand-500 px-2.5 py-1 text-xs font-medium text-white">
+          <span className="bg-brand-500 absolute top-3 left-3 rounded-full px-2.5 py-1 text-xs font-medium text-white">
             Popular
           </span>
           <CardContent />
@@ -46,9 +56,10 @@ export const RibbonsPage = () => (
         <CardBase>
           {/* clip-path creates the arrow/pennant shape: flat left + right arrow tip */}
           <div
-            className="absolute left-0 top-4 bg-brand-500 py-1.5 pl-3 pr-8 text-sm font-bold text-white"
+            className="bg-brand-500 absolute top-4 left-0 py-1.5 pr-8 pl-3 text-sm font-bold text-white"
             style={{
-              clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)',
+              clipPath:
+                'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)',
             }}
           >
             Popular
@@ -61,7 +72,7 @@ export const RibbonsPage = () => (
       <SectionCard title="Filed Ribbon" desc="Diagonal banner folded across the top-left corner">
         <CardBase>
           {/* Classic dog-ear corner ribbon: rotated strip clipped by overflow-hidden */}
-          <div className="absolute -left-7 top-5 w-28 -rotate-45 bg-brand-500 py-1.5 text-center text-xs font-bold text-white shadow-sm">
+          <div className="bg-brand-500 absolute top-5 -left-7 w-28 -rotate-45 py-1.5 text-center text-xs font-bold text-white shadow-sm">
             New
           </div>
           <CardContent />
@@ -72,9 +83,10 @@ export const RibbonsPage = () => (
       <SectionCard title="Filed Ribbon (Icon)" desc="Pennant flag with icon at top-left">
         <CardBase>
           <div
-            className="absolute left-0 top-4 flex items-center gap-1.5 bg-brand-500 py-1.5 pl-2.5 pr-7 text-white"
+            className="bg-brand-500 absolute top-4 left-0 flex items-center gap-1.5 py-1.5 pr-7 pl-2.5 text-white"
             style={{
-              clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)',
+              clipPath:
+                'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)',
             }}
           >
             {/* Lightning bolt icon via SVG inline */}
@@ -88,9 +100,12 @@ export const RibbonsPage = () => (
       </SectionCard>
 
       {/* 5 — Diagonal banner (top-right) */}
-      <SectionCard title="Corner Banner (Top Right)" desc="Diagonal rotated band at the top-right corner">
+      <SectionCard
+        title="Corner Banner (Top Right)"
+        desc="Diagonal rotated band at the top-right corner"
+      >
         <CardBase>
-          <div className="absolute -right-8 top-4 w-28 rotate-45 bg-error-500 py-1.5 text-center text-xs font-bold text-white shadow">
+          <div className="bg-error-500 absolute top-4 -right-8 w-28 rotate-45 py-1.5 text-center text-xs font-bold text-white shadow">
             Sale
           </div>
           <CardContent />
@@ -100,23 +115,31 @@ export const RibbonsPage = () => (
       {/* 6 — Multiple ribbons */}
       <SectionCard title="Multiple Ribbons" desc="Stacked badge ribbons on the same card">
         <CardBase>
-          <div className="absolute left-3 top-3 flex flex-col gap-1.5">
-            <span className="rounded-full bg-brand-500 px-2.5 py-0.5 text-xs font-medium text-white">New</span>
-            <span className="rounded-full bg-success-500 px-2.5 py-0.5 text-xs font-medium text-white">Popular</span>
+          <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+            <span className="bg-brand-500 rounded-full px-2.5 py-0.5 text-xs font-medium text-white">
+              New
+            </span>
+            <span className="bg-success-500 rounded-full px-2.5 py-0.5 text-xs font-medium text-white">
+              Popular
+            </span>
           </div>
           <div className="mt-12">
             <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Premium Package</h4>
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              Lorem ipsum dolor sit amet consectetur. Eget nulla suscipit arcu rutrum amet vel nec fringilla.
+              Lorem ipsum dolor sit amet consectetur. Eget nulla suscipit arcu rutrum amet vel nec
+              fringilla.
             </p>
           </div>
         </CardBase>
       </SectionCard>
 
       {/* 7 — Success Rounded (Top Right) */}
-      <SectionCard title="Rounded Ribbon (Top Right)" desc="Success pill badge at the top-right corner">
+      <SectionCard
+        title="Rounded Ribbon (Top Right)"
+        desc="Success pill badge at the top-right corner"
+      >
         <CardBase>
-          <span className="absolute right-3 top-3 rounded-full bg-success-500 px-2.5 py-1 text-xs font-medium text-white">
+          <span className="bg-success-500 absolute top-3 right-3 rounded-full px-2.5 py-1 text-xs font-medium text-white">
             Featured
           </span>
           <CardContent />
@@ -126,13 +149,12 @@ export const RibbonsPage = () => (
       {/* 8 — Warning Filed Ribbon */}
       <SectionCard title="Filed Ribbon (Warning)" desc="Corner fold ribbon in warning color">
         <CardBase>
-          <div className="absolute -left-7 top-5 w-28 -rotate-45 bg-warning-500 py-1.5 text-center text-xs font-bold text-white shadow-sm">
+          <div className="bg-warning-500 absolute top-5 -left-7 w-28 -rotate-45 py-1.5 text-center text-xs font-bold text-white shadow-sm">
             Hot
           </div>
           <CardContent />
         </CardBase>
       </SectionCard>
-
     </div>
   </div>
 );

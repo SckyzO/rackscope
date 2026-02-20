@@ -9,8 +9,8 @@ export const CosmosComingSoon = () => {
   return (
     <div className="flex min-h-[480px] items-center justify-center">
       <div className="text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-500/10">
-          <Sparkles className="h-8 w-8 text-brand-500" />
+        <div className="bg-brand-50 dark:bg-brand-500/10 mx-auto flex h-16 w-16 items-center justify-center rounded-2xl">
+          <Sparkles className="text-brand-500 h-8 w-8" />
         </div>
         <h2 className="mt-5 text-xl font-bold text-gray-900 dark:text-white">{label}</h2>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">

@@ -125,25 +125,40 @@ export const SimulatorControlPanelPage: React.FC = () => {
     <div className="flex h-full flex-col bg-[var(--color-bg-base)] p-8">
       {/* Header */}
       <header className="mb-6">
-        <h1 className="text-3xl font-black uppercase tracking-tighter" style={{ color: 'var(--color-text-primary)' }}>
+        <h1
+          className="text-3xl font-black tracking-tighter uppercase"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
           Simulator Control Panel
         </h1>
-        <p className="mt-1 font-mono text-xs tracking-wider uppercase" style={{ color: 'var(--color-text-muted)' }}>
+        <p
+          className="mt-1 font-mono text-xs tracking-wider uppercase"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
           Manage test scenarios and metric overrides
         </p>
       </header>
 
       <div className="flex-1 space-y-6 overflow-y-auto">
         {/* Scenarios Section */}
-        <div className="rounded-xl border border-[var(--color-border)] p-6" style={{ backgroundColor: 'var(--color-bg-panel)' }}>
+        <div
+          className="rounded-xl border border-[var(--color-border)] p-6"
+          style={{ backgroundColor: 'var(--color-bg-panel)' }}
+        >
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-primary)' }}>
+              <h2
+                className="text-sm font-bold tracking-wider uppercase"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
                 Test Scenarios
               </h2>
               {activeScenario && (
                 <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                  Currently applied: <span className="font-bold" style={{ color: 'var(--color-accent)' }}>{activeScenario}</span>
+                  Currently applied:{' '}
+                  <span className="font-bold" style={{ color: 'var(--color-accent)' }}>
+                    {activeScenario}
+                  </span>
                 </p>
               )}
             </div>
@@ -159,7 +174,7 @@ export const SimulatorControlPanelPage: React.FC = () => {
 
           {scenarios.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="mb-4 grid grid-cols-2 gap-3">
                 {scenarios.map((scenario) => {
                   const isActive = activeScenario === scenario.name;
                   const isSelected = selectedScenario === scenario.name;
@@ -179,7 +194,7 @@ export const SimulatorControlPanelPage: React.FC = () => {
                     >
                       {isSelected && (
                         <div
-                          className="absolute inset-0 rounded-lg pointer-events-none"
+                          className="pointer-events-none absolute inset-0 rounded-lg"
                           style={{
                             backgroundColor: 'var(--color-accent)',
                             opacity: 0.1,
@@ -187,17 +202,28 @@ export const SimulatorControlPanelPage: React.FC = () => {
                         />
                       )}
                       {isActive && (
-                        <div className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider z-10" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-text-inverse)' }}>
+                        <div
+                          className="absolute top-2 right-2 z-10 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase"
+                          style={{
+                            backgroundColor: 'var(--color-accent)',
+                            color: 'var(--color-text-inverse)',
+                          }}
+                        >
                           CURRENT
                         </div>
                       )}
                       <div className="relative flex items-center gap-2">
                         <Play
                           className="h-4 w-4"
-                          style={{ color: isSelected ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+                          style={{
+                            color: isSelected ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                          }}
                         />
                         <div>
-                          <div className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
+                          <div
+                            className="text-sm font-bold"
+                            style={{ color: 'var(--color-text-primary)' }}
+                          >
                             {scenario.name}
                           </div>
                           <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
@@ -214,7 +240,7 @@ export const SimulatorControlPanelPage: React.FC = () => {
               <button
                 onClick={handleApplyScenario}
                 disabled={selectedScenario === activeScenario || applying}
-                className={`w-full rounded-lg px-4 py-3 text-sm font-bold uppercase tracking-wider transition ${
+                className={`w-full rounded-lg px-4 py-3 text-sm font-bold tracking-wider uppercase transition ${
                   selectedScenario === activeScenario || applying
                     ? 'cursor-not-allowed opacity-50'
                     : ''
@@ -235,16 +261,23 @@ export const SimulatorControlPanelPage: React.FC = () => {
 
           <div className="mt-4 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3">
             <p className="text-xs" style={{ color: 'var(--color-text-base)' }}>
-              <strong>Note:</strong> Changing scenarios requires a backend restart. Select a scenario
-              and click "Apply Changes" to restart the backend and activate the new configuration.
+              <strong>Note:</strong> Changing scenarios requires a backend restart. Select a
+              scenario and click "Apply Changes" to restart the backend and activate the new
+              configuration.
             </p>
           </div>
         </div>
 
         {/* Overrides Section */}
-        <div className="rounded-xl border border-[var(--color-border)] p-6" style={{ backgroundColor: 'var(--color-bg-panel)' }}>
+        <div
+          className="rounded-xl border border-[var(--color-border)] p-6"
+          style={{ backgroundColor: 'var(--color-bg-panel)' }}
+        >
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-primary)' }}>
+            <h2
+              className="text-sm font-bold tracking-wider uppercase"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
               Metric Overrides
             </h2>
             <div className="flex gap-2">
@@ -272,36 +305,58 @@ export const SimulatorControlPanelPage: React.FC = () => {
           </div>
 
           {showAddOverride && (
-            <div className="mb-4 rounded-lg border border-[var(--color-border)] p-4 space-y-3" style={{ backgroundColor: 'var(--color-bg-elevated)' }}>
+            <div
+              className="mb-4 space-y-3 rounded-lg border border-[var(--color-border)] p-4"
+              style={{ backgroundColor: 'var(--color-bg-elevated)' }}
+            >
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                <label
+                  className="block text-xs font-bold tracking-wider uppercase"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
                   Instance (node name)
                 </label>
                 <input
                   type="text"
                   value={newOverride.instance}
-                  onChange={(e) => setNewOverride((prev) => ({ ...prev, instance: e.target.value }))}
+                  onChange={(e) =>
+                    setNewOverride((prev) => ({ ...prev, instance: e.target.value }))
+                  }
                   placeholder="compute001"
                   className="w-full rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm"
-                  style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                  style={{
+                    backgroundColor: 'var(--color-bg-elevated)',
+                    color: 'var(--color-text-base)',
+                  }}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                  <label
+                    className="block text-xs font-bold tracking-wider uppercase"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
                     Metric
                   </label>
                   <input
                     type="text"
                     value={newOverride.metric}
-                    onChange={(e) => setNewOverride((prev) => ({ ...prev, metric: e.target.value }))}
+                    onChange={(e) =>
+                      setNewOverride((prev) => ({ ...prev, metric: e.target.value }))
+                    }
                     placeholder="up"
                     className="w-full rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm"
-                    style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                    style={{
+                      backgroundColor: 'var(--color-bg-elevated)',
+                      color: 'var(--color-text-base)',
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-secondary)' }}>
+                  <label
+                    className="block text-xs font-bold tracking-wider uppercase"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
                     Value
                   </label>
                   <input
@@ -310,7 +365,10 @@ export const SimulatorControlPanelPage: React.FC = () => {
                     onChange={(e) => setNewOverride((prev) => ({ ...prev, value: e.target.value }))}
                     placeholder="0"
                     className="w-full rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm"
-                    style={{ backgroundColor: 'var(--color-bg-elevated)', color: 'var(--color-text-base)' }}
+                    style={{
+                      backgroundColor: 'var(--color-bg-elevated)',
+                      color: 'var(--color-text-base)',
+                    }}
                   />
                 </div>
               </div>
@@ -342,10 +400,16 @@ export const SimulatorControlPanelPage: React.FC = () => {
                   style={{ backgroundColor: 'var(--color-bg-elevated)' }}
                 >
                   <div className="font-mono text-sm">
-                    <span style={{ color: 'var(--color-accent)' }}>{override.instance || override.rack_id}</span>
-                    <span className="mx-2" style={{ color: 'var(--color-text-muted)' }}>→</span>
+                    <span style={{ color: 'var(--color-accent)' }}>
+                      {override.instance || override.rack_id}
+                    </span>
+                    <span className="mx-2" style={{ color: 'var(--color-text-muted)' }}>
+                      →
+                    </span>
                     <span style={{ color: '#f59e0b' }}>{override.metric}</span>
-                    <span className="mx-2" style={{ color: 'var(--color-text-muted)' }}>=</span>
+                    <span className="mx-2" style={{ color: 'var(--color-text-muted)' }}>
+                      =
+                    </span>
                     <span style={{ color: 'var(--color-text-primary)' }}>{override.value}</span>
                   </div>
                   <button

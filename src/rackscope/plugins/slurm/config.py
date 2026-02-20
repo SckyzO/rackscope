@@ -11,7 +11,7 @@ class SlurmStatusMap(BaseModel):
 
     ok: List[str] = Field(
         default_factory=lambda: ["idle", "allocated", "alloc", "completing", "comp"],
-        description="Statuses mapped to OK severity"
+        description="Statuses mapped to OK severity",
     )
     warn: List[str] = Field(
         default_factory=lambda: [
@@ -33,7 +33,7 @@ class SlurmStatusMap(BaseModel):
             "reboot_issued",
             "reboot_req",
         ],
-        description="Statuses mapped to WARN severity"
+        description="Statuses mapped to WARN severity",
     )
     crit: List[str] = Field(
         default_factory=lambda: [
@@ -51,33 +51,20 @@ class SlurmStatusMap(BaseModel):
             "noresp",
             "inval",
         ],
-        description="Statuses mapped to CRIT severity"
+        description="Statuses mapped to CRIT severity",
     )
     info: List[str] = Field(
-        default_factory=list,
-        description="Statuses mapped to INFO severity (custom level)"
+        default_factory=list, description="Statuses mapped to INFO severity (custom level)"
     )
 
 
 class SeverityColors(BaseModel):
     """Colors for severity levels (hex format)."""
 
-    ok: str = Field(
-        default="#22c55e",
-        description="Color for OK severity (green)"
-    )
-    warn: str = Field(
-        default="#f59e0b",
-        description="Color for WARN severity (orange)"
-    )
-    crit: str = Field(
-        default="#ef4444",
-        description="Color for CRIT severity (red)"
-    )
-    info: str = Field(
-        default="#3b82f6",
-        description="Color for INFO severity (blue)"
-    )
+    ok: str = Field(default="#22c55e", description="Color for OK severity (green)")
+    warn: str = Field(default="#f59e0b", description="Color for WARN severity (orange)")
+    crit: str = Field(default="#ef4444", description="Color for CRIT severity (red)")
+    info: str = Field(default="#3b82f6", description="Color for INFO severity (blue)")
 
 
 class SlurmPluginConfig(BaseModel):
@@ -87,40 +74,29 @@ class SlurmPluginConfig(BaseModel):
     metric: str = Field(
         default="slurm_node_status",
         min_length=1,
-        description="Prometheus metric name for Slurm node status"
+        description="Prometheus metric name for Slurm node status",
     )
     label_node: str = Field(
-        default="node",
-        min_length=1,
-        description="Label name for node identifier"
+        default="node", min_length=1, description="Label name for node identifier"
     )
     label_status: str = Field(
-        default="status",
-        min_length=1,
-        description="Label name for node status"
+        default="status", min_length=1, description="Label name for node status"
     )
     label_partition: str = Field(
-        default="partition",
-        min_length=1,
-        description="Label name for partition"
+        default="partition", min_length=1, description="Label name for partition"
     )
     status_map: SlurmStatusMap = Field(
-        default_factory=SlurmStatusMap,
-        description="Mapping of Slurm statuses to severity levels"
+        default_factory=SlurmStatusMap, description="Mapping of Slurm statuses to severity levels"
     )
     severity_colors: SeverityColors = Field(
-        default_factory=SeverityColors,
-        description="Colors for severity levels"
+        default_factory=SeverityColors, description="Colors for severity levels"
     )
     roles: List[str] = Field(
         default_factory=lambda: ["compute", "visu"],
-        description="Device roles to include in Slurm monitoring"
+        description="Device roles to include in Slurm monitoring",
     )
-    include_unlabeled: bool = Field(
-        default=False,
-        description="Include devices without role label"
-    )
+    include_unlabeled: bool = Field(default=False, description="Include devices without role label")
     mapping_path: Optional[str] = Field(
         default="config/plugins/slurm/node_mapping.yaml",
-        description="Path to Slurm node to instance mapping file"
+        description="Path to Slurm node to instance mapping file",
     )

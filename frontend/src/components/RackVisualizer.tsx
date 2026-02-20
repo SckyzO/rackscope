@@ -716,7 +716,14 @@ export const DeviceChassis = ({
 
     // For non-storage devices, use standard expansion
     return expandInstanceMap((device.instance || device.nodes) as InstanceInput);
-  }, [device.instance, device.nodes, device.id, template.type, template.disk_layout, template.layout]);
+  }, [
+    device.instance,
+    device.nodes,
+    device.id,
+    template.type,
+    template.disk_layout,
+    template.layout,
+  ]);
   const instanceList = useMemo(() => Object.values(nodeMap).filter(Boolean) as string[], [nodeMap]);
   const chassisHealth = useMemo(() => {
     if (!nodesData) return rackHealth;
@@ -760,9 +767,8 @@ export const DeviceChassis = ({
     return null;
   }
   // For storage devices, use disk_layout if available, otherwise fallback to layout
-  const frontLayout = template.type === 'storage' && template.disk_layout
-    ? template.disk_layout
-    : template.layout;
+  const frontLayout =
+    template.type === 'storage' && template.disk_layout ? template.disk_layout : template.layout;
   const layout = isRearView && hasRearLayout ? template.rear_layout : frontLayout;
 
   // Safety check: layout should never be null for a valid device

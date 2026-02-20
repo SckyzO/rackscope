@@ -5,7 +5,10 @@ import { api } from '../../../services/api';
 import type { Rack, RackState, DeviceTemplate } from '../../../types';
 
 const HC: Record<string, string> = {
-  OK: '#10b981', WARN: '#f59e0b', CRIT: '#ef4444', UNKNOWN: '#6b7280',
+  OK: '#10b981',
+  WARN: '#f59e0b',
+  CRIT: '#ef4444',
+  UNKNOWN: '#6b7280',
 };
 
 // Map device type to icon name — rendered in JSX conditionally (no component-in-render)
@@ -20,8 +23,13 @@ const USlot = ({ u, device, template, onClick }: USlotProps) => {
   if (!device) {
     return (
       <div className="flex h-6 items-center gap-2 border-b border-gray-100 dark:border-gray-800">
-        <span className="w-7 shrink-0 text-right text-[9px] text-gray-300 dark:text-gray-600">{u}</span>
-        <div className="flex-1 rounded-sm bg-gray-50 dark:bg-gray-800/50" style={{ height: '18px' }} />
+        <span className="w-7 shrink-0 text-right text-[9px] text-gray-300 dark:text-gray-600">
+          {u}
+        </span>
+        <div
+          className="flex-1 rounded-sm bg-gray-50 dark:bg-gray-800/50"
+          style={{ height: '18px' }}
+        />
       </div>
     );
   }
@@ -30,14 +38,21 @@ const USlot = ({ u, device, template, onClick }: USlotProps) => {
 
   return (
     <div
-      className="group flex cursor-pointer items-start gap-2 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5"
+      className="group flex cursor-pointer items-start gap-2 border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5"
       style={{ height, minHeight: height }}
       onClick={onClick}
     >
-      <span className="mt-1 w-7 shrink-0 text-right text-[9px] text-gray-300 dark:text-gray-600">{u}</span>
-      <div className="flex flex-1 items-center gap-2 rounded-sm bg-gray-100 px-2 dark:bg-gray-800" style={{ height: height - 2 }}>
-        <Cpu className="h-3.5 w-3.5 shrink-0 text-brand-500" />
-        <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{device.name}</span>
+      <span className="mt-1 w-7 shrink-0 text-right text-[9px] text-gray-300 dark:text-gray-600">
+        {u}
+      </span>
+      <div
+        className="flex flex-1 items-center gap-2 rounded-sm bg-gray-100 px-2 dark:bg-gray-800"
+        style={{ height: height - 2 }}
+      >
+        <Cpu className="text-brand-500 h-3.5 w-3.5 shrink-0" />
+        <span className="truncate font-mono text-xs font-semibold text-gray-700 dark:text-gray-300">
+          {device.name}
+        </span>
         <span className="ml-auto text-[9px] text-gray-400">{template?.type}</span>
       </div>
     </div>
@@ -53,13 +68,25 @@ export const CosmosRackPage = () => {
   const [loading, setLoading] = useState(true);
   const [viewSide, setViewSide] = useState<'front' | 'rear' | 'both'>('front');
 
+  const loadHealth = async () => {
+    if (!rackId) return;
+    try {
+      const state = await api.getRackState(rackId, true);
+      setHealth(state);
+    } catch {
+      /* ignore */
+    }
+  };
+
   useEffect(() => {
     if (!rackId) return;
     Promise.all([api.getRack(rackId), api.getCatalog()])
       .then(([rackData, catalog]) => {
         setRack(rackData);
         const dc: Record<string, DeviceTemplate> = {};
-        (catalog?.device_templates ?? []).forEach((t: DeviceTemplate) => { dc[t.id] = t; });
+        (catalog?.device_templates ?? []).forEach((t: DeviceTemplate) => {
+          dc[t.id] = t;
+        });
         setDeviceCatalog(dc);
         setLoading(false);
       })
@@ -69,25 +96,40 @@ export const CosmosRackPage = () => {
   useEffect(() => {
     if (!rackId) return;
     let active = true;
-    const load = async () => {
+    const poll = async () => {
       try {
         const state = await api.getRackState(rackId, true);
         if (active) setHealth(state);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     };
-    load();
-    const t = setInterval(load, 30000);
-    return () => { active = false; clearInterval(t); };
+    poll();
+    const t = setInterval(poll, 30000);
+    return () => {
+      active = false;
+      clearInterval(t);
+    };
   }, [rackId]);
 
-  if (loading) return <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-brand-500 dark:border-gray-700" /></div>;
-  if (!rack) return <div className="flex h-64 items-center justify-center text-gray-400">Rack not found</div>;
+  if (loading)
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="border-t-brand-500 h-8 w-8 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
+      </div>
+    );
+  if (!rack)
+    return (
+      <div className="flex h-64 items-center justify-center text-gray-400">Rack not found</div>
+    );
 
   const state = health?.state ?? 'UNKNOWN';
   const nodes = health?.nodes ?? {};
 
   const uMap: Record<number, Rack['devices'][0]> = {};
-  rack.devices.forEach((dev) => { uMap[dev.u_position] = dev; });
+  rack.devices.forEach((dev) => {
+    uMap[dev.u_position] = dev;
+  });
 
   const uHeight = rack.u_height ?? 42;
   const slots = Array.from({ length: uHeight }, (_, i) => uHeight - i);
@@ -100,7 +142,10 @@ export const CosmosRackPage = () => {
         if (dev && dev.u_position !== u) return null;
         return (
           <USlot
-            key={u} u={u} device={dev} template={tpl}
+            key={u}
+            u={u}
+            device={dev}
+            template={tpl}
             onClick={dev ? () => navigate(`/cosmos/views/device/${rackId}/${dev.id}`) : undefined}
           />
         );
@@ -111,7 +156,9 @@ export const CosmosRackPage = () => {
   return (
     <div className="space-y-5">
       <nav className="flex items-center gap-1 text-sm">
-        <Link to="/cosmos/views/worldmap" className="text-brand-500 hover:underline">World Map</Link>
+        <Link to="/cosmos/views/worldmap" className="text-brand-500 hover:underline">
+          World Map
+        </Link>
         <ChevronRight className="h-4 w-4 text-gray-400" />
         <span className="font-semibold text-gray-900 dark:text-white">{rack.name}</span>
       </nav>
@@ -120,20 +167,33 @@ export const CosmosRackPage = () => {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">{rack.name}</h2>
-            <span className="rounded-lg px-2.5 py-1 text-xs font-bold text-white" style={{ backgroundColor: HC[state] }}>{state}</span>
+            <span
+              className="rounded-lg px-2.5 py-1 text-xs font-bold text-white"
+              style={{ backgroundColor: HC[state] }}
+            >
+              {state}
+            </span>
           </div>
-          <p className="mt-1 font-mono text-sm text-gray-400">{rack.id} · {uHeight}U</p>
+          <p className="mt-1 font-mono text-sm text-gray-400">
+            {rack.id} · {uHeight}U
+          </p>
         </div>
         <div className="flex gap-2">
           <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
             {(['front', 'both', 'rear'] as const).map((side) => (
-              <button key={side} onClick={() => setViewSide(side)}
-                className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${viewSide === side ? 'bg-brand-500 text-white' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5'}`}>
+              <button
+                key={side}
+                onClick={() => setViewSide(side)}
+                className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${viewSide === side ? 'bg-brand-500 text-white' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5'}`}
+              >
                 {side === 'both' ? 'Front & Rear' : side}
               </button>
             ))}
           </div>
-          <button onClick={loadHealth} className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 dark:border-gray-700 dark:text-gray-400">
+          <button
+            onClick={loadHealth}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-600 dark:border-gray-700 dark:text-gray-400"
+          >
             <RotateCcw className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -142,15 +202,30 @@ export const CosmosRackPage = () => {
       {health && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {[
-            { label: 'Temperature', value: health.metrics?.temperature ? `${Math.round(health.metrics.temperature)}°C` : '—', icon: Thermometer },
-            { label: 'Power', value: health.metrics?.power ? `${(health.metrics.power / 1000).toFixed(1)} kW` : '—', icon: Zap },
+            {
+              label: 'Temperature',
+              value: health.metrics?.temperature
+                ? `${Math.round(health.metrics.temperature)}°C`
+                : '—',
+              icon: Thermometer,
+            },
+            {
+              label: 'Power',
+              value: health.metrics?.power ? `${(health.metrics.power / 1000).toFixed(1)} kW` : '—',
+              icon: Zap,
+            },
             { label: 'Devices', value: rack.devices.length, icon: Server },
             { label: 'Nodes', value: Object.keys(nodes).length, icon: Cpu },
           ].map((s) => (
-            <div key={s.label} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-              <s.icon className="h-5 w-5 shrink-0 text-brand-500" />
-              <div><p className="text-lg font-bold text-gray-900 dark:text-white">{s.value}</p>
-                <p className="text-xs text-gray-400">{s.label}</p></div>
+            <div
+              key={s.label}
+              className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+            >
+              <s.icon className="text-brand-500 h-5 w-5 shrink-0" />
+              <div>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">{s.value}</p>
+                <p className="text-xs text-gray-400">{s.label}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -184,9 +259,12 @@ export const CosmosRackPage = () => {
             {Object.entries(nodes).map(([node, ns]) => {
               const s = (ns as { state?: string }).state ?? 'UNKNOWN';
               return (
-                <div key={node} title={`${node}: ${s}`}
+                <div
+                  key={node}
+                  title={`${node}: ${s}`}
                   className="flex h-7 w-7 cursor-pointer items-center justify-center rounded text-[8px] font-bold text-white transition-transform hover:scale-110"
-                  style={{ backgroundColor: HC[s] }} />
+                  style={{ backgroundColor: HC[s] }}
+                />
               );
             })}
           </div>

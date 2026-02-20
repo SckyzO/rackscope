@@ -115,7 +115,7 @@ class TelemetryPlanner:
             seen_disc: set[str] = set()
             absent_state = check.expand_absent_state or self.config.unknown_state
             for disc_query in disc_exprs:
-                disc_result = await prom_client.query(disc_query, cache_type='health')
+                disc_result = await prom_client.query(disc_query, cache_type="health")
                 if disc_result.get("status") != "success":
                     continue
                 for item in disc_result.get("data", {}).get("result", []):
@@ -133,7 +133,7 @@ class TelemetryPlanner:
         for check, query in queries:
             if not query:
                 continue
-            result = await prom_client.query(query, cache_type='health')
+            result = await prom_client.query(query, cache_type="health")
             if result.get("status") != "success":
                 continue
             for item in result.get("data", {}).get("result", []):

@@ -16,8 +16,17 @@ export const FormSection: React.FC<FormSectionProps> = ({
   return (
     <div className={`space-y-4 ${className}`}>
       <div>
-        <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-primary)' }}>{title}</h3>
-        {description && <p className="mt-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{description}</p>}
+        <h3
+          className="text-sm font-bold tracking-wider uppercase"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          {title}
+        </h3>
+        {description && (
+          <p className="mt-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+            {description}
+          </p>
+        )}
       </div>
       <div className="space-y-4">{children}</div>
     </div>

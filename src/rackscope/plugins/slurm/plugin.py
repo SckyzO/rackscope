@@ -56,12 +56,12 @@ class SlurmPlugin(RackscopePlugin):
 
         if app_config:
             # Try new format first (recommended)
-            if hasattr(app_config, 'plugins') and 'slurm' in app_config.plugins:
-                slurm_cfg = app_config.plugins['slurm']
+            if hasattr(app_config, "plugins") and "slurm" in app_config.plugins:
+                slurm_cfg = app_config.plugins["slurm"]
                 # Convert to dict, handling both dict and BaseModel
-                if hasattr(slurm_cfg, 'model_dump'):
+                if hasattr(slurm_cfg, "model_dump"):
                     raw_config = slurm_cfg.model_dump()
-                elif hasattr(slurm_cfg, 'dict'):
+                elif hasattr(slurm_cfg, "dict"):
                     raw_config = slurm_cfg.dict()
                 elif isinstance(slurm_cfg, dict):
                     raw_config = dict(slurm_cfg)
@@ -69,7 +69,7 @@ class SlurmPlugin(RackscopePlugin):
                     raw_config = {}
                 logger.info("Loading Slurm config from plugins.slurm (new format)")
             # Fallback to legacy format
-            elif hasattr(app_config, 'slurm') and app_config.slurm:
+            elif hasattr(app_config, "slurm") and app_config.slurm:
                 raw_config = app_config.slurm.model_dump()
                 logger.warning(
                     "Loading Slurm config from legacy format. "
@@ -77,17 +77,17 @@ class SlurmPlugin(RackscopePlugin):
                 )
 
         # Ensure status_map.info exists (for backwards compatibility)
-        if 'status_map' in raw_config and isinstance(raw_config['status_map'], dict):
-            if 'info' not in raw_config['status_map']:
-                raw_config['status_map']['info'] = []
+        if "status_map" in raw_config and isinstance(raw_config["status_map"], dict):
+            if "info" not in raw_config["status_map"]:
+                raw_config["status_map"]["info"] = []
 
         # Ensure severity_colors exists with defaults
-        if 'severity_colors' not in raw_config or raw_config['severity_colors'] is None:
-            raw_config['severity_colors'] = {
-                'ok': '#22c55e',
-                'warn': '#f59e0b',
-                'crit': '#ef4444',
-                'info': '#3b82f6'
+        if "severity_colors" not in raw_config or raw_config["severity_colors"] is None:
+            raw_config["severity_colors"] = {
+                "ok": "#22c55e",
+                "warn": "#f59e0b",
+                "crit": "#ef4444",
+                "info": "#3b82f6",
             }
 
         # Validate and create config with defaults
@@ -107,8 +107,7 @@ class SlurmPlugin(RackscopePlugin):
 
         self.config = self._load_config(APP_CONFIG)
         logger.info(
-            f"Slurm plugin started (metric={self.config.metric}, "
-            f"roles={self.config.roles})"
+            f"Slurm plugin started (metric={self.config.metric}, roles={self.config.roles})"
         )
 
     async def on_config_reload(self, app_config: AppConfig) -> None:

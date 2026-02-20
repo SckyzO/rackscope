@@ -8,7 +8,15 @@ const slides = [
   { bg: 'from-error-500 to-error-700', label: 'Slide 4 — Error' },
 ];
 
-const SectionCard = ({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) => (
+const SectionCard = ({
+  title,
+  desc,
+  children,
+}: {
+  title: string;
+  desc?: string;
+  children: React.ReactNode;
+}) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
     <div className="mb-5">
       <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
@@ -31,7 +39,9 @@ function useCarousel(auto = false) {
 }
 
 const Slide = ({ idx }: { idx: number }) => (
-  <div className={`flex h-44 items-center justify-center rounded-xl bg-gradient-to-br ${slides[idx].bg}`}>
+  <div
+    className={`flex h-44 items-center justify-center rounded-xl bg-gradient-to-br ${slides[idx].bg}`}
+  >
     <span className="text-lg font-bold text-white">{slides[idx].label}</span>
   </div>
 );
@@ -46,7 +56,9 @@ export const CarouselPage = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">Carousel</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Image and content slideshow components</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Image and content slideshow components
+        </p>
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="Slides Only" desc="Auto-rotating, no controls">
@@ -55,10 +67,16 @@ export const CarouselPage = () => {
         <SectionCard title="With Controls" desc="Manual navigation with prev/next buttons">
           <div className="relative">
             <Slide idx={c2.idx} />
-            <button onClick={c2.prev} className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60">
+            <button
+              onClick={c2.prev}
+              className="absolute top-1/2 left-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60"
+            >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <button onClick={c2.next} className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60">
+            <button
+              onClick={c2.next}
+              className="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60"
+            >
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
@@ -68,23 +86,40 @@ export const CarouselPage = () => {
             <Slide idx={c3.idx} />
             <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
               {slides.map((_, i) => (
-                <button key={i} onClick={() => c3.setIdx(i)} className={`h-1.5 rounded-full transition-all ${i === c3.idx ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`} />
+                <button
+                  key={i}
+                  onClick={() => c3.setIdx(i)}
+                  className={`h-1.5 rounded-full transition-all ${i === c3.idx ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`}
+                />
               ))}
             </div>
           </div>
         </SectionCard>
-        <SectionCard title="With Controls & Indicators" desc="Full navigation with both controls and dots">
+        <SectionCard
+          title="With Controls & Indicators"
+          desc="Full navigation with both controls and dots"
+        >
           <div className="relative">
             <Slide idx={c4.idx} />
-            <button onClick={c4.prev} className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60">
+            <button
+              onClick={c4.prev}
+              className="absolute top-1/2 left-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60"
+            >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <button onClick={c4.next} className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60">
+            <button
+              onClick={c4.next}
+              className="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm hover:bg-black/60"
+            >
               <ChevronRight className="h-5 w-5" />
             </button>
             <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
               {slides.map((_, i) => (
-                <button key={i} onClick={() => c4.setIdx(i)} className={`h-1.5 rounded-full transition-all ${i === c4.idx ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`} />
+                <button
+                  key={i}
+                  onClick={() => c4.setIdx(i)}
+                  className={`h-1.5 rounded-full transition-all ${i === c4.idx ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`}
+                />
               ))}
             </div>
           </div>

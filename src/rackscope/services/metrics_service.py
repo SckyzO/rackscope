@@ -64,7 +64,7 @@ async def collect_component_metrics(
     metrics: Dict[str, float] = {}
     try:
         responses = await asyncio.gather(
-            *[prom_client.query(query, cache_type='metrics') for query in queries.values()],
+            *[prom_client.query(query, cache_type="metrics") for query in queries.values()],
             return_exceptions=True,
         )
     except Exception as e:
@@ -266,7 +266,7 @@ async def collect_device_metrics(
     all_instances_metrics: Dict[str, Dict[str, float]] = {}
     try:
         responses = await asyncio.gather(
-            *[prom_client.query(query, cache_type='metrics') for query in queries.values()],
+            *[prom_client.query(query, cache_type="metrics") for query in queries.values()],
             return_exceptions=True,
         )
     except Exception as e:

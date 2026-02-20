@@ -1,6 +1,24 @@
-import { ChevronRight, Building2, Cpu, Network, HardDrive, Zap, Thermometer, Box, Server } from 'lucide-react';
+import {
+  ChevronRight,
+  Building2,
+  Cpu,
+  Network,
+  HardDrive,
+  Zap,
+  Thermometer,
+  Box,
+  Server,
+} from 'lucide-react';
 
-const SectionCard = ({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) => (
+const SectionCard = ({
+  title,
+  desc,
+  children,
+}: {
+  title: string;
+  desc?: string;
+  children: React.ReactNode;
+}) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
     <div className="mb-5">
       <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
@@ -12,10 +30,25 @@ const SectionCard = ({ title, desc, children }: { title: string; desc?: string; 
 
 const deviceTypes = [
   { type: 'Server', icon: Cpu, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-500/10' },
-  { type: 'Switch', icon: Network, color: 'text-success-500', bg: 'bg-success-50 dark:bg-success-500/10' },
-  { type: 'Storage', icon: HardDrive, color: 'text-warning-500', bg: 'bg-warning-50 dark:bg-warning-500/10' },
+  {
+    type: 'Switch',
+    icon: Network,
+    color: 'text-success-500',
+    bg: 'bg-success-50 dark:bg-success-500/10',
+  },
+  {
+    type: 'Storage',
+    icon: HardDrive,
+    color: 'text-warning-500',
+    bg: 'bg-warning-50 dark:bg-warning-500/10',
+  },
   { type: 'PDU', icon: Zap, color: 'text-error-500', bg: 'bg-error-50 dark:bg-error-500/10' },
-  { type: 'Cooling', icon: Thermometer, color: 'text-brand-400', bg: 'bg-brand-50 dark:bg-brand-400/10' },
+  {
+    type: 'Cooling',
+    icon: Thermometer,
+    color: 'text-brand-400',
+    bg: 'bg-brand-50 dark:bg-brand-400/10',
+  },
   { type: 'Generic', icon: Box, color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-800' },
 ];
 
@@ -34,10 +67,15 @@ export const InfrastructureNavPage = () => (
   <div className="space-y-6">
     <div>
       <h2 className="text-xl font-bold text-gray-900 dark:text-white">Infrastructure Navigation</h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Hierarchy navigation and topology components</p>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Hierarchy navigation and topology components
+      </p>
     </div>
     <div className="grid gap-6">
-      <SectionCard title="Infrastructure Breadcrumb" desc="Clickable path: Site → Room → Aisle → Rack → Device">
+      <SectionCard
+        title="Infrastructure Breadcrumb"
+        desc="Clickable path: Site → Room → Aisle → Rack → Device"
+      >
         <nav className="flex items-center gap-1 overflow-x-auto">
           {[
             { icon: Building2, label: 'DC Paris' },
@@ -46,22 +84,32 @@ export const InfrastructureNavPage = () => (
             { icon: Box, label: 'Rack r01-01' },
           ].map(({ icon: Icon, label }, i) => (
             <div key={label} className="flex items-center gap-1">
-              {i > 0 && <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600 shrink-0" />}
-              <a href="#" className="flex items-center gap-1.5 rounded px-2 py-1 text-sm font-medium text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10 whitespace-nowrap">
-                <Icon className="h-4 w-4" />{label}
+              {i > 0 && (
+                <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-600" />
+              )}
+              <a
+                href="#"
+                className="text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10 flex items-center gap-1.5 rounded px-2 py-1 text-sm font-medium whitespace-nowrap"
+              >
+                <Icon className="h-4 w-4" />
+                {label}
               </a>
             </div>
           ))}
-          <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600 shrink-0" />
-          <span className="flex items-center gap-1.5 rounded px-2 py-1 text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-            <Cpu className="h-4 w-4 text-brand-500" />r01-01-c01
+          <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-600" />
+          <span className="flex items-center gap-1.5 rounded px-2 py-1 text-sm font-semibold whitespace-nowrap text-gray-900 dark:text-white">
+            <Cpu className="text-brand-500 h-4 w-4" />
+            r01-01-c01
           </span>
         </nav>
       </SectionCard>
       <SectionCard title="Device Type Icons" desc="Icon system for physical infrastructure types">
         <div className="grid grid-cols-3 gap-4 md:grid-cols-6">
           {deviceTypes.map(({ type, icon: Icon, color, bg }) => (
-            <div key={type} className={`flex flex-col items-center gap-2 rounded-xl border border-gray-200 p-4 dark:border-gray-800 ${bg}`}>
+            <div
+              key={type}
+              className={`flex flex-col items-center gap-2 rounded-xl border border-gray-200 p-4 dark:border-gray-800 ${bg}`}
+            >
               <Icon className={`h-8 w-8 ${color}`} />
               <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{type}</span>
             </div>
@@ -71,14 +119,32 @@ export const InfrastructureNavPage = () => (
       <SectionCard title="Rack Mini Cards" desc="Compact rack overview for room/aisle views">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {racks.map((rack) => (
-            <div key={rack.id} className="group relative cursor-pointer rounded-xl border-2 bg-white p-3 transition-all hover:shadow-lg dark:bg-gray-900" style={{ borderColor: rack.color }}>
+            <div
+              key={rack.id}
+              className="group relative cursor-pointer rounded-xl border-2 bg-white p-3 transition-all hover:shadow-lg dark:bg-gray-900"
+              style={{ borderColor: rack.color }}
+            >
               <div className="mb-2 flex items-center justify-between">
-                <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">{rack.id}</span>
-                <span className="rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: rack.color }}>{rack.health}</span>
+                <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
+                  {rack.id}
+                </span>
+                <span
+                  className="rounded px-1.5 py-0.5 text-[10px] font-bold text-white"
+                  style={{ backgroundColor: rack.color }}
+                >
+                  {rack.health}
+                </span>
               </div>
               <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
-                {[['U', rack.u], ['Temp', rack.temp], ['Power', rack.power]].map(([k, v]) => (
-                  <div key={k} className="flex justify-between"><span>{k}:</span><span className="font-mono font-semibold">{v}</span></div>
+                {[
+                  ['U', rack.u],
+                  ['Temp', rack.temp],
+                  ['Power', rack.power],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex justify-between">
+                    <span>{k}:</span>
+                    <span className="font-mono font-semibold">{v}</span>
+                  </div>
                 ))}
               </div>
               <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
@@ -97,12 +163,25 @@ export const InfrastructureNavPage = () => (
             { indent: 3, icon: Box, label: 'Rack r01-01', extra: '(10 devices)' },
             { indent: 4, icon: Cpu, label: 'r01-01-c01', extra: 'OK' },
           ].map(({ indent, icon: Icon, label, extra }, i) => (
-            <div key={i} className="flex items-center gap-2 text-gray-700 dark:text-gray-300" style={{ paddingLeft: `${indent * 16}px` }}>
+            <div
+              key={i}
+              className="flex items-center gap-2 text-gray-700 dark:text-gray-300"
+              style={{ paddingLeft: `${indent * 16}px` }}
+            >
               {indent > 0 && <span className="text-gray-300 dark:text-gray-600">└──</span>}
-              <Icon className="h-4 w-4 text-brand-500 shrink-0" />
+              <Icon className="text-brand-500 h-4 w-4 shrink-0" />
               <span className="font-semibold">{label}</span>
-              {extra && extra !== 'OK' && <span className="text-xs text-gray-400 dark:text-gray-500">{extra}</span>}
-              {extra === 'OK' && <span className="rounded px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: '#10b981' }}>OK</span>}
+              {extra && extra !== 'OK' && (
+                <span className="text-xs text-gray-400 dark:text-gray-500">{extra}</span>
+              )}
+              {extra === 'OK' && (
+                <span
+                  className="rounded px-1.5 py-0.5 text-[10px] font-bold text-white"
+                  style={{ backgroundColor: '#10b981' }}
+                >
+                  OK
+                </span>
+              )}
             </div>
           ))}
         </div>

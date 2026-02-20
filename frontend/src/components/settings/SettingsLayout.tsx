@@ -30,8 +30,16 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
       {/* Header */}
       <header className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black uppercase tracking-tighter" style={{ color: 'var(--color-text-primary)' }}>Settings</h1>
-          <p className="mt-1 font-mono text-xs tracking-wider uppercase" style={{ color: 'var(--color-text-muted)' }}>
+          <h1
+            className="text-3xl font-black tracking-tighter uppercase"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            Settings
+          </h1>
+          <p
+            className="mt-1 font-mono text-xs tracking-wider uppercase"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
             Application Configuration
           </p>
         </div>
@@ -40,7 +48,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
         <button
           onClick={onSave}
           disabled={saving || saved}
-          className={`flex items-center gap-2 rounded-lg px-6 py-3 font-mono text-sm font-bold uppercase tracking-wider transition ${
+          className={`flex items-center gap-2 rounded-lg px-6 py-3 font-mono text-sm font-bold tracking-wider uppercase transition ${
             saved
               ? 'bg-green-600'
               : saving
@@ -74,7 +82,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
-            className={`px-6 py-3 font-mono text-xs font-bold uppercase tracking-wider transition ${
+            className={`px-6 py-3 font-mono text-xs font-bold tracking-wider uppercase transition ${
               activeTab === tab.id
                 ? 'border-b-2 border-blue-500 text-blue-400'
                 : 'text-gray-500 hover:text-gray-300'

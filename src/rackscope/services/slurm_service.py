@@ -207,7 +207,7 @@ async def fetch_slurm_results(slurm_cfg: SlurmConfig) -> List[Dict[str, Any]]:
         f"max by ({slurm_cfg.label_node},{slurm_cfg.label_status},{slurm_cfg.label_partition})"
         f" ({slurm_cfg.metric})"
     )
-    result = await prom_client.query(query, cache_type='health')
+    result = await prom_client.query(query, cache_type="health")
     if result.get("status") != "success":
         return []
     return result.get("data", {}).get("result", [])

@@ -1,4 +1,12 @@
-const SectionCard = ({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) => (
+const SectionCard = ({
+  title,
+  desc,
+  children,
+}: {
+  title: string;
+  desc?: string;
+  children: React.ReactNode;
+}) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
     <div className="mb-5">
       <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
@@ -8,7 +16,15 @@ const SectionCard = ({ title, desc, children }: { title: string; desc?: string; 
   </div>
 );
 
-const Bar = ({ pct, color = 'bg-brand-500', height = 'h-2' }: { pct: number; color?: string; height?: string }) => (
+const Bar = ({
+  pct,
+  color = 'bg-brand-500',
+  height = 'h-2',
+}: {
+  pct: number;
+  color?: string;
+  height?: string;
+}) => (
   <div className={`w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800 ${height}`}>
     <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
   </div>
@@ -18,15 +34,25 @@ export const ProgressBarPage = () => (
   <div className="space-y-6">
     <div>
       <h2 className="text-xl font-bold text-gray-900 dark:text-white">Progress Bars</h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Progress indicators for tasks and loading states</p>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Progress indicators for tasks and loading states
+      </p>
     </div>
     <div className="grid gap-6 lg:grid-cols-2">
       <SectionCard title="Sizes" desc="Extra small to extra large">
         <div className="space-y-4">
-          {[['xs', 'h-1'], ['sm', 'h-1.5'], ['md', 'h-2.5'], ['lg', 'h-4'], ['xl', 'h-6']].map(([size, h]) => (
+          {[
+            ['xs', 'h-1'],
+            ['sm', 'h-1.5'],
+            ['md', 'h-2.5'],
+            ['lg', 'h-4'],
+            ['xl', 'h-6'],
+          ].map(([size, h]) => (
             <div key={size} className="flex items-center gap-3">
-              <span className="w-6 text-xs uppercase text-gray-400">{size}</span>
-              <div className="flex-1"><Bar pct={65} height={h} /></div>
+              <span className="w-6 text-xs text-gray-400 uppercase">{size}</span>
+              <div className="flex-1">
+                <Bar pct={65} height={h} />
+              </div>
             </div>
           ))}
         </div>
@@ -66,8 +92,14 @@ export const ProgressBarPage = () => (
       <SectionCard title="With Inside Label" desc="Percentage text inside the bar">
         <div className="space-y-3">
           {[45, 72, 88].map((pct) => (
-            <div key={pct} className="h-6 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-              <div className="flex h-full items-center justify-end rounded-full bg-brand-500 pr-2 text-xs font-bold text-white" style={{ width: `${pct}%` }}>
+            <div
+              key={pct}
+              className="h-6 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800"
+            >
+              <div
+                className="bg-brand-500 flex h-full items-center justify-end rounded-full pr-2 text-xs font-bold text-white"
+                style={{ width: `${pct}%` }}
+              >
                 {pct}%
               </div>
             </div>
@@ -77,10 +109,24 @@ export const ProgressBarPage = () => (
       <SectionCard title="Striped" desc="Diagonal stripe pattern">
         <div className="space-y-3">
           <div className="h-4 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-            <div className="h-full rounded-full bg-brand-500" style={{ width: '65%', backgroundImage: 'repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(255,255,255,.2) 10px,rgba(255,255,255,.2) 20px)' }} />
+            <div
+              className="bg-brand-500 h-full rounded-full"
+              style={{
+                width: '65%',
+                backgroundImage:
+                  'repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(255,255,255,.2) 10px,rgba(255,255,255,.2) 20px)',
+              }}
+            />
           </div>
           <div className="h-4 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-            <div className="h-full rounded-full bg-success-500" style={{ width: '80%', backgroundImage: 'repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(255,255,255,.2) 10px,rgba(255,255,255,.2) 20px)' }} />
+            <div
+              className="bg-success-500 h-full rounded-full"
+              style={{
+                width: '80%',
+                backgroundImage:
+                  'repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(255,255,255,.2) 10px,rgba(255,255,255,.2) 20px)',
+              }}
+            />
           </div>
         </div>
       </SectionCard>
@@ -93,8 +139,12 @@ export const ProgressBarPage = () => (
             { label: 'Network', pct: 23, color: 'bg-error-500' },
           ].map((item) => (
             <div key={item.label} className="flex items-center gap-3">
-              <span className="w-14 text-xs font-medium text-gray-600 dark:text-gray-400">{item.label}</span>
-              <div className="flex-1"><Bar pct={item.pct} color={item.color} height="h-1.5" /></div>
+              <span className="w-14 text-xs font-medium text-gray-600 dark:text-gray-400">
+                {item.label}
+              </span>
+              <div className="flex-1">
+                <Bar pct={item.pct} color={item.color} height="h-1.5" />
+              </div>
               <span className="w-10 text-right text-xs text-gray-500">{item.pct}%</span>
             </div>
           ))}

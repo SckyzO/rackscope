@@ -46,9 +46,8 @@ const buildSlotMap = (device: Device, template?: DeviceTemplate): Record<number,
 
   if (!template) return {};
   // For storage devices, use disk_layout if available, otherwise fallback to layout
-  const deviceLayout = template.type === 'storage' && template.disk_layout
-    ? template.disk_layout
-    : template.layout;
+  const deviceLayout =
+    template.type === 'storage' && template.disk_layout ? template.disk_layout : template.layout;
   if (!deviceLayout?.matrix) return {};
   const slotOrder = deviceLayout.matrix.flat().filter((slot) => slot > 0);
 
@@ -109,7 +108,9 @@ export const SlurmRoomPage = () => {
       try {
         const cfg = await api.getConfig();
         const nextRefresh = Number(cfg?.refresh?.room_state_seconds) || 30;
-        const roles = Array.isArray(cfg?.plugins?.slurm?.roles) ? cfg.plugins.slurm?.roles : undefined;
+        const roles = Array.isArray(cfg?.plugins?.slurm?.roles)
+          ? cfg.plugins.slurm?.roles
+          : undefined;
         if (active) {
           setRefreshMs(Math.max(10, nextRefresh) * 1000);
           if (roles && roles.length > 0) {
@@ -278,9 +279,10 @@ export const SlurmRoomPage = () => {
                             >
                               {(() => {
                                 // For storage devices, use disk_layout if available, otherwise fallback to layout
-                                const deviceLayout = template.type === 'storage' && template.disk_layout
-                                  ? template.disk_layout
-                                  : template.layout;
+                                const deviceLayout =
+                                  template.type === 'storage' && template.disk_layout
+                                    ? template.disk_layout
+                                    : template.layout;
                                 if (!deviceLayout) return null;
 
                                 return (
@@ -292,49 +294,49 @@ export const SlurmRoomPage = () => {
                                     }}
                                   >
                                     {deviceLayout.matrix.flat().map((slot, idx) => {
-                                  const nodeName = slotMap[slot];
-                                  const nodeState = nodeName
-                                    ? slurmNodes?.nodes[nodeName]
-                                    : undefined;
-                                  const severity = nodeState?.severity || 'UNKNOWN';
-                                  const status = nodeState?.status || 'unknown';
-                                  const partitions = nodeState?.partitions || [];
-                                  return (
-                                    <div
-                                      key={`${device.id}-${idx}`}
-                                      className={`h-full w-full rounded-[2px] border border-black/10 ${severityColor(
-                                        severity
-                                      )} ${nodeName ? 'cursor-help' : 'opacity-30'}`}
-                                      onMouseEnter={(event) => {
-                                        if (!nodeName) return;
-                                        setHover({
-                                          payload: {
-                                            node: nodeName,
-                                            status,
-                                            severity,
-                                            partitions,
-                                            rackName: rack.name,
-                                            deviceName: device.name,
-                                          },
-                                          x: event.clientX,
-                                          y: event.clientY,
-                                        });
-                                      }}
-                                      onMouseMove={(event) => {
-                                        if (!nodeName) return;
-                                        setHover((prev) =>
-                                          prev
-                                            ? {
-                                                ...prev,
-                                                x: event.clientX,
-                                                y: event.clientY,
-                                              }
-                                            : prev
-                                        );
-                                      }}
-                                      onMouseLeave={() => setHover(null)}
-                                    />
-                                  );
+                                      const nodeName = slotMap[slot];
+                                      const nodeState = nodeName
+                                        ? slurmNodes?.nodes[nodeName]
+                                        : undefined;
+                                      const severity = nodeState?.severity || 'UNKNOWN';
+                                      const status = nodeState?.status || 'unknown';
+                                      const partitions = nodeState?.partitions || [];
+                                      return (
+                                        <div
+                                          key={`${device.id}-${idx}`}
+                                          className={`h-full w-full rounded-[2px] border border-black/10 ${severityColor(
+                                            severity
+                                          )} ${nodeName ? 'cursor-help' : 'opacity-30'}`}
+                                          onMouseEnter={(event) => {
+                                            if (!nodeName) return;
+                                            setHover({
+                                              payload: {
+                                                node: nodeName,
+                                                status,
+                                                severity,
+                                                partitions,
+                                                rackName: rack.name,
+                                                deviceName: device.name,
+                                              },
+                                              x: event.clientX,
+                                              y: event.clientY,
+                                            });
+                                          }}
+                                          onMouseMove={(event) => {
+                                            if (!nodeName) return;
+                                            setHover((prev) =>
+                                              prev
+                                                ? {
+                                                    ...prev,
+                                                    x: event.clientX,
+                                                    y: event.clientY,
+                                                  }
+                                                : prev
+                                            );
+                                          }}
+                                          onMouseLeave={() => setHover(null)}
+                                        />
+                                      );
                                     })}
                                   </div>
                                 );

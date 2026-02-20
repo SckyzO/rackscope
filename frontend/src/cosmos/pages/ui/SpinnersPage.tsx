@@ -1,4 +1,12 @@
-const SectionCard = ({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) => (
+const SectionCard = ({
+  title,
+  desc,
+  children,
+}: {
+  title: string;
+  desc?: string;
+  children: React.ReactNode;
+}) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
     <div className="mb-5">
       <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
@@ -12,14 +20,24 @@ export const SpinnersPage = () => (
   <div className="space-y-6">
     <div>
       <h2 className="text-xl font-bold text-gray-900 dark:text-white">Spinners</h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Loading indicators and animated state components</p>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Loading indicators and animated state components
+      </p>
     </div>
     <div className="grid gap-6 lg:grid-cols-2">
       <SectionCard title="Border Spinner" desc="Circular border-based spinner in multiple sizes">
         <div className="flex flex-wrap items-center gap-6">
-          {[['h-4 w-4 border-2', 'XS'], ['h-6 w-6 border-2', 'SM'], ['h-8 w-8 border-[3px]', 'MD'], ['h-10 w-10 border-4', 'LG'], ['h-12 w-12 border-4', 'XL']].map(([cls, label]) => (
+          {[
+            ['h-4 w-4 border-2', 'XS'],
+            ['h-6 w-6 border-2', 'SM'],
+            ['h-8 w-8 border-[3px]', 'MD'],
+            ['h-10 w-10 border-4', 'LG'],
+            ['h-12 w-12 border-4', 'XL'],
+          ].map(([cls, label]) => (
             <div key={label} className="flex flex-col items-center gap-2">
-              <div className={`animate-spin rounded-full border-gray-200 border-t-brand-500 dark:border-gray-700 dark:border-t-brand-500 ${cls}`} />
+              <div
+                className={`border-t-brand-500 dark:border-t-brand-500 animate-spin rounded-full border-gray-200 dark:border-gray-700 ${cls}`}
+              />
               <span className="text-[10px] text-gray-400">{label}</span>
             </div>
           ))}
@@ -48,7 +66,11 @@ export const SpinnersPage = () => (
           {['bg-brand-500', 'bg-success-500', 'bg-warning-500'].map((color) => (
             <div key={color} className="flex gap-1.5">
               {[0, 1, 2].map((i) => (
-                <div key={i} className={`h-2.5 w-2.5 animate-bounce rounded-full ${color}`} style={{ animationDelay: `${i * 0.15}s` }} />
+                <div
+                  key={i}
+                  className={`h-2.5 w-2.5 animate-bounce rounded-full ${color}`}
+                  style={{ animationDelay: `${i * 0.15}s` }}
+                />
               ))}
             </div>
           ))}
@@ -58,7 +80,9 @@ export const SpinnersPage = () => (
         <div className="flex flex-wrap items-center gap-6">
           {['bg-brand-500', 'bg-success-500', 'bg-warning-500', 'bg-error-500'].map((color) => (
             <div key={color} className="relative h-8 w-8">
-              <div className={`absolute h-full w-full animate-ping rounded-full opacity-75 ${color}`} />
+              <div
+                className={`absolute h-full w-full animate-ping rounded-full opacity-75 ${color}`}
+              />
               <div className={`relative h-full w-full rounded-full ${color}`} />
             </div>
           ))}
@@ -66,16 +90,16 @@ export const SpinnersPage = () => (
       </SectionCard>
       <SectionCard title="Spinner in Button" desc="Loading state integrated in buttons">
         <div className="flex flex-wrap gap-3">
-          <button className="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white">
+          <button className="bg-brand-500 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             Loading...
           </button>
-          <button className="flex items-center gap-2 rounded-lg bg-success-500 px-4 py-2 text-sm font-medium text-white">
+          <button className="bg-success-500 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             Saving...
           </button>
           <button className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-brand-500 dark:border-gray-700" />
+            <div className="border-t-brand-500 h-4 w-4 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
             Please wait...
           </button>
         </div>
@@ -84,8 +108,10 @@ export const SpinnersPage = () => (
         <div className="relative h-40 overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm dark:bg-gray-900/80">
             <div className="text-center">
-              <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-brand-500 dark:border-gray-700" />
-              <p className="mt-3 text-sm font-medium text-gray-600 dark:text-gray-400">Loading...</p>
+              <div className="border-t-brand-500 mx-auto h-10 w-10 animate-spin rounded-full border-4 border-gray-200 dark:border-gray-700" />
+              <p className="mt-3 text-sm font-medium text-gray-600 dark:text-gray-400">
+                Loading...
+              </p>
             </div>
           </div>
         </div>

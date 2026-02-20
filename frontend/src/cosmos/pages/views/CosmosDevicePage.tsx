@@ -1,10 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { ChevronRight, Thermometer, Zap, Server, CheckCircle, XCircle, AlertTriangle, HelpCircle } from 'lucide-react';
+import {
+  ChevronRight,
+  Thermometer,
+  Zap,
+  Server,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  HelpCircle,
+} from 'lucide-react';
 import { api } from '../../../services/api';
 import type { RackState, DeviceTemplate } from '../../../types';
 
-const HC: Record<string, string> = { OK: '#10b981', WARN: '#f59e0b', CRIT: '#ef4444', UNKNOWN: '#6b7280' };
+const HC: Record<string, string> = {
+  OK: '#10b981',
+  WARN: '#f59e0b',
+  CRIT: '#ef4444',
+  UNKNOWN: '#6b7280',
+};
 const HBg: Record<string, string> = {
   OK: 'bg-green-50 dark:bg-green-500/10',
   WARN: 'bg-amber-50 dark:bg-amber-500/10',
@@ -20,15 +34,27 @@ const HText: Record<string, string> = {
 const StateIcon = ({ state }: { state: string }) => {
   const props = { className: 'h-4 w-4' };
   switch (state) {
-    case 'OK': return <CheckCircle {...props} style={{ color: HC.OK }} />;
-    case 'WARN': return <AlertTriangle {...props} style={{ color: HC.WARN }} />;
-    case 'CRIT': return <XCircle {...props} style={{ color: HC.CRIT }} />;
-    default: return <HelpCircle {...props} style={{ color: HC.UNKNOWN }} />;
+    case 'OK':
+      return <CheckCircle {...props} style={{ color: HC.OK }} />;
+    case 'WARN':
+      return <AlertTriangle {...props} style={{ color: HC.WARN }} />;
+    case 'CRIT':
+      return <XCircle {...props} style={{ color: HC.CRIT }} />;
+    default:
+      return <HelpCircle {...props} style={{ color: HC.UNKNOWN }} />;
   }
 };
 
 type DeviceContext = {
-  device: { id: string; name: string; template_id: string; u_position: number; instance?: unknown; nodes?: unknown; labels?: unknown };
+  device: {
+    id: string;
+    name: string;
+    template_id: string;
+    u_position: number;
+    instance?: unknown;
+    nodes?: unknown;
+    labels?: unknown;
+  };
   template: DeviceTemplate | null;
   rack: { id: string; name: string };
   room: { id: string; name: string };
@@ -43,8 +69,9 @@ function expandInstances(instance: unknown): string[] {
     if (m) {
       const [, prefix, start, end] = m;
       const w = start.length;
-      return Array.from({ length: parseInt(end) - parseInt(start) + 1 }, (_, i) =>
-        `${prefix}${String(parseInt(start) + i).padStart(w, '0')}`
+      return Array.from(
+        { length: parseInt(end) - parseInt(start) + 1 },
+        (_, i) => `${prefix}${String(parseInt(start) + i).padStart(w, '0')}`
       );
     }
     return [instance];
@@ -64,8 +91,12 @@ export const CosmosDevicePage = () => {
 
   useEffect(() => {
     if (!rackId || !deviceId) return;
-    api.getDeviceDetails(rackId, deviceId)
-      .then((data) => { setCtx(data); setLoading(false); })
+    api
+      .getDeviceDetails(rackId, deviceId)
+      .then((data) => {
+        setCtx(data);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [rackId, deviceId]);
 
@@ -76,26 +107,47 @@ export const CosmosDevicePage = () => {
       try {
         const state = await api.getRackState(rackId, true);
         if (active) setRackState(state);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     };
     load();
     const t = setInterval(load, 30000);
-    return () => { active = false; clearInterval(t); };
+    return () => {
+      active = false;
+      clearInterval(t);
+    };
   }, [rackId]);
 
-  if (loading) return <div className="flex h-64 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-brand-500 dark:border-gray-700" /></div>;
-  if (!ctx) return <div className="flex h-64 items-center justify-center text-gray-400">Device not found</div>;
-
-  // Derive selected instance: URL param > manual selection > first instance
-  const instances = expandInstances(ctx.device.instance ?? ctx.device.nodes);
-  const selectedInstance = searchParams.get('instance') || manualInstance || instances[0] || '';
+  if (loading)
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="border-t-brand-500 h-8 w-8 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
+      </div>
+    );
+  if (!ctx)
+    return (
+      <div className="flex h-64 items-center justify-center text-gray-400">Device not found</div>
+    );
 
   const { device, template, rack, room, site, aisle } = ctx;
+
+  // Derive selected instance: URL param > manual selection > first instance
   const instances = expandInstances(device.instance ?? device.nodes);
+  const selectedInstance = searchParams.get('instance') || manualInstance || instances[0] || '';
 
   // Get instance health from rack state
   const nodes = rackState?.nodes ?? {};
-  const selNodeState = selectedInstance ? (nodes[selectedInstance] as { state?: string; temperature?: number; power?: number; checks?: { id: string; severity: string }[] } | undefined) : undefined;
+  const selNodeState = selectedInstance
+    ? (nodes[selectedInstance] as
+        | {
+            state?: string;
+            temperature?: number;
+            power?: number;
+            checks?: { id: string; severity: string }[];
+          }
+        | undefined)
+    : undefined;
   const selState = selNodeState?.state ?? 'UNKNOWN';
 
   // For disk slots (storage devices)
@@ -121,26 +173,42 @@ export const CosmosDevicePage = () => {
     <div className="space-y-5">
       {/* Breadcrumb */}
       <nav className="flex flex-wrap items-center gap-1 text-sm">
-        <Link to="/cosmos/views/worldmap" className="text-brand-500 hover:underline">{site.name}</Link>
+        <Link to="/cosmos/views/worldmap" className="text-brand-500 hover:underline">
+          {site.name}
+        </Link>
         <ChevronRight className="h-4 w-4 text-gray-400" />
-        <Link to={`/cosmos/views/room/${room.id}`} className="text-brand-500 hover:underline">{room.name}</Link>
+        <Link to={`/cosmos/views/room/${room.id}`} className="text-brand-500 hover:underline">
+          {room.name}
+        </Link>
         <ChevronRight className="h-4 w-4 text-gray-400" />
-        {aisle && <><span className="text-gray-400">{aisle.name}</span><ChevronRight className="h-4 w-4 text-gray-400" /></>}
-        <Link to={`/cosmos/views/rack/${rack.id}`} className="text-brand-500 hover:underline">{rack.name}</Link>
+        {aisle && (
+          <>
+            <span className="text-gray-400">{aisle.name}</span>
+            <ChevronRight className="h-4 w-4 text-gray-400" />
+          </>
+        )}
+        <Link to={`/cosmos/views/rack/${rack.id}`} className="text-brand-500 hover:underline">
+          {rack.name}
+        </Link>
         <ChevronRight className="h-4 w-4 text-gray-400" />
         <span className="font-semibold text-gray-900 dark:text-white">{device.name}</span>
       </nav>
 
       {/* Header */}
       <div className="flex flex-wrap items-start gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/15">
-          <Server className="h-6 w-6 text-brand-500" />
+        <div className="bg-brand-50 dark:bg-brand-500/15 flex h-12 w-12 items-center justify-center rounded-xl">
+          <Server className="text-brand-500 h-6 w-6" />
         </div>
         <div className="flex-1">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">{device.name}</h2>
-          <p className="font-mono text-sm text-gray-400">{device.id} · U{device.u_position} · {template?.type ?? 'device'}</p>
+          <p className="font-mono text-sm text-gray-400">
+            {device.id} · U{device.u_position} · {template?.type ?? 'device'}
+          </p>
         </div>
-        <span className="rounded-lg px-3 py-1.5 text-sm font-bold text-white" style={{ backgroundColor: HC[rackState?.state ?? 'UNKNOWN'] }}>
+        <span
+          className="rounded-lg px-3 py-1.5 text-sm font-bold text-white"
+          style={{ backgroundColor: HC[rackState?.state ?? 'UNKNOWN'] }}
+        >
           Rack: {rackState?.state ?? 'UNKNOWN'}
         </span>
       </div>
@@ -151,7 +219,9 @@ export const CosmosDevicePage = () => {
           {/* Instance tabs */}
           {instances.length > 1 && (
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-              <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Instances ({instances.length})</h3>
+              <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Instances ({instances.length})
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {instances.map((inst) => {
                   const ns = nodes[inst] as { state?: string } | undefined;
@@ -160,9 +230,12 @@ export const CosmosDevicePage = () => {
                     <button
                       key={inst}
                       onClick={() => handleInstanceSelect(inst)}
-                      className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${selectedInstance === inst ? 'border-brand-500 bg-brand-500 text-white' : 'border border-gray-200 text-gray-600 hover:border-brand-300 dark:border-gray-700 dark:text-gray-400'}`}
+                      className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${selectedInstance === inst ? 'border-brand-500 bg-brand-500 text-white' : 'hover:border-brand-300 border border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400'}`}
                     >
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: selectedInstance === inst ? 'white' : HC[s] }} />
+                      <span
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: selectedInstance === inst ? 'white' : HC[s] }}
+                      />
                       {inst}
                     </button>
                   );
@@ -182,14 +255,21 @@ export const CosmosDevicePage = () => {
                   <div key={ri} className="flex gap-1">
                     {row.map((slot: number) => {
                       const vNode = slotMap[slot];
-                      const ns = vNode ? (nodes[vNode] as { state?: string } | undefined) : undefined;
+                      const ns = vNode
+                        ? (nodes[vNode] as { state?: string } | undefined)
+                        : undefined;
                       const s = ns?.state ?? (vNode ? 'OK' : 'UNKNOWN');
                       return (
                         <div
                           key={slot}
                           title={`Slot ${slot}${vNode ? `: ${vNode} — ${s}` : ''}`}
                           className="flex aspect-square flex-1 cursor-pointer items-center justify-center rounded text-[8px] font-bold text-white transition-transform hover:scale-110"
-                          style={{ backgroundColor: slot > 0 ? HC[s] : 'transparent', minWidth: '24px', minHeight: '24px', opacity: slot > 0 ? 0.8 : 0 }}
+                          style={{
+                            backgroundColor: slot > 0 ? HC[s] : 'transparent',
+                            minWidth: '24px',
+                            minHeight: '24px',
+                            opacity: slot > 0 ? 0.8 : 0,
+                          }}
                         >
                           {slot > 0 ? slot : ''}
                         </div>
@@ -198,7 +278,9 @@ export const CosmosDevicePage = () => {
                   </div>
                 ))}
               </div>
-              <p className="mt-3 text-xs text-gray-400">{diskMatrix.flat().filter((s: number) => s > 0).length} disk slots</p>
+              <p className="mt-3 text-xs text-gray-400">
+                {diskMatrix.flat().filter((s: number) => s > 0).length} disk slots
+              </p>
             </div>
           )}
 
@@ -206,9 +288,14 @@ export const CosmosDevicePage = () => {
           {selectedInstance && (
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Instance: {selectedInstance}</h3>
-                <div className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold ${HBg[selState]} ${HText[selState]}`}>
-                  <StateIcon state={selState} />{selState}
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Instance: {selectedInstance}
+                </h3>
+                <div
+                  className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold ${HBg[selState]} ${HText[selState]}`}
+                >
+                  <StateIcon state={selState} />
+                  {selState}
                 </div>
               </div>
 
@@ -217,14 +304,24 @@ export const CosmosDevicePage = () => {
                 <div className="mb-4 grid grid-cols-2 gap-3">
                   {(selNodeState.temperature ?? 0) > 0 && (
                     <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400"><Thermometer className="h-3.5 w-3.5" />Temperature</div>
-                      <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">{Math.round(selNodeState.temperature ?? 0)}°C</p>
+                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                        <Thermometer className="h-3.5 w-3.5" />
+                        Temperature
+                      </div>
+                      <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
+                        {Math.round(selNodeState.temperature ?? 0)}°C
+                      </p>
                     </div>
                   )}
                   {(selNodeState.power ?? 0) > 0 && (
                     <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400"><Zap className="h-3.5 w-3.5" />Power</div>
-                      <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">{selNodeState.power} W</p>
+                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                        <Zap className="h-3.5 w-3.5" />
+                        Power
+                      </div>
+                      <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
+                        {selNodeState.power} W
+                      </p>
                     </div>
                   )}
                 </div>
@@ -233,15 +330,33 @@ export const CosmosDevicePage = () => {
               {/* Checks */}
               {selNodeState?.checks && selNodeState.checks.length > 0 && (
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Active Checks</p>
+                  <p className="mb-2 text-xs font-semibold tracking-wider text-gray-400 uppercase">
+                    Active Checks
+                  </p>
                   <div className="space-y-2">
-                    {selNodeState.checks.map((check: { id: string; severity: string }, i: number) => (
-                      <div key={i} className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800" style={{ borderLeftWidth: 3, borderLeftColor: HC[check.severity] ?? HC.UNKNOWN }}>
-                        <StateIcon state={check.severity} />
-                        <span className="font-mono text-sm text-gray-900 dark:text-white">{check.id}</span>
-                        <span className="ml-auto rounded px-2 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: HC[check.severity] ?? HC.UNKNOWN }}>{check.severity}</span>
-                      </div>
-                    ))}
+                    {selNodeState.checks.map(
+                      (check: { id: string; severity: string }, i: number) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
+                          style={{
+                            borderLeftWidth: 3,
+                            borderLeftColor: HC[check.severity] ?? HC.UNKNOWN,
+                          }}
+                        >
+                          <StateIcon state={check.severity} />
+                          <span className="font-mono text-sm text-gray-900 dark:text-white">
+                            {check.id}
+                          </span>
+                          <span
+                            className="ml-auto rounded px-2 py-0.5 text-[10px] font-bold text-white"
+                            style={{ backgroundColor: HC[check.severity] ?? HC.UNKNOWN }}
+                          >
+                            {check.severity}
+                          </span>
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
               )}
@@ -253,7 +368,9 @@ export const CosmosDevicePage = () => {
         <div className="space-y-4">
           {/* Device info */}
           <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Device Info</h3>
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Device Info
+            </h3>
             <div className="space-y-2 text-sm">
               {[
                 { label: 'ID', value: device.id, mono: true },
@@ -261,12 +378,18 @@ export const CosmosDevicePage = () => {
                 { label: 'Type', value: template?.type ?? '—' },
                 { label: 'U Position', value: `U${device.u_position}` },
                 { label: 'U Height', value: `${template?.u_height ?? 1}U` },
-                ...(isStorage ? [{ label: 'Storage Type', value: template?.storage_type ?? '—' }] : []),
+                ...(isStorage
+                  ? [{ label: 'Storage Type', value: template?.storage_type ?? '—' }]
+                  : []),
                 ...(template?.role ? [{ label: 'Role', value: template.role }] : []),
               ].map(({ label, value, mono }) => (
                 <div key={label} className="flex items-center justify-between">
                   <span className="text-gray-500 dark:text-gray-400">{label}</span>
-                  <span className={`font-medium text-gray-900 dark:text-white ${mono ? 'font-mono text-xs' : ''}`}>{value}</span>
+                  <span
+                    className={`font-medium text-gray-900 dark:text-white ${mono ? 'font-mono text-xs' : ''}`}
+                  >
+                    {value}
+                  </span>
                 </div>
               ))}
             </div>
@@ -274,7 +397,9 @@ export const CosmosDevicePage = () => {
 
           {/* Physical location */}
           <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Location</h3>
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Location
+            </h3>
             <div className="space-y-2 text-sm">
               {[
                 { label: 'Datacenter', value: site.name, to: '/cosmos/views/worldmap' },
@@ -285,7 +410,9 @@ export const CosmosDevicePage = () => {
                 <div key={label} className="flex items-center justify-between">
                   <span className="text-gray-500 dark:text-gray-400">{label}</span>
                   {to ? (
-                    <Link to={to} className="font-medium text-brand-500 hover:underline">{value}</Link>
+                    <Link to={to} className="text-brand-500 font-medium hover:underline">
+                      {value}
+                    </Link>
                   ) : (
                     <span className="font-medium text-gray-900 dark:text-white">{value}</span>
                   )}
@@ -297,10 +424,17 @@ export const CosmosDevicePage = () => {
           {/* Template checks */}
           {template?.checks && template.checks.length > 0 && (
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-              <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Configured Checks</h3>
+              <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Configured Checks
+              </h3>
               <div className="flex flex-wrap gap-1.5">
                 {template.checks.map((c: string) => (
-                  <span key={c} className="rounded-full bg-brand-50 px-2.5 py-1 font-mono text-xs text-brand-500 dark:bg-brand-500/15">{c}</span>
+                  <span
+                    key={c}
+                    className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 rounded-full px-2.5 py-1 font-mono text-xs"
+                  >
+                    {c}
+                  </span>
                 ))}
               </div>
             </div>
