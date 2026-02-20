@@ -5,6 +5,7 @@ import {
   Activity,
   BarChart2,
   LineChart,
+  HeartPulse,
   LayoutGrid,
   Tag,
   AlertTriangle,
@@ -97,6 +98,19 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
     { to: '/cosmos/ui/tabs', icon: PanelTop, label: 'Tabs' },
     { to: '/cosmos/ui/tooltips', icon: Info, label: 'Tooltips' },
     { to: '/cosmos/ui/form-elements', icon: FormInput, label: 'Form Elements' },
+    { to: '/cosmos/ui/avatars', icon: Users, label: 'Avatars' },
+    // New generic
+    { to: '/cosmos/ui/accordion', icon: ChevronDown, label: 'Accordion' },
+    { to: '/cosmos/ui/stepper', icon: MoreHorizontal, label: 'Stepper' },
+    { to: '/cosmos/ui/timeline', icon: Activity, label: 'Timeline' },
+    { to: '/cosmos/ui/skeleton', icon: Loader2, label: 'Skeleton' },
+    { to: '/cosmos/ui/empty-state', icon: Info, label: 'Empty State' },
+    { to: '/cosmos/ui/toast', icon: Bell, label: 'Toast' },
+    { to: '/cosmos/ui/drawer', icon: PanelTop, label: 'Drawer' },
+    { to: '/cosmos/ui/stats-cards', icon: BarChart2, label: 'Stats Cards' },
+    { to: '/cosmos/ui/tag-input', icon: Tag, label: 'Tag Input' },
+    { to: '/cosmos/ui/range-slider', icon: Gauge, label: 'Range Slider' },
+    { to: '/cosmos/ui/otp-input', icon: FormInput, label: 'OTP Input' },
   ];
 
   return (
@@ -156,6 +170,13 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
 
         <SectionLabel label="Navigation" collapsed={collapsed} />
         <NavItem to="/cosmos/ui/breadcrumb" icon={Home} label="Breadcrumb" collapsed={collapsed} />
+
+        <SectionLabel label="Rackscope" collapsed={collapsed} />
+        <NavItem to="/cosmos/rackscope/health" icon={HeartPulse} label="Health Status" collapsed={collapsed} />
+        <NavItem to="/cosmos/rackscope/alerts" icon={AlertTriangle} label="Alert Feed" collapsed={collapsed} />
+        <NavItem to="/cosmos/rackscope/metrics" icon={BarChart2} label="Metrics" collapsed={collapsed} />
+        <NavItem to="/cosmos/rackscope/infra-nav" icon={Home} label="Infra Navigation" collapsed={collapsed} />
+        <NavItem to="/cosmos/rackscope/slurm" icon={Activity} label="Slurm" collapsed={collapsed} />
 
         <SectionLabel label="Charts" collapsed={collapsed} />
         <NavItem to="/cosmos/charts" icon={LineChart} label="Charts" collapsed={collapsed} />

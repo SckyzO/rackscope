@@ -24,6 +24,18 @@ import { PopoversPage } from './pages/ui/PopoversPage';
 import { NotificationsPage } from './pages/ui/NotificationsPage';
 import { FormElementsPage } from './pages/ui/FormElementsPage';
 import { AvatarsPage } from './pages/ui/AvatarsPage';
+// New generic UI
+import { AccordionPage } from './pages/ui/AccordionPage';
+import { StepperPage } from './pages/ui/StepperPage';
+import { TimelinePage } from './pages/ui/TimelinePage';
+import { SkeletonPage } from './pages/ui/SkeletonPage';
+import { EmptyStatePage } from './pages/ui/EmptyStatePage';
+import { ToastPage } from './pages/ui/ToastPage';
+import { DrawerPage } from './pages/ui/DrawerPage';
+import { StatsCardsPage } from './pages/ui/StatsCardsPage';
+import { TagInputPage } from './pages/ui/TagInputPage';
+import { RangeSliderPage } from './pages/ui/RangeSliderPage';
+import { OtpInputPage } from './pages/ui/OtpInputPage';
 
 // Charts
 import { ChartsPage } from './pages/charts/ChartsPage';
@@ -35,14 +47,21 @@ import { DataTablesPage } from './pages/tables/DataTablesPage';
 import { SignInPage } from './pages/auth/SignInPage';
 import { SignUpPage } from './pages/auth/SignUpPage';
 
-// Free template pages
+// Pages
 import { ProfilePage } from './pages/ProfilePage';
 import { CalendarPage } from './pages/CalendarPage';
 import { NotificationsFullPage } from './pages/NotificationsFullPage';
 
+// Rackscope-specific
+import { HealthStatusPage } from './pages/rackscope/HealthStatusPage';
+import { AlertFeedPage } from './pages/rackscope/AlertFeedPage';
+import { MetricsPage } from './pages/rackscope/MetricsPage';
+import { InfrastructureNavPage } from './pages/rackscope/InfrastructureNavPage';
+import { SlurmPage } from './pages/rackscope/SlurmPage';
+
 export const CosmosRouter = () => (
   <Routes>
-    {/* Auth pages bypass layout */}
+    {/* Auth — no layout */}
     <Route path="auth/signin" element={<SignInPage />} />
     <Route path="auth/signup" element={<SignUpPage />} />
 
@@ -70,6 +89,18 @@ export const CosmosRouter = () => (
       <Route path="ui/breadcrumb" element={<BreadcrumbPage />} />
       <Route path="ui/form-elements" element={<FormElementsPage />} />
       <Route path="ui/avatars" element={<AvatarsPage />} />
+      {/* New generic */}
+      <Route path="ui/accordion" element={<AccordionPage />} />
+      <Route path="ui/stepper" element={<StepperPage />} />
+      <Route path="ui/timeline" element={<TimelinePage />} />
+      <Route path="ui/skeleton" element={<SkeletonPage />} />
+      <Route path="ui/empty-state" element={<EmptyStatePage />} />
+      <Route path="ui/toast" element={<ToastPage />} />
+      <Route path="ui/drawer" element={<DrawerPage />} />
+      <Route path="ui/stats-cards" element={<StatsCardsPage />} />
+      <Route path="ui/tag-input" element={<TagInputPage />} />
+      <Route path="ui/range-slider" element={<RangeSliderPage />} />
+      <Route path="ui/otp-input" element={<OtpInputPage />} />
 
       {/* Charts */}
       <Route path="charts" element={<ChartsPage />} />
@@ -77,12 +108,18 @@ export const CosmosRouter = () => (
       {/* Tables */}
       <Route path="tables" element={<DataTablesPage />} />
 
-      {/* Free template pages */}
+      {/* Pages */}
       <Route path="profile" element={<ProfilePage />} />
       <Route path="calendar" element={<CalendarPage />} />
       <Route path="notifications" element={<NotificationsFullPage />} />
 
-      {/* 404 */}
+      {/* Rackscope */}
+      <Route path="rackscope/health" element={<HealthStatusPage />} />
+      <Route path="rackscope/alerts" element={<AlertFeedPage />} />
+      <Route path="rackscope/metrics" element={<MetricsPage />} />
+      <Route path="rackscope/infra-nav" element={<InfrastructureNavPage />} />
+      <Route path="rackscope/slurm" element={<SlurmPage />} />
+
       <Route path="*" element={<NotFoundPage />} />
     </Route>
   </Routes>
