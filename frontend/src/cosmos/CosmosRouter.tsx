@@ -56,6 +56,9 @@ import { NotificationsFullPage } from './pages/NotificationsFullPage';
 import { CosmosWorldMapPage } from './pages/views/CosmosWorldMapPage';
 import { CosmosRoomPage } from './pages/views/CosmosRoomPage';
 import { CosmosRoomPageV2 } from './pages/views/CosmosRoomPageV2';
+import { CosmosRoomPageV3 } from './pages/views/CosmosRoomPageV3';
+import { CosmosRoomPageV4 } from './pages/views/CosmosRoomPageV4';
+import { CosmosRoomPageV5 } from './pages/views/CosmosRoomPageV5';
 import { CosmosRackPage } from './pages/views/CosmosRackPage';
 import { CosmosDevicePage } from './pages/views/CosmosDevicePage';
 import { CosmosRackV1 } from './pages/views/CosmosRackV1';
@@ -143,6 +146,9 @@ export const CosmosRouter = () => (
       <Route path="views/worldmap" element={<CosmosWorldMapPage />} />
       <Route path="views/room/:roomId" element={<CosmosRoomPage />} />
       <Route path="views/room-v2/:roomId" element={<CosmosRoomPageV2 />} />
+      <Route path="views/room-v3/:roomId" element={<CosmosRoomPageV3 />} />
+      <Route path="views/room-v4/:roomId" element={<CosmosRoomPageV4 />} />
+      <Route path="views/room-v5/:roomId" element={<CosmosRoomPageV5 />} />
       <Route path="views/rack/:rackId" element={<CosmosRackPage />} />
       <Route path="views/rack-v1/:rackId" element={<CosmosRackV1 />} />
       <Route path="views/rack-v2/:rackId" element={<CosmosRackV2 />} />
