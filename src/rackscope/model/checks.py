@@ -25,6 +25,27 @@ class CheckDefinition(BaseModel):
         default=None,
         description="Label name to expand into virtual nodes (e.g., 'slot' for per-drive checks)"
     )
+    expand_discovery_expr: Optional[str] = Field(
+        default=None,
+        description=(
+            "Optional PromQL expression to discover all label values (uses $instances). "
+            "Slots found here but absent from the main query get expand_absent_state."
+        )
+    )
+    expand_absent_state: Optional[str] = Field(
+        default=None,
+        description=(
+            "State assigned to virtual nodes discovered but absent from the main query. "
+            "Defaults to planner unknown_state. Set to 'OK' when absence means healthy."
+        )
+    )
+    expand_crit_threshold: Optional[int] = Field(
+        default=None,
+        description=(
+            "When set, a parent instance is CRIT only if this many or more virtual nodes "
+            "are CRIT; fewer CRIT virtual nodes result in WARN instead."
+        )
+    )
 
 
 class ChecksLibrary(BaseModel):

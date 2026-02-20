@@ -2,7 +2,6 @@ import time
 import random
 import yaml
 import os
-import sys
 import math
 import re
 import fnmatch

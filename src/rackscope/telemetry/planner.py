@@ -90,8 +90,45 @@ class TelemetryPlanner:
         seen_nodes: set[str] = set()
         seen_chassis: set[str] = set()
         seen_racks: set[str] = set()
-        # Maps virtual node key → parent instance key for state propagation
-        virtual_node_parents: Dict[str, str] = {}
+        # Maps virtual node key → (parent_instance, check_id) for propagation
+        virtual_node_info: Dict[str, Tuple[str, str]] = {}
+
+        # Discovery pre-pass: populate virtual nodes from expand_discovery_expr
+        # so slots absent from the main (filtered) query still get a state
+        for check in checks.checks:
+            if not check.expand_by_label or not check.expand_discovery_expr:
+                continue
+            disc_node_ids = node_ids
+            if targets_by_check is not None:
+                scoped = targets_by_check.get(check.id)
+                if not scoped:
+                    continue
+                disc_node_ids = scoped.get("node", [])
+            if not disc_node_ids:
+                continue
+            disc_exprs = _expand_placeholder(
+                [check.expand_discovery_expr],
+                "$instances",
+                disc_node_ids,
+                self.config.max_ids_per_query,
+            )
+            seen_disc: set[str] = set()
+            absent_state = check.expand_absent_state or self.config.unknown_state
+            for disc_query in disc_exprs:
+                disc_result = await prom_client.query(disc_query, cache_type='health')
+                if disc_result.get("status") != "success":
+                    continue
+                for item in disc_result.get("data", {}).get("result", []):
+                    labels = item.get("metric") or {}
+                    instance = labels.get(self.config.identity_label)
+                    label_value = labels.get(check.expand_by_label)
+                    if not instance or label_value is None:
+                        continue
+                    vn_key = f"{instance}:{check.expand_by_label}{label_value}"
+                    if vn_key not in seen_disc:
+                        seen_disc.add(vn_key)
+                        node_states[vn_key] = absent_state
+                        virtual_node_info[vn_key] = (instance, check.id)
 
         for check, query in queries:
             if not query:
@@ -109,7 +146,7 @@ class TelemetryPlanner:
                     if not instance or label_value is None:
                         continue
                     key = f"{instance}:{check.expand_by_label}{label_value}"
-                    virtual_node_parents[key] = instance
+                    virtual_node_info[key] = (instance, check.id)
                     effective_scope = "node"
                 else:
                     key = _extract_key(check, labels, self.config)
@@ -156,14 +193,36 @@ class TelemetryPlanner:
                         if _max_severity(current, severity) == severity:
                             rack_alerts[key][check.id] = severity
 
-        # Propagate virtual node WARN/CRIT states to their parent instance
-        # so rack aggregation reflects individual unit failures
-        for vn_key, parent_instance in virtual_node_parents.items():
-            vn_state = node_states.get(vn_key)
-            if vn_state in ("WARN", "CRIT"):
-                node_states[parent_instance] = _max_severity(
-                    node_states.get(parent_instance), vn_state
-                )
+        # Propagate virtual node states to parent instances with optional threshold logic.
+        # Build a map: (parent_instance, check_id) → list of virtual node states
+        vn_check_thresholds: Dict[str, Optional[int]] = {
+            c.id: c.expand_crit_threshold for c in checks.checks if c.expand_by_label
+        }
+        vn_groups: Dict[Tuple[str, str], List[str]] = {}
+        for vn_key, (parent_instance, check_id) in virtual_node_info.items():
+            group_key = (parent_instance, check_id)
+            vn_groups.setdefault(group_key, []).append(vn_key)
+
+        for (parent_instance, check_id), vn_keys in vn_groups.items():
+            vn_states = [node_states[k] for k in vn_keys if k in node_states]
+            if not vn_states:
+                continue
+            crit_count = sum(1 for s in vn_states if s == "CRIT")
+            has_warn = any(s == "WARN" for s in vn_states)
+            threshold = vn_check_thresholds.get(check_id)
+
+            if crit_count > 0:
+                if threshold is not None and crit_count < threshold:
+                    effective = "WARN"
+                else:
+                    effective = "CRIT"
+            elif has_warn:
+                effective = "WARN"
+            else:
+                continue
+            node_states[parent_instance] = _max_severity(
+                node_states.get(parent_instance), effective
+            )
 
         _apply_unknown(node_ids, seen_nodes, node_states, self.config.unknown_state)
         _apply_unknown(chassis_ids, seen_chassis, chassis_states, self.config.unknown_state)

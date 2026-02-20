@@ -27,7 +27,11 @@ checks:
     kind: eseries
     expr: eseries_drive_status{status!~"(optimal)",instance=~"$instances"}
     output: numeric
-    expand_by_label: slot  # Create virtual nodes per slot (da01-r02-01:slot1, :slot2, etc.)
+    expand_by_label: slot
+    # Discovery query fetches all slots so optimal drives display as OK (green)
+    expand_discovery_expr: eseries_drive_status{instance=~"$instances"}
+    expand_absent_state: OK
+    # expand_crit_threshold: 2  # Uncomment: fewer than 2 CRIT disks → array WARN not CRIT
     rules:
       - op: "=="
         value: 1
