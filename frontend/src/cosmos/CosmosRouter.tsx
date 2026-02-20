@@ -69,6 +69,13 @@ import { MetricsPage } from './pages/rackscope/MetricsPage';
 import { InfrastructureNavPage } from './pages/rackscope/InfrastructureNavPage';
 import { SlurmPage } from './pages/rackscope/SlurmPage';
 
+// Slurm live views
+import { CosmosSlurmOverviewPage } from './pages/slurm/CosmosSlurmOverviewPage';
+import { CosmosSlurmNodesPage } from './pages/slurm/CosmosSlurmNodesPage';
+import { CosmosSlurmAlertsPage } from './pages/slurm/CosmosSlurmAlertsPage';
+import { CosmosSlurmPartitionsPage } from './pages/slurm/CosmosSlurmPartitionsPage';
+import { CosmosSlurmWallboardPage } from './pages/slurm/CosmosSlurmWallboardPage';
+
 export const CosmosRouter = () => (
   <Routes>
     {/* Auth — no layout */}
@@ -139,6 +146,13 @@ export const CosmosRouter = () => (
       <Route path="rackscope/metrics" element={<MetricsPage />} />
       <Route path="rackscope/infra-nav" element={<InfrastructureNavPage />} />
       <Route path="rackscope/slurm" element={<SlurmPage />} />
+
+      {/* ── Slurm live views ── */}
+      <Route path="slurm/overview" element={<CosmosSlurmOverviewPage />} />
+      <Route path="slurm/nodes" element={<CosmosSlurmNodesPage />} />
+      <Route path="slurm/alerts" element={<CosmosSlurmAlertsPage />} />
+      <Route path="slurm/partitions" element={<CosmosSlurmPartitionsPage />} />
+      <Route path="slurm/wallboard/:roomId" element={<CosmosSlurmWallboardPage />} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Route>

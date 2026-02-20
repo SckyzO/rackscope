@@ -35,6 +35,9 @@ import {
   Users,
   Columns,
   Rows,
+  LayoutDashboard,
+  Network,
+  MapPin,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -243,7 +246,39 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
           label="Infra Navigation"
           collapsed={collapsed}
         />
-        <NavItem to="/cosmos/rackscope/slurm" icon={Activity} label="Slurm" collapsed={collapsed} />
+        <NavItem
+          to="/cosmos/rackscope/slurm"
+          icon={Activity}
+          label="Slurm (design)"
+          collapsed={collapsed}
+        />
+
+        <SectionLabel label="Slurm" collapsed={collapsed} />
+        <NavItem
+          to="/cosmos/slurm/overview"
+          icon={LayoutDashboard}
+          label="Overview"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/slurm/partitions"
+          icon={Network}
+          label="Partitions"
+          collapsed={collapsed}
+        />
+        <NavItem to="/cosmos/slurm/nodes" icon={List} label="Nodes" collapsed={collapsed} />
+        <NavItem
+          to="/cosmos/slurm/alerts"
+          icon={AlertTriangle}
+          label="Alerts"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/slurm/wallboard/room-a"
+          icon={MapPin}
+          label="Wallboard"
+          collapsed={collapsed}
+        />
 
         <SectionLabel label="Charts" collapsed={collapsed} />
         <NavItem to="/cosmos/charts" icon={LineChart} label="Charts" collapsed={collapsed} />
