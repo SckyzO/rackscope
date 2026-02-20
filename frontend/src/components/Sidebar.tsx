@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import type { ComponentType } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../services/api';
-import type { RoomSummary, AisleSummary, Site, PrometheusStats, MenuSection } from '../types';
+import type { RoomSummary, AisleSummary, Site, PrometheusStats } from '../types';
+import { usePluginsMenu } from '../context/PluginsMenuContext';
 import { matchesInstanceValue, matchesText } from '../utils/search';
 import {
   LayoutDashboard,
@@ -64,7 +65,7 @@ export const Sidebar = ({
   const [now, setNow] = useState(() => Date.now());
   const [appName, setAppName] = useState('Rackscope');
   const [appDescription, setAppDescription] = useState('Datacenter Overview');
-  const [pluginSections, setPluginSections] = useState<MenuSection[]>([]);
+  const { sections: pluginSections } = usePluginsMenu();
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     topology: false,
     catalog: false,
@@ -72,13 +73,12 @@ export const Sidebar = ({
   });
 
   useEffect(() => {
-    Promise.all([api.getRooms(), api.getSites(), api.getConfig(), api.getPluginsMenu()])
-      .then(([roomsData, sitesData, configData, menuData]) => {
+    Promise.all([api.getRooms(), api.getSites(), api.getConfig()])
+      .then(([roomsData, sitesData, configData]) => {
         const safeRooms = Array.isArray(roomsData) ? roomsData : [];
         const safeSites = Array.isArray(sitesData) ? sitesData : [];
         setRooms(safeRooms);
         setSites(safeSites);
-        setPluginSections(menuData?.sections || []);
         const nextRefresh = Number(configData?.telemetry?.prometheus_heartbeat_seconds) || 30;
         setRefreshSeconds(Math.max(10, nextRefresh));
         if (configData?.app?.name) setAppName(configData.app.name);

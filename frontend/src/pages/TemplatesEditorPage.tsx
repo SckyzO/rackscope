@@ -192,7 +192,7 @@ export const TemplatesEditorPage = () => {
     const template = buildTemplateFromDraft();
 
     // Generate YAML in block style
-    let yamlText = yaml.dump(
+    const yamlText = yaml.dump(
       { templates: [template] },
       {
         noRefs: true,
@@ -227,7 +227,6 @@ export const TemplatesEditorPage = () => {
         i++;
 
         const baseIndent = line.match(/^(\s*)/)?.[1].length || 0;
-        const matrixIndent = baseIndent + 2;
 
         // Process matrix rows
         while (i < lines.length) {

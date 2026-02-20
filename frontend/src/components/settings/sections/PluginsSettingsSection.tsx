@@ -17,7 +17,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   const [simulatorSettingsOpen, setSimulatorSettingsOpen] = useState(false);
   const [slurmSettingsOpen, setSlurmSettingsOpen] = useState(false);
 
-  const updateSimulator = (field: string, value: string | boolean | Record<string, string> | Array<any>) => {
+  const updateSimulator = (field: string, value: string | boolean | Record<string, string> | Array<unknown>) => {
     setDraft((prev) => {
       if (!prev) return prev;
       return {
@@ -33,7 +33,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
     });
   };
 
-  const updateSlurm = (field: string, value: string | boolean | Record<string, string> | Array<any>) => {
+  const updateSlurm = (field: string, value: string | boolean | Record<string, string> | Array<unknown>) => {
     setDraft((prev) => {
       if (!prev) return prev;
       return {

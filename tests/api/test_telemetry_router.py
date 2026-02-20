@@ -434,7 +434,7 @@ async def test_get_rack_state_success(
         }
         mock_components.return_value = {"pdu-left": {"activepower_watt": 550.0}}
 
-        response = client.get("/api/racks/rack01/state")
+        response = client.get("/api/racks/rack01/state?include_metrics=true")
 
     assert response.status_code == 200
     data = response.json()

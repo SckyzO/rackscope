@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
+import { PluginRoute } from './components/PluginRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { PluginsMenuProvider } from './context/PluginsMenuContext';
 import { NotificationHeader } from './components/NotificationHeader';
 import { ThemeSelector } from './components/ThemeSelector';
 import { DashboardOverview } from './components/dashboard/DashboardOverview';
@@ -298,6 +300,7 @@ function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
+        <PluginsMenuProvider>
         <Layout
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -312,14 +315,70 @@ function App() {
               element={<RoomPage searchQuery={searchQuery} reloadKey={reloadKey} />}
             />
             <Route path="/topology/map" element={<WorldMapPage />} />
-            <Route path="/simulator" element={<SimulatorControlPanelPage />} />
-            <Route path="/slurm" element={<SlurmOverviewPage />} />
-            <Route path="/slurm/overview" element={<SlurmOverviewPage />} />
-            <Route path="/slurm/wallboard" element={<SlurmRoomPage />} />
-            <Route path="/slurm/room/:roomId" element={<SlurmRoomPage />} />
-            <Route path="/slurm/partitions" element={<SlurmPartitionsPage />} />
-            <Route path="/slurm/nodes" element={<SlurmNodesPage />} />
-            <Route path="/slurm/alerts" element={<SlurmAlertsPage />} />
+            <Route
+              path="/simulator"
+              element={
+                <PluginRoute pluginId="simulator">
+                  <SimulatorControlPanelPage />
+                </PluginRoute>
+              }
+            />
+            <Route
+              path="/slurm"
+              element={
+                <PluginRoute pluginId="workload">
+                  <SlurmOverviewPage />
+                </PluginRoute>
+              }
+            />
+            <Route
+              path="/slurm/overview"
+              element={
+                <PluginRoute pluginId="workload">
+                  <SlurmOverviewPage />
+                </PluginRoute>
+              }
+            />
+            <Route
+              path="/slurm/wallboard"
+              element={
+                <PluginRoute pluginId="workload">
+                  <SlurmRoomPage />
+                </PluginRoute>
+              }
+            />
+            <Route
+              path="/slurm/room/:roomId"
+              element={
+                <PluginRoute pluginId="workload">
+                  <SlurmRoomPage />
+                </PluginRoute>
+              }
+            />
+            <Route
+              path="/slurm/partitions"
+              element={
+                <PluginRoute pluginId="workload">
+                  <SlurmPartitionsPage />
+                </PluginRoute>
+              }
+            />
+            <Route
+              path="/slurm/nodes"
+              element={
+                <PluginRoute pluginId="workload">
+                  <SlurmNodesPage />
+                </PluginRoute>
+              }
+            />
+            <Route
+              path="/slurm/alerts"
+              element={
+                <PluginRoute pluginId="workload">
+                  <SlurmAlertsPage />
+                </PluginRoute>
+              }
+            />
             <Route path="/rack/:rackId/device/:deviceId" element={<DevicePage />} />
             <Route path="/rack/:rackId" element={<RackPage reloadKey={reloadKey} />} />
             <Route path="/templates" element={<TemplatesLibraryPage />} />
@@ -331,6 +390,7 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </Layout>
+        </PluginsMenuProvider>
       </ErrorBoundary>
     </BrowserRouter>
   );

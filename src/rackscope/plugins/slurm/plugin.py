@@ -93,6 +93,14 @@ class SlurmPlugin(RackscopePlugin):
         # Validate and create config with defaults
         return SlurmPluginConfig(**raw_config)
 
+    def _get_config(self) -> SlurmPluginConfig:
+        """Get current config, loading lazily from APP_CONFIG if not yet initialized."""
+        if self.config is None:
+            from rackscope.api import app as app_module
+
+            self.config = self._load_config(app_module.APP_CONFIG)
+        return self.config
+
     async def on_startup(self) -> None:
         """Initialize Slurm plugin and load configuration."""
         from rackscope.api.app import APP_CONFIG
@@ -148,7 +156,7 @@ class SlurmPlugin(RackscopePlugin):
                 for node in room_nodes
             }
 
-            slurm_cfg = self.config
+            slurm_cfg = self._get_config()
             mapping = slurm_service.load_slurm_mapping(slurm_cfg)
             results = await slurm_service.fetch_slurm_results(slurm_cfg)
 
@@ -217,7 +225,7 @@ class SlurmPlugin(RackscopePlugin):
                     raise HTTPException(status_code=404, detail="Room not found")
                 allowed_nodes = slurm_service.collect_room_nodes(room)
 
-            slurm_cfg = self.config
+            slurm_cfg = self._get_config()
             node_states = await slurm_service.build_slurm_states(slurm_cfg, allowed_nodes)
             by_status: Dict[str, int] = {}
             by_severity: Dict[str, int] = {"OK": 0, "WARN": 0, "CRIT": 0, "UNKNOWN": 0}
@@ -253,7 +261,7 @@ class SlurmPlugin(RackscopePlugin):
                     raise HTTPException(status_code=404, detail="Room not found")
                 allowed_nodes = slurm_service.collect_room_nodes(room)
 
-            slurm_cfg = self.config
+            slurm_cfg = self._get_config()
             mapping = slurm_service.load_slurm_mapping(slurm_cfg)
             results = await slurm_service.fetch_slurm_results(slurm_cfg)
             if not results:
@@ -301,7 +309,7 @@ class SlurmPlugin(RackscopePlugin):
                     raise HTTPException(status_code=404, detail="Room not found")
                 allowed_nodes = slurm_service.collect_room_nodes(room)
 
-            slurm_cfg = self.config
+            slurm_cfg = self._get_config()
             node_states = await slurm_service.build_slurm_states(slurm_cfg, allowed_nodes)
             context = slurm_service.build_node_context(TOPOLOGY)
 
