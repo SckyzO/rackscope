@@ -12,7 +12,15 @@ export const CosmosLayout = () => {
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Sync Cosmos dark mode to html.dark so Tailwind dark: utilities work correctly.
+  // Rackscope's ThemeContext will re-apply its own state when we navigate back.
   useEffect(() => {
+    const htmlEl = document.documentElement;
+    if (isDark) {
+      htmlEl.classList.add('dark');
+    } else {
+      htmlEl.classList.remove('dark');
+    }
     localStorage.setItem('cosmos-dark-mode', String(isDark));
   }, [isDark]);
 

@@ -1,10 +1,11 @@
 @import 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap';
 @import 'leaflet/dist/leaflet.css';
 
-/* Class-based dark mode — used by both Rackscope (ThemeContext) and Cosmos */
-@custom-variant dark (&:is(.dark *));
-
 @import 'tailwindcss';
+
+/* Class-based dark mode — MUST be after @import 'tailwindcss' to override
+   the default media-query dark mode. Used by Rackscope ThemeContext and Cosmos. */
+@custom-variant dark (&:is(.dark, .dark *));
 
 @theme {
   --font-sans: 'Outfit', system-ui, sans-serif;

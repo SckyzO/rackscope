@@ -105,8 +105,8 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
         collapsed ? 'w-[90px]' : 'w-[290px]'
       }`}
     >
-      {/* Logo */}
-      <div className="flex h-[72px] shrink-0 items-center justify-center border-b border-gray-200 px-5 dark:border-gray-800">
+      {/* Logo + collapse toggle */}
+      <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-800">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-white">
             <Activity className="h-5 w-5" />
@@ -117,6 +117,13 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
             </span>
           )}
         </div>
+        <button
+          onClick={onToggleCollapse}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5"
+        >
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </button>
       </div>
 
       {/* Nav */}
@@ -167,24 +174,16 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
       </nav>
 
       {/* Footer */}
-      <div className="shrink-0 border-t border-gray-200 p-4 dark:border-gray-800">
-        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
-          {!collapsed && (
-            <a
-              href="/"
-              className="text-xs text-gray-400 transition-colors hover:text-brand-500 dark:text-gray-500 dark:hover:text-brand-400"
-            >
-              ← Rackscope
-            </a>
-          )}
-          <button
-            onClick={onToggleCollapse}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5"
+      {!collapsed && (
+        <div className="shrink-0 border-t border-gray-200 px-5 py-3 dark:border-gray-800">
+          <a
+            href="/"
+            className="text-xs text-gray-400 transition-colors hover:text-brand-500 dark:text-gray-500 dark:hover:text-brand-400"
           >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
+            ← Back to Rackscope
+          </a>
         </div>
-      </div>
+      )}
     </aside>
   );
 };
