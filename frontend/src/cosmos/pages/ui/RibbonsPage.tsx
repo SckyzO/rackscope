@@ -14,10 +14,12 @@ const CardBase = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-const CardContent = ({ title }: { title: string }) => (
-  <div className="mt-4">
+const CardContent = ({ title = 'Card Title' }: { title?: string }) => (
+  <div className="mt-8">
     <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h4>
-    <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+      Lorem ipsum dolor sit amet consectetur. Eget nulla suscipit arcu rutrum amet vel nec fringilla vulputate.
+    </p>
   </div>
 );
 
@@ -28,44 +30,75 @@ export const RibbonsPage = () => (
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Corner and edge label decorations</p>
     </div>
     <div className="grid gap-6 lg:grid-cols-2">
-      <SectionCard title="Pill Ribbon (Top Left)" desc="Rounded pill-style corner label">
+
+      {/* 1 — Rounded Ribbon */}
+      <SectionCard title="Rounded Ribbon" desc="Simple pill-style badge at top-left">
         <CardBase>
-          <span className="absolute left-3 top-3 rounded-full bg-brand-500 px-2.5 py-1 text-xs font-medium text-white">New</span>
-          <CardContent title="Featured Product" />
+          <span className="absolute left-3 top-3 rounded-full bg-brand-500 px-2.5 py-1 text-xs font-medium text-white">
+            Popular
+          </span>
+          <CardContent />
         </CardBase>
       </SectionCard>
-      <SectionCard title="Pill Ribbon (Top Right)" desc="Right-aligned pill label">
+
+      {/* 2 — Ribbon With Shape (pennant / flag pointing right) */}
+      <SectionCard title="Ribbon With Shape" desc="Pennant flag with right-pointing arrow tip">
         <CardBase>
-          <span className="absolute right-3 top-3 rounded-full bg-success-500 px-2.5 py-1 text-xs font-medium text-white">Popular</span>
-          <CardContent title="Top Seller" />
-        </CardBase>
-      </SectionCard>
-      <SectionCard title="Tag Ribbon (Top Left)" desc="Rectangle tag ribbon">
-        <CardBase>
-          <div className="absolute left-0 top-0 bg-warning-500 px-4 py-1.5">
-            <span className="text-xs font-bold text-white">HOT</span>
-            <div className="absolute right-0 top-0 h-0 w-0 border-b-[30px] border-r-[12px] border-b-transparent border-r-white/20" />
+          {/* clip-path creates the arrow/pennant shape: flat left + right arrow tip */}
+          <div
+            className="absolute left-0 top-4 bg-brand-500 py-1.5 pl-3 pr-8 text-sm font-bold text-white"
+            style={{
+              clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)',
+            }}
+          >
+            Popular
           </div>
-          <CardContent title="Hot Deal" />
+          <CardContent />
         </CardBase>
       </SectionCard>
-      <SectionCard title="Diagonal Ribbon (Top Right)" desc="Angled corner banner">
+
+      {/* 3 — Filed Ribbon (New) — diagonal corner fold */}
+      <SectionCard title="Filed Ribbon" desc="Diagonal banner folded across the top-left corner">
         <CardBase>
-          <div className="absolute -right-8 top-4 w-28 rotate-45 bg-error-500 py-1 text-center shadow">
-            <span className="text-xs font-bold text-white">SALE</span>
+          {/* Classic dog-ear corner ribbon: rotated strip clipped by overflow-hidden */}
+          <div className="absolute -left-7 top-5 w-28 -rotate-45 bg-brand-500 py-1.5 text-center text-xs font-bold text-white shadow-sm">
+            New
           </div>
-          <CardContent title="Limited Offer" />
+          <CardContent />
         </CardBase>
       </SectionCard>
-      <SectionCard title="Triangle Ribbon" desc="Folded triangle corner">
+
+      {/* 4 — Filed Ribbon with icon */}
+      <SectionCard title="Filed Ribbon (Icon)" desc="Pennant flag with icon at top-left">
         <CardBase>
-          <div className="absolute right-0 top-0 h-0 w-0 border-b-[40px] border-l-[40px] border-b-transparent border-l-brand-500">
-            <span className="absolute -left-[28px] -top-0 text-[9px] font-bold rotate-[-45deg] text-white">NEW</span>
+          <div
+            className="absolute left-0 top-4 flex items-center gap-1.5 bg-brand-500 py-1.5 pl-2.5 pr-7 text-white"
+            style={{
+              clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)',
+            }}
+          >
+            {/* Lightning bolt icon via SVG inline */}
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L14 2z" />
+            </svg>
+            <span className="text-xs font-bold">New</span>
           </div>
-          <CardContent title="Latest Release" />
+          <CardContent />
         </CardBase>
       </SectionCard>
-      <SectionCard title="Multiple Ribbons" desc="Card with stacked ribbon labels">
+
+      {/* 5 — Diagonal banner (top-right) */}
+      <SectionCard title="Corner Banner (Top Right)" desc="Diagonal rotated band at the top-right corner">
+        <CardBase>
+          <div className="absolute -right-8 top-4 w-28 rotate-45 bg-error-500 py-1.5 text-center text-xs font-bold text-white shadow">
+            Sale
+          </div>
+          <CardContent />
+        </CardBase>
+      </SectionCard>
+
+      {/* 6 — Multiple ribbons */}
+      <SectionCard title="Multiple Ribbons" desc="Stacked badge ribbons on the same card">
         <CardBase>
           <div className="absolute left-3 top-3 flex flex-col gap-1.5">
             <span className="rounded-full bg-brand-500 px-2.5 py-0.5 text-xs font-medium text-white">New</span>
@@ -73,10 +106,33 @@ export const RibbonsPage = () => (
           </div>
           <div className="mt-12">
             <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Premium Package</h4>
-            <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400">Lorem ipsum dolor sit amet consectetur.</p>
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Lorem ipsum dolor sit amet consectetur. Eget nulla suscipit arcu rutrum amet vel nec fringilla.
+            </p>
           </div>
         </CardBase>
       </SectionCard>
+
+      {/* 7 — Success Rounded (Top Right) */}
+      <SectionCard title="Rounded Ribbon (Top Right)" desc="Success pill badge at the top-right corner">
+        <CardBase>
+          <span className="absolute right-3 top-3 rounded-full bg-success-500 px-2.5 py-1 text-xs font-medium text-white">
+            Featured
+          </span>
+          <CardContent />
+        </CardBase>
+      </SectionCard>
+
+      {/* 8 — Warning Filed Ribbon */}
+      <SectionCard title="Filed Ribbon (Warning)" desc="Corner fold ribbon in warning color">
+        <CardBase>
+          <div className="absolute -left-7 top-5 w-28 -rotate-45 bg-warning-500 py-1.5 text-center text-xs font-bold text-white shadow-sm">
+            Hot
+          </div>
+          <CardContent />
+        </CardBase>
+      </SectionCard>
+
     </div>
   </div>
 );
