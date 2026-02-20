@@ -4,6 +4,7 @@ import { Moon, Sun, Bell, ChevronDown, User, Search, X } from 'lucide-react';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/cosmos': 'Analytics Dashboard',
+  '/cosmos/views/worldmap': 'World Map',
   '/cosmos/ui/buttons-group': 'Buttons Group',
   '/cosmos/ui/badges': 'Badges',
   '/cosmos/ui/alerts': 'Alerts',

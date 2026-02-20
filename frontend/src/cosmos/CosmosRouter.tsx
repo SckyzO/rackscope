@@ -52,6 +52,12 @@ import { ProfilePage } from './pages/ProfilePage';
 import { CalendarPage } from './pages/CalendarPage';
 import { NotificationsFullPage } from './pages/NotificationsFullPage';
 
+// Monitoring Views (connected to real API)
+import { CosmosWorldMapPage } from './pages/views/CosmosWorldMapPage';
+import { CosmosRoomPage } from './pages/views/CosmosRoomPage';
+import { CosmosRackPage } from './pages/views/CosmosRackPage';
+import { CosmosDevicePage } from './pages/views/CosmosDevicePage';
+
 // Rackscope-specific
 import { HealthStatusPage } from './pages/rackscope/HealthStatusPage';
 import { AlertFeedPage } from './pages/rackscope/AlertFeedPage';
@@ -113,7 +119,13 @@ export const CosmosRouter = () => (
       <Route path="calendar" element={<CalendarPage />} />
       <Route path="notifications" element={<NotificationsFullPage />} />
 
-      {/* Rackscope */}
+      {/* ── Monitoring Views (live data) ── */}
+      <Route path="views/worldmap" element={<CosmosWorldMapPage />} />
+      <Route path="views/room/:roomId" element={<CosmosRoomPage />} />
+      <Route path="views/rack/:rackId" element={<CosmosRackPage />} />
+      <Route path="views/device/:rackId/:deviceId" element={<CosmosDevicePage />} />
+
+      {/* Rackscope UI Components */}
       <Route path="rackscope/health" element={<HealthStatusPage />} />
       <Route path="rackscope/alerts" element={<AlertFeedPage />} />
       <Route path="rackscope/metrics" element={<MetricsPage />} />
