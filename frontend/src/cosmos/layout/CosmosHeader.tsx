@@ -25,6 +25,9 @@ const ROUTE_LABELS: Record<string, string> = {
   '/cosmos/ui/form-elements': 'Form Elements',
   '/cosmos/charts': 'Charts',
   '/cosmos/tables': 'Data Tables',
+  '/cosmos/ui/avatars': 'Avatars',
+  '/cosmos/profile': 'Profile',
+  '/cosmos/calendar': 'Calendar',
   '/cosmos/auth/signin': 'Sign In',
   '/cosmos/auth/signup': 'Sign Up',
 };

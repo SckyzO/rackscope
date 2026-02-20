@@ -28,6 +28,9 @@ import {
   LogIn,
   UserPlus,
   FormInput,
+  User,
+  CalendarDays,
+  Users,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -152,6 +155,11 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
 
         <SectionLabel label="Tables" collapsed={collapsed} />
         <NavItem to="/cosmos/tables" icon={Table2} label="Data Tables" collapsed={collapsed} />
+
+        <SectionLabel label="Pages" collapsed={collapsed} />
+        <NavItem to="/cosmos/profile" icon={User} label="Profile" collapsed={collapsed} />
+        <NavItem to="/cosmos/calendar" icon={CalendarDays} label="Calendar" collapsed={collapsed} />
+        <NavItem to="/cosmos/ui/avatars" icon={Users} label="Avatars" collapsed={collapsed} />
 
         <SectionLabel label="Auth" collapsed={collapsed} />
         <NavItem to="/cosmos/auth/signin" icon={LogIn} label="Sign In" collapsed={collapsed} />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { CosmosRouter } from './cosmos/CosmosRouter';
 import { Sidebar } from './components/Sidebar';
 import { PluginRoute } from './components/PluginRoute';
@@ -294,16 +294,10 @@ const Layout = ({
 };
 
 
-// Inner component so we can use useLocation inside BrowserRouter
-const AppInner = () => {
-  const location = useLocation();
+// Rackscope main app — Layout + all existing routes
+const RackscopeApp = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [reloadKey] = useState(0);
-
-  // Cosmos theme gets its own full-page layout — no Rackscope chrome
-  if (location.pathname.startsWith('/cosmos')) {
-    return <CosmosRouter />;
-  }
 
   return (
     <PluginsMenuProvider>
@@ -401,7 +395,12 @@ function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
-        <AppInner />
+        <Routes>
+          {/* Cosmos theme: nested routing context so relative paths work correctly */}
+          <Route path="/cosmos/*" element={<CosmosRouter />} />
+          {/* Rackscope main app */}
+          <Route path="/*" element={<RackscopeApp />} />
+        </Routes>
       </ErrorBoundary>
     </BrowserRouter>
   );

@@ -7,7 +7,7 @@ import '../cosmos.css';
 export const CosmosLayout = () => {
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('cosmos-dark-mode');
-    return saved === null ? false : saved === 'true';
+    return saved === null ? true : saved === 'true'; // dark by default (NOC-first)
   });
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);

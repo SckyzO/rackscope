@@ -23,6 +23,7 @@ import { TooltipsPage } from './pages/ui/TooltipsPage';
 import { PopoversPage } from './pages/ui/PopoversPage';
 import { NotificationsPage } from './pages/ui/NotificationsPage';
 import { FormElementsPage } from './pages/ui/FormElementsPage';
+import { AvatarsPage } from './pages/ui/AvatarsPage';
 
 // Charts
 import { ChartsPage } from './pages/charts/ChartsPage';
@@ -33,6 +34,10 @@ import { DataTablesPage } from './pages/tables/DataTablesPage';
 // Auth (standalone — no layout)
 import { SignInPage } from './pages/auth/SignInPage';
 import { SignUpPage } from './pages/auth/SignUpPage';
+
+// Free template pages
+import { ProfilePage } from './pages/ProfilePage';
+import { CalendarPage } from './pages/CalendarPage';
 
 export const CosmosRouter = () => (
   <Routes>
@@ -63,12 +68,17 @@ export const CosmosRouter = () => (
       <Route path="ui/tooltips" element={<TooltipsPage />} />
       <Route path="ui/breadcrumb" element={<BreadcrumbPage />} />
       <Route path="ui/form-elements" element={<FormElementsPage />} />
+      <Route path="ui/avatars" element={<AvatarsPage />} />
 
       {/* Charts */}
       <Route path="charts" element={<ChartsPage />} />
 
       {/* Tables */}
       <Route path="tables" element={<DataTablesPage />} />
+
+      {/* Free template pages */}
+      <Route path="profile" element={<ProfilePage />} />
+      <Route path="calendar" element={<CalendarPage />} />
 
       {/* 404 */}
       <Route path="*" element={<NotFoundPage />} />
