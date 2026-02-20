@@ -1,0 +1,176 @@
+import { useState } from 'react';
+import { NavLink } from 'react-router-dom';
+import type { ComponentType } from 'react';
+import {
+  Activity,
+  BarChart2,
+  LayoutGrid,
+  Tag,
+  AlertTriangle,
+  CreditCard,
+  Image as ImageIcon,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Link as LinkIcon,
+  List,
+  MessageSquare,
+  Bell,
+  MoreHorizontal,
+  Gauge,
+  Award,
+  Loader2,
+  PanelTop,
+  Info,
+  Home,
+  Table2,
+  LogIn,
+  UserPlus,
+} from 'lucide-react';
+
+interface NavItemProps {
+  to: string;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  collapsed: boolean;
+  end?: boolean;
+  depth?: boolean;
+}
+
+const NavItem = ({ to, icon: Icon, label, collapsed, end = false, depth = false }: NavItemProps) => (
+  <NavLink
+    to={to}
+    end={end}
+    className={({ isActive }) =>
+      `group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+        depth ? 'py-1.5' : 'py-2.5'
+      } ${
+        isActive
+          ? 'bg-brand-500 text-white'
+          : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+      }`
+    }
+  >
+    <Icon className={`shrink-0 ${depth ? 'h-4 w-4' : 'h-5 w-5'}`} />
+    {!collapsed && <span>{label}</span>}
+  </NavLink>
+);
+
+const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean }) =>
+  collapsed ? (
+    <div className="my-3 h-px bg-gray-200 dark:bg-gray-800" />
+  ) : (
+    <p className="mt-6 mb-1.5 px-3 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
+      {label}
+    </p>
+  );
+
+interface CosmosSidebarProps {
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+}
+
+export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProps) => {
+  const [uiOpen, setUiOpen] = useState(true);
+
+  const uiItems: Array<{ to: string; icon: ComponentType<{ className?: string }>; label: string }> = [
+    { to: '/cosmos/ui/buttons-group', icon: LayoutGrid, label: 'Buttons Group' },
+    { to: '/cosmos/ui/badges', icon: Tag, label: 'Badges' },
+    { to: '/cosmos/ui/alerts', icon: AlertTriangle, label: 'Alerts' },
+    { to: '/cosmos/ui/cards', icon: CreditCard, label: 'Cards' },
+    { to: '/cosmos/ui/carousel', icon: ImageIcon, label: 'Carousel' },
+    { to: '/cosmos/ui/dropdowns', icon: ChevronDown, label: 'Dropdowns' },
+    { to: '/cosmos/ui/links', icon: LinkIcon, label: 'Links' },
+    { to: '/cosmos/ui/list', icon: List, label: 'List' },
+    { to: '/cosmos/ui/modals', icon: MessageSquare, label: 'Modals' },
+    { to: '/cosmos/ui/notifications', icon: Bell, label: 'Notifications' },
+    { to: '/cosmos/ui/pagination', icon: MoreHorizontal, label: 'Pagination' },
+    { to: '/cosmos/ui/popovers', icon: MessageSquare, label: 'Popovers' },
+    { to: '/cosmos/ui/progress-bar', icon: Gauge, label: 'Progress Bar' },
+    { to: '/cosmos/ui/ribbons', icon: Award, label: 'Ribbons' },
+    { to: '/cosmos/ui/spinners', icon: Loader2, label: 'Spinners' },
+    { to: '/cosmos/ui/tabs', icon: PanelTop, label: 'Tabs' },
+    { to: '/cosmos/ui/tooltips', icon: Info, label: 'Tooltips' },
+  ];
+
+  return (
+    <aside
+      className={`cosmos-scrollbar flex flex-col overflow-y-auto border-r border-gray-200 bg-white transition-all duration-300 dark:border-gray-800 dark:bg-gray-dark ${
+        collapsed ? 'w-[90px]' : 'w-[290px]'
+      }`}
+    >
+      {/* Logo */}
+      <div className="flex h-[72px] shrink-0 items-center justify-center border-b border-gray-200 px-5 dark:border-gray-800">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500 text-white">
+            <Activity className="h-5 w-5" />
+          </div>
+          {!collapsed && (
+            <span className="text-base font-bold tracking-tight text-gray-900 dark:text-white">
+              Cosmos
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 px-4 py-4">
+        <SectionLabel label="Menu" collapsed={collapsed} />
+        <NavItem to="/cosmos" icon={BarChart2} label="Dashboard" collapsed={collapsed} end />
+
+        <SectionLabel label="UI Elements" collapsed={collapsed} />
+        {!collapsed ? (
+          <>
+            <button
+              onClick={() => setUiOpen((p) => !p)}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+            >
+              <LayoutGrid className="h-5 w-5 shrink-0" />
+              <span className="flex-1 text-left">Components</span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${uiOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {uiOpen && (
+              <div className="mt-1 ml-3 space-y-0.5 border-l-2 border-gray-200 pl-3 dark:border-gray-800">
+                {uiItems.map((item) => (
+                  <NavItem key={item.to} {...item} collapsed={false} depth />
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <NavItem to="/cosmos/ui/buttons-group" icon={LayoutGrid} label="UI" collapsed={collapsed} />
+        )}
+
+        <SectionLabel label="Navigation" collapsed={collapsed} />
+        <NavItem to="/cosmos/ui/breadcrumb" icon={Home} label="Breadcrumb" collapsed={collapsed} />
+
+        <SectionLabel label="Tables" collapsed={collapsed} />
+        <NavItem to="/cosmos/tables" icon={Table2} label="Data Tables" collapsed={collapsed} />
+
+        <SectionLabel label="Auth" collapsed={collapsed} />
+        <NavItem to="/cosmos/auth/signin" icon={LogIn} label="Sign In" collapsed={collapsed} />
+        <NavItem to="/cosmos/auth/signup" icon={UserPlus} label="Sign Up" collapsed={collapsed} />
+      </nav>
+
+      {/* Footer */}
+      <div className="shrink-0 border-t border-gray-200 p-4 dark:border-gray-800">
+        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
+          {!collapsed && (
+            <a
+              href="/"
+              className="text-xs text-gray-400 transition-colors hover:text-brand-500 dark:text-gray-500 dark:hover:text-brand-400"
+            >
+              ← Rackscope
+            </a>
+          )}
+          <button
+            onClick={onToggleCollapse}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5"
+          >
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+    </aside>
+  );
+};

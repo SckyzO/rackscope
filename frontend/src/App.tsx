@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { CosmosRouter } from './cosmos/CosmosRouter';
 import { Sidebar } from './components/Sidebar';
 import { PluginRoute } from './components/PluginRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -293,104 +294,114 @@ const Layout = ({
 };
 
 
-function App() {
+// Inner component so we can use useLocation inside BrowserRouter
+const AppInner = () => {
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [reloadKey] = useState(0);
 
+  // Cosmos theme gets its own full-page layout — no Rackscope chrome
+  if (location.pathname.startsWith('/cosmos')) {
+    return <CosmosRouter />;
+  }
+
+  return (
+    <PluginsMenuProvider>
+      <Layout searchQuery={searchQuery} onSearchChange={setSearchQuery}>
+        <Routes>
+          <Route
+            path="/"
+            element={<DashboardOverview searchQuery={searchQuery} reloadKey={reloadKey} />}
+          />
+          <Route
+            path="/room/:roomId"
+            element={<RoomPage searchQuery={searchQuery} reloadKey={reloadKey} />}
+          />
+          <Route path="/topology/map" element={<WorldMapPage />} />
+          <Route
+            path="/simulator"
+            element={
+              <PluginRoute pluginId="simulator">
+                <SimulatorControlPanelPage />
+              </PluginRoute>
+            }
+          />
+          <Route
+            path="/slurm"
+            element={
+              <PluginRoute pluginId="workload">
+                <SlurmOverviewPage />
+              </PluginRoute>
+            }
+          />
+          <Route
+            path="/slurm/overview"
+            element={
+              <PluginRoute pluginId="workload">
+                <SlurmOverviewPage />
+              </PluginRoute>
+            }
+          />
+          <Route
+            path="/slurm/wallboard"
+            element={
+              <PluginRoute pluginId="workload">
+                <SlurmRoomPage />
+              </PluginRoute>
+            }
+          />
+          <Route
+            path="/slurm/room/:roomId"
+            element={
+              <PluginRoute pluginId="workload">
+                <SlurmRoomPage />
+              </PluginRoute>
+            }
+          />
+          <Route
+            path="/slurm/partitions"
+            element={
+              <PluginRoute pluginId="workload">
+                <SlurmPartitionsPage />
+              </PluginRoute>
+            }
+          />
+          <Route
+            path="/slurm/nodes"
+            element={
+              <PluginRoute pluginId="workload">
+                <SlurmNodesPage />
+              </PluginRoute>
+            }
+          />
+          <Route
+            path="/slurm/alerts"
+            element={
+              <PluginRoute pluginId="workload">
+                <SlurmAlertsPage />
+              </PluginRoute>
+            }
+          />
+          <Route path="/rack/:rackId/device/:deviceId" element={<DevicePage />} />
+          <Route path="/rack/:rackId" element={<RackPage reloadKey={reloadKey} />} />
+          <Route path="/templates" element={<TemplatesLibraryPage />} />
+          <Route path="/templates/editor" element={<TemplatesEditorPage />} />
+          <Route path="/templates/editor/racks" element={<TemplatesRackEditorPage />} />
+          <Route path="/checks/library" element={<ChecksLibraryEditorPage />} />
+          <Route path="/topology/editor" element={<TopologyEditorPage />} />
+          <Route path="/topology/racks/editor" element={<RackEditorPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Routes>
+      </Layout>
+    </PluginsMenuProvider>
+  );
+};
+
+function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
-        <PluginsMenuProvider>
-        <Layout
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        >
-          <Routes>
-            <Route
-              path="/"
-              element={<DashboardOverview searchQuery={searchQuery} reloadKey={reloadKey} />}
-            />
-            <Route
-              path="/room/:roomId"
-              element={<RoomPage searchQuery={searchQuery} reloadKey={reloadKey} />}
-            />
-            <Route path="/topology/map" element={<WorldMapPage />} />
-            <Route
-              path="/simulator"
-              element={
-                <PluginRoute pluginId="simulator">
-                  <SimulatorControlPanelPage />
-                </PluginRoute>
-              }
-            />
-            <Route
-              path="/slurm"
-              element={
-                <PluginRoute pluginId="workload">
-                  <SlurmOverviewPage />
-                </PluginRoute>
-              }
-            />
-            <Route
-              path="/slurm/overview"
-              element={
-                <PluginRoute pluginId="workload">
-                  <SlurmOverviewPage />
-                </PluginRoute>
-              }
-            />
-            <Route
-              path="/slurm/wallboard"
-              element={
-                <PluginRoute pluginId="workload">
-                  <SlurmRoomPage />
-                </PluginRoute>
-              }
-            />
-            <Route
-              path="/slurm/room/:roomId"
-              element={
-                <PluginRoute pluginId="workload">
-                  <SlurmRoomPage />
-                </PluginRoute>
-              }
-            />
-            <Route
-              path="/slurm/partitions"
-              element={
-                <PluginRoute pluginId="workload">
-                  <SlurmPartitionsPage />
-                </PluginRoute>
-              }
-            />
-            <Route
-              path="/slurm/nodes"
-              element={
-                <PluginRoute pluginId="workload">
-                  <SlurmNodesPage />
-                </PluginRoute>
-              }
-            />
-            <Route
-              path="/slurm/alerts"
-              element={
-                <PluginRoute pluginId="workload">
-                  <SlurmAlertsPage />
-                </PluginRoute>
-              }
-            />
-            <Route path="/rack/:rackId/device/:deviceId" element={<DevicePage />} />
-            <Route path="/rack/:rackId" element={<RackPage reloadKey={reloadKey} />} />
-            <Route path="/templates" element={<TemplatesLibraryPage />} />
-            <Route path="/templates/editor" element={<TemplatesEditorPage />} />
-            <Route path="/templates/editor/racks" element={<TemplatesRackEditorPage />} />
-            <Route path="/checks/library" element={<ChecksLibraryEditorPage />} />
-            <Route path="/topology/editor" element={<TopologyEditorPage />} />
-            <Route path="/topology/racks/editor" element={<RackEditorPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Routes>
-        </Layout>
-        </PluginsMenuProvider>
+        <AppInner />
       </ErrorBoundary>
     </BrowserRouter>
   );
