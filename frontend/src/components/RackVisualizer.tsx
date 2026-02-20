@@ -1076,13 +1076,28 @@ export const NodeUnit = ({
       className={`group relative flex h-full cursor-help items-center justify-center border border-[var(--color-border)]/20 bg-[var(--color-node-surface)] transition-all hover:bg-[var(--color-accent-primary)]/20`}
     >
       {nodeName ? (
-        <div className="flex h-full w-full flex-col items-center justify-center px-1">
-          <div
-            className={`${hideText ? 'h-2 w-2' : 'mb-1 h-1.5 w-1.5'} shrink-0 rounded-full ${nodeHealth === 'OK' ? 'bg-status-ok' : nodeHealth === 'CRIT' ? 'bg-status-crit animate-pulse shadow-[0_0_8px_var(--color-status-crit)]' : 'bg-status-warn'} `}
-          ></div>
-          {!hideText && (
-            <div className="flex w-full items-center justify-center gap-1.5 overflow-hidden">
-              <Icon className="h-3 w-3 shrink-0 text-gray-400 opacity-50" />
+        <div className="flex h-full w-full items-center justify-center overflow-hidden px-1">
+          {hideText ? (
+            <Icon
+              className={`h-3 w-3 shrink-0 ${
+                nodeHealth === 'OK'
+                  ? 'text-[var(--color-status-ok)]'
+                  : nodeHealth === 'CRIT'
+                    ? 'animate-pulse text-[var(--color-status-crit)]'
+                    : 'text-[var(--color-status-warn)]'
+              }`}
+            />
+          ) : (
+            <div className="flex w-full items-center justify-center gap-1 overflow-hidden">
+              <Icon
+                className={`h-3 w-3 shrink-0 ${
+                  nodeHealth === 'OK'
+                    ? 'text-[var(--color-status-ok)]'
+                    : nodeHealth === 'CRIT'
+                      ? 'animate-pulse text-[var(--color-status-crit)]'
+                      : 'text-[var(--color-status-warn)]'
+                }`}
+              />
               <span className="truncate font-mono text-[10px] font-black tracking-tight text-[var(--color-text-base)] uppercase opacity-50 group-hover:opacity-100">
                 {nodeName}
               </span>
