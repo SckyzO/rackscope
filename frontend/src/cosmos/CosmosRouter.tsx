@@ -75,6 +75,7 @@ import { CosmosSlurmNodesPage } from './pages/slurm/CosmosSlurmNodesPage';
 import { CosmosSlurmAlertsPage } from './pages/slurm/CosmosSlurmAlertsPage';
 import { CosmosSlurmPartitionsPage } from './pages/slurm/CosmosSlurmPartitionsPage';
 import { CosmosSlurmWallboardPage } from './pages/slurm/CosmosSlurmWallboardPage';
+import { CosmosSlurmWallboardV2Page } from './pages/slurm/CosmosSlurmWallboardV2Page';
 
 export const CosmosRouter = () => (
   <Routes>
@@ -153,6 +154,7 @@ export const CosmosRouter = () => (
       <Route path="slurm/alerts" element={<CosmosSlurmAlertsPage />} />
       <Route path="slurm/partitions" element={<CosmosSlurmPartitionsPage />} />
       <Route path="slurm/wallboard/:roomId" element={<CosmosSlurmWallboardPage />} />
+      <Route path="slurm/wallboard-v2/:roomId" element={<CosmosSlurmWallboardV2Page />} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Route>

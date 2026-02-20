@@ -276,7 +276,13 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
         <NavItem
           to="/cosmos/slurm/wallboard/room-a"
           icon={MapPin}
-          label="Wallboard"
+          label="Wallboard V1"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/slurm/wallboard-v2/room-a"
+          icon={MapPin}
+          label="Wallboard V2"
           collapsed={collapsed}
         />
 
