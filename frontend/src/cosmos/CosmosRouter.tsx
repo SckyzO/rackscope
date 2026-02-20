@@ -77,6 +77,13 @@ import { CosmosSlurmPartitionsPage } from './pages/slurm/CosmosSlurmPartitionsPa
 import { CosmosSlurmWallboardPage } from './pages/slurm/CosmosSlurmWallboardPage';
 import { CosmosSlurmWallboardV2Page } from './pages/slurm/CosmosSlurmWallboardV2Page';
 
+// Editors
+import { CosmosSettingsPage } from './pages/editors/CosmosSettingsPage';
+import { CosmosChecksEditorPage } from './pages/editors/CosmosChecksEditorPage';
+import { CosmosTopologyEditorPage } from './pages/editors/CosmosTopologyEditorPage';
+import { CosmosTemplatesEditorPage } from './pages/editors/CosmosTemplatesEditorPage';
+import { CosmosRackEditorPage } from './pages/editors/CosmosRackEditorPage';
+
 export const CosmosRouter = () => (
   <Routes>
     {/* Auth — no layout */}
@@ -155,6 +162,13 @@ export const CosmosRouter = () => (
       <Route path="slurm/partitions" element={<CosmosSlurmPartitionsPage />} />
       <Route path="slurm/wallboard/:roomId" element={<CosmosSlurmWallboardPage />} />
       <Route path="slurm/wallboard-v2/:roomId" element={<CosmosSlurmWallboardV2Page />} />
+
+      {/* ── Editors ── */}
+      <Route path="editors/settings" element={<CosmosSettingsPage />} />
+      <Route path="editors/checks" element={<CosmosChecksEditorPage />} />
+      <Route path="editors/topology" element={<CosmosTopologyEditorPage />} />
+      <Route path="editors/templates" element={<CosmosTemplatesEditorPage />} />
+      <Route path="editors/rack" element={<CosmosRackEditorPage />} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Route>

@@ -38,6 +38,11 @@ import {
   LayoutDashboard,
   Network,
   MapPin,
+  GitBranch,
+  Server,
+  Layers,
+  ShieldCheck,
+  Settings,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -283,6 +288,38 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
           to="/cosmos/slurm/wallboard-v2/room-a"
           icon={MapPin}
           label="Wallboard V2"
+          collapsed={collapsed}
+        />
+
+        <SectionLabel label="Editors" collapsed={collapsed} />
+        <NavItem
+          to="/cosmos/editors/topology"
+          icon={GitBranch}
+          label="Topology"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/editors/rack"
+          icon={Server}
+          label="Rack Editor"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/editors/templates"
+          icon={Layers}
+          label="Templates"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/editors/checks"
+          icon={ShieldCheck}
+          label="Checks Library"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/editors/settings"
+          icon={Settings}
+          label="Settings"
           collapsed={collapsed}
         />
 
