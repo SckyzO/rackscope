@@ -360,6 +360,7 @@ export const CosmosRackPage = () => {
                       key={comp.id}
                       component={comp}
                       pduMetrics={health?.infra_metrics?.pdu}
+                      fullWidth
                     />
                   ))}
                 </div>
@@ -387,6 +388,7 @@ export const CosmosRackPage = () => {
                   infraComponents={frontInfra}
                   sideComponents={sideInfra}
                   pduMetrics={health?.infra_metrics?.pdu}
+                  fullWidth
                   onDeviceClick={(device) =>
                     navigate(`/cosmos/views/device/${rack.id}/${device.id}`)
                   }
@@ -413,6 +415,7 @@ export const CosmosRackPage = () => {
                   sideComponents={sideInfra}
                   allowInfraOverlap={true}
                   pduMetrics={health?.infra_metrics?.pdu}
+                  fullWidth
                   onDeviceClick={(device) =>
                     navigate(`/cosmos/views/device/${rack.id}/${device.id}`)
                   }

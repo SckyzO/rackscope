@@ -187,6 +187,7 @@ export const RackElevation = ({
   overlay,
   onDeviceClick,
   pduMetrics,
+  fullWidth = false,
 }: {
   rack: Rack;
   catalog: Record<string, DeviceTemplate>;
@@ -210,6 +211,7 @@ export const RackElevation = ({
       inlet_rating_amp?: number;
     }
   >;
+  fullWidth?: boolean;
 }) => {
   const [tooltip, setTooltip] = useState<HUDTooltipProps | null>(null);
   const uMap = new Map<number, Device>();
@@ -330,7 +332,12 @@ export const RackElevation = ({
                   {isDeviceStart && template && (
                     <div
                       className="absolute right-0.5 bottom-0 left-0.5 z-20"
-                      style={{ height: `calc(${template.u_height} * 100%)` }}
+                      style={{
+                        height:
+                          template.u_height === 1
+                            ? '100%'
+                            : `calc(${template.u_height} * 100% + ${template.u_height - 1}px)`,
+                      }}
                     >
                       <DeviceChassis
                         device={device}
@@ -350,7 +357,12 @@ export const RackElevation = ({
                       className={`absolute right-0.5 bottom-0 left-0.5 z-30 ${
                         infraStart.hasCollision ? 'ring-2 ring-[var(--color-status-crit)]/70' : ''
                       }`}
-                      style={{ height: `calc(${infraStart.height} * 100%)` }}
+                      style={{
+                        height:
+                          infraStart.height === 1
+                            ? '100%'
+                            : `calc(${infraStart.height} * 100% + ${infraStart.height - 1}px)`,
+                      }}
                     >
                       <InfraOverlay
                         component={infraStart.component}
@@ -384,7 +396,9 @@ export const RackElevation = ({
   return (
     <div className="relative flex h-full flex-1 items-center justify-center rounded-lg bg-[var(--color-rack-interior)] p-4 transition-colors duration-500">
       {overlay && <div className="absolute top-2 left-2 z-30">{overlay}</div>}
-      <div className="relative flex h-full w-full max-w-[380px] items-stretch">
+      <div
+        className={`relative flex h-full w-full items-stretch ${fullWidth ? '' : 'max-w-[380px]'}`}
+      >
         {flipView
           ? renderRackFace(
               flipView === 'rear',

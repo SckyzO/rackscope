@@ -35,7 +35,6 @@ import {
   Users,
   Columns,
   Rows,
-  List,
 } from 'lucide-react';
 
 interface NavItemProps {
