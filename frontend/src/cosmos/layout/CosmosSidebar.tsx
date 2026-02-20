@@ -4,6 +4,7 @@ import type { ComponentType } from 'react';
 import {
   Activity,
   BarChart2,
+  LineChart,
   LayoutGrid,
   Tag,
   AlertTriangle,
@@ -26,6 +27,7 @@ import {
   Table2,
   LogIn,
   UserPlus,
+  FormInput,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -91,6 +93,7 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
     { to: '/cosmos/ui/spinners', icon: Loader2, label: 'Spinners' },
     { to: '/cosmos/ui/tabs', icon: PanelTop, label: 'Tabs' },
     { to: '/cosmos/ui/tooltips', icon: Info, label: 'Tooltips' },
+    { to: '/cosmos/ui/form-elements', icon: FormInput, label: 'Form Elements' },
   ];
 
   return (
@@ -143,6 +146,9 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
 
         <SectionLabel label="Navigation" collapsed={collapsed} />
         <NavItem to="/cosmos/ui/breadcrumb" icon={Home} label="Breadcrumb" collapsed={collapsed} />
+
+        <SectionLabel label="Charts" collapsed={collapsed} />
+        <NavItem to="/cosmos/charts" icon={LineChart} label="Charts" collapsed={collapsed} />
 
         <SectionLabel label="Tables" collapsed={collapsed} />
         <NavItem to="/cosmos/tables" icon={Table2} label="Data Tables" collapsed={collapsed} />

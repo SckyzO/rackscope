@@ -1,0 +1,119 @@
+import { Activity, Star, ArrowRight } from 'lucide-react';
+
+const SectionCard = ({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) => (
+  <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+    <div className="mb-5">
+      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
+      {desc && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
+    </div>
+    {children}
+  </div>
+);
+
+const cardBase = 'rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900';
+
+export const CardsPage = () => (
+  <div className="space-y-6">
+    <div>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white">Cards</h2>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Container components for grouped content</p>
+    </div>
+    <div className="grid gap-6 lg:grid-cols-2">
+      <SectionCard title="Card with Image (Vertical)" desc="Image at top with content below">
+        <div className={cardBase + ' overflow-hidden'}>
+          <div className="h-40 bg-gradient-to-br from-brand-400 to-brand-600" />
+          <div className="p-5">
+            <h4 className="font-semibold text-gray-900 dark:text-white">Card Title</h4>
+            <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.</p>
+            <a href="#" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-brand-500 hover:text-brand-600">Read more <ArrowRight className="h-3.5 w-3.5" /></a>
+          </div>
+        </div>
+      </SectionCard>
+      <SectionCard title="Card with Image (Horizontal)" desc="Side-by-side image and content">
+        <div className={cardBase + ' flex overflow-hidden'}>
+          <div className="w-28 shrink-0 bg-gradient-to-b from-success-400 to-success-600" />
+          <div className="p-5">
+            <h4 className="font-semibold text-gray-900 dark:text-white">Card Title</h4>
+            <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">Consectetur adipiscing elit. Sed do eiusmod tempor.</p>
+            <a href="#" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-brand-500 hover:text-brand-600">Read more <ArrowRight className="h-3.5 w-3.5" /></a>
+          </div>
+        </div>
+      </SectionCard>
+      <SectionCard title="Text Only Card" desc="Simple card with text content">
+        <div className={cardBase + ' p-5'}>
+          <h4 className="font-semibold text-gray-900 dark:text-white">Card Title</h4>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.</p>
+          <a href="#" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-brand-500 hover:text-brand-600">Read more <ArrowRight className="h-3.5 w-3.5" /></a>
+        </div>
+      </SectionCard>
+      <SectionCard title="Card with Icon" desc="Icon header with title and description">
+        <div className={cardBase + ' p-5'}>
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/15">
+            <Activity className="h-6 w-6 text-brand-500" />
+          </div>
+          <h4 className="mt-4 font-semibold text-gray-900 dark:text-white">Card Title</h4>
+          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+          <a href="#" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-brand-500 hover:text-brand-600">Learn more <ArrowRight className="h-3.5 w-3.5" /></a>
+        </div>
+      </SectionCard>
+      <SectionCard title="Card with Header/Body/Footer" desc="Structured sections separated by borders">
+        <div className={cardBase + ' divide-y divide-gray-100 dark:divide-gray-800'}>
+          <div className="flex items-center justify-between p-5">
+            <h4 className="font-semibold text-gray-900 dark:text-white">Card Header</h4>
+            <button className="text-xs font-medium text-brand-500">Action</button>
+          </div>
+          <div className="p-5">
+            <p className="text-sm text-gray-500 dark:text-gray-400">This is the card body. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+          </div>
+          <div className="flex justify-end gap-2 p-4">
+            <button className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300">Cancel</button>
+            <button className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">Confirm</button>
+          </div>
+        </div>
+      </SectionCard>
+      <SectionCard title="Stat Card" desc="KPI and metric display card">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {[
+            { label: 'Total Users', value: '24,563', change: '+12%', color: 'text-success-500', bg: 'bg-success-50 dark:bg-success-500/10' },
+            { label: 'Revenue', value: '$89.2K', change: '+8.5%', color: 'text-success-500', bg: 'bg-success-50 dark:bg-success-500/10' },
+          ].map((s) => (
+            <div key={s.label} className={`${cardBase} p-4`}>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{s.label}</p>
+              <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">{s.value}</p>
+              <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium ${s.color} ${s.bg}`}>{s.change}</span>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+      <SectionCard title="Profile Card" desc="User profile summary card">
+        <div className={cardBase + ' p-5 text-center'}>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-500 text-xl font-bold text-white">JD</div>
+          <h4 className="mt-3 font-semibold text-gray-900 dark:text-white">John Doe</h4>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Software Engineer</p>
+          <div className="mt-3 flex justify-center gap-1">
+            {[1, 2, 3, 4, 5].map((i) => <Star key={i} className="h-4 w-4 fill-warning-400 text-warning-400" />)}
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button className="flex-1 rounded-lg bg-brand-500 py-2 text-sm font-medium text-white hover:bg-brand-600">Follow</button>
+            <button className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300">Message</button>
+          </div>
+        </div>
+      </SectionCard>
+      <SectionCard title="Hover Effects" desc="Cards with hover interactions">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {['Lift', 'Glow', 'Scale', 'Border'].map((effect) => (
+            <div key={effect} className={`${cardBase} cursor-pointer p-4 transition-all ${
+              effect === 'Lift' ? 'hover:-translate-y-1 hover:shadow-theme-md' :
+              effect === 'Glow' ? 'hover:shadow-[0_0_0_3px_rgba(70,95,255,0.15)]' :
+              effect === 'Scale' ? 'hover:scale-[1.02]' :
+              'hover:border-brand-500'
+            }`}>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{effect}</p>
+              <p className="mt-1 text-xs text-gray-400">Hover to see effect</p>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  </div>
+);
