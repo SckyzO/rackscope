@@ -183,13 +183,24 @@ export const CosmosRoomPage = () => {
             {room.aisles?.length ?? 0} aisles · {allRacks.length} racks
           </p>
         </div>
-        <button
-          onClick={loadHealth}
-          className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-        >
-          <RotateCcw className="h-4 w-4" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            <button className="bg-brand-500 px-3 py-1.5 text-xs font-medium text-white">V1</button>
+            <button
+              onClick={() => navigate(`/cosmos/views/room-v2/${roomId}`)}
+              className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5"
+            >
+              V2
+            </button>
+          </div>
+          <button
+            onClick={loadHealth}
+            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Health summary */}
