@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronRight, RotateCcw, Database } from 'lucide-react';
+import { ChevronRight, RotateCcw, ExternalLink } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Room, Rack, Aisle, DeviceTemplate } from '../../../types';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const HEALTH_COLOR: Record<string, string> = {
+const HC: Record<string, string> = {
   OK: '#22c55e',
   WARN: '#f59e0b',
   CRIT: '#ef4444',
@@ -30,11 +30,8 @@ const VARIANTS = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const computeUsedU = (rack: Rack, templateMap: Record<string, DeviceTemplate>): number =>
-  rack.devices.reduce((acc, dev) => {
-    const tpl = templateMap[dev.template_id];
-    return acc + (tpl?.u_height ?? 1);
-  }, 0);
+const computeUsedU = (rack: Rack, catalog: Record<string, DeviceTemplate>): number =>
+  rack.devices.reduce((acc, dev) => acc + (catalog[dev.template_id]?.u_height ?? 1), 0);
 
 const worstHealth = (racks: Rack[], healthMap: Record<string, string>): string =>
   racks.reduce((worst, r) => {
@@ -42,30 +39,45 @@ const worstHealth = (racks: Rack[], healthMap: Record<string, string>): string =
     return (SEVERITY_ORDER[s] ?? 0) > (SEVERITY_ORDER[worst] ?? 0) ? s : worst;
   }, 'OK');
 
-// ── ProgressBar ────────────────────────────────────────────────────────────
+// ── SegmentedBar ───────────────────────────────────────────────────────────
 
-type ProgressBarProps = {
-  value: number;
-  max: number;
-  color: string;
-  label: string;
-  valueLabel: string;
+type SegmentedBarProps = {
+  rack: Rack;
+  catalog: Record<string, DeviceTemplate>;
+  health: string;
 };
 
-const ProgressBar = ({ value, max, color, label, valueLabel }: ProgressBarProps) => {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+const SegmentedBar = ({ rack, catalog, health }: SegmentedBarProps) => {
+  const color = HC[health] ?? HC.UNKNOWN;
+  const totalU = rack.u_height;
+  if (totalU === 0) return null;
+
+  const segments = rack.devices
+    .map((dev) => ({
+      id: dev.id,
+      name: dev.name,
+      uPos: dev.u_position,
+      uH: catalog[dev.template_id]?.u_height ?? 1,
+    }))
+    .sort((a, b) => a.uPos - b.uPos);
+
   return (
-    <div className="flex flex-col gap-0.5">
-      <div className="flex items-center justify-between text-[10px]">
-        <span className="text-gray-400">{label}</span>
-        <span className="font-mono font-semibold text-gray-300">{valueLabel}</span>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-800">
+    <div
+      className="flex h-4 w-full overflow-hidden rounded"
+      style={{ border: `1px solid ${color}50`, backgroundColor: '#0d1729' }}
+    >
+      {segments.map((seg) => (
         <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, backgroundColor: color }}
+          key={seg.id}
+          title={`${seg.name} (${seg.uH}U)`}
+          style={{
+            width: `${(seg.uH / totalU) * 100}%`,
+            backgroundColor: `${color}cc`,
+            borderRight: '1px solid #0d1729',
+            flexShrink: 0,
+          }}
         />
-      </div>
+      ))}
     </div>
   );
 };
@@ -75,67 +87,68 @@ const ProgressBar = ({ value, max, color, label, valueLabel }: ProgressBarProps)
 type RackCapacityCardProps = {
   rack: Rack;
   health: string;
-  usedU: number;
+  catalog: Record<string, DeviceTemplate>;
   selected: boolean;
   onClick: () => void;
 };
 
-const RackCapacityCard = ({ rack, health, usedU, selected, onClick }: RackCapacityCardProps) => {
-  const color = HEALTH_COLOR[health] ?? HEALTH_COLOR.UNKNOWN;
+const RackCapacityCard = ({ rack, health, catalog, selected, onClick }: RackCapacityCardProps) => {
+  const color = HC[health] ?? HC.UNKNOWN;
+  const usedU = computeUsedU(rack, catalog);
   const fillPct = rack.u_height > 0 ? Math.round((usedU / rack.u_height) * 100) : 0;
-  const deviceCount = rack.devices.length;
-  const maxDevices = Math.max(rack.u_height, 1);
+  const isCrit = health === 'CRIT';
 
   return (
     <button
       onClick={onClick}
-      className="group w-full rounded-xl border px-4 py-3 text-left transition-all duration-150 hover:shadow-lg focus:outline-none"
+      className="group relative w-full rounded-xl border px-4 py-3 text-left transition-all duration-150 focus:outline-none"
       style={{
-        borderColor: selected ? color : `${color}30`,
-        backgroundColor: selected ? `${color}12` : '#0f172a',
-        boxShadow: selected ? `0 0 0 1px ${color}60, inset 0 0 20px ${color}08` : undefined,
+        borderColor: selected ? color : `${color}25`,
+        backgroundColor: selected ? `${color}10` : '#0c1525',
+        borderLeftWidth: isCrit ? 4 : 1,
+        borderLeftColor: color,
+        boxShadow: selected ? `0 0 0 1px ${color}50` : undefined,
       }}
     >
-      <div className="flex items-start gap-4">
-        {/* Health badge + rack ID */}
-        <div className="flex w-32 shrink-0 flex-col gap-1">
-          <span
-            className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 font-mono text-[9px] font-bold text-white"
-            style={{ backgroundColor: color }}
-          >
+      <div className="flex items-center gap-3">
+        {/* Health indicator + rack ID */}
+        <div className="flex w-36 shrink-0 flex-col gap-0.5">
+          <div className="flex items-center gap-1.5">
             <span
-              className={`h-1.5 w-1.5 rounded-full bg-white ${health === 'CRIT' ? 'animate-pulse' : ''}`}
+              className={`h-2 w-2 shrink-0 rounded-full ${isCrit ? 'animate-pulse' : ''}`}
+              style={{ backgroundColor: color }}
             />
-            {health}
+            <span
+              className="rounded px-1.5 py-0.5 font-mono text-[9px] font-bold text-white"
+              style={{ backgroundColor: color }}
+            >
+              {health}
+            </span>
+          </div>
+          <span className="font-mono text-[11px] font-bold text-gray-100">{rack.id}</span>
+          <span className="font-mono text-[9px] text-gray-500">
+            {rack.name !== rack.id ? rack.name : `${rack.u_height}U rack`}
           </span>
-          <span className="font-mono text-[10px] font-semibold text-gray-200">{rack.id}</span>
-          <span className="font-mono text-[9px] text-gray-500">{rack.u_height}U rack</span>
         </div>
 
-        {/* Bars */}
-        <div className="flex flex-1 flex-col gap-2">
-          <ProgressBar
-            value={usedU}
-            max={rack.u_height}
-            color={color}
-            label="U Fill"
-            valueLabel={`${fillPct}%  (${usedU}/${rack.u_height}U)`}
-          />
-          <ProgressBar
-            value={deviceCount}
-            max={maxDevices}
-            color={`${color}80`}
-            label="Devices"
-            valueLabel={`${deviceCount}`}
-          />
+        {/* Segmented fill bar */}
+        <div className="flex flex-1 flex-col gap-1.5">
+          <SegmentedBar rack={rack} catalog={catalog} health={health} />
+          <div className="flex items-center gap-1 text-[9px] text-gray-500">
+            <span>{rack.devices.length} devices</span>
+            <span>·</span>
+            <span>
+              {usedU}/{rack.u_height}U occupied
+            </span>
+          </div>
         </div>
 
-        {/* Free U badge */}
-        <div className="flex w-14 shrink-0 flex-col items-end gap-0.5">
-          <span className="font-mono text-lg font-bold" style={{ color }}>
-            {rack.u_height - usedU}
+        {/* Fill % + U count */}
+        <div className="flex w-16 shrink-0 flex-col items-end">
+          <span className="font-mono text-xl font-bold" style={{ color }}>
+            {fillPct}%
           </span>
-          <span className="text-[9px] text-gray-500">U free</span>
+          <span className="font-mono text-[9px] text-gray-500">{rack.u_height - usedU}U free</span>
         </div>
       </div>
     </button>
@@ -147,7 +160,7 @@ const RackCapacityCard = ({ rack, health, usedU, selected, onClick }: RackCapaci
 type AisleSectionProps = {
   aisle: Aisle;
   healthMap: Record<string, string>;
-  templateMap: Record<string, DeviceTemplate>;
+  catalog: Record<string, DeviceTemplate>;
   selectedRackId: string | null;
   onSelect: (rack: Rack) => void;
 };
@@ -155,27 +168,27 @@ type AisleSectionProps = {
 const AisleSection = ({
   aisle,
   healthMap,
-  templateMap,
+  catalog,
   selectedRackId,
   onSelect,
 }: AisleSectionProps) => {
-  const sortedRacks = [...(aisle.racks ?? [])].sort((a, b) => {
-    const ha = healthMap[a.id] ?? 'UNKNOWN';
-    const hb = healthMap[b.id] ?? 'UNKNOWN';
-    return (SEVERITY_ORDER[hb] ?? 0) - (SEVERITY_ORDER[ha] ?? 0);
-  });
+  const sortedRacks = [...(aisle.racks ?? [])].sort(
+    (a, b) =>
+      (SEVERITY_ORDER[healthMap[b.id] ?? 'UNKNOWN'] ?? 0) -
+      (SEVERITY_ORDER[healthMap[a.id] ?? 'UNKNOWN'] ?? 0)
+  );
 
   const worst = worstHealth(aisle.racks ?? [], healthMap);
-  const worstColor = HEALTH_COLOR[worst] ?? HEALTH_COLOR.UNKNOWN;
+  const worstColor = HC[worst] ?? HC.UNKNOWN;
 
   const totalU = sortedRacks.reduce((s, r) => s + r.u_height, 0);
-  const usedUSum = sortedRacks.reduce((s, r) => s + computeUsedU(r, templateMap), 0);
+  const usedUSum = sortedRacks.reduce((s, r) => s + computeUsedU(r, catalog), 0);
   const aisleFill = totalU > 0 ? Math.round((usedUSum / totalU) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-3">
-        <div className="h-3 w-1 rounded-full" style={{ backgroundColor: worstColor }} />
+        <div className="h-4 w-1 rounded-full" style={{ backgroundColor: worstColor }} />
         <h3 className="font-mono text-xs font-bold tracking-widest text-gray-300 uppercase">
           {aisle.name}
         </h3>
@@ -191,7 +204,7 @@ const AisleSection = ({
             key={rack.id}
             rack={rack}
             health={healthMap[rack.id] ?? 'UNKNOWN'}
-            usedU={computeUsedU(rack, templateMap)}
+            catalog={catalog}
             selected={selectedRackId === rack.id}
             onClick={() => onSelect(rack)}
           />
@@ -206,13 +219,14 @@ const AisleSection = ({
 type SidePanelDetailProps = {
   rack: Rack;
   health: string;
-  usedU: number;
+  catalog: Record<string, DeviceTemplate>;
   onNavigate: () => void;
   onClose: () => void;
 };
 
-const SidePanelDetail = ({ rack, health, usedU, onNavigate, onClose }: SidePanelDetailProps) => {
-  const color = HEALTH_COLOR[health] ?? HEALTH_COLOR.UNKNOWN;
+const SidePanelDetail = ({ rack, health, catalog, onNavigate, onClose }: SidePanelDetailProps) => {
+  const color = HC[health] ?? HC.UNKNOWN;
+  const usedU = computeUsedU(rack, catalog);
   const fillPct = rack.u_height > 0 ? Math.round((usedU / rack.u_height) * 100) : 0;
 
   return (
@@ -241,45 +255,47 @@ const SidePanelDetail = ({ rack, health, usedU, onNavigate, onClose }: SidePanel
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 text-center">
+      <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Total', value: `${rack.u_height}U`, sub: 'capacity' },
-          { label: 'Used', value: `${usedU}U`, sub: `${fillPct}% fill` },
-          { label: 'Free', value: `${rack.u_height - usedU}U`, sub: 'available' },
-        ].map(({ label, value, sub }) => (
+          { label: 'Total', value: `${rack.u_height}U` },
+          { label: 'Used', value: `${usedU}U · ${fillPct}%` },
+          { label: 'Free', value: `${rack.u_height - usedU}U` },
+        ].map(({ label, value }) => (
           <div key={label} className="rounded-lg bg-gray-800/60 py-2 text-center">
-            <p className="font-mono text-xs text-gray-400">{label}</p>
-            <p className="font-mono text-base font-bold" style={{ color }}>
+            <p className="font-mono text-[9px] text-gray-400">{label}</p>
+            <p className="font-mono text-sm font-bold" style={{ color }}>
               {value}
             </p>
-            <p className="font-mono text-[9px] text-gray-500">{sub}</p>
           </div>
         ))}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        {rack.devices.slice(0, 8).map((dev) => (
-          <div
-            key={dev.id}
-            className="flex items-center justify-between rounded-lg bg-gray-800/40 px-3 py-1.5"
-          >
-            <span className="font-mono text-[10px] text-gray-300">{dev.name}</span>
-            <span className="font-mono text-[9px] text-gray-500">{dev.template_id}</span>
-          </div>
-        ))}
+      <div className="flex flex-col gap-1">
+        {rack.devices.slice(0, 8).map((dev) => {
+          const uH = catalog[dev.template_id]?.u_height ?? 1;
+          return (
+            <div
+              key={dev.id}
+              className="flex items-center justify-between rounded-lg bg-gray-800/40 px-3 py-1.5"
+            >
+              <span className="font-mono text-[10px] text-gray-300">{dev.name}</span>
+              <span className="font-mono text-[9px] text-gray-500">{uH}U</span>
+            </div>
+          );
+        })}
         {rack.devices.length > 8 && (
           <p className="text-center font-mono text-[9px] text-gray-500">
-            +{rack.devices.length - 8} more devices
+            +{rack.devices.length - 8} more
           </p>
         )}
       </div>
 
       <button
         onClick={onNavigate}
-        className="flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold text-white transition-colors hover:opacity-90"
+        className="flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold text-white hover:opacity-90"
         style={{ backgroundColor: color }}
       >
-        <Database className="h-3.5 w-3.5" />
+        <ExternalLink className="h-3.5 w-3.5" />
         Open rack view
       </button>
     </div>
@@ -294,7 +310,7 @@ export const CosmosRoomPageV6 = () => {
 
   const [room, setRoom] = useState<Room | null>(null);
   const [healthMap, setHealthMap] = useState<Record<string, string>>({});
-  const [templateMap, setTemplateMap] = useState<Record<string, DeviceTemplate>>({});
+  const [catalog, setCatalog] = useState<Record<string, DeviceTemplate>>({});
   const [selectedRack, setSelectedRack] = useState<Rack | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -330,7 +346,7 @@ export const CosmosRoomPageV6 = () => {
         (catalogData.device_templates ?? []).forEach((t) => {
           tmap[t.id] = t;
         });
-        setTemplateMap(tmap);
+        setCatalog(tmap);
         setLoading(false);
       } catch {
         if (active) setLoading(false);
@@ -373,10 +389,16 @@ export const CosmosRoomPageV6 = () => {
     ...(room.standalone_racks ?? []),
   ];
 
+  const aisles: Aisle[] = [
+    ...(room.aisles ?? []),
+    ...(room.standalone_racks && room.standalone_racks.length > 0
+      ? [{ id: '_standalone', name: 'STANDALONE', racks: room.standalone_racks }]
+      : []),
+  ];
+
   const totalU = allRacks.reduce((s, r) => s + r.u_height, 0);
-  const usedU = allRacks.reduce((s, r) => s + computeUsedU(r, templateMap), 0);
-  const freeU = totalU - usedU;
-  const fillPct = totalU > 0 ? Math.round((usedU / totalU) * 100) : 0;
+  const usedUTotal = allRacks.reduce((s, r) => s + computeUsedU(r, catalog), 0);
+  const fillPct = totalU > 0 ? Math.round((usedUTotal / totalU) * 100) : 0;
 
   const summary = allRacks.reduce(
     (acc, rack) => {
@@ -387,19 +409,8 @@ export const CosmosRoomPageV6 = () => {
     {} as Record<string, number>
   );
 
-  const aisles = [
-    ...(room.aisles ?? []),
-    ...(room.standalone_racks && room.standalone_racks.length > 0
-      ? [{ id: '_standalone', name: 'STANDALONE', racks: room.standalone_racks }]
-      : []),
-  ];
-
-  const handleSelect = (rack: Rack) => {
-    setSelectedRack((prev) => (prev?.id === rack.id ? null : rack));
-  };
-
   return (
-    <div className="flex min-h-full flex-col gap-5 bg-[#080f1e] p-1">
+    <div className="flex flex-col gap-5 bg-[#080f1e] p-1">
       {/* Header */}
       <div className="flex shrink-0 flex-wrap items-start gap-4">
         <div className="flex-1">
@@ -411,15 +422,15 @@ export const CosmosRoomPageV6 = () => {
             <span className="font-semibold text-gray-200">{room.name}</span>
           </nav>
           <h2 className="text-xl font-bold text-white">{room.name}</h2>
-          <p className="text-xs text-gray-500">Capacity View — physical utilization</p>
+          <p className="text-xs text-gray-500">Capacity Bars — segmented U fill per rack</p>
         </div>
 
         {/* Global stats */}
-        <div className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-2 text-xs">
+        <div className="flex items-center gap-4 rounded-xl border border-gray-800 bg-gray-900/60 px-4 py-2">
           {[
+            { label: 'Racks', value: allRacks.length, color: '#94a3b8' },
             { label: 'Total', value: `${totalU}U`, color: '#94a3b8' },
-            { label: 'Used', value: `${usedU}U`, color: '#f59e0b' },
-            { label: 'Free', value: `${freeU}U`, color: '#22c55e' },
+            { label: 'Used', value: `${usedUTotal}U`, color: '#f59e0b' },
             {
               label: 'Fill',
               value: `${fillPct}%`,
@@ -436,7 +447,6 @@ export const CosmosRoomPageV6 = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Health summary pills */}
           <div className="flex items-center gap-1">
             {(['CRIT', 'WARN', 'OK', 'UNKNOWN'] as const)
               .filter((s) => (summary[s] ?? 0) > 0)
@@ -444,14 +454,13 @@ export const CosmosRoomPageV6 = () => {
                 <span
                   key={s}
                   className="rounded-full px-2 py-0.5 font-mono text-[9px] font-bold text-white"
-                  style={{ backgroundColor: `${HEALTH_COLOR[s]}cc` }}
+                  style={{ backgroundColor: `${HC[s]}cc` }}
                 >
                   {summary[s]} {s}
                 </span>
               ))}
           </div>
 
-          {/* Variant switcher */}
           <div className="inline-flex overflow-hidden rounded-lg border border-gray-700">
             {VARIANTS.map((v) => (
               <button
@@ -480,27 +489,25 @@ export const CosmosRoomPageV6 = () => {
 
       {/* Main content */}
       <div className="flex gap-5">
-        {/* Aisle list */}
         <div className="flex flex-1 flex-col gap-6">
           {aisles.map((aisle) => (
             <AisleSection
               key={aisle.id}
               aisle={aisle}
               healthMap={healthMap}
-              templateMap={templateMap}
+              catalog={catalog}
               selectedRackId={selectedRack?.id ?? null}
-              onSelect={handleSelect}
+              onSelect={(rack) => setSelectedRack((prev) => (prev?.id === rack.id ? null : rack))}
             />
           ))}
         </div>
 
-        {/* Side panel */}
         {selectedRack && (
           <div className="w-72 shrink-0">
             <SidePanelDetail
               rack={selectedRack}
               health={healthMap[selectedRack.id] ?? 'UNKNOWN'}
-              usedU={computeUsedU(selectedRack, templateMap)}
+              catalog={catalog}
               onNavigate={() => navigate(`/cosmos/views/rack/${selectedRack.id}`)}
               onClose={() => setSelectedRack(null)}
             />

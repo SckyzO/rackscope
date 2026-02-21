@@ -6,7 +6,7 @@ import type { Room, Rack, Aisle, DeviceTemplate } from '../../../types';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const HEALTH_COLOR: Record<string, string> = {
+const HC: Record<string, string> = {
   OK: '#22c55e',
   WARN: '#f59e0b',
   CRIT: '#ef4444',
@@ -30,11 +30,8 @@ const VARIANTS = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const computeUsedU = (rack: Rack, templateMap: Record<string, DeviceTemplate>): number =>
-  rack.devices.reduce((acc, dev) => {
-    const tpl = templateMap[dev.template_id];
-    return acc + (tpl?.u_height ?? 1);
-  }, 0);
+const computeUsedU = (rack: Rack, catalog: Record<string, DeviceTemplate>): number =>
+  rack.devices.reduce((acc, dev) => acc + (catalog[dev.template_id]?.u_height ?? 1), 0);
 
 const formatTime = (d: Date) =>
   d.toLocaleTimeString('en-US', {
@@ -54,7 +51,7 @@ type AlertFeedItemProps = {
 };
 
 const AlertFeedItem = ({ rackId, health, aisleName, onClick }: AlertFeedItemProps) => {
-  const color = HEALTH_COLOR[health] ?? HEALTH_COLOR.UNKNOWN;
+  const color = HC[health] ?? HC.UNKNOWN;
   return (
     <button
       onClick={onClick}
@@ -89,17 +86,17 @@ type HeatCellProps = {
 };
 
 const HeatCell = ({ rack, health, selected, onClick }: HeatCellProps) => {
-  const color = HEALTH_COLOR[health] ?? HEALTH_COLOR.UNKNOWN;
+  const color = HC[health] ?? HC.UNKNOWN;
   const isCrit = health === 'CRIT';
 
   return (
     <button
       onClick={onClick}
       title={`${rack.id} — ${health}`}
-      className={`flex flex-col items-center justify-end overflow-hidden rounded transition-all duration-100 hover:scale-105 focus:outline-none ${isCrit ? 'animate-pulse' : ''}`}
+      className={`relative flex flex-col items-center justify-end overflow-hidden rounded transition-all duration-100 hover:scale-105 focus:outline-none ${isCrit ? 'animate-pulse' : ''}`}
       style={{
-        width: 72,
-        height: 88,
+        width: 80,
+        height: 100,
         backgroundColor: `${color}88`,
         border: `1.5px solid ${selected ? 'white' : color}`,
         boxShadow: selected
@@ -116,7 +113,7 @@ const HeatCell = ({ rack, health, selected, onClick }: HeatCellProps) => {
         }}
       />
       <span
-        className="relative z-10 w-full truncate px-1 pb-1.5 text-center font-mono text-[8px] font-bold text-white"
+        className="relative z-10 w-full truncate px-1 pb-2 text-center font-mono text-[8px] font-bold text-white"
         style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}
       >
         {rack.id}
@@ -125,23 +122,23 @@ const HeatCell = ({ rack, health, selected, onClick }: HeatCellProps) => {
   );
 };
 
-// ── CenterHeatMap ──────────────────────────────────────────────────────────
+// ── HeatMapGrid ────────────────────────────────────────────────────────────
 
-type CenterHeatMapProps = {
+type HeatMapGridProps = {
   aisles: Aisle[];
   healthMap: Record<string, string>;
   selectedRackId: string | null;
   onSelect: (rack: Rack) => void;
 };
 
-const CenterHeatMap = ({ aisles, healthMap, selectedRackId, onSelect }: CenterHeatMapProps) => (
-  <div className="flex flex-col gap-4">
+const HeatMapGrid = ({ aisles, healthMap, selectedRackId, onSelect }: HeatMapGridProps) => (
+  <div className="flex flex-col gap-5">
     {aisles.map((aisle) => {
       const worst = (aisle.racks ?? []).reduce((w, r) => {
         const s = healthMap[r.id] ?? 'UNKNOWN';
         return (SEVERITY_ORDER[s] ?? 0) > (SEVERITY_ORDER[w] ?? 0) ? s : w;
       }, 'OK');
-      const worstColor = HEALTH_COLOR[worst] ?? HEALTH_COLOR.UNKNOWN;
+      const worstColor = HC[worst] ?? HC.UNKNOWN;
 
       return (
         <div key={aisle.id} className="flex flex-col gap-2">
@@ -171,14 +168,14 @@ const CenterHeatMap = ({ aisles, healthMap, selectedRackId, onSelect }: CenterHe
   </div>
 );
 
-// ── AisleMiniSummary ───────────────────────────────────────────────────────
+// ── AisleMiniBar ───────────────────────────────────────────────────────────
 
-type AisleMiniSummaryProps = {
+type AisleMiniBarProps = {
   aisle: Aisle;
   healthMap: Record<string, string>;
 };
 
-const AisleMiniSummary = ({ aisle, healthMap }: AisleMiniSummaryProps) => {
+const AisleMiniBar = ({ aisle, healthMap }: AisleMiniBarProps) => {
   const counts = (aisle.racks ?? []).reduce(
     (acc, r) => {
       const s = healthMap[r.id] ?? 'UNKNOWN';
@@ -191,28 +188,41 @@ const AisleMiniSummary = ({ aisle, healthMap }: AisleMiniSummaryProps) => {
   const hasCrit = (counts['CRIT'] ?? 0) > 0;
   const hasWarn = (counts['WARN'] ?? 0) > 0;
   const worst = hasCrit ? 'CRIT' : hasWarn ? 'WARN' : 'OK';
-  const color = HEALTH_COLOR[worst];
+  const color = HC[worst] ?? HC.UNKNOWN;
+  const total = aisle.racks?.length ?? 0;
 
   return (
-    <div
-      className="flex items-center gap-3 rounded-lg border px-3 py-2"
-      style={{ borderColor: `${color}30`, backgroundColor: `${color}08` }}
-    >
-      <span className="font-mono text-[10px] font-bold text-gray-300 uppercase">{aisle.name}</span>
-      <div className="flex flex-1 gap-1.5">
-        {(['CRIT', 'WARN', 'OK'] as const).map((s) =>
-          (counts[s] ?? 0) > 0 ? (
-            <span
-              key={s}
-              className="rounded px-1.5 py-0.5 font-mono text-[8px] font-bold text-white"
-              style={{ backgroundColor: HEALTH_COLOR[s] }}
-            >
-              {counts[s]}
-            </span>
-          ) : null
-        )}
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[9px] font-bold text-gray-400 uppercase">{aisle.name}</span>
+        <div className="flex gap-1">
+          {(['CRIT', 'WARN', 'OK'] as const).map((s) =>
+            (counts[s] ?? 0) > 0 ? (
+              <span
+                key={s}
+                className="rounded px-1 py-0.5 font-mono text-[7px] font-bold text-white"
+                style={{ backgroundColor: HC[s] }}
+              >
+                {counts[s]}
+              </span>
+            ) : null
+          )}
+        </div>
       </div>
-      <span className="font-mono text-[9px] text-gray-600">{aisle.racks?.length ?? 0} racks</span>
+      <div
+        className="flex h-1.5 w-full overflow-hidden rounded-full"
+        style={{ backgroundColor: '#1e293b' }}
+      >
+        {(['CRIT', 'WARN', 'OK', 'UNKNOWN'] as const).map((s) => {
+          const pct = total > 0 ? ((counts[s] ?? 0) / total) * 100 : 0;
+          return pct > 0 ? (
+            <div key={s} style={{ width: `${pct}%`, backgroundColor: HC[s] }} />
+          ) : null;
+        })}
+      </div>
+      <span className="font-mono text-[8px]" style={{ color }}>
+        {total} racks
+      </span>
     </div>
   );
 };
@@ -226,7 +236,7 @@ export const CosmosRoomPageV9 = () => {
 
   const [room, setRoom] = useState<Room | null>(null);
   const [healthMap, setHealthMap] = useState<Record<string, string>>({});
-  const [templateMap, setTemplateMap] = useState<Record<string, DeviceTemplate>>({});
+  const [catalog, setCatalog] = useState<Record<string, DeviceTemplate>>({});
   const [selectedRack, setSelectedRack] = useState<Rack | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
@@ -270,7 +280,7 @@ export const CosmosRoomPageV9 = () => {
         (catalogData.device_templates ?? []).forEach((t) => {
           tmap[t.id] = t;
         });
-        setTemplateMap(tmap);
+        setCatalog(tmap);
         setLoading(false);
       } catch {
         if (active) setLoading(false);
@@ -330,9 +340,10 @@ export const CosmosRoomPageV9 = () => {
   );
 
   const totalU = allRacks.reduce((s, r) => s + r.u_height, 0);
-  const usedU = allRacks.reduce((s, r) => s + computeUsedU(r, templateMap), 0);
+  const usedU = allRacks.reduce((s, r) => s + computeUsedU(r, catalog), 0);
   const fillPct = totalU > 0 ? Math.round((usedU / totalU) * 100) : 0;
   const totalDevices = allRacks.reduce((s, r) => s + r.devices.length, 0);
+  const critCount = summary['CRIT'] ?? 0;
 
   const alerts = allRacks
     .filter((r) => ['CRIT', 'WARN'].includes(healthMap[r.id] ?? ''))
@@ -346,11 +357,9 @@ export const CosmosRoomPageV9 = () => {
       return { rack: r, health: healthMap[r.id] ?? 'UNKNOWN', aisleName: aisle?.name ?? '—' };
     });
 
-  const critCount = summary['CRIT'] ?? 0;
-
   return (
-    <div className="flex min-h-full flex-col gap-4" style={{ backgroundColor: '#050810' }}>
-      {/* Fullscreen header */}
+    <div className="flex flex-col gap-4" style={{ backgroundColor: '#050810' }}>
+      {/* Header */}
       <div
         className="flex shrink-0 flex-wrap items-center gap-4 rounded-xl border px-5 py-3"
         style={{ borderColor: '#1a2035', backgroundColor: '#080d1a' }}
@@ -368,18 +377,15 @@ export const CosmosRoomPageV9 = () => {
 
         <div className="flex-1" />
 
-        {/* Live clock */}
         <span className="font-mono text-sm font-bold text-gray-300">{formatTime(now)}</span>
 
-        {/* Alert count */}
         {critCount > 0 && (
           <span className="flex items-center gap-1.5 rounded-lg bg-red-500/20 px-3 py-1 text-xs font-bold text-red-400">
             <AlertOctagon className="h-4 w-4 animate-pulse" />
-            ALERTS: {critCount}
+            {critCount} CRITICAL
           </span>
         )}
 
-        {/* Switcher */}
         <div className="inline-flex overflow-hidden rounded-lg border border-gray-700">
           {VARIANTS.map((v) => (
             <button
@@ -403,122 +409,116 @@ export const CosmosRoomPageV9 = () => {
         </button>
       </div>
 
-      {/* 3-column layout */}
-      <div className="flex flex-1 gap-4 overflow-hidden">
+      {/* 3-column grid */}
+      <div className="grid grid-cols-3 gap-4">
         {/* Left: Alert feed */}
-        <div className="flex w-60 shrink-0 flex-col gap-2 overflow-y-auto">
-          <div className="flex items-center gap-2 rounded-lg border border-gray-800 px-3 py-2">
+        <div className="rounded-2xl border border-gray-800 bg-[#080d1a]">
+          <div className="flex items-center gap-2 border-b border-gray-800 px-4 py-3">
             <AlertOctagon className="h-3.5 w-3.5 text-red-400" />
             <span className="font-mono text-[10px] font-bold tracking-widest text-gray-400 uppercase">
               Alerts ({alerts.length})
             </span>
           </div>
-          {alerts.length === 0 ? (
-            <div
-              className="flex flex-col items-center gap-2 rounded-xl border border-green-500/20 py-6 text-center"
-              style={{ backgroundColor: '#0a1f14' }}
-            >
-              <span className="text-2xl">✓</span>
-              <p className="font-mono text-xs text-green-400">All systems OK</p>
-            </div>
-          ) : (
-            alerts.map(({ rack, health, aisleName }) => (
-              <AlertFeedItem
-                key={rack.id}
-                rackId={rack.id}
-                health={health}
-                aisleName={aisleName}
-                onClick={() => setSelectedRack((prev) => (prev?.id === rack.id ? null : rack))}
-              />
-            ))
-          )}
+          <div className="flex max-h-[600px] flex-col gap-1.5 overflow-y-auto p-3">
+            {alerts.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 rounded-xl border border-green-500/20 bg-[#0a1f14] py-8 text-center">
+                <span className="text-2xl text-green-400">✓</span>
+                <p className="font-mono text-xs text-green-400">All systems OK</p>
+              </div>
+            ) : (
+              alerts.map(({ rack, health, aisleName }) => (
+                <AlertFeedItem
+                  key={rack.id}
+                  rackId={rack.id}
+                  health={health}
+                  aisleName={aisleName}
+                  onClick={() => setSelectedRack((prev) => (prev?.id === rack.id ? null : rack))}
+                />
+              ))
+            )}
+          </div>
         </div>
 
         {/* Center: Heat map */}
-        <div
-          className="flex-1 overflow-y-auto rounded-2xl border border-gray-800 p-5"
-          style={{ backgroundColor: '#080d1a' }}
-        >
-          <CenterHeatMap
-            aisles={aislesAll}
-            healthMap={healthMap}
-            selectedRackId={selectedRack?.id ?? null}
-            onSelect={(rack) => setSelectedRack((prev) => (prev?.id === rack.id ? null : rack))}
-          />
+        <div className="rounded-2xl border border-gray-800 bg-[#080d1a]">
+          <div className="border-b border-gray-800 px-4 py-3">
+            <span className="font-mono text-[10px] font-bold tracking-widest text-gray-400 uppercase">
+              Room Heat Map
+            </span>
+          </div>
+          <div className="max-h-[600px] overflow-y-auto p-4">
+            <HeatMapGrid
+              aisles={aislesAll}
+              healthMap={healthMap}
+              selectedRackId={selectedRack?.id ?? null}
+              onSelect={(rack) => setSelectedRack((prev) => (prev?.id === rack.id ? null : rack))}
+            />
 
-          {selectedRack && (
-            <div
-              className="mt-4 flex items-center justify-between rounded-xl border px-4 py-3"
-              style={{
-                borderColor: `${HEALTH_COLOR[healthMap[selectedRack.id] ?? 'UNKNOWN']}40`,
-                backgroundColor: '#0c1220',
-              }}
-            >
-              <div>
-                <p className="font-semibold text-gray-200">{selectedRack.name}</p>
-                <p className="font-mono text-xs text-gray-500">{selectedRack.id}</p>
-              </div>
-              <button
-                onClick={() => navigate(`/cosmos/views/rack/${selectedRack.id}`)}
-                className="rounded-lg px-3 py-1.5 text-xs font-bold text-white"
+            {selectedRack && (
+              <div
+                className="mt-4 flex items-center justify-between rounded-xl border px-4 py-3"
                 style={{
-                  backgroundColor:
-                    HEALTH_COLOR[healthMap[selectedRack.id] ?? 'UNKNOWN'] ?? '#374151',
+                  borderColor: `${HC[healthMap[selectedRack.id] ?? 'UNKNOWN']}40`,
+                  backgroundColor: '#0c1220',
                 }}
               >
-                Open rack
-              </button>
-            </div>
-          )}
+                <div>
+                  <p className="font-semibold text-gray-200">{selectedRack.name}</p>
+                  <p className="font-mono text-xs text-gray-500">{selectedRack.id}</p>
+                </div>
+                <button
+                  onClick={() => navigate(`/cosmos/views/rack/${selectedRack.id}`)}
+                  className="rounded-lg px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
+                  style={{
+                    backgroundColor: HC[healthMap[selectedRack.id] ?? 'UNKNOWN'] ?? HC.UNKNOWN,
+                  }}
+                >
+                  Open rack
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right: Stats */}
-        <div className="flex w-52 shrink-0 flex-col gap-3">
-          {/* Live stats */}
-          <div
-            className="flex flex-col gap-3 rounded-xl border border-gray-800 p-4"
-            style={{ backgroundColor: '#080d1a' }}
-          >
-            <p className="font-mono text-[9px] font-bold tracking-widest text-gray-600 uppercase">
+        <div className="flex flex-col gap-4">
+          {/* Global stats card */}
+          <div className="rounded-2xl border border-gray-800 bg-[#080d1a] p-4">
+            <p className="mb-3 font-mono text-[9px] font-bold tracking-widest text-gray-600 uppercase">
               Global Stats
             </p>
 
             {[
               { label: 'Total racks', value: allRacks.length, color: '#94a3b8' },
-              { label: 'CRIT', value: summary['CRIT'] ?? 0, color: HEALTH_COLOR.CRIT },
-              { label: 'WARN', value: summary['WARN'] ?? 0, color: HEALTH_COLOR.WARN },
-              { label: 'OK', value: summary['OK'] ?? 0, color: HEALTH_COLOR.OK },
-              { label: 'UNKNOWN', value: summary['UNKNOWN'] ?? 0, color: HEALTH_COLOR.UNKNOWN },
+              { label: 'CRIT', value: summary['CRIT'] ?? 0, color: HC.CRIT },
+              { label: 'WARN', value: summary['WARN'] ?? 0, color: HC.WARN },
+              { label: 'OK', value: summary['OK'] ?? 0, color: HC.OK },
+              { label: 'UNKNOWN', value: summary['UNKNOWN'] ?? 0, color: HC.UNKNOWN },
             ].map(({ label, value, color }) => (
-              <div key={label} className="flex items-center justify-between">
+              <div key={label} className="mb-2 flex items-center justify-between">
                 <span className="font-mono text-[10px] text-gray-400">{label}</span>
-                <span className="font-mono text-sm font-bold" style={{ color }}>
+                <span className="font-mono text-base font-bold" style={{ color }}>
                   {value}
                 </span>
               </div>
             ))}
 
-            <div className="my-1 h-px bg-gray-800" />
+            <div className="my-2 h-px bg-gray-800" />
 
-            <div className="flex items-center justify-between">
+            <div className="mb-2 flex items-center justify-between">
               <span className="flex items-center gap-1.5 font-mono text-[10px] text-gray-400">
                 <Server className="h-3 w-3" /> Devices
               </span>
-              <span className="font-mono text-sm font-bold text-gray-200">{totalDevices}</span>
+              <span className="font-mono text-base font-bold text-gray-200">{totalDevices}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 font-mono text-[10px] text-gray-400">
                 <Zap className="h-3 w-3" /> Fill
               </span>
               <span
-                className="font-mono text-sm font-bold"
+                className="font-mono text-base font-bold"
                 style={{
-                  color:
-                    fillPct > 80
-                      ? HEALTH_COLOR.CRIT
-                      : fillPct > 60
-                        ? HEALTH_COLOR.WARN
-                        : HEALTH_COLOR.OK,
+                  color: fillPct > 80 ? HC.CRIT : fillPct > 60 ? HC.WARN : HC.OK,
                 }}
               >
                 {fillPct}%
@@ -526,37 +526,38 @@ export const CosmosRoomPageV9 = () => {
             </div>
           </div>
 
-          {/* Health bar */}
-          <div
-            className="overflow-hidden rounded-xl border border-gray-800"
-            style={{ backgroundColor: '#080d1a' }}
-          >
-            <div className="px-4 py-2">
+          {/* Health distribution bar */}
+          <div className="overflow-hidden rounded-2xl border border-gray-800 bg-[#080d1a]">
+            <div className="border-b border-gray-800 px-4 py-3">
               <p className="font-mono text-[9px] font-bold tracking-widest text-gray-600 uppercase">
                 Health Distribution
               </p>
             </div>
-            <div className="flex h-4 w-full overflow-hidden">
+            <div className="flex h-5 w-full overflow-hidden">
               {(['CRIT', 'WARN', 'OK', 'UNKNOWN'] as const).map((s) => {
                 const pct = allRacks.length > 0 ? ((summary[s] ?? 0) / allRacks.length) * 100 : 0;
                 return pct > 0 ? (
                   <div
                     key={s}
                     title={`${s}: ${summary[s] ?? 0}`}
-                    style={{ width: `${pct}%`, backgroundColor: HEALTH_COLOR[s] }}
+                    style={{ width: `${pct}%`, backgroundColor: HC[s] }}
                   />
                 ) : null;
               })}
             </div>
+            <div className="flex flex-col gap-2 px-4 py-3">
+              {aislesAll.map((aisle) => (
+                <AisleMiniBar key={aisle.id} aisle={aisle} healthMap={healthMap} />
+              ))}
+            </div>
+          </div>
+
+          {/* Live clock */}
+          <div className="rounded-2xl border border-gray-800 bg-[#080d1a] px-4 py-3 text-center">
+            <p className="mb-1 font-mono text-[9px] text-gray-600 uppercase">Local Time</p>
+            <p className="font-mono text-2xl font-bold text-gray-200">{formatTime(now)}</p>
           </div>
         </div>
-      </div>
-
-      {/* Bottom strip */}
-      <div className="flex shrink-0 flex-wrap gap-2">
-        {aislesAll.map((aisle) => (
-          <AisleMiniSummary key={aisle.id} aisle={aisle} healthMap={healthMap} />
-        ))}
       </div>
     </div>
   );

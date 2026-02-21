@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronRight, RotateCcw, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
+import { ChevronRight, RotateCcw, ExternalLink } from 'lucide-react';
 import { api } from '../../../services/api';
-import type { Room, Rack, Aisle, RackState } from '../../../types';
+import type { Room, Rack, Aisle, DeviceTemplate, RackState } from '../../../types';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const HEALTH_COLOR: Record<string, string> = {
+const HC: Record<string, string> = {
   OK: '#22c55e',
   WARN: '#f59e0b',
   CRIT: '#ef4444',
@@ -28,92 +28,101 @@ const VARIANTS = [
   { label: 'V10', path: 'room-v10' },
 ] as const;
 
-// ── HealthIcon ─────────────────────────────────────────────────────────────
+const PX_PER_U_MINI = 5;
+const PX_PER_U_MAIN = 14;
 
-const HealthIcon = ({ health, size = 14 }: { health: string; size?: number }) => {
-  if (health === 'CRIT')
-    return <AlertTriangle style={{ width: size, height: size, color: HEALTH_COLOR.CRIT }} />;
-  if (health === 'WARN')
-    return <AlertTriangle style={{ width: size, height: size, color: HEALTH_COLOR.WARN }} />;
-  if (health === 'OK')
-    return <CheckCircle2 style={{ width: size, height: size, color: HEALTH_COLOR.OK }} />;
-  return <HelpCircle style={{ width: size, height: size, color: HEALTH_COLOR.UNKNOWN }} />;
-};
+// ── MiniRackElevation ──────────────────────────────────────────────────────
 
-// ── RackListCard ───────────────────────────────────────────────────────────
-
-type RackListCardProps = {
+type MiniRackProps = {
   rack: Rack;
   health: string;
+  catalog: Record<string, DeviceTemplate>;
   selected: boolean;
   onClick: () => void;
 };
 
-const RackListCard = ({ rack, health, selected, onClick }: RackListCardProps) => {
-  const color = HEALTH_COLOR[health] ?? HEALTH_COLOR.UNKNOWN;
+const MiniRackElevation = ({ rack, health, catalog, selected, onClick }: MiniRackProps) => {
+  const uHeight = rack.u_height ?? 42;
+  const totalPx = uHeight * PX_PER_U_MINI;
+  const color = HC[health] ?? HC.UNKNOWN;
+
+  const uMap = new Map<number, boolean>();
+  rack.devices.forEach((dev) => {
+    const h = catalog[dev.template_id]?.u_height ?? 1;
+    for (let u = dev.u_position; u < dev.u_position + h; u++) {
+      uMap.set(u, true);
+    }
+  });
+
+  const slots = Array.from({ length: uHeight }, (_, i) => uHeight - i);
+
   return (
-    <button
-      onClick={onClick}
-      className="flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-all duration-100 hover:border-gray-600 focus:outline-none"
-      style={{
-        borderColor: selected ? color : '#1e293b',
-        backgroundColor: selected ? `${color}15` : 'transparent',
-      }}
-    >
-      <HealthIcon health={health} size={13} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-mono text-xs font-semibold text-gray-200">{rack.id}</p>
-        <p className="font-mono text-[9px] text-gray-500">
-          {rack.u_height}U · {rack.devices.length} dev
-        </p>
+    <button onClick={onClick} className="flex flex-col items-center gap-1 focus:outline-none">
+      <div
+        className="overflow-hidden rounded-sm"
+        style={{
+          width: 40,
+          height: totalPx,
+          border: `2px solid ${color}`,
+          boxShadow: selected ? `0 0 0 2px ${color}40` : undefined,
+          backgroundColor: '#0d1420',
+        }}
+      >
+        {slots.map((u) => (
+          <div
+            key={u}
+            style={{
+              height: PX_PER_U_MINI,
+              backgroundColor: uMap.get(u) ? color : undefined,
+              opacity: uMap.get(u) ? 0.75 : 0.06,
+            }}
+          />
+        ))}
       </div>
-      {selected && <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />}
+      <span className="font-mono text-[9px] text-gray-500">
+        {rack.id.split('-').pop() ?? rack.id}
+      </span>
+      <span
+        className="rounded px-1 py-0.5 text-[8px] font-bold text-white"
+        style={{ backgroundColor: color }}
+      >
+        {health}
+      </span>
     </button>
   );
 };
 
-// ── RackElevationMini ─────────────────────────────────────────────────────
-// Simplified elevation showing devices as colored U-blocks
+// ── RackElevationPanel ─────────────────────────────────────────────────────
+// Full rack elevation rendered from catalog data (no external RackVisualizer dep)
 
-type RackElevationMiniProps = {
+type RackElevationPanelProps = {
   rack: Rack;
   health: string;
+  catalog: Record<string, DeviceTemplate>;
   rackState: RackState | null;
 };
 
-const RackElevationMini = ({ rack, health, rackState }: RackElevationMiniProps) => {
-  const color = HEALTH_COLOR[health] ?? HEALTH_COLOR.UNKNOWN;
-  const PX_PER_U = 14;
-  const totalHeight = rack.u_height * PX_PER_U;
+const RackElevationPanel = ({ rack, health, catalog, rackState }: RackElevationPanelProps) => {
+  const color = HC[health] ?? HC.UNKNOWN;
+  const totalHeight = rack.u_height * PX_PER_U_MAIN;
 
-  // Build U-slot occupancy map
-  const slots: Array<{
-    id: string;
-    name: string;
-    start: number;
-    height: number;
-    nodeHealth: string;
-  }> = [];
-  rack.devices.forEach((dev) => {
-    const uStart = dev.u_position ?? 1;
-    const uH = 1; // We don't have template info here, default 1U
-    slots.push({
+  const deviceSlots = rack.devices
+    .map((dev) => ({
       id: dev.id,
       name: dev.name,
-      start: uStart,
-      height: uH,
-      nodeHealth: health,
-    });
-  });
+      templateId: dev.template_id,
+      uPos: dev.u_position,
+      uH: catalog[dev.template_id]?.u_height ?? 1,
+    }))
+    .sort((a, b) => a.uPos - b.uPos);
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Rack header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
           <h3 className="font-semibold text-gray-100">{rack.name}</h3>
           <p className="font-mono text-xs text-gray-500">
-            {rack.id} · {rack.u_height}U
+            {rack.id} · {rack.u_height}U · {rack.devices.length} devices
           </p>
         </div>
         <span
@@ -124,13 +133,13 @@ const RackElevationMini = ({ rack, health, rackState }: RackElevationMiniProps) 
         </span>
       </div>
 
-      {/* Elevation chassis */}
       <div
         className="relative overflow-hidden rounded-lg border"
         style={{
           height: Math.min(totalHeight, 560),
           borderColor: `${color}30`,
           backgroundColor: '#0a1020',
+          overflowY: totalHeight > 560 ? 'auto' : 'hidden',
         }}
       >
         {/* U ruler */}
@@ -142,7 +151,7 @@ const RackElevationMini = ({ rack, health, rackState }: RackElevationMiniProps) 
             <div
               key={i}
               className="flex items-center justify-end pr-1"
-              style={{ height: PX_PER_U, borderBottom: '1px solid #0d1929' }}
+              style={{ height: PX_PER_U_MAIN, borderBottom: '1px solid #0d1929' }}
             >
               {(i + 1) % 5 === 0 && (
                 <span className="font-mono text-[7px] text-gray-600">{i + 1}</span>
@@ -151,46 +160,53 @@ const RackElevationMini = ({ rack, health, rackState }: RackElevationMiniProps) 
           ))}
         </div>
 
-        {/* Device slots */}
+        {/* Device area */}
         <div className="absolute inset-0 left-7">
-          {/* Empty background grid */}
+          {/* Empty grid background */}
           {Array.from({ length: rack.u_height }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                height: PX_PER_U,
-                borderBottom: '1px solid #0d1929',
-              }}
-            />
+            <div key={i} style={{ height: PX_PER_U_MAIN, borderBottom: '1px solid #0d1929' }} />
           ))}
 
-          {/* Devices */}
-          {slots.map((slot) => (
-            <div
-              key={slot.id}
-              className="absolute right-1 left-1 rounded-sm"
-              style={{
-                top: (slot.start - 1) * PX_PER_U + 1,
-                height: slot.height * PX_PER_U - 2,
-                backgroundColor: `${color}40`,
-                border: `1px solid ${color}60`,
-              }}
-            >
-              <span
-                className="block truncate px-1.5 font-mono text-[8px] font-semibold text-white"
+          {/* Device blocks */}
+          {deviceSlots.map((slot) => {
+            const nodeHealth =
+              (rackState?.nodes &&
+                Object.values(rackState.nodes).find(
+                  (n) => (n as { state?: string })?.state !== undefined
+                )) ??
+              null;
+            const blockColor =
+              nodeHealth && (nodeHealth as { state?: string })?.state
+                ? (HC[(nodeHealth as { state: string }).state] ?? color)
+                : color;
+
+            return (
+              <div
+                key={slot.id}
+                className="absolute right-1 left-1 rounded-sm"
                 style={{
-                  lineHeight: `${slot.height * PX_PER_U - 2}px`,
-                  textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                  top: (slot.uPos - 1) * PX_PER_U_MAIN + 1,
+                  height: slot.uH * PX_PER_U_MAIN - 2,
+                  backgroundColor: `${blockColor}40`,
+                  border: `1px solid ${blockColor}70`,
                 }}
               >
-                {slot.name}
-              </span>
-            </div>
-          ))}
+                <span
+                  className="block truncate px-1.5 font-mono text-[9px] font-semibold text-white"
+                  style={{
+                    lineHeight: `${Math.max(slot.uH * PX_PER_U_MAIN - 2, 12)}px`,
+                    textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                  }}
+                >
+                  {slot.name}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Node health dots if available */}
+      {/* Node health grid */}
       {rackState?.nodes && Object.keys(rackState.nodes).length > 0 && (
         <div>
           <p className="mb-1.5 font-mono text-[9px] font-bold tracking-wider text-gray-500 uppercase">
@@ -198,7 +214,7 @@ const RackElevationMini = ({ rack, health, rackState }: RackElevationMiniProps) 
           </p>
           <div className="flex flex-wrap gap-1">
             {Object.entries(rackState.nodes)
-              .slice(0, 48)
+              .slice(0, 64)
               .map(([node, ns]) => {
                 const s = (ns as { state?: string }).state ?? 'UNKNOWN';
                 return (
@@ -206,7 +222,7 @@ const RackElevationMini = ({ rack, health, rackState }: RackElevationMiniProps) 
                     key={node}
                     title={`${node}: ${s}`}
                     className="h-3 w-3 rounded-sm"
-                    style={{ backgroundColor: HEALTH_COLOR[s] ?? HEALTH_COLOR.UNKNOWN }}
+                    style={{ backgroundColor: HC[s] ?? HC.UNKNOWN }}
                   />
                 );
               })}
@@ -217,36 +233,36 @@ const RackElevationMini = ({ rack, health, rackState }: RackElevationMiniProps) 
   );
 };
 
-// ── AisleStats ─────────────────────────────────────────────────────────────
+// ── AisleTab ───────────────────────────────────────────────────────────────
 
-type AisleStatsProps = {
+type AisleTabProps = {
   aisle: Aisle;
   healthMap: Record<string, string>;
+  active: boolean;
+  onClick: () => void;
 };
 
-const AisleStats = ({ aisle, healthMap }: AisleStatsProps) => {
-  const counts = (aisle.racks ?? []).reduce(
-    (acc, r) => {
-      const s = healthMap[r.id] ?? 'UNKNOWN';
-      acc[s] = (acc[s] ?? 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+const AisleTab = ({ aisle, healthMap, active, onClick }: AisleTabProps) => {
+  const worst = (aisle.racks ?? []).reduce((w, r) => {
+    const s = healthMap[r.id] ?? 'UNKNOWN';
+    return (SEVERITY_ORDER[s] ?? 0) > (SEVERITY_ORDER[w] ?? 0) ? s : w;
+  }, 'OK');
+  const color = HC[worst] ?? HC.UNKNOWN;
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-gray-800 bg-gray-900/40 px-4 py-2 text-[10px]">
-      <span className="font-mono font-bold text-gray-400 uppercase">{aisle.name}</span>
-      <span className="text-gray-600">|</span>
-      {(['CRIT', 'WARN', 'OK', 'UNKNOWN'] as const).map((s) =>
-        (counts[s] ?? 0) > 0 ? (
-          <span key={s} className="flex items-center gap-1" style={{ color: HEALTH_COLOR[s] }}>
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: HEALTH_COLOR[s] }} />
-            {counts[s]} {s}
-          </span>
-        ) : null
-      )}
-    </div>
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all focus:outline-none"
+      style={{
+        borderColor: active ? color : '#1e293b',
+        backgroundColor: active ? `${color}20` : '#0c1525',
+        color: active ? 'white' : '#94a3b8',
+      }}
+    >
+      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+      {aisle.name}
+      <span className="font-mono text-[9px] opacity-60">{aisle.racks?.length ?? 0}</span>
+    </button>
   );
 };
 
@@ -258,6 +274,7 @@ export const CosmosRoomPageV8 = () => {
 
   const [room, setRoom] = useState<Room | null>(null);
   const [healthMap, setHealthMap] = useState<Record<string, string>>({});
+  const [catalog, setCatalog] = useState<Record<string, DeviceTemplate>>({});
   const [selectedAisle, setSelectedAisle] = useState<Aisle | null>(null);
   const [selectedRack, setSelectedRack] = useState<Rack | null>(null);
   const [rackState, setRackState] = useState<RackState | null>(null);
@@ -285,19 +302,25 @@ export const CosmosRoomPageV8 = () => {
     let active = true;
     const load = async () => {
       try {
-        const roomData = await api.getRoomLayout(roomId);
+        const [roomData, catalogData] = await Promise.all([
+          api.getRoomLayout(roomId),
+          api.getCatalog(),
+        ]);
         if (!active) return;
+
+        const tmap: Record<string, DeviceTemplate> = {};
+        (catalogData.device_templates ?? []).forEach((t) => {
+          tmap[t.id] = t;
+        });
+        setCatalog(tmap);
         setRoom(roomData);
-        setLoading(false);
-        // Auto-select first aisle
+
         const firstAisle = roomData.aisles?.[0] ?? null;
         setSelectedAisle(firstAisle);
-        // Auto-select first CRIT rack or first rack
-        if (firstAisle) {
-          const racks = firstAisle.racks ?? [];
-          const critRack = racks.find((r) => (healthMap[r.id] ?? 'UNKNOWN') === 'CRIT');
-          setSelectedRack(critRack ?? racks[0] ?? null);
-        }
+        const firstRack = firstAisle?.racks?.[0] ?? null;
+        setSelectedRack(firstRack);
+
+        setLoading(false);
       } catch {
         if (active) setLoading(false);
       }
@@ -306,21 +329,7 @@ export const CosmosRoomPageV8 = () => {
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
-
-  // Auto-select worst rack when health loads
-  useEffect(() => {
-    if (!selectedAisle || Object.keys(healthMap).length === 0) return;
-    const racks = selectedAisle.racks ?? [];
-    const sorted = [...racks].sort(
-      (a, b) =>
-        (SEVERITY_ORDER[healthMap[b.id] ?? 'UNKNOWN'] ?? 0) -
-        (SEVERITY_ORDER[healthMap[a.id] ?? 'UNKNOWN'] ?? 0)
-    );
-    if (sorted[0] && !selectedRack) setSelectedRack(sorted[0]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [healthMap, selectedAisle]);
 
   useEffect(() => {
     if (!roomId || loading) return;
@@ -339,7 +348,7 @@ export const CosmosRoomPageV8 = () => {
   useEffect(() => {
     if (!selectedRack) return;
     let active = true;
-    const fetchRackState = async () => {
+    const fetch = async () => {
       try {
         const data = await api.getRackState(selectedRack.id, false);
         if (active) setRackState(data);
@@ -347,11 +356,28 @@ export const CosmosRoomPageV8 = () => {
         if (active) setRackState(null);
       }
     };
-    fetchRackState();
+    fetch();
     return () => {
       active = false;
     };
   }, [selectedRack]);
+
+  // Auto-select worst rack when health loads
+  useEffect(() => {
+    if (!selectedAisle || Object.keys(healthMap).length === 0 || selectedRack) return;
+    const racks = selectedAisle.racks ?? [];
+    const sorted = [...racks].sort(
+      (a, b) =>
+        (SEVERITY_ORDER[healthMap[b.id] ?? 'UNKNOWN'] ?? 0) -
+        (SEVERITY_ORDER[healthMap[a.id] ?? 'UNKNOWN'] ?? 0)
+    );
+    const best = sorted[0];
+    if (best) {
+      const tid = setTimeout(() => setSelectedRack(best), 0);
+      return () => clearTimeout(tid);
+    }
+    return undefined;
+  }, [healthMap, selectedAisle, selectedRack]);
 
   if (loading)
     return (
@@ -365,15 +391,14 @@ export const CosmosRoomPageV8 = () => {
       <div className="flex h-64 items-center justify-center text-gray-400">Room not found</div>
     );
 
-  const aislesWithStandalone: Aisle[] = [
+  const aislesAll: Aisle[] = [
     ...(room.aisles ?? []),
     ...(room.standalone_racks && room.standalone_racks.length > 0
       ? [{ id: '_standalone', name: 'STANDALONE', racks: room.standalone_racks }]
       : []),
   ];
 
-  const currentRacks = selectedAisle?.racks ?? [];
-  const sortedRacks = [...currentRacks].sort(
+  const currentRacks = [...(selectedAisle?.racks ?? [])].sort(
     (a, b) =>
       (SEVERITY_ORDER[healthMap[b.id] ?? 'UNKNOWN'] ?? 0) -
       (SEVERITY_ORDER[healthMap[a.id] ?? 'UNKNOWN'] ?? 0)
@@ -381,18 +406,17 @@ export const CosmosRoomPageV8 = () => {
 
   const handleAisleSelect = (aisle: Aisle) => {
     setSelectedAisle(aisle);
-    const racks = aisle.racks ?? [];
-    const sorted = [...racks].sort(
+    setRackState(null);
+    const sorted = [...(aisle.racks ?? [])].sort(
       (a, b) =>
         (SEVERITY_ORDER[healthMap[b.id] ?? 'UNKNOWN'] ?? 0) -
         (SEVERITY_ORDER[healthMap[a.id] ?? 'UNKNOWN'] ?? 0)
     );
     setSelectedRack(sorted[0] ?? null);
-    setRackState(null);
   };
 
   return (
-    <div className="flex min-h-full flex-col gap-4" style={{ backgroundColor: '#070b14' }}>
+    <div className="flex flex-col gap-4" style={{ backgroundColor: '#070b14' }}>
       {/* Header */}
       <div className="flex shrink-0 flex-wrap items-center gap-3">
         <div className="flex-1">
@@ -404,7 +428,7 @@ export const CosmosRoomPageV8 = () => {
             <span className="font-semibold text-gray-200">{room.name}</span>
           </nav>
           <h2 className="text-xl font-bold text-white">{room.name}</h2>
-          <p className="text-xs text-gray-500">Aisle Walk-Through — navigate aisle by aisle</p>
+          <p className="text-xs text-gray-500">Aisle Walk-Through — mini rack elevations</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -433,82 +457,66 @@ export const CosmosRoomPageV8 = () => {
 
       {/* Aisle tabs */}
       <div className="flex shrink-0 flex-wrap gap-2">
-        {aislesWithStandalone.map((aisle) => {
-          const worst = (aisle.racks ?? []).reduce((w, r) => {
-            const s = healthMap[r.id] ?? 'UNKNOWN';
-            return (SEVERITY_ORDER[s] ?? 0) > (SEVERITY_ORDER[w] ?? 0) ? s : w;
-          }, 'OK');
-          const color = HEALTH_COLOR[worst] ?? HEALTH_COLOR.UNKNOWN;
-          const isActive = selectedAisle?.id === aisle.id;
-
-          return (
-            <button
-              key={aisle.id}
-              onClick={() => handleAisleSelect(aisle)}
-              className="flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all focus:outline-none"
-              style={{
-                borderColor: isActive ? color : '#1e293b',
-                backgroundColor: isActive ? `${color}20` : '#0c1525',
-                color: isActive ? 'white' : '#94a3b8',
-              }}
-            >
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-              {aisle.name}
-              <span className="font-mono text-[9px] opacity-60">{aisle.racks?.length ?? 0}</span>
-            </button>
-          );
-        })}
+        {aislesAll.map((aisle) => (
+          <AisleTab
+            key={aisle.id}
+            aisle={aisle}
+            healthMap={healthMap}
+            active={selectedAisle?.id === aisle.id}
+            onClick={() => handleAisleSelect(aisle)}
+          />
+        ))}
       </div>
 
-      {/* Aisle stats */}
-      {selectedAisle && <AisleStats aisle={selectedAisle} healthMap={healthMap} />}
-
-      {/* Main content: rack list + elevation */}
-      <div className="flex flex-1 gap-4 overflow-hidden">
-        {/* Rack list */}
-        <div className="flex w-48 shrink-0 flex-col gap-1.5 overflow-y-auto">
-          <p className="font-mono text-[9px] font-bold tracking-widest text-gray-600 uppercase">
-            Racks ({sortedRacks.length})
-          </p>
-          {sortedRacks.map((rack) => (
-            <RackListCard
-              key={rack.id}
-              rack={rack}
-              health={healthMap[rack.id] ?? 'UNKNOWN'}
-              selected={selectedRack?.id === rack.id}
-              onClick={() => {
-                setSelectedRack(rack);
-                setRackState(null);
-              }}
-            />
-          ))}
+      {/* Main layout: mini racks left + full elevation right */}
+      <div className="flex gap-4">
+        {/* Left: mini rack column */}
+        <div className="flex shrink-0 flex-wrap gap-4 rounded-2xl border border-gray-800 bg-[#0a1020] p-4">
+          <div className="w-full">
+            <p className="mb-3 font-mono text-[9px] font-bold tracking-widest text-gray-600 uppercase">
+              {selectedAisle?.name ?? 'Racks'} ({currentRacks.length})
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-4">
+            {currentRacks.map((rack) => (
+              <MiniRackElevation
+                key={rack.id}
+                rack={rack}
+                health={healthMap[rack.id] ?? 'UNKNOWN'}
+                catalog={catalog}
+                selected={selectedRack?.id === rack.id}
+                onClick={() => {
+                  setSelectedRack(rack);
+                  setRackState(null);
+                }}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Rack elevation detail */}
-        <div
-          className="flex-1 overflow-y-auto rounded-2xl border border-gray-800 p-5"
-          style={{ backgroundColor: '#0a1020' }}
-        >
+        {/* Right: full elevation */}
+        <div className="flex-1 overflow-y-auto rounded-2xl border border-gray-800 p-5">
           {selectedRack ? (
             <>
-              <RackElevationMini
+              <RackElevationPanel
                 rack={selectedRack}
                 health={healthMap[selectedRack.id] ?? 'UNKNOWN'}
+                catalog={catalog}
                 rackState={rackState}
               />
               <button
                 onClick={() => navigate(`/cosmos/views/rack/${selectedRack.id}`)}
-                className="mt-4 w-full rounded-lg py-2.5 text-xs font-semibold text-white transition-colors hover:opacity-90"
+                className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-semibold text-white hover:opacity-90"
                 style={{
-                  backgroundColor:
-                    HEALTH_COLOR[healthMap[selectedRack.id] ?? 'UNKNOWN'] ?? '#374151',
+                  backgroundColor: HC[healthMap[selectedRack.id] ?? 'UNKNOWN'] ?? HC.UNKNOWN,
                 }}
               >
+                <ExternalLink className="h-3.5 w-3.5" />
                 Open full rack view
               </button>
             </>
           ) : (
-            <div className="flex h-full items-center justify-center text-gray-600">
+            <div className="flex h-full min-h-[200px] items-center justify-center text-gray-600">
               Select a rack to view details
             </div>
           )}
