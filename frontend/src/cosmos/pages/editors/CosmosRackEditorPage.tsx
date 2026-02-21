@@ -298,7 +298,8 @@ export const CosmosRackEditorPage = () => {
 
   const handleSlotDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+    // 'move' for existing device repositioning, 'copy' for placing a new template
+    e.dataTransfer.dropEffect = dragDeviceRef.current ? 'move' : 'copy';
   };
 
   const handleSlotDrop = (e: React.DragEvent, u: number) => {
@@ -309,8 +310,17 @@ export const CosmosRackEditorPage = () => {
     }
 
     // Use refs — state batching can cause stale closures in DnD handlers
-    const activeDevice = dragDeviceRef.current;
+    let activeDevice = dragDeviceRef.current;
     const activeTpl = dragTemplateRef.current;
+
+    // Fallback: if ref is empty, try to recover device from dataTransfer id
+    if (!activeDevice && !activeTpl) {
+      const transferId = e.dataTransfer.getData('text/plain');
+      if (transferId) {
+        const recovered = draftDevices.find((d) => d.id === transferId);
+        if (recovered) activeDevice = recovered;
+      }
+    }
 
     // Case 1: repositioning an existing device
     if (activeDevice) {
