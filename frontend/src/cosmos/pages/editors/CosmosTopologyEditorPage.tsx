@@ -142,8 +142,9 @@ const RackCard = ({
       <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-gray-600 group-hover:text-gray-400" />
       <Server className="h-4 w-4 shrink-0 text-gray-400" />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-mono text-xs font-semibold text-white">{rack.id}</p>
-        <p className="truncate text-[10px] text-gray-500">{tpl?.name ?? rack.template_id ?? '—'}</p>
+        <p className="truncate text-sm font-semibold text-white">{rack.name || rack.id}</p>
+        <p className="truncate font-mono text-[10px] text-gray-500">{rack.id}</p>
+        <p className="truncate text-[10px] text-gray-600">{tpl?.name ?? rack.template_id ?? '—'}</p>
       </div>
       <div className="shrink-0 text-right">
         <p className="font-mono text-[10px] text-gray-500">{rack.u_height}U</p>
@@ -161,12 +162,16 @@ type AisleColumnProps = {
   dragRackId: string | null;
   dragOverAisleId: string | null;
   rackTemplates: RackTemplate[];
+  standaloneRacks: Rack[];
+  addingRackInAisle: string | null;
   onRackSelect: (rackId: string) => void;
   onRackDragStart: (e: React.DragEvent, rackId: string, aisleId: string) => void;
   onDragOver: (e: React.DragEvent, aisleId: string) => void;
   onDragLeave: () => void;
   onDrop: (e: React.DragEvent, aisleId: string) => void;
-  onAddRack: () => void;
+  onAddRack: (aisleId: string) => void;
+  onCancelAddRack: () => void;
+  onPickStandalone: (aisleId: string, rackId: string) => void;
 };
 
 const AisleColumn = ({
@@ -175,18 +180,23 @@ const AisleColumn = ({
   dragRackId,
   dragOverAisleId,
   rackTemplates,
+  standaloneRacks,
+  addingRackInAisle,
   onRackSelect,
   onRackDragStart,
   onDragOver,
   onDragLeave,
   onDrop,
   onAddRack,
+  onCancelAddRack,
+  onPickStandalone,
 }: AisleColumnProps) => {
   const isDropTarget = dragOverAisleId === aisle.id;
+  const isAddingHere = addingRackInAisle === aisle.id;
 
   return (
     <div
-      className={`flex min-h-[200px] w-64 shrink-0 flex-col rounded-2xl border-2 transition-all ${
+      className={`flex min-h-[200px] w-80 shrink-0 flex-col rounded-2xl border-2 transition-all ${
         isDropTarget ? 'border-brand-500 bg-brand-500/5' : 'border-gray-800 bg-gray-900'
       }`}
       onDragOver={(e) => onDragOver(e, aisle.id)}
@@ -230,14 +240,51 @@ const AisleColumn = ({
         )}
       </div>
 
-      {/* Add rack button */}
+      {/* Add rack area */}
       <div className="border-t border-gray-800 p-3">
-        <button
-          onClick={() => onAddRack()}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-700 py-2 text-xs text-gray-500 hover:border-gray-600 hover:text-gray-400"
-        >
-          <Plus className="h-3.5 w-3.5" /> Add Rack
-        </button>
+        {isAddingHere ? (
+          <div className="space-y-2">
+            {standaloneRacks.length > 0 ? (
+              <>
+                <p className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+                  Available racks
+                </p>
+                {standaloneRacks.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => onPickStandalone(aisle.id, r.id)}
+                    className="hover:border-brand-500/50 hover:bg-brand-500/10 flex w-full items-center gap-2 rounded-lg border border-gray-700 bg-gray-800/50 px-3 py-2 text-left"
+                  >
+                    <Server className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-white">{r.name || r.id}</p>
+                      <p className="truncate font-mono text-[10px] text-gray-500">{r.id}</p>
+                    </div>
+                  </button>
+                ))}
+              </>
+            ) : (
+              <p className="rounded-lg border border-dashed border-gray-700 p-3 text-center text-[11px] text-gray-500">
+                No standalone racks available.
+                <br />
+                Create a rack in the YAML config first.
+              </p>
+            )}
+            <button
+              onClick={onCancelAddRack}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-700 py-1.5 text-xs text-gray-500 hover:text-gray-400"
+            >
+              <X className="h-3 w-3" /> Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => onAddRack(aisle.id)}
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-700 py-2 text-xs text-gray-500 hover:border-gray-600 hover:text-gray-400"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add Rack
+          </button>
+        )}
       </div>
     </div>
   );
@@ -353,6 +400,7 @@ export const CosmosTopologyEditorPage = () => {
   const [addingSiteForm, setAddingSiteForm] = useState(false);
   const [addingRoomFor, setAddingRoomFor] = useState<string | null>(null);
   const [addingAisleFor, setAddingAisleFor] = useState(false);
+  const [addingRackInAisle, setAddingRackInAisle] = useState<string | null>(null);
 
   // ── Data loading ──────────────────────────────────────────────────────────
 
@@ -380,6 +428,19 @@ export const CosmosTopologyEditorPage = () => {
       active = false;
     };
   }, []);
+
+  // Auto-select first room after initial load
+  useEffect(() => {
+    if (loading || selectedRoomId || topology.length === 0) return;
+    const autoSelect = async () => {
+      const firstSite = topology[0];
+      if (firstSite.rooms.length > 0) {
+        setSelectedRoomId(firstSite.rooms[0].id);
+        setExpandedSites(new Set([firstSite.id]));
+      }
+    };
+    autoSelect();
+  }, [loading, topology, selectedRoomId]);
 
   // ── Derived values ────────────────────────────────────────────────────────
 
@@ -488,8 +549,15 @@ export const CosmosTopologyEditorPage = () => {
     await withSave(() => api.updateRackTemplate(selectedRackId, templateId));
   };
 
-  const handleAddRack = () => {
-    alert('Add Rack — open the Rack Editor to add devices, or use the YAML editor.');
+  const handleMoveStandaloneToAisle = async (aisleId: string, rackId: string) => {
+    if (!selectedRoom) return;
+    setAddingRackInAisle(null);
+    const newAisles: Record<string, string[]> = {};
+    selectedRoom.aisles.forEach((a) => {
+      newAisles[a.id] =
+        a.id === aisleId ? [...a.racks.map((r) => r.id), rackId] : a.racks.map((r) => r.id);
+    });
+    await withSave(() => api.updateRoomAisles(selectedRoom.id, newAisles));
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -688,12 +756,16 @@ export const CosmosTopologyEditorPage = () => {
                       dragRackId={dragRackId}
                       dragOverAisleId={dragOverAisleId}
                       rackTemplates={rackTemplates}
+                      standaloneRacks={selectedRoom.standalone_racks ?? []}
+                      addingRackInAisle={addingRackInAisle}
                       onRackSelect={setSelectedRackId}
                       onRackDragStart={handleRackDragStart}
                       onDragOver={handleAisleDragOver}
                       onDragLeave={handleAisleDragLeave}
                       onDrop={handleAisleDrop}
-                      onAddRack={handleAddRack}
+                      onAddRack={(aisleId) => setAddingRackInAisle(aisleId)}
+                      onCancelAddRack={() => setAddingRackInAisle(null)}
+                      onPickStandalone={handleMoveStandaloneToAisle}
                     />
                   ))}
 
