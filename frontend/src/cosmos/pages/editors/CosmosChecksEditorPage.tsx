@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import yaml from 'js-yaml';
-import { Pencil, Trash2, Plus, X, Check, ChevronRight } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Check, ChevronRight, ShieldCheck } from 'lucide-react';
 import { api } from '../../../services/api';
 
 // ---------------------------------------------------------------------------
@@ -105,7 +105,7 @@ type CheckCardProps = {
 };
 
 const CheckCard = ({ check, onEdit, onDelete }: CheckCardProps) => (
-  <div className="group flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-4">
+  <div className="group flex flex-col gap-3 rounded-2xl border border-gray-800 bg-gray-900 p-4">
     {/* Header */}
     <div className="space-y-1.5">
       <div className="flex items-start justify-between gap-2">
@@ -123,20 +123,20 @@ const CheckCard = ({ check, onEdit, onDelete }: CheckCardProps) => (
           <button
             onClick={onEdit}
             title="Edit check"
-            className="rounded-lg border border-[var(--color-border)] p-1.5 text-gray-500 hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
+            className="hover:border-brand-500/40 hover:text-brand-500 rounded-lg border border-gray-700 p-1.5 text-gray-500"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={onDelete}
             title="Delete check"
-            className="rounded-lg border border-[var(--color-border)] p-1.5 text-gray-500 hover:border-red-500/40 hover:text-red-400"
+            className="rounded-lg border border-gray-700 p-1.5 text-gray-500 hover:border-red-500/40 hover:text-red-400"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
-      <h3 className="font-mono text-sm font-bold text-[var(--color-text-base)]">{check.id}</h3>
+      <h3 className="font-mono text-sm font-bold text-white">{check.id}</h3>
       {check.name && check.name !== check.id && (
         <p className="text-[11px] text-gray-500">{check.name}</p>
       )}
@@ -653,14 +653,16 @@ type FileListItemProps = {
 const FileListItem = ({ name, selected, onClick, dirty }: FileListItemProps) => (
   <button
     onClick={onClick}
-    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left font-mono text-xs transition-all ${
+    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs transition-all ${
       selected
-        ? 'border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
+        ? 'bg-brand-500/15 text-brand-400 font-semibold'
         : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
     }`}
   >
-    <span className="flex-1 truncate">{name}</span>
-    {dirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" title="Unsaved changes" />}
+    <span className="flex-1 truncate font-mono">{name}</span>
+    {dirty && (
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" title="Unsaved changes" />
+    )}
   </button>
 );
 
@@ -828,77 +830,76 @@ export const CosmosChecksEditorPage = () => {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-panel)] px-8 py-4">
-        <div>
-          <div className="font-mono text-[10px] tracking-[0.45em] text-gray-500 uppercase">
-            Checks
+      <div className="flex shrink-0 items-center justify-between border-b border-gray-800 bg-gray-950 px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="bg-brand-500/10 flex h-9 w-9 items-center justify-center rounded-xl">
+            <ShieldCheck className="text-brand-500 h-5 w-5" />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-[var(--color-text-base)] uppercase">
-            Library Editor
-          </h1>
+          <div>
+            <h1 className="text-lg font-bold text-white">Checks Library Editor</h1>
+            <p className="text-xs text-gray-500">
+              {selectedFile ? selectedFile : 'Health check definitions'}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           {/* View toggle */}
-          <div className="overflow-hidden rounded-lg border border-[var(--color-border)]">
+          <div className="inline-flex overflow-hidden rounded-lg border border-gray-700">
             {(['visual', 'yaml'] as const).map((v) => (
               <button
                 key={v}
                 onClick={() => setView(v)}
-                className={`px-3 py-1.5 font-mono text-[10px] font-bold tracking-widest uppercase transition-colors ${
+                className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
                   view === v
-                    ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
-                    : 'text-gray-500 hover:text-gray-300'
+                    ? 'bg-brand-500 text-white'
+                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
                 }`}
               >
-                {v}
+                {v === 'visual' ? 'Visual' : 'YAML'}
               </button>
             ))}
           </div>
-          {/* Filename */}
-          {selectedFile && (
-            <span className="font-mono text-[11px] text-gray-500">{selectedFile}</span>
-          )}
           {/* Save */}
           <button
-            onClick={() => {
-              void handleSave();
-            }}
+            onClick={() => void handleSave()}
             disabled={!isDirty || !selectedFile || saveStatus === 'saving'}
-            className={`rounded-lg px-4 py-2 font-mono text-xs font-bold tracking-widest uppercase transition-colors ${
+            className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
               isDirty && selectedFile
-                ? 'border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/25'
-                : 'cursor-not-allowed border border-white/10 bg-white/5 text-gray-600'
+                ? 'bg-brand-500 hover:bg-brand-600 text-white'
+                : 'cursor-not-allowed bg-gray-800 text-gray-500'
             }`}
           >
-            {saveStatus === 'saving'
-              ? 'Saving...'
-              : saveStatus === 'saved'
-                ? 'Saved ✓'
-                : saveStatus === 'error'
-                  ? 'Error'
-                  : isDirty
-                    ? 'Save'
-                    : 'Saved'}
+            {saveStatus === 'saving' ? (
+              'Saving...'
+            ) : saveStatus === 'saved' ? (
+              <>
+                <Check className="h-4 w-4" /> Saved
+              </>
+            ) : saveStatus === 'error' ? (
+              'Error'
+            ) : (
+              <>
+                <Check className="h-4 w-4" /> {isDirty ? 'Save' : 'Saved'}
+              </>
+            )}
           </button>
         </div>
-      </header>
+      </div>
 
       {/* Body */}
       <div className="flex min-h-0 flex-1">
         {/* LEFT: File list */}
-        <aside className="flex w-64 shrink-0 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-bg-panel)]">
-          <div className="border-b border-[var(--color-border)] px-4 py-3">
-            <span className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
+        <aside className="flex w-64 shrink-0 flex-col overflow-y-auto border-r border-gray-800 bg-gray-950">
+          <div className="border-b border-gray-800 px-4 py-3">
+            <span className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
               Files
             </span>
           </div>
           <div className="flex-1 space-y-1 p-3">
             {loading ? (
-              <div className="py-4 text-center font-mono text-[10px] text-gray-600">Loading...</div>
+              <div className="py-4 text-center text-xs text-gray-600">Loading...</div>
             ) : files.length === 0 ? (
-              <div className="py-4 text-center font-mono text-[10px] text-gray-600">
-                No files found
-              </div>
+              <div className="py-4 text-center text-xs text-gray-600">No files found</div>
             ) : (
               files.map((name) => (
                 <FileListItem
@@ -911,8 +912,8 @@ export const CosmosChecksEditorPage = () => {
               ))
             )}
           </div>
-          <div className="border-t border-[var(--color-border)] px-4 py-2">
-            <span className="font-mono text-[10px] text-gray-600">
+          <div className="border-t border-gray-800 px-4 py-2">
+            <span className="text-xs text-gray-600">
               {files.length} file{files.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -928,7 +929,7 @@ export const CosmosChecksEditorPage = () => {
             </div>
           ) : loadingFile ? (
             <div className="flex h-full items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-700 border-t-[var(--color-accent)]" />
+              <div className="border-t-brand-500 h-8 w-8 animate-spin rounded-full border-2 border-gray-700" />
             </div>
           ) : view === 'yaml' ? (
             /* YAML View: Monaco */
@@ -969,13 +970,13 @@ export const CosmosChecksEditorPage = () => {
                   <div className="flex gap-3">
                     <button
                       onClick={openAddForm}
-                      className="flex items-center gap-1.5 rounded-lg border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 px-4 py-2 font-mono text-[10px] font-bold tracking-widest text-[var(--color-accent)] uppercase hover:bg-[var(--color-accent)]/20"
+                      className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
                     >
                       <Plus className="h-3.5 w-3.5" /> Add First Check
                     </button>
                     <button
                       onClick={() => setView('yaml')}
-                      className="rounded-lg border border-[var(--color-border)] px-4 py-2 font-mono text-[10px] tracking-widest text-gray-500 uppercase hover:text-gray-300"
+                      className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs text-gray-400 hover:text-gray-200"
                     >
                       Edit YAML
                     </button>
@@ -984,20 +985,20 @@ export const CosmosChecksEditorPage = () => {
               ) : (
                 <>
                   <div className="mb-4 flex items-center justify-between">
-                    <span className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
-                      {parsedChecks.length} check
-                      {parsedChecks.length !== 1 ? 's' : ''} — {selectedFile}
+                    <span className="text-xs font-semibold text-gray-400">
+                      {parsedChecks.length} check{parsedChecks.length !== 1 ? 's' : ''} —{' '}
+                      {selectedFile}
                     </span>
                     <div className="flex items-center gap-3">
                       <button
                         onClick={openAddForm}
-                        className="flex items-center gap-1.5 rounded-lg border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 px-3 py-1.5 font-mono text-[10px] font-bold tracking-widest text-[var(--color-accent)] uppercase hover:bg-[var(--color-accent)]/20"
+                        className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
                       >
                         <Plus className="h-3.5 w-3.5" /> Add Check
                       </button>
                       <button
                         onClick={() => setView('yaml')}
-                        className="font-mono text-[10px] tracking-widest text-gray-500 uppercase hover:text-[var(--color-accent)]"
+                        className="hover:text-brand-500 text-xs text-gray-400"
                       >
                         Edit YAML →
                       </button>
