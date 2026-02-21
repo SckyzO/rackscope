@@ -175,6 +175,9 @@ export const CosmosRackEditorPage = () => {
   const [dragTemplate, setDragTemplate] = useState<DeviceTemplate | null>(null);
   const [dragDevice, setDragDevice] = useState<Device | null>(null);
   const [dragHoverU, setDragHoverU] = useState<number | null>(null);
+  // Refs for synchronous access in event handlers (React state batching can cause stale closures)
+  const dragTemplateRef = useRef<DeviceTemplate | null>(null);
+  const dragDeviceRef = useRef<Device | null>(null);
   const rackContainerRef = useRef<HTMLDivElement>(null);
   const deviceCounterRef = useRef(0);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
@@ -266,24 +269,31 @@ export const CosmosRackEditorPage = () => {
   const handleDragStart = (e: React.DragEvent, tpl: DeviceTemplate) => {
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('text/plain', tpl.id);
+    dragTemplateRef.current = tpl;
+    dragDeviceRef.current = null;
     setDragTemplate(tpl);
+    setDragDevice(null);
   };
 
   const handleDeviceDragStart = (e: React.DragEvent, device: Device) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', device.id);
+    dragDeviceRef.current = device;
+    dragTemplateRef.current = null;
     setDragDevice(device);
     setDragTemplate(null);
   };
 
   const handleDragEnd = () => {
+    dragTemplateRef.current = null;
+    dragDeviceRef.current = null;
     setDragTemplate(null);
     setDragDevice(null);
     setDragHoverU(null);
   };
 
   const handleSlotDragEnter = (u: number) => {
-    if (dragTemplate || dragDevice) setDragHoverU(u);
+    if (dragTemplateRef.current || dragDeviceRef.current) setDragHoverU(u);
   };
 
   const handleSlotDragOver = (e: React.DragEvent) => {
@@ -298,31 +308,36 @@ export const CosmosRackEditorPage = () => {
       return;
     }
 
+    // Use refs — state batching can cause stale closures in DnD handlers
+    const activeDevice = dragDeviceRef.current;
+    const activeTpl = dragTemplateRef.current;
+
     // Case 1: repositioning an existing device
-    if (dragDevice) {
-      const h = deviceCatalog[dragDevice.template_id]?.u_height ?? 1;
-      // Slots currently occupied by this device (to allow dropping on same position)
-      const ownSlots = new Set(Array.from({ length: h }, (_, i) => dragDevice.u_position + i));
+    if (activeDevice) {
+      const h = deviceCatalog[activeDevice.template_id]?.u_height ?? 1;
+      const ownSlots = new Set(Array.from({ length: h }, (_, i) => activeDevice.u_position + i));
       const valid = Array.from({ length: h }, (_, i) => u + i).every(
         (slot) => slot >= 1 && slot <= rack.u_height && (!uMap.has(slot) || ownSlots.has(slot))
       );
-      if (valid && u !== dragDevice.u_position) {
+      if (valid && u !== activeDevice.u_position) {
         setDraftDevices((prev) =>
-          prev.map((d) => (d.id === dragDevice.id ? { ...d, u_position: u } : d))
+          prev.map((d) => (d.id === activeDevice.id ? { ...d, u_position: u } : d))
         );
         setDirty(true);
       }
+      dragDeviceRef.current = null;
+      dragTemplateRef.current = null;
       setDragDevice(null);
       setDragHoverU(null);
       return;
     }
 
     // Case 2: placing a new template from the library
-    if (!dragTemplate) {
+    if (!activeTpl) {
       setDragHoverU(null);
       return;
     }
-    const h = dragTemplate.u_height ?? 1;
+    const h = activeTpl.u_height ?? 1;
     const valid = Array.from({ length: h }, (_, i) => u + i).every(
       (slot) => slot >= 1 && slot <= rack.u_height && !uMap.has(slot)
     );
@@ -330,11 +345,12 @@ export const CosmosRackEditorPage = () => {
       setDragHoverU(null);
       return;
     }
-    setPlacingTemplate({ template: dragTemplate, u });
-    setNewDeviceName(dragTemplate.name);
+    setPlacingTemplate({ template: activeTpl, u });
+    setNewDeviceName(activeTpl.name);
     setNewDeviceInstance('');
     deviceCounterRef.current += 1;
     setNewDeviceId(`dev-${deviceCounterRef.current}`);
+    dragTemplateRef.current = null;
     setDragTemplate(null);
     setDragHoverU(null);
   };
