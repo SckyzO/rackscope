@@ -1,343 +1,442 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import Editor from '@monaco-editor/react';
-import {
-  FileText,
-  Save,
-  Check,
-  AlertCircle,
-  Loader2,
-  ShieldCheck,
-  ChevronRight,
-} from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import Editor, { type OnMount } from '@monaco-editor/react';
+import yaml from 'js-yaml';
 import { api } from '../../../services/api';
-import type { CheckDefinition, ChecksLibrary } from '../../../types';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type CheckRule = {
+  op: string;
+  value: number | string;
+  severity: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
+};
+
+type CheckDef = {
+  id: string;
+  name?: string;
+  scope?: string;
+  kind?: string;
+  expr?: string;
+  output?: 'bool' | 'numeric';
+  rules?: CheckRule[];
+};
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
+// ---------------------------------------------------------------------------
+// ScopeBadge
+// ---------------------------------------------------------------------------
+
 const SCOPE_COLORS: Record<string, string> = {
-  node: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400',
-  chassis: 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400',
-  rack: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400',
+  node: 'border-blue-500/40 bg-blue-500/10 text-blue-400',
+  chassis: 'border-purple-500/40 bg-purple-500/10 text-purple-400',
+  rack: 'border-amber-500/40 bg-amber-500/10 text-amber-400',
 };
+
+const ScopeBadge = ({ scope }: { scope?: string }) => {
+  const cls = SCOPE_COLORS[scope ?? ''] ?? 'border-gray-700 bg-gray-800 text-gray-400';
+  return (
+    <span className={`rounded border px-2 py-0.5 font-mono text-[9px] font-bold uppercase ${cls}`}>
+      {scope ?? 'unknown'}
+    </span>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// KindBadge
+// ---------------------------------------------------------------------------
 
 const KIND_COLORS: Record<string, string> = {
-  server: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
-  storage: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400',
-  switch: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400',
-  pdu: 'bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400',
-  cooling: 'bg-teal-50 text-teal-600 dark:bg-teal-500/10 dark:text-teal-400',
+  server: 'border-green-500/30 bg-green-500/10 text-green-400',
+  storage: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+  pdu: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400',
+  ipmi: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400',
+  switch: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
+  cooling: 'border-sky-500/30 bg-sky-500/10 text-sky-400',
 };
 
-const ScopeBadge = ({ scope }: { scope: string }) => (
-  <span
-    className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase ${SCOPE_COLORS[scope] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}
-  >
-    {scope}
-  </span>
-);
+const KindBadge = ({ kind }: { kind?: string }) => {
+  if (!kind) return null;
+  const cls = KIND_COLORS[kind] ?? 'border-gray-700 bg-gray-800 text-gray-400';
+  return (
+    <span className={`rounded border px-2 py-0.5 font-mono text-[9px] font-bold uppercase ${cls}`}>
+      {kind}
+    </span>
+  );
+};
 
-const KindBadge = ({ kind }: { kind: string }) => (
-  <span
-    className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${KIND_COLORS[kind] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}
-  >
-    {kind}
-  </span>
-);
+// ---------------------------------------------------------------------------
+// RuleBadge
+// ---------------------------------------------------------------------------
 
-const CheckPreviewCard = ({ check }: { check: CheckDefinition }) => (
-  <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50">
-    <p className="mb-2 font-mono text-xs font-semibold text-gray-900 dark:text-white">{check.id}</p>
-    {check.name && (
-      <p className="mb-2 truncate text-[11px] text-gray-500 dark:text-gray-400">{check.name}</p>
-    )}
-    <div className="flex flex-wrap gap-1.5">
-      <ScopeBadge scope={check.scope} />
-      {check.kind && <KindBadge kind={check.kind} />}
-    </div>
+const SEV_COLORS: Record<string, string> = {
+  OK: 'bg-green-500',
+  WARN: 'bg-amber-500',
+  CRIT: 'bg-red-500',
+  UNKNOWN: 'bg-gray-500',
+};
+
+const RuleBadge = ({ rule }: { rule: CheckRule }) => (
+  <div className="flex items-center gap-2 text-[11px] text-gray-400">
+    <span className="font-mono">
+      {rule.op} {String(rule.value)}
+    </span>
+    <span className="text-gray-600">→</span>
+    <span
+      className={`flex items-center gap-1 rounded px-2 py-0.5 font-mono text-[10px] font-bold text-white ${SEV_COLORS[rule.severity] ?? 'bg-gray-500'}`}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
+      {rule.severity}
+    </span>
   </div>
 );
 
-const FileListItem = ({
-  name,
-  active,
-  onClick,
-}: {
+// ---------------------------------------------------------------------------
+// CheckCard
+// ---------------------------------------------------------------------------
+
+const CheckCard = ({ check }: { check: CheckDef }) => (
+  <div className="flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-4">
+    {/* Header */}
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <ScopeBadge scope={check.scope} />
+        <KindBadge kind={check.kind} />
+        {check.output && (
+          <span className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 uppercase">
+            {check.output}
+          </span>
+        )}
+      </div>
+      <h3 className="font-mono text-sm font-bold text-[var(--color-text-base)]">{check.id}</h3>
+      {check.name && check.name !== check.id && (
+        <p className="text-[11px] text-gray-500">{check.name}</p>
+      )}
+    </div>
+
+    {/* PromQL expression */}
+    {check.expr && (
+      <div className="rounded-xl border border-white/5 bg-black/40 px-3 py-2">
+        <div className="mb-1 font-mono text-[9px] tracking-[0.2em] text-gray-600 uppercase">
+          expr
+        </div>
+        <p className="font-mono text-[11px] leading-relaxed break-all text-gray-300">
+          {check.expr}
+        </p>
+      </div>
+    )}
+
+    {/* Rules */}
+    {check.rules && check.rules.length > 0 && (
+      <div className="space-y-1.5">
+        <div className="font-mono text-[9px] tracking-[0.2em] text-gray-600 uppercase">Rules</div>
+        <div className="space-y-1">
+          {check.rules.map((rule, i) => (
+            <RuleBadge key={i} rule={rule} />
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+);
+
+// ---------------------------------------------------------------------------
+// FileListItem
+// ---------------------------------------------------------------------------
+
+type FileListItemProps = {
   name: string;
-  active: boolean;
+  selected: boolean;
   onClick: () => void;
-}) => (
+  dirty: boolean;
+};
+
+const FileListItem = ({ name, selected, onClick, dirty }: FileListItemProps) => (
   <button
     onClick={onClick}
-    className={`group flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-      active
-        ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400'
-        : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left font-mono text-xs transition-all ${
+      selected
+        ? 'border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
+        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
     }`}
   >
-    <FileText className="h-3.5 w-3.5 shrink-0" />
-    <span className="flex-1 truncate font-mono text-xs">{name}</span>
-    {active && <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+    <span className="flex-1 truncate">{name}</span>
+    {dirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-500" title="Unsaved changes" />}
   </button>
 );
 
-export const CosmosChecksEditorPage: React.FC = () => {
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
+
+export const CosmosChecksEditorPage = () => {
   const [files, setFiles] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [content, setContent] = useState<string>('');
-  const [previewChecks, setPreviewChecks] = useState<CheckDefinition[]>([]);
-  const [loadingFiles, setLoadingFiles] = useState(true);
-  const [loadingContent, setLoadingContent] = useState(false);
+  const [content, setContent] = useState('');
+  const [savedContent, setSavedContent] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadingFile, setLoadingFile] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [view, setView] = useState<'yaml' | 'visual'>('visual');
+  const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
 
+  // Parse checks from YAML content for visual view
+  const parsedChecks = useMemo((): CheckDef[] => {
+    if (!content.trim()) return [];
+    try {
+      const data = yaml.load(content) as { checks?: CheckDef[] };
+      return Array.isArray(data?.checks) ? data.checks : [];
+    } catch {
+      return [];
+    }
+  }, [content]);
+
+  const isDirty = content !== savedContent;
+
+  // Load file list
   useEffect(() => {
-    const loadFiles = async () => {
-      setLoadingFiles(true);
+    let active = true;
+    const load = async () => {
       try {
         const data = await api.getChecksFiles();
-        const rawFiles = Array.isArray(data)
-          ? data
-          : Array.isArray((data as { files?: unknown[] }).files)
+        if (!active) return;
+        const names = Array.isArray(data)
+          ? (data as string[])
+          : Array.isArray((data as { files?: { name: string }[] }).files)
             ? (data as { files: { name: string }[] }).files.map((f) => f.name)
             : [];
-        const fileList = rawFiles as string[];
-        setFiles(fileList);
-        if (fileList.length > 0) {
-          setSelectedFile(fileList[0]);
-        }
-      } catch (err) {
-        console.error('Failed to load checks files:', err);
-      } finally {
-        setLoadingFiles(false);
+        setFiles(names);
+        if (names.length > 0 && !selectedFile) setSelectedFile(names[0]);
+        setLoading(false);
+      } catch {
+        if (active) setLoading(false);
       }
     };
-    loadFiles();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedFile) return;
-
-    const loadFileContent = async () => {
-      setLoadingContent(true);
-      setErrorMsg(null);
-      try {
-        const data = await api.getChecksFile(selectedFile);
-        const fileContent =
-          typeof data === 'string' ? data : ((data as { content?: string })?.content ?? '');
-        setContent(fileContent);
-      } catch (err) {
-        console.error('Failed to load checks file:', err);
-        setContent('');
-      } finally {
-        setLoadingContent(false);
-      }
+    void load();
+    return () => {
+      active = false;
     };
-    loadFileContent();
   }, [selectedFile]);
 
-  const loadPreviewChecks = useCallback(async () => {
-    try {
-      const library: ChecksLibrary = await api.getChecks();
-      setPreviewChecks(library.checks ?? []);
-    } catch {
-      setPreviewChecks([]);
-    }
-  }, []);
-
+  // Load file content when selection changes
   useEffect(() => {
-    loadPreviewChecks();
-  }, [loadPreviewChecks]);
+    if (!selectedFile) return;
+    let active = true;
+    const load = async () => {
+      setLoadingFile(true);
+      try {
+        const data = await api.getChecksFile(selectedFile);
+        if (!active) return;
+        const text =
+          typeof data === 'string' ? data : ((data as { content?: string }).content ?? '');
+        setContent(text);
+        setSavedContent(text);
+      } catch {
+        if (active) setContent('');
+      } finally {
+        if (active) setLoadingFile(false);
+      }
+    };
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [selectedFile]);
 
+  // Save
   const handleSave = async () => {
-    if (!selectedFile || !content) return;
-
+    if (!selectedFile) return;
     setSaveStatus('saving');
-    setErrorMsg(null);
-
+    setSaveError(null);
     try {
       await api.updateChecksFile(selectedFile, content);
+      setSavedContent(content);
       setSaveStatus('saved');
-      await loadPreviewChecks();
-      setTimeout(() => setSaveStatus('idle'), 3000);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to save file';
-      setErrorMsg(message);
+      setTimeout(() => setSaveStatus('idle'), 1500);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Save failed');
       setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 5000);
+      setTimeout(() => setSaveStatus('idle'), 3000);
     }
-  };
-
-  const getSaveButtonContent = () => {
-    if (saveStatus === 'saving') {
-      return (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Saving...</span>
-        </>
-      );
-    }
-    if (saveStatus === 'saved') {
-      return (
-        <>
-          <Check className="h-4 w-4" />
-          <span>Saved</span>
-        </>
-      );
-    }
-    if (saveStatus === 'error') {
-      return (
-        <>
-          <AlertCircle className="h-4 w-4" />
-          <span>Error</span>
-        </>
-      );
-    }
-    return (
-      <>
-        <Save className="h-4 w-4" />
-        <span>Save</span>
-      </>
-    );
-  };
-
-  const getSaveButtonStyle = () => {
-    if (saveStatus === 'saved') return 'bg-green-500 hover:bg-green-600 text-white';
-    if (saveStatus === 'error') return 'bg-red-500 hover:bg-red-600 text-white';
-    return 'bg-brand-500 hover:bg-brand-600 text-white';
   };
 
   return (
-    <div className="flex h-full min-h-[calc(100vh-8rem)] flex-col gap-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-brand-50 dark:bg-brand-500/10 flex h-10 w-10 items-center justify-center rounded-xl">
-            <ShieldCheck className="text-brand-500 h-5 w-5" />
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <header className="flex shrink-0 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-bg-panel)] px-8 py-4">
+        <div>
+          <div className="font-mono text-[10px] tracking-[0.45em] text-gray-500 uppercase">
+            Checks
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Checks Library</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Edit health check definitions (YAML)
-            </p>
-          </div>
+          <h1 className="text-2xl font-black tracking-tight text-[var(--color-text-base)] uppercase">
+            Library Editor
+          </h1>
         </div>
-
         <div className="flex items-center gap-3">
+          {/* View toggle */}
+          <div className="overflow-hidden rounded-lg border border-[var(--color-border)]">
+            {(['visual', 'yaml'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`px-3 py-1.5 font-mono text-[10px] font-bold tracking-widest uppercase transition-colors ${
+                  view === v
+                    ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)]'
+                    : 'text-gray-500 hover:text-gray-300'
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+          {/* Filename */}
           {selectedFile && (
-            <span className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-              {selectedFile}
-            </span>
+            <span className="font-mono text-[11px] text-gray-500">{selectedFile}</span>
           )}
+          {/* Save */}
           <button
-            onClick={handleSave}
-            disabled={saveStatus === 'saving' || !selectedFile}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all disabled:opacity-60 ${getSaveButtonStyle()}`}
+            onClick={() => {
+              void handleSave();
+            }}
+            disabled={!isDirty || !selectedFile || saveStatus === 'saving'}
+            className={`rounded-lg px-4 py-2 font-mono text-xs font-bold tracking-widest uppercase transition-colors ${
+              isDirty && selectedFile
+                ? 'border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/25'
+                : 'cursor-not-allowed border border-white/10 bg-white/5 text-gray-600'
+            }`}
           >
-            {getSaveButtonContent()}
+            {saveStatus === 'saving'
+              ? 'Saving...'
+              : saveStatus === 'saved'
+                ? 'Saved ✓'
+                : saveStatus === 'error'
+                  ? 'Error'
+                  : isDirty
+                    ? 'Save'
+                    : 'Saved'}
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Error banner */}
-      {errorMsg && (
-        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-3.5 dark:border-red-500/20 dark:bg-red-500/10">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-          <div>
-            <p className="text-sm font-medium text-red-700 dark:text-red-400">Save failed</p>
-            <p className="mt-0.5 font-mono text-xs text-red-600 dark:text-red-500">{errorMsg}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Three-column layout */}
-      <div className="flex flex-1 gap-4 overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800">
-        {/* Left panel: file list */}
-        <div className="flex w-[280px] shrink-0 flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-          <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-800">
-            <p className="text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+      {/* Body */}
+      <div className="flex min-h-0 flex-1">
+        {/* LEFT: File list */}
+        <aside className="flex w-64 shrink-0 flex-col overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-bg-panel)]">
+          <div className="border-b border-[var(--color-border)] px-4 py-3">
+            <span className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
               Files
-            </p>
+            </span>
           </div>
-
-          <div className="flex-1 overflow-y-auto p-2">
-            {loadingFiles ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-              </div>
+          <div className="flex-1 space-y-1 p-3">
+            {loading ? (
+              <div className="py-4 text-center font-mono text-[10px] text-gray-600">Loading...</div>
             ) : files.length === 0 ? (
-              <p className="py-6 text-center text-xs text-gray-400">No files found</p>
+              <div className="py-4 text-center font-mono text-[10px] text-gray-600">
+                No files found
+              </div>
             ) : (
               files.map((name) => (
                 <FileListItem
                   key={name}
                   name={name}
-                  active={selectedFile === name}
+                  selected={selectedFile === name}
+                  dirty={selectedFile === name && isDirty}
                   onClick={() => setSelectedFile(name)}
                 />
               ))
             )}
           </div>
-
-          <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-800">
-            <p className="text-[11px] text-gray-400 dark:text-gray-500">
+          <div className="border-t border-[var(--color-border)] px-4 py-2">
+            <span className="font-mono text-[10px] text-gray-600">
               {files.length} file{files.length !== 1 ? 's' : ''}
-            </p>
+            </span>
           </div>
-        </div>
+        </aside>
 
-        {/* Center: Monaco editor */}
-        <div className="relative flex flex-1 flex-col overflow-hidden bg-[#1e1e1e]">
-          {loadingContent && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1e1e1e]/80">
-              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+        {/* MAIN: YAML or Visual */}
+        <main className="min-h-0 flex-1 overflow-hidden">
+          {!selectedFile ? (
+            <div className="flex h-full items-center justify-center">
+              <p className="font-mono text-[11px] tracking-widest text-gray-600 uppercase">
+                Select a file
+              </p>
             </div>
-          )}
-          {selectedFile ? (
-            <Editor
-              height="100%"
-              defaultLanguage="yaml"
-              theme="vs-dark"
-              value={content}
-              onChange={(val) => setContent(val ?? '')}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 13,
-                wordWrap: 'on',
-                tabSize: 2,
-                scrollBeyondLastLine: false,
-                renderLineHighlight: 'all',
-                lineNumbers: 'on',
-              }}
-            />
+          ) : loadingFile ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-700 border-t-[var(--color-accent)]" />
+            </div>
+          ) : view === 'yaml' ? (
+            /* YAML View: Monaco */
+            <div className="h-full">
+              <Editor
+                height="100%"
+                defaultLanguage="yaml"
+                value={content}
+                onMount={(editor) => {
+                  editorRef.current = editor;
+                }}
+                onChange={(value) => setContent(value ?? '')}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 13,
+                  wordWrap: 'on',
+                  scrollBeyondLastLine: false,
+                  tabSize: 2,
+                  padding: { top: 16, bottom: 16 },
+                  fontFamily: 'JetBrains Mono, monospace',
+                }}
+                theme="vs-dark"
+              />
+            </div>
           ) : (
-            <div className="flex flex-1 items-center justify-center">
-              <p className="text-sm text-gray-500">Select a file to edit</p>
+            /* Visual View: check cards */
+            <div className="custom-scrollbar h-full overflow-y-auto p-6">
+              {saveError && (
+                <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 font-mono text-xs text-red-400">
+                  {saveError}
+                </div>
+              )}
+              {parsedChecks.length === 0 ? (
+                <div className="flex h-64 items-center justify-center">
+                  <div className="text-center">
+                    <p className="font-mono text-[11px] tracking-widest text-gray-600 uppercase">
+                      {content.trim() ? 'No checks found (YAML parse error?)' : 'File is empty'}
+                    </p>
+                    <button
+                      onClick={() => setView('yaml')}
+                      className="mt-3 font-mono text-[10px] tracking-widest text-[var(--color-accent)] uppercase hover:underline"
+                    >
+                      Switch to YAML view
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="font-mono text-[10px] tracking-[0.2em] text-gray-500 uppercase">
+                      {parsedChecks.length} check
+                      {parsedChecks.length !== 1 ? 's' : ''} — {selectedFile}
+                    </span>
+                    <button
+                      onClick={() => setView('yaml')}
+                      className="font-mono text-[10px] tracking-widest text-gray-500 uppercase hover:text-[var(--color-accent)]"
+                    >
+                      Edit YAML →
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {parsedChecks.map((check) => (
+                      <CheckCard key={check.id} check={check} />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
-        </div>
-
-        {/* Right panel: checks preview */}
-        <div className="flex w-[240px] shrink-0 flex-col border-l border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-          <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-800">
-            <p className="text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-              Parsed Checks
-            </p>
-          </div>
-
-          <div className="flex-1 space-y-2 overflow-y-auto p-3">
-            {previewChecks.length === 0 ? (
-              <p className="py-6 text-center text-xs text-gray-400">No checks loaded</p>
-            ) : (
-              previewChecks.map((check) => <CheckPreviewCard key={check.id} check={check} />)
-            )}
-          </div>
-
-          <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-800">
-            <p className="text-[11px] text-gray-400 dark:text-gray-500">
-              {previewChecks.length} check{previewChecks.length !== 1 ? 's' : ''} total
-            </p>
-          </div>
-        </div>
+        </main>
       </div>
     </div>
   );
