@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { api } from '../../services/api';
 import type { ComponentType } from 'react';
 import {
   Activity,
@@ -95,7 +96,18 @@ interface CosmosSidebarProps {
 }
 
 export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProps) => {
-  const [uiOpen, setUiOpen] = useState(true);
+  const [uiOpen, setUiOpen] = useState(false);
+  const [rooms, setRooms] = useState<{ id: string; name: string }[]>([]);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    api
+      .getRooms()
+      .then((data) =>
+        setRooms(Array.isArray(data) ? data.map((r) => ({ id: r.id, name: r.name })) : [])
+      )
+      .catch(() => {});
+  }, []);
 
   const uiItems: Array<{ to: string; icon: ComponentType<{ className?: string }>; label: string }> =
     [
@@ -199,6 +211,29 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
 
         <SectionLabel label="Monitoring" collapsed={collapsed} />
         <NavItem to="/cosmos/views/worldmap" icon={Globe} label="World Map" collapsed={collapsed} />
+
+        {rooms.length > 0 && (
+          <>
+            {!collapsed && (
+              <p className="mt-2 mb-1 px-3 text-[10px] font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-600">
+                Rooms
+              </p>
+            )}
+            {rooms.map((room) => (
+              <button
+                key={room.id}
+                onClick={() => {
+                  const variant = localStorage.getItem('cosmos-room-variant') ?? 'room';
+                  navigate(`/cosmos/views/${variant}/${room.id}`);
+                }}
+                className="group flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+              >
+                <MapPin className="h-4 w-4 shrink-0" />
+                {!collapsed && <span className="truncate">{room.name}</span>}
+              </button>
+            ))}
+          </>
+        )}
 
         <SectionLabel label="Rack Variants" collapsed={collapsed} />
         <NavItem
