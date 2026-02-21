@@ -95,7 +95,12 @@ export const CosmosChecksEditorPage: React.FC = () => {
       setLoadingFiles(true);
       try {
         const data = await api.getChecksFiles();
-        const fileList = Array.isArray(data) ? (data as string[]) : [];
+        const rawFiles = Array.isArray(data)
+          ? data
+          : Array.isArray((data as { files?: unknown[] }).files)
+            ? (data as { files: { name: string }[] }).files.map((f) => f.name)
+            : [];
+        const fileList = rawFiles as string[];
         setFiles(fileList);
         if (fileList.length > 0) {
           setSelectedFile(fileList[0]);
