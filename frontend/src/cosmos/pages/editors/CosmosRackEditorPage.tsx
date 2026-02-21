@@ -234,7 +234,6 @@ export const CosmosRackEditorPage = () => {
   const dragTemplateRef = useRef<DeviceTemplate | null>(null);
   const dragDeviceRef = useRef<Device | null>(null);
   const rackContainerRef = useRef<HTMLDivElement>(null);
-  const rackViewportRef = useRef<HTMLDivElement>(null);
   const deviceCounterRef = useRef(0);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [selectedFlash, setSelectedFlash] = useState<string | null>(null);
@@ -245,19 +244,6 @@ export const CosmosRackEditorPage = () => {
   const [newDeviceName, setNewDeviceName] = useState('');
   const [newDeviceInstance, setNewDeviceInstance] = useState('');
   const [newDeviceId, setNewDeviceId] = useState('');
-
-  // Dynamic viewport height for rack scaling
-  const [viewportHeight, setViewportHeight] = useState(600);
-
-  useEffect(() => {
-    const el = rackViewportRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      setViewportHeight(entries[0].contentRect.height);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   // Load all racks + catalog
   useEffect(() => {
@@ -337,8 +323,7 @@ export const CosmosRackEditorPage = () => {
 
   // Dynamic U pixel height — scale rack to fill available viewport
   const uHeight = rack?.u_height ?? 42;
-  const availH = Math.max(200, viewportHeight - 48);
-  const dynamicUPx = Math.max(10, Math.min(U_PX, Math.floor(availH / uHeight)));
+  const dynamicUPx = U_PX; // fixed 24px per U, same as RackElevation
 
   // Filtered rack list
   const filteredRacks = useMemo(() => {
@@ -654,7 +639,7 @@ export const CosmosRackEditorPage = () => {
                 </div>
               </div>
               {/* Rack viewport — measured for dynamic scaling */}
-              <div ref={rackViewportRef} className="flex-1 overflow-hidden py-6">
+              <div className="flex-1 overflow-y-auto py-6">
                 <div className="mx-auto max-w-xl px-12">
                   {/* Rack frame: border-x-[24px] = side rails, flex-col-reverse = U1 bottom */}
                   <div
