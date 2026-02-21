@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import yaml from 'js-yaml';
-import { Pencil, Trash2, Plus, X, Check } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Check, ChevronRight } from 'lucide-react';
 import { api } from '../../../services/api';
 
 // ---------------------------------------------------------------------------
@@ -169,7 +169,7 @@ const CheckCard = ({ check, onEdit, onDelete }: CheckCardProps) => (
 );
 
 // ---------------------------------------------------------------------------
-// CheckForm — add / edit a check definition
+// CheckWizard — add / edit a check (Cosmos TailAdmin style)
 // ---------------------------------------------------------------------------
 
 type CheckFormData = {
@@ -199,15 +199,51 @@ type CheckFormProps = {
   onCancel: () => void;
 };
 
-const inputCls =
-  'w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200 focus:border-[var(--color-accent)]/50 focus:outline-none';
-const labelCls = 'block text-[11px] text-gray-500 uppercase tracking-[0.15em] font-mono mb-1';
+type WizardStep = 'identity' | 'expression' | 'rules' | 'review';
+const WIZARD_STEPS: WizardStep[] = ['identity', 'expression', 'rules', 'review'];
+const STEP_LABELS: Record<WizardStep, string> = {
+  identity: 'Identity',
+  expression: 'Expression',
+  rules: 'Rules',
+  review: 'Review',
+};
+
+const SEV_PILL: Record<string, string> = {
+  OK: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400',
+  WARN: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+  CRIT: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
+  UNKNOWN: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+};
+
+const SCOPE_OPTIONS = [
+  { value: 'node', label: 'Node', desc: 'Per instance (server, blade...)' },
+  { value: 'chassis', label: 'Chassis', desc: 'Multi-node chassis' },
+  { value: 'rack', label: 'Rack', desc: 'Rack-level aggregation' },
+];
+
+const KIND_OPTIONS = ['server', 'storage', 'network', 'pdu', 'cooling', 'ipmi', 'other'];
+
+const cosmosInput =
+  'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:placeholder:text-gray-600';
 
 const CheckForm = ({ initial, isEdit, onSave, onCancel }: CheckFormProps) => {
+  const [step, setStep] = useState<WizardStep>(isEdit ? 'identity' : 'identity');
   const [form, setForm] = useState<CheckFormData>(initial);
 
+  const stepIdx = WIZARD_STEPS.indexOf(step);
+
+  const canNext =
+    step === 'identity'
+      ? Boolean(form.id.trim()) && Boolean(form.scope)
+      : step === 'expression'
+        ? Boolean(form.expr.trim())
+        : true;
+
   const addRule = () =>
-    setForm((f) => ({ ...f, rules: [...f.rules, { op: '==', value: 0, severity: 'CRIT' }] }));
+    setForm((f) => ({
+      ...f,
+      rules: [...f.rules, { op: '==', value: 0, severity: 'CRIT' as const }],
+    }));
 
   const updateRule = (i: number, patch: Partial<CheckRule>) =>
     setForm((f) => {
@@ -219,173 +255,384 @@ const CheckForm = ({ initial, isEdit, onSave, onCancel }: CheckFormProps) => {
   const removeRule = (i: number) =>
     setForm((f) => ({ ...f, rules: f.rules.filter((_, j) => j !== i) }));
 
+  const handleNext = () => {
+    if (stepIdx < WIZARD_STEPS.length - 1) setStep(WIZARD_STEPS[stepIdx + 1]);
+  };
+  const handleBack = () => {
+    if (stepIdx > 0) setStep(WIZARD_STEPS[stepIdx - 1]);
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-950">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-gray-800">
           <div>
-            <div className="font-mono text-[10px] tracking-[0.3em] text-gray-500 uppercase">
-              {isEdit ? 'Edit' : 'New'}
-            </div>
-            <h2 className="text-lg font-black tracking-tight text-[var(--color-text-base)] uppercase">
-              Check Definition
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">
+              {isEdit ? `Edit: ${form.id}` : 'New Check'}
             </h2>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              {isEdit ? 'Modify the check definition' : 'Add a health check to this file'}
+            </p>
           </div>
-          <button onClick={onCancel} className="text-gray-500 hover:text-gray-300">
+          <button
+            onClick={onCancel}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Form */}
-        <div className="max-h-[70vh] space-y-4 overflow-y-auto p-6">
-          {/* Identity row */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>ID *</label>
-              <input
-                value={form.id}
-                onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))}
-                disabled={isEdit}
-                placeholder="my_check_id"
-                className={inputCls + (isEdit ? ' opacity-50' : '')}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Name</label>
-              <input
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="Human readable name"
-                className={inputCls}
-              />
-            </div>
-          </div>
-
-          {/* Scope / Kind / Output */}
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className={labelCls}>Scope</label>
-              <select
-                value={form.scope}
-                onChange={(e) => setForm((f) => ({ ...f, scope: e.target.value }))}
-                className={inputCls}
+        {/* Step indicators */}
+        <div className="flex items-center gap-1 border-b border-gray-100 px-6 py-3 dark:border-gray-800">
+          {WIZARD_STEPS.map((s, i) => (
+            <div key={s} className="flex items-center gap-1">
+              <div
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold transition-colors ${
+                  i < stepIdx
+                    ? 'bg-brand-500 text-white'
+                    : i === stepIdx
+                      ? 'bg-brand-50 text-brand-600 ring-brand-500 dark:bg-brand-500/20 dark:text-brand-400 ring-1'
+                      : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600'
+                }`}
               >
-                {['node', 'chassis', 'rack'].map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Kind</label>
-              <input
-                value={form.kind}
-                onChange={(e) => setForm((f) => ({ ...f, kind: e.target.value }))}
-                placeholder="server, ipmi, pdu..."
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Output</label>
-              <select
-                value={form.output}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, output: e.target.value as 'bool' | 'numeric' }))
-                }
-                className={inputCls}
+                {i < stepIdx ? <Check className="h-3 w-3" /> : i + 1}
+              </div>
+              <span
+                className={`text-xs font-medium ${
+                  i === stepIdx
+                    ? 'text-gray-900 dark:text-white'
+                    : 'text-gray-400 dark:text-gray-600'
+                }`}
               >
-                <option value="bool">bool</option>
-                <option value="numeric">numeric</option>
-              </select>
+                {STEP_LABELS[s]}
+              </span>
+              {i < WIZARD_STEPS.length - 1 && (
+                <ChevronRight className="mx-0.5 h-3.5 w-3.5 text-gray-300 dark:text-gray-700" />
+              )}
             </div>
-          </div>
+          ))}
+        </div>
 
-          {/* Expression */}
-          <div>
-            <label className={labelCls}>PromQL Expression</label>
-            <textarea
-              value={form.expr}
-              onChange={(e) => setForm((f) => ({ ...f, expr: e.target.value }))}
-              placeholder={`metric_name{instance=~"$instances"}`}
-              rows={3}
-              className={inputCls + ' resize-none font-mono text-[11px]'}
-            />
-          </div>
+        {/* Step content */}
+        <div className="max-h-[60vh] overflow-y-auto p-6">
+          {step === 'identity' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    Check ID *
+                  </label>
+                  <input
+                    autoFocus
+                    value={form.id}
+                    onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))}
+                    disabled={isEdit}
+                    placeholder="my_check_id"
+                    className={cosmosInput + (isEdit ? ' opacity-50' : '')}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    Display name
+                  </label>
+                  <input
+                    value={form.name}
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                    placeholder="Human readable name"
+                    className={cosmosInput}
+                  />
+                </div>
+              </div>
 
-          {/* Rules */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className={labelCls}>Rules</label>
-              <button
-                onClick={addRule}
-                className="flex items-center gap-1 font-mono text-[10px] tracking-widest text-[var(--color-accent)] uppercase hover:underline"
-              >
-                <Plus className="h-3 w-3" /> Add rule
-              </button>
-            </div>
-            {form.rules.length === 0 && (
-              <p className="font-mono text-[10px] text-gray-600">No rules yet — add one above.</p>
-            )}
-            {form.rules.map((rule, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <select
-                  value={rule.op}
-                  onChange={(e) => updateRule(i, { op: e.target.value })}
-                  className="rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1.5 text-xs text-gray-200"
-                >
-                  {['==', '!=', '>', '>=', '<', '<='].map((op) => (
-                    <option key={op} value={op}>
-                      {op}
-                    </option>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  Scope *
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {SCOPE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setForm((f) => ({ ...f, scope: opt.value }))}
+                      className={`rounded-xl border p-3 text-left transition-all ${
+                        form.scope === opt.value
+                          ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
+                          : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      <p
+                        className={`text-xs font-bold ${form.scope === opt.value ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
+                      >
+                        {opt.label}
+                      </p>
+                      <p className="mt-0.5 text-[10px] text-gray-400">{opt.desc}</p>
+                    </button>
                   ))}
-                </select>
-                <input
-                  type="number"
-                  value={String(rule.value)}
-                  onChange={(e) => updateRule(i, { value: parseFloat(e.target.value) || 0 })}
-                  className="w-20 rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1.5 text-xs text-gray-200"
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  Kind
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {KIND_OPTIONS.map((k) => (
+                    <button
+                      key={k}
+                      onClick={() => setForm((f) => ({ ...f, kind: f.kind === k ? '' : k }))}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                        form.kind === k
+                          ? 'border-brand-500 bg-brand-500 text-white'
+                          : 'border-gray-200 text-gray-500 hover:border-gray-300 dark:border-gray-700 dark:text-gray-400'
+                      }`}
+                    >
+                      {k}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 'expression' && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  PromQL Expression *
+                </label>
+                <textarea
+                  autoFocus
+                  value={form.expr}
+                  onChange={(e) => setForm((f) => ({ ...f, expr: e.target.value }))}
+                  placeholder={`metric_name{instance=~"$instances"}`}
+                  rows={4}
+                  className={cosmosInput + ' resize-none font-mono text-xs'}
                 />
-                <select
-                  value={rule.severity}
-                  onChange={(e) =>
-                    updateRule(i, { severity: e.target.value as CheckRule['severity'] })
-                  }
-                  className="rounded-lg border border-[var(--color-border)] bg-black/30 px-2 py-1.5 text-xs font-bold text-gray-200"
-                >
-                  {(['OK', 'WARN', 'CRIT', 'UNKNOWN'] as const).map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
+                <p className="text-[11px] text-gray-400 dark:text-gray-600">
+                  Use{' '}
+                  <code className="rounded bg-gray-100 px-1 font-mono dark:bg-gray-800">
+                    $instances
+                  </code>
+                  ,{' '}
+                  <code className="rounded bg-gray-100 px-1 font-mono dark:bg-gray-800">
+                    $chassis
+                  </code>
+                  , or{' '}
+                  <code className="rounded bg-gray-100 px-1 font-mono dark:bg-gray-800">
+                    $racks
+                  </code>{' '}
+                  as placeholders.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  Output type
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {(['bool', 'numeric'] as const).map((out) => (
+                    <button
+                      key={out}
+                      onClick={() => setForm((f) => ({ ...f, output: out }))}
+                      className={`rounded-xl border p-4 text-left transition-all ${
+                        form.output === out
+                          ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
+                          : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900'
+                      }`}
+                    >
+                      <p
+                        className={`text-sm font-bold ${form.output === out ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
+                      >
+                        {out}
+                      </p>
+                      <p className="mt-1 text-[11px] text-gray-400">
+                        {out === 'bool' ? 'Returns 0 or 1 (up/down)' : 'Returns a numeric value'}
+                      </p>
+                    </button>
                   ))}
-                </select>
-                <button onClick={() => removeRule(i)} className="text-gray-600 hover:text-red-400">
-                  <X className="h-4 w-4" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 'rules' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    Severity rules
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Define when the check triggers WARN or CRIT
+                  </p>
+                </div>
+                <button
+                  onClick={addRule}
+                  className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add Rule
                 </button>
               </div>
-            ))}
-          </div>
+
+              {form.rules.length === 0 && (
+                <div className="flex h-24 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+                  <p className="text-xs text-gray-400 dark:text-gray-600">
+                    No rules yet — click "Add Rule" to define severity thresholds
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                {form.rules.map((rule, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-900"
+                  >
+                    <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
+                      When
+                    </span>
+                    <select
+                      value={rule.op}
+                      onChange={(e) => updateRule(i, { op: e.target.value })}
+                      className="focus:border-brand-500 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    >
+                      {['==', '!=', '>', '>=', '<', '<='].map((op) => (
+                        <option key={op} value={op}>
+                          {op}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      value={String(rule.value)}
+                      onChange={(e) => updateRule(i, { value: parseFloat(e.target.value) || 0 })}
+                      className="focus:border-brand-500 w-20 rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-center text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    />
+                    <span className="shrink-0 text-xs font-medium text-gray-500 dark:text-gray-400">
+                      →
+                    </span>
+                    <div className="flex gap-1">
+                      {(['OK', 'WARN', 'CRIT', 'UNKNOWN'] as const).map((sev) => (
+                        <button
+                          key={sev}
+                          onClick={() => updateRule(i, { severity: sev })}
+                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition-all ${
+                            rule.severity === sev
+                              ? SEV_PILL[sev]
+                              : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600'
+                          }`}
+                        >
+                          {sev}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => removeRule(i)}
+                      className="ml-auto text-gray-300 hover:text-red-400 dark:text-gray-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 'review' && (
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                Ready to {isEdit ? 'update' : 'add'}
+              </p>
+              <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+                {[
+                  { label: 'ID', value: form.id, mono: true },
+                  ...(form.name ? [{ label: 'Name', value: form.name, mono: false }] : []),
+                  { label: 'Scope', value: form.scope, mono: false },
+                  ...(form.kind ? [{ label: 'Kind', value: form.kind, mono: false }] : []),
+                  { label: 'Output', value: form.output, mono: false },
+                ].map(({ label, value, mono }) => (
+                  <div key={label} className="flex items-center justify-between gap-4 text-sm">
+                    <span className="text-gray-500 dark:text-gray-400">{label}</span>
+                    <span
+                      className={`text-gray-800 dark:text-gray-200 ${mono ? 'font-mono text-xs' : 'font-medium'}`}
+                    >
+                      {value}
+                    </span>
+                  </div>
+                ))}
+                {form.expr && (
+                  <div className="space-y-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Expression</span>
+                    <p className="rounded-lg bg-white px-3 py-2 font-mono text-xs break-all text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                      {form.expr}
+                    </p>
+                  </div>
+                )}
+                {form.rules.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      Rules ({form.rules.length})
+                    </span>
+                    {form.rules.map((r, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400"
+                      >
+                        <span className="font-mono">
+                          {r.op} {String(r.value)}
+                        </span>
+                        <span>→</span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${SEV_PILL[r.severity] ?? SEV_PILL.UNKNOWN}`}
+                        >
+                          {r.severity}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-[var(--color-border)] px-6 py-4">
+        <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4 dark:border-gray-800">
           <button
-            onClick={onCancel}
-            className="rounded-lg border border-[var(--color-border)] px-4 py-2 font-mono text-xs tracking-widest text-gray-400 uppercase hover:text-gray-200"
+            onClick={stepIdx === 0 ? onCancel : handleBack}
+            className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
           >
-            Cancel
+            {stepIdx === 0 ? (
+              <>
+                <X className="h-4 w-4" /> Cancel
+              </>
+            ) : (
+              <>
+                <ChevronRight className="h-4 w-4 rotate-180" /> Back
+              </>
+            )}
           </button>
-          <button
-            onClick={() => {
-              if (form.id.trim()) onSave(form);
-            }}
-            disabled={!form.id.trim()}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 px-4 py-2 font-mono text-xs font-bold tracking-widest text-[var(--color-accent)] uppercase hover:bg-[var(--color-accent)]/25 disabled:opacity-40"
-          >
-            <Check className="h-3.5 w-3.5" />
-            {isEdit ? 'Update' : 'Add'}
-          </button>
+
+          {step !== 'review' ? (
+            <button
+              onClick={handleNext}
+              disabled={!canNext}
+              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            >
+              Next <ChevronRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                if (form.id.trim()) onSave(form);
+              }}
+              disabled={!form.id.trim()}
+              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            >
+              <Check className="h-4 w-4" />
+              {isEdit ? 'Update Check' : 'Add Check'}
+            </button>
+          )}
         </div>
       </div>
     </div>
