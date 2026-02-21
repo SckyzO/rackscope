@@ -69,30 +69,30 @@ const KindBadge = ({ kind }: { kind?: string }) => {
 };
 
 // ---------------------------------------------------------------------------
-// RuleBadge
+// CheckCard helpers
 // ---------------------------------------------------------------------------
 
-const SEV_COLORS: Record<string, string> = {
-  OK: 'bg-green-500',
-  WARN: 'bg-amber-500',
-  CRIT: 'bg-red-500',
-  UNKNOWN: 'bg-gray-500',
+const SEV_ACCENT: Record<string, string> = {
+  CRIT: '#ef4444',
+  WARN: '#f59e0b',
+  OK: '#22c55e',
+  UNKNOWN: '#374151',
 };
 
-const RuleBadge = ({ rule }: { rule: CheckRule }) => (
-  <div className="flex items-center gap-2 text-[11px] text-gray-400">
-    <span className="font-mono">
-      {rule.op} {String(rule.value)}
-    </span>
-    <span className="text-gray-600">→</span>
-    <span
-      className={`flex items-center gap-1 rounded px-2 py-0.5 font-mono text-[10px] font-bold text-white ${SEV_COLORS[rule.severity] ?? 'bg-gray-500'}`}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
-      {rule.severity}
-    </span>
-  </div>
-);
+const SEV_RULE_CLS: Record<string, string> = {
+  OK: 'bg-green-500/15 text-green-400 border border-green-500/20',
+  WARN: 'bg-amber-500/15 text-amber-400 border border-amber-500/20',
+  CRIT: 'bg-red-500/15 text-red-400 border border-red-500/20',
+  UNKNOWN: 'bg-gray-800 text-gray-500 border border-gray-700',
+};
+
+const worstSeverity = (rules?: CheckRule[]): string => {
+  if (!rules || rules.length === 0) return 'UNKNOWN';
+  for (const sev of ['CRIT', 'WARN', 'OK']) {
+    if (rules.some((r) => r.severity === sev)) return sev;
+  }
+  return 'UNKNOWN';
+};
 
 // ---------------------------------------------------------------------------
 // CheckCard
@@ -104,69 +104,94 @@ type CheckCardProps = {
   onDelete: () => void;
 };
 
-const CheckCard = ({ check, onEdit, onDelete }: CheckCardProps) => (
-  <div className="group flex flex-col gap-3 rounded-2xl border border-gray-800 bg-gray-900 p-4">
-    {/* Header */}
-    <div className="space-y-1.5">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <ScopeBadge scope={check.scope} />
-          <KindBadge kind={check.kind} />
-          {check.output && (
-            <span className="rounded border border-white/10 bg-black/30 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 uppercase">
-              {check.output}
-            </span>
+const CheckCard = ({ check, onEdit, onDelete }: CheckCardProps) => {
+  const accent = SEV_ACCENT[worstSeverity(check.rules)] ?? SEV_ACCENT.UNKNOWN;
+
+  return (
+    <div
+      className="flex flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-900"
+      style={{ borderTopWidth: 3, borderTopColor: accent }}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
+        <div className="min-w-0 flex-1 space-y-2">
+          {/* Badges row */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <ScopeBadge scope={check.scope} />
+            <KindBadge kind={check.kind} />
+            {check.output && (
+              <span className="rounded-full bg-gray-800 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+                {check.output}
+              </span>
+            )}
+          </div>
+          {/* ID */}
+          <h3 className="truncate font-mono text-sm font-bold text-white" title={check.id}>
+            {check.id}
+          </h3>
+          {/* Name */}
+          {check.name && check.name !== check.id && (
+            <p className="truncate text-xs text-gray-500">{check.name}</p>
           )}
         </div>
-        {/* Edit / Delete buttons */}
-        <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {/* Actions — always visible, subtle */}
+        <div className="flex shrink-0 gap-1 pt-0.5">
           <button
             onClick={onEdit}
-            title="Edit check"
-            className="hover:border-brand-500/40 hover:text-brand-500 rounded-lg border border-gray-700 p-1.5 text-gray-500"
+            title="Edit"
+            className="hover:text-brand-400 rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-800"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={onDelete}
-            title="Delete check"
-            className="rounded-lg border border-gray-700 p-1.5 text-gray-500 hover:border-red-500/40 hover:text-red-400"
+            title="Delete"
+            className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-800 hover:text-red-400"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
-      <h3 className="font-mono text-sm font-bold text-white">{check.id}</h3>
-      {check.name && check.name !== check.id && (
-        <p className="text-[11px] text-gray-500">{check.name}</p>
-      )}
-    </div>
 
-    {/* PromQL expression */}
-    {check.expr && (
-      <div className="rounded-xl border border-white/5 bg-black/40 px-3 py-2">
-        <div className="mb-1 font-mono text-[9px] tracking-[0.2em] text-gray-600 uppercase">
-          expr
+      {/* Expression */}
+      {check.expr && (
+        <div className="mx-4 mb-3 rounded-xl bg-gray-950 px-3 py-2.5">
+          <div className="mb-1.5 flex items-center gap-1.5">
+            <span className="bg-brand-500/60 h-1.5 w-1.5 rounded-full" />
+            <span className="text-[10px] font-semibold tracking-wider text-gray-600 uppercase">
+              expr
+            </span>
+          </div>
+          <p className="line-clamp-2 font-mono text-[11px] leading-relaxed break-all text-gray-400">
+            {check.expr}
+          </p>
         </div>
-        <p className="font-mono text-[11px] leading-relaxed break-all text-gray-300">
-          {check.expr}
-        </p>
-      </div>
-    )}
+      )}
 
-    {/* Rules */}
-    {check.rules && check.rules.length > 0 && (
-      <div className="space-y-1.5">
-        <div className="font-mono text-[9px] tracking-[0.2em] text-gray-600 uppercase">Rules</div>
-        <div className="space-y-1">
+      {/* Rules footer */}
+      {check.rules && check.rules.length > 0 ? (
+        <div className="flex flex-wrap gap-1.5 border-t border-gray-800 px-4 py-3">
           {check.rules.map((rule, i) => (
-            <RuleBadge key={i} rule={rule} />
+            <span
+              key={i}
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${SEV_RULE_CLS[rule.severity] ?? SEV_RULE_CLS.UNKNOWN}`}
+            >
+              <span className="font-mono opacity-80">
+                {rule.op} {String(rule.value)}
+              </span>
+              <span className="opacity-50">→</span>
+              <span>{rule.severity}</span>
+            </span>
           ))}
         </div>
-      </div>
-    )}
-  </div>
-);
+      ) : (
+        <div className="border-t border-gray-800 px-4 py-2.5">
+          <span className="text-[11px] text-gray-700">No rules defined</span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ---------------------------------------------------------------------------
 // CheckWizard — add / edit a check (Cosmos TailAdmin style)
