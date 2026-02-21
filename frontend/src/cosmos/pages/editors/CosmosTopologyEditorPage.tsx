@@ -375,6 +375,352 @@ const RackDetailPanel = ({
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
+// ─── TopologyWizard ───────────────────────────────────────────────────────────
+
+type WizardStep = 'site' | 'room' | 'aisles' | 'summary';
+type WizardData = {
+  siteMode: 'new' | 'existing';
+  existingSiteId: string;
+  newSiteName: string;
+  newSiteId: string;
+  roomName: string;
+  roomId: string;
+  aisles: { name: string; id: string }[];
+};
+
+const WIZARD_STEPS: WizardStep[] = ['site', 'room', 'aisles', 'summary'];
+const STEP_LABELS: Record<WizardStep, string> = {
+  site: 'Site',
+  room: 'Room',
+  aisles: 'Aisles',
+  summary: 'Summary',
+};
+
+type TopologyWizardProps = {
+  topology: Site[];
+  onClose: () => void;
+  onDone: (roomId: string, siteId: string) => void;
+};
+
+const TopologyWizard = ({ topology, onClose, onDone }: TopologyWizardProps) => {
+  const [step, setStep] = useState<WizardStep>('site');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<WizardData>({
+    siteMode: 'new',
+    existingSiteId: topology[0]?.id ?? '',
+    newSiteName: '',
+    newSiteId: '',
+    roomName: '',
+    roomId: '',
+    aisles: [{ name: 'Aisle 01', id: '' }],
+  });
+
+  const stepIdx = WIZARD_STEPS.indexOf(step);
+  const canNext =
+    step === 'site'
+      ? data.siteMode === 'existing'
+        ? Boolean(data.existingSiteId)
+        : Boolean(data.newSiteName.trim())
+      : step === 'room'
+        ? Boolean(data.roomName.trim())
+        : step === 'aisles'
+          ? data.aisles.some((a) => a.name.trim())
+          : true;
+
+  const selectedSiteName =
+    data.siteMode === 'new'
+      ? data.newSiteName
+      : (topology.find((s) => s.id === data.existingSiteId)?.name ?? data.existingSiteId);
+
+  const handleCreate = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      let siteId = data.existingSiteId;
+      if (data.siteMode === 'new') {
+        const site = await api.createSite({
+          id: data.newSiteId.trim() || null,
+          name: data.newSiteName.trim(),
+        });
+        siteId = site.id ?? data.newSiteName.toLowerCase().replace(/\s+/g, '-');
+      }
+      const room = await api.createRoom(siteId, {
+        id: data.roomId.trim() || null,
+        name: data.roomName.trim(),
+      });
+      const roomId = room.id ?? data.roomName.toLowerCase().replace(/\s+/g, '-');
+      const validAisles = data.aisles.filter((a) => a.name.trim());
+      if (validAisles.length > 0) {
+        await api.createRoomAisles(
+          roomId,
+          validAisles.map((a) => ({ id: a.id.trim() || null, name: a.name.trim() }))
+        );
+      }
+      onDone(roomId, siteId);
+    } catch {
+      setError('Creation failed — check the console for details.');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-gray-700 bg-gray-900 shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-800 px-6 py-4">
+          <div className="flex items-center gap-3">
+            <Wand2 className="text-brand-500 h-5 w-5" />
+            <h2 className="text-base font-bold text-white">Creation Wizard</h2>
+          </div>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-300">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Step indicator */}
+        <div className="flex border-b border-gray-800 px-6 py-3">
+          {WIZARD_STEPS.map((s, i) => (
+            <div key={s} className="flex items-center gap-2">
+              <div
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                  i < stepIdx
+                    ? 'bg-brand-500 text-white'
+                    : i === stepIdx
+                      ? 'bg-brand-500/20 text-brand-400 ring-brand-500 ring-1'
+                      : 'bg-gray-800 text-gray-500'
+                }`}
+              >
+                {i < stepIdx ? <Check className="h-3 w-3" /> : i + 1}
+              </div>
+              <span
+                className={`text-xs font-medium ${i === stepIdx ? 'text-white' : 'text-gray-500'}`}
+              >
+                {STEP_LABELS[s]}
+              </span>
+              {i < WIZARD_STEPS.length - 1 && (
+                <ChevronRight className="mx-1 h-3.5 w-3.5 text-gray-700" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Step content */}
+        <div className="space-y-4 p-6">
+          {step === 'site' && (
+            <>
+              <h3 className="font-semibold text-white">Which site?</h3>
+              <div className="space-y-3">
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-700 p-3 hover:border-gray-600">
+                  <input
+                    type="radio"
+                    checked={data.siteMode === 'new'}
+                    onChange={() => setData((d) => ({ ...d, siteMode: 'new' }))}
+                    className="accent-brand-500"
+                  />
+                  <span className="text-sm text-white">Create a new site</span>
+                </label>
+                {data.siteMode === 'new' && (
+                  <div className="ml-7 space-y-2">
+                    <input
+                      autoFocus
+                      placeholder="Site name (e.g. Main Datacenter)"
+                      value={data.newSiteName}
+                      onChange={(e) => setData((d) => ({ ...d, newSiteName: e.target.value }))}
+                      className="focus:border-brand-500 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none"
+                    />
+                    <input
+                      placeholder="Custom ID (optional)"
+                      value={data.newSiteId}
+                      onChange={(e) => setData((d) => ({ ...d, newSiteId: e.target.value }))}
+                      className="focus:border-brand-500 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-gray-300 placeholder:text-gray-500 focus:outline-none"
+                    />
+                  </div>
+                )}
+                {topology.length > 0 && (
+                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-700 p-3 hover:border-gray-600">
+                    <input
+                      type="radio"
+                      checked={data.siteMode === 'existing'}
+                      onChange={() => setData((d) => ({ ...d, siteMode: 'existing' }))}
+                      className="accent-brand-500"
+                    />
+                    <span className="text-sm text-white">Add to existing site</span>
+                  </label>
+                )}
+                {data.siteMode === 'existing' && (
+                  <div className="ml-7">
+                    <select
+                      value={data.existingSiteId}
+                      onChange={(e) => setData((d) => ({ ...d, existingSiteId: e.target.value }))}
+                      className="focus:border-brand-500 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white focus:outline-none"
+                    >
+                      {topology.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {step === 'room' && (
+            <>
+              <h3 className="font-semibold text-white">New room</h3>
+              <p className="text-xs text-gray-500">
+                In site: <span className="text-gray-300">{selectedSiteName}</span>
+              </p>
+              <input
+                autoFocus
+                placeholder="Room name (e.g. Room A)"
+                value={data.roomName}
+                onChange={(e) => setData((d) => ({ ...d, roomName: e.target.value }))}
+                className="focus:border-brand-500 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none"
+              />
+              <input
+                placeholder="Custom ID (optional)"
+                value={data.roomId}
+                onChange={(e) => setData((d) => ({ ...d, roomId: e.target.value }))}
+                className="focus:border-brand-500 w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-1.5 text-xs text-gray-300 placeholder:text-gray-500 focus:outline-none"
+              />
+            </>
+          )}
+
+          {step === 'aisles' && (
+            <>
+              <h3 className="font-semibold text-white">Create aisles</h3>
+              <p className="text-xs text-gray-500">In room: {data.roomName}</p>
+              <div className="space-y-2">
+                {data.aisles.map((aisle, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      autoFocus={i === 0}
+                      placeholder={`Aisle ${String(i + 1).padStart(2, '0')}`}
+                      value={aisle.name}
+                      onChange={(e) =>
+                        setData((d) => {
+                          const aisles = [...d.aisles];
+                          aisles[i] = { ...aisles[i], name: e.target.value };
+                          return { ...d, aisles };
+                        })
+                      }
+                      className="focus:border-brand-500 flex-1 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none"
+                    />
+                    {data.aisles.length > 1 && (
+                      <button
+                        onClick={() =>
+                          setData((d) => ({ ...d, aisles: d.aisles.filter((_, j) => j !== i) }))
+                        }
+                        className="text-gray-600 hover:text-red-400"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={() =>
+                    setData((d) => ({ ...d, aisles: [...d.aisles, { name: '', id: '' }] }))
+                  }
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Add another aisle
+                </button>
+              </div>
+            </>
+          )}
+
+          {step === 'summary' && (
+            <>
+              <h3 className="font-semibold text-white">Ready to create</h3>
+              <div className="space-y-2 rounded-xl border border-gray-800 p-4">
+                {[
+                  {
+                    label: 'Site',
+                    value:
+                      data.siteMode === 'new'
+                        ? `${data.newSiteName} (new)`
+                        : `${selectedSiteName} (existing)`,
+                  },
+                  { label: 'Room', value: data.roomName },
+                  {
+                    label: 'Aisles',
+                    value:
+                      data.aisles
+                        .filter((a) => a.name.trim())
+                        .map((a) => a.name)
+                        .join(', ') || 'None',
+                  },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex gap-3 text-sm">
+                    <span className="w-16 shrink-0 text-gray-500">{label}</span>
+                    <span className="text-white">{value}</span>
+                  </div>
+                ))}
+              </div>
+              {error && (
+                <p className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  {error}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-gray-800 px-6 py-4">
+          <button
+            onClick={stepIdx === 0 ? onClose : () => setStep(WIZARD_STEPS[stepIdx - 1])}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-400 hover:border-gray-600 hover:text-gray-200"
+          >
+            {stepIdx === 0 ? (
+              <>
+                <X className="h-4 w-4" /> Cancel
+              </>
+            ) : (
+              <>
+                <ChevronRight className="h-4 w-4 rotate-180" /> Back
+              </>
+            )}
+          </button>
+
+          {step !== 'summary' ? (
+            <button
+              onClick={() => setStep(WIZARD_STEPS[stepIdx + 1])}
+              disabled={!canNext}
+              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            >
+              Next <ChevronRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={handleCreate}
+              disabled={saving}
+              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Creating...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" /> Create
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── CosmosTopologyEditorPage ─────────────────────────────────────────────────
+
 export const CosmosTopologyEditorPage = () => {
   const navigate = useNavigate();
 
@@ -395,6 +741,9 @@ export const CosmosTopologyEditorPage = () => {
   const [dragRackId, setDragRackId] = useState<string | null>(null);
   const [dragFromAisleId, setDragFromAisleId] = useState<string | null>(null);
   const [dragOverAisleId, setDragOverAisleId] = useState<string | null>(null);
+
+  // Wizard
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   // Inline create forms
   const [addingSiteForm, setAddingSiteForm] = useState(false);
@@ -586,9 +935,8 @@ export const CosmosTopologyEditorPage = () => {
         <div className="flex items-center gap-3">
           <SaveBadge status={saveStatus} />
           <button
-            disabled
-            title="Creation wizard — coming soon"
-            className="border-brand-500/30 bg-brand-500/5 text-brand-400/50 flex cursor-not-allowed items-center gap-2 rounded-xl border border-dashed px-4 py-2 text-sm font-medium"
+            onClick={() => setWizardOpen(true)}
+            className="border-brand-500/40 bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-colors"
           >
             <Wand2 className="h-4 w-4" />
             Create Wizard
@@ -801,6 +1149,20 @@ export const CosmosTopologyEditorPage = () => {
           )}
         </aside>
       </div>
+
+      {/* Wizard modal */}
+      {wizardOpen && (
+        <TopologyWizard
+          topology={topology}
+          onClose={() => setWizardOpen(false)}
+          onDone={async (roomId, siteId) => {
+            setWizardOpen(false);
+            await reload();
+            setSelectedRoomId(roomId);
+            setExpandedSites((prev) => new Set([...prev, siteId]));
+          }}
+        />
+      )}
     </div>
   );
 };
