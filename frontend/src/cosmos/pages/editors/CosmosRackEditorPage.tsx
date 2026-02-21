@@ -102,8 +102,10 @@ type DeviceSlotProps = {
   template: DeviceTemplate | undefined;
   uHeight: number;
   selected: boolean;
+  dragging: boolean;
   onClick: () => void;
   onDelete: () => void;
+  onDragStart: (e: React.DragEvent) => void;
 };
 
 const DeviceSlot = ({
@@ -111,12 +113,16 @@ const DeviceSlot = ({
   template,
   uHeight,
   selected,
+  dragging,
   onClick,
   onDelete,
+  onDragStart,
 }: DeviceSlotProps) => {
   const type = template?.type ?? 'other';
   return (
     <div
+      draggable
+      onDragStart={onDragStart}
       onClick={onClick}
       style={{
         height: uHeight * U_PX,
@@ -124,8 +130,9 @@ const DeviceSlot = ({
         borderLeft: `3px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}`,
         outline: selected ? `2px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}` : undefined,
         outlineOffset: selected ? '1px' : undefined,
+        opacity: dragging ? 0.4 : 1,
       }}
-      className="relative flex w-full cursor-pointer items-center gap-2 px-2 transition-all hover:brightness-125"
+      className="relative flex w-full cursor-grab items-center gap-2 px-2 transition-all hover:brightness-125 active:cursor-grabbing"
     >
       <div className="min-w-0 flex-1">
         <p
@@ -166,6 +173,7 @@ export const CosmosRackEditorPage = () => {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [dragTemplate, setDragTemplate] = useState<DeviceTemplate | null>(null);
+  const [dragDevice, setDragDevice] = useState<Device | null>(null);
   const [dragHoverU, setDragHoverU] = useState<number | null>(null);
   const rackContainerRef = useRef<HTMLDivElement>(null);
   const deviceCounterRef = useRef(0);
@@ -261,13 +269,21 @@ export const CosmosRackEditorPage = () => {
     setDragTemplate(tpl);
   };
 
+  const handleDeviceDragStart = (e: React.DragEvent, device: Device) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', device.id);
+    setDragDevice(device);
+    setDragTemplate(null);
+  };
+
   const handleDragEnd = () => {
     setDragTemplate(null);
+    setDragDevice(null);
     setDragHoverU(null);
   };
 
   const handleSlotDragEnter = (u: number) => {
-    if (dragTemplate) setDragHoverU(u);
+    if (dragTemplate || dragDevice) setDragHoverU(u);
   };
 
   const handleSlotDragOver = (e: React.DragEvent) => {
@@ -277,8 +293,32 @@ export const CosmosRackEditorPage = () => {
 
   const handleSlotDrop = (e: React.DragEvent, u: number) => {
     e.preventDefault();
-    if (!dragTemplate || !rack) {
-      setDragTemplate(null);
+    if (!rack) {
+      setDragHoverU(null);
+      return;
+    }
+
+    // Case 1: repositioning an existing device
+    if (dragDevice) {
+      const h = deviceCatalog[dragDevice.template_id]?.u_height ?? 1;
+      // Slots currently occupied by this device (to allow dropping on same position)
+      const ownSlots = new Set(Array.from({ length: h }, (_, i) => dragDevice.u_position + i));
+      const valid = Array.from({ length: h }, (_, i) => u + i).every(
+        (slot) => slot >= 1 && slot <= rack.u_height && (!uMap.has(slot) || ownSlots.has(slot))
+      );
+      if (valid && u !== dragDevice.u_position) {
+        setDraftDevices((prev) =>
+          prev.map((d) => (d.id === dragDevice.id ? { ...d, u_position: u } : d))
+        );
+        setDirty(true);
+      }
+      setDragDevice(null);
+      setDragHoverU(null);
+      return;
+    }
+
+    // Case 2: placing a new template from the library
+    if (!dragTemplate) {
       setDragHoverU(null);
       return;
     }
@@ -477,11 +517,16 @@ export const CosmosRackEditorPage = () => {
 
                       const tpl = dev ? deviceCatalog[dev.template_id] : undefined;
                       const devUHeight = tpl?.u_height ?? 1;
+                      const activeDragH = dragTemplate
+                        ? (dragTemplate.u_height ?? 1)
+                        : dragDevice
+                          ? (deviceCatalog[dragDevice.template_id]?.u_height ?? 1)
+                          : 0;
                       const isHover =
-                        dragTemplate !== null &&
+                        (dragTemplate !== null || dragDevice !== null) &&
                         dragHoverU !== null &&
                         u >= dragHoverU &&
-                        u < dragHoverU + (dragTemplate.u_height ?? 1);
+                        u < dragHoverU + activeDragH;
 
                       if (dev) {
                         return (
@@ -489,6 +534,9 @@ export const CosmosRackEditorPage = () => {
                             key={u}
                             style={{ flex: `0 0 ${devUHeight * U_PX}px` }}
                             className="relative flex min-h-0 w-full items-center border-b border-white/5"
+                            onDragEnter={() => handleSlotDragEnter(u)}
+                            onDragOver={handleSlotDragOver}
+                            onDrop={(e) => handleSlotDrop(e, u)}
                           >
                             <div className="pointer-events-none absolute -left-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
                               {u}
@@ -502,8 +550,10 @@ export const CosmosRackEditorPage = () => {
                                 template={tpl}
                                 uHeight={devUHeight}
                                 selected={selectedDevice?.id === dev.id}
+                                dragging={dragDevice?.id === dev.id}
                                 onClick={() => setSelectedDevice(dev)}
                                 onDelete={() => deleteDevice(dev.id)}
+                                onDragStart={(e) => handleDeviceDragStart(e, dev)}
                               />
                             </div>
                           </div>
