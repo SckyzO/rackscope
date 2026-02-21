@@ -31,6 +31,11 @@ const VARIANTS = [
   { label: 'V3', path: 'room-v3' },
   { label: 'V4', path: 'room-v4' },
   { label: 'V5', path: 'room-v5' },
+  { label: 'V6', path: 'room-v6' },
+  { label: 'V7', path: 'room-v7' },
+  { label: 'V8', path: 'room-v8' },
+  { label: 'V9', path: 'room-v9' },
+  { label: 'V10', path: 'room-v10' },
 ] as const;
 
 // ── Helpers ────────────────────────────────────────────────────────────────

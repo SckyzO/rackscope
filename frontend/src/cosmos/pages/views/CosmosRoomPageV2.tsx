@@ -1,6 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ChevronRight, RotateCcw, Thermometer, Zap, Server, ExternalLink } from 'lucide-react';
+
+const VARIANTS = [
+  { label: 'V1', path: 'room' },
+  { label: 'V2', path: 'room-v2' },
+  { label: 'V3', path: 'room-v3' },
+  { label: 'V4', path: 'room-v4' },
+  { label: 'V5', path: 'room-v5' },
+  { label: 'V6', path: 'room-v6' },
+  { label: 'V7', path: 'room-v7' },
+  { label: 'V8', path: 'room-v8' },
+  { label: 'V9', path: 'room-v9' },
+  { label: 'V10', path: 'room-v10' },
+] as const;
 import { RackElevation } from '../../../components/RackVisualizer';
 import { api } from '../../../services/api';
 import type {
@@ -461,13 +474,22 @@ export const CosmosRoomPageV2 = () => {
 
           {/* View toggle */}
           <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-            <button
-              onClick={() => navigate(`/cosmos/views/room/${roomId}`)}
-              className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5"
-            >
-              V1
-            </button>
-            <button className="bg-brand-500 px-3 py-1.5 text-xs font-medium text-white">V2</button>
+            {VARIANTS.map((v) => (
+              <button
+                key={v.label}
+                onClick={() => {
+                  localStorage.setItem('cosmos-room-variant', v.path);
+                  navigate(`/cosmos/views/${v.path}/${roomId}`);
+                }}
+                className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  v.path === 'room-v2'
+                    ? 'bg-brand-500 text-white'
+                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'
+                }`}
+              >
+                {v.label}
+              </button>
+            ))}
           </div>
 
           <button
