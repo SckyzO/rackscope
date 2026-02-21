@@ -90,6 +90,10 @@ import { CosmosSlurmWallboardV2Page } from './pages/slurm/CosmosSlurmWallboardV2
 import { CosmosSettingsPage } from './pages/editors/CosmosSettingsPage';
 import { CosmosChecksEditorPage } from './pages/editors/CosmosChecksEditorPage';
 import { CosmosTopologyEditorPage } from './pages/editors/CosmosTopologyEditorPage';
+import { CosmosTopologyEditorPageV2 } from './pages/editors/CosmosTopologyEditorPageV2';
+import { CosmosTopologyEditorPageV3 } from './pages/editors/CosmosTopologyEditorPageV3';
+import { CosmosTopologyEditorPageV4 } from './pages/editors/CosmosTopologyEditorPageV4';
+import { CosmosTopologyEditorPageV5 } from './pages/editors/CosmosTopologyEditorPageV5';
 import { CosmosTemplatesEditorPage } from './pages/editors/CosmosTemplatesEditorPage';
 import { CosmosRackEditorPage } from './pages/editors/CosmosRackEditorPage';
 
@@ -185,6 +189,10 @@ export const CosmosRouter = () => (
       <Route path="editors/settings" element={<CosmosSettingsPage />} />
       <Route path="editors/checks" element={<CosmosChecksEditorPage />} />
       <Route path="editors/topology" element={<CosmosTopologyEditorPage />} />
+      <Route path="editors/topology-v2" element={<CosmosTopologyEditorPageV2 />} />
+      <Route path="editors/topology-v3" element={<CosmosTopologyEditorPageV3 />} />
+      <Route path="editors/topology-v4" element={<CosmosTopologyEditorPageV4 />} />
+      <Route path="editors/topology-v5" element={<CosmosTopologyEditorPageV5 />} />
       <Route path="editors/templates" element={<CosmosTemplatesEditorPage />} />
       <Route path="editors/rack" element={<CosmosRackEditorPage />} />
 

@@ -330,7 +330,31 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
         <NavItem
           to="/cosmos/editors/topology"
           icon={GitBranch}
-          label="Topology"
+          label="Topology V1"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/editors/topology-v2"
+          icon={GitBranch}
+          label="Topology V2"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/editors/topology-v3"
+          icon={GitBranch}
+          label="Topology V3"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/editors/topology-v4"
+          icon={GitBranch}
+          label="Topology V4"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/editors/topology-v5"
+          icon={GitBranch}
+          label="Topology V5"
           collapsed={collapsed}
         />
         <NavItem
