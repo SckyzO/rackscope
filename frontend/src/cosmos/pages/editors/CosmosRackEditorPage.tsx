@@ -1,42 +1,40 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Search,
   Server,
+  Layers,
+  Network,
+  Zap,
+  Thermometer,
   GripVertical,
   X,
   Check,
   Loader2,
   AlertTriangle,
-  Network,
-  Zap,
-  Thermometer,
-  Layers,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Rack, Device, DeviceTemplate } from '../../../types';
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-const U_PX = 28;
+const U_PX = 24; // pixels per U (matches RackElevation scale)
 
 const TYPE_BG: Record<string, string> = {
-  server: '#1e3a5f',
-  storage: '#3d2b07',
-  network: '#0c2a3d',
-  pdu: '#3d3107',
-  cooling: '#0c2d2d',
-  other: '#1f2937',
+  server: '#0d1f3c',
+  storage: '#241a04',
+  network: '#071d27',
+  pdu: '#241f03',
+  cooling: '#051d1d',
+  other: '#141a22',
 };
-
 const TYPE_BORDER: Record<string, string> = {
   server: '#2563eb',
   storage: '#d97706',
   network: '#0891b2',
   pdu: '#ca8a04',
   cooling: '#0d9488',
-  other: '#4b5563',
+  other: '#374151',
 };
-
 const TYPE_TEXT: Record<string, string> = {
   server: '#60a5fa',
   storage: '#fbbf24',
@@ -46,9 +44,9 @@ const TYPE_TEXT: Record<string, string> = {
   other: '#9ca3af',
 };
 
-// ─── TypeIcon ─────────────────────────────────────────────────────────────────
+// ── TypeIcon ──────────────────────────────────────────────────────────────────
 
-const TYPE_ICONS: Record<string, React.ElementType> = {
+const ICONS: Record<string, React.ElementType> = {
   server: Server,
   storage: Layers,
   network: Network,
@@ -56,14 +54,12 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   cooling: Thermometer,
 };
 
-type TypeIconProps = { type: string; className?: string; style?: React.CSSProperties };
-
-const TypeIcon = ({ type, className, style }: TypeIconProps) => {
-  const Icon = TYPE_ICONS[type] ?? Server;
-  return <Icon className={className} style={style} />;
+const TypeIcon = ({ type, className }: { type: string; className?: string }) => {
+  const Icon = ICONS[type] ?? Server;
+  return <Icon className={className} />;
 };
 
-// ─── TemplateCard ─────────────────────────────────────────────────────────────
+// ── TemplateCard ──────────────────────────────────────────────────────────────
 
 type TemplateCardProps = {
   template: DeviceTemplate;
@@ -74,7 +70,7 @@ const TemplateCard = ({ template, onDragStart }: TemplateCardProps) => (
   <div
     draggable
     onDragStart={onDragStart}
-    className="flex cursor-grab items-center gap-2.5 rounded-xl border border-gray-800 bg-gray-900 p-3 transition-all hover:border-gray-700 active:cursor-grabbing active:opacity-70"
+    className="flex cursor-grab items-center gap-2.5 rounded-xl border border-gray-800 bg-gray-900 p-3 transition-all hover:border-gray-600 active:cursor-grabbing active:opacity-60"
   >
     <div
       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
@@ -99,29 +95,37 @@ const TemplateCard = ({ template, onDragStart }: TemplateCardProps) => (
   </div>
 );
 
-// ─── DeviceBlock ──────────────────────────────────────────────────────────────
+// ── DeviceSlot — placed device in the rack ────────────────────────────────────
 
-type DeviceBlockProps = {
+type DeviceSlotProps = {
   device: Device;
   template: DeviceTemplate | undefined;
+  uHeight: number;
   selected: boolean;
   onClick: () => void;
   onDelete: () => void;
 };
 
-const DeviceBlock = ({ device, template, selected, onClick, onDelete }: DeviceBlockProps) => {
+const DeviceSlot = ({
+  device,
+  template,
+  uHeight,
+  selected,
+  onClick,
+  onDelete,
+}: DeviceSlotProps) => {
   const type = template?.type ?? 'other';
-  const uH = template?.u_height ?? 1;
   return (
     <div
       onClick={onClick}
       style={{
-        height: uH * U_PX - 2,
+        height: uHeight * U_PX,
         backgroundColor: TYPE_BG[type] ?? TYPE_BG.other,
         borderLeft: `3px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}`,
-        boxShadow: selected ? `0 0 0 2px ${TYPE_BORDER[type] ?? TYPE_BORDER.other}` : undefined,
+        outline: selected ? `2px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}` : undefined,
+        outlineOffset: selected ? '1px' : undefined,
       }}
-      className="group relative flex cursor-pointer items-center gap-2 rounded-r-lg px-3 transition-all hover:brightness-125"
+      className="relative flex w-full cursor-pointer items-center gap-2 px-2 transition-all hover:brightness-125"
     >
       <div className="min-w-0 flex-1">
         <p
@@ -130,103 +134,58 @@ const DeviceBlock = ({ device, template, selected, onClick, onDelete }: DeviceBl
         >
           {device.name || device.id}
         </p>
-        <p className="truncate font-mono text-[10px] text-gray-600">{device.id}</p>
+        {uHeight > 1 && <p className="truncate font-mono text-[10px] text-gray-600">{device.id}</p>}
       </div>
+      {/* Delete button — always visible */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           onDelete();
         }}
-        className="shrink-0 rounded p-0.5 text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-400"
+        className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-500/20 text-red-400 transition-colors hover:bg-red-500 hover:text-white"
+        title="Remove device"
       >
-        <X className="h-3.5 w-3.5" />
+        <X className="h-3 w-3" />
       </button>
     </div>
   );
 };
 
-// ─── RackSlotRow ──────────────────────────────────────────────────────────────
-
-type RackSlotRowProps = {
-  u: number;
-  isHover: boolean;
-  dragTemplateName: string | undefined;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
-  onDragLeave: () => void;
-};
-
-const RackSlotRow = ({
-  u,
-  isHover,
-  dragTemplateName,
-  onDragOver,
-  onDrop,
-  onDragLeave,
-}: RackSlotRowProps) => (
-  <div
-    style={{ height: U_PX }}
-    className={`flex items-center transition-colors ${isHover ? 'bg-brand-500/10' : ''}`}
-    onDragOver={onDragOver}
-    onDrop={onDrop}
-    onDragLeave={onDragLeave}
-  >
-    <div className="flex w-10 shrink-0 items-center justify-center border-r border-gray-800 font-mono text-[10px] text-gray-700">
-      {u}
-    </div>
-    <div className={`flex-1 px-3 text-[10px] ${isHover ? 'text-brand-400' : 'text-transparent'}`}>
-      {isHover ? `Drop here — ${dragTemplateName ?? ''}` : '—'}
-    </div>
-  </div>
-);
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
-type RackEntry = {
-  id: string;
-  name: string;
-  roomName: string;
-  aisleName: string;
-};
-
-type PlacingState = {
-  template: DeviceTemplate;
-  u: number;
-};
+// ── Main component ────────────────────────────────────────────────────────────
 
 export const CosmosRackEditorPage = () => {
-  // ── Rack list + catalog ──
-  const [allRacks, setAllRacks] = useState<RackEntry[]>([]);
+  const [allRacks, setAllRacks] = useState<
+    Array<{ id: string; name: string; roomName: string; aisleName: string }>
+  >([]);
   const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
   const [rack, setRack] = useState<Rack | null>(null);
   const [deviceCatalog, setDeviceCatalog] = useState<Record<string, DeviceTemplate>>({});
   const [draftDevices, setDraftDevices] = useState<Device[]>([]);
   const [dirty, setDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-
-  // ── Template library ──
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-
-  // ── DnD ──
   const [dragTemplate, setDragTemplate] = useState<DeviceTemplate | null>(null);
   const [dragHoverU, setDragHoverU] = useState<number | null>(null);
-
-  // ── Right panel ──
+  const rackContainerRef = useRef<HTMLDivElement>(null);
+  const deviceCounterRef = useRef(0);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
-  const [placingTemplate, setPlacingTemplate] = useState<PlacingState | null>(null);
+  const [placingTemplate, setPlacingTemplate] = useState<{
+    template: DeviceTemplate;
+    u: number;
+  } | null>(null);
   const [newDeviceName, setNewDeviceName] = useState('');
   const [newDeviceInstance, setNewDeviceInstance] = useState('');
   const [newDeviceId, setNewDeviceId] = useState('');
 
-  // ── Load racks + catalog ──
+  // Load all racks + catalog
   useEffect(() => {
     let active = true;
     const load = async () => {
       try {
         const [rooms, catalog] = await Promise.all([api.getRooms(), api.getCatalog()]);
         if (!active) return;
-        const racks: RackEntry[] = [];
+        const racks: Array<{ id: string; name: string; roomName: string; aisleName: string }> = [];
         (Array.isArray(rooms) ? rooms : []).forEach((room) => {
           (room.aisles ?? []).forEach((aisle) => {
             (aisle.racks ?? []).forEach((r) => {
@@ -253,21 +212,18 @@ export const CosmosRackEditorPage = () => {
           dc[t.id] = t;
         });
         setDeviceCatalog(dc);
-        if (racks.length > 0 && !selectedRackId) {
-          setSelectedRackId(racks[0].id);
-        }
+        if (racks.length > 0 && !selectedRackId) setSelectedRackId(racks[0].id);
       } catch {
-        // ignore
+        /* ignore */
       }
     };
-    void load();
+    load();
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedRackId]);
 
-  // ── Load rack devices when selection changes ──
+  // Load rack on selection change
   useEffect(() => {
     if (!selectedRackId) return;
     let active = true;
@@ -287,22 +243,21 @@ export const CosmosRackEditorPage = () => {
     };
   }, [selectedRackId]);
 
-  // ── Computed: uMap ──
+  // U occupancy map
   const uMap = useMemo(() => {
     const map = new Map<number, Device>();
     draftDevices.forEach((dev) => {
       const tpl = deviceCatalog[dev.template_id];
       const h = tpl?.u_height ?? 1;
-      for (let u = dev.u_position; u < dev.u_position + h; u++) {
-        map.set(u, dev);
-      }
+      for (let u = dev.u_position; u < dev.u_position + h; u++) map.set(u, dev);
     });
     return map;
   }, [draftDevices, deviceCatalog]);
 
-  // ── DnD handlers ──
+  // DnD
   const handleDragStart = (e: React.DragEvent, tpl: DeviceTemplate) => {
     e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('text/plain', tpl.id);
     setDragTemplate(tpl);
   };
 
@@ -311,11 +266,13 @@ export const CosmosRackEditorPage = () => {
     setDragHoverU(null);
   };
 
-  const handleSlotDragOver = (e: React.DragEvent, u: number) => {
+  const handleSlotDragEnter = (u: number) => {
+    if (dragTemplate) setDragHoverU(u);
+  };
+
+  const handleSlotDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    if (!dragTemplate) return;
     e.dataTransfer.dropEffect = 'copy';
-    setDragHoverU(u);
   };
 
   const handleSlotDrop = (e: React.DragEvent, u: number) => {
@@ -326,33 +283,39 @@ export const CosmosRackEditorPage = () => {
       return;
     }
     const h = dragTemplate.u_height ?? 1;
-    const startU = u - h + 1;
-    const valid = Array.from({ length: h }, (_, i) => startU + i).every(
+    const valid = Array.from({ length: h }, (_, i) => u + i).every(
       (slot) => slot >= 1 && slot <= rack.u_height && !uMap.has(slot)
     );
     if (!valid) {
       setDragHoverU(null);
       return;
     }
-    setPlacingTemplate({ template: dragTemplate, u: startU });
+    setPlacingTemplate({ template: dragTemplate, u });
     setNewDeviceName(dragTemplate.name);
     setNewDeviceInstance('');
-    setNewDeviceId(`dev-${Date.now().toString()}`);
+    deviceCounterRef.current += 1;
+    setNewDeviceId(`dev-${deviceCounterRef.current}`);
     setDragTemplate(null);
     setDragHoverU(null);
   };
 
-  // ── Placement ──
+  const handleRackContainerDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    const related = e.relatedTarget as Node | null;
+    if (!rackContainerRef.current?.contains(related)) {
+      setDragHoverU(null);
+    }
+  };
+
   const confirmPlacement = () => {
-    if (!placingTemplate) return;
+    if (!placingTemplate || !rack) return;
     const newDev: Device = {
-      id: newDeviceId || `dev-${Date.now().toString()}`,
+      id: newDeviceId || `dev-${deviceCounterRef.current}`,
       name: newDeviceName || placingTemplate.template.name,
       template_id: placingTemplate.template.id,
       u_position: placingTemplate.u,
-      instance: newDeviceInstance.trim() || '',
-      nodes: undefined,
-      labels: undefined,
+      instance: newDeviceInstance.trim() || null,
+      nodes: null,
+      labels: null,
     };
     setDraftDevices((prev) => [...prev, newDev]);
     setDirty(true);
@@ -366,7 +329,6 @@ export const CosmosRackEditorPage = () => {
     if (selectedDevice?.id === deviceId) setSelectedDevice(null);
   };
 
-  // ── Save ──
   const handleSave = async () => {
     if (!selectedRackId) return;
     setSaveStatus('saving');
@@ -381,24 +343,19 @@ export const CosmosRackEditorPage = () => {
     }
   };
 
-  // ── Filtered template list ──
-  const filteredTemplates = useMemo(
-    () =>
-      Object.values(deviceCatalog)
-        .filter(
-          (t) =>
-            !search ||
-            t.name.toLowerCase().includes(search.toLowerCase()) ||
-            t.id.toLowerCase().includes(search.toLowerCase())
-        )
-        .filter((t) => !typeFilter || t.type === typeFilter),
-    [deviceCatalog, search, typeFilter]
+  const uHeight = rack?.u_height ?? 42;
+  const slots = Array.from({ length: uHeight }, (_, i) => i + 1);
+  const filteredTemplates = Object.values(deviceCatalog).filter(
+    (t) =>
+      (!search ||
+        t.name.toLowerCase().includes(search.toLowerCase()) ||
+        t.id.toLowerCase().includes(search.toLowerCase())) &&
+      (!typeFilter || t.type === typeFilter)
   );
 
-  // ── Render ──
   return (
     <div className="flex h-full flex-col">
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-gray-800 bg-gray-950 px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="bg-brand-500/10 flex h-9 w-9 items-center justify-center rounded-xl">
@@ -406,16 +363,13 @@ export const CosmosRackEditorPage = () => {
           </div>
           <div>
             <h1 className="text-lg font-bold text-white">Rack Editor</h1>
-            <p className="text-xs text-gray-500">Place devices in rack slots</p>
+            <p className="text-xs text-gray-500">Drag templates onto rack slots to place devices</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {/* Rack selector */}
           <select
             value={selectedRackId ?? ''}
-            onChange={(e) => {
-              setSelectedRackId(e.target.value);
-            }}
+            onChange={(e) => setSelectedRackId(e.target.value)}
             className="focus:border-brand-500 max-w-xs truncate rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:outline-none"
           >
             {allRacks.map((r) => (
@@ -424,12 +378,9 @@ export const CosmosRackEditorPage = () => {
               </option>
             ))}
           </select>
-          {/* Save button */}
           {dirty && (
             <button
-              onClick={() => {
-                void handleSave();
-              }}
+              onClick={() => void handleSave()}
               disabled={saveStatus === 'saving'}
               className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
             >
@@ -454,11 +405,11 @@ export const CosmosRackEditorPage = () => {
         </div>
       </div>
 
-      {/* ── 3-column body ── */}
+      {/* 3-column body */}
       <div className="flex min-h-0 flex-1">
         {/* LEFT: Template library */}
         <aside className="flex w-64 shrink-0 flex-col overflow-hidden border-r border-gray-800 bg-gray-950">
-          <div className="border-b border-gray-800 p-3">
+          <div className="space-y-2 border-b border-gray-800 p-3">
             <div className="relative">
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-600" />
               <input
@@ -468,17 +419,12 @@ export const CosmosRackEditorPage = () => {
                 className="focus:border-brand-500 w-full rounded-xl border border-gray-800 bg-gray-900 py-2 pr-3 pl-9 text-xs text-gray-300 placeholder:text-gray-600 focus:outline-none"
               />
             </div>
-            {/* Type filter pills */}
-            <div className="mt-2 flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1">
               {['', 'server', 'storage', 'network', 'pdu'].map((t) => (
                 <button
                   key={t}
                   onClick={() => setTypeFilter(t)}
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${
-                    typeFilter === t
-                      ? 'bg-brand-500 text-white'
-                      : 'bg-gray-800 text-gray-500 hover:text-gray-300'
-                  }`}
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${typeFilter === t ? 'bg-brand-500 text-white' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}
                 >
                   {t || 'All'}
                 </button>
@@ -489,113 +435,106 @@ export const CosmosRackEditorPage = () => {
             {filteredTemplates.map((t) => (
               <TemplateCard key={t.id} template={t} onDragStart={(e) => handleDragStart(e, t)} />
             ))}
-            {filteredTemplates.length === 0 && (
-              <p className="pt-4 text-center text-xs text-gray-700">No templates found</p>
-            )}
           </div>
           <div className="border-t border-gray-800 px-4 py-2">
             <p className="text-[10px] text-gray-700">Drag a template onto a rack slot</p>
           </div>
         </aside>
 
-        {/* CENTER: Rack visualization */}
-        <main className="min-h-0 flex-1 overflow-hidden bg-gray-950">
+        {/* CENTER: Rack visualization — same style as RackElevation */}
+        <main className="min-h-0 flex-1 overflow-hidden bg-[var(--color-bg-base)]">
           {!rack ? (
             <div className="flex h-full items-center justify-center">
               <Loader2 className="text-brand-500 h-8 w-8 animate-spin" />
             </div>
           ) : (
             <div className="flex h-full flex-col">
-              {/* Rack meta header */}
               <div className="shrink-0 border-b border-gray-800 px-6 py-3">
                 <div className="flex items-center gap-3">
                   <h2 className="text-sm font-semibold text-white">{rack.name}</h2>
                   <span className="rounded-full bg-gray-800 px-2 py-0.5 font-mono text-[10px] text-gray-500">
                     {rack.id}
                   </span>
-                  <span className="text-xs text-gray-600">{rack.u_height}U</span>
+                  <span className="text-xs text-gray-600">{uHeight}U</span>
                   <span className="text-xs text-gray-600">
-                    {draftDevices.length} device{draftDevices.length !== 1 ? 's' : ''} installed
+                    {draftDevices.length} device{draftDevices.length !== 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
-              {/* Rack slots — scrollable */}
-              <div className="flex-1 overflow-y-auto" onDragLeave={() => setDragHoverU(null)}>
-                <div className="mx-auto w-full max-w-2xl px-8 py-4">
-                  {/* Rack frame */}
-                  <div className="overflow-hidden rounded-xl border border-gray-700 bg-gray-900">
-                    {/* Column headers */}
-                    <div className="flex border-b border-gray-800 bg-gray-800/50 px-4 py-1.5">
-                      <div className="w-10 text-center text-[10px] text-gray-600">U</div>
-                      <div className="flex-1 px-2 text-[10px] text-gray-600">Device</div>
-                      <div className="w-24 text-[10px] text-gray-600">Template</div>
-                    </div>
-                    {/* Slots */}
-                    <div className="divide-y divide-gray-800/50">
-                      {Array.from({ length: rack.u_height }, (_, i) => rack.u_height - i).map(
-                        (u) => {
-                          const dev = uMap.get(u);
-                          const tpl = dev ? deviceCatalog[dev.template_id] : undefined;
+              <div className="flex-1 overflow-y-auto py-6">
+                <div className="mx-auto max-w-xl px-12">
+                  {/* Rack frame: border-x-[24px] = side rails, flex-col-reverse = U1 bottom */}
+                  <div
+                    ref={rackContainerRef}
+                    onDragLeave={handleRackContainerDragLeave}
+                    onDragEnd={handleDragEnd}
+                    className="relative flex flex-col-reverse rounded-sm border-x-[24px] border-gray-700 bg-gray-700 shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                  >
+                    {slots.map((u) => {
+                      const dev = uMap.get(u);
+                      const isStart = !dev || dev.u_position === u;
+                      if (!isStart) return null;
 
-                          // Skip continuation slots (not the start of the device)
-                          if (dev && dev.u_position !== u) return null;
+                      const tpl = dev ? deviceCatalog[dev.template_id] : undefined;
+                      const devUHeight = tpl?.u_height ?? 1;
+                      const isHover =
+                        dragTemplate !== null &&
+                        dragHoverU !== null &&
+                        u >= dragHoverU &&
+                        u < dragHoverU + (dragTemplate.u_height ?? 1);
 
-                          const uH = tpl?.u_height ?? 1;
-                          const isHover =
-                            dragTemplate !== null &&
-                            dragHoverU !== null &&
-                            u <= dragHoverU &&
-                            u > dragHoverU - (dragTemplate.u_height ?? 1);
+                      if (dev) {
+                        return (
+                          <div
+                            key={u}
+                            style={{ flex: `0 0 ${devUHeight * U_PX}px` }}
+                            className="relative flex min-h-0 w-full items-center border-b border-white/5"
+                          >
+                            <div className="pointer-events-none absolute -left-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
+                              {u}
+                            </div>
+                            <div className="pointer-events-none absolute -right-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
+                              {u}
+                            </div>
+                            <div className="relative h-full w-full px-0.5 py-[1px]">
+                              <DeviceSlot
+                                device={dev}
+                                template={tpl}
+                                uHeight={devUHeight}
+                                selected={selectedDevice?.id === dev.id}
+                                onClick={() => setSelectedDevice(dev)}
+                                onDelete={() => deleteDevice(dev.id)}
+                              />
+                            </div>
+                          </div>
+                        );
+                      }
 
-                          if (dev) {
-                            return (
-                              <div
-                                key={u}
-                                style={{ height: uH * U_PX }}
-                                className="flex items-stretch"
-                                onDragOver={(e) => {
-                                  e.preventDefault();
-                                }}
-                              >
-                                {/* U label */}
-                                <div className="flex w-10 shrink-0 items-center justify-center border-r border-gray-800 font-mono text-[10px] text-gray-600">
-                                  {u}
-                                </div>
-                                {/* Device block */}
-                                <div className="flex-1 p-1">
-                                  <DeviceBlock
-                                    device={dev}
-                                    template={tpl}
-                                    selected={selectedDevice?.id === dev.id}
-                                    onClick={() => setSelectedDevice(dev)}
-                                    onDelete={() => deleteDevice(dev.id)}
-                                  />
-                                </div>
-                                {/* Template label */}
-                                <div className="flex w-24 shrink-0 items-center border-l border-gray-800 px-2">
-                                  <span className="truncate text-[10px] text-gray-600">
-                                    {tpl?.name ?? dev.template_id}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          }
-
-                          // Empty slot — drop target
-                          return (
-                            <RackSlotRow
-                              key={u}
-                              u={u}
-                              isHover={isHover}
-                              dragTemplateName={dragTemplate?.name}
-                              onDragOver={(e) => handleSlotDragOver(e, u)}
-                              onDrop={(e) => handleSlotDrop(e, u)}
-                              onDragLeave={() => setDragHoverU(null)}
-                            />
-                          );
-                        }
-                      )}
-                    </div>
+                      return (
+                        <div
+                          key={u}
+                          style={{ flex: `0 0 ${U_PX}px` }}
+                          className={`relative flex min-h-0 w-full items-center border-b border-white/5 transition-colors ${isHover ? 'bg-brand-500/20' : 'bg-[var(--color-empty-slot)]/5'}`}
+                          onDragEnter={() => handleSlotDragEnter(u)}
+                          onDragOver={handleSlotDragOver}
+                          onDrop={(e) => handleSlotDrop(e, u)}
+                        >
+                          <div className="pointer-events-none absolute -left-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
+                            {u}
+                          </div>
+                          <div className="pointer-events-none absolute -right-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
+                            {u}
+                          </div>
+                          {isHover && (
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                              <span className="text-brand-400 font-mono text-[10px] font-bold">
+                                Drop — {dragTemplate?.name}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -603,10 +542,9 @@ export const CosmosRackEditorPage = () => {
           )}
         </main>
 
-        {/* RIGHT: Device detail / placement form */}
+        {/* RIGHT: Detail / placement form */}
         <aside className="flex w-72 shrink-0 flex-col overflow-y-auto border-l border-gray-800 bg-gray-950">
           {placingTemplate ? (
-            /* Placement form */
             <div className="space-y-4 p-5">
               <div>
                 <h3 className="text-sm font-bold text-white">Place device</h3>
@@ -640,7 +578,7 @@ export const CosmosRackEditorPage = () => {
                     placeholder="e.g. compute001 or compute[001-004]"
                     className="focus:border-brand-500 w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 font-mono text-xs text-gray-300 placeholder:text-gray-600 focus:outline-none"
                   />
-                  <p className="text-[10px] text-gray-600">
+                  <p className="text-[10px] text-gray-700">
                     Maps this device to Prometheus metrics
                   </p>
                 </div>
@@ -661,7 +599,6 @@ export const CosmosRackEditorPage = () => {
               </div>
             </div>
           ) : selectedDevice ? (
-            /* Device detail */
             <div className="space-y-4 p-5">
               <div className="flex items-start justify-between">
                 <div>
@@ -679,19 +616,16 @@ export const CosmosRackEditorPage = () => {
               </div>
               <div className="space-y-2 rounded-xl border border-gray-800 bg-gray-900 p-3">
                 {[
-                  { label: 'U Position', value: `U${selectedDevice.u_position.toString()}` },
+                  { label: 'U Position', value: `U${selectedDevice.u_position}` },
                   {
                     label: 'Template',
                     value:
                       deviceCatalog[selectedDevice.template_id]?.name ?? selectedDevice.template_id,
                   },
-                  {
-                    label: 'Type',
-                    value: deviceCatalog[selectedDevice.template_id]?.type ?? '—',
-                  },
+                  { label: 'Type', value: deviceCatalog[selectedDevice.template_id]?.type ?? '—' },
                   {
                     label: 'Height',
-                    value: `${(deviceCatalog[selectedDevice.template_id]?.u_height ?? 1).toString()}U`,
+                    value: `${deviceCatalog[selectedDevice.template_id]?.u_height ?? 1}U`,
                   },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-center justify-between text-xs">
@@ -718,23 +652,16 @@ export const CosmosRackEditorPage = () => {
               </button>
             </div>
           ) : (
-            /* Empty state */
             <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
               <Server className="h-10 w-10 text-gray-800" />
               <p className="text-sm text-gray-600">No device selected</p>
               <p className="text-xs text-gray-700">
-                Drag a template from the library and drop it on a slot, or click a device to inspect
-                it
+                Drag a template onto a free slot, or click a device
               </p>
             </div>
           )}
         </aside>
       </div>
-
-      {/* Invisible drag-end capture */}
-      <div className="hidden" onDragEnd={handleDragEnd} aria-hidden="true" />
     </div>
   );
 };
-
-export default CosmosRackEditorPage;
