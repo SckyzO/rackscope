@@ -234,7 +234,9 @@ export const CosmosRackEditorPage = () => {
   const dragTemplateRef = useRef<DeviceTemplate | null>(null);
   const dragDeviceRef = useRef<Device | null>(null);
   const rackContainerRef = useRef<HTMLDivElement>(null);
+  const mainPanelRef = useRef<HTMLDivElement>(null);
   const deviceCounterRef = useRef(0);
+  const [mainPanelH, setMainPanelH] = useState(700);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [selectedFlash, setSelectedFlash] = useState<string | null>(null);
   const [placingTemplate, setPlacingTemplate] = useState<{
@@ -323,7 +325,20 @@ export const CosmosRackEditorPage = () => {
 
   // Dynamic U pixel height — scale rack to fill available viewport
   const uHeight = rack?.u_height ?? 42;
-  const dynamicUPx = U_PX; // fixed 24px per U, same as RackElevation
+  // Measure the center <main> panel and scale U height to fit without scrolling
+  useEffect(() => {
+    const el = mainPanelRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      setMainPanelH(entries[0].contentRect.height);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Available height = main panel minus rack sub-header (52px) and padding (48px)
+  const rackAreaH = Math.max(200, mainPanelH - 100);
+  const dynamicUPx = Math.max(12, Math.min(U_PX, Math.floor(rackAreaH / uHeight)));
 
   // Filtered rack list
   const filteredRacks = useMemo(() => {
@@ -619,7 +634,10 @@ export const CosmosRackEditorPage = () => {
         </aside>
 
         {/* COLUMN 3: Rack visualization (flex) */}
-        <main className="min-h-0 flex-1 overflow-hidden bg-[var(--color-bg-base)]">
+        <main
+          ref={mainPanelRef}
+          className="min-h-0 flex-1 overflow-hidden bg-[var(--color-bg-base)]"
+        >
           {!rack ? (
             <div className="flex h-full items-center justify-center">
               <Loader2 className="text-brand-500 h-8 w-8 animate-spin" />
@@ -639,14 +657,14 @@ export const CosmosRackEditorPage = () => {
                 </div>
               </div>
               {/* Rack viewport — measured for dynamic scaling */}
-              <div className="flex-1 overflow-y-auto py-6">
+              <div className="flex-1 overflow-hidden py-4">
                 <div className="mx-auto max-w-xl px-12">
                   {/* Rack frame: border-x-[24px] = side rails, flex-col-reverse = U1 bottom */}
                   <div
                     ref={rackContainerRef}
                     onDragLeave={handleRackContainerDragLeave}
                     onDragEnd={handleDragEnd}
-                    className="relative flex flex-col-reverse rounded-sm border-x-[24px] border-gray-700 bg-gray-700 shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                    className="relative flex flex-col-reverse rounded-sm border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-interior)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-colors duration-500"
                   >
                     {slots.map((u) => {
                       const dev = uMap.get(u);
@@ -671,7 +689,7 @@ export const CosmosRackEditorPage = () => {
                           <div
                             key={u}
                             style={{ flex: `0 0 ${devUHeight * dynamicUPx}px` }}
-                            className="relative flex min-h-0 w-full items-center border-b border-white/5"
+                            className="relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10"
                             onDragEnter={() => handleSlotDragEnter(u)}
                             onDragOver={handleSlotDragOver}
                             onDrop={(e) => handleSlotDrop(e, u)}
@@ -704,7 +722,7 @@ export const CosmosRackEditorPage = () => {
                         <div
                           key={u}
                           style={{ flex: `0 0 ${dynamicUPx}px` }}
-                          className={`relative flex min-h-0 w-full items-center border-b border-white/5 transition-colors ${isHover ? 'bg-brand-500/20' : 'bg-[var(--color-empty-slot)]/5'}`}
+                          className={`relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10 transition-colors ${isHover ? 'bg-brand-500/20' : ''}`}
                           onDragEnter={() => handleSlotDragEnter(u)}
                           onDragOver={handleSlotDragOver}
                           onDrop={(e) => handleSlotDrop(e, u)}
