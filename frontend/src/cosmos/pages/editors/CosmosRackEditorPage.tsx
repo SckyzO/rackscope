@@ -17,7 +17,7 @@ import type { Rack, Device, DeviceTemplate } from '../../../types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const U_PX = 24; // pixels per U (matches RackElevation scale)
+const U_PX = 28; // max pixels per U — dynamic scaling will reduce this
 
 const TYPE_BG: Record<string, string> = {
   server: '#0d1f3c',
@@ -54,10 +54,50 @@ const ICONS: Record<string, React.ElementType> = {
   cooling: Thermometer,
 };
 
-const TypeIcon = ({ type, className }: { type: string; className?: string }) => {
-  const Icon = ICONS[type] ?? Server;
-  return <Icon className={className} />;
+type TypeIconProps = {
+  type: string;
+  className?: string;
+  style?: React.CSSProperties;
 };
+
+const TypeIcon = ({ type, className, style }: TypeIconProps) => {
+  const Icon = ICONS[type] ?? Server;
+  return <Icon className={className} style={style} />;
+};
+
+// ── RackListItem ──────────────────────────────────────────────────────────────
+
+type RackListItemProps = {
+  rack: { id: string; name: string; roomName: string; aisleName: string };
+  selected: boolean;
+  onClick: () => void;
+};
+
+const RackListItem = ({ rack, selected, onClick }: RackListItemProps) => (
+  <button
+    onClick={onClick}
+    className={`flex w-full flex-col rounded-xl px-3 py-2.5 text-left transition-all ${
+      selected ? 'border-brand-500 bg-brand-500/15 border-l-2' : 'hover:bg-white/5'
+    }`}
+  >
+    <span
+      className={`truncate text-xs font-semibold ${selected ? 'text-brand-400' : 'text-gray-300'}`}
+    >
+      {rack.name}
+    </span>
+    <span className="truncate text-[10px] text-gray-600">
+      {rack.roomName} · {rack.aisleName}
+    </span>
+  </button>
+);
+
+// ── RoomGroupHeader ───────────────────────────────────────────────────────────
+
+const RoomGroupHeader = ({ name }: { name: string }) => (
+  <div className="mt-2 mb-1 px-3 text-[10px] font-semibold tracking-wider text-gray-700 uppercase first:mt-0">
+    {name}
+  </div>
+);
 
 // ── TemplateCard ──────────────────────────────────────────────────────────────
 
@@ -101,7 +141,9 @@ type DeviceSlotProps = {
   device: Device;
   template: DeviceTemplate | undefined;
   uHeight: number;
+  uPx: number;
   selected: boolean;
+  flash: boolean;
   dragging: boolean;
   onClick: () => void;
   onDelete: () => void;
@@ -112,7 +154,9 @@ const DeviceSlot = ({
   device,
   template,
   uHeight,
+  uPx,
   selected,
+  flash,
   dragging,
   onClick,
   onDelete,
@@ -125,15 +169,25 @@ const DeviceSlot = ({
       onDragStart={onDragStart}
       onClick={onClick}
       style={{
-        height: uHeight * U_PX,
+        height: uHeight * uPx,
         backgroundColor: TYPE_BG[type] ?? TYPE_BG.other,
-        borderLeft: `3px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}`,
-        outline: selected ? `2px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}` : undefined,
-        outlineOffset: selected ? '1px' : undefined,
+        borderLeft: selected
+          ? `4px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}`
+          : `3px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}`,
+        outline:
+          selected || flash ? `2px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}` : undefined,
+        outlineOffset: selected || flash ? '1px' : undefined,
         opacity: dragging ? 0.4 : 1,
       }}
       className="relative flex w-full cursor-grab items-center gap-2 px-2 transition-all hover:brightness-125 active:cursor-grabbing"
     >
+      {/* Selection pulse indicator */}
+      {selected && (
+        <span
+          className="absolute top-1/2 left-0 h-2 w-2 -translate-y-1/2 animate-pulse rounded-full"
+          style={{ backgroundColor: TYPE_BORDER[type] ?? TYPE_BORDER.other, left: '-10px' }}
+        />
+      )}
       <div className="min-w-0 flex-1">
         <p
           className="truncate text-xs font-semibold"
@@ -143,7 +197,7 @@ const DeviceSlot = ({
         </p>
         {uHeight > 1 && <p className="truncate font-mono text-[10px] text-gray-600">{device.id}</p>}
       </div>
-      {/* Delete button — always visible */}
+      {/* Delete button */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -172,6 +226,7 @@ export const CosmosRackEditorPage = () => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [rackSearch, setRackSearch] = useState('');
   const [dragTemplate, setDragTemplate] = useState<DeviceTemplate | null>(null);
   const [dragDevice, setDragDevice] = useState<Device | null>(null);
   const [dragHoverU, setDragHoverU] = useState<number | null>(null);
@@ -179,8 +234,10 @@ export const CosmosRackEditorPage = () => {
   const dragTemplateRef = useRef<DeviceTemplate | null>(null);
   const dragDeviceRef = useRef<Device | null>(null);
   const rackContainerRef = useRef<HTMLDivElement>(null);
+  const rackViewportRef = useRef<HTMLDivElement>(null);
   const deviceCounterRef = useRef(0);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+  const [selectedFlash, setSelectedFlash] = useState<string | null>(null);
   const [placingTemplate, setPlacingTemplate] = useState<{
     template: DeviceTemplate;
     u: number;
@@ -188,6 +245,19 @@ export const CosmosRackEditorPage = () => {
   const [newDeviceName, setNewDeviceName] = useState('');
   const [newDeviceInstance, setNewDeviceInstance] = useState('');
   const [newDeviceId, setNewDeviceId] = useState('');
+
+  // Dynamic viewport height for rack scaling
+  const [viewportHeight, setViewportHeight] = useState(600);
+
+  useEffect(() => {
+    const el = rackViewportRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      setViewportHeight(entries[0].contentRect.height);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Load all racks + catalog
   useEffect(() => {
@@ -265,6 +335,34 @@ export const CosmosRackEditorPage = () => {
     return map;
   }, [draftDevices, deviceCatalog]);
 
+  // Dynamic U pixel height — scale rack to fill available viewport
+  const uHeight = rack?.u_height ?? 42;
+  const availH = Math.max(200, viewportHeight - 48);
+  const dynamicUPx = Math.max(10, Math.min(U_PX, Math.floor(availH / uHeight)));
+
+  // Filtered rack list
+  const filteredRacks = useMemo(() => {
+    if (!rackSearch.trim()) return allRacks;
+    const q = rackSearch.toLowerCase();
+    return allRacks.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.roomName.toLowerCase().includes(q) ||
+        r.aisleName.toLowerCase().includes(q)
+    );
+  }, [allRacks, rackSearch]);
+
+  // Group filtered racks by room
+  const racksByRoom = useMemo(() => {
+    const groups = new Map<string, typeof filteredRacks>();
+    filteredRacks.forEach((r) => {
+      const existing = groups.get(r.roomName) ?? [];
+      existing.push(r);
+      groups.set(r.roomName, existing);
+    });
+    return groups;
+  }, [filteredRacks]);
+
   // DnD
   const handleDragStart = (e: React.DragEvent, tpl: DeviceTemplate) => {
     e.dataTransfer.effectAllowed = 'copy';
@@ -298,7 +396,6 @@ export const CosmosRackEditorPage = () => {
 
   const handleSlotDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    // 'move' for existing device repositioning, 'copy' for placing a new template
     e.dataTransfer.dropEffect = dragDeviceRef.current ? 'move' : 'copy';
   };
 
@@ -309,11 +406,9 @@ export const CosmosRackEditorPage = () => {
       return;
     }
 
-    // Use refs — state batching can cause stale closures in DnD handlers
     let activeDevice = dragDeviceRef.current;
     const activeTpl = dragTemplateRef.current;
 
-    // Fallback: if ref is empty, try to recover device from dataTransfer id
     if (!activeDevice && !activeTpl) {
       const transferId = e.dataTransfer.getData('text/plain');
       if (transferId) {
@@ -322,7 +417,6 @@ export const CosmosRackEditorPage = () => {
       }
     }
 
-    // Case 1: repositioning an existing device
     if (activeDevice) {
       const h = deviceCatalog[activeDevice.template_id]?.u_height ?? 1;
       const ownSlots = new Set(Array.from({ length: h }, (_, i) => activeDevice.u_position + i));
@@ -342,7 +436,6 @@ export const CosmosRackEditorPage = () => {
       return;
     }
 
-    // Case 2: placing a new template from the library
     if (!activeTpl) {
       setDragHoverU(null);
       return;
@@ -395,6 +488,12 @@ export const CosmosRackEditorPage = () => {
     if (selectedDevice?.id === deviceId) setSelectedDevice(null);
   };
 
+  const handleSelectDevice = (dev: Device) => {
+    setSelectedDevice(dev);
+    setSelectedFlash(dev.id);
+    setTimeout(() => setSelectedFlash(null), 500);
+  };
+
   const handleSave = async () => {
     if (!selectedRackId) return;
     setSaveStatus('saving');
@@ -409,7 +508,6 @@ export const CosmosRackEditorPage = () => {
     }
   };
 
-  const uHeight = rack?.u_height ?? 42;
   const slots = Array.from({ length: uHeight }, (_, i) => i + 1);
   const filteredTemplates = Object.values(deviceCatalog).filter(
     (t) =>
@@ -433,17 +531,6 @@ export const CosmosRackEditorPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <select
-            value={selectedRackId ?? ''}
-            onChange={(e) => setSelectedRackId(e.target.value)}
-            className="focus:border-brand-500 max-w-xs truncate rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-300 focus:outline-none"
-          >
-            {allRacks.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.roomName} / {r.aisleName} / {r.name}
-              </option>
-            ))}
-          </select>
           {dirty && (
             <button
               onClick={() => void handleSave()}
@@ -471,10 +558,49 @@ export const CosmosRackEditorPage = () => {
         </div>
       </div>
 
-      {/* 3-column body */}
+      {/* 4-column body */}
       <div className="flex min-h-0 flex-1">
-        {/* LEFT: Template library */}
-        <aside className="flex w-64 shrink-0 flex-col overflow-hidden border-r border-gray-800 bg-gray-950">
+        {/* COLUMN 1: Rack list (220px) */}
+        <aside className="flex w-[220px] shrink-0 flex-col overflow-hidden border-r border-gray-800 bg-gray-950">
+          <div className="shrink-0 border-b border-gray-800 p-3">
+            <div className="mb-2 px-1 text-[10px] font-semibold tracking-wider text-gray-600 uppercase">
+              Racks
+            </div>
+            <div className="relative">
+              <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-gray-600" />
+              <input
+                value={rackSearch}
+                onChange={(e) => setRackSearch(e.target.value)}
+                placeholder="Search racks..."
+                className="focus:border-brand-500 w-full rounded-xl border border-gray-800 bg-gray-900 py-2 pr-3 pl-8 text-xs text-gray-300 placeholder:text-gray-600 focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-2 py-2">
+            {Array.from(racksByRoom.entries()).map(([roomName, racks]) => (
+              <div key={roomName}>
+                <RoomGroupHeader name={roomName} />
+                {racks.map((r) => (
+                  <RackListItem
+                    key={r.id}
+                    rack={r}
+                    selected={selectedRackId === r.id}
+                    onClick={() => setSelectedRackId(r.id)}
+                  />
+                ))}
+              </div>
+            ))}
+            {filteredRacks.length === 0 && (
+              <p className="px-3 py-4 text-center text-xs text-gray-700">No racks found</p>
+            )}
+          </div>
+          <div className="shrink-0 border-t border-gray-800 px-4 py-2">
+            <p className="text-[10px] text-gray-700">{allRacks.length} racks</p>
+          </div>
+        </aside>
+
+        {/* COLUMN 2: Template library (240px) */}
+        <aside className="flex w-60 shrink-0 flex-col overflow-hidden border-r border-gray-800 bg-gray-950">
           <div className="space-y-2 border-b border-gray-800 p-3">
             <div className="relative">
               <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-600" />
@@ -507,7 +633,7 @@ export const CosmosRackEditorPage = () => {
           </div>
         </aside>
 
-        {/* CENTER: Rack visualization — same style as RackElevation */}
+        {/* COLUMN 3: Rack visualization (flex) */}
         <main className="min-h-0 flex-1 overflow-hidden bg-[var(--color-bg-base)]">
           {!rack ? (
             <div className="flex h-full items-center justify-center">
@@ -527,7 +653,8 @@ export const CosmosRackEditorPage = () => {
                   </span>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto py-6">
+              {/* Rack viewport — measured for dynamic scaling */}
+              <div ref={rackViewportRef} className="flex-1 overflow-hidden py-6">
                 <div className="mx-auto max-w-xl px-12">
                   {/* Rack frame: border-x-[24px] = side rails, flex-col-reverse = U1 bottom */}
                   <div
@@ -558,7 +685,7 @@ export const CosmosRackEditorPage = () => {
                         return (
                           <div
                             key={u}
-                            style={{ flex: `0 0 ${devUHeight * U_PX}px` }}
+                            style={{ flex: `0 0 ${devUHeight * dynamicUPx}px` }}
                             className="relative flex min-h-0 w-full items-center border-b border-white/5"
                             onDragEnter={() => handleSlotDragEnter(u)}
                             onDragOver={handleSlotDragOver}
@@ -575,9 +702,11 @@ export const CosmosRackEditorPage = () => {
                                 device={dev}
                                 template={tpl}
                                 uHeight={devUHeight}
+                                uPx={dynamicUPx}
                                 selected={selectedDevice?.id === dev.id}
+                                flash={selectedFlash === dev.id}
                                 dragging={dragDevice?.id === dev.id}
-                                onClick={() => setSelectedDevice(dev)}
+                                onClick={() => handleSelectDevice(dev)}
                                 onDelete={() => deleteDevice(dev.id)}
                                 onDragStart={(e) => handleDeviceDragStart(e, dev)}
                               />
@@ -589,7 +718,7 @@ export const CosmosRackEditorPage = () => {
                       return (
                         <div
                           key={u}
-                          style={{ flex: `0 0 ${U_PX}px` }}
+                          style={{ flex: `0 0 ${dynamicUPx}px` }}
                           className={`relative flex min-h-0 w-full items-center border-b border-white/5 transition-colors ${isHover ? 'bg-brand-500/20' : 'bg-[var(--color-empty-slot)]/5'}`}
                           onDragEnter={() => handleSlotDragEnter(u)}
                           onDragOver={handleSlotDragOver}
@@ -618,8 +747,8 @@ export const CosmosRackEditorPage = () => {
           )}
         </main>
 
-        {/* RIGHT: Detail / placement form */}
-        <aside className="flex w-72 shrink-0 flex-col overflow-y-auto border-l border-gray-800 bg-gray-950">
+        {/* COLUMN 4: Detail / placement form (280px) */}
+        <aside className="flex w-[280px] shrink-0 flex-col overflow-y-auto border-l border-gray-800 bg-gray-950">
           {placingTemplate ? (
             <div className="space-y-4 p-5">
               <div>
@@ -675,58 +804,81 @@ export const CosmosRackEditorPage = () => {
               </div>
             </div>
           ) : selectedDevice ? (
-            <div className="space-y-4 p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-white">
-                    {selectedDevice.name || selectedDevice.id}
-                  </h3>
-                  <p className="mt-0.5 font-mono text-[10px] text-gray-500">{selectedDevice.id}</p>
+            (() => {
+              const type = deviceCatalog[selectedDevice.template_id]?.type ?? 'other';
+              return (
+                <div className="space-y-4">
+                  {/* Device preview header */}
+                  <div
+                    className="mx-5 mt-5 flex items-center gap-3 rounded-xl p-3"
+                    style={{
+                      backgroundColor: TYPE_BG[type] ?? TYPE_BG.other,
+                      border: `1px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}`,
+                    }}
+                  >
+                    <TypeIcon
+                      type={type}
+                      className="h-5 w-5 shrink-0"
+                      style={{ color: TYPE_TEXT[type] }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold" style={{ color: TYPE_TEXT[type] }}>
+                        {selectedDevice.name || selectedDevice.id}
+                      </p>
+                      <p className="text-[10px] text-gray-600">
+                        {type} · U{selectedDevice.u_position}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedDevice(null)}
+                      className="shrink-0 text-gray-600 hover:text-gray-300"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {/* Info fields */}
+                  <div className="mx-5 space-y-2 rounded-xl border border-gray-800 bg-gray-900 p-3">
+                    {[
+                      { label: 'U Position', value: `U${selectedDevice.u_position}` },
+                      {
+                        label: 'Template',
+                        value:
+                          deviceCatalog[selectedDevice.template_id]?.name ??
+                          selectedDevice.template_id,
+                      },
+                      { label: 'Type', value: type },
+                      {
+                        label: 'Height',
+                        value: `${deviceCatalog[selectedDevice.template_id]?.u_height ?? 1}U`,
+                      },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500">{label}</span>
+                        <span className="font-mono text-gray-300">{value}</span>
+                      </div>
+                    ))}
+                    {selectedDevice.instance && (
+                      <div className="flex items-start justify-between gap-2 text-xs">
+                        <span className="shrink-0 text-gray-500">Instance</span>
+                        <span className="text-right font-mono break-all text-gray-300">
+                          {typeof selectedDevice.instance === 'string'
+                            ? selectedDevice.instance
+                            : JSON.stringify(selectedDevice.instance)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="px-5 pb-5">
+                    <button
+                      onClick={() => deleteDevice(selectedDevice.id)}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/20"
+                    >
+                      <X className="h-4 w-4" /> Remove Device
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => setSelectedDevice(null)}
-                  className="text-gray-600 hover:text-gray-300"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="space-y-2 rounded-xl border border-gray-800 bg-gray-900 p-3">
-                {[
-                  { label: 'U Position', value: `U${selectedDevice.u_position}` },
-                  {
-                    label: 'Template',
-                    value:
-                      deviceCatalog[selectedDevice.template_id]?.name ?? selectedDevice.template_id,
-                  },
-                  { label: 'Type', value: deviceCatalog[selectedDevice.template_id]?.type ?? '—' },
-                  {
-                    label: 'Height',
-                    value: `${deviceCatalog[selectedDevice.template_id]?.u_height ?? 1}U`,
-                  },
-                ].map(({ label, value }) => (
-                  <div key={label} className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500">{label}</span>
-                    <span className="font-mono text-gray-300">{value}</span>
-                  </div>
-                ))}
-                {selectedDevice.instance && (
-                  <div className="flex items-start justify-between gap-2 text-xs">
-                    <span className="shrink-0 text-gray-500">Instance</span>
-                    <span className="text-right font-mono break-all text-gray-300">
-                      {typeof selectedDevice.instance === 'string'
-                        ? selectedDevice.instance
-                        : JSON.stringify(selectedDevice.instance)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => deleteDevice(selectedDevice.id)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/20"
-              >
-                <X className="h-4 w-4" /> Remove Device
-              </button>
-            </div>
+              );
+            })()
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
               <Server className="h-10 w-10 text-gray-800" />
