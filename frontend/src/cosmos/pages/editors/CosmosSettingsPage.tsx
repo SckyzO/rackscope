@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Save, Check, AlertCircle, Loader2, Settings } from 'lucide-react';
 import { useSettingsConfig } from '../../../components/settings/useSettingsConfig';
 import { AppSettingsSection } from '../../../components/settings/sections/AppSettingsSection';
@@ -8,22 +9,33 @@ import { PluginsSettingsSection } from '../../../components/settings/sections/Pl
 
 type TabId = 'general' | 'telemetry' | 'planner' | 'plugins';
 
-interface Tab {
-  id: TabId;
-  label: string;
-}
-
-const TABS: Tab[] = [
+const TABS: { id: TabId; label: string }[] = [
   { id: 'general', label: 'General' },
   { id: 'telemetry', label: 'Telemetry' },
   { id: 'planner', label: 'Planner' },
   { id: 'plugins', label: 'Plugins' },
 ];
 
+const TAB_IDS = TABS.map((t) => t.id);
+
 export const CosmosSettingsPage: React.FC = () => {
   const { draft, setDraft, loading, saving, saved, saveConfig } = useSettingsConfig();
-  const [activeTab, setActiveTab] = useState<TabId>('general');
+  const location = useLocation();
+  const navigate = useNavigate();
   const [saveError, setSaveError] = useState(false);
+
+  // Derive active tab from URL hash
+  const hashTab = location.hash.replace('#', '') as TabId;
+  const activeTab: TabId = TAB_IDS.includes(hashTab) ? hashTab : 'general';
+
+  const handleTabChange = (tabId: TabId) => {
+    navigate(`${location.pathname}#${tabId}`, { replace: true });
+  };
+
+  // Set hash to 'general' on first mount if no hash
+  useEffect(() => {
+    if (!location.hash) navigate(`${location.pathname}#general`, { replace: true });
+  }, [location.hash, location.pathname, navigate]);
 
   const handleSave = async () => {
     setSaveError(false);
@@ -119,7 +131,7 @@ export const CosmosSettingsPage: React.FC = () => {
             {TABS.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`relative px-4 py-3.5 text-sm font-medium transition-colors ${
                   activeTab === tab.id
                     ? 'text-brand-500'

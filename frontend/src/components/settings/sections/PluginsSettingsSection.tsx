@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ExternalLink, ChevronDown, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ChevronDown, ChevronRight, Play, Trash2, Plus, RefreshCw } from 'lucide-react';
+import { api } from '../../../services/api';
+import type { SimulatorScenario, SimulatorOverride } from '../../../types';
 import { FormField } from '../common/FormField';
 import { FormToggle } from '../common/FormToggle';
 import type { ConfigDraft } from '../useSettingsConfig';
@@ -16,6 +17,72 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 }) => {
   const [simulatorSettingsOpen, setSimulatorSettingsOpen] = useState(false);
   const [slurmSettingsOpen, setSlurmSettingsOpen] = useState(false);
+
+  // Simulator control panel state
+  const [scenarios, setScenarios] = useState<SimulatorScenario[]>([]);
+  const [overrides, setOverrides] = useState<SimulatorOverride[]>([]);
+  const [activeScenario, setActiveScenario] = useState('');
+  const [applying, setApplying] = useState(false);
+  const [showAddOverride, setShowAddOverride] = useState(false);
+  const [newOverride, setNewOverride] = useState({ instance: '', metric: 'up', value: '0' });
+
+  const loadSimulatorData = useCallback(async () => {
+    try {
+      const [scenariosData, overridesData, config] = await Promise.all([
+        api.getSimulatorScenarios(),
+        api.getSimulatorOverrides(),
+        api.getConfig(),
+      ]);
+      setScenarios(scenariosData.scenarios ?? []);
+      setOverrides(overridesData.overrides ?? []);
+      setActiveScenario(config.plugins?.simulator?.scenario ?? '');
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSimulatorData();
+  }, [loadSimulatorData]);
+
+  const handleApplyScenario = async () => {
+    if (!draft.plugins.simulator.scenario || applying) return;
+    setApplying(true);
+    try {
+      const config = await api.getConfig();
+      await api.updateConfig({
+        ...config,
+        plugins: {
+          ...config.plugins,
+          simulator: { ...config.plugins.simulator, scenario: draft.plugins.simulator.scenario },
+        },
+      });
+      await api.restartBackend().catch(() => {});
+      setActiveScenario(draft.plugins.simulator.scenario);
+      setTimeout(() => window.location.reload(), 2000);
+    } catch {
+      /* ignore */
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const handleAddOverride = async () => {
+    try {
+      await api.addSimulatorOverride({
+        instance: newOverride.instance || null,
+        rack_id: null,
+        metric: newOverride.metric,
+        value: parseFloat(newOverride.value),
+        ttl_seconds: 0,
+      });
+      await loadSimulatorData();
+      setShowAddOverride(false);
+      setNewOverride({ instance: '', metric: 'up', value: '0' });
+    } catch {
+      /* ignore */
+    }
+  };
 
   const updateSimulator = (
     field: string,
@@ -201,12 +268,65 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               onChange={(value) => updateSimulator('seed', value)}
               placeholder="Leave empty for random"
             />
-            <FormField
-              label="Scenario"
-              value={draft.plugins.simulator.scenario}
-              onChange={(value) => updateSimulator('scenario', value)}
-              placeholder="full-ok, demo-small, random-demo-small"
-            />
+            {/* Scenario — dropdown */}
+            <div className="space-y-1">
+              <label
+                className="block text-xs font-bold tracking-wider uppercase"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                Scenario
+                {activeScenario && (
+                  <span
+                    className="ml-2 font-mono normal-case"
+                    style={{ color: 'var(--color-accent)' }}
+                  >
+                    (active: {activeScenario})
+                  </span>
+                )}
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={draft.plugins.simulator.scenario}
+                  onChange={(e) => updateSimulator('scenario', e.target.value)}
+                  className="flex-1 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
+                  style={{
+                    backgroundColor: 'var(--color-bg-elevated)',
+                    color: 'var(--color-text-base)',
+                  }}
+                >
+                  {scenarios.length === 0 && (
+                    <option value={draft.plugins.simulator.scenario}>
+                      {draft.plugins.simulator.scenario || 'Loading...'}
+                    </option>
+                  )}
+                  {scenarios.map((s) => (
+                    <option key={s.name} value={s.name}>
+                      {s.name} — {s.description}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleApplyScenario}
+                  disabled={draft.plugins.simulator.scenario === activeScenario || applying}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold uppercase transition disabled:opacity-40"
+                  style={{
+                    backgroundColor: 'var(--color-accent)',
+                    color: 'var(--color-text-inverse)',
+                  }}
+                >
+                  {applying ? (
+                    <RefreshCw className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Play className="h-3 w-3" />
+                  )}
+                  {applying ? 'Applying...' : 'Apply'}
+                </button>
+              </div>
+              {draft.plugins.simulator.scenario !== activeScenario && (
+                <p className="text-xs text-yellow-500">Apply will restart the backend</p>
+              )}
+            </div>
+
             <FormField
               label="Scale Factor"
               value={draft.plugins.simulator.scale_factor}
@@ -382,24 +502,148 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               </div>
             </div>
 
-            <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
-              <h4 className="mb-2 font-mono text-xs font-bold tracking-wider text-blue-400 uppercase">
-                Simulator Control Panel
-              </h4>
-              <p className="mb-3 text-xs text-[var(--color-text-base)]">
-                Manage test scenarios and metric overrides from the dedicated control panel.
-              </p>
-              <Link
-                to="/simulator"
-                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold uppercase transition"
-                style={{
-                  backgroundColor: 'var(--color-accent)',
-                  color: 'var(--color-text-inverse)',
-                }}
-              >
-                <ExternalLink className="h-4 w-4" />
-                Open Control Panel
-              </Link>
+            {/* ── Metric Overrides ── */}
+            <div className="space-y-3 border-t border-[var(--color-border)] pt-4">
+              <div className="flex items-center justify-between">
+                <h4
+                  className="font-mono text-xs font-bold tracking-wider uppercase"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  Metric Overrides
+                </h4>
+                <div className="flex gap-2">
+                  <button
+                    onClick={loadSimulatorData}
+                    className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs transition"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    <RefreshCw className="h-3 w-3" /> Refresh
+                  </button>
+                  {overrides.length > 0 && (
+                    <button
+                      onClick={() =>
+                        api
+                          .clearSimulatorOverrides()
+                          .then(loadSimulatorData)
+                          .catch(() => {})
+                      }
+                      className="flex items-center gap-1.5 rounded-lg border border-red-500/50 px-2.5 py-1 text-xs text-red-400 transition hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-3 w-3" /> Clear All
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowAddOverride((p) => !p)}
+                    className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition"
+                    style={{
+                      backgroundColor: 'var(--color-accent)',
+                      color: 'var(--color-text-inverse)',
+                    }}
+                  >
+                    <Plus className="h-3 w-3" /> Add
+                  </button>
+                </div>
+              </div>
+
+              {showAddOverride && (
+                <div
+                  className="space-y-2 rounded-lg border border-[var(--color-border)] p-3"
+                  style={{ backgroundColor: 'var(--color-bg-elevated)' }}
+                >
+                  <input
+                    type="text"
+                    value={newOverride.instance}
+                    onChange={(e) => setNewOverride((p) => ({ ...p, instance: e.target.value }))}
+                    placeholder="Instance (e.g. compute001)"
+                    className="w-full rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs"
+                    style={{
+                      backgroundColor: 'var(--color-bg-elevated)',
+                      color: 'var(--color-text-base)',
+                    }}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={newOverride.metric}
+                      onChange={(e) => setNewOverride((p) => ({ ...p, metric: e.target.value }))}
+                      placeholder="Metric (e.g. up)"
+                      className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs"
+                      style={{
+                        backgroundColor: 'var(--color-bg-elevated)',
+                        color: 'var(--color-text-base)',
+                      }}
+                    />
+                    <input
+                      type="number"
+                      value={newOverride.value}
+                      onChange={(e) => setNewOverride((p) => ({ ...p, value: e.target.value }))}
+                      placeholder="Value"
+                      className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs"
+                      style={{
+                        backgroundColor: 'var(--color-bg-elevated)',
+                        color: 'var(--color-text-base)',
+                      }}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAddOverride}
+                      className="flex-1 rounded-lg py-1.5 text-xs font-bold uppercase"
+                      style={{ backgroundColor: '#22c55e', color: 'var(--color-text-inverse)' }}
+                    >
+                      Add Override
+                    </button>
+                    <button
+                      onClick={() => setShowAddOverride(false)}
+                      className="flex-1 rounded-lg border border-[var(--color-border)] py-1.5 text-xs font-bold uppercase"
+                      style={{ color: 'var(--color-text-secondary)' }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {overrides.length === 0 ? (
+                <p className="text-center text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                  No active overrides
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {overrides.map((ov) => (
+                    <div
+                      key={ov.id}
+                      className="flex items-center justify-between rounded-lg border border-[var(--color-border)] px-3 py-2"
+                      style={{ backgroundColor: 'var(--color-bg-elevated)' }}
+                    >
+                      <span className="font-mono text-xs">
+                        <span style={{ color: 'var(--color-accent)' }}>
+                          {ov.instance ?? ov.rack_id}
+                        </span>
+                        <span className="mx-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                          →
+                        </span>
+                        <span style={{ color: '#f59e0b' }}>{ov.metric}</span>
+                        <span className="mx-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                          =
+                        </span>
+                        <span style={{ color: 'var(--color-text-primary)' }}>{ov.value}</span>
+                      </span>
+                      <button
+                        onClick={() =>
+                          api
+                            .deleteSimulatorOverride(ov.id)
+                            .then(loadSimulatorData)
+                            .catch(() => {})
+                        }
+                        className="text-red-500 hover:text-red-400"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

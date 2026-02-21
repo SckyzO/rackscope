@@ -187,6 +187,7 @@ export const CosmosRouter = () => (
 
       {/* ── Editors ── */}
       <Route path="editors/settings" element={<CosmosSettingsPage />} />
+      <Route path="settings" element={<CosmosSettingsPage />} />
       <Route path="editors/checks" element={<CosmosChecksEditorPage />} />
       <Route path="editors/topology" element={<CosmosTopologyEditorPage />} />
       <Route path="editors/topology-v2" element={<CosmosTopologyEditorPageV2 />} />

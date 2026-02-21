@@ -375,12 +375,7 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
           label="Checks Library"
           collapsed={collapsed}
         />
-        <NavItem
-          to="/cosmos/editors/settings"
-          icon={Settings}
-          label="Settings"
-          collapsed={collapsed}
-        />
+        <NavItem to="/cosmos/settings" icon={Settings} label="Settings" collapsed={collapsed} />
 
         <SectionLabel label="Charts" collapsed={collapsed} />
         <NavItem to="/cosmos/charts" icon={LineChart} label="Charts" collapsed={collapsed} />

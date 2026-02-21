@@ -175,6 +175,12 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
           checked={draft.features.offline}
           onChange={(value) => update('features', 'offline', value)}
         />
+        <FormToggle
+          label="Demo Mode"
+          description="Enable demonstration mode — uses the Simulator plugin as the data source"
+          checked={draft.features.demo}
+          onChange={(value) => update('features', 'demo', value)}
+        />
       </FormSection>
     </div>
   );
