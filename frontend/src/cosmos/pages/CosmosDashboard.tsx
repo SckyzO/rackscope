@@ -316,6 +316,7 @@ export const CosmosDashboard = () => {
     const stored = localStorage.getItem('cosmos-dash-alert-limit');
     return stored ? Number(stored) : 5;
   });
+  const [alertPage, setAlertPage] = useState(0);
   const [alertStateFilter, setAlertStateFilter] = useState<string>('all');
   const [alertRoomFilter, setAlertRoomFilter] = useState<string>('all');
 
@@ -468,11 +469,17 @@ export const CosmosDashboard = () => {
   }, {});
 
   // Filtered alerts
-  const filteredAlerts = alerts
+  // All filtered alerts (no pagination slice — used for total count + pagination)
+  const filteredAlertsAll = alerts
     .filter((a) => alertStateFilter === 'all' || a.state === alertStateFilter)
     .filter((a) => alertRoomFilter === 'all' || a.room_id === alertRoomFilter)
-    .sort((a, b) => (a.state === 'CRIT' ? -1 : 1) - (b.state === 'CRIT' ? -1 : 1))
-    .slice(0, alertLimit);
+    .sort((a, b) => (a.state === 'CRIT' ? -1 : 1) - (b.state === 'CRIT' ? -1 : 1));
+  const totalAlertPages = Math.max(1, Math.ceil(filteredAlertsAll.length / alertLimit));
+  const safeAlertPage = Math.min(alertPage, totalAlertPages - 1);
+  const filteredAlerts = filteredAlertsAll.slice(
+    safeAlertPage * alertLimit,
+    (safeAlertPage + 1) * alertLimit
+  );
 
   // Prometheus next scrape countdown
   const [now, setNow] = useState(Date.now());
@@ -631,7 +638,10 @@ export const CosmosDashboard = () => {
                 {['all', 'CRIT', 'WARN'].map((f) => (
                   <button
                     key={f}
-                    onClick={() => setAlertStateFilter(f)}
+                    onClick={() => {
+                      setAlertStateFilter(f);
+                      setAlertPage(0);
+                    }}
                     className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors ${
                       alertStateFilter === f
                         ? 'bg-brand-500 text-white'
@@ -646,7 +656,10 @@ export const CosmosDashboard = () => {
               {allRooms.length > 1 && (
                 <select
                   value={alertRoomFilter}
-                  onChange={(e) => setAlertRoomFilter(e.target.value)}
+                  onChange={(e) => {
+                    setAlertRoomFilter(e.target.value);
+                    setAlertPage(0);
+                  }}
                   className="rounded-lg border border-gray-200 bg-white px-2 py-0.5 text-[11px] text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
                 >
                   <option value="all">All rooms</option>
@@ -662,7 +675,10 @@ export const CosmosDashboard = () => {
                 <span>Show</span>
                 <select
                   value={alertLimit}
-                  onChange={(e) => setAlertLimit(Number(e.target.value))}
+                  onChange={(e) => {
+                    setAlertLimit(Number(e.target.value));
+                    setAlertPage(0);
+                  }}
                   className="rounded-lg border border-gray-200 bg-white px-2 py-0.5 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
                 >
                   {[5, 10, 20, 50, 100].map((n) => (
@@ -683,15 +699,50 @@ export const CosmosDashboard = () => {
                 <p className="text-xs text-gray-400 dark:text-gray-600">No active alerts</p>
               </div>
             ) : (
-              <div className="max-h-72 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
-                {filteredAlerts.map((alert, i) => (
-                  <AlertRow
-                    key={i}
-                    alert={alert}
-                    onClick={() => navigate(`/cosmos/views/rack/${alert.rack_id}`)}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {filteredAlerts.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 py-8">
+                      <CheckCircle className="h-7 w-7 text-green-400" />
+                      <p className="text-sm text-gray-400">No alerts match the current filters</p>
+                    </div>
+                  ) : (
+                    filteredAlerts.map((alert, i) => (
+                      <AlertRow
+                        key={i}
+                        alert={alert}
+                        onClick={() => navigate(`/cosmos/views/rack/${alert.rack_id}`)}
+                      />
+                    ))
+                  )}
+                </div>
+
+                {/* Pagination footer */}
+                {filteredAlertsAll.length > alertLimit && (
+                  <div className="flex items-center justify-between border-t border-gray-100 px-5 py-2.5 dark:border-gray-800">
+                    <button
+                      onClick={() => setAlertPage((p) => Math.max(0, p - 1))}
+                      disabled={safeAlertPage === 0}
+                      className="rounded-lg border border-gray-200 px-3 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-30 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+                    >
+                      ← Prev
+                    </button>
+                    <span className="text-xs text-gray-400">
+                      Page {safeAlertPage + 1} / {totalAlertPages}
+                      <span className="ml-2 text-gray-300 dark:text-gray-600">
+                        ({filteredAlertsAll.length} total)
+                      </span>
+                    </span>
+                    <button
+                      onClick={() => setAlertPage((p) => Math.min(totalAlertPages - 1, p + 1))}
+                      disabled={safeAlertPage >= totalAlertPages - 1}
+                      className="rounded-lg border border-gray-200 px-3 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-30 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
