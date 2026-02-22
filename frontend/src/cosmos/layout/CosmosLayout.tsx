@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { CosmosSidebar } from './CosmosSidebar';
 import { CosmosHeader } from './CosmosHeader';
@@ -12,15 +12,10 @@ export const CosmosLayout = () => {
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Sync Cosmos dark mode to html.dark so Tailwind dark: utilities work correctly.
-  // Rackscope's ThemeContext will re-apply its own state when we navigate back.
-  useEffect(() => {
-    const htmlEl = document.documentElement;
-    if (isDark) {
-      htmlEl.classList.add('dark');
-    } else {
-      htmlEl.classList.remove('dark');
-    }
+  // useLayoutEffect — synchronous before paint, so html.dark and cosmos-root.dark
+  // are applied in the same frame, eliminating the sidebar/header colour lag.
+  useLayoutEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
     localStorage.setItem('cosmos-dark-mode', String(isDark));
   }, [isDark]);
 
