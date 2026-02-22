@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { CosmosLayout } from './layout/CosmosLayout';
-import { CosmosAnalytics } from './pages/CosmosAnalytics';
+import { CosmosDashboard } from './pages/CosmosDashboard';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 // UI Elements
@@ -104,7 +104,7 @@ export const CosmosRouter = () => (
     <Route path="auth/signup" element={<SignUpPage />} />
 
     <Route element={<CosmosLayout />}>
-      <Route index element={<CosmosAnalytics />} />
+      <Route index element={<CosmosDashboard />} />
 
       {/* UI Elements */}
       <Route path="ui/buttons-group" element={<ButtonsGroupPage />} />
