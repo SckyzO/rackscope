@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import {
   Server,
@@ -86,7 +87,8 @@ type WidgetType =
   | 'check-summary'
   | 'device-types'
   | 'slurm-nodes'
-  | 'slurm-utilization';
+  | 'slurm-utilization'
+  | 'world-map';
 
 type WidgetConfig = {
   id: string;
@@ -188,7 +190,7 @@ const ROW_SPAN_CLASS: Record<number, string> = {
 // Minimum row height in pixels (grid-auto-rows: minmax(ROW_PX, auto))
 const ROW_PX = 140;
 // Increment whenever DEFAULT_WIDGETS structure changes to invalidate stale localStorage saves
-const WIDGET_LAYOUT_VERSION = '3';
+const WIDGET_LAYOUT_VERSION = '4';
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'stat-sites', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'sites' },
   { id: 'stat-rooms', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'rooms' },
@@ -201,8 +203,9 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'prometheus', type: 'prometheus', colSpan: 4, rowSpan: 2 },
   { id: 'alerts', type: 'active-alerts', colSpan: 8, rowSpan: 3 },
   { id: 'infra', type: 'infrastructure', colSpan: 4, rowSpan: 2 },
-  { id: 'slurm', type: 'slurm-cluster', colSpan: 8, rowSpan: 2 },
-  { id: 'catalog', type: 'catalog-checks', colSpan: 4, rowSpan: 2 },
+  { id: 'worldmap', type: 'world-map', colSpan: 6, rowSpan: 3 },
+  { id: 'slurm', type: 'slurm-cluster', colSpan: 6, rowSpan: 2 },
+  { id: 'catalog', type: 'catalog-checks', colSpan: 6, rowSpan: 2 },
 ];
 
 const WIDGET_CATALOG: WidgetDefinition[] = [
@@ -341,6 +344,13 @@ const WIDGET_CATALOG: WidgetDefinition[] = [
     defaultColSpan: 6,
     icon: Activity,
     requiresSlurm: true,
+  },
+  {
+    type: 'world-map',
+    title: 'World Map',
+    description: 'Mini map with site markers and health states',
+    defaultColSpan: 6,
+    icon: Globe,
   },
 ];
 
@@ -1397,6 +1407,97 @@ const SlurmUtilizationWidget = ({ data }: { data: DashboardData }) => {
   );
 };
 
+// ── Widget: WorldMap ──────────────────────────────────────────────────────────
+
+const WorldMapWidget = ({
+  data,
+  navigate,
+}: {
+  data: DashboardData;
+  navigate: (path: string) => void;
+}) => {
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+
+  useEffect(() => {
+    const obs = new MutationObserver(() =>
+      setIsDark(document.documentElement.classList.contains('dark'))
+    );
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+
+  const geoSites = data.sites.filter((s) => s.location?.lat != null && s.location?.lon != null);
+  const tileUrl = isDark
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      {/* Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+        <div className="flex items-center gap-2">
+          <Globe className="text-brand-500 h-4 w-4" />
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">World Map</p>
+          {geoSites.length > 0 && (
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800">
+              {geoSites.length} site{geoSites.length > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={() => navigate('/cosmos/views/worldmap')}
+          className="text-brand-500 text-xs hover:underline"
+        >
+          Full map →
+        </button>
+      </div>
+
+      {/* Map */}
+      <div className="min-h-0 flex-1">
+        {geoSites.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-xs text-gray-400">
+            <Globe className="h-6 w-6 text-gray-200 dark:text-gray-700" />
+            No sites with coordinates
+          </div>
+        ) : (
+          <MapContainer
+            key={String(isDark)}
+            center={[20, 10]}
+            zoom={1}
+            scrollWheelZoom={false}
+            zoomControl={false}
+            attributionControl={false}
+            style={{ height: '100%', width: '100%' }}
+          >
+            <TileLayer url={tileUrl} />
+            {geoSites.map((site) => (
+              <CircleMarker
+                key={site.id}
+                center={[site.location!.lat, site.location!.lon]}
+                radius={9}
+                fillColor="#465fff"
+                color="#3641f5"
+                weight={2}
+                opacity={1}
+                fillOpacity={0.85}
+                eventHandlers={{ click: () => navigate('/cosmos/views/worldmap') }}
+              >
+                <Popup>
+                  <span className="font-semibold">{site.name}</span>
+                  <br />
+                  <span className="text-gray-500">
+                    {site.rooms?.length ?? 0} room{(site.rooms?.length ?? 0) !== 1 ? 's' : ''}
+                  </span>
+                </Popup>
+              </CircleMarker>
+            ))}
+          </MapContainer>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ── Widget renderer ───────────────────────────────────────────────────────────
 
 type WidgetRendererProps = {
@@ -1445,6 +1546,8 @@ const WidgetContent = ({ widget, data, navigate }: WidgetRendererProps) => {
       return <SlurmNodesWidget data={data} />;
     case 'slurm-utilization':
       return <SlurmUtilizationWidget data={data} />;
+    case 'world-map':
+      return <WorldMapWidget data={data} navigate={navigate} />;
     default:
       return null;
   }
@@ -1489,7 +1592,7 @@ const WidgetPicker = ({
     {
       label: 'Monitoring',
       defs: available.filter((d) =>
-        ['active-alerts', 'recent-alerts', 'node-heatmap'].includes(d.type)
+        ['active-alerts', 'recent-alerts', 'node-heatmap', 'world-map'].includes(d.type)
       ),
     },
     {
