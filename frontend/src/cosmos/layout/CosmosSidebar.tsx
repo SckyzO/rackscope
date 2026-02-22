@@ -143,9 +143,9 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
 
   return (
     <aside
-      className={`cosmos-scrollbar cosmos-theme-bg dark:bg-gray-dark flex flex-col overflow-y-auto border-r border-gray-200 bg-white dark:border-gray-800 ${
+      className={`cosmos-scrollbar cosmos-sidebar dark:bg-gray-dark flex shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r border-gray-200 bg-white dark:border-gray-800 ${
         collapsed ? 'w-[90px]' : 'w-[290px]'
-      } [transition:width_300ms_ease,background-color_500ms_ease,border-color_500ms_ease,color_500ms_ease]`}
+      }`}
     >
       {/* Logo */}
       <div className="flex h-[72px] shrink-0 items-center border-b border-gray-200 px-4 dark:border-gray-800">
