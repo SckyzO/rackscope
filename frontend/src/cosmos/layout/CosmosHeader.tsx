@@ -1,18 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  Moon,
-  Sun,
-  Bell,
-  ChevronDown,
-  User,
-  Search,
-  X,
-  AlertTriangle,
-  XCircle,
-} from 'lucide-react';
+import { Moon, Sun, Bell, ChevronDown, User, AlertTriangle, XCircle } from 'lucide-react';
 import { api } from '../../services/api';
 import type { ActiveAlert } from '../../types';
+import { CosmosSearch } from './CosmosSearch';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/cosmos': 'Analytics Dashboard',
@@ -68,7 +59,6 @@ export const CosmosHeader = ({
   const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
   const [seenCount, setSeenCount] = useState(0);
 
@@ -133,26 +123,7 @@ export const CosmosHeader = ({
       </div>
 
       {/* Center: search */}
-      <div className="mx-6 hidden max-w-md flex-1 lg:block">
-        <div className="relative">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search..."
-            className="focus:border-brand-500 dark:focus:border-brand-500 h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pr-4 pl-10 text-sm text-gray-700 placeholder:text-gray-400 focus:bg-white focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:placeholder:text-gray-500 dark:focus:bg-gray-800"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      </div>
+      <CosmosSearch />
 
       {/* Right: actions */}
       <div className="flex items-center gap-2">
