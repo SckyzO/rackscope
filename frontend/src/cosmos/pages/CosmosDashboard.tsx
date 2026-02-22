@@ -20,6 +20,8 @@ import {
   BarChart2,
   LayoutDashboard,
   GripVertical,
+  Check,
+  Undo2,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import type {
@@ -352,7 +354,7 @@ type StatCardProps = {
 };
 
 const StatCard = ({ icon: Icon, label, value, color, sub }: StatCardProps) => (
-  <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+  <div className="flex h-full items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
     <div
       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
       style={{ backgroundColor: `${color}18` }}
@@ -572,7 +574,7 @@ const WidgetPlaceholder = ({ title, icon: Icon }: { title: string; icon: React.E
 // ── Widget: StatsRow ──────────────────────────────────────────────────────────
 
 const StatsRowWidget = ({ data }: { data: DashboardData }) => (
-  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+  <div className="grid h-full grid-cols-2 items-stretch gap-3 sm:grid-cols-3 lg:grid-cols-6">
     <StatCard icon={Globe} label="Sites" value={data.sites.length} color="#465fff" />
     <StatCard icon={DoorOpen} label="Rooms" value={data.totalRooms} color="#8b5cf6" />
     <StatCard icon={Server} label="Racks" value={data.totalRacks} color="#06b6d4" />
@@ -653,7 +655,7 @@ const StatCardWidget = ({ data, statKey }: { data: DashboardData; statKey?: stri
 // ── Widget: HealthGauge ───────────────────────────────────────────────────────
 
 const HealthGaugeWidget = ({ data }: { data: DashboardData }) => (
-  <div className="flex items-center gap-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+  <div className="flex h-full items-center gap-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
     <HealthGauge score={data.healthScore} />
     <div>
       <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Health Score</p>
@@ -682,7 +684,7 @@ const HealthGaugeWidget = ({ data }: { data: DashboardData }) => (
 // ── Widget: SeverityDonut ─────────────────────────────────────────────────────
 
 const SeverityDonutWidget = ({ data }: { data: DashboardData }) => (
-  <div className="flex items-center gap-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+  <div className="flex h-full items-center gap-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
     <SeverityDonut slices={data.donutSlices} />
     <div className="flex-1 space-y-2">
       <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -717,8 +719,8 @@ const ActiveAlertsWidget = ({
   data: DashboardData;
   navigate: (path: string) => void;
 }) => (
-  <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-    <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
+  <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+    <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
       <div className="flex items-center gap-2">
         <XCircle className="h-4 w-4 text-red-500" />
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Active Alerts</h2>
@@ -734,7 +736,7 @@ const ActiveAlertsWidget = ({
       </button>
     </div>
 
-    <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 px-5 pt-2 pb-3 dark:border-gray-800">
+    <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-gray-100 px-5 pt-2 pb-3 dark:border-gray-800">
       <div className="flex gap-1">
         {['all', 'CRIT', 'WARN'].map((f) => (
           <button
@@ -790,14 +792,14 @@ const ActiveAlertsWidget = ({
     </div>
 
     {data.alerts.length === 0 ? (
-      <div className="flex flex-col items-center gap-2 py-10">
+      <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10">
         <CheckCircle className="h-8 w-8 text-green-400" />
         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">All systems healthy</p>
         <p className="text-xs text-gray-400 dark:text-gray-600">No active alerts</p>
       </div>
     ) : (
       <>
-        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="flex-1 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
           {data.filteredAlerts.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-8">
               <CheckCircle className="h-7 w-7 text-green-400" />
@@ -814,7 +816,7 @@ const ActiveAlertsWidget = ({
           )}
         </div>
         {data.filteredAlertsAll.length > data.alertLimit && (
-          <div className="flex items-center justify-between border-t border-gray-100 px-5 py-2.5 dark:border-gray-800">
+          <div className="flex shrink-0 items-center justify-between border-t border-gray-100 px-5 py-2.5 dark:border-gray-800">
             <button
               onClick={() => data.setAlertPage(Math.max(0, data.safeAlertPage - 1))}
               disabled={data.safeAlertPage === 0}
@@ -858,8 +860,8 @@ const SlurmClusterWidget = ({
   const slurmStatus = data.slurm.by_status ?? {};
   const slurmSevs = data.slurm.by_severity ?? {};
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-purple-500" />
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Slurm Cluster</h2>
@@ -874,53 +876,58 @@ const SlurmClusterWidget = ({
           Details →
         </button>
       </div>
-      <div className="space-y-4 p-5">
-        <div className="space-y-1.5">
-          <div className="flex h-6 w-full overflow-hidden rounded-full">
-            {Object.entries(slurmStatus)
-              .filter(([, v]) => v > 0)
-              .map(([st, count]) => (
-                <div
-                  key={st}
-                  title={`${st}: ${count}`}
-                  className="h-full transition-all"
-                  style={{
-                    width: `${(count / slurmTotal) * 100}%`,
-                    backgroundColor: STATUS_COLOR[st.toLowerCase()] ?? '#6b7280',
-                  }}
-                />
-              ))}
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {Object.entries(slurmStatus)
-              .filter(([, v]) => v > 0)
-              .map(([st, count]) => (
-                <div
-                  key={st}
-                  className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
-                >
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: STATUS_COLOR[st.toLowerCase()] ?? '#6b7280' }}
+      <div className="flex-1 overflow-y-auto">
+        <div className="space-y-4 p-5">
+          <div className="space-y-1.5">
+            <div className="flex h-6 w-full overflow-hidden rounded-full">
+              {Object.entries(slurmStatus)
+                .filter(([, v]) => v > 0)
+                .map(([st, count]) => (
+                  <div
+                    key={st}
+                    title={`${st}: ${count}`}
+                    className="h-full transition-all"
+                    style={{
+                      width: `${(count / slurmTotal) * 100}%`,
+                      backgroundColor: STATUS_COLOR[st.toLowerCase()] ?? '#6b7280',
+                    }}
                   />
-                  <span className="capitalize">{st}</span>
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">{count}</span>
-                </div>
-              ))}
-          </div>
-        </div>
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { label: 'Total', value: slurmTotal, color: 'text-gray-500' },
-            { label: 'CRIT', value: slurmSevs['CRIT'] ?? 0, color: 'text-red-500' },
-            { label: 'WARN', value: slurmSevs['WARN'] ?? 0, color: 'text-amber-500' },
-            { label: 'OK', value: slurmSevs['OK'] ?? 0, color: 'text-green-500' },
-          ].map((s) => (
-            <div key={s.label} className="rounded-xl bg-gray-50 p-2.5 text-center dark:bg-gray-800">
-              <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
-              <p className="text-[10px] text-gray-400">{s.label}</p>
+                ))}
             </div>
-          ))}
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(slurmStatus)
+                .filter(([, v]) => v > 0)
+                .map(([st, count]) => (
+                  <div
+                    key={st}
+                    className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"
+                  >
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: STATUS_COLOR[st.toLowerCase()] ?? '#6b7280' }}
+                    />
+                    <span className="capitalize">{st}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">{count}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: 'Total', value: slurmTotal, color: 'text-gray-500' },
+              { label: 'CRIT', value: slurmSevs['CRIT'] ?? 0, color: 'text-red-500' },
+              { label: 'WARN', value: slurmSevs['WARN'] ?? 0, color: 'text-amber-500' },
+              { label: 'OK', value: slurmSevs['OK'] ?? 0, color: 'text-green-500' },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="rounded-xl bg-gray-50 p-2.5 text-center dark:bg-gray-800"
+              >
+                <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+                <p className="text-[10px] text-gray-400">{s.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -936,8 +943,8 @@ const InfrastructureWidget = ({
   data: DashboardData;
   navigate: (path: string) => void;
 }) => (
-  <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-    <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
+  <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+    <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
       <div className="flex items-center gap-2">
         <Server className="text-brand-500 h-4 w-4" />
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Infrastructure</h2>
@@ -949,7 +956,7 @@ const InfrastructureWidget = ({
         World Map →
       </button>
     </div>
-    <div className="max-h-[300px] divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
+    <div className="flex-1 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
       {data.allRooms.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm text-gray-400">No rooms configured</div>
       ) : (
@@ -984,7 +991,7 @@ const InfrastructureWidget = ({
 // ── Widget: Prometheus ────────────────────────────────────────────────────────
 
 const PrometheusWidget = ({ data }: { data: DashboardData }) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+  <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
     <div className="mb-4 flex items-center gap-2">
       <Zap className="h-4 w-4 text-amber-500" />
       <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Prometheus</h2>
@@ -1032,7 +1039,7 @@ const PrometheusWidget = ({ data }: { data: DashboardData }) => (
 // ── Widget: CatalogChecks ─────────────────────────────────────────────────────
 
 const CatalogChecksWidget = ({ data }: { data: DashboardData }) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+  <div className="flex h-full flex-col overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
     <div className="mb-4 flex items-center gap-2">
       <ShieldCheck className="text-brand-500 h-4 w-4" />
       <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -1118,8 +1125,8 @@ const RackUtilizationWidget = ({ data }: { data: DashboardData }) => {
   const rooms = data.allRooms.slice(0, 6);
   if (rooms.length === 0) return <WidgetPlaceholder title="Rack Utilization" icon={Server} />;
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="mb-3 shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-300">
         Rack Utilization
       </p>
       <div className="space-y-2">
@@ -1232,8 +1239,10 @@ const UptimeWidget = ({ data }: { data: DashboardData }) => (
 const RecentAlertsWidget = ({ data }: { data: DashboardData }) => {
   const top3 = data.alerts.filter((a) => a.state === 'CRIT').slice(0, 3);
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Recent CRIT</p>
+    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="mb-2 shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        Recent CRIT
+      </p>
       {top3.length === 0 ? (
         <p className="text-xs text-green-500">No CRIT alerts</p>
       ) : (
@@ -1255,8 +1264,8 @@ const RecentAlertsWidget = ({ data }: { data: DashboardData }) => {
 // ── Widget: SiteMap ───────────────────────────────────────────────────────────
 
 const SiteMapWidget = ({ data }: { data: DashboardData }) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-    <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Sites</p>
+  <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+    <p className="mb-3 shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-300">Sites</p>
     <div className="space-y-2">
       {data.sites.map((s) => (
         <div key={s.id} className="flex items-center justify-between text-xs">
@@ -1278,8 +1287,8 @@ const CheckSummaryWidget = ({ data }: { data: DashboardData }) => {
     return a;
   }, {});
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Checks</p>
+    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="mb-3 shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-300">Checks</p>
       <div className="flex items-end gap-4">
         <span className="text-3xl font-bold text-gray-900 dark:text-white">
           {data.checks.length}
@@ -1308,8 +1317,10 @@ const DeviceTypesWidget = ({ data }: { data: DashboardData }) => {
   }, {});
   const total = data.deviceTemplates.length;
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Device Types</p>
+    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="mb-3 shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        Device Types
+      </p>
       <div className="space-y-1.5">
         {Object.entries(types)
           .sort(([, a], [, b]) => b - a)
@@ -1358,8 +1369,8 @@ const SlurmUtilizationWidget = ({ data }: { data: DashboardData }) => {
   const allocated = (data.slurm.by_status?.allocated ?? 0) + (data.slurm.by_status?.alloc ?? 0);
   const pct = total > 0 ? Math.round((allocated / total) * 100) : 0;
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+    <div className="flex h-full flex-col justify-center rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="mb-3 shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-300">
         Slurm Utilization
       </p>
       <div className="flex items-center gap-4">
@@ -1639,6 +1650,8 @@ export const CosmosDashboard = () => {
     return DEFAULT_WIDGETS;
   });
   const [editMode, setEditMode] = useState(false);
+  // Snapshot taken when entering edit mode — used by Discard to roll back
+  const widgetSnapshot = useRef<WidgetConfig[]>([]);
 
   // ── Drag & drop state ─────────────────────────────────────────────────────
   const [dragId, setDragId] = useState<string | null>(null);
@@ -2002,19 +2015,43 @@ export const CosmosDashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              setEditMode((e) => !e);
-            }}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm transition-colors ${
-              editMode
-                ? 'bg-brand-500 hover:bg-brand-600 text-white'
-                : 'border border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
-            }`}
-          >
-            <LayoutDashboard className="h-4 w-4" />
-            {editMode ? 'Done' : 'Edit'}
-          </button>
+          {editMode ? (
+            <>
+              {/* Discard — revert to snapshot */}
+              <button
+                onClick={() => {
+                  saveWidgets(widgetSnapshot.current);
+                  setEditMode(false);
+                }}
+                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              >
+                <Undo2 className="h-4 w-4" />
+                Discard
+              </button>
+              {/* Save — persist and exit */}
+              <button
+                onClick={() => {
+                  saveWidgets(widgets);
+                  setEditMode(false);
+                }}
+                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm text-white transition-colors"
+              >
+                <Check className="h-4 w-4" />
+                Save
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                widgetSnapshot.current = widgets;
+                setEditMode(true);
+              }}
+              className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              Edit
+            </button>
+          )}
           <button
             onClick={() => setSettingsOpen(true)}
             className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
