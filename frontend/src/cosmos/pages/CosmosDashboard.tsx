@@ -1197,7 +1197,7 @@ export const CosmosDashboard = () => {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
     };
-  }, [VALID_SPANS]);
+  }, []); // validSpans is defined inside the effect, no external deps
 
   // ── Data loading ──────────────────────────────────────────────────────────
   const loadAll = async (quiet = false) => {
@@ -1483,9 +1483,8 @@ export const CosmosDashboard = () => {
                       className="bg-brand-500/20 hover:bg-brand-500/40 absolute right-0 bottom-0 z-20 flex h-6 w-6 cursor-se-resize items-center justify-center rounded-tl-lg rounded-br-2xl opacity-0 transition-opacity group-hover:opacity-100"
                       title="Drag to resize"
                       onMouseDown={(e) => {
-                        const el = e.currentTarget.closest(
-                          `[data-widget-id="${widget.id}"]`
-                        ) as HTMLElement | null;
+                        // parentElement is the widget wrapper div
+                        const el = e.currentTarget.closest('.group') as HTMLElement | null;
                         if (el) startResize(e, widget, el);
                       }}
                     >
