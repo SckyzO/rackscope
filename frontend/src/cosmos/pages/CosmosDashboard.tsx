@@ -24,6 +24,10 @@ import {
   Check,
   Undo2,
   PanelRight,
+  Plus,
+  Copy,
+  Trash2,
+  Pencil,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import type {
@@ -97,6 +101,17 @@ type WidgetConfig = {
   rowSpan?: 1 | 2 | 3 | 4; // vertical height in grid rows (default 1)
   statKey?: StatKey; // for stat-card widget
 };
+
+type Dashboard = {
+  id: string;
+  name: string;
+  widgets: WidgetConfig[];
+};
+
+const DASHBOARDS_STORAGE_KEY = 'cosmos-dashboards';
+const ACTIVE_DASHBOARD_STORAGE_KEY = 'cosmos-active-dashboard';
+const DASHBOARDS_STORAGE_VERSION_KEY = 'cosmos-dashboards-v';
+const DASHBOARDS_STORAGE_VERSION = '1';
 
 type WidgetDefinition = {
   type: WidgetType;
@@ -190,7 +205,6 @@ const ROW_SPAN_CLASS: Record<number, string> = {
 // Minimum row height in pixels (grid-auto-rows: minmax(ROW_PX, auto))
 const ROW_PX = 140;
 // Increment whenever DEFAULT_WIDGETS structure changes to invalidate stale localStorage saves
-const WIDGET_LAYOUT_VERSION = '5';
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   // ── Row 1 — KPI strip ───────────────────────────────────────────────────────
   { id: 'stat-sites', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'sites' },
@@ -1724,7 +1738,6 @@ export const CosmosDashboard = () => {
   const [checks, setChecks] = useState<CheckDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   // ── Alert filter state ────────────────────────────────────────────────────
   const [alertLimit, setAlertLimit] = useState<number>(() => {
@@ -1746,21 +1759,40 @@ export const CosmosDashboard = () => {
     return stored ? Number(stored) : 5;
   });
 
-  // ── Widget layout state ───────────────────────────────────────────────────
-  const [widgets, setWidgets] = useState<WidgetConfig[]>(() => {
+  // ── Dashboard layout state ────────────────────────────────────────────────
+  const [dashboards, setDashboards] = useState<Dashboard[]>(() => {
     try {
-      const version = localStorage.getItem('cosmos-dashboard-widgets-v');
-      const stored = localStorage.getItem('cosmos-dashboard-widgets');
-      if (stored && version === WIDGET_LAYOUT_VERSION) return JSON.parse(stored) as WidgetConfig[];
+      const version = localStorage.getItem(DASHBOARDS_STORAGE_VERSION_KEY);
+      const stored = localStorage.getItem(DASHBOARDS_STORAGE_KEY);
+      if (stored && version === DASHBOARDS_STORAGE_VERSION)
+        return JSON.parse(stored) as Dashboard[];
     } catch {
       /* ignore */
     }
-    return DEFAULT_WIDGETS;
+    return [{ id: 'default', name: 'Overview', widgets: DEFAULT_WIDGETS }];
   });
+  const [activeDashboardId, setActiveDashboardId] = useState<string>(() => {
+    return localStorage.getItem(ACTIVE_DASHBOARD_STORAGE_KEY) ?? 'default';
+  });
+  // Ref kept in sync for use inside resize useEffect (avoids stale closure)
+  const activeDashboardIdRef = useRef(activeDashboardId);
+
+  // Derived: active dashboard + its widgets (shared catalog, per-dashboard layout)
+  const activeDashboard = dashboards.find((d) => d.id === activeDashboardId) ?? dashboards[0];
+  const widgets = activeDashboard?.widgets ?? DEFAULT_WIDGETS;
+
+  // Keep activeDashboardIdRef in sync
+  useEffect(() => {
+    activeDashboardIdRef.current = activeDashboardId;
+  }, [activeDashboardId]);
+
   const [editMode, setEditMode] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   // Snapshot taken when entering edit mode — used by Discard to roll back
   const widgetSnapshot = useRef<WidgetConfig[]>([]);
+  // Rename state for dashboard tabs
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   // ── Drag & drop state ─────────────────────────────────────────────────────
   const [dragId, setDragId] = useState<string | null>(null);
@@ -1783,29 +1815,87 @@ export const CosmosDashboard = () => {
   const resizingRef = useRef<ResizeState | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // ── Widget operations ─────────────────────────────────────────────────────
+  // ── Widget + dashboard operations ─────────────────────────────────────────
+  const persistDashboards = (next: Dashboard[]) => {
+    localStorage.setItem(DASHBOARDS_STORAGE_KEY, JSON.stringify(next));
+    localStorage.setItem(DASHBOARDS_STORAGE_VERSION_KEY, DASHBOARDS_STORAGE_VERSION);
+  };
+
   const saveWidgets = (newWidgets: WidgetConfig[]) => {
-    setWidgets(newWidgets);
-    localStorage.setItem('cosmos-dashboard-widgets', JSON.stringify(newWidgets));
-    localStorage.setItem('cosmos-dashboard-widgets-v', WIDGET_LAYOUT_VERSION);
+    const next = dashboards.map((d) =>
+      d.id === activeDashboardId ? { ...d, widgets: newWidgets } : d
+    );
+    setDashboards(next);
+    persistDashboards(next);
   };
 
   const removeWidget = (id: string) => saveWidgets(widgets.filter((w) => w.id !== id));
 
-  // moveWidget replaced by drag-and-drop (kept for backward compat, unused)
-
   const addWidget = (type: WidgetType) => {
     const def = WIDGET_CATALOG.find((d) => d.type === type);
     if (!def) return;
-    const newWidget: WidgetConfig = {
-      id: `${type}-${Date.now()}`,
-      type,
-      colSpan: def.defaultColSpan,
-    };
-    saveWidgets([...widgets, newWidget]);
+    saveWidgets([...widgets, { id: `${type}-${Date.now()}`, type, colSpan: def.defaultColSpan }]);
   };
 
   const resetLayout = () => saveWidgets(DEFAULT_WIDGETS);
+
+  const switchDashboard = (id: string) => {
+    setActiveDashboardId(id);
+    localStorage.setItem(ACTIVE_DASHBOARD_STORAGE_KEY, id);
+    setEditMode(false);
+    setPickerOpen(false);
+  };
+
+  const createDashboard = () => {
+    const id = `dash-${Date.now()}`;
+    const name = `Dashboard ${dashboards.length + 1}`;
+    const next = [...dashboards, { id, name, widgets: [] }];
+    setDashboards(next);
+    persistDashboards(next);
+    setActiveDashboardId(id);
+    localStorage.setItem(ACTIVE_DASHBOARD_STORAGE_KEY, id);
+    setEditMode(false);
+    setPickerOpen(false);
+    setRenamingId(id);
+    setRenameValue(name);
+  };
+
+  const deleteDashboard = (id: string) => {
+    if (dashboards.length <= 1) return;
+    const next = dashboards.filter((d) => d.id !== id);
+    setDashboards(next);
+    persistDashboards(next);
+    if (activeDashboardId === id) {
+      const newActive = next[0].id;
+      setActiveDashboardId(newActive);
+      localStorage.setItem(ACTIVE_DASHBOARD_STORAGE_KEY, newActive);
+    }
+  };
+
+  const duplicateDashboard = (id: string) => {
+    const src = dashboards.find((d) => d.id === id);
+    if (!src) return;
+    const newId = `dash-${Date.now()}`;
+    const next = [
+      ...dashboards,
+      { id: newId, name: `${src.name} (copy)`, widgets: src.widgets.map((w) => ({ ...w })) },
+    ];
+    setDashboards(next);
+    persistDashboards(next);
+    setActiveDashboardId(newId);
+    localStorage.setItem(ACTIVE_DASHBOARD_STORAGE_KEY, newId);
+  };
+
+  const renameDashboard = (id: string, name: string) => {
+    const next = dashboards.map((d) => (d.id === id ? { ...d, name } : d));
+    setDashboards(next);
+    persistDashboards(next);
+  };
+
+  const finishRename = () => {
+    if (renamingId && renameValue.trim()) renameDashboard(renamingId, renameValue.trim());
+    setRenamingId(null);
+  };
 
   // ── Drag-and-drop handlers ────────────────────────────────────────────────
   const handleDragStart = (e: React.DragEvent, id: string) => {
@@ -1905,24 +1995,31 @@ export const CosmosDashboard = () => {
         const next = { ...r, ...updated };
         resizingRef.current = next;
         setResizing(next);
-        setWidgets((prev) =>
-          prev.map((w) =>
-            w.id === r.id
+        setDashboards((prev) =>
+          prev.map((d) =>
+            d.id === activeDashboardIdRef.current
               ? {
-                  ...w,
-                  ...(updated.colSpan !== undefined ? { colSpan: updated.colSpan } : {}),
-                  ...(updated.rowSpan !== undefined ? { rowSpan: updated.rowSpan } : {}),
+                  ...d,
+                  widgets: d.widgets.map((w) =>
+                    w.id === r.id
+                      ? {
+                          ...w,
+                          ...(updated.colSpan !== undefined ? { colSpan: updated.colSpan } : {}),
+                          ...(updated.rowSpan !== undefined ? { rowSpan: updated.rowSpan } : {}),
+                        }
+                      : w
+                  ),
                 }
-              : w
+              : d
           )
         );
       }
     };
     const onUp = () => {
       if (!resizingRef.current) return;
-      setWidgets((prev) => {
-        localStorage.setItem('cosmos-dashboard-widgets', JSON.stringify(prev));
-        localStorage.setItem('cosmos-dashboard-widgets-v', WIDGET_LAYOUT_VERSION);
+      setDashboards((prev) => {
+        localStorage.setItem(DASHBOARDS_STORAGE_KEY, JSON.stringify(prev));
+        localStorage.setItem(DASHBOARDS_STORAGE_VERSION_KEY, DASHBOARDS_STORAGE_VERSION);
         return prev;
       });
       resizingRef.current = null;
@@ -1975,7 +2072,6 @@ export const CosmosDashboard = () => {
         )
       );
       setRoomStates(Object.fromEntries(stateEntries));
-      setLastUpdate(new Date());
     } catch {
       /* ignore */
     } finally {
@@ -2117,11 +2213,87 @@ export const CosmosDashboard = () => {
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-            {lastUpdate ? `Last updated ${lastUpdate.toLocaleTimeString()}` : 'Loading...'}
-          </p>
+        <div className="flex min-w-0 items-center gap-3">
+          {/* Dashboard tabs */}
+          <div className="flex items-center gap-0.5 overflow-x-auto">
+            {dashboards.map((d) => {
+              const isActive = d.id === activeDashboardId;
+              if (renamingId === d.id) {
+                return (
+                  <form
+                    key={d.id}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      finishRename();
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onBlur={finishRename}
+                      className="border-brand-400 h-8 w-36 rounded-lg border bg-white px-2 text-sm focus:outline-none dark:bg-gray-800 dark:text-white"
+                    />
+                  </form>
+                );
+              }
+              return (
+                <div
+                  key={d.id}
+                  className={`group flex h-8 items-center gap-1 rounded-lg px-3 text-sm transition-colors ${
+                    isActive
+                      ? 'bg-brand-500 text-white'
+                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <button
+                    className="max-w-[120px] truncate font-medium"
+                    onClick={() => switchDashboard(d.id)}
+                  >
+                    {d.name}
+                  </button>
+                  {isActive && (
+                    <span className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        title="Rename"
+                        onClick={() => {
+                          setRenamingId(d.id);
+                          setRenameValue(d.name);
+                        }}
+                        className="rounded p-0.5 hover:bg-white/20"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        title="Duplicate"
+                        onClick={() => duplicateDashboard(d.id)}
+                        className="rounded p-0.5 hover:bg-white/20"
+                      >
+                        <Copy className="h-3 w-3" />
+                      </button>
+                      {dashboards.length > 1 && (
+                        <button
+                          title="Delete"
+                          onClick={() => deleteDashboard(d.id)}
+                          className="rounded p-0.5 hover:bg-red-500/30"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      )}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+            <button
+              onClick={createDashboard}
+              title="New dashboard"
+              className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-sm text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:hover:text-gray-200"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {editMode ? (
