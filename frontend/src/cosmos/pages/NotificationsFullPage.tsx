@@ -1,262 +1,347 @@
-import { useState } from 'react';
-import { Bell, CheckCheck, Trash2, Settings, Filter } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Bell,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
+  Filter,
+  ChevronRight,
+  Server,
+  Cpu,
+} from 'lucide-react';
+import { api } from '../../services/api';
+import type { ActiveAlert, SlurmNodeEntry } from '../../types';
 
-type NotifType = 'all' | 'unread' | 'mentions' | 'tasks';
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-const NOTIFICATIONS = [
-  {
-    id: 1,
-    type: 'request',
-    name: 'Alex Johnson',
-    initials: 'AJ',
-    color: 'bg-brand-500',
-    action: 'requests permission to change',
-    target: 'Rackscope — Monitoring Project',
-    time: '5 min ago',
-    unread: true,
-  },
-  {
-    id: 2,
-    type: 'mention',
-    name: 'Sarah Williams',
-    initials: 'SW',
-    color: 'bg-success-500',
-    action: 'mentioned you in a comment on',
-    target: 'Phase 7 Frontend Plan',
-    time: '12 min ago',
-    unread: true,
-  },
-  {
-    id: 3,
-    type: 'task',
-    name: 'Michael Chen',
-    initials: 'MC',
-    color: 'bg-warning-500',
-    action: 'assigned a new task to you:',
-    target: 'Build Cosmos Theme',
-    time: '1h ago',
-    unread: true,
-  },
-  {
-    id: 4,
-    type: 'request',
-    name: 'Emily Davis',
-    initials: 'ED',
-    color: 'bg-error-500',
-    action: 'requests permission to change',
-    target: 'Backend API Configuration',
-    time: '2h ago',
-    unread: false,
-  },
-  {
-    id: 5,
-    type: 'mention',
-    name: 'James Wilson',
-    initials: 'JW',
-    color: 'bg-brand-500',
-    action: 'replied to your comment on',
-    target: 'expand_by_label PR review',
-    time: '3h ago',
-    unread: false,
-  },
-  {
-    id: 6,
-    type: 'task',
-    name: 'Lisa Anderson',
-    initials: 'LA',
-    color: 'bg-success-500',
-    action: 'completed task assigned by you:',
-    target: 'CSS Design Token Migration',
-    time: '5h ago',
-    unread: false,
-  },
-  {
-    id: 7,
-    type: 'request',
-    name: 'David Martinez',
-    initials: 'DM',
-    color: 'bg-warning-500',
-    action: 'requests permission to change',
-    target: 'Prometheus Configuration',
-    time: '1d ago',
-    unread: false,
-  },
-  {
-    id: 8,
-    type: 'mention',
-    name: 'Jennifer Lee',
-    initials: 'JL',
-    color: 'bg-error-500',
-    action: 'mentioned you in',
-    target: 'Infrastructure Review Meeting notes',
-    time: '1d ago',
-    unread: false,
-  },
-];
-
-const TAB_LABELS: { key: NotifType; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'unread', label: 'Unread' },
-  { key: 'mentions', label: 'Mentions' },
-  { key: 'tasks', label: 'Tasks' },
-];
-
-const TYPE_BADGE: Record<string, string> = {
-  request: 'bg-brand-50 text-brand-500 dark:bg-brand-500/15',
-  mention: 'bg-success-50 text-success-500 dark:bg-success-500/15',
-  task: 'bg-warning-50 text-warning-500 dark:bg-warning-500/15',
+const SEV_COLOR: Record<string, string> = {
+  CRIT: '#ef4444',
+  WARN: '#f59e0b',
+};
+const SEV_BG: Record<string, string> = {
+  CRIT: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
+  WARN: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
 };
 
+type FilterType = 'all' | 'crit' | 'warn' | 'infra' | 'slurm';
+
+// ── AlertRow — one infrastructure alert ───────────────────────────────────────
+
+type AlertRowProps = {
+  alert: ActiveAlert;
+  onClick: () => void;
+};
+
+const AlertRow = ({ alert, onClick }: AlertRowProps) => (
+  <button
+    onClick={onClick}
+    className="flex w-full items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+    style={{ borderLeftWidth: 3, borderLeftColor: SEV_COLOR[alert.state] ?? '#6b7280' }}
+  >
+    {/* Severity icon */}
+    <div
+      className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+      style={{ backgroundColor: `${SEV_COLOR[alert.state] ?? '#6b7280'}18` }}
+    >
+      {alert.state === 'CRIT' ? (
+        <XCircle className="h-4 w-4" style={{ color: SEV_COLOR.CRIT }} />
+      ) : (
+        <AlertTriangle className="h-4 w-4" style={{ color: SEV_COLOR.WARN }} />
+      )}
+    </div>
+
+    {/* Content */}
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2">
+        <span className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+          {alert.node_id}
+        </span>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${SEV_BG[alert.state] ?? ''}`}
+        >
+          {alert.state}
+        </span>
+      </div>
+      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+        {alert.device_name} · {alert.rack_name} · {alert.room_name}
+      </p>
+      {alert.checks.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1">
+          {alert.checks.slice(0, 3).map((c, i) => (
+            <span
+              key={i}
+              className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+            >
+              {c.id}
+            </span>
+          ))}
+          {alert.checks.length > 3 && (
+            <span className="text-[10px] text-gray-400">+{alert.checks.length - 3} more</span>
+          )}
+        </div>
+      )}
+    </div>
+
+    <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-gray-400" />
+  </button>
+);
+
+// ── SlurmRow — one Slurm alert ────────────────────────────────────────────────
+
+type SlurmRowProps = {
+  node: SlurmNodeEntry;
+  onClick: () => void;
+};
+
+const SlurmRow = ({ node, onClick }: SlurmRowProps) => (
+  <button
+    onClick={onClick}
+    className="flex w-full items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+    style={{ borderLeftWidth: 3, borderLeftColor: SEV_COLOR[node.severity] ?? '#6b7280' }}
+  >
+    <div
+      className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+      style={{ backgroundColor: `${SEV_COLOR[node.severity] ?? '#6b7280'}18` }}
+    >
+      <Cpu className="h-4 w-4" style={{ color: SEV_COLOR[node.severity] ?? '#6b7280' }} />
+    </div>
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2">
+        <span className="truncate font-mono text-sm font-semibold text-gray-900 dark:text-white">
+          {node.node}
+        </span>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${SEV_BG[node.severity] ?? ''}`}
+        >
+          {node.severity}
+        </span>
+      </div>
+      <p className="mt-0.5 text-xs text-gray-500 capitalize dark:text-gray-400">
+        {node.status} · {node.partitions.join(', ') || 'no partition'}
+        {node.rack_name ? ` · ${node.rack_name}` : ''}
+      </p>
+    </div>
+    <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-gray-400" />
+  </button>
+);
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export const NotificationsFullPage = () => {
-  const [tab, setTab] = useState<NotifType>('all');
-  const [dismissed, setDismissed] = useState<number[]>([]);
-  const [readAll, setReadAll] = useState(false);
+  const navigate = useNavigate();
+  const [infraAlerts, setInfraAlerts] = useState<ActiveAlert[]>([]);
+  const [slurmAlerts, setSlurmAlerts] = useState<SlurmNodeEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<FilterType>('all');
 
-  const visible = NOTIFICATIONS.filter((n) => {
-    if (dismissed.includes(n.id)) return false;
-    if (tab === 'unread') return !readAll && n.unread;
-    if (tab === 'mentions') return n.type === 'mention';
-    if (tab === 'tasks') return n.type === 'task';
-    return true;
-  });
+  const load = async (quiet = false) => {
+    if (!quiet) setLoading(true);
+    else setRefreshing(true);
+    try {
+      const [infraData, slurmData] = await Promise.all([
+        api.getActiveAlerts(),
+        api.getSlurmNodes(),
+      ]);
+      setInfraAlerts(infraData?.alerts ?? []);
+      const slurmNodes = slurmData?.nodes ?? [];
+      setSlurmAlerts(
+        slurmNodes.filter((n: SlurmNodeEntry) => n.severity === 'CRIT' || n.severity === 'WARN')
+      );
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-  const unreadCount = NOTIFICATIONS.filter(
-    (n) => n.unread && !readAll && !dismissed.includes(n.id)
-  ).length;
+  useEffect(() => {
+    load();
+    const t = setInterval(() => load(true), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Filtered data
+  const filteredInfra = useMemo(() => {
+    if (filter === 'slurm') return [];
+    if (filter === 'crit') return infraAlerts.filter((a) => a.state === 'CRIT');
+    if (filter === 'warn') return infraAlerts.filter((a) => a.state === 'WARN');
+    return infraAlerts;
+  }, [infraAlerts, filter]);
+
+  const filteredSlurm = useMemo(() => {
+    if (filter === 'infra') return [];
+    if (filter === 'crit') return slurmAlerts.filter((n) => n.severity === 'CRIT');
+    if (filter === 'warn') return slurmAlerts.filter((n) => n.severity === 'WARN');
+    return slurmAlerts;
+  }, [slurmAlerts, filter]);
+
+  const totalCrit =
+    infraAlerts.filter((a) => a.state === 'CRIT').length +
+    slurmAlerts.filter((n) => n.severity === 'CRIT').length;
+  const totalWarn =
+    infraAlerts.filter((a) => a.state === 'WARN').length +
+    slurmAlerts.filter((n) => n.severity === 'WARN').length;
+  const total = infraAlerts.length + slurmAlerts.length;
+
+  const affectedRacks = new Set([...infraAlerts.map((a) => a.rack_id)]).size;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {unreadCount > 0
-              ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
-              : 'All caught up!'}
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h1>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+            Active alerts across your infrastructure
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 rounded-lg border border-gray-200 px-3.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5">
-            <Filter className="h-4 w-4" />
-            Filter
-          </button>
-          <button
-            onClick={() => setReadAll(true)}
-            className="flex items-center gap-2 rounded-lg border border-gray-200 px-3.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5"
+        <button
+          onClick={() => load(true)}
+          disabled={refreshing}
+          className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: 'Total alerts', value: total, icon: Bell, color: 'text-gray-500' },
+          { label: 'CRIT', value: totalCrit, icon: XCircle, color: 'text-red-500' },
+          { label: 'WARN', value: totalWarn, icon: AlertTriangle, color: 'text-amber-500' },
+          { label: 'Affected racks', value: affectedRacks, icon: Server, color: 'text-brand-500' },
+        ].map((s) => (
+          <div
+            key={s.label}
+            className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
           >
-            <CheckCheck className="h-4 w-4" />
-            Mark all read
-          </button>
-          <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5">
-            <Settings className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-800">
-        <div className="flex gap-1">
-          {TAB_LABELS.map(({ key, label }) => {
-            const count =
-              key === 'unread'
-                ? unreadCount
-                : key === 'mentions'
-                  ? NOTIFICATIONS.filter((n) => n.type === 'mention').length
-                  : key === 'tasks'
-                    ? NOTIFICATIONS.filter((n) => n.type === 'task').length
-                    : NOTIFICATIONS.length;
-            return (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${tab === key ? 'border-brand-500 text-brand-500' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
-              >
-                {label}
-                <span
-                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${tab === key ? 'bg-brand-500 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}
-                >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Notifications list */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        {visible.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-              <Bell className="h-7 w-7 text-gray-400" />
+            <s.icon className={`h-5 w-5 shrink-0 ${s.color}`} />
+            <div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{s.value}</p>
+              <p className="text-xs text-gray-400">{s.label}</p>
             </div>
-            <h3 className="mt-4 text-base font-semibold text-gray-900 dark:text-white">
-              No notifications
-            </h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              You're all caught up. Check back later.
-            </p>
           </div>
-        ) : (
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
-            {visible.map((n) => (
-              <div
-                key={n.id}
-                className={`flex items-start gap-4 px-5 py-4 transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${n.unread && !readAll ? 'bg-brand-25 dark:bg-brand-500/5' : ''}`}
+        ))}
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-1 dark:border-gray-800 dark:bg-gray-900">
+        <Filter className="ml-2 h-3.5 w-3.5 shrink-0 text-gray-400" />
+        {(
+          [
+            { id: 'all', label: 'All', count: total },
+            { id: 'crit', label: 'CRIT', count: totalCrit },
+            { id: 'warn', label: 'WARN', count: totalWarn },
+            { id: 'infra', label: 'Infrastructure', count: infraAlerts.length },
+            { id: 'slurm', label: 'Slurm', count: slurmAlerts.length },
+          ] as { id: FilterType; label: string; count: number }[]
+        ).map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              filter === f.id
+                ? 'bg-brand-500 text-white'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+          >
+            {f.label}
+            {f.count > 0 && (
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  filter === f.id
+                    ? 'bg-white/20 text-white'
+                    : 'bg-gray-100 text-gray-500 dark:bg-gray-800'
+                }`}
               >
-                {/* Avatar */}
-                <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${n.color}`}
-                >
-                  {n.initials}
-                </div>
+                {f.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
 
-                {/* Content */}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    <span className="font-semibold text-gray-900 dark:text-white">{n.name}</span>{' '}
-                    {n.action} <span className="text-brand-500 font-medium">{n.target}</span>
-                  </p>
-                  <div className="mt-1.5 flex items-center gap-3">
-                    <span className="text-xs text-gray-400">{n.time}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${TYPE_BADGE[n.type]}`}
-                    >
-                      {n.type}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex shrink-0 items-center gap-2">
-                  {n.unread && !readAll && <span className="bg-brand-500 h-2 w-2 rounded-full" />}
-                  <button
-                    onClick={() => setDismissed([...dismissed, n.id])}
-                    className="hover:text-error-500 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-white/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+      {/* Alert lists */}
+      {loading ? (
+        <div className="flex h-40 items-center justify-center">
+          <div className="border-t-brand-500 h-8 w-8 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
+        </div>
+      ) : filteredInfra.length === 0 && filteredSlurm.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-white py-16 dark:border-gray-800 dark:bg-gray-900">
+          <Bell className="h-12 w-12 text-gray-200 dark:text-gray-800" />
+          <p className="text-base font-semibold text-gray-500 dark:text-gray-400">No alerts</p>
+          <p className="text-sm text-gray-400 dark:text-gray-600">
+            {filter === 'all' ? 'All nodes are healthy' : `No ${filter.toUpperCase()} alerts`}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Infrastructure alerts */}
+          {filteredInfra.length > 0 && (
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                  <Server className="text-brand-500 h-4 w-4" />
+                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Infrastructure
+                  </h2>
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800">
+                    {filteredInfra.length}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Footer */}
-        {visible.length > 0 && (
-          <div className="border-t border-gray-100 px-5 py-3 dark:border-gray-800">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-gray-400">
-                Showing {visible.length} of {NOTIFICATIONS.length} notifications
-              </p>
-              <button className="text-brand-500 hover:text-brand-600 text-xs font-medium">
-                Load more
-              </button>
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {filteredInfra.map((alert, i) => (
+                  <AlertRow
+                    key={i}
+                    alert={alert}
+                    onClick={() => navigate(`/cosmos/views/rack/${alert.rack_id}`)}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+
+          {/* Slurm alerts */}
+          {filteredSlurm.length > 0 && (
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                  <Cpu className="h-4 w-4 text-purple-500" />
+                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Slurm</h2>
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800">
+                    {filteredSlurm.length}
+                  </span>
+                </div>
+                <button
+                  onClick={() => navigate('/cosmos/slurm/alerts')}
+                  className="text-brand-500 text-xs hover:underline"
+                >
+                  View Slurm dashboard →
+                </button>
+              </div>
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {filteredSlurm.map((node, i) => (
+                  <SlurmRow
+                    key={i}
+                    node={node}
+                    onClick={() =>
+                      node.rack_id
+                        ? navigate(`/cosmos/views/rack/${node.rack_id}`)
+                        : navigate('/cosmos/slurm/alerts')
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

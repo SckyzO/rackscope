@@ -252,7 +252,7 @@ export const CosmosHeader = ({ isDark, toggleDark }: CosmosHeaderProps) => {
                   <button
                     onClick={() => {
                       setNotifOpen(false);
-                      navigate('/cosmos/slurm/alerts');
+                      navigate('/cosmos/notifications');
                     }}
                     className="text-brand-500 w-full rounded-lg py-2 text-center text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
                   >
