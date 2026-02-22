@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Server,
@@ -19,6 +19,7 @@ import {
   X,
   BarChart2,
   LayoutDashboard,
+  GripVertical,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import type {
@@ -1069,6 +1070,18 @@ export const CosmosDashboard = () => {
   });
   const [editMode, setEditMode] = useState(false);
 
+  // ── Drag & drop state ─────────────────────────────────────────────────────
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dropBeforeId, setDropBeforeId] = useState<string | null>(null);
+  const [dropSide, setDropSide] = useState<'before' | 'after'>('before');
+  const dragIdRef = useRef<string | null>(null);
+
+  // ── Resize state ──────────────────────────────────────────────────────────
+  type ResizeState = { id: string; startX: number; startWidth: number; colSpan: number };
+  const [resizing, setResizing] = useState<ResizeState | null>(null);
+  const resizingRef = useRef<ResizeState | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+
   // ── Widget operations ─────────────────────────────────────────────────────
   const saveWidgets = (newWidgets: WidgetConfig[]) => {
     setWidgets(newWidgets);
@@ -1077,15 +1090,7 @@ export const CosmosDashboard = () => {
 
   const removeWidget = (id: string) => saveWidgets(widgets.filter((w) => w.id !== id));
 
-  const moveWidget = (id: string, dir: 'up' | 'down') => {
-    const idx = widgets.findIndex((w) => w.id === id);
-    if (idx < 0) return;
-    const next = [...widgets];
-    const swap = dir === 'up' ? idx - 1 : idx + 1;
-    if (swap < 0 || swap >= next.length) return;
-    [next[idx], next[swap]] = [next[swap], next[idx]];
-    saveWidgets(next);
-  };
+  // moveWidget replaced by drag-and-drop (kept for backward compat, unused)
 
   const addWidget = (type: WidgetType) => {
     const def = WIDGET_CATALOG.find((d) => d.type === type);
@@ -1099,6 +1104,100 @@ export const CosmosDashboard = () => {
   };
 
   const resetLayout = () => saveWidgets(DEFAULT_WIDGETS);
+
+  // ── Drag-and-drop handlers ────────────────────────────────────────────────
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+    dragIdRef.current = id;
+    setDragId(id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    if (!dragIdRef.current || dragIdRef.current === targetId) return;
+    e.dataTransfer.dropEffect = 'move';
+    const rect = e.currentTarget.getBoundingClientRect();
+    setDropBeforeId(targetId);
+    setDropSide(e.clientX < rect.left + rect.width / 2 ? 'before' : 'after');
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const srcId = dragIdRef.current;
+    if (!srcId || srcId === targetId) {
+      handleDragEnd();
+      return;
+    }
+    const next = [...widgets];
+    const srcIdx = next.findIndex((w) => w.id === srcId);
+    const tgtIdx = next.findIndex((w) => w.id === targetId);
+    const [removed] = next.splice(srcIdx, 1);
+    const insertAt = dropSide === 'before' ? tgtIdx : tgtIdx + 1;
+    const adjustedInsert = insertAt > srcIdx ? insertAt - 1 : insertAt;
+    next.splice(adjustedInsert, 0, removed);
+    saveWidgets(next);
+    handleDragEnd();
+  };
+
+  const handleDragEnd = () => {
+    dragIdRef.current = null;
+    setDragId(null);
+    setDropBeforeId(null);
+  };
+
+  // ── Resize handlers ───────────────────────────────────────────────────────
+  const startResize = (e: React.MouseEvent, widget: WidgetConfig, el: HTMLElement) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const state: ResizeState = {
+      id: widget.id,
+      startX: e.clientX,
+      startWidth: el.getBoundingClientRect().width,
+      colSpan: widget.colSpan,
+    };
+    resizingRef.current = state;
+    setResizing(state);
+  };
+
+  useEffect(() => {
+    const validSpans = [3, 4, 6, 8, 12] as const;
+    const onMove = (e: MouseEvent) => {
+      const r = resizingRef.current;
+      if (!r || !gridRef.current) return;
+      const gridWidth = gridRef.current.getBoundingClientRect().width;
+      const colPx = gridWidth / 12;
+      const delta = e.clientX - r.startX;
+      const newPx = r.startWidth + delta;
+      const raw = Math.round(newPx / colPx);
+      const snapped = validSpans.reduce((a, b) =>
+        Math.abs(b - raw) < Math.abs(a - raw) ? b : a
+      ) as WidgetConfig['colSpan'];
+      if (snapped !== r.colSpan) {
+        const next = { ...r, colSpan: snapped };
+        resizingRef.current = next;
+        setResizing(next);
+        // Live preview — update colSpan directly (don't persist yet)
+        setWidgets((prev) => prev.map((w) => (w.id === r.id ? { ...w, colSpan: snapped } : w)));
+      }
+    };
+    const onUp = () => {
+      if (!resizingRef.current) return;
+      // Persist final colSpan
+      setWidgets((prev) => {
+        localStorage.setItem('cosmos-dashboard-widgets', JSON.stringify(prev));
+        return prev;
+      });
+      resizingRef.current = null;
+      setResizing(null);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, [VALID_SPANS]);
 
   // ── Data loading ──────────────────────────────────────────────────────────
   const loadAll = async (quiet = false) => {
@@ -1329,40 +1428,105 @@ export const CosmosDashboard = () => {
           ))}
         </div>
       ) : (
-        <div className={`grid grid-cols-12 gap-5 ${editMode ? 'pr-72' : ''}`}>
-          {widgets.map((widget) => (
-            <div
-              key={widget.id}
-              className={`${SPAN_CLASS[widget.colSpan] ?? 'col-span-4'} group relative`}
-            >
-              {editMode && (
-                <div className="absolute -top-2.5 right-2 z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button
-                    onClick={() => moveWidget(widget.id, 'up')}
-                    className="flex h-5 w-5 items-center justify-center rounded border border-gray-300 bg-white text-[10px] text-gray-500 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
-                    title="Move up"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    onClick={() => moveWidget(widget.id, 'down')}
-                    className="flex h-5 w-5 items-center justify-center rounded border border-gray-300 bg-white text-[10px] text-gray-500 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
-                    title="Move down"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    onClick={() => removeWidget(widget.id)}
-                    className="flex h-5 w-5 items-center justify-center rounded border border-red-300 bg-white text-[10px] text-red-500 hover:bg-red-50 dark:border-red-800 dark:bg-gray-900"
-                    title="Remove widget"
-                  >
-                    ×
-                  </button>
+        <div ref={gridRef} className={`grid grid-cols-12 gap-5 ${editMode ? 'pr-72' : ''}`}>
+          {widgets.map((widget) => {
+            const isDragging = dragId === widget.id;
+            const isDropTarget = dropBeforeId === widget.id;
+            const isResizing = resizing?.id === widget.id;
+
+            return (
+              <div
+                key={widget.id}
+                draggable={editMode}
+                onDragStart={editMode ? (e) => handleDragStart(e, widget.id) : undefined}
+                onDragOver={editMode ? (e) => handleDragOver(e, widget.id) : undefined}
+                onDrop={editMode ? (e) => handleDrop(e, widget.id) : undefined}
+                onDragEnd={editMode ? handleDragEnd : undefined}
+                className={[
+                  SPAN_CLASS[widget.colSpan] ?? 'col-span-4',
+                  'group relative transition-opacity',
+                  isDragging ? 'cursor-grabbing opacity-40' : '',
+                  isDropTarget && dropSide === 'before'
+                    ? 'border-brand-500 border-l-4'
+                    : isDropTarget && dropSide === 'after'
+                      ? 'border-brand-500 border-r-4'
+                      : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                {/* Edit mode overlay: grip + remove */}
+                {editMode && (
+                  <>
+                    {/* Drag grip bar across top */}
+                    <div
+                      className="bg-brand-500/10 absolute inset-x-0 top-0 z-20 flex h-7 cursor-grab items-center justify-between rounded-t-2xl px-3 opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <GripVertical className="text-brand-500 h-4 w-4" />
+                      <div className="flex items-center gap-1">
+                        <span className="bg-brand-500/20 text-brand-500 rounded px-1.5 py-0.5 font-mono text-[10px]">
+                          {widget.colSpan}/12
+                        </span>
+                        <button
+                          onClick={() => removeWidget(widget.id)}
+                          className="flex h-5 w-5 items-center justify-center rounded border border-red-300 bg-white text-[11px] text-red-500 hover:bg-red-50 dark:border-red-800 dark:bg-gray-900"
+                          title="Remove widget"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Resize handle — bottom-right corner */}
+                    <div
+                      className="bg-brand-500/20 hover:bg-brand-500/40 absolute right-0 bottom-0 z-20 flex h-6 w-6 cursor-se-resize items-center justify-center rounded-tl-lg rounded-br-2xl opacity-0 transition-opacity group-hover:opacity-100"
+                      title="Drag to resize"
+                      onMouseDown={(e) => {
+                        const el = e.currentTarget.closest(
+                          `[data-widget-id="${widget.id}"]`
+                        ) as HTMLElement | null;
+                        if (el) startResize(e, widget, el);
+                      }}
+                    >
+                      {/* Resize icon: two diagonal lines */}
+                      <svg width="10" height="10" viewBox="0 0 10 10" className="text-brand-500">
+                        <line
+                          x1="10"
+                          y1="3"
+                          x2="3"
+                          y2="10"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                        <line
+                          x1="10"
+                          y1="7"
+                          x2="7"
+                          y2="10"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </div>
+
+                    {/* Resize tooltip */}
+                    {isResizing && (
+                      <div className="bg-brand-500 absolute top-2 left-1/2 z-30 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg">
+                        {resizing.colSpan}/12 cols ({Math.round((resizing.colSpan / 12) * 100)}%)
+                      </div>
+                    )}
+                  </>
+                )}
+
+                <div data-widget-id={widget.id} className="h-full">
+                  <WidgetContent widget={widget} data={dashboardData} navigate={navigate} />
                 </div>
-              )}
-              <WidgetContent widget={widget} data={dashboardData} navigate={navigate} />
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
 
