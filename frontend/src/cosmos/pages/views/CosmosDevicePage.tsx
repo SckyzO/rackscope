@@ -322,9 +322,9 @@ export const CosmosDevicePage = () => {
         </div>
 
         {/* ── Bottom row: Instance detail (left) + Device info (right) ── */}
-        <div className="grid gap-4 md:grid-cols-[1fr,320px]">
+        <div className="flex flex-col gap-4 lg:flex-row">
           {/* LEFT — selected instance */}
-          <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
               <div className="flex items-center gap-2">
                 <span
@@ -412,7 +412,7 @@ export const CosmosDevicePage = () => {
           </div>
 
           {/* RIGHT — device info + location + checks */}
-          <div className="space-y-4">
+          <div className="w-full shrink-0 space-y-4 lg:w-80">
             {/* Device info */}
             <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
               <p className="mb-3 text-xs font-semibold tracking-wider text-gray-400 uppercase">
