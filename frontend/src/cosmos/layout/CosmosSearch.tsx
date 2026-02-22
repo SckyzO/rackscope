@@ -316,7 +316,7 @@ export const CosmosSearch = () => {
   };
 
   return (
-    <div ref={containerRef} className="relative mx-4 hidden max-w-sm flex-1 lg:block">
+    <div ref={containerRef} className="relative mx-4 hidden max-w-xl flex-1 lg:block">
       {/* Input */}
       <div className="relative">
         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
