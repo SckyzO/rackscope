@@ -190,22 +190,26 @@ const ROW_SPAN_CLASS: Record<number, string> = {
 // Minimum row height in pixels (grid-auto-rows: minmax(ROW_PX, auto))
 const ROW_PX = 140;
 // Increment whenever DEFAULT_WIDGETS structure changes to invalidate stale localStorage saves
-const WIDGET_LAYOUT_VERSION = '4';
+const WIDGET_LAYOUT_VERSION = '5';
 const DEFAULT_WIDGETS: WidgetConfig[] = [
+  // ── Row 1 — KPI strip ───────────────────────────────────────────────────────
   { id: 'stat-sites', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'sites' },
   { id: 'stat-rooms', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'rooms' },
   { id: 'stat-racks', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'racks' },
   { id: 'stat-devices', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'devices' },
   { id: 'stat-crit', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'crit' },
   { id: 'stat-warn', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'warn' },
+  // ── Rows 2-4 — Primary monitoring (alerts left, map right) ──────────────────
+  { id: 'alerts', type: 'active-alerts', colSpan: 6, rowSpan: 3 },
+  { id: 'worldmap', type: 'world-map', colSpan: 6, rowSpan: 3 },
+  // ── Rows 5-6 — Gauges (3 × 4-col) ──────────────────────────────────────────
   { id: 'gauge', type: 'health-gauge', colSpan: 4, rowSpan: 2 },
   { id: 'donut', type: 'severity-donut', colSpan: 4, rowSpan: 2 },
   { id: 'prometheus', type: 'prometheus', colSpan: 4, rowSpan: 2 },
-  { id: 'alerts', type: 'active-alerts', colSpan: 8, rowSpan: 3 },
+  // ── Rows 7-8 — Operational details (3 × 4-col) ─────────────────────────────
   { id: 'infra', type: 'infrastructure', colSpan: 4, rowSpan: 2 },
-  { id: 'worldmap', type: 'world-map', colSpan: 6, rowSpan: 3 },
-  { id: 'slurm', type: 'slurm-cluster', colSpan: 6, rowSpan: 2 },
-  { id: 'catalog', type: 'catalog-checks', colSpan: 6, rowSpan: 2 },
+  { id: 'heatmap', type: 'node-heatmap', colSpan: 4, rowSpan: 2 },
+  { id: 'catalog', type: 'catalog-checks', colSpan: 4, rowSpan: 2 },
 ];
 
 const WIDGET_CATALOG: WidgetDefinition[] = [
