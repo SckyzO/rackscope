@@ -89,6 +89,7 @@ type WidgetConfig = {
   id: string;
   type: WidgetType;
   colSpan: 2 | 3 | 4 | 6 | 8 | 12;
+  rowSpan?: 1 | 2 | 3 | 4; // vertical height in grid rows (default 1)
   statKey?: StatKey; // for stat-card widget
 };
 
@@ -174,20 +175,29 @@ const SPAN_CLASS: Record<number, string> = {
   12: 'col-span-12',
 };
 
+const ROW_SPAN_CLASS: Record<number, string> = {
+  1: 'row-span-1',
+  2: 'row-span-2',
+  3: 'row-span-3',
+  4: 'row-span-4',
+};
+
+// Row height in pixels (grid-auto-rows value)
+const ROW_PX = 140;
 const DEFAULT_WIDGETS: WidgetConfig[] = [
-  { id: 'stat-sites', type: 'stat-card', colSpan: 2, statKey: 'sites' },
-  { id: 'stat-rooms', type: 'stat-card', colSpan: 2, statKey: 'rooms' },
-  { id: 'stat-racks', type: 'stat-card', colSpan: 2, statKey: 'racks' },
-  { id: 'stat-devices', type: 'stat-card', colSpan: 2, statKey: 'devices' },
-  { id: 'stat-crit', type: 'stat-card', colSpan: 2, statKey: 'crit' },
-  { id: 'stat-warn', type: 'stat-card', colSpan: 2, statKey: 'warn' },
-  { id: 'gauge', type: 'health-gauge', colSpan: 4 },
-  { id: 'donut', type: 'severity-donut', colSpan: 4 },
-  { id: 'prometheus', type: 'prometheus', colSpan: 4 },
-  { id: 'alerts', type: 'active-alerts', colSpan: 8 },
-  { id: 'infra', type: 'infrastructure', colSpan: 4 },
-  { id: 'slurm', type: 'slurm-cluster', colSpan: 8 },
-  { id: 'catalog', type: 'catalog-checks', colSpan: 4 },
+  { id: 'stat-sites', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'sites' },
+  { id: 'stat-rooms', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'rooms' },
+  { id: 'stat-racks', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'racks' },
+  { id: 'stat-devices', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'devices' },
+  { id: 'stat-crit', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'crit' },
+  { id: 'stat-warn', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'warn' },
+  { id: 'gauge', type: 'health-gauge', colSpan: 4, rowSpan: 2 },
+  { id: 'donut', type: 'severity-donut', colSpan: 4, rowSpan: 2 },
+  { id: 'prometheus', type: 'prometheus', colSpan: 4, rowSpan: 2 },
+  { id: 'alerts', type: 'active-alerts', colSpan: 8, rowSpan: 3 },
+  { id: 'infra', type: 'infrastructure', colSpan: 4, rowSpan: 2 },
+  { id: 'slurm', type: 'slurm-cluster', colSpan: 8, rowSpan: 2 },
+  { id: 'catalog', type: 'catalog-checks', colSpan: 4, rowSpan: 2 },
 ];
 
 const WIDGET_CATALOG: WidgetDefinition[] = [
@@ -271,8 +281,8 @@ const WIDGET_CATALOG: WidgetDefinition[] = [
   },
   {
     type: 'node-heatmap',
-    title: 'Node Heatmap',
-    description: 'Color grid of node alert states',
+    title: 'Node Health',
+    description: 'Alert nodes grouped by room with CRIT/WARN/OK summary',
     defaultColSpan: 6,
     icon: Cpu,
   },
@@ -1136,25 +1146,69 @@ const RackUtilizationWidget = ({ data }: { data: DashboardData }) => {
 // ── Widget: NodeHeatmap ───────────────────────────────────────────────────────
 
 const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
-  const alertMap: Record<string, string> = {};
-  data.alerts.forEach((a) => {
-    alertMap[a.node_id] = a.state;
-  });
-  const nodes = Object.keys(alertMap).slice(0, 48);
+  const critAlerts = data.alerts.filter((a) => a.state === 'CRIT');
+  const warnAlerts = data.alerts.filter((a) => a.state === 'WARN');
+  const okCount = Math.max(0, data.totalDevices - critAlerts.length - warnAlerts.length);
+
+  // Group alerts by room, CRIT rooms first
+  const byRoom = new Map<string, { name: string; alerts: ActiveAlert[] }>();
+  for (const a of data.alerts) {
+    if (!byRoom.has(a.room_id)) byRoom.set(a.room_id, { name: a.room_name, alerts: [] });
+    byRoom.get(a.room_id)!.alerts.push(a);
+  }
+  const affectedRooms = [...byRoom.values()].sort(
+    (a, b) =>
+      (b.alerts.some((x) => x.state === 'CRIT') ? 1 : 0) -
+      (a.alerts.some((x) => x.state === 'CRIT') ? 1 : 0)
+  );
+
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Node Heatmap</p>
-      <div className="flex flex-wrap gap-1">
-        {nodes.map((n) => (
-          <div
-            key={n}
-            title={n}
-            className="h-3 w-3 rounded-sm"
-            style={{ backgroundColor: HC[alertMap[n]] ?? HC.UNKNOWN }}
-          />
-        ))}
-        {nodes.length === 0 && <p className="text-xs text-gray-400">No alert data</p>}
+    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      {/* Header */}
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Node Health</p>
+        <div className="flex items-center gap-2.5 text-xs">
+          {critAlerts.length > 0 && (
+            <span className="font-semibold text-red-500">{critAlerts.length} CRIT</span>
+          )}
+          {warnAlerts.length > 0 && (
+            <span className="font-semibold text-amber-500">{warnAlerts.length} WARN</span>
+          )}
+          <span className="text-gray-400">{okCount} OK</span>
+        </div>
       </div>
+
+      {/* Content */}
+      {affectedRooms.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center gap-2">
+          <CheckCircle className="h-5 w-5 text-emerald-500" />
+          <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+            All nodes healthy
+          </p>
+        </div>
+      ) : (
+        <div className="flex-1 space-y-3 overflow-y-auto">
+          {affectedRooms.map((room) => (
+            <div key={room.name}>
+              <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+                {room.name}
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {room.alerts
+                  .sort((a, b) => (a.state === 'CRIT' ? -1 : 1) - (b.state === 'CRIT' ? -1 : 1))
+                  .map((a) => (
+                    <div
+                      key={a.node_id}
+                      title={`${a.node_id} — ${a.rack_name} (${a.state})`}
+                      className="h-5 w-5 rounded-sm"
+                      style={{ backgroundColor: HC[a.state] ?? HC.UNKNOWN }}
+                    />
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -1590,7 +1644,16 @@ export const CosmosDashboard = () => {
   const dragIdRef = useRef<string | null>(null);
 
   // ── Resize state ──────────────────────────────────────────────────────────
-  type ResizeState = { id: string; startX: number; startWidth: number; colSpan: number };
+  type ResizeState = {
+    id: string;
+    startX: number;
+    startY: number;
+    startWidth: number;
+    startHeight: number;
+    colSpan: number;
+    rowSpan: number;
+    direction: 'h' | 'v' | 'both'; // horizontal, vertical, or corner
+  };
   const [resizing, setResizing] = useState<ResizeState | null>(null);
   const resizingRef = useRef<ResizeState | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -1660,44 +1723,77 @@ export const CosmosDashboard = () => {
   };
 
   // ── Resize handlers ───────────────────────────────────────────────────────
-  const startResize = (e: React.MouseEvent, widget: WidgetConfig, el: HTMLElement) => {
+  const startResize = (
+    e: React.MouseEvent,
+    widget: WidgetConfig,
+    el: HTMLElement,
+    dir: 'h' | 'v' | 'both'
+  ) => {
     e.preventDefault();
     e.stopPropagation();
+    const rect = el.getBoundingClientRect();
     const state: ResizeState = {
       id: widget.id,
       startX: e.clientX,
-      startWidth: el.getBoundingClientRect().width,
+      startY: e.clientY,
+      startWidth: rect.width,
+      startHeight: rect.height,
       colSpan: widget.colSpan,
+      rowSpan: widget.rowSpan ?? 1,
+      direction: dir,
     };
     resizingRef.current = state;
     setResizing(state);
   };
 
   useEffect(() => {
-    const validSpans = [2, 3, 4, 6, 8, 12] as const;
+    const validColSpans = [2, 3, 4, 6, 8, 12] as const;
+    const validRowSpans = [1, 2, 3, 4] as const;
     const onMove = (e: MouseEvent) => {
       const r = resizingRef.current;
       if (!r || !gridRef.current) return;
+      const GAP = 20;
       const gridWidth = gridRef.current.getBoundingClientRect().width;
-      const GAP = 20; // gap-5 = 20px
       const colPx = (gridWidth - GAP * 11) / 12;
-      const delta = e.clientX - r.startX;
-      const newPx = r.startWidth + delta;
-      const raw = Math.round(newPx / colPx);
-      const snapped = validSpans.reduce((a, b) =>
-        Math.abs(b - raw) < Math.abs(a - raw) ? b : a
-      ) as WidgetConfig['colSpan'];
-      if (snapped !== r.colSpan) {
-        const next = { ...r, colSpan: snapped };
+      const updated: Partial<ResizeState> = {};
+
+      if (r.direction === 'h' || r.direction === 'both') {
+        const delta = e.clientX - r.startX;
+        const raw = Math.round((r.startWidth + delta) / colPx);
+        const snapped = validColSpans.reduce((a, b) =>
+          Math.abs(b - raw) < Math.abs(a - raw) ? b : a
+        ) as WidgetConfig['colSpan'];
+        if (snapped !== r.colSpan) updated.colSpan = snapped;
+      }
+
+      if (r.direction === 'v' || r.direction === 'both') {
+        const deltaY = e.clientY - r.startY;
+        const raw = Math.round((r.startHeight + deltaY) / (ROW_PX + GAP));
+        const snapped = validRowSpans.reduce((a, b) =>
+          Math.abs(b - raw) < Math.abs(a - raw) ? b : a
+        ) as NonNullable<WidgetConfig['rowSpan']>;
+        if (snapped !== r.rowSpan) updated.rowSpan = snapped;
+      }
+
+      if (Object.keys(updated).length > 0) {
+        const next = { ...r, ...updated };
         resizingRef.current = next;
         setResizing(next);
-        // Live preview — update colSpan directly (don't persist yet)
-        setWidgets((prev) => prev.map((w) => (w.id === r.id ? { ...w, colSpan: snapped } : w)));
+        setWidgets((prev) =>
+          prev.map((w) =>
+            w.id === r.id
+              ? {
+                  ...w,
+                  ...(updated.colSpan !== undefined ? { colSpan: updated.colSpan } : {}),
+                  ...(updated.rowSpan !== undefined ? { rowSpan: updated.rowSpan } : {}),
+                }
+              : w
+          )
+        );
       }
     };
     const onUp = () => {
       if (!resizingRef.current) return;
-      // Persist final colSpan
       setWidgets((prev) => {
         localStorage.setItem('cosmos-dashboard-widgets', JSON.stringify(prev));
         return prev;
@@ -1711,7 +1807,7 @@ export const CosmosDashboard = () => {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
     };
-  }, []); // validSpans is defined inside the effect, no external deps
+  }, []);
 
   // ── Data loading ──────────────────────────────────────────────────────────
   const loadAll = async (quiet = false) => {
@@ -1933,7 +2029,7 @@ export const CosmosDashboard = () => {
 
       {/* Loading skeleton */}
       {loading ? (
-        <div className="grid grid-cols-12 gap-5">
+        <div className="grid grid-cols-12 gap-5" style={{ gridAutoRows: `${ROW_PX}px` }}>
           {[12, 4, 4, 4, 8, 4].map((span, i) => (
             <div
               key={i}
@@ -1944,6 +2040,7 @@ export const CosmosDashboard = () => {
       ) : (
         <div
           ref={gridRef}
+          style={{ gridAutoRows: `${ROW_PX}px` }}
           className={`relative grid grid-cols-12 gap-5 ${editMode ? 'pr-[420px]' : ''}`}
         >
           {/* Column guide overlay — shown while resizing */}
@@ -1966,6 +2063,7 @@ export const CosmosDashboard = () => {
                 onDrop={editMode ? (e) => handleDrop(e, widget.id) : undefined}
                 className={[
                   SPAN_CLASS[widget.colSpan] ?? 'col-span-4',
+                  ROW_SPAN_CLASS[widget.rowSpan ?? 1] ?? 'row-span-1',
                   'group relative transition-opacity',
                   editMode
                     ? 'ring-brand-500/20 rounded-2xl ring-1 ring-offset-1 ring-offset-transparent'
@@ -2027,19 +2125,29 @@ export const CosmosDashboard = () => {
                       </div>
                     </div>
 
-                    {/* Resize handle — bottom-right corner */}
+                    {/* Bottom resize handle — vertical height */}
                     <div
-                      className="bg-brand-500/30 hover:bg-brand-500/60 absolute right-0 bottom-0 z-20 flex h-6 w-6 cursor-se-resize items-center justify-center rounded-tl-lg rounded-br-2xl"
-                      title="Drag to resize"
+                      className="bg-brand-500/30 hover:bg-brand-500/60 absolute bottom-0 left-1/2 z-20 h-2 w-16 -translate-x-1/2 cursor-s-resize rounded-full"
+                      title="Drag to resize height"
                       onMouseDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        // parentElement is the widget cell div (fragment creates no DOM node)
                         const el = e.currentTarget.parentElement as HTMLElement | null;
-                        if (el) startResize(e, widget, el);
+                        if (el) startResize(e, widget, el, 'v');
+                      }}
+                    />
+
+                    {/* Bottom-right corner handle — resize both */}
+                    <div
+                      className="bg-brand-500/30 hover:bg-brand-500/60 absolute right-0 bottom-0 z-20 flex h-6 w-6 cursor-se-resize items-center justify-center rounded-tl-lg rounded-br-2xl"
+                      title="Drag to resize width + height"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const el = e.currentTarget.parentElement as HTMLElement | null;
+                        if (el) startResize(e, widget, el, 'both');
                       }}
                     >
-                      {/* Resize icon: two diagonal lines */}
                       <svg width="10" height="10" viewBox="0 0 10 10" className="text-brand-500">
                         <line
                           x1="10"
@@ -2062,10 +2170,22 @@ export const CosmosDashboard = () => {
                       </svg>
                     </div>
 
+                    {/* Right resize handle — horizontal width only */}
+                    <div
+                      className="bg-brand-500/30 hover:bg-brand-500/60 absolute top-1/2 right-0 z-20 h-12 w-1.5 -translate-y-1/2 cursor-e-resize rounded-full"
+                      title="Drag to resize width"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const el = e.currentTarget.parentElement as HTMLElement | null;
+                        if (el) startResize(e, widget, el, 'h');
+                      }}
+                    />
+
                     {/* Resize tooltip */}
                     {isResizing && (
                       <div className="bg-brand-500 absolute top-2 left-1/2 z-30 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg">
-                        {resizing.colSpan}/12 cols ({Math.round((resizing.colSpan / 12) * 100)}%)
+                        {resizing.colSpan}/12 · {resizing.rowSpan ?? 1}row
                       </div>
                     )}
                   </>
