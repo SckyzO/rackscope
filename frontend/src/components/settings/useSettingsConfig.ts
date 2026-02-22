@@ -59,6 +59,11 @@ export type ConfigDraft = {
     offline: boolean;
     demo: boolean;
   };
+  auth: {
+    enabled: boolean;
+    session_duration: string;
+    password_hash: string;
+  };
   plugins: {
     simulator: {
       enabled: boolean;
@@ -165,6 +170,11 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     playlist: config.features?.playlist ?? false,
     offline: config.features?.offline ?? false,
     demo: config.features?.demo ?? false,
+  },
+  auth: {
+    enabled: config.auth?.enabled ?? false,
+    session_duration: config.auth?.session_duration ?? '24h',
+    password_hash: config.auth?.password_hash ?? '',
   },
   plugins: {
     simulator: {
@@ -303,6 +313,10 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
     playlist: draft.features.playlist,
     offline: draft.features.offline,
     demo: draft.features.demo,
+  },
+  auth: {
+    enabled: draft.auth.enabled,
+    session_duration: draft.auth.session_duration as '8h' | '24h' | 'unlimited',
   },
   plugins: {
     simulator: {

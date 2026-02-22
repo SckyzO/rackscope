@@ -1,7 +1,9 @@
-import { Routes, Route } from 'react-router-dom';
+import { useEffect, type ReactNode } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { CosmosLayout } from './layout/CosmosLayout';
 import { CosmosDashboard } from './pages/CosmosDashboard';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
 
 // UI Elements
 import { BadgesPage } from './pages/ui/BadgesPage';
@@ -43,7 +45,7 @@ import { ChartsPage } from './pages/charts/ChartsPage';
 // Tables
 import { DataTablesPage } from './pages/tables/DataTablesPage';
 
-// Auth (standalone — no layout)
+// Auth (standalone — no layout, no protection)
 import { SignInPage } from './pages/auth/SignInPage';
 import { SignUpPage } from './pages/auth/SignUpPage';
 
@@ -97,13 +99,44 @@ import { CosmosTopologyEditorPageV5 } from './pages/editors/CosmosTopologyEditor
 import { CosmosTemplatesEditorPage } from './pages/editors/CosmosTemplatesEditorPage';
 import { CosmosRackEditorPage } from './pages/editors/CosmosRackEditorPage';
 
-export const CosmosRouter = () => (
+// ── ProtectedRoute ────────────────────────────────────────────────────────────
+
+const ProtectedRoute = ({ children }: { children: ReactNode }) => {
+  const { authEnabled, user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && authEnabled && !user) {
+      navigate('/cosmos/auth/signin', { replace: true });
+    }
+  }, [loading, authEnabled, user, navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-500" />
+      </div>
+    );
+  }
+  if (authEnabled && !user) return null;
+  return <>{children}</>;
+};
+
+// ── Router ────────────────────────────────────────────────────────────────────
+
+const CosmosRoutes = () => (
   <Routes>
-    {/* Auth — no layout */}
+    {/* Auth — no layout, no protection */}
     <Route path="auth/signin" element={<SignInPage />} />
     <Route path="auth/signup" element={<SignUpPage />} />
 
-    <Route element={<CosmosLayout />}>
+    <Route
+      element={
+        <ProtectedRoute>
+          <CosmosLayout />
+        </ProtectedRoute>
+      }
+    >
       <Route index element={<CosmosDashboard />} />
 
       {/* UI Elements */}
@@ -200,4 +233,10 @@ export const CosmosRouter = () => (
       <Route path="*" element={<NotFoundPage />} />
     </Route>
   </Routes>
+);
+
+export const CosmosRouter = () => (
+  <AuthProvider>
+    <CosmosRoutes />
+  </AuthProvider>
 );

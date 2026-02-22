@@ -65,9 +65,26 @@ const writeCache = (key: string, data: unknown) => {
   writeJSON(`${CACHE_PREFIX}${key}`, { ts: Date.now(), data });
 };
 
+// ── Auth-aware fetch ───────────────────────────────────────────────────────
+
+const getToken = (): string | null => {
+  try {
+    return localStorage.getItem('rackscope.auth.token');
+  } catch {
+    return null;
+  }
+};
+
+const apiFetch = (url: string, options?: RequestInit): Promise<Response> => {
+  const token = getToken();
+  const base = options?.headers ? new Headers(options.headers) : new Headers();
+  if (token) base.set('Authorization', `Bearer ${token}`);
+  return fetch(url, { ...options, headers: base });
+};
+
 const fetchWithCache = async <T>(url: string, cacheKey: string): Promise<T> => {
   try {
-    const res = await fetch(url);
+    const res = await apiFetch(url);
     if (!res.ok) {
       logClientError(`Request failed: ${res.status} ${res.statusText}`, url);
       const cached = readCache(cacheKey);
@@ -92,7 +109,7 @@ export const api = {
     return fetchWithCache('/api/sites', 'sites');
   },
   createSite: async (payload: { id?: string | null; name: string }) => {
-    const res = await fetch('/api/topology/sites', {
+    const res = await apiFetch('/api/topology/sites', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -111,7 +128,7 @@ export const api = {
     siteId: string,
     payload: { id?: string | null; name: string; description?: string | null }
   ) => {
-    const res = await fetch(`/api/topology/sites/${encodeURIComponent(siteId)}/rooms`, {
+    const res = await apiFetch(`/api/topology/sites/${encodeURIComponent(siteId)}/rooms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -129,7 +146,7 @@ export const api = {
     return data;
   },
   createRoomAisles: async (roomId: string, aisles: { id?: string | null; name: string }[]) => {
-    const res = await fetch(`/api/topology/rooms/${encodeURIComponent(roomId)}/aisles/create`, {
+    const res = await apiFetch(`/api/topology/rooms/${encodeURIComponent(roomId)}/aisles/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ aisles }),
@@ -156,7 +173,7 @@ export const api = {
     kind: 'device' | 'rack';
     template: Record<string, unknown>;
   }) => {
-    const res = await fetch('/api/catalog/templates', {
+    const res = await apiFetch('/api/catalog/templates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -174,7 +191,7 @@ export const api = {
     kind: 'device' | 'rack';
     template: Record<string, unknown>;
   }) => {
-    const res = await fetch('/api/catalog/templates', {
+    const res = await apiFetch('/api/catalog/templates', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -192,7 +209,7 @@ export const api = {
     kind: 'device' | 'rack';
     template: Record<string, unknown>;
   }) => {
-    const res = await fetch('/api/catalog/templates/validate', {
+    const res = await apiFetch('/api/catalog/templates/validate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -269,7 +286,7 @@ export const api = {
     return fetchWithCache(`/api/checks/files/${encodeURIComponent(name)}`, `checks.file.${name}`);
   },
   updateChecksFile: async (name: string, content: string) => {
-    const res = await fetch(`/api/checks/files/${encodeURIComponent(name)}`, {
+    const res = await apiFetch(`/api/checks/files/${encodeURIComponent(name)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content }),
@@ -336,7 +353,7 @@ export const api = {
     return fetchWithCache(url, cacheKey, 60000); // 60s cache for metrics
   },
   updateAisleRacks: async (aisleId: string, roomId: string, racks: string[]) => {
-    const res = await fetch(`/api/topology/aisles/${encodeURIComponent(aisleId)}/racks`, {
+    const res = await apiFetch(`/api/topology/aisles/${encodeURIComponent(aisleId)}/racks`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ room_id: roomId, racks }),
@@ -351,7 +368,7 @@ export const api = {
     return data;
   },
   updateRackTemplate: async (rackId: string, templateId: string | null) => {
-    const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/template`, {
+    const res = await apiFetch(`/api/topology/racks/${encodeURIComponent(rackId)}/template`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ template_id: templateId }),
@@ -367,7 +384,7 @@ export const api = {
     return data;
   },
   updateRoomAisles: async (roomId: string, aisles: Record<string, string[]>) => {
-    const res = await fetch(`/api/topology/rooms/${encodeURIComponent(roomId)}/aisles`, {
+    const res = await apiFetch(`/api/topology/rooms/${encodeURIComponent(roomId)}/aisles`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ aisles }),
@@ -392,7 +409,7 @@ export const api = {
       instance?: Record<number, string> | string | null;
     }
   ) => {
-    const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices`, {
+    const res = await apiFetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -408,7 +425,7 @@ export const api = {
     return data;
   },
   updateRackDevicePosition: async (rackId: string, deviceId: string, uPosition: number) => {
-    const res = await fetch(
+    const res = await apiFetch(
       `/api/topology/racks/${encodeURIComponent(rackId)}/devices/${encodeURIComponent(deviceId)}`,
       {
         method: 'PUT',
@@ -430,7 +447,7 @@ export const api = {
     return data;
   },
   deleteRackDevice: async (rackId: string, deviceId: string) => {
-    const res = await fetch(
+    const res = await apiFetch(
       `/api/topology/racks/${encodeURIComponent(rackId)}/devices/${encodeURIComponent(deviceId)}`,
       {
         method: 'DELETE',
@@ -450,7 +467,7 @@ export const api = {
     return data;
   },
   updateRackDevices: async (rackId: string, devices: Device[]) => {
-    const res = await fetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices`, {
+    const res = await apiFetch(`/api/topology/racks/${encodeURIComponent(rackId)}/devices`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ devices }),
@@ -472,7 +489,7 @@ export const api = {
     return fetchWithCache('/api/config', 'app.config');
   },
   updateConfig: async (payload: AppConfig): Promise<AppConfig> => {
-    const res = await fetch('/api/config', {
+    const res = await apiFetch('/api/config', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -502,7 +519,7 @@ export const api = {
     value: number;
     ttl_seconds?: number;
   }): Promise<{ overrides: SimulatorOverride[] }> => {
-    const res = await fetch('/api/simulator/overrides', {
+    const res = await apiFetch('/api/simulator/overrides', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -516,7 +533,7 @@ export const api = {
     return data;
   },
   clearSimulatorOverrides: async (): Promise<{ overrides: SimulatorOverride[] }> => {
-    const res = await fetch('/api/simulator/overrides', { method: 'DELETE' });
+    const res = await apiFetch('/api/simulator/overrides', { method: 'DELETE' });
     if (!res.ok) {
       logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/simulator/overrides');
       throw new Error(`Request failed: ${res.status}`);
@@ -528,7 +545,7 @@ export const api = {
   deleteSimulatorOverride: async (
     overrideId: string
   ): Promise<{ overrides: SimulatorOverride[] }> => {
-    const res = await fetch(`/api/simulator/overrides/${overrideId}`, { method: 'DELETE' });
+    const res = await apiFetch(`/api/simulator/overrides/${overrideId}`, { method: 'DELETE' });
     if (!res.ok) {
       logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/simulator/overrides');
       throw new Error(`Request failed: ${res.status}`);
@@ -540,7 +557,7 @@ export const api = {
   getPluginsMenu: async (): Promise<PluginsMenuResponse> => {
     // Don't cache plugins menu - needs to be fresh for enabled/disabled state changes
     try {
-      const res = await fetch('/api/plugins/menu');
+      const res = await apiFetch('/api/plugins/menu');
       if (!res.ok) {
         logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/plugins/menu');
         throw new Error(`Request failed: ${res.status}`);
@@ -556,7 +573,7 @@ export const api = {
   },
   restartBackend: async (): Promise<{ status: string; message: string }> => {
     try {
-      const res = await fetch('/api/system/restart', { method: 'POST' });
+      const res = await apiFetch('/api/system/restart', { method: 'POST' });
       if (!res.ok) {
         logClientError(`Request failed: ${res.status} ${res.statusText}`, '/api/system/restart');
         throw new Error(`Request failed: ${res.status}`);
@@ -581,4 +598,28 @@ export const api = {
   },
   getErrorLog: () => readJSON(ERROR_KEY) || [],
   clearErrorLog: () => writeJSON(ERROR_KEY, []),
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+    const res = await apiFetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { detail?: string }).detail ?? 'Failed to change password');
+    }
+  },
+  changeUsername: async (password: string, newUsername: string): Promise<{ username: string }> => {
+    const res = await apiFetch('/api/auth/change-username', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password, new_username: newUsername }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { detail?: string }).detail ?? 'Failed to change username');
+    }
+    return res.json() as Promise<{ username: string }>;
+  },
 };

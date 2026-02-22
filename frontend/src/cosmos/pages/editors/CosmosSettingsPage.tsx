@@ -6,14 +6,16 @@ import { AppSettingsSection } from '../../../components/settings/sections/AppSet
 import { TelemetrySettingsSection } from '../../../components/settings/sections/TelemetrySettingsSection';
 import { PlannerSettingsSection } from '../../../components/settings/sections/PlannerSettingsSection';
 import { PluginsSettingsSection } from '../../../components/settings/sections/PluginsSettingsSection';
+import { SecuritySettingsSection } from '../../../components/settings/sections/SecuritySettingsSection';
 
-type TabId = 'general' | 'telemetry' | 'planner' | 'plugins';
+type TabId = 'general' | 'telemetry' | 'planner' | 'plugins' | 'security';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'general', label: 'General' },
   { id: 'telemetry', label: 'Telemetry' },
   { id: 'planner', label: 'Planner' },
   { id: 'plugins', label: 'Plugins' },
+  { id: 'security', label: 'Security' },
 ];
 
 const TAB_IDS = TABS.map((t) => t.id);
@@ -155,6 +157,9 @@ export const CosmosSettingsPage: React.FC = () => {
           )}
           {activeTab === 'planner' && <PlannerSettingsSection draft={draft} setDraft={setDraft} />}
           {activeTab === 'plugins' && <PluginsSettingsSection draft={draft} setDraft={setDraft} />}
+          {activeTab === 'security' && (
+            <SecuritySettingsSection draft={draft} setDraft={setDraft} />
+          )}
         </div>
       </div>
 

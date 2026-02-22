@@ -202,6 +202,14 @@ class SlurmConfig(BaseModel):
     mapping_path: Optional[str] = None
 
 
+class AuthConfig(BaseModel):
+    enabled: bool = False
+    username: str = "admin"
+    password_hash: str = ""  # bcrypt hash; empty = not yet configured
+    secret_key: str = ""  # JWT signing key; auto-generated at startup if empty
+    session_duration: Literal["8h", "24h", "unlimited"] = "24h"
+
+
 class AppConfig(BaseModel):
     app: AppInfoConfig = Field(default_factory=AppInfoConfig)
     paths: PathsConfig
@@ -210,6 +218,7 @@ class AppConfig(BaseModel):
     telemetry: TelemetryConfig = Field(default_factory=TelemetryConfig)
     planner: PlannerConfig = Field(default_factory=PlannerConfig)
     features: FeatureConfig = Field(default_factory=FeatureConfig)
+    auth: AuthConfig = Field(default_factory=AuthConfig)
     map: MapConfig = Field(default_factory=MapConfig)
 
     # Plugin configuration (new format - recommended)

@@ -10,7 +10,9 @@ import logging
 from typing import Callable
 
 from fastapi import Request, Response
+from jose import jwt as _jwt, JWTError as _JWTError
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
 
@@ -72,3 +74,42 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         response.headers["X-Request-ID"] = request_id
 
         return response
+
+
+# Public paths that never require authentication
+_AUTH_PUBLIC_PATHS = {"/api/auth/login", "/api/auth/status"}
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    """JWT Bearer token validation middleware.
+
+    Skips validation when auth is disabled in config.
+    Exempts /api/auth/login and /api/auth/status.
+    """
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        from rackscope.api.app import APP_CONFIG, AUTH_RUNTIME_SECRET
+
+        # Skip if auth not configured or disabled
+        if not APP_CONFIG or not APP_CONFIG.auth.enabled:
+            return await call_next(request)
+
+        # Always allow public auth endpoints
+        if request.url.path in _AUTH_PUBLIC_PATHS:
+            return await call_next(request)
+
+        # Extract Bearer token
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return JSONResponse({"detail": "Not authenticated"}, status_code=401)
+
+        token = auth_header[7:]
+        secret = APP_CONFIG.auth.secret_key or AUTH_RUNTIME_SECRET
+
+        try:
+            payload = _jwt.decode(token, secret, algorithms=["HS256"])
+            request.state.user = payload.get("sub", "")
+        except _JWTError:
+            return JSONResponse({"detail": "Invalid or expired token"}, status_code=401)
+
+        return await call_next(request)

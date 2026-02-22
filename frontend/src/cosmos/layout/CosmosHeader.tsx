@@ -4,6 +4,7 @@ import { Moon, Sun, Bell, ChevronDown, User, AlertTriangle, XCircle } from 'luci
 import { api } from '../../services/api';
 import type { ActiveAlert } from '../../types';
 import { CosmosSearch } from './CosmosSearch';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/cosmos': 'Analytics Dashboard',
@@ -57,6 +58,7 @@ export const CosmosHeader = ({
 }: CosmosHeaderProps) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout, user, authEnabled } = useAuth();
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
@@ -275,7 +277,9 @@ export const CosmosHeader = ({
             <div className="bg-brand-500 flex h-7 w-7 items-center justify-center rounded-full text-white">
               <User className="h-4 w-4" />
             </div>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Admin</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              {authEnabled && user ? user.username : 'Admin'}
+            </span>
             <ChevronDown className="h-4 w-4 text-gray-400" />
           </button>
 
@@ -290,7 +294,10 @@ export const CosmosHeader = ({
                   Settings
                 </button>
                 <hr className="my-1 border-gray-100 dark:border-gray-800" />
-                <button className="text-error-500 w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
+                <button
+                  onClick={logout}
+                  className="text-error-500 w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                >
                   Sign Out
                 </button>
               </div>

@@ -412,6 +412,13 @@ export interface AppConfig {
       crit?: string[];
     };
   };
+  auth?: {
+    enabled?: boolean;
+    username?: string;
+    password_hash?: string;
+    secret_key?: string;
+    session_duration?: '8h' | '24h' | 'unlimited';
+  };
 }
 
 export interface SimulatorScenario {

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import asyncio
+import secrets
 from contextlib import asynccontextmanager, suppress
 from typing import Optional, Dict
 
@@ -36,12 +37,13 @@ from rackscope.api.routers import (
     plugins,
     metrics,
     system,
+    auth as auth_router,
 )
 from rackscope.services.instance_service import expand_device_instances
 from rackscope.services import telemetry_service
 from rackscope.logging_config import setup_logging, get_logger
 from rackscope.api import exceptions
-from rackscope.api.middleware import RequestLoggingMiddleware
+from rackscope.api.middleware import AuthMiddleware, RequestLoggingMiddleware
 
 # Setup logging
 setup_logging()
@@ -55,6 +57,9 @@ METRICS_LIBRARY: Optional[MetricsLibrary] = None
 APP_CONFIG: Optional[AppConfig] = None
 PLANNER: Optional[TelemetryPlanner] = None
 PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
+
+# Runtime JWT secret — used when auth.secret_key is empty in config
+AUTH_RUNTIME_SECRET: str = secrets.token_hex(32)
 
 
 # Telemetry helper functions now in telemetry_service
@@ -210,6 +215,7 @@ app = FastAPI(title="rackscope", version="0.0.0", lifespan=lifespan)
 
 # Register middleware
 app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(AuthMiddleware)
 
 # Register exception handlers
 app.add_exception_handler(RequestValidationError, exceptions.validation_error_handler)
@@ -227,6 +233,7 @@ app.include_router(topology.router)
 app.include_router(telemetry.router)
 app.include_router(metrics.router)
 app.include_router(plugins.router)
+app.include_router(auth_router.router)
 
 
 @app.get("/healthz")
