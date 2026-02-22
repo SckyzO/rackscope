@@ -14,8 +14,6 @@ import {
   CreditCard,
   Image as ImageIcon,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Link as LinkIcon,
   List,
   MessageSquare,
@@ -92,10 +90,9 @@ const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean 
 
 interface CosmosSidebarProps {
   collapsed: boolean;
-  onToggleCollapse: () => void;
 }
 
-export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProps) => {
+export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
   const [uiOpen, setUiOpen] = useState(false);
   const [rooms, setRooms] = useState<{ id: string; name: string }[]>([]);
   const navigate = useNavigate();
@@ -146,12 +143,12 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
 
   return (
     <aside
-      className={`cosmos-scrollbar dark:bg-gray-dark flex flex-col overflow-y-auto border-r border-gray-200 bg-white duration-300 dark:border-gray-800 ${
+      className={`cosmos-scrollbar cosmos-theme-bg dark:bg-gray-dark flex flex-col overflow-y-auto border-r border-gray-200 bg-white dark:border-gray-800 ${
         collapsed ? 'w-[90px]' : 'w-[290px]'
-      } [transition:width_300ms_ease]`}
+      } [transition:width_300ms_ease,background-color_500ms_ease,border-color_500ms_ease,color_500ms_ease]`}
     >
-      {/* Logo + collapse toggle */}
-      <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-800">
+      {/* Logo */}
+      <div className="flex h-[72px] shrink-0 items-center border-b border-gray-200 px-4 dark:border-gray-800">
         <div className="flex items-center gap-3">
           <div className="bg-brand-500 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white">
             <Activity className="h-5 w-5" />
@@ -162,13 +159,6 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
             </span>
           )}
         </div>
-        <button
-          onClick={onToggleCollapse}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5"
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </button>
       </div>
 
       {/* Nav */}

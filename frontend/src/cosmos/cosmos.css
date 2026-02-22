@@ -2,6 +2,15 @@
    All Tailwind design tokens (brand, success, error, warning, shadows, dark variant)
    are defined in index.css so Tailwind generates utility classes globally. */
 
+/* Smooth theme transition — applied to the main layout containers so
+   light/dark switch feels uniform. We target only structural divs, NOT
+   interactive elements (buttons, links) so hover effects stay fast. */
+.cosmos-theme-bg {
+  transition-property: color, background-color, border-color;
+  transition-duration: 500ms;
+  transition-timing-function: ease;
+}
+
 .cosmos-root {
   font-family: Outfit, system-ui, sans-serif;
   background: white;

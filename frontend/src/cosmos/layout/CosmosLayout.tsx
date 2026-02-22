@@ -31,12 +31,14 @@ export const CosmosLayout = () => {
   return (
     <div ref={rootRef} className={isDark ? 'cosmos-root dark' : 'cosmos-root'}>
       <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
-        <CosmosSidebar
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
-        />
+        <CosmosSidebar collapsed={sidebarCollapsed} />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <CosmosHeader isDark={isDark} toggleDark={handleToggleDark} />
+          <CosmosHeader
+            isDark={isDark}
+            toggleDark={handleToggleDark}
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleSidebar={() => setSidebarCollapsed((p) => !p)}
+          />
           <main className="cosmos-scrollbar flex-1 overflow-y-auto p-6">
             <Outlet />
           </main>

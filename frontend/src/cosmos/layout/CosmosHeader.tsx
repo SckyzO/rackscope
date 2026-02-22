@@ -10,6 +10,8 @@ import {
   X,
   AlertTriangle,
   XCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import type { ActiveAlert } from '../../types';
@@ -54,9 +56,16 @@ const SEV_COLOR: Record<string, string> = {
 interface CosmosHeaderProps {
   isDark: boolean;
   toggleDark: () => void;
+  sidebarCollapsed: boolean;
+  onToggleSidebar: () => void;
 }
 
-export const CosmosHeader = ({ isDark, toggleDark }: CosmosHeaderProps) => {
+export const CosmosHeader = ({
+  isDark,
+  toggleDark,
+  sidebarCollapsed,
+  onToggleSidebar,
+}: CosmosHeaderProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
@@ -96,9 +105,20 @@ export const CosmosHeader = ({ isDark, toggleDark }: CosmosHeaderProps) => {
   };
 
   return (
-    <header className="dark:bg-gray-dark flex h-[72px] shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 dark:border-gray-800">
-      {/* Left: page title */}
-      <div className="min-w-0">
+    <header className="dark:bg-gray-dark flex h-[72px] shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 [transition:background-color_500ms_ease,border-color_500ms_ease] dark:border-gray-800">
+      {/* Left: sidebar toggle + page title */}
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          onClick={onToggleSidebar}
+          title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5"
+        >
+          {sidebarCollapsed ? (
+            <PanelLeftOpen className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
+        </button>
         <h1 className="truncate text-lg font-semibold text-gray-900 dark:text-white">
           {pageTitle}
         </h1>
