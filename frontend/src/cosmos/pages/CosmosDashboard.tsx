@@ -62,7 +62,10 @@ type RoomWithState = {
 
 type DonutSlice = { label: string; count: number; color: string };
 
+type StatKey = 'sites' | 'rooms' | 'racks' | 'devices' | 'crit' | 'warn';
+
 type WidgetType =
+  | 'stat-card'
   | 'stats-row'
   | 'health-gauge'
   | 'severity-donut'
@@ -70,19 +73,30 @@ type WidgetType =
   | 'slurm-cluster'
   | 'infrastructure'
   | 'prometheus'
-  | 'catalog-checks';
+  | 'catalog-checks'
+  | 'alert-count'
+  | 'rack-utilization'
+  | 'node-heatmap'
+  | 'uptime'
+  | 'recent-alerts'
+  | 'site-map'
+  | 'check-summary'
+  | 'device-types'
+  | 'slurm-nodes'
+  | 'slurm-utilization';
 
 type WidgetConfig = {
   id: string;
   type: WidgetType;
-  colSpan: 3 | 4 | 6 | 8 | 12;
+  colSpan: 2 | 3 | 4 | 6 | 8 | 12;
+  statKey?: StatKey; // for stat-card widget
 };
 
 type WidgetDefinition = {
   type: WidgetType;
   title: string;
   description: string;
-  defaultColSpan: 3 | 4 | 6 | 8 | 12;
+  defaultColSpan: 2 | 3 | 4 | 6 | 8 | 12;
   icon: React.ElementType;
   requiresSlurm?: boolean;
 };
@@ -152,6 +166,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const SPAN_CLASS: Record<number, string> = {
+  2: 'col-span-2',
   3: 'col-span-3',
   4: 'col-span-4',
   6: 'col-span-6',
@@ -160,7 +175,12 @@ const SPAN_CLASS: Record<number, string> = {
 };
 
 const DEFAULT_WIDGETS: WidgetConfig[] = [
-  { id: 'stats', type: 'stats-row', colSpan: 12 },
+  { id: 'stat-sites', type: 'stat-card', colSpan: 2, statKey: 'sites' },
+  { id: 'stat-rooms', type: 'stat-card', colSpan: 2, statKey: 'rooms' },
+  { id: 'stat-racks', type: 'stat-card', colSpan: 2, statKey: 'racks' },
+  { id: 'stat-devices', type: 'stat-card', colSpan: 2, statKey: 'devices' },
+  { id: 'stat-crit', type: 'stat-card', colSpan: 2, statKey: 'crit' },
+  { id: 'stat-warn', type: 'stat-card', colSpan: 2, statKey: 'warn' },
   { id: 'gauge', type: 'health-gauge', colSpan: 4 },
   { id: 'donut', type: 'severity-donut', colSpan: 4 },
   { id: 'prometheus', type: 'prometheus', colSpan: 4 },
@@ -227,6 +247,85 @@ const WIDGET_CATALOG: WidgetDefinition[] = [
     description: 'Templates and checks library stats',
     defaultColSpan: 4,
     icon: ShieldCheck,
+  },
+  {
+    type: 'stat-card',
+    title: 'Stat Card',
+    description: 'Single metric (sites, rooms, racks...)',
+    defaultColSpan: 2,
+    icon: BarChart2,
+  },
+  {
+    type: 'alert-count',
+    title: 'Alert Count',
+    description: 'CRIT + WARN count prominent display',
+    defaultColSpan: 3,
+    icon: XCircle,
+  },
+  {
+    type: 'rack-utilization',
+    title: 'Rack Utilization',
+    description: 'Fill % per room as bar chart',
+    defaultColSpan: 6,
+    icon: Server,
+  },
+  {
+    type: 'node-heatmap',
+    title: 'Node Heatmap',
+    description: 'Color grid of node alert states',
+    defaultColSpan: 6,
+    icon: Cpu,
+  },
+  {
+    type: 'uptime',
+    title: 'Scrape Latency',
+    description: 'Last Prometheus scrape latency',
+    defaultColSpan: 3,
+    icon: Zap,
+  },
+  {
+    type: 'recent-alerts',
+    title: 'Recent CRIT',
+    description: 'Last 3 critical alerts',
+    defaultColSpan: 4,
+    icon: AlertTriangle,
+  },
+  {
+    type: 'site-map',
+    title: 'Site Map',
+    description: 'Sites with room counts',
+    defaultColSpan: 4,
+    icon: Globe,
+  },
+  {
+    type: 'check-summary',
+    title: 'Check Summary',
+    description: 'Checks library stats',
+    defaultColSpan: 3,
+    icon: ShieldCheck,
+  },
+  {
+    type: 'device-types',
+    title: 'Device Types',
+    description: 'Template types breakdown',
+    defaultColSpan: 4,
+    icon: Layers,
+  },
+  {
+    type: 'slurm-nodes',
+    title: 'Slurm Nodes',
+    description: 'Total Slurm nodes count',
+    defaultColSpan: 3,
+    icon: Activity,
+    requiresSlurm: true,
+  },
+  {
+    type: 'slurm-utilization',
+    title: 'Slurm Utilization',
+    description: 'Allocated % gauge',
+    defaultColSpan: 6,
+    icon: Activity,
+    requiresSlurm: true,
   },
 ];
 
@@ -449,6 +548,15 @@ const SeverityDonut = ({ slices }: { slices: DonutSlice[] }) => {
   );
 };
 
+// ── Widget placeholder helper ─────────────────────────────────────────────────
+
+const WidgetPlaceholder = ({ title, icon: Icon }: { title: string; icon: React.ElementType }) => (
+  <div className="flex h-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-6 dark:border-gray-700 dark:bg-gray-900/50">
+    <Icon className="h-8 w-8 text-gray-300 dark:text-gray-700" />
+    <p className="text-sm font-medium text-gray-400 dark:text-gray-600">{title}</p>
+  </div>
+);
+
 // ── Widget: StatsRow ──────────────────────────────────────────────────────────
 
 const StatsRowWidget = ({ data }: { data: DashboardData }) => (
@@ -481,6 +589,54 @@ const StatsRowWidget = ({ data }: { data: DashboardData }) => (
     />
   </div>
 );
+
+// ── Widget: StatCard (single stat) ────────────────────────────────────────────
+
+const STAT_CONFIG: Record<
+  string,
+  {
+    label: string;
+    icon: React.ElementType;
+    color: string;
+    getValue: (d: DashboardData) => string | number;
+    getSub?: (d: DashboardData) => string;
+  }
+> = {
+  sites: { label: 'Sites', icon: Globe, color: '#465fff', getValue: (d) => d.sites.length },
+  rooms: { label: 'Rooms', icon: DoorOpen, color: '#8b5cf6', getValue: (d) => d.totalRooms },
+  racks: { label: 'Racks', icon: Server, color: '#06b6d4', getValue: (d) => d.totalRacks },
+  devices: { label: 'Devices', icon: Cpu, color: '#10b981', getValue: (d) => d.totalDevices },
+  crit: {
+    label: 'CRIT',
+    icon: XCircle,
+    color: '#ef4444',
+    getValue: (d) => d.critCount,
+    getSub: (d) =>
+      d.critCount === 0 ? 'All clear' : `${d.critCount} node${d.critCount > 1 ? 's' : ''}`,
+  },
+  warn: {
+    label: 'WARN',
+    icon: AlertTriangle,
+    color: '#f59e0b',
+    getValue: (d) => d.warnCount,
+    getSub: (d) =>
+      d.warnCount === 0 ? 'All clear' : `${d.warnCount} node${d.warnCount > 1 ? 's' : ''}`,
+  },
+};
+
+const StatCardWidget = ({ data, statKey }: { data: DashboardData; statKey?: string }) => {
+  const cfg = STAT_CONFIG[statKey ?? 'sites'];
+  if (!cfg) return null;
+  return (
+    <StatCard
+      icon={cfg.icon}
+      label={cfg.label}
+      value={cfg.getValue(data)}
+      color={cfg.color}
+      sub={cfg.getSub?.(data)}
+    />
+  );
+};
 
 // ── Widget: HealthGauge ───────────────────────────────────────────────────────
 
@@ -781,7 +937,7 @@ const InfrastructureWidget = ({
         World Map →
       </button>
     </div>
-    <div className="divide-y divide-gray-100 dark:divide-gray-800">
+    <div className="max-h-[300px] divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
       {data.allRooms.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm text-gray-400">No rooms configured</div>
       ) : (
@@ -932,6 +1088,247 @@ const CatalogChecksWidget = ({ data }: { data: DashboardData }) => (
   </div>
 );
 
+// ── Widget: AlertCount ────────────────────────────────────────────────────────
+
+const AlertCountWidget = ({ data }: { data: DashboardData }) => (
+  <div className="flex h-full flex-col items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+    <div className="flex items-baseline gap-3">
+      <span className="text-5xl font-black text-red-500">{data.critCount}</span>
+      <span className="text-2xl font-bold text-amber-500">+{data.warnCount}</span>
+    </div>
+    <p className="text-xs font-semibold tracking-wider text-gray-400 uppercase">Active Alerts</p>
+  </div>
+);
+
+// ── Widget: RackUtilization ───────────────────────────────────────────────────
+
+const RackUtilizationWidget = ({ data }: { data: DashboardData }) => {
+  const rooms = data.allRooms.slice(0, 6);
+  if (rooms.length === 0) return <WidgetPlaceholder title="Rack Utilization" icon={Server} />;
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        Rack Utilization
+      </p>
+      <div className="space-y-2">
+        {rooms.map((r) => (
+          <div key={r.id} className="space-y-0.5">
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>{r.name}</span>
+              <span className="text-gray-700 dark:text-gray-300">{r.state}</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${r.state === 'CRIT' ? 90 : r.state === 'WARN' ? 60 : r.state === 'OK' ? 40 : 20}%`,
+                  backgroundColor: HC[r.state] ?? HC.UNKNOWN,
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Widget: NodeHeatmap ───────────────────────────────────────────────────────
+
+const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
+  const alertMap: Record<string, string> = {};
+  data.alerts.forEach((a) => {
+    alertMap[a.node_id] = a.state;
+  });
+  const nodes = Object.keys(alertMap).slice(0, 48);
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Node Heatmap</p>
+      <div className="flex flex-wrap gap-1">
+        {nodes.map((n) => (
+          <div
+            key={n}
+            title={n}
+            className="h-3 w-3 rounded-sm"
+            style={{ backgroundColor: HC[alertMap[n]] ?? HC.UNKNOWN }}
+          />
+        ))}
+        {nodes.length === 0 && <p className="text-xs text-gray-400">No alert data</p>}
+      </div>
+    </div>
+  );
+};
+
+// ── Widget: Uptime ────────────────────────────────────────────────────────────
+
+const UptimeWidget = ({ data }: { data: DashboardData }) => (
+  <div className="flex h-full flex-col items-center justify-center gap-1 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+    <Zap className="h-6 w-6 text-amber-500" />
+    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+      {data.promStats?.last_ms ? `${Math.round(data.promStats.last_ms)} ms` : '—'}
+    </p>
+    <p className="text-xs text-gray-400">Last scrape latency</p>
+  </div>
+);
+
+// ── Widget: RecentAlerts ──────────────────────────────────────────────────────
+
+const RecentAlertsWidget = ({ data }: { data: DashboardData }) => {
+  const top3 = data.alerts.filter((a) => a.state === 'CRIT').slice(0, 3);
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Recent CRIT</p>
+      {top3.length === 0 ? (
+        <p className="text-xs text-green-500">No CRIT alerts</p>
+      ) : (
+        <div className="space-y-2">
+          {top3.map((a, i) => (
+            <div key={i} className="flex items-center gap-2 text-xs">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
+              <span className="truncate font-mono text-gray-800 dark:text-gray-200">
+                {a.node_id}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Widget: SiteMap ───────────────────────────────────────────────────────────
+
+const SiteMapWidget = ({ data }: { data: DashboardData }) => (
+  <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+    <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Sites</p>
+    <div className="space-y-2">
+      {data.sites.map((s) => (
+        <div key={s.id} className="flex items-center justify-between text-xs">
+          <span className="font-medium text-gray-800 dark:text-gray-200">{s.name}</span>
+          <span className="text-gray-400">{s.rooms?.length ?? 0} rooms</span>
+        </div>
+      ))}
+      {data.sites.length === 0 && <p className="text-xs text-gray-400">No sites</p>}
+    </div>
+  </div>
+);
+
+// ── Widget: CheckSummary ──────────────────────────────────────────────────────
+
+const CheckSummaryWidget = ({ data }: { data: DashboardData }) => {
+  const scopes = data.checks.reduce<Record<string, number>>((a, c) => {
+    const key = c.scope ?? 'unknown';
+    a[key] = (a[key] ?? 0) + 1;
+    return a;
+  }, {});
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Checks</p>
+      <div className="flex items-end gap-4">
+        <span className="text-3xl font-bold text-gray-900 dark:text-white">
+          {data.checks.length}
+        </span>
+        <div className="space-y-0.5 pb-0.5">
+          {Object.entries(scopes).map(([scope, n]) => (
+            <div key={scope} className="flex items-center gap-1.5 text-[11px] text-gray-500">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+              <span className="capitalize">{scope}</span>
+              <span className="font-semibold">{n}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Widget: DeviceTypes ───────────────────────────────────────────────────────
+
+const DeviceTypesWidget = ({ data }: { data: DashboardData }) => {
+  const types = data.deviceTemplates.reduce<Record<string, number>>((a, t) => {
+    const key = t.type ?? 'other';
+    a[key] = (a[key] ?? 0) + 1;
+    return a;
+  }, {});
+  const total = data.deviceTemplates.length;
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">Device Types</p>
+      <div className="space-y-1.5">
+        {Object.entries(types)
+          .sort(([, a], [, b]) => b - a)
+          .map(([type, n]) => (
+            <div key={type} className="flex items-center gap-2 text-xs">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                <div
+                  className="h-full rounded-full bg-blue-500"
+                  style={{ width: `${total > 0 ? (n / total) * 100 : 0}%` }}
+                />
+              </div>
+              <span className="w-16 text-gray-600 capitalize dark:text-gray-400">{type}</span>
+              <span className="w-4 text-right font-mono text-gray-700 dark:text-gray-300">{n}</span>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Widget: SlurmNodes ────────────────────────────────────────────────────────
+
+const SlurmNodesWidget = ({ data }: { data: DashboardData }) => (
+  <div className="flex h-full flex-col items-center justify-center gap-1 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+    {data.slurmEnabled && data.slurm ? (
+      <>
+        <p className="text-5xl font-black text-purple-500">{data.slurm.total_nodes}</p>
+        <p className="text-xs font-semibold tracking-wider text-gray-400 uppercase">Slurm Nodes</p>
+      </>
+    ) : (
+      <p className="text-xs text-gray-400">Slurm not enabled</p>
+    )}
+  </div>
+);
+
+// ── Widget: SlurmUtilization ──────────────────────────────────────────────────
+
+const SlurmUtilizationWidget = ({ data }: { data: DashboardData }) => {
+  if (!data.slurmEnabled || !data.slurm)
+    return (
+      <div className="flex h-full items-center justify-center rounded-2xl border border-gray-200 bg-white p-5 text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-900">
+        Slurm not enabled
+      </div>
+    );
+  const total = data.slurm.total_nodes;
+  const allocated = (data.slurm.by_status?.allocated ?? 0) + (data.slurm.by_status?.alloc ?? 0);
+  const pct = total > 0 ? Math.round((allocated / total) * 100) : 0;
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+        Slurm Utilization
+      </p>
+      <div className="flex items-center gap-4">
+        <p
+          className="text-4xl font-black"
+          style={{ color: pct > 80 ? '#ef4444' : pct > 50 ? '#f59e0b' : '#10b981' }}
+        >
+          {pct}%
+        </p>
+        <div className="flex-1 space-y-1">
+          <div className="h-3 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+            <div
+              className="h-full rounded-full bg-blue-500 transition-all"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-gray-400">
+            {allocated}/{total} nodes allocated
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Widget renderer ───────────────────────────────────────────────────────────
 
 type WidgetRendererProps = {
@@ -942,6 +1339,8 @@ type WidgetRendererProps = {
 
 const WidgetContent = ({ widget, data, navigate }: WidgetRendererProps) => {
   switch (widget.type) {
+    case 'stat-card':
+      return <StatCardWidget data={data} statKey={widget.statKey} />;
     case 'stats-row':
       return <StatsRowWidget data={data} />;
     case 'health-gauge':
@@ -958,6 +1357,26 @@ const WidgetContent = ({ widget, data, navigate }: WidgetRendererProps) => {
       return <PrometheusWidget data={data} />;
     case 'catalog-checks':
       return <CatalogChecksWidget data={data} />;
+    case 'alert-count':
+      return <AlertCountWidget data={data} />;
+    case 'rack-utilization':
+      return <RackUtilizationWidget data={data} />;
+    case 'node-heatmap':
+      return <NodeHeatmapWidget data={data} />;
+    case 'uptime':
+      return <UptimeWidget data={data} />;
+    case 'recent-alerts':
+      return <RecentAlertsWidget data={data} />;
+    case 'site-map':
+      return <SiteMapWidget data={data} />;
+    case 'check-summary':
+      return <CheckSummaryWidget data={data} />;
+    case 'device-types':
+      return <DeviceTypesWidget data={data} />;
+    case 'slurm-nodes':
+      return <SlurmNodesWidget data={data} />;
+    case 'slurm-utilization':
+      return <SlurmUtilizationWidget data={data} />;
     default:
       return null;
   }
@@ -1161,7 +1580,7 @@ export const CosmosDashboard = () => {
   };
 
   useEffect(() => {
-    const validSpans = [3, 4, 6, 8, 12] as const;
+    const validSpans = [2, 3, 4, 6, 8, 12] as const;
     const onMove = (e: MouseEvent) => {
       const r = resizingRef.current;
       if (!r || !gridRef.current) return;
@@ -1481,7 +1900,7 @@ export const CosmosDashboard = () => {
                       <div className="flex items-center gap-1">
                         {/* Size preset buttons */}
                         <div className="mr-1 flex items-center gap-0.5">
-                          {([4, 6, 8, 12] as const).map((s) => (
+                          {([2, 3, 4, 6, 8, 12] as const).map((s) => (
                             <button
                               key={s}
                               onClick={() =>
