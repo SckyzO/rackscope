@@ -1,23 +1,32 @@
-import { useState, useLayoutEffect } from 'react';
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { CosmosSidebar } from './CosmosSidebar';
 import { CosmosHeader } from './CosmosHeader';
 import '../cosmos.css';
 
+// Apply dark class directly on the html element — synchronous, no React cycle
+function applyDark(dark: boolean) {
+  document.documentElement.classList.toggle('dark', dark);
+  localStorage.setItem('cosmos-dark-mode', String(dark));
+}
+
 export const CosmosLayout = () => {
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('cosmos-dark-mode');
-    return saved === null ? true : saved === 'true'; // dark by default (NOC-first)
+    const dark = saved === null ? true : saved === 'true';
+    // Apply immediately at init so there's no flash
+    document.documentElement.classList.toggle('dark', dark);
+    return dark;
   });
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // useLayoutEffect — synchronous before paint, so html.dark and cosmos-root.dark
-  // are applied in the same frame, eliminating the sidebar/header colour lag.
-  useLayoutEffect(() => {
-    document.documentElement.classList.toggle('dark', isDark);
-    localStorage.setItem('cosmos-dark-mode', String(isDark));
-  }, [isDark]);
+  // Toggle: update html.dark BEFORE React re-renders so both change in the same frame
+  const handleToggleDark = () => {
+    const next = !isDark;
+    applyDark(next); // synchronous DOM mutation first
+    setIsDark(next); // then trigger re-render
+  };
 
   return (
     <div className={isDark ? 'cosmos-root dark' : 'cosmos-root'}>
@@ -27,7 +36,7 @@ export const CosmosLayout = () => {
           onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
         />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <CosmosHeader isDark={isDark} toggleDark={() => setIsDark((p) => !p)} />
+          <CosmosHeader isDark={isDark} toggleDark={handleToggleDark} />
           <main className="cosmos-scrollbar flex-1 overflow-y-auto p-6">
             <Outlet />
           </main>
