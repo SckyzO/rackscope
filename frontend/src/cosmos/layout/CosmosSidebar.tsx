@@ -146,9 +146,9 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
 
   return (
     <aside
-      className={`cosmos-scrollbar dark:bg-gray-dark flex flex-col overflow-y-auto border-r border-gray-200 bg-white transition-all duration-300 dark:border-gray-800 ${
+      className={`cosmos-scrollbar dark:bg-gray-dark flex flex-col overflow-y-auto border-r border-gray-200 bg-white duration-300 dark:border-gray-800 ${
         collapsed ? 'w-[90px]' : 'w-[290px]'
-      }`}
+      } [transition:width_300ms_ease]`}
     >
       {/* Logo + collapse toggle */}
       <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-800">
