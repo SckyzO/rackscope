@@ -65,7 +65,7 @@ const NavItem = ({
     to={to}
     end={end}
     className={({ isActive }) =>
-      `group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
+      `flex items-center gap-3 rounded-lg px-3 text-sm font-medium transition-all ${
         depth ? 'py-1.5' : 'py-2.5'
       } ${
         isActive
@@ -75,18 +75,27 @@ const NavItem = ({
     }
   >
     <Icon className={`shrink-0 ${depth ? 'h-4 w-4' : 'h-5 w-5'}`} />
-    {!collapsed && <span>{label}</span>}
+    <span
+      className={`overflow-hidden whitespace-nowrap transition-all duration-200 ${
+        collapsed
+          ? 'max-w-0 opacity-0 group-hover:max-w-[200px] group-hover:opacity-100'
+          : 'max-w-[200px] opacity-100'
+      }`}
+    >
+      {label}
+    </span>
   </NavLink>
 );
 
-const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean }) =>
-  collapsed ? (
-    <div className="my-3 h-px bg-gray-200 dark:bg-gray-800" />
-  ) : (
-    <p className="mt-6 mb-1.5 px-3 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
-      {label}
-    </p>
-  );
+const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean }) => (
+  <p
+    className={`mt-6 mb-1.5 px-3 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500 ${
+      collapsed ? 'hidden group-hover:block' : ''
+    }`}
+  >
+    {label}
+  </p>
+);
 
 interface CosmosSidebarProps {
   collapsed: boolean;
@@ -127,7 +136,6 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
       { to: '/cosmos/ui/tooltips', icon: Info, label: 'Tooltips' },
       { to: '/cosmos/ui/form-elements', icon: FormInput, label: 'Form Elements' },
       { to: '/cosmos/ui/avatars', icon: Users, label: 'Avatars' },
-      // New generic
       { to: '/cosmos/ui/accordion', icon: ChevronDown, label: 'Accordion' },
       { to: '/cosmos/ui/stepper', icon: MoreHorizontal, label: 'Stepper' },
       { to: '/cosmos/ui/timeline', icon: Activity, label: 'Timeline' },
@@ -143,8 +151,8 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
 
   return (
     <aside
-      className={`cosmos-scrollbar cosmos-sidebar dark:bg-gray-dark flex shrink-0 flex-col overflow-x-hidden overflow-y-auto border-r border-gray-200 bg-white dark:border-gray-800 ${
-        collapsed ? 'w-[90px]' : 'w-[290px]'
+      className={`cosmos-sidebar cosmos-scrollbar group dark:bg-gray-dark flex shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out dark:border-gray-800 ${
+        collapsed ? 'w-[90px] hover:w-[290px]' : 'w-[290px]'
       }`}
     >
       {/* Logo */}
@@ -153,47 +161,56 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           <div className="bg-brand-500 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white">
             <Activity className="h-5 w-5" />
           </div>
-          {!collapsed && (
-            <span className="text-base font-bold tracking-tight text-gray-900 dark:text-white">
-              Cosmos
-            </span>
-          )}
+          <span
+            className={`overflow-hidden text-base font-bold tracking-tight whitespace-nowrap text-gray-900 transition-all duration-300 dark:text-white ${
+              collapsed
+                ? 'max-w-0 opacity-0 group-hover:max-w-[200px] group-hover:opacity-100'
+                : 'max-w-[200px] opacity-100'
+            }`}
+          >
+            Cosmos
+          </span>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-4 py-4">
+      <nav className="flex-1 overflow-y-auto px-4 py-4">
         <SectionLabel label="Menu" collapsed={collapsed} />
         <NavItem to="/cosmos" icon={BarChart2} label="Dashboard" collapsed={collapsed} end />
 
         <SectionLabel label="UI Elements" collapsed={collapsed} />
-        {!collapsed ? (
-          <>
-            <button
-              onClick={() => setUiOpen((p) => !p)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
-            >
-              <LayoutGrid className="h-5 w-5 shrink-0" />
-              <span className="flex-1 text-left">Components</span>
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${uiOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
-            {uiOpen && (
-              <div className="mt-1 ml-3 space-y-0.5 border-l-2 border-gray-200 pl-3 dark:border-gray-800">
-                {uiItems.map((item) => (
-                  <NavItem key={item.to} {...item} collapsed={false} depth />
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <NavItem
-            to="/cosmos/ui/buttons-group"
-            icon={LayoutGrid}
-            label="UI"
-            collapsed={collapsed}
+        <button
+          onClick={() => setUiOpen((p) => !p)}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+        >
+          <LayoutGrid className="h-5 w-5 shrink-0" />
+          <span
+            className={`flex-1 overflow-hidden text-left whitespace-nowrap transition-all duration-200 ${
+              collapsed
+                ? 'max-w-0 opacity-0 group-hover:max-w-[160px] group-hover:opacity-100'
+                : 'max-w-[160px] opacity-100'
+            }`}
+          >
+            Components
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 transition-all duration-200 ${uiOpen ? 'rotate-180' : ''} ${
+              collapsed
+                ? 'max-w-0 opacity-0 group-hover:max-w-[16px] group-hover:opacity-100'
+                : 'max-w-[16px] opacity-100'
+            }`}
           />
+        </button>
+        {uiOpen && (
+          <div
+            className={`mt-1 ml-3 space-y-0.5 border-l-2 border-gray-200 pl-3 dark:border-gray-800 ${
+              collapsed ? 'hidden group-hover:block' : ''
+            }`}
+          >
+            {uiItems.map((item) => (
+              <NavItem key={item.to} {...item} collapsed={false} depth />
+            ))}
+          </div>
         )}
 
         <SectionLabel label="Navigation" collapsed={collapsed} />
@@ -210,11 +227,13 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
 
         {rooms.length > 0 && (
           <>
-            {!collapsed && (
-              <p className="mt-2 mb-1 px-3 text-[10px] font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-600">
-                Rooms
-              </p>
-            )}
+            <p
+              className={`mt-2 mb-1 px-3 text-[10px] font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-600 ${
+                collapsed ? 'hidden group-hover:block' : ''
+              }`}
+            >
+              Rooms
+            </p>
             {rooms.map((room) => (
               <button
                 key={room.id}
@@ -222,10 +241,18 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                   const variant = localStorage.getItem('cosmos-room-variant') ?? 'room';
                   navigate(`/cosmos/views/${variant}/${room.id}`);
                 }}
-                className="group flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
               >
                 <MapPin className="h-4 w-4 shrink-0" />
-                {!collapsed && <span className="truncate">{room.name}</span>}
+                <span
+                  className={`truncate overflow-hidden whitespace-nowrap transition-all duration-200 ${
+                    collapsed
+                      ? 'max-w-0 opacity-0 group-hover:max-w-[160px] group-hover:opacity-100'
+                      : 'max-w-[160px] opacity-100'
+                  }`}
+                >
+                  {room.name}
+                </span>
               </button>
             ))}
           </>
@@ -396,16 +423,20 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
       </nav>
 
       {/* Footer */}
-      {!collapsed && (
-        <div className="shrink-0 border-t border-gray-200 px-5 py-3 dark:border-gray-800">
+      <div
+        className={`shrink-0 overflow-hidden border-t border-gray-200 transition-all duration-300 dark:border-gray-800 ${
+          collapsed ? 'max-h-0 group-hover:max-h-[48px]' : 'max-h-[48px]'
+        }`}
+      >
+        <div className="px-5 py-3">
           <a
             href="/"
-            className="hover:text-brand-500 dark:hover:text-brand-400 text-xs text-gray-400 transition-colors dark:text-gray-500"
+            className="hover:text-brand-500 dark:hover:text-brand-400 text-xs whitespace-nowrap text-gray-400 transition-colors dark:text-gray-500"
           >
             ← Back to Rackscope
           </a>
         </div>
-      )}
+      </div>
     </aside>
   );
 };
