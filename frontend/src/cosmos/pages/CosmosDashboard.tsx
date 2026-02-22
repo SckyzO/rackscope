@@ -1166,7 +1166,8 @@ export const CosmosDashboard = () => {
       const r = resizingRef.current;
       if (!r || !gridRef.current) return;
       const gridWidth = gridRef.current.getBoundingClientRect().width;
-      const colPx = gridWidth / 12;
+      const GAP = 20; // gap-5 = 20px
+      const colPx = (gridWidth - GAP * 11) / 12;
       const delta = e.clientX - r.startX;
       const newPx = r.startWidth + delta;
       const raw = Math.round(newPx / colPx);
@@ -1428,7 +1429,18 @@ export const CosmosDashboard = () => {
           ))}
         </div>
       ) : (
-        <div ref={gridRef} className={`grid grid-cols-12 gap-5 ${editMode ? 'pr-72' : ''}`}>
+        <div
+          ref={gridRef}
+          className={`relative grid grid-cols-12 gap-5 ${editMode ? 'pr-72' : ''}`}
+        >
+          {/* Column guide overlay — shown while resizing */}
+          {resizing && (
+            <div className="pointer-events-none absolute inset-0 z-50 grid grid-cols-12 gap-5">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="border-brand-500/20 bg-brand-500/5 h-full rounded border" />
+              ))}
+            </div>
+          )}
           {widgets.map((widget) => {
             const isDragging = dragId === widget.id;
             const isDropTarget = dropBeforeId === widget.id;
@@ -1437,11 +1449,8 @@ export const CosmosDashboard = () => {
             return (
               <div
                 key={widget.id}
-                draggable={editMode}
-                onDragStart={editMode ? (e) => handleDragStart(e, widget.id) : undefined}
                 onDragOver={editMode ? (e) => handleDragOver(e, widget.id) : undefined}
                 onDrop={editMode ? (e) => handleDrop(e, widget.id) : undefined}
-                onDragEnd={editMode ? handleDragEnd : undefined}
                 className={[
                   SPAN_CLASS[widget.colSpan] ?? 'col-span-4',
                   'group relative transition-opacity',
@@ -1461,13 +1470,37 @@ export const CosmosDashboard = () => {
                 {/* Edit mode overlay: grip + remove */}
                 {editMode && (
                   <>
-                    {/* Drag grip bar across top */}
+                    {/* Drag grip bar — draggable element */}
                     <div
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, widget.id)}
+                      onDragEnd={handleDragEnd}
                       className="bg-brand-500/15 border-brand-500/20 absolute inset-x-0 top-0 z-20 flex h-7 cursor-grab items-center justify-between rounded-t-2xl border-b px-3 active:cursor-grabbing"
-                      onMouseDown={(e) => e.stopPropagation()}
                     >
                       <GripVertical className="text-brand-500 h-4 w-4" />
                       <div className="flex items-center gap-1">
+                        {/* Size preset buttons */}
+                        <div className="mr-1 flex items-center gap-0.5">
+                          {([4, 6, 8, 12] as const).map((s) => (
+                            <button
+                              key={s}
+                              onClick={() =>
+                                saveWidgets(
+                                  widgets.map((w) =>
+                                    w.id === widget.id ? { ...w, colSpan: s } : w
+                                  )
+                                )
+                              }
+                              className={`rounded px-1.5 py-0.5 font-mono text-[9px] font-bold transition-colors ${
+                                widget.colSpan === s
+                                  ? 'bg-brand-500 text-white'
+                                  : 'text-brand-400/60 hover:bg-brand-500/20 hover:text-brand-400'
+                              }`}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
                         <span className="bg-brand-500/20 text-brand-500 rounded px-1.5 py-0.5 font-mono text-[10px]">
                           {widget.colSpan}/12
                         </span>
@@ -1486,8 +1519,10 @@ export const CosmosDashboard = () => {
                       className="bg-brand-500/30 hover:bg-brand-500/60 absolute right-0 bottom-0 z-20 flex h-6 w-6 cursor-se-resize items-center justify-center rounded-tl-lg rounded-br-2xl"
                       title="Drag to resize"
                       onMouseDown={(e) => {
-                        // parentElement is the widget wrapper div
-                        const el = e.currentTarget.closest('.group') as HTMLElement | null;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // parentElement is the widget cell div (fragment creates no DOM node)
+                        const el = e.currentTarget.parentElement as HTMLElement | null;
                         if (el) startResize(e, widget, el);
                       }}
                     >
@@ -1535,7 +1570,7 @@ export const CosmosDashboard = () => {
       {/* Widget picker panel (edit mode) */}
       {editMode && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/10" onClick={() => setEditMode(false)} />
+          {/* No full-screen overlay — would capture all clicks and exit edit mode */}
           <WidgetPicker
             widgets={widgets}
             slurmEnabled={slurmEnabled}
