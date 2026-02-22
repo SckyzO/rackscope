@@ -1508,7 +1508,7 @@ const WidgetPicker = ({ widgets, slurmEnabled, onAdd, onReset, onClose }: Widget
 
   return (
     <div
-      className={`fixed top-0 right-0 z-50 flex h-full w-[400px] flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-950 ${
+      className={`fixed top-[72px] right-0 z-40 flex h-[calc(100vh-72px)] w-[400px] flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-950 ${
         visible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
@@ -2263,7 +2263,7 @@ export const CosmosDashboard = () => {
       {settingsOpen && (
         <>
           <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setSettingsOpen(false)} />
-          <div className="fixed top-0 right-0 z-50 h-full w-80 border-l border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-950">
+          <div className="fixed top-[72px] right-0 z-50 h-[calc(100vh-72px)] w-80 border-l border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-950">
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                 Dashboard Settings
