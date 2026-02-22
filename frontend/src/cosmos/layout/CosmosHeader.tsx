@@ -1,6 +1,18 @@
-import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Moon, Sun, Bell, ChevronDown, User, Search, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Moon,
+  Sun,
+  Bell,
+  ChevronDown,
+  User,
+  Search,
+  X,
+  AlertTriangle,
+  XCircle,
+} from 'lucide-react';
+import { api } from '../../services/api';
+import type { ActiveAlert } from '../../types';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/cosmos': 'Analytics Dashboard',
@@ -34,31 +46,10 @@ const ROUTE_LABELS: Record<string, string> = {
   '/cosmos/auth/signup': 'Sign Up',
 };
 
-const NOTIFICATIONS = [
-  {
-    id: 1,
-    name: 'Alex Johnson',
-    action: 'commented on your post',
-    time: '5 min ago',
-    unread: true,
-  },
-  {
-    id: 2,
-    name: 'Sarah Williams',
-    action: 'sent you a friend request',
-    time: '12 min ago',
-    unread: true,
-  },
-  { id: 3, name: 'Michael Chen', action: 'shared a file with you', time: '1h ago', unread: true },
-  {
-    id: 4,
-    name: 'Emily Davis',
-    action: 'mentioned you in a comment',
-    time: '2h ago',
-    unread: false,
-  },
-  { id: 5, name: 'James Wilson', action: 'reacted to your photo', time: '3h ago', unread: false },
-];
+const SEV_COLOR: Record<string, string> = {
+  CRIT: '#ef4444',
+  WARN: '#f59e0b',
+};
 
 interface CosmosHeaderProps {
   isDark: boolean;
@@ -67,12 +58,42 @@ interface CosmosHeaderProps {
 
 export const CosmosHeader = ({ isDark, toggleDark }: CosmosHeaderProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
+  const [seenCount, setSeenCount] = useState(0);
+
+  // Load real alerts from API, poll every 30s
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const data = await api.getActiveAlerts();
+        if (active) setAlerts(data?.alerts ?? []);
+      } catch {
+        /* ignore */
+      }
+    };
+    load();
+    const t = setInterval(load, 30000);
+    return () => {
+      active = false;
+      clearInterval(t);
+    };
+  }, []);
 
   const pageTitle = ROUTE_LABELS[location.pathname] ?? 'Cosmos';
-  const unreadCount = NOTIFICATIONS.filter((n) => n.unread).length;
+  const critCount = alerts.filter((a) => a.state === 'CRIT').length;
+  const warnCount = alerts.filter((a) => a.state === 'WARN').length;
+  const unreadCount = Math.max(0, alerts.length - seenCount);
+
+  const handleOpenNotif = () => {
+    setNotifOpen((p) => !p);
+    setUserOpen(false);
+    setSeenCount(alerts.length);
+  };
 
   return (
     <header className="dark:bg-gray-dark flex h-[72px] shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 dark:border-gray-800">
@@ -119,63 +140,123 @@ export const CosmosHeader = ({ isDark, toggleDark }: CosmosHeaderProps) => {
         {/* Notifications */}
         <div className="relative">
           <button
-            onClick={() => {
-              setNotifOpen((p) => !p);
-              setUserOpen(false);
-            }}
+            onClick={handleOpenNotif}
             className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
-              <span className="bg-error-500 absolute top-2 right-2 flex h-2 w-2 items-center justify-center rounded-full" />
+              <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
           </button>
 
           {notifOpen && (
             <>
               <div className="fixed inset-0 z-30" onClick={() => setNotifOpen(false)} />
-              <div className="shadow-theme-xl absolute top-full right-0 z-40 mt-2 w-80 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+              <div className="shadow-theme-xl absolute top-full right-0 z-40 mt-2 w-96 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+                {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                    Notifications
+                    Active Alerts
                   </h3>
-                  {unreadCount > 0 && (
-                    <span className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 rounded-full px-2 py-0.5 text-xs font-medium">
-                      {unreadCount} new
-                    </span>
+                  <div className="flex items-center gap-2">
+                    {critCount > 0 && (
+                      <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-500/15 dark:text-red-400">
+                        <XCircle className="h-3 w-3" />
+                        {critCount} CRIT
+                      </span>
+                    )}
+                    {warnCount > 0 && (
+                      <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
+                        <AlertTriangle className="h-3 w-3" />
+                        {warnCount} WARN
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Alert list */}
+                <div className="max-h-96 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
+                  {alerts.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+                      <Bell className="h-8 w-8 text-gray-300 dark:text-gray-700" />
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        No active alerts
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-600">
+                        All nodes are healthy
+                      </p>
+                    </div>
+                  ) : (
+                    alerts.slice(0, 15).map((alert, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setNotifOpen(false);
+                          navigate(`/cosmos/views/rack/${alert.rack_id}`);
+                        }}
+                        className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                      >
+                        {/* Severity icon */}
+                        <div
+                          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                          style={{ backgroundColor: `${SEV_COLOR[alert.state] ?? '#6b7280'}20` }}
+                        >
+                          {alert.state === 'CRIT' ? (
+                            <XCircle
+                              className="h-4 w-4"
+                              style={{ color: SEV_COLOR[alert.state] }}
+                            />
+                          ) : (
+                            <AlertTriangle
+                              className="h-4 w-4"
+                              style={{ color: SEV_COLOR[alert.state] }}
+                            />
+                          )}
+                        </div>
+                        {/* Content */}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                            {alert.node_id}
+                          </p>
+                          <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                            {alert.rack_name} · {alert.room_name}
+                          </p>
+                          {alert.checks.length > 0 && (
+                            <p className="mt-0.5 truncate font-mono text-[10px] text-gray-400">
+                              {alert.checks[0].id}
+                              {alert.checks.length > 1 ? ` +${alert.checks.length - 1}` : ''}
+                            </p>
+                          )}
+                        </div>
+                        {/* State badge */}
+                        <span
+                          className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                          style={{ backgroundColor: SEV_COLOR[alert.state] ?? '#6b7280' }}
+                        >
+                          {alert.state}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                  {alerts.length > 15 && (
+                    <div className="px-4 py-2 text-center text-xs text-gray-400">
+                      +{alerts.length - 15} more alerts
+                    </div>
                   )}
                 </div>
-                <div className="max-h-80 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
-                  {NOTIFICATIONS.map((n) => (
-                    <div
-                      key={n.id}
-                      className={`flex gap-3 px-4 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${n.unread ? 'bg-brand-25 dark:bg-brand-500/5' : ''}`}
-                    >
-                      <div className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold">
-                        {n.name
-                          .split(' ')
-                          .map((w) => w[0])
-                          .join('')
-                          .slice(0, 2)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                          <span className="font-semibold text-gray-900 dark:text-white">
-                            {n.name}
-                          </span>{' '}
-                          {n.action}
-                        </p>
-                        <p className="mt-0.5 text-xs text-gray-400">{n.time}</p>
-                      </div>
-                      {n.unread && (
-                        <span className="bg-brand-500 mt-1.5 h-2 w-2 shrink-0 rounded-full" />
-                      )}
-                    </div>
-                  ))}
-                </div>
+
+                {/* Footer */}
                 <div className="border-t border-gray-100 p-2 dark:border-gray-800">
-                  <button className="text-brand-500 w-full rounded-lg py-2 text-center text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
-                    View all notifications
+                  <button
+                    onClick={() => {
+                      setNotifOpen(false);
+                      navigate('/cosmos/slurm/alerts');
+                    }}
+                    className="text-brand-500 w-full rounded-lg py-2 text-center text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                  >
+                    View all alerts →
                   </button>
                 </div>
               </div>
