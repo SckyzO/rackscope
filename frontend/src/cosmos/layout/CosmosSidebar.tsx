@@ -84,21 +84,20 @@ const NavItem = ({
     >
       {label}
     </span>
-    {collapsed && (
-      <span className="text-[10px] text-gray-400 group-hover:hidden dark:text-gray-600">···</span>
-    )}
   </NavLink>
 );
 
-const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean }) => (
-  <p
-    className={`mt-6 mb-1.5 px-3 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500 ${
-      collapsed ? 'hidden group-hover:block' : ''
-    }`}
-  >
-    {label}
-  </p>
-);
+// Section label: shows "···" when collapsed (like TailAdmin), full label when expanded
+const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean }) =>
+  collapsed ? (
+    <p className="my-3 px-3 text-center text-[11px] font-semibold tracking-wider text-gray-400 group-hover:hidden dark:text-gray-600">
+      ···
+    </p>
+  ) : (
+    <p className="mt-6 mb-1.5 px-3 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
+      {label}
+    </p>
+  );
 
 interface CosmosSidebarProps {
   collapsed: boolean;
