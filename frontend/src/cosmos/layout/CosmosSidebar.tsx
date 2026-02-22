@@ -84,6 +84,9 @@ const NavItem = ({
     >
       {label}
     </span>
+    {collapsed && (
+      <span className="text-[10px] text-gray-400 group-hover:hidden dark:text-gray-600">···</span>
+    )}
   </NavLink>
 );
 
