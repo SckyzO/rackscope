@@ -182,8 +182,10 @@ const ROW_SPAN_CLASS: Record<number, string> = {
   4: 'row-span-4',
 };
 
-// Row height in pixels (grid-auto-rows value)
+// Minimum row height in pixels (grid-auto-rows: minmax(ROW_PX, auto))
 const ROW_PX = 140;
+// Increment whenever DEFAULT_WIDGETS structure changes to invalidate stale localStorage saves
+const WIDGET_LAYOUT_VERSION = '3';
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'stat-sites', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'sites' },
   { id: 'stat-rooms', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'rooms' },
@@ -1628,8 +1630,9 @@ export const CosmosDashboard = () => {
   // ── Widget layout state ───────────────────────────────────────────────────
   const [widgets, setWidgets] = useState<WidgetConfig[]>(() => {
     try {
+      const version = localStorage.getItem('cosmos-dashboard-widgets-v');
       const stored = localStorage.getItem('cosmos-dashboard-widgets');
-      if (stored) return JSON.parse(stored) as WidgetConfig[];
+      if (stored && version === WIDGET_LAYOUT_VERSION) return JSON.parse(stored) as WidgetConfig[];
     } catch {
       /* ignore */
     }
@@ -1662,6 +1665,7 @@ export const CosmosDashboard = () => {
   const saveWidgets = (newWidgets: WidgetConfig[]) => {
     setWidgets(newWidgets);
     localStorage.setItem('cosmos-dashboard-widgets', JSON.stringify(newWidgets));
+    localStorage.setItem('cosmos-dashboard-widgets-v', WIDGET_LAYOUT_VERSION);
   };
 
   const removeWidget = (id: string) => saveWidgets(widgets.filter((w) => w.id !== id));
@@ -1796,6 +1800,7 @@ export const CosmosDashboard = () => {
       if (!resizingRef.current) return;
       setWidgets((prev) => {
         localStorage.setItem('cosmos-dashboard-widgets', JSON.stringify(prev));
+        localStorage.setItem('cosmos-dashboard-widgets-v', WIDGET_LAYOUT_VERSION);
         return prev;
       });
       resizingRef.current = null;
@@ -2029,7 +2034,10 @@ export const CosmosDashboard = () => {
 
       {/* Loading skeleton */}
       {loading ? (
-        <div className="grid grid-cols-12 gap-5" style={{ gridAutoRows: `${ROW_PX}px` }}>
+        <div
+          className="grid grid-cols-12 gap-5"
+          style={{ gridAutoRows: `minmax(${ROW_PX}px, auto)` }}
+        >
           {[12, 4, 4, 4, 8, 4].map((span, i) => (
             <div
               key={i}
@@ -2040,7 +2048,7 @@ export const CosmosDashboard = () => {
       ) : (
         <div
           ref={gridRef}
-          style={{ gridAutoRows: `${ROW_PX}px` }}
+          style={{ gridAutoRows: `minmax(${ROW_PX}px, auto)` }}
           className={`relative grid grid-cols-12 gap-5 ${editMode ? 'pr-[420px]' : ''}`}
         >
           {/* Column guide overlay — shown while resizing */}
