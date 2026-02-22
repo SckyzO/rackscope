@@ -1392,51 +1392,145 @@ type WidgetPickerProps = {
   onClose: () => void;
 };
 
-const WidgetPicker = ({ widgets, slurmEnabled, onAdd, onReset, onClose }: WidgetPickerProps) => (
-  <div className="fixed top-0 right-0 z-50 flex h-full w-72 flex-col border-l border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-950">
-    <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Add Widget</h3>
-      <button
-        onClick={onClose}
-        className="text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-    <div className="flex-1 overflow-y-auto p-4">
-      <div className="space-y-2">
-        {WIDGET_CATALOG.filter((def) => !def.requiresSlurm || slurmEnabled).map((def) => {
-          const alreadyAdded = widgets.some((w) => w.type === def.type);
-          const Icon = def.icon;
-          return (
-            <button
-              key={def.type}
-              onClick={() => !alreadyAdded && onAdd(def.type)}
-              disabled={alreadyAdded}
-              className={`w-full rounded-xl border p-3 text-left transition-colors ${
-                alreadyAdded
-                  ? 'cursor-not-allowed opacity-40'
-                  : 'hover:border-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 cursor-pointer border-gray-200 dark:border-gray-700'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Icon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{def.title}</p>
+const WidgetPicker = ({ widgets, slurmEnabled, onAdd, onReset, onClose }: WidgetPickerProps) => {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    // Trigger slide-in after first paint
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const available = WIDGET_CATALOG.filter((def) => !def.requiresSlurm || slurmEnabled);
+  const addedTypes = new Set(widgets.map((w) => w.type));
+
+  // Group by category
+  const groups: { label: string; defs: typeof WIDGET_CATALOG }[] = [
+    {
+      label: 'Stats',
+      defs: available.filter((d) =>
+        ['stat-card', 'alert-count', 'uptime', 'slurm-nodes'].includes(d.type)
+      ),
+    },
+    {
+      label: 'Charts',
+      defs: available.filter((d) =>
+        ['health-gauge', 'severity-donut', 'rack-utilization', 'slurm-utilization'].includes(d.type)
+      ),
+    },
+    {
+      label: 'Monitoring',
+      defs: available.filter((d) =>
+        ['active-alerts', 'recent-alerts', 'node-heatmap'].includes(d.type)
+      ),
+    },
+    {
+      label: 'Overview',
+      defs: available.filter((d) =>
+        ['infrastructure', 'site-map', 'prometheus', 'slurm-cluster'].includes(d.type)
+      ),
+    },
+    {
+      label: 'Catalog',
+      defs: available.filter((d) =>
+        ['catalog-checks', 'check-summary', 'device-types'].includes(d.type)
+      ),
+    },
+    { label: 'Stats Row (legacy)', defs: available.filter((d) => d.type === 'stats-row') },
+  ].filter((g) => g.defs.length > 0);
+
+  return (
+    <div
+      className={`fixed top-0 right-0 z-50 flex h-full w-[400px] flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-950 ${
+        visible ? 'translate-x-0' : 'translate-x-full'
+      }`}
+    >
+      {/* Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+        <div>
+          <h3 className="text-base font-bold text-gray-900 dark:text-white">Widget Library</h3>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            {addedTypes.size} / {available.length} widgets active
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-600 dark:border-gray-700 dark:hover:text-gray-200"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Widget list grouped */}
+      <div className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="space-y-5">
+          {groups.map((group) => (
+            <div key={group.label}>
+              <p className="mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                {group.label}
+              </p>
+              <div className="space-y-1.5">
+                {group.defs.map((def) => {
+                  const isAdded = addedTypes.has(def.type);
+                  const Icon = def.icon;
+                  return (
+                    <button
+                      key={def.type}
+                      onClick={() => !isAdded && onAdd(def.type)}
+                      disabled={isAdded}
+                      className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all ${
+                        isAdded
+                          ? 'cursor-not-allowed border-gray-100 bg-gray-50 opacity-50 dark:border-gray-800 dark:bg-gray-900/50'
+                          : 'hover:border-brand-500/50 hover:bg-brand-50 dark:hover:bg-brand-500/10 cursor-pointer border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <div
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                          isAdded
+                            ? 'bg-gray-100 dark:bg-gray-800'
+                            : 'bg-brand-50 dark:bg-brand-500/10'
+                        }`}
+                      >
+                        <Icon
+                          className={`h-4 w-4 ${isAdded ? 'text-gray-400' : 'text-brand-500'}`}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                          {def.title}
+                        </p>
+                        <p className="truncate text-xs text-gray-400">{def.description}</p>
+                      </div>
+                      {isAdded ? (
+                        <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-400 dark:bg-gray-800">
+                          Added
+                        </span>
+                      ) : (
+                        <span className="bg-brand-50 text-brand-500 dark:bg-brand-500/10 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                          + Add
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-              <p className="mt-1 text-xs text-gray-400">{def.description}</p>
-            </button>
-          );
-        })}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="shrink-0 border-t border-gray-100 p-4 dark:border-gray-800">
         <button
           onClick={onReset}
-          className="w-full rounded-xl border border-dashed border-gray-300 py-2 text-xs text-gray-400 transition-colors hover:text-gray-600 dark:border-gray-700 dark:hover:text-gray-300"
+          className="hover:border-brand-500/50 hover:text-brand-500 w-full rounded-xl border border-dashed border-gray-300 py-2.5 text-xs font-medium text-gray-400 transition-colors dark:border-gray-700"
         >
-          Reset to default
+          ↺ Reset to default layout
         </button>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -1850,7 +1944,7 @@ export const CosmosDashboard = () => {
       ) : (
         <div
           ref={gridRef}
-          className={`relative grid grid-cols-12 gap-5 ${editMode ? 'pr-72' : ''}`}
+          className={`relative grid grid-cols-12 gap-5 ${editMode ? 'pr-[420px]' : ''}`}
         >
           {/* Column guide overlay — shown while resizing */}
           {resizing && (
