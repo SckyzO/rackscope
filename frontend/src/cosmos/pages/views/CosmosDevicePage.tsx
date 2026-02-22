@@ -282,6 +282,7 @@ export const CosmosDevicePage = () => {
                   isRearView={chassisView === 'rear'}
                   uPosition={device.u_position}
                   detailView={true}
+                  disableZoom={true}
                   onClick={() => {}}
                   onTooltipChange={(payload) => setTooltip(payload as TooltipPayload | null)}
                 />
@@ -293,30 +294,35 @@ export const CosmosDevicePage = () => {
             )}
           </div>
 
-          {/* Instance pills */}
+          {/* Instance selector — buttons-group style, centered */}
           {instances.length > 0 && (
-            <div className="flex flex-wrap gap-2 border-t border-gray-100 px-5 py-3 dark:border-gray-800">
-              {instances.map((inst) => {
-                const s = nodes[inst]?.state ?? 'UNKNOWN';
-                const active = inst === selectedInstance;
-                return (
-                  <button
-                    key={inst}
-                    onClick={() => handleSelect(inst)}
-                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
-                      active
-                        ? 'bg-brand-500 text-white shadow-sm'
-                        : 'border border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:text-gray-400'
-                    }`}
-                  >
-                    <span
-                      className="h-1.5 w-1.5 rounded-full"
-                      style={{ backgroundColor: active ? 'white' : HC[s] }}
-                    />
-                    {inst}
-                  </button>
-                );
-              })}
+            <div className="flex justify-center border-t border-gray-100 px-5 py-4 dark:border-gray-800">
+              <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                {instances.map((inst, i) => {
+                  const s = nodes[inst]?.state ?? 'UNKNOWN';
+                  const active = inst === selectedInstance;
+                  return (
+                    <button
+                      key={inst}
+                      onClick={() => handleSelect(inst)}
+                      className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                        i > 0 ? 'border-l border-gray-200 dark:border-gray-700' : ''
+                      } ${
+                        active
+                          ? 'bg-brand-500 text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      {/* Dot always shows health color — not white when active */}
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full ring-1 ring-white/30"
+                        style={{ backgroundColor: HC[s] ?? HC.UNKNOWN }}
+                      />
+                      {inst}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

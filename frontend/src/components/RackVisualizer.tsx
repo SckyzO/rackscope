@@ -673,6 +673,7 @@ export const DeviceChassis = ({
   onClick,
   onTooltipChange,
   detailView = false,
+  disableZoom = false,
 }: {
   device: Device;
   template: DeviceTemplate;
@@ -683,6 +684,7 @@ export const DeviceChassis = ({
   onClick?: () => void;
   onTooltipChange?: (payload: HUDTooltipProps | null) => void;
   detailView?: boolean;
+  disableZoom?: boolean;
 }) => {
   const [suppressTooltip, setSuppressTooltip] = useState(false);
   const nodeMap = useMemo(() => {
@@ -810,9 +812,9 @@ export const DeviceChassis = ({
 
   return (
     <div
-      className={`h-full w-full border ${borderColor} ${bgColor} group relative flex rounded-[2px] transition-all duration-200 hover:z-[100] hover:scale-[1.03] hover:shadow-2xl ${
-        onClick ? 'cursor-pointer' : ''
-      }`}
+      className={`h-full w-full border ${borderColor} ${bgColor} group relative flex rounded-[2px] transition-all duration-200 ${
+        disableZoom ? '' : 'hover:z-[100] hover:scale-[1.03] hover:shadow-2xl'
+      } ${onClick ? 'cursor-pointer' : ''}`}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
