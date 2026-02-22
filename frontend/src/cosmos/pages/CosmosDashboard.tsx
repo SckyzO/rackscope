@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom';
 import {
   Server,
@@ -1183,7 +1183,11 @@ const RackUtilizationWidget = ({ data }: { data: DashboardData }) => {
 
 // ── Widget: NodeHeatmap ───────────────────────────────────────────────────────
 
+type NodeTooltip = { alert: ActiveAlert; x: number; y: number };
+
 const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
+  const [tooltip, setTooltip] = useState<NodeTooltip | null>(null);
+
   const critAlerts = data.alerts.filter((a) => a.state === 'CRIT');
   const warnAlerts = data.alerts.filter((a) => a.state === 'WARN');
   const okCount = Math.max(0, data.totalDevices - critAlerts.length - warnAlerts.length);
@@ -1237,14 +1241,58 @@ const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
                   .map((a) => (
                     <div
                       key={a.node_id}
-                      title={`${a.node_id} — ${a.rack_name} (${a.state})`}
-                      className="h-5 w-5 rounded-sm"
+                      className="h-5 w-5 cursor-default rounded-sm"
                       style={{ backgroundColor: HC[a.state] ?? HC.UNKNOWN }}
+                      onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setTooltip({ alert: a, x: rect.left + rect.width / 2, y: rect.top });
+                      }}
+                      onMouseLeave={() => setTooltip(null)}
                     />
                   ))}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Tooltip — fixed so it escapes overflow:hidden/auto containers */}
+      {tooltip && (
+        <div
+          className="pointer-events-none fixed z-[200]"
+          style={{
+            left: tooltip.x,
+            top: tooltip.y - 8,
+            transform: 'translateX(-50%) translateY(-100%)',
+          }}
+        >
+          <div className="rounded-xl bg-gray-900 px-3 py-2 shadow-2xl dark:bg-gray-800">
+            <p className="font-mono text-sm font-bold text-white">{tooltip.alert.node_id}</p>
+            <p className="mt-0.5 text-xs text-gray-400">
+              {tooltip.alert.rack_name} · {tooltip.alert.room_name}
+            </p>
+            {tooltip.alert.checks.length > 0 && (
+              <p className="mt-1 font-mono text-[10px] text-gray-500">
+                {tooltip.alert.checks[0].id}
+                {tooltip.alert.checks.length > 1 ? ` +${tooltip.alert.checks.length - 1}` : ''}
+              </p>
+            )}
+            <p
+              className="mt-1 text-xs font-bold"
+              style={{ color: HC[tooltip.alert.state] ?? HC.UNKNOWN }}
+            >
+              {tooltip.alert.state}
+            </p>
+          </div>
+          {/* Arrow pointing down */}
+          <div
+            className="mx-auto h-0 w-0"
+            style={{
+              borderLeft: '5px solid transparent',
+              borderRight: '5px solid transparent',
+              borderTop: '5px solid #111827',
+            }}
+          />
         </div>
       )}
     </div>
@@ -1427,6 +1475,29 @@ const SlurmUtilizationWidget = ({ data }: { data: DashboardData }) => {
 
 // ── Widget: WorldMap ──────────────────────────────────────────────────────────
 
+// Must be rendered inside MapContainer (uses useMap hook)
+const MapZoomControls = () => {
+  const map = useMap();
+  return (
+    <div className="absolute right-3 bottom-3 z-[1000] flex flex-col gap-1">
+      <button
+        onClick={() => map.zoomIn()}
+        className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-lg font-bold text-gray-700 shadow-md transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+        title="Zoom in"
+      >
+        +
+      </button>
+      <button
+        onClick={() => map.zoomOut()}
+        className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-lg font-bold text-gray-700 shadow-md transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+        title="Zoom out"
+      >
+        −
+      </button>
+    </div>
+  );
+};
+
 const WorldMapWidget = ({
   data,
   navigate,
@@ -1481,13 +1552,16 @@ const WorldMapWidget = ({
           <MapContainer
             key={String(isDark)}
             center={[20, 10]}
-            zoom={1}
+            zoom={2}
+            minZoom={1}
+            maxZoom={12}
             scrollWheelZoom={false}
             zoomControl={false}
             attributionControl={false}
             style={{ height: '100%', width: '100%' }}
           >
             <TileLayer url={tileUrl} />
+            <MapZoomControls />
             {geoSites.map((site) => (
               <CircleMarker
                 key={site.id}
