@@ -364,7 +364,7 @@ export const CosmosSearch = () => {
           ref={inputRef}
           type="text"
           value={query}
-          placeholder="Search... (Ctrl+K)"
+          placeholder="Search racks, devices, rooms... (Ctrl+K)"
           className="focus:border-brand-500 dark:focus:border-brand-500 h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pr-8 pl-10 text-sm text-gray-700 placeholder:text-gray-400 focus:bg-white focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:placeholder:text-gray-500 dark:focus:bg-gray-800"
           onFocus={() => {
             setOpen(true);
