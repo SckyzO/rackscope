@@ -22,6 +22,7 @@ import {
   GripVertical,
   Check,
   Undo2,
+  PanelRight,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import type {
@@ -1457,17 +1458,17 @@ type WidgetPickerProps = {
   onAdd: (type: WidgetType) => void;
   onReset: () => void;
   onClose: () => void;
+  open: boolean;
 };
 
-const WidgetPicker = ({ widgets, slurmEnabled, onAdd, onReset, onClose }: WidgetPickerProps) => {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    // Trigger slide-in after first paint
-    const raf = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
+const WidgetPicker = ({
+  widgets,
+  slurmEnabled,
+  onAdd,
+  onReset,
+  onClose,
+  open,
+}: WidgetPickerProps) => {
   const available = WIDGET_CATALOG.filter((def) => !def.requiresSlurm || slurmEnabled);
   const addedTypes = new Set(widgets.map((w) => w.type));
 
@@ -1509,7 +1510,7 @@ const WidgetPicker = ({ widgets, slurmEnabled, onAdd, onReset, onClose }: Widget
   return (
     <div
       className={`fixed top-[72px] right-0 z-40 flex h-[calc(100vh-72px)] w-[400px] flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-950 ${
-        visible ? 'translate-x-0' : 'translate-x-full'
+        open ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
       {/* Header */}
@@ -1650,6 +1651,7 @@ export const CosmosDashboard = () => {
     return DEFAULT_WIDGETS;
   });
   const [editMode, setEditMode] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   // Snapshot taken when entering edit mode — used by Discard to roll back
   const widgetSnapshot = useRef<WidgetConfig[]>([]);
 
@@ -2016,28 +2018,22 @@ export const CosmosDashboard = () => {
         </div>
         <div className="flex items-center gap-2">
           {editMode ? (
+            /* Edit mode: show "Editing" badge + Widgets toggle. Save/Discard are in the floating pill. */
             <>
-              {/* Discard — revert to snapshot */}
+              <span className="flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 dark:border-amber-700/50 dark:bg-amber-500/10 dark:text-amber-400">
+                <LayoutDashboard className="h-4 w-4" />
+                Editing
+              </span>
               <button
-                onClick={() => {
-                  saveWidgets(widgetSnapshot.current);
-                  setEditMode(false);
-                }}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+                onClick={() => setPickerOpen((o) => !o)}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition-colors ${
+                  pickerOpen
+                    ? 'border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-700/50 dark:bg-brand-500/10 dark:text-brand-400'
+                    : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
+                }`}
               >
-                <Undo2 className="h-4 w-4" />
-                Discard
-              </button>
-              {/* Save — persist and exit */}
-              <button
-                onClick={() => {
-                  saveWidgets(widgets);
-                  setEditMode(false);
-                }}
-                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm text-white transition-colors"
-              >
-                <Check className="h-4 w-4" />
-                Save
+                <PanelRight className="h-4 w-4" />
+                Widgets
               </button>
             </>
           ) : (
@@ -2049,7 +2045,7 @@ export const CosmosDashboard = () => {
               className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
             >
               <LayoutDashboard className="h-4 w-4" />
-              Edit
+              Edit layout
             </button>
           )}
           <button
@@ -2069,6 +2065,36 @@ export const CosmosDashboard = () => {
         </div>
       </div>
 
+      {/* Floating Save / Discard pill — always visible, never covered */}
+      {editMode && (
+        <div className="pointer-events-none fixed right-0 bottom-6 left-0 z-[60] flex justify-center">
+          <div className="pointer-events-auto flex items-center gap-1 rounded-2xl border border-gray-200 bg-white p-1 shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+            <button
+              onClick={() => {
+                saveWidgets(widgetSnapshot.current);
+                setEditMode(false);
+                setPickerOpen(false);
+              }}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/10"
+            >
+              <Undo2 className="h-4 w-4" />
+              Discard
+            </button>
+            <button
+              onClick={() => {
+                saveWidgets(widgets);
+                setEditMode(false);
+                setPickerOpen(false);
+              }}
+              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium text-white transition-colors"
+            >
+              <Check className="h-4 w-4" />
+              Save layout
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Loading skeleton */}
       {loading ? (
         <div
@@ -2086,7 +2112,7 @@ export const CosmosDashboard = () => {
         <div
           ref={gridRef}
           style={{ gridAutoRows: `minmax(${ROW_PX}px, auto)` }}
-          className={`relative grid grid-cols-12 gap-5 ${editMode ? 'pr-[420px]' : ''}`}
+          className={`relative grid grid-cols-12 gap-5 ${editMode && pickerOpen ? 'pr-[420px]' : ''} ${editMode ? 'pb-20' : ''}`}
         >
           {/* Column guide overlay — shown while resizing */}
           {resizing && (
@@ -2245,18 +2271,16 @@ export const CosmosDashboard = () => {
         </div>
       )}
 
-      {/* Widget picker panel (edit mode) */}
+      {/* Widget picker panel — independent from edit mode, toggled via "Widgets" button */}
       {editMode && (
-        <>
-          {/* No full-screen overlay — would capture all clicks and exit edit mode */}
-          <WidgetPicker
-            widgets={widgets}
-            slurmEnabled={slurmEnabled}
-            onAdd={addWidget}
-            onReset={resetLayout}
-            onClose={() => setEditMode(false)}
-          />
-        </>
+        <WidgetPicker
+          widgets={widgets}
+          slurmEnabled={slurmEnabled}
+          onAdd={addWidget}
+          onReset={resetLayout}
+          onClose={() => setPickerOpen(false)}
+          open={pickerOpen}
+        />
       )}
 
       {/* Settings panel */}
