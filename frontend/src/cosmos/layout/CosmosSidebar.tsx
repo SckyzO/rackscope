@@ -211,6 +211,12 @@ export const CosmosSidebar = ({ collapsed, onToggleCollapse }: CosmosSidebarProp
 
         <SectionLabel label="Monitoring" collapsed={collapsed} />
         <NavItem to="/cosmos/views/worldmap" icon={Globe} label="World Map" collapsed={collapsed} />
+        <NavItem
+          to="/cosmos/notifications"
+          icon={Bell}
+          label="Notifications"
+          collapsed={collapsed}
+        />
 
         {rooms.length > 0 && (
           <>
