@@ -27,7 +27,30 @@ type SearchResult = {
   sublabel: string;
   category: Category;
   href: string;
+  keywords?: string[]; // instance names, IDs, etc.
 };
+
+// ── Instance expansion (same as CosmosDevicePage) ─────────────────────────────
+
+function expandInstances(instance: unknown): string[] {
+  if (!instance) return [];
+  if (typeof instance === 'string') {
+    const m = instance.match(/^(.*)\[(\d+)-(\d+)\](.*)$/);
+    if (m) {
+      const [, prefix, start, end, suffix] = m;
+      const w = Math.max(start.length, end.length);
+      return Array.from(
+        { length: parseInt(end) - parseInt(start) + 1 },
+        (_, i) => `${prefix}${String(parseInt(start) + i).padStart(w, '0')}${suffix ?? ''}`
+      );
+    }
+    return [instance];
+  }
+  if (Array.isArray(instance)) return instance as string[];
+  if (typeof instance === 'object' && instance !== null)
+    return Object.values(instance as Record<string, string>);
+  return [];
+}
 
 // ── Static pages ──────────────────────────────────────────────────────────────
 
@@ -172,12 +195,14 @@ function buildIndex(sites: Site[]): SearchResult[] {
             href: `/cosmos/views/rack/${rack.id}`,
           });
           for (const device of rack.devices ?? []) {
+            const instances = expandInstances(device.instance ?? device.nodes);
             results.push({
               id: `device-${rack.id}-${device.id}`,
               label: device.name || device.id,
               sublabel: `${rack.name || rack.id} · ${room.name}`,
               category: 'device',
               href: `/cosmos/views/device/${rack.id}/${device.id}`,
+              keywords: [device.id, ...instances],
             });
           }
         }
@@ -203,7 +228,8 @@ function filterResults(index: SearchResult[], query: string): SearchResult[] {
     (r) =>
       r.label.toLowerCase().includes(q) ||
       r.sublabel.toLowerCase().includes(q) ||
-      r.id.toLowerCase().includes(q)
+      r.id.toLowerCase().includes(q) ||
+      r.keywords?.some((k) => k.toLowerCase().includes(q))
   );
   // Group by category, max 5 per group
   const groups: Partial<Record<Category, SearchResult[]>> = {};
@@ -247,6 +273,20 @@ export const CosmosSearch = () => {
       /* ignore */
     }
   }, [loaded]);
+
+  // Ctrl+K / Cmd+K — open search from anywhere
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setOpen(true);
+        void loadData();
+        setTimeout(() => inputRef.current?.focus(), 50);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [loadData]);
 
   // Close on click outside
   useEffect(() => {
@@ -324,7 +364,7 @@ export const CosmosSearch = () => {
           ref={inputRef}
           type="text"
           value={query}
-          placeholder="Search racks, devices, rooms..."
+          placeholder="Search... (Ctrl+K)"
           className="focus:border-brand-500 dark:focus:border-brand-500 h-10 w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pr-8 pl-10 text-sm text-gray-700 placeholder:text-gray-400 focus:bg-white focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:placeholder:text-gray-500 dark:focus:bg-gray-800"
           onFocus={() => {
             setOpen(true);
