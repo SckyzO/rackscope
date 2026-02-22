@@ -65,9 +65,9 @@ const NavItem = ({
     to={to}
     end={end}
     className={({ isActive }) =>
-      `flex items-center rounded-lg text-sm font-medium transition-all ${
-        collapsed ? 'justify-center px-2' : 'gap-3 px-3'
-      } ${depth ? 'py-1.5' : 'py-2.5'} ${
+      `flex items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors ${
+        depth ? 'py-1.5' : 'py-2.5'
+      } ${
         isActive
           ? 'bg-brand-500 text-white'
           : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
@@ -75,13 +75,9 @@ const NavItem = ({
     }
   >
     <Icon className={`shrink-0 ${depth ? 'h-4 w-4' : 'h-5 w-5'}`} />
-    <span
-      className={`overflow-hidden whitespace-nowrap transition-all duration-200 ${
-        collapsed
-          ? 'max-w-0 opacity-0 group-hover:max-w-[200px] group-hover:opacity-100'
-          : 'max-w-[200px] opacity-100'
-      }`}
-    >
+    {/* Text: display:none when collapsed (removes from flex flow, like TailAdmin lg:hidden).
+        Instantly visible on group-hover. No max-width animation. */}
+    <span className={`whitespace-nowrap ${collapsed ? 'hidden group-hover:inline' : ''}`}>
       {label}
     </span>
   </NavLink>
@@ -107,7 +103,7 @@ const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean 
       </svg>
     </div>
   ) : (
-    <p className="mt-6 mb-1.5 px-3 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
+    <p className="mt-6 mb-1.5 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
       {label}
     </p>
   );
@@ -166,12 +162,12 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
 
   return (
     <aside
-      className={`cosmos-sidebar cosmos-scrollbar group dark:bg-gray-dark flex shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out dark:border-gray-800 ${
+      className={`cosmos-sidebar cosmos-scrollbar group dark:bg-gray-dark flex shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white px-5 transition-[width] duration-300 ease-linear dark:border-gray-800 ${
         collapsed ? 'w-[90px] hover:w-[290px]' : 'w-[290px]'
       }`}
     >
-      {/* Logo */}
-      <div className="flex h-[72px] shrink-0 items-center border-b border-gray-200 px-4 dark:border-gray-800">
+      {/* Logo — no extra px since aside already has px-5 */}
+      <div className="flex h-[72px] shrink-0 items-center border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-3">
           <div className="bg-brand-500 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white">
             <Activity className="h-5 w-5" />
@@ -189,7 +185,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-4 py-4">
+      <nav className="flex-1 overflow-y-auto py-4">
         <SectionLabel label="Menu" collapsed={collapsed} />
         <NavItem to="/cosmos" icon={BarChart2} label="Dashboard" collapsed={collapsed} end />
 
