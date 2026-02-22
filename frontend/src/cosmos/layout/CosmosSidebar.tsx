@@ -65,9 +65,9 @@ const NavItem = ({
     to={to}
     end={end}
     className={({ isActive }) =>
-      `flex items-center gap-3 rounded-lg px-3 text-sm font-medium transition-all ${
-        depth ? 'py-1.5' : 'py-2.5'
-      } ${
+      `flex items-center rounded-lg text-sm font-medium transition-all ${
+        collapsed ? 'justify-center px-2' : 'gap-3 px-3'
+      } ${depth ? 'py-1.5' : 'py-2.5'} ${
         isActive
           ? 'bg-brand-500 text-white'
           : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
