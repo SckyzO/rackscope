@@ -83,10 +83,12 @@ const NavItem = ({
   </NavLink>
 );
 
-// Section label: 3-dots SVG icon when collapsed (TailAdmin style), full label when expanded
-const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean }) =>
-  collapsed ? (
-    <div className="mt-4 mb-4 flex justify-center group-hover:hidden">
+// Section label: BOTH SVG dots AND text always in the DOM.
+// CSS controls visibility so hover expand works correctly.
+const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean }) => (
+  <>
+    {/* 3-dots: shown when collapsed, hidden on group-hover */}
+    <div className={`flex justify-center py-2 ${collapsed ? 'group-hover:hidden' : 'hidden'}`}>
       <svg
         className="fill-current text-gray-400 dark:text-gray-600"
         width="24"
@@ -102,11 +104,16 @@ const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean 
         />
       </svg>
     </div>
-  ) : (
-    <p className="mt-6 mb-1.5 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
+    {/* Full text label: hidden when collapsed, shown on hover */}
+    <p
+      className={`mb-1.5 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500 ${
+        collapsed ? 'mt-2 hidden group-hover:block' : 'mt-6'
+      }`}
+    >
       {label}
     </p>
-  );
+  </>
+);
 
 interface CosmosSidebarProps {
   collapsed: boolean;
@@ -196,20 +203,12 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         >
           <LayoutGrid className="h-5 w-5 shrink-0" />
           <span
-            className={`flex-1 overflow-hidden text-left whitespace-nowrap transition-all duration-200 ${
-              collapsed
-                ? 'max-w-0 opacity-0 group-hover:max-w-[160px] group-hover:opacity-100'
-                : 'max-w-[160px] opacity-100'
-            }`}
+            className={`flex-1 text-left whitespace-nowrap ${collapsed ? 'hidden group-hover:inline' : ''}`}
           >
             Components
           </span>
           <ChevronDown
-            className={`h-4 w-4 shrink-0 transition-all duration-200 ${uiOpen ? 'rotate-180' : ''} ${
-              collapsed
-                ? 'max-w-0 opacity-0 group-hover:max-w-[16px] group-hover:opacity-100'
-                : 'max-w-[16px] opacity-100'
-            }`}
+            className={`h-4 w-4 shrink-0 ${uiOpen ? 'rotate-180' : ''} ${collapsed ? 'hidden group-hover:block' : ''}`}
           />
         </button>
         {uiOpen && (
@@ -256,11 +255,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
               >
                 <MapPin className="h-4 w-4 shrink-0" />
                 <span
-                  className={`truncate overflow-hidden whitespace-nowrap transition-all duration-200 ${
-                    collapsed
-                      ? 'max-w-0 opacity-0 group-hover:max-w-[160px] group-hover:opacity-100'
-                      : 'max-w-[160px] opacity-100'
-                  }`}
+                  className={`truncate whitespace-nowrap ${collapsed ? 'hidden group-hover:inline' : ''}`}
                 >
                   {room.name}
                 </span>
