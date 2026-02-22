@@ -12,9 +12,38 @@ import {
   Zap,
   RefreshCw,
   ChevronRight,
+  Layers,
+  ShieldCheck,
+  Network,
 } from 'lucide-react';
 import { api } from '../../services/api';
-import type { ActiveAlert, Site, SlurmSummary, PrometheusStats, RoomState } from '../../types';
+import type {
+  ActiveAlert,
+  Site,
+  SlurmSummary,
+  PrometheusStats,
+  RoomState,
+  DeviceTemplate,
+  CheckDefinition,
+} from '../../types';
+
+// Device type icon + color mapping
+const DEV_TYPE_COLOR: Record<string, string> = {
+  server: '#3b82f6',
+  storage: '#f59e0b',
+  network: '#06b6d4',
+  pdu: '#eab308',
+  cooling: '#10b981',
+  other: '#6b7280',
+};
+const DEV_TYPE_ICON: Record<string, React.ElementType> = {
+  server: Server,
+  storage: Layers,
+  network: Network,
+  pdu: Zap,
+  cooling: Activity,
+  other: Cpu,
+};
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -118,6 +147,9 @@ export const CosmosDashboard = () => {
   const [slurm, setSlurm] = useState<SlurmSummary | null>(null);
   const [slurmEnabled, setSlurmEnabled] = useState(false);
   const [promStats, setPromStats] = useState<PrometheusStats | null>(null);
+  const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
+  const [rackTemplateCount, setRackTemplateCount] = useState(0);
+  const [checks, setChecks] = useState<CheckDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -126,16 +158,22 @@ export const CosmosDashboard = () => {
     if (!quiet) setLoading(true);
     else setRefreshing(true);
     try {
-      const [alertsData, sitesData, configData, promData] = await Promise.all([
-        api.getActiveAlerts(),
-        api.getSites(),
-        api.getConfig(),
-        api.getPrometheusStats().catch(() => null),
-      ]);
+      const [alertsData, sitesData, configData, promData, catalogData, checksData] =
+        await Promise.all([
+          api.getActiveAlerts(),
+          api.getSites(),
+          api.getConfig(),
+          api.getPrometheusStats().catch(() => null),
+          api.getCatalog().catch(() => null),
+          api.getChecks().catch(() => null),
+        ]);
       setAlerts(alertsData?.alerts ?? []);
       const siteList = Array.isArray(sitesData) ? sitesData : [];
       setSites(siteList);
       setPromStats(promData);
+      setDeviceTemplates(catalogData?.device_templates ?? []);
+      setRackTemplateCount(catalogData?.rack_templates?.length ?? 0);
+      setChecks(checksData?.checks ?? []);
 
       const slEnabled = Boolean(configData?.plugins?.slurm?.enabled);
       setSlurmEnabled(slEnabled);
@@ -228,6 +266,16 @@ export const CosmosDashboard = () => {
     mixed: '#8b5cf6',
     unknown: '#6b7280',
   };
+
+  // Catalog stats
+  const devsByType = deviceTemplates.reduce<Record<string, number>>((acc, t) => {
+    acc[t.type ?? 'other'] = (acc[t.type ?? 'other'] ?? 0) + 1;
+    return acc;
+  }, {});
+  const checksByScope = checks.reduce<Record<string, number>>((acc, c) => {
+    acc[c.scope ?? 'unknown'] = (acc[c.scope ?? 'unknown'] ?? 0) + 1;
+    return acc;
+  }, {});
 
   // Prometheus next scrape countdown
   const [now, setNow] = useState(Date.now());
@@ -513,6 +561,82 @@ export const CosmosDashboard = () => {
               <p className="text-xs text-gray-400">Checking connection...</p>
             )}
           </div>
+
+          {/* Catalog & Checks */}
+          {(deviceTemplates.length > 0 || checks.length > 0) && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+              <div className="mb-4 flex items-center gap-2">
+                <ShieldCheck className="text-brand-500 h-4 w-4" />
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Catalog &amp; Checks
+                </h2>
+              </div>
+
+              {/* Device templates by type */}
+              {Object.keys(devsByType).length > 0 && (
+                <div className="mb-4 space-y-2">
+                  <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                    Device Templates ({deviceTemplates.length})
+                  </p>
+                  {Object.entries(devsByType)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([type, count]) => {
+                      const Icon = DEV_TYPE_ICON[type] ?? Cpu;
+                      const color = DEV_TYPE_COLOR[type] ?? DEV_TYPE_COLOR.other;
+                      const pct = Math.round((count / deviceTemplates.length) * 100);
+                      return (
+                        <div key={type} className="space-y-0.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5">
+                              <Icon className="h-3 w-3 shrink-0" style={{ color }} />
+                              <span className="text-gray-600 capitalize dark:text-gray-400">
+                                {type}
+                              </span>
+                            </div>
+                            <span className="font-mono font-medium text-gray-700 dark:text-gray-300">
+                              {count}
+                            </span>
+                          </div>
+                          <div className="h-1 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{ width: `${pct}%`, backgroundColor: color }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  <div className="mt-1 flex items-center justify-between text-[11px] text-gray-400">
+                    <span>Rack templates</span>
+                    <span className="font-mono font-medium text-gray-600 dark:text-gray-400">
+                      {rackTemplateCount}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Checks */}
+              {checks.length > 0 && (
+                <div className="space-y-1.5 border-t border-gray-100 pt-3 dark:border-gray-800">
+                  <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                    Checks Library ({checks.length})
+                  </p>
+                  {Object.entries(checksByScope)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([scope, count]) => (
+                      <div key={scope} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500 capitalize dark:text-gray-400">
+                          {scope} scope
+                        </span>
+                        <span className="font-mono font-medium text-gray-700 dark:text-gray-300">
+                          {count}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
