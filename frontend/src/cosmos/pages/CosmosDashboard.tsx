@@ -1445,6 +1445,9 @@ export const CosmosDashboard = () => {
                 className={[
                   SPAN_CLASS[widget.colSpan] ?? 'col-span-4',
                   'group relative transition-opacity',
+                  editMode
+                    ? 'ring-brand-500/20 rounded-2xl ring-1 ring-offset-1 ring-offset-transparent'
+                    : '',
                   isDragging ? 'cursor-grabbing opacity-40' : '',
                   isDropTarget && dropSide === 'before'
                     ? 'border-brand-500 border-l-4'
@@ -1460,7 +1463,7 @@ export const CosmosDashboard = () => {
                   <>
                     {/* Drag grip bar across top */}
                     <div
-                      className="bg-brand-500/10 absolute inset-x-0 top-0 z-20 flex h-7 cursor-grab items-center justify-between rounded-t-2xl px-3 opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
+                      className="bg-brand-500/15 border-brand-500/20 absolute inset-x-0 top-0 z-20 flex h-7 cursor-grab items-center justify-between rounded-t-2xl border-b px-3 active:cursor-grabbing"
                       onMouseDown={(e) => e.stopPropagation()}
                     >
                       <GripVertical className="text-brand-500 h-4 w-4" />
@@ -1480,7 +1483,7 @@ export const CosmosDashboard = () => {
 
                     {/* Resize handle — bottom-right corner */}
                     <div
-                      className="bg-brand-500/20 hover:bg-brand-500/40 absolute right-0 bottom-0 z-20 flex h-6 w-6 cursor-se-resize items-center justify-center rounded-tl-lg rounded-br-2xl opacity-0 transition-opacity group-hover:opacity-100"
+                      className="bg-brand-500/30 hover:bg-brand-500/60 absolute right-0 bottom-0 z-20 flex h-6 w-6 cursor-se-resize items-center justify-center rounded-tl-lg rounded-br-2xl"
                       title="Drag to resize"
                       onMouseDown={(e) => {
                         // parentElement is the widget wrapper div
