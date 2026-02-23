@@ -495,26 +495,34 @@ export const TemplatesShowcase = () => {
             { label: 'Page Title' },
           ]}
         />
-        {/* The canvas card: bg-white / dark:bg-gray-900, min height, generous padding */}
-        <div className="rounded-2xl border border-gray-200 bg-white px-5 py-10 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-900">
-          {/* ContentNarrow (inline style) guarantees the 630px constraint */}
-          <ContentNarrow maxWidth={630}>
+        {/* Canvas card — slightly different bg so the constrained zone is visible in demo */}
+        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-10 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-800/50">
+          {/* Dashed outline shows the 630px constraint boundary */}
+          <div
+            className="mx-auto"
+            style={{
+              maxWidth: 630,
+              outline: '2px dashed rgba(70,95,255,0.3)',
+              outlineOffset: 8,
+              borderRadius: 12,
+            }}
+          >
             <div className="mb-8 text-center">
               <h3 className="mb-3 text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
                 Page Title
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Title and description live INSIDE the card. Content below is also constrained.
+                Everything inside this dashed zone is constrained to 630px and centered.
               </p>
             </div>
             <div className="space-y-4">
-              <ColBox label="630px content width" height={60} />
+              <ColBox label="630px max-width" height={60} />
               <div className="grid grid-cols-2 gap-4">
                 <ColBox label="50%" height={60} />
                 <ColBox label="50%" height={60} />
               </div>
             </div>
-          </ContentNarrow>
+          </div>
         </div>
       </div>
 
