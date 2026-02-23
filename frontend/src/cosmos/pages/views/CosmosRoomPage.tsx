@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   RefreshCw,
@@ -23,7 +24,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { api } from '../../../services/api';
-import type { Room, Aisle, Rack, RoomState } from '../../../types';
+import type { Room, Aisle, Rack, RoomState, RackState, DeviceTemplate } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageBreadcrumb } from '../templates/EmptyPage';
 import { RackElevation } from '../../../components/RackVisualizer';
@@ -116,57 +117,63 @@ const CompassRose = ({ north, showLabels }: { north: string; showLabels?: boolea
   const rotate = north === 'right' ? 90 : north === 'bottom' ? 180 : north === 'left' ? 270 : 0;
   return (
     <div
-      className="pointer-events-none absolute top-4 right-4 z-20 flex h-14 w-14 items-center justify-center"
+      className="pointer-events-none absolute top-3 right-3 z-20 h-20 w-20"
       style={{ transform: `rotate(${rotate}deg)` }}
     >
-      <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-14 w-14">
-        <circle
-          cx="28"
-          cy="28"
-          r="20"
-          stroke="currentColor"
-          strokeWidth="1"
-          className="text-gray-300 dark:text-gray-600"
-        />
-        {/* N arrow — blue */}
-        <polygon points="28,8 31,28 28,23 25,28" fill="#465fff" />
-        {/* S arrow — muted */}
-        <polygon
-          points="28,48 25,28 28,33 31,28"
-          fill="currentColor"
-          className="text-gray-400 dark:text-gray-500"
-        />
-        {/* W arrow — light */}
-        <polygon
-          points="8,28 28,25 23,28 28,31"
-          fill="currentColor"
-          className="text-gray-300 dark:text-gray-600"
-        />
-        {/* E arrow — light */}
-        <polygon
-          points="48,28 28,31 33,28 28,25"
-          fill="currentColor"
-          className="text-gray-300 dark:text-gray-600"
-        />
-        {/* N label — always shown */}
-        <text x="28" y="6" textAnchor="middle" fontSize="6" fontWeight="bold" fill="#465fff">
-          N
-        </text>
-        {/* Cardinal labels — optional */}
-        {showLabels && (
-          <>
-            <text x="28" y="54" textAnchor="middle" fontSize="5.5" fill="#6b7280">
-              S
-            </text>
-            <text x="52" y="30" textAnchor="middle" fontSize="5.5" fill="#6b7280">
-              E
-            </text>
-            <text x="4" y="30" textAnchor="middle" fontSize="5.5" fill="#6b7280">
-              O
-            </text>
-          </>
-        )}
-      </svg>
+      {/* N label — always shown */}
+      <span
+        className="absolute top-0 left-1/2 -translate-x-1/2 font-mono text-[10px] leading-none font-bold"
+        style={{ color: '#465fff' }}
+      >
+        N
+      </span>
+      {showLabels && (
+        <>
+          <span className="absolute bottom-0 left-1/2 -translate-x-1/2 font-mono text-[10px] leading-none font-medium text-gray-400 dark:text-gray-500">
+            S
+          </span>
+          <span className="absolute top-1/2 right-0 -translate-y-1/2 font-mono text-[10px] leading-none font-medium text-gray-400 dark:text-gray-500">
+            E
+          </span>
+          <span className="absolute top-1/2 left-0 -translate-y-1/2 font-mono text-[10px] leading-none font-medium text-gray-400 dark:text-gray-500">
+            O
+          </span>
+        </>
+      )}
+      {/* SVG compass — centered inside the label container */}
+      <div className="absolute inset-4 flex items-center justify-center">
+        <svg
+          viewBox="0 0 44 44"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-full w-full"
+        >
+          <circle
+            cx="22"
+            cy="22"
+            r="20"
+            stroke="currentColor"
+            strokeWidth="1"
+            className="text-gray-300 dark:text-gray-600"
+          />
+          <polygon points="22,3 25,22 22,17 19,22" fill="#465fff" />
+          <polygon
+            points="22,41 19,22 22,27 25,22"
+            fill="currentColor"
+            className="text-gray-400 dark:text-gray-500"
+          />
+          <polygon
+            points="3,22 22,19 17,22 22,25"
+            fill="currentColor"
+            className="text-gray-300 dark:text-gray-600"
+          />
+          <polygon
+            points="41,22 22,25 27,22 22,19"
+            fill="currentColor"
+            className="text-gray-300 dark:text-gray-600"
+          />
+        </svg>
+      </div>
     </div>
   );
 };
@@ -195,10 +202,18 @@ const RackCell = ({
   const color = HC[state] ?? HC.UNKNOWN;
   const dimmed = isHighlighted === false;
   const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const handleMouseEnter = () => {
-    timerRef.current = setTimeout(() => setShowTooltip(true), 1000);
+    timerRef.current = setTimeout(() => {
+      if (wrapperRef.current) {
+        const rect = wrapperRef.current.getBoundingClientRect();
+        setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top });
+      }
+      setShowTooltip(true);
+    }, 1000);
   };
   const handleMouseLeave = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -208,8 +223,78 @@ const RackCell = ({
   const deviceCount = rack.devices?.length ?? 0;
   const occupancy = Math.min(100, (deviceCount / (rack.u_height / 2)) * 100);
 
+  const tooltip = showTooltip
+    ? createPortal(
+        <div
+          className="pointer-events-none fixed z-[9999] min-w-[240px] overflow-hidden rounded-xl bg-gray-900 shadow-[0_8px_40px_rgba(0,0,0,0.55)] ring-1 ring-white/10 dark:bg-gray-800"
+          style={{
+            left: tooltipPos.x,
+            top: tooltipPos.y - 8,
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          {/* Colored header */}
+          <div
+            className="px-3.5 pt-3 pb-2.5"
+            style={{
+              background: `linear-gradient(135deg, ${color}22 0%, transparent 80%)`,
+              borderBottom: `1px solid ${color}25`,
+            }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm leading-tight font-bold text-white">{rack.name}</p>
+              <span
+                className="mt-0.5 shrink-0 rounded px-2 py-0.5 font-mono text-[10px] font-bold tracking-wide uppercase"
+                style={{ backgroundColor: `${color}30`, color }}
+              >
+                {state}
+              </span>
+            </div>
+            <p className="mt-1 font-mono text-[10px] text-gray-500">{rack.id}</p>
+          </div>
+
+          {/* Stats */}
+          <div className="space-y-2.5 px-3.5 py-3">
+            {/* Occupancy bar */}
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-xs text-gray-400">Occupancy</span>
+                <span className="font-mono text-xs text-gray-300">
+                  {deviceCount} device{deviceCount !== 1 ? 's' : ''} / {rack.u_height}U
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-gray-700">
+                <div
+                  className="h-2 rounded-full"
+                  style={{ width: `${occupancy}%`, backgroundColor: color }}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-gray-700/50 pt-2.5">
+              <span className="text-xs text-gray-400">Height</span>
+              <span className="text-right font-mono text-xs text-gray-200">{rack.u_height}U</span>
+              {deviceCount > 0 && (
+                <>
+                  <span className="text-xs text-gray-400">Devices</span>
+                  <span className="text-right text-xs font-semibold text-gray-200">
+                    {deviceCount}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Arrow */}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-gray-900 dark:border-t-gray-800" />
+        </div>,
+        document.body
+      )
+    : null;
+
   return (
     <div
+      ref={wrapperRef}
       className="relative flex flex-col items-center gap-1.5"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -227,11 +312,7 @@ const RackCell = ({
         {/* Fill bar */}
         <div
           className="absolute right-0 bottom-0 left-0 rounded-sm"
-          style={{
-            backgroundColor: color,
-            height: `${occupancy}%`,
-            opacity: 0.3,
-          }}
+          style={{ backgroundColor: color, height: `${occupancy}%`, opacity: 0.3 }}
         />
         {/* State dot */}
         <div
@@ -240,7 +321,7 @@ const RackCell = ({
         />
       </button>
 
-      {/* Rack name — always visible, 2 lines max */}
+      {/* Rack name — 2 lines max, consistent min-height for grid alignment */}
       <p
         className="w-20 text-center text-[11px] leading-tight text-gray-700 dark:text-gray-300"
         style={{
@@ -249,6 +330,7 @@ const RackCell = ({
           WebkitBoxOrient: 'vertical',
           overflow: 'hidden',
           wordBreak: 'break-word',
+          minHeight: '2.4em',
         }}
       >
         {rack.name}
@@ -261,67 +343,7 @@ const RackCell = ({
         </span>
       )}
 
-      {/* Delayed tooltip — rich info */}
-      {showTooltip && (
-        <div className="pointer-events-none absolute bottom-full left-1/2 z-[200] mb-2 min-w-[210px] -translate-x-1/2 overflow-hidden rounded-xl bg-gray-900 shadow-2xl ring-1 ring-white/5 dark:bg-gray-800">
-          {/* Colored header */}
-          <div
-            className="px-3 pt-3 pb-2.5"
-            style={{
-              background: `linear-gradient(135deg, ${color}22 0%, transparent 80%)`,
-              borderBottom: `1px solid ${color}25`,
-            }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-xs leading-tight font-bold text-white">{rack.name}</p>
-              <span
-                className="mt-0.5 shrink-0 rounded px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wide uppercase"
-                style={{ backgroundColor: `${color}30`, color }}
-              >
-                {state}
-              </span>
-            </div>
-            <p className="mt-0.5 font-mono text-[9px] text-gray-500">{rack.id}</p>
-          </div>
-
-          {/* Stats */}
-          <div className="space-y-2 px-3 py-2.5">
-            {/* Occupancy bar */}
-            <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-[10px] text-gray-400">Occupancy</span>
-                <span className="font-mono text-[10px] text-gray-300">
-                  {deviceCount} device{deviceCount !== 1 ? 's' : ''} / {rack.u_height}U
-                </span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-gray-700">
-                <div
-                  className="h-1.5 rounded-full transition-all"
-                  style={{ width: `${occupancy}%`, backgroundColor: color }}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-gray-700/50 pt-2">
-              <span className="text-[10px] text-gray-400">Height</span>
-              <span className="text-right font-mono text-[10px] text-gray-200">
-                {rack.u_height}U
-              </span>
-              {deviceCount > 0 && (
-                <>
-                  <span className="text-[10px] text-gray-400">Devices</span>
-                  <span className="text-right text-[10px] font-semibold text-gray-200">
-                    {deviceCount}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Arrow */}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-gray-900 dark:border-t-gray-800" />
-        </div>
-      )}
+      {tooltip}
     </div>
   );
 };
@@ -452,6 +474,13 @@ const RackDrawer = ({
   navigate: (path: string) => void;
 }) => {
   const [visible, setVisible] = useState(false);
+  const [isRearView, setIsRearView] = useState(false);
+  const [catalog, setCatalog] = useState<Record<string, DeviceTemplate>>({});
+  const [health, setHealth] = useState<RackState | null>(null);
+  // Start as loading=true — component is remounted (via key) when rack changes,
+  // so synchronous state resets are not needed.
+  const [loadingRack, setLoadingRack] = useState(true);
+
   useEffect(() => {
     if (!selected) return;
     const raf = requestAnimationFrame(() => setVisible(true));
@@ -461,17 +490,52 @@ const RackDrawer = ({
     };
   }, [selected]);
 
+  const rackId = selected?.rack.id;
+  useEffect(() => {
+    if (!rackId) return;
+    let cancelled = false;
+    Promise.all([api.getCatalog(), api.getRackState(rackId, true)])
+      .then(([catalogData, rackState]) => {
+        if (cancelled) return;
+        const devCat: Record<string, DeviceTemplate> = {};
+        (catalogData?.device_templates ?? []).forEach((t: DeviceTemplate) => {
+          devCat[t.id] = t;
+        });
+        setCatalog(devCat);
+        setHealth(rackState);
+        setLoadingRack(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadingRack(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [rackId]);
+
   if (!selected) return null;
   const { rack, aisle, state } = selected;
   const color = HC[state] ?? HC.UNKNOWN;
   const StateIcon = state === 'CRIT' ? XCircle : state === 'WARN' ? AlertTriangle : CheckCircle;
 
+  // Collect CRIT / WARN nodes for alert list
+  const critNodes: string[] = [];
+  const warnNodes: string[] = [];
+  if (health?.nodes) {
+    for (const [nodeId, nodeState] of Object.entries(health.nodes)) {
+      if (nodeState.state === 'CRIT') critNodes.push(nodeId);
+      else if (nodeState.state === 'WARN') warnNodes.push(nodeId);
+    }
+  }
+  const hasAlerts = critNodes.length > 0 || warnNodes.length > 0;
+
   return (
     <>
       <div className="fixed inset-0 z-[9990]" onClick={onClose} />
       <div
-        className={`fixed top-[72px] right-0 z-[9991] flex h-[calc(100vh-72px)] w-80 flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${visible ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-[72px] right-0 z-[9991] flex h-[calc(100vh-72px)] w-[360px] flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${visible ? 'translate-x-0' : 'translate-x-full'}`}
       >
+        {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">{rack.name}</h3>
@@ -494,6 +558,7 @@ const RackDrawer = ({
           </div>
         </div>
 
+        {/* Stats */}
         <div className="shrink-0 divide-y divide-gray-100 border-b border-gray-100 dark:divide-gray-800 dark:border-gray-800">
           {[
             { icon: Ruler, label: 'Height', value: `${rack.u_height}U` },
@@ -510,26 +575,95 @@ const RackDrawer = ({
           ))}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <p className="mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-            Rack View
-          </p>
-          <div style={{ height: Math.max(200, rack.u_height * 6) }}>
-            <RackElevation
-              rack={rack}
-              catalog={{}}
-              health={state}
-              nodesData={{}}
-              isRearView={false}
-              infraComponents={[]}
-              sideComponents={[]}
-              allowInfraOverlap={false}
-              pduMetrics={undefined}
-              onDeviceClick={() => {}}
-            />
+        {/* Scrollable body */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* Rack elevation */}
+          <div className="p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+                Rack View
+              </p>
+              {/* Front / Rear toggle */}
+              <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                {(['FRONT', 'REAR'] as const).map((side) => (
+                  <button
+                    key={side}
+                    onClick={() => setIsRearView(side === 'REAR')}
+                    className={`px-2.5 py-1 text-[10px] font-semibold transition-colors ${
+                      (side === 'REAR') === isRearView
+                        ? 'bg-brand-500 text-white'
+                        : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    {side}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {loadingRack ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="border-t-brand-500 h-6 w-6 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
+              </div>
+            ) : (
+              <div style={{ height: Math.max(240, rack.u_height * 13) }}>
+                <RackElevation
+                  rack={rack}
+                  catalog={catalog}
+                  health={health?.state ?? state}
+                  nodesData={health?.nodes}
+                  isRearView={isRearView}
+                  infraComponents={[]}
+                  sideComponents={[]}
+                  allowInfraOverlap={isRearView}
+                  pduMetrics={health?.infra_metrics?.pdu}
+                  onDeviceClick={() => {}}
+                />
+              </div>
+            )}
           </div>
+
+          {/* Alerts */}
+          {hasAlerts && (
+            <div className="border-t border-gray-100 p-4 dark:border-gray-800">
+              <p className="mb-2.5 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+                Alerts ({critNodes.length + warnNodes.length})
+              </p>
+              <div className="space-y-1.5">
+                {critNodes.map((nodeId) => (
+                  <div
+                    key={nodeId}
+                    className="flex items-center gap-2 rounded-lg bg-red-50 px-2.5 py-1.5 dark:bg-red-500/10"
+                  >
+                    <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                    <span className="min-w-0 flex-1 truncate font-mono text-xs text-red-700 dark:text-red-400">
+                      {nodeId}
+                    </span>
+                    <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400">
+                      CRIT
+                    </span>
+                  </div>
+                ))}
+                {warnNodes.map((nodeId) => (
+                  <div
+                    key={nodeId}
+                    className="flex items-center gap-2 rounded-lg bg-amber-50 px-2.5 py-1.5 dark:bg-amber-500/10"
+                  >
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                    <span className="min-w-0 flex-1 truncate font-mono text-xs text-amber-700 dark:text-amber-400">
+                      {nodeId}
+                    </span>
+                    <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+                      WARN
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Footer */}
         <div className="shrink-0 border-t border-gray-100 p-4 dark:border-gray-800">
           <button
             onClick={() => navigate(`/cosmos/views/rack/${rack.id}`)}
@@ -1070,6 +1204,7 @@ export const CosmosRoomPage = () => {
       {/* ── Drawers ── */}
       {drawerOpen && selectedRack && (
         <RackDrawer
+          key={selectedRack.rack.id}
           selected={selectedRack}
           onClose={() => setDrawerOpen(false)}
           navigate={navigate}
