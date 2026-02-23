@@ -84,7 +84,8 @@ const RackPanel = ({
 }) => {
   const uH = Math.max(1, draft.u_height);
   // Dynamic U pixel height: fill ~420px per rack, min 10px, max 22px
-  const U_PX = Math.max(10, Math.min(22, Math.floor(420 / uH)));
+  // Target ~900px total rack height; min 14px/U so slots remain readable
+  const U_PX = Math.max(14, Math.min(28, Math.floor(900 / uH)));
 
   // Components visible on this face
   const visible = draft.components.filter((c) => {
