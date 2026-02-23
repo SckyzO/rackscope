@@ -71,17 +71,32 @@ const nextKey = (() => {
 const RackPreview = ({
   draft,
   compTemplates,
+  face = 'front',
+  uPxMax = 20,
 }: {
   draft: Draft;
   compTemplates: Record<string, RackComponentTemplate>;
+  face?: 'front' | 'rear';
+  uPxMax?: number;
 }) => {
   const uH = Math.max(1, draft.u_height);
-  const U_PX = Math.max(10, Math.min(20, Math.floor(420 / uH)));
+  const U_PX = Math.max(10, Math.min(uPxMax, Math.floor(600 / uH)));
+
+  // Filter: u-mount components show on both faces; front/rear only on their respective face
+  const visibleComponents = draft.components.filter((c) => {
+    const loc = compTemplates[c.template_id]?.location;
+    if (!loc) return false;
+    if (loc === 'u-mount') return true;
+    if (loc === 'side') return true;
+    if (loc === 'front') return face === 'front';
+    if (loc === 'rear') return face === 'rear';
+    return false;
+  });
 
   // Build occupied map: u → { name, type, height }
   const occupied = useMemo(() => {
     const map = new Map<number, { name: string; type: CompType; height: number }>();
-    for (const c of draft.components) {
+    for (const c of visibleComponents) {
       const tmpl = compTemplates[c.template_id];
       if (!tmpl || tmpl.location !== 'u-mount') continue;
       const h = tmpl.u_height ?? 1;
@@ -90,28 +105,25 @@ const RackPreview = ({
       for (let i = 0; i < h; i++) map.set(c.u_position + i, info);
     }
     return map;
-  }, [draft.components, compTemplates, uH]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.components, compTemplates, uH, face]);
 
-  const sideComponents = draft.components
+  const sideComponents = visibleComponents
     .map((c) => compTemplates[c.template_id])
     .filter(Boolean)
-    .filter((t) => t.location === 'side' || t.location === 'front' || t.location === 'rear');
+    .filter((t) => t.location === 'side');
 
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-        Preview — {uH}U
-      </p>
-
+    <div className="flex flex-col gap-2">
       <div className="flex gap-2">
         {/* Side indicators left */}
-        <div className="flex w-4 flex-col items-center gap-px pt-5">
+        <div className="flex w-5 flex-col items-center gap-px pt-5">
           {draft.components
             .filter((c) => {
               const t = compTemplates[c.template_id];
               return t?.location === 'side' && c.side === 'left';
             })
-            .slice(0, 3)
+            .slice(0, 4)
             .map((c) => {
               const t = compTemplates[c.template_id];
               const color = TYPE_COLOR[(t?.type as CompType) ?? 'other'];
@@ -119,7 +131,7 @@ const RackPreview = ({
                 <div
                   key={c._key}
                   title={t?.name}
-                  className="h-8 w-3 rounded-sm opacity-80"
+                  className="h-10 w-4 rounded-sm opacity-80"
                   style={{ backgroundColor: color }}
                 />
               );
@@ -141,7 +153,7 @@ const RackPreview = ({
               const info = occupied.get(u);
               const isStart =
                 info &&
-                draft.components.some(
+                visibleComponents.some(
                   (c) => c.u_position === u && compTemplates[c.template_id]?.location === 'u-mount'
                 );
 
@@ -196,13 +208,13 @@ const RackPreview = ({
         </div>
 
         {/* Side indicators right */}
-        <div className="flex w-4 flex-col items-center gap-px pt-5">
+        <div className="flex w-5 flex-col items-center gap-px pt-5">
           {draft.components
             .filter((c) => {
               const t = compTemplates[c.template_id];
               return t?.location === 'side' && c.side === 'right';
             })
-            .slice(0, 3)
+            .slice(0, 4)
             .map((c) => {
               const t = compTemplates[c.template_id];
               const color = TYPE_COLOR[(t?.type as CompType) ?? 'other'];
@@ -210,7 +222,7 @@ const RackPreview = ({
                 <div
                   key={c._key}
                   title={t?.name}
-                  className="h-8 w-3 rounded-sm opacity-80"
+                  className="h-10 w-4 rounded-sm opacity-80"
                   style={{ backgroundColor: color }}
                 />
               );
@@ -793,14 +805,28 @@ export const CosmosRackTemplateEditorPage = () => {
               Failed to save template. Check the console for details.
             </div>
           )}
-        </div>
-      )}
 
-      {/* ── Right: preview ─────────────────────────────────────────────────── */}
-      {hasSelection && (
-        <aside className="flex w-52 shrink-0 flex-col overflow-y-auto rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-          <RackPreview draft={draft} compTemplates={compTemplates} />
-        </aside>
+          {/* ── Dual rack preview ── */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+            <p className="mb-4 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+              Preview — {draft.u_height}U
+            </p>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <p className="mb-2 text-center text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                  Front
+                </p>
+                <RackPreview draft={draft} compTemplates={compTemplates} face="front" uPxMax={28} />
+              </div>
+              <div>
+                <p className="mb-2 text-center text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                  Rear
+                </p>
+                <RackPreview draft={draft} compTemplates={compTemplates} face="rear" uPxMax={28} />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
