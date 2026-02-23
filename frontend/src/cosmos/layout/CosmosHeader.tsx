@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Moon, Sun, Bell, ChevronDown, AlertTriangle, XCircle } from 'lucide-react';
 import { api } from '../../services/api';
@@ -66,7 +66,11 @@ export const CosmosHeader = ({
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
-  const [seenCount, setSeenCount] = useState(0);
+  // Refs for fixed dropdown positioning (escapes overflow:hidden parents + Leaflet stacking context)
+  const notifBtnRef = useRef<HTMLButtonElement>(null);
+  const userBtnRef = useRef<HTMLDivElement>(null);
+  const [notifPos, setNotifPos] = useState({ top: 0, right: 0 });
+  const [userPos, setUserPos] = useState({ top: 0, right: 0 });
 
   // Load real alerts from API, poll every 30s
   useEffect(() => {
@@ -90,12 +94,23 @@ export const CosmosHeader = ({
   const pageTitle = ROUTE_LABELS[location.pathname] ?? '';
   const critCount = alerts.filter((a) => a.state === 'CRIT').length;
   const warnCount = alerts.filter((a) => a.state === 'WARN').length;
-  const unreadCount = Math.max(0, alerts.length - seenCount);
 
   const handleOpenNotif = () => {
+    if (!notifOpen && notifBtnRef.current) {
+      const r = notifBtnRef.current.getBoundingClientRect();
+      setNotifPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+    }
     setNotifOpen((p) => !p);
     setUserOpen(false);
-    setSeenCount(alerts.length);
+  };
+
+  const handleOpenUser = () => {
+    if (!userOpen && userBtnRef.current) {
+      const r = userBtnRef.current.getBoundingClientRect();
+      setUserPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+    }
+    setUserOpen((p) => !p);
+    setNotifOpen(false);
   };
 
   return (
@@ -145,21 +160,28 @@ export const CosmosHeader = ({
         {/* Notifications */}
         <div className="relative">
           <button
+            ref={notifBtnRef}
             onClick={handleOpenNotif}
             className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
           >
             <Bell className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
-                {unreadCount > 9 ? '9+' : unreadCount}
+            {alerts.length > 0 && (
+              <span className="absolute top-1 right-1">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-60" />
+                <span className="relative flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                  {alerts.length > 9 ? '9+' : alerts.length}
+                </span>
               </span>
             )}
           </button>
 
           {notifOpen && (
             <>
-              <div className="fixed inset-0 z-30" onClick={() => setNotifOpen(false)} />
-              <div className="shadow-theme-xl absolute top-full right-0 z-40 mt-2 w-96 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+              <div className="fixed inset-0 z-[9998]" onClick={() => setNotifOpen(false)} />
+              <div
+                className="shadow-theme-xl fixed z-[9999] w-96 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+                style={{ top: notifPos.top, right: notifPos.right }}
+              >
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -270,12 +292,9 @@ export const CosmosHeader = ({
         </div>
 
         {/* User menu */}
-        <div className="relative">
+        <div ref={userBtnRef} className="relative">
           <button
-            onClick={() => {
-              setUserOpen((p) => !p);
-              setNotifOpen(false);
-            }}
+            onClick={handleOpenUser}
             className="flex items-center gap-2 rounded-lg border border-gray-200 py-1.5 pr-3 pl-2 transition-colors hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
           >
             {avatar ? (
@@ -293,8 +312,11 @@ export const CosmosHeader = ({
 
           {userOpen && (
             <>
-              <div className="fixed inset-0 z-30" onClick={() => setUserOpen(false)} />
-              <div className="shadow-theme-lg absolute top-full right-0 z-40 mt-2 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 dark:border-gray-800 dark:bg-gray-900">
+              <div className="fixed inset-0 z-[9998]" onClick={() => setUserOpen(false)} />
+              <div
+                className="shadow-theme-lg fixed z-[9999] w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 dark:border-gray-800 dark:bg-gray-900"
+                style={{ top: userPos.top, right: userPos.right }}
+              >
                 <button
                   onClick={() => {
                     setUserOpen(false);
