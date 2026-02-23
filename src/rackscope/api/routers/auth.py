@@ -9,17 +9,26 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Annotated
 
+import bcrypt as _bcrypt
 import yaml
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
-from passlib.context import CryptContext
 from jose import jwt, JWTError
 
 from rackscope.model.config import AppConfig
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def _hash_password(password: str) -> str:
+    return _bcrypt.hashpw(password.encode(), _bcrypt.gensalt()).decode()
+
+
+def _verify_password(password: str, hashed: str) -> bool:
+    try:
+        return _bcrypt.checkpw(password.encode(), hashed.encode())
+    except Exception:
+        return False
 
 # ── Dependency helpers ────────────────────────────────────────────────────────
 
@@ -131,7 +140,7 @@ def login(
     if not auth.password_hash:
         raise HTTPException(status_code=401, detail="No password configured")
 
-    if not pwd_ctx.verify(body.password, auth.password_hash):
+    if not _verify_password(body.password, auth.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     secret = _secret_key(app_config)
@@ -173,13 +182,13 @@ def change_password(
     auth = app_config.auth
 
     # Allow initial password setup even when no hash exists yet
-    if auth.password_hash and not pwd_ctx.verify(body.current_password, auth.password_hash):
+    if auth.password_hash and not _verify_password(body.current_password, auth.password_hash):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
 
     if len(body.new_password) < 6:
         raise HTTPException(status_code=422, detail="Password must be at least 6 characters")
 
-    new_hash = pwd_ctx.hash(body.new_password)
+    new_hash = _hash_password(body.new_password)
     _update_auth_config(app_config, {"password_hash": new_hash})
     return {"ok": True}
 
@@ -196,7 +205,7 @@ def change_username(
 
     auth = app_config.auth
 
-    if auth.password_hash and not pwd_ctx.verify(body.password, auth.password_hash):
+    if auth.password_hash and not _verify_password(body.password, auth.password_hash):
         raise HTTPException(status_code=401, detail="Password is incorrect")
 
     if not body.new_username.strip():
