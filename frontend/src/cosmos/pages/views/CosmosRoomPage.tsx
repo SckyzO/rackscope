@@ -19,6 +19,7 @@ import {
   Ruler,
   SortAsc,
   Tag,
+  ListFilter,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Room, Aisle, Rack, RoomState } from '../../../types';
@@ -312,16 +313,26 @@ const RackDrawer = ({
   onClose: () => void;
   navigate: (path: string) => void;
 }) => {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!selected) return;
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => {
+      cancelAnimationFrame(raf);
+      setVisible(false);
+    };
+  }, [selected]);
+
   if (!selected) return null;
   const { rack, aisle, state } = selected;
   const color = HC[state] ?? HC.UNKNOWN;
 
-  const StateIcon = state === 'CRIT' ? XCircle : state === 'WARN' ? AlertTriangle : CheckCircle;
-
   return (
     <>
       <div className="fixed inset-0 z-[9990]" onClick={onClose} />
-      <div className="fixed top-[72px] right-0 z-[9991] flex h-[calc(100vh-72px)] w-80 flex-col border-l border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900">
+      <div
+        className={`fixed top-[72px] right-0 z-[9991] flex h-[calc(100vh-72px)] w-80 flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${visible ? 'translate-x-0' : 'translate-x-full'}`}
+      >
         <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">{rack.name}</h3>
@@ -344,22 +355,18 @@ const RackDrawer = ({
           </div>
         </div>
 
-        <div className="grid shrink-0 grid-cols-3 gap-2 border-b border-gray-100 p-4 dark:border-gray-800">
+        <div className="shrink-0 divide-y divide-gray-100 border-b border-gray-100 dark:divide-gray-800 dark:border-gray-800">
           {[
-            { icon: Ruler, label: 'Height', value: `${rack.u_height}U`, colored: false },
-            { icon: Server, label: 'Devices', value: rack.devices?.length ?? 0, colored: false },
-            { icon: StateIcon, label: 'State', value: state, colored: true },
+            { icon: Ruler, label: 'Height', value: `${rack.u_height}U` },
+            { icon: Server, label: 'Devices', value: rack.devices?.length ?? 0 },
+            { icon: StateIcon, label: 'Health state', value: state, style: { color } },
           ].map((s) => (
-            <div
-              key={s.label}
-              className="rounded-xl border border-gray-100 p-2.5 text-center dark:border-gray-800"
-            >
-              <s.icon
-                className="mx-auto mb-1 h-4 w-4 text-gray-400"
-                style={s.colored ? { color } : {}}
-              />
-              <p className="text-sm font-bold text-gray-900 dark:text-white">{s.value}</p>
-              <p className="text-[9px] text-gray-400">{s.label}</p>
+            <div key={s.label} className="flex items-center justify-between px-4 py-2.5">
+              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <s.icon className="h-4 w-4 shrink-0" style={s.style ?? {}} />
+                {s.label}
+              </div>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white">{s.value}</span>
             </div>
           ))}
         </div>
@@ -495,9 +502,19 @@ const CustomizePanel = ({
 
           {aisles.length > 0 && (
             <div>
-              <p className="mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-                Aisles
-              </p>
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <ListFilter className="h-3.5 w-3.5 text-gray-400" />
+                  <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+                    Filter Aisles
+                  </p>
+                </div>
+                {settings.hiddenAisles.size > 0 && (
+                  <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
+                    {settings.hiddenAisles.size} hidden
+                  </span>
+                )}
+              </div>
               <div className="space-y-1">
                 {aisles.map((a) => {
                   const hidden = settings.hiddenAisles.has(a.id);
@@ -756,7 +773,7 @@ export const CosmosRoomPage = () => {
         className="relative flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
         style={{
           backgroundImage: settings.showGrid
-            ? `linear-gradient(to right, rgb(229 231 235 / 0.5) 1px, transparent 1px), linear-gradient(to bottom, rgb(229 231 235 / 0.5) 1px, transparent 1px)`
+            ? `linear-gradient(to right, rgb(156 163 175 / 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgb(156 163 175 / 0.08) 1px, transparent 1px)`
             : undefined,
           backgroundSize: settings.showGrid
             ? `${layout?.grid?.cell ?? 28}px ${layout?.grid?.cell ?? 28}px`
