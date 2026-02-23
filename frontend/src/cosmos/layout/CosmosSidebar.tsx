@@ -429,6 +429,14 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         />
         <NavItem to="/cosmos/ui/avatars" icon={Users} label="Avatars" collapsed={collapsed} />
 
+        <SectionLabel label="Page Templates" collapsed={collapsed} />
+        <NavItem
+          to="/cosmos/templates/empty"
+          icon={PanelTop}
+          label="Empty Page"
+          collapsed={collapsed}
+        />
+
         <SectionLabel label="Auth" collapsed={collapsed} />
         <NavItem to="/cosmos/auth/signin" icon={LogIn} label="Sign In" collapsed={collapsed} />
         <NavItem to="/cosmos/auth/signup" icon={UserPlus} label="Sign Up" collapsed={collapsed} />
