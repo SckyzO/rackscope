@@ -93,67 +93,67 @@ const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean 
   </>
 );
 
-// ── Infrastructure tree ────────────────────────────────────────────────────
+// ── Infrastructure tree — TailAdmin-inspired ──────────────────────────────
+//
+// Pattern from /tmp/tailadmin-free-tailwind-dashboard-template:
+//   parent item: px-3 py-2 gap-3 rounded-lg font-medium
+//   children:    mt-1 flex flex-col gap-0.5 pl-9  (no border-l, just padding)
+//   leaf items:  same structure, deeper pl
 
+const ITEM_BASE =
+  'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors';
+const ITEM_ACTIVE = 'bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400';
+const ITEM_INACTIVE = 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5';
+
+/** Generic collapsible node — renders as a button row + optional children */
 const TreeNode = ({
   label,
-  depth = 0,
   expanded,
   onToggle,
   children,
   isActive = false,
   icon: Icon,
-  to,
+  hasLink = false,
+  onLinkClick,
   collapsed: sidebarCollapsed,
-  navigate,
-  header = false,
+  small = false,
 }: {
   label: string;
-  depth?: number;
   expanded: boolean;
   onToggle: () => void;
   children?: React.ReactNode;
   isActive?: boolean;
   icon?: ComponentType<{ className?: string }>;
-  to?: string;
+  /** If true, clicking the label navigates; chevron still toggles */
+  hasLink?: boolean;
+  onLinkClick?: () => void;
   collapsed: boolean;
-  navigate: (path: string) => void;
-  /** true = aisle-style (uppercase, grey) — false = site-style (normal text) */
-  header?: boolean;
-}) => {
-  const pl = depth === 0 ? 'pl-3' : depth === 1 ? 'pl-5' : 'pl-7';
-  return (
-    <div>
-      <div className={`flex items-center gap-0 ${pl} pr-1`}>
-        {to ? (
-          <button
-            onClick={() => navigate(to)}
-            className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-medium transition-colors ${
-              isActive
-                ? 'bg-brand-500/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400'
-                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
-            }`}
-          >
-            {Icon && (
-              <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-brand-500' : 'opacity-60'}`} />
-            )}
-            {!sidebarCollapsed && <span className="truncate">{label}</span>}
-          </button>
-        ) : (
-          <button
-            onClick={onToggle}
-            className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5 ${
-              header
-                ? 'text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500'
-                : 'text-sm font-medium text-gray-600 dark:text-gray-300'
-            }`}
-          >
-            {Icon && (
-              <Icon className={`shrink-0 opacity-60 ${header ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
-            )}
-            {!sidebarCollapsed && <span className="truncate">{label}</span>}
-          </button>
+  /** Smaller text for aisle-level rows */
+  small?: boolean;
+}) => (
+  <div>
+    <div className="flex items-center pr-1">
+      {/* Label area — clickable for navigation if hasLink */}
+      <button
+        onClick={hasLink ? onLinkClick : onToggle}
+        className={`${ITEM_BASE} flex-1 ${small ? 'py-1.5 text-xs' : ''} ${isActive ? ITEM_ACTIVE : ITEM_INACTIVE}`}
+      >
+        {Icon && (
+          <Icon
+            className={`h-4 w-4 shrink-0 ${isActive ? 'text-brand-500 dark:text-brand-400' : 'opacity-50'}`}
+          />
         )}
+        {!sidebarCollapsed && <span className="min-w-0 flex-1 truncate">{label}</span>}
+        {/* Chevron inline when sidebar is collapsed */}
+        {sidebarCollapsed &&
+          (expanded ? (
+            <ChevronDown className="h-3 w-3 shrink-0 opacity-40" />
+          ) : (
+            <ChevronRight className="h-3 w-3 shrink-0 opacity-40" />
+          ))}
+      </button>
+      {/* Separate chevron button for toggle when label is a link */}
+      {!sidebarCollapsed && hasLink && (
         <button
           onClick={onToggle}
           className="shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-white/5"
@@ -164,14 +164,24 @@ const TreeNode = ({
             <ChevronRight className="h-3.5 w-3.5" />
           )}
         </button>
-      </div>
-      {expanded && children && (
-        <div className="ml-4 border-l border-gray-200 pl-1 dark:border-gray-800">{children}</div>
+      )}
+      {/* Chevron for toggle-only nodes */}
+      {!sidebarCollapsed && !hasLink && (
+        <span className="pointer-events-none pr-1.5 text-gray-400 dark:text-gray-500">
+          {expanded ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
+        </span>
       )}
     </div>
-  );
-};
+    {/* Children: TailAdmin dropdown style — pl-9, no border-l */}
+    {expanded && children && <div className="mt-0.5 flex flex-col gap-0.5 pl-9">{children}</div>}
+  </div>
+);
 
+/** Leaf rack link */
 const RackLink = ({
   rack,
   collapsed,
@@ -185,14 +195,12 @@ const RackLink = ({
 }) => (
   <button
     onClick={() => navigate(`/cosmos/views/rack/${rack.id}`)}
-    className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs font-medium transition-colors ${
-      isActive
-        ? 'bg-brand-500/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400'
-        : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
-    }`}
+    className={`flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-left text-xs font-medium transition-colors ${isActive ? ITEM_ACTIVE : ITEM_INACTIVE}`}
   >
-    <Server className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-brand-500' : 'opacity-50'}`} />
-    {!collapsed && <span className="truncate">{rack.name}</span>}
+    <Server
+      className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-brand-500 dark:text-brand-400' : 'opacity-50'}`}
+    />
+    {!collapsed && <span className="min-w-0 flex-1 truncate">{rack.name}</span>}
   </button>
 );
 
@@ -284,7 +292,6 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                   <TreeNode
                     key={site.id}
                     label={site.name}
-                    depth={0}
                     expanded={siteExpanded}
                     onToggle={() => {
                       setExpandedSites((prev) => {
@@ -309,7 +316,6 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                         <TreeNode
                           key={room.id}
                           label={room.name}
-                          depth={1}
                           expanded={roomExpanded}
                           onToggle={() => {
                             setExpandedRooms((prev) => {
@@ -322,7 +328,8 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                               return next;
                             });
                           }}
-                          to={roomPath}
+                          hasLink
+                          onLinkClick={() => navigate(roomPath)}
                           isActive={isRoomActive}
                           icon={Home}
                           collapsed={collapsed}
@@ -334,8 +341,8 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                               <TreeNode
                                 key={aisle.id}
                                 label={aisle.name}
-                                depth={2}
-                                header
+                                small
+                                small
                                 expanded={aisleExpanded}
                                 onToggle={() => {
                                   setExpandedAisles((prev) => {
@@ -379,7 +386,6 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                     <TreeNode
                       key={room.id}
                       label={room.name}
-                      depth={0}
                       expanded={roomExpanded}
                       onToggle={() => {
                         setExpandedRooms((prev) => {
@@ -392,7 +398,8 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                           return next;
                         });
                       }}
-                      to={roomPath}
+                      hasLink
+                      onLinkClick={() => navigate(roomPath)}
                       isActive={location.pathname === roomPath}
                       icon={Home}
                       collapsed={collapsed}
@@ -402,8 +409,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                         <TreeNode
                           key={aisle.id}
                           label={aisle.name}
-                          depth={1}
-                          header
+                          small
                           expanded={expandedAisles.has(aisle.id)}
                           onToggle={() => {
                             setExpandedAisles((prev) => {
