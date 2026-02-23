@@ -513,12 +513,14 @@ const RackDrawer = ({
     };
   }, [rackId]);
 
+  const [alertsOpen, setAlertsOpen] = useState(false);
+
   if (!selected) return null;
   const { rack, aisle, state } = selected;
   const color = HC[state] ?? HC.UNKNOWN;
   const StateIcon = state === 'CRIT' ? XCircle : state === 'WARN' ? AlertTriangle : CheckCircle;
 
-  // Collect CRIT / WARN nodes for alert list
+  // Collect CRIT / WARN nodes
   const critNodes: string[] = [];
   const warnNodes: string[] = [];
   if (health?.nodes) {
@@ -527,63 +529,97 @@ const RackDrawer = ({
       else if (nodeState.state === 'WARN') warnNodes.push(nodeId);
     }
   }
-  const hasAlerts = critNodes.length > 0 || warnNodes.length > 0;
+  const alertCount = critNodes.length + warnNodes.length;
+  const alertColor = critNodes.length > 0 ? '#ef4444' : warnNodes.length > 0 ? '#f59e0b' : null;
 
   return (
     <>
       <div className="fixed inset-0 z-[9990]" onClick={onClose} />
+      {/* Outer — animates its width when alerts panel opens */}
       <div
-        className={`fixed top-[72px] right-0 z-[9991] flex h-[calc(100vh-72px)] w-[360px] flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${visible ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-[72px] right-0 z-[9991] flex h-[calc(100vh-72px)] flex-row overflow-hidden border-l border-gray-200 bg-white shadow-2xl transition-all duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${visible ? 'translate-x-0' : 'translate-x-full'}`}
+        style={{ width: alertsOpen ? 720 : 380 }}
       >
-        {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
-          <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">{rack.name}</h3>
-            <p className="text-xs text-gray-400">
-              {aisle.name} · {rack.id}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`rounded-lg px-2 py-0.5 text-xs font-bold ${HEALTH_PILL[state] ?? HEALTH_PILL.UNKNOWN}`}
-            >
-              {state}
-            </span>
-            <button
-              onClick={onClose}
-              className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="shrink-0 divide-y divide-gray-100 border-b border-gray-100 dark:divide-gray-800 dark:border-gray-800">
-          {[
-            { icon: Ruler, label: 'Height', value: `${rack.u_height}U` },
-            { icon: Server, label: 'Devices', value: rack.devices?.length ?? 0 },
-            { icon: StateIcon, label: 'Health state', value: state, style: { color } },
-          ].map((s) => (
-            <div key={s.label} className="flex items-center justify-between px-4 py-2.5">
-              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                <s.icon className="h-4 w-4 shrink-0" style={s.style ?? {}} />
-                {s.label}
-              </div>
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">{s.value}</span>
+        {/* ── Left panel — rack info + elevation ────────────────────────── */}
+        <div className="flex h-full w-[380px] shrink-0 flex-col">
+          {/* Header */}
+          <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+            <div className="min-w-0 flex-1">
+              <h3 className="truncate font-semibold text-gray-900 dark:text-white">{rack.name}</h3>
+              <p className="truncate text-xs text-gray-400">
+                {aisle.name} · {rack.id}
+              </p>
             </div>
-          ))}
-        </div>
+            <div className="ml-2 flex shrink-0 items-center gap-1.5">
+              <span
+                className={`rounded-lg px-2 py-0.5 text-xs font-bold ${HEALTH_PILL[state] ?? HEALTH_PILL.UNKNOWN}`}
+              >
+                {state}
+              </span>
 
-        {/* Scrollable body */}
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {/* Rack elevation */}
-          <div className="p-4">
-            <div className="mb-2 flex items-center justify-between">
+              {/* Alert bell — pulses when alerts exist, highlights when panel open */}
+              {alertCount > 0 && alertColor && (
+                <button
+                  onClick={() => setAlertsOpen((o) => !o)}
+                  title={`${alertCount} alert${alertCount > 1 ? 's' : ''}`}
+                  className={`relative rounded-lg p-1.5 transition-colors ${
+                    alertsOpen ? 'bg-opacity-20' : 'hover:bg-gray-100 dark:hover:bg-white/5'
+                  }`}
+                  style={alertsOpen ? { backgroundColor: `${alertColor}25` } : {}}
+                >
+                  <AlertTriangle className="h-4 w-4" style={{ color: alertColor }} />
+                  {/* Pulsing dot — hidden when panel is open */}
+                  {!alertsOpen && (
+                    <span
+                      className="absolute top-0.5 right-0.5 h-2 w-2 animate-pulse rounded-full"
+                      style={{ backgroundColor: alertColor }}
+                    />
+                  )}
+                  {/* Count badge */}
+                  <span
+                    className="absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-0.5 text-[9px] font-bold text-white"
+                    style={{ backgroundColor: alertColor }}
+                  >
+                    {alertCount}
+                  </span>
+                </button>
+              )}
+
+              <button
+                onClick={onClose}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="shrink-0 divide-y divide-gray-100 border-b border-gray-100 dark:divide-gray-800 dark:border-gray-800">
+            {[
+              { icon: Ruler, label: 'Height', value: `${rack.u_height}U` },
+              { icon: Server, label: 'Devices', value: rack.devices?.length ?? 0 },
+              { icon: StateIcon, label: 'Health', value: state, style: { color } },
+            ].map((s) => (
+              <div key={s.label} className="flex items-center justify-between px-4 py-2">
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <s.icon className="h-3.5 w-3.5 shrink-0" style={s.style ?? {}} />
+                  {s.label}
+                </div>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {s.value}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Rack elevation — takes all remaining height */}
+          <div className="flex min-h-0 flex-1 flex-col">
+            {/* Toggle bar */}
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-3 py-2 dark:border-gray-800">
               <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
                 Rack View
               </p>
-              {/* Front / Rear toggle */}
               <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
                 {(['FRONT', 'REAR'] as const).map((side) => (
                   <button
@@ -601,76 +637,111 @@ const RackDrawer = ({
               </div>
             </div>
 
-            {loadingRack ? (
-              <div className="flex items-center justify-center py-10">
-                <div className="border-t-brand-500 h-6 w-6 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
-              </div>
-            ) : (
-              <div style={{ height: Math.max(240, rack.u_height * 13) }}>
-                <RackElevation
-                  rack={rack}
-                  catalog={catalog}
-                  health={health?.state ?? state}
-                  nodesData={health?.nodes}
-                  isRearView={isRearView}
-                  infraComponents={[]}
-                  sideComponents={[]}
-                  allowInfraOverlap={isRearView}
-                  pduMetrics={health?.infra_metrics?.pdu}
-                  onDeviceClick={() => {}}
-                />
-              </div>
-            )}
+            {/* Elevation viewport — fills remaining height, scrolls if rack is taller */}
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {loadingRack ? (
+                <div className="flex h-full items-center justify-center">
+                  <div className="border-t-brand-500 h-6 w-6 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
+                </div>
+              ) : (
+                <div style={{ height: Math.max(280, rack.u_height * 16) }}>
+                  <RackElevation
+                    rack={rack}
+                    catalog={catalog}
+                    health={health?.state ?? state}
+                    nodesData={health?.nodes}
+                    isRearView={isRearView}
+                    infraComponents={[]}
+                    sideComponents={[]}
+                    allowInfraOverlap={isRearView}
+                    pduMetrics={health?.infra_metrics?.pdu}
+                    onDeviceClick={() => {}}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Alerts */}
-          {hasAlerts && (
-            <div className="border-t border-gray-100 p-4 dark:border-gray-800">
-              <p className="mb-2.5 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-                Alerts ({critNodes.length + warnNodes.length})
-              </p>
-              <div className="space-y-1.5">
-                {critNodes.map((nodeId) => (
-                  <div
-                    key={nodeId}
-                    className="flex items-center gap-2 rounded-lg bg-red-50 px-2.5 py-1.5 dark:bg-red-500/10"
-                  >
-                    <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
-                    <span className="min-w-0 flex-1 truncate font-mono text-xs text-red-700 dark:text-red-400">
-                      {nodeId}
-                    </span>
-                    <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400">
-                      CRIT
-                    </span>
-                  </div>
-                ))}
-                {warnNodes.map((nodeId) => (
-                  <div
-                    key={nodeId}
-                    className="flex items-center gap-2 rounded-lg bg-amber-50 px-2.5 py-1.5 dark:bg-amber-500/10"
-                  >
-                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                    <span className="min-w-0 flex-1 truncate font-mono text-xs text-amber-700 dark:text-amber-400">
-                      {nodeId}
-                    </span>
-                    <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
-                      WARN
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Footer */}
+          <div className="shrink-0 border-t border-gray-100 p-3 dark:border-gray-800">
+            <button
+              onClick={() => navigate(`/cosmos/views/rack/${rack.id}`)}
+              className="bg-brand-500 hover:bg-brand-600 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-colors"
+            >
+              Open Rack <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="shrink-0 border-t border-gray-100 p-4 dark:border-gray-800">
-          <button
-            onClick={() => navigate(`/cosmos/views/rack/${rack.id}`)}
-            className="bg-brand-500 hover:bg-brand-600 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-colors"
-          >
-            Open Rack <ChevronRight className="h-4 w-4" />
-          </button>
+        {/* ── Right panel — alerts (slides in) ──────────────────────────── */}
+        <div
+          className={`flex flex-col overflow-hidden border-l border-gray-200 transition-all duration-300 ease-out dark:border-gray-700 ${alertsOpen ? 'w-[340px]' : 'w-0'}`}
+        >
+          {/* Fixed inner — 340px wide so content doesn't reflow during animation */}
+          <div className="flex h-full w-[340px] flex-col bg-white dark:bg-gray-900">
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" style={{ color: alertColor ?? '#6b7280' }} />
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  Alerts
+                  <span className="ml-1.5 text-sm font-normal text-gray-400">({alertCount})</span>
+                </span>
+              </div>
+              <button
+                onClick={() => setAlertsOpen(false)}
+                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-4">
+              {critNodes.length > 0 && (
+                <>
+                  <p className="mb-2 text-[10px] font-semibold tracking-wider text-red-400 uppercase">
+                    Critical ({critNodes.length})
+                  </p>
+                  {critNodes.map((nodeId) => (
+                    <div
+                      key={nodeId}
+                      className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 dark:bg-red-500/10"
+                    >
+                      <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                      <span className="min-w-0 flex-1 truncate font-mono text-xs text-red-700 dark:text-red-400">
+                        {nodeId}
+                      </span>
+                      <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400">
+                        CRIT
+                      </span>
+                    </div>
+                  ))}
+                </>
+              )}
+              {warnNodes.length > 0 && (
+                <>
+                  <p
+                    className={`mb-2 text-[10px] font-semibold tracking-wider text-amber-400 uppercase ${critNodes.length > 0 ? 'mt-4' : ''}`}
+                  >
+                    Warning ({warnNodes.length})
+                  </p>
+                  {warnNodes.map((nodeId) => (
+                    <div
+                      key={nodeId}
+                      className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-500/10"
+                    >
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                      <span className="min-w-0 flex-1 truncate font-mono text-xs text-amber-700 dark:text-amber-400">
+                        {nodeId}
+                      </span>
+                      <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+                        WARN
+                      </span>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </>
