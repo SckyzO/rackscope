@@ -172,42 +172,95 @@ const RackCell = ({
 }: RackCellProps) => {
   const color = HC[state] ?? HC.UNKNOWN;
   const dimmed = isHighlighted === false;
+  const [showTooltip, setShowTooltip] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = () => {
+    timerRef.current = setTimeout(() => setShowTooltip(true), 1000);
+  };
+  const handleMouseLeave = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setShowTooltip(false);
+  };
+
   return (
-    <div className="group relative flex flex-col items-center gap-0.5">
+    <div
+      className="relative flex flex-col items-center gap-1"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Rack body */}
       <button
         onClick={onClick}
-        title={rack.name}
-        className={`relative h-14 w-8 rounded-sm border-2 transition-all ${
+        className={`relative h-20 w-16 rounded border-2 transition-all ${
           isSelected ? 'ring-brand-500 ring-2 ring-offset-1 dark:ring-offset-gray-900' : ''
         } ${searchMatch ? 'ring-2 ring-yellow-400 ring-offset-1' : ''} ${
           dimmed ? 'opacity-25' : ''
         }`}
-        style={{
-          backgroundColor: `${color}22`,
-          borderColor: color,
-        }}
+        style={{ backgroundColor: `${color}18`, borderColor: color }}
       >
+        {/* Fill bar */}
         <div
           className="absolute right-0 bottom-0 left-0 rounded-sm"
           style={{
             backgroundColor: color,
             height: `${Math.min(100, ((rack.devices?.length ?? 0) / (rack.u_height / 2)) * 100)}%`,
-            opacity: 0.4,
+            opacity: 0.35,
           }}
         />
+        {/* State dot */}
         <div
-          className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full"
+          className="absolute top-1 right-1 h-2 w-2 rounded-full"
           style={{ backgroundColor: color }}
         />
       </button>
-      {showLabel && (
-        <span className="w-8 truncate text-center font-mono text-[8px] text-gray-400 dark:text-gray-600">
-          {rack.id.split('-').pop()}
-        </span>
-      )}
-      <div className="pointer-events-none absolute -top-8 left-1/2 z-50 hidden -translate-x-1/2 rounded-lg bg-gray-900 px-2 py-1 text-[10px] whitespace-nowrap text-white shadow-lg group-hover:block dark:bg-gray-700">
+
+      {/* Rack name — always visible, 2 lines max */}
+      <p
+        className="w-16 text-center text-[9px] leading-tight text-gray-600 dark:text-gray-400"
+        style={{
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+          wordBreak: 'break-word',
+        }}
+      >
         {rack.name}
-      </div>
+      </p>
+
+      {/* Short ID label if toggle enabled */}
+      {showLabel && (
+        <span className="font-mono text-[8px] text-gray-300 dark:text-gray-600">{rack.id}</span>
+      )}
+
+      {/* Delayed tooltip — rich info */}
+      {showTooltip && (
+        <div className="pointer-events-none absolute bottom-full left-1/2 z-[200] mb-2 min-w-[160px] -translate-x-1/2 rounded-xl bg-gray-900 px-3 py-2.5 shadow-2xl dark:bg-gray-800">
+          <p className="text-xs font-semibold text-white">{rack.name}</p>
+          <p className="mb-1.5 font-mono text-[10px] text-gray-500">{rack.id}</p>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-[10px] text-gray-400">State</span>
+              <span className="text-[10px] font-bold" style={{ color }}>
+                {state}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-[10px] text-gray-400">Height</span>
+              <span className="text-[10px] text-white">{rack.u_height}U</span>
+            </div>
+            {(rack.devices?.length ?? 0) > 0 && (
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-[10px] text-gray-400">Devices</span>
+                <span className="text-[10px] text-white">{rack.devices?.length}</span>
+              </div>
+            )}
+          </div>
+          {/* Arrow */}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-gray-900 dark:border-t-gray-800" />
+        </div>
+      )}
     </div>
   );
 };
