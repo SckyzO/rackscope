@@ -1,256 +1,484 @@
-import { TrendingUp, BarChart2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import ReactApexChart from 'react-apexcharts';
+import type { ApexOptions } from 'apexcharts';
+import { usePageTitle } from '../../contexts/PageTitleContext';
+import { PageHeader, SectionCard } from '../templates/EmptyPage';
 
-const SectionCard = ({
+// ── Dark mode helper ──────────────────────────────────────────────────────────
+
+const useDark = () => {
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
+  useEffect(() => {
+    const obs = new MutationObserver(() =>
+      setDark(document.documentElement.classList.contains('dark'))
+    );
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+  return dark;
+};
+
+const baseChart = (): ApexOptions['chart'] => ({
+  background: 'transparent',
+  toolbar: { show: false },
+  fontFamily: 'Outfit, system-ui, sans-serif',
+});
+
+const baseTheme = (dark: boolean): ApexOptions['theme'] => ({ mode: dark ? 'dark' : 'light' });
+
+const BRAND = '#465fff';
+const COLORS = ['#465fff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const GRID = (dark: boolean): ApexOptions['grid'] => ({
+  borderColor: dark ? '#1f2937' : '#f3f4f6',
+  strokeDashArray: 4,
+});
+const AXIS_LABELS = (dark: boolean) => ({
+  style: { colors: dark ? '#6b7280' : '#9ca3af', fontSize: '12px' },
+});
+
+// ── 1. Line / Area chart ──────────────────────────────────────────────────────
+
+const LineAreaChart = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'area' },
+    theme: baseTheme(dark),
+    colors: [BRAND, '#10b981'],
+    dataLabels: { enabled: false },
+    stroke: { curve: 'smooth', width: 2 },
+    fill: { type: 'gradient', gradient: { opacityFrom: 0.4, opacityTo: 0.05 } },
+    grid: GRID(dark),
+    xaxis: {
+      categories: [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ],
+      labels: AXIS_LABELS(dark),
+    },
+    yaxis: { labels: { ...AXIS_LABELS(dark) } },
+    legend: {
+      position: 'top',
+      horizontalAlign: 'right',
+      labels: { colors: dark ? '#d1d5db' : '#374151' },
+    },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[
+        { name: 'Revenue', data: [31, 40, 28, 51, 42, 109, 100, 87, 78, 95, 110, 130] },
+        { name: 'Expenses', data: [11, 32, 45, 32, 34, 52, 41, 67, 54, 72, 68, 80] },
+      ]}
+      type="area"
+      height={280}
+    />
+  );
+};
+
+// ── 2. Bar chart ──────────────────────────────────────────────────────────────
+
+const BarChart = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'bar' },
+    theme: baseTheme(dark),
+    colors: [BRAND, '#10b981'],
+    plotOptions: { bar: { columnWidth: '50%', borderRadius: 4 } },
+    dataLabels: { enabled: false },
+    grid: GRID(dark),
+    xaxis: {
+      categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      labels: AXIS_LABELS(dark),
+    },
+    yaxis: { labels: { ...AXIS_LABELS(dark) } },
+    legend: { position: 'top', labels: { colors: dark ? '#d1d5db' : '#374151' } },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[
+        { name: 'Sales', data: [44, 55, 57, 56, 61, 58, 63] },
+        { name: 'Revenue', data: [76, 85, 101, 98, 87, 105, 91] },
+      ]}
+      type="bar"
+      height={280}
+    />
+  );
+};
+
+// ── 3. Donut chart ────────────────────────────────────────────────────────────
+
+const DonutChart = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'donut' },
+    theme: baseTheme(dark),
+    colors: COLORS,
+    labels: ['OK', 'WARN', 'CRIT', 'UNKNOWN', 'Other'],
+    dataLabels: { enabled: false },
+    legend: { position: 'bottom', labels: { colors: dark ? '#d1d5db' : '#374151' } },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '65%',
+          labels: {
+            show: true,
+            total: { show: true, label: 'Total', color: dark ? '#d1d5db' : '#374151' },
+          },
+        },
+      },
+    },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[44, 15, 8, 12, 21]}
+      type="donut"
+      height={280}
+    />
+  );
+};
+
+// ── 4. Heatmap ────────────────────────────────────────────────────────────────
+
+const HeatmapChart = () => {
+  const dark = useDark();
+  const gen = (n: number) =>
+    Array.from({ length: n }, (_, i) => ({
+      x: `N${String(i + 1).padStart(2, '0')}`,
+      y: Math.floor(Math.random() * 100),
+    }));
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'heatmap' },
+    theme: baseTheme(dark),
+    dataLabels: { enabled: false },
+    plotOptions: {
+      heatmap: {
+        shadeIntensity: 0.5,
+        colorScale: {
+          ranges: [
+            { from: 0, to: 30, color: '#10b981', name: 'OK' },
+            { from: 31, to: 65, color: '#f59e0b', name: 'WARN' },
+            { from: 66, to: 100, color: '#ef4444', name: 'CRIT' },
+          ],
+        },
+      },
+    },
+    grid: GRID(dark),
+    xaxis: {
+      labels: { ...AXIS_LABELS(dark), style: { ...AXIS_LABELS(dark).style, fontSize: '10px' } },
+    },
+    yaxis: { labels: { ...AXIS_LABELS(dark) } },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[
+        { name: 'Aisle A', data: gen(12) },
+        { name: 'Aisle B', data: gen(12) },
+        { name: 'Aisle C', data: gen(12) },
+        { name: 'Aisle D', data: gen(12) },
+      ]}
+      type="heatmap"
+      height={220}
+    />
+  );
+};
+
+// ── 5. Realtime ────────────────────────────────────────────────────────────────
+
+const RealtimeChart = () => {
+  const dark = useDark();
+  const chartRef = useRef<InstanceType<typeof ReactApexChart>>(null);
+  // useState lazy initializer avoids calling impure functions during render
+  const [initData] = useState(() =>
+    Array.from({ length: 30 }, (_, i) => ({
+      x: Date.now() - (30 - i) * 2000,
+      y: Math.floor(Math.random() * 40) + 30,
+    }))
+  );
+  const bufRef = useRef(initData);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      const last = bufRef.current[bufRef.current.length - 1];
+      bufRef.current = [
+        ...bufRef.current.slice(-29),
+        { x: last.x + 2000, y: Math.max(20, Math.min(95, last.y + (Math.random() - 0.5) * 14)) },
+      ];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (chartRef.current as any)?.chart?.updateSeries([{ data: [...bufRef.current] }], false);
+    }, 2000);
+    return () => clearInterval(t);
+  }, []);
+
+  const options: ApexOptions = {
+    chart: {
+      ...baseChart(),
+      type: 'line',
+      animations: { enabled: true, easing: 'linear', dynamicAnimation: { speed: 1000 } },
+    },
+    theme: baseTheme(dark),
+    colors: [BRAND],
+    stroke: { curve: 'smooth', width: 2 },
+    dataLabels: { enabled: false },
+    grid: GRID(dark),
+    xaxis: {
+      type: 'datetime',
+      range: 60000,
+      labels: { ...AXIS_LABELS(dark), datetimeFormatter: { minute: 'HH:mm:ss' } },
+    },
+    yaxis: {
+      min: 0,
+      max: 100,
+      labels: { formatter: (v) => `${Math.round(v)}%`, ...AXIS_LABELS(dark) },
+    },
+    annotations: {
+      yaxis: [
+        {
+          y: 70,
+          borderColor: '#f59e0b',
+          label: {
+            text: 'WARN 70%',
+            style: { color: '#f59e0b', background: 'transparent', border: 0 },
+          },
+        },
+        {
+          y: 85,
+          borderColor: '#ef4444',
+          label: {
+            text: 'CRIT 85%',
+            style: { color: '#ef4444', background: 'transparent', border: 0 },
+          },
+        },
+      ],
+    },
+    tooltip: { theme: dark ? 'dark' : 'light', x: { format: 'HH:mm:ss' } },
+  };
+  return (
+    <ReactApexChart
+      ref={chartRef}
+      key={String(dark)}
+      options={options}
+      series={[{ name: 'CPU Load', data: initData }]}
+      type="line"
+      height={220}
+    />
+  );
+};
+
+// ── 6. Mixed: area + column ───────────────────────────────────────────────────
+
+const MixedChart = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'line', stacked: false },
+    theme: baseTheme(dark),
+    colors: [BRAND, '#10b981', '#f59e0b'],
+    stroke: { width: [2, 2, 0], curve: 'smooth' },
+    dataLabels: { enabled: false },
+    fill: { opacity: [0.3, 0.3, 1] },
+    grid: GRID(dark),
+    xaxis: {
+      categories: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+      labels: AXIS_LABELS(dark),
+    },
+    yaxis: [
+      {
+        seriesName: 'Temperature',
+        min: 0,
+        max: 100,
+        labels: { formatter: (v) => `${Math.round(v)}°C`, ...AXIS_LABELS(dark) },
+      },
+      {
+        seriesName: 'Power',
+        opposite: true,
+        labels: { formatter: (v) => `${v.toFixed(1)}kW`, ...AXIS_LABELS(dark) },
+      },
+    ],
+    legend: { position: 'top', labels: { colors: dark ? '#d1d5db' : '#374151' } },
+    tooltip: { theme: dark ? 'dark' : 'light', shared: true, intersect: false },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[
+        { name: 'Temperature', type: 'area', data: [38, 40, 45, 52, 48, 42, 40] },
+        { name: 'Power (kW)', type: 'area', data: [3.2, 3.8, 4.5, 5.1, 4.8, 4.0, 3.5] },
+        { name: 'Alerts', type: 'column', data: [0, 0, 2, 5, 1, 0, 0] },
+      ]}
+      type="line"
+      height={260}
+    />
+  );
+};
+
+// ── 7. Radial Bar ─────────────────────────────────────────────────────────────
+
+const RadialBarChart = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'radialBar' },
+    theme: baseTheme(dark),
+    colors: [BRAND, '#10b981', '#f59e0b', '#ef4444'],
+    plotOptions: {
+      radialBar: {
+        offsetY: 0,
+        startAngle: 0,
+        endAngle: 270,
+        hollow: { margin: 5, size: '30%', background: 'transparent' },
+        dataLabels: {
+          name: { show: false },
+          value: { show: false },
+          total: {
+            show: true,
+            label: 'Health',
+            color: dark ? '#d1d5db' : '#374151',
+            formatter: () => '78%',
+          },
+        },
+        track: { background: dark ? '#1f2937' : '#f3f4f6' },
+      },
+    },
+    labels: ['Servers', 'Switches', 'Storage', 'PDUs'],
+    legend: {
+      show: true,
+      position: 'left',
+      offsetY: 40,
+      labels: { colors: dark ? '#d1d5db' : '#374151' },
+    },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[91, 85, 78, 62]}
+      type="radialBar"
+      height={260}
+    />
+  );
+};
+
+// ── 8. Pie charts ─────────────────────────────────────────────────────────────
+
+const PieChart = ({
   title,
-  desc,
-  children,
+  series,
+  labels,
 }: {
   title: string;
-  desc?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-    <div className="mb-5">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-      {desc && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
-    </div>
-    {children}
-  </div>
-);
-
-// Simple SVG bar chart placeholder
-const SimpleBarChart = ({ data, color }: { data: number[]; color: string }) => {
-  const max = Math.max(...data);
+  series: number[];
+  labels: string[];
+}) => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'pie' },
+    theme: baseTheme(dark),
+    colors: COLORS,
+    labels,
+    dataLabels: { style: { fontSize: '11px' } },
+    legend: {
+      position: 'bottom',
+      labels: { colors: dark ? '#d1d5db' : '#374151' },
+      fontSize: '12px',
+    },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+    title: {
+      text: title,
+      align: 'center',
+      style: { color: dark ? '#e5e7eb' : '#374151', fontSize: '13px', fontWeight: '600' },
+    },
+  };
   return (
-    <div className="flex h-32 items-end gap-2">
-      {data.map((val, i) => (
-        <div key={i} className="flex flex-1 flex-col items-center gap-1">
-          <div
-            className={`w-full rounded-t-sm ${color}`}
-            style={{ height: `${(val / max) * 100}%` }}
-          />
-          <span className="text-[9px] text-gray-400">
-            {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'][i]}
-          </span>
-        </div>
-      ))}
-    </div>
+    <ReactApexChart key={String(dark)} options={options} series={series} type="pie" height={260} />
   );
 };
 
-// Simple SVG area/line chart placeholder
-const SimpleLineChart = ({ color }: { color: string }) => {
-  const points = [30, 55, 40, 70, 50, 80, 65, 90];
-  const w = 400,
-    h = 100;
-  const maxV = 100;
-  const pts = points
-    .map((v, i) => `${(i / (points.length - 1)) * w},${h - (v / maxV) * h}`)
-    .join(' ');
-  const fill = `${pts} ${w},${h} 0,${h}`;
+// ── Page ──────────────────────────────────────────────────────────────────────
 
+export const ChartsPage = () => {
+  usePageTitle('Charts');
   return (
-    <div className="h-32 w-full">
-      <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id={`grad-${color}`} x1="0" y1="0" x2="0" y2="1">
-            <stop
-              offset="0%"
-              stopColor={color === 'brand' ? '#465fff' : '#12b76a'}
-              stopOpacity="0.3"
+    <div className="space-y-6">
+      <PageHeader
+        title="Charts"
+        description="Interactive data visualizations powered by ApexCharts — 6 chart types."
+      />
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title="Line / Area" desc="Revenue vs expenses over 12 months">
+          <LineAreaChart />
+        </SectionCard>
+        <SectionCard title="Bar / Column" desc="Grouped bars — sales and revenue by day">
+          <BarChart />
+        </SectionCard>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title="Donut" desc="Node health distribution with center total">
+          <DonutChart />
+        </SectionCard>
+        <SectionCard title="Mixed" desc="Area + column combo — temperature, power, alerts">
+          <MixedChart />
+        </SectionCard>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title="Heatmap" desc="Intensity grid — ideal for rack/node health maps">
+          <HeatmapChart />
+        </SectionCard>
+        <SectionCard
+          title="Realtime"
+          desc="Live metric with WARN/CRIT thresholds — updates every 2s"
+        >
+          <RealtimeChart />
+        </SectionCard>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title="Radial Bar" desc="Multi-series radial gauge — health per device type">
+          <RadialBarChart />
+        </SectionCard>
+        <SectionCard title="Pie Charts" desc="Three pie variants side by side">
+          <div className="grid grid-cols-3 gap-2">
+            <PieChart
+              title="Servers"
+              series={[60, 25, 10, 5]}
+              labels={['OK', 'WARN', 'CRIT', 'UNK']}
             />
-            <stop
-              offset="100%"
-              stopColor={color === 'brand' ? '#465fff' : '#12b76a'}
-              stopOpacity="0.02"
+            <PieChart
+              title="Network"
+              series={[75, 15, 8, 2]}
+              labels={['OK', 'WARN', 'CRIT', 'UNK']}
             />
-          </linearGradient>
-        </defs>
-        <polygon points={fill} fill={`url(#grad-${color})`} />
-        <polyline
-          points={pts}
-          fill="none"
-          stroke={color === 'brand' ? '#465fff' : '#12b76a'}
-          strokeWidth="2"
-        />
-      </svg>
+            <PieChart
+              title="Storage"
+              series={[50, 30, 12, 8]}
+              labels={['OK', 'WARN', 'CRIT', 'UNK']}
+            />
+          </div>
+        </SectionCard>
+      </div>
     </div>
   );
 };
-
-export const ChartsPage = () => (
-  <div className="space-y-6">
-    <div>
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">Charts</h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Data visualization components</p>
-    </div>
-    <div className="grid gap-6 lg:grid-cols-2">
-      <SectionCard title="Line Chart" desc="Trend visualization over time">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="text-brand-500 h-5 w-5" />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">24,563</span>
-          </div>
-          <span className="bg-success-50 text-success-500 dark:bg-success-500/10 rounded-full px-2.5 py-1 text-xs font-medium">
-            +12.5%
-          </span>
-        </div>
-        <SimpleLineChart color="brand" />
-        <div className="mt-3 flex gap-2">
-          {['7d', '1m', '3m', '1y'].map((p, i) => (
-            <button
-              key={p}
-              className={`rounded px-2.5 py-1 text-xs font-medium ${i === 1 ? 'bg-brand-500 text-white' : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'}`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      </SectionCard>
-      <SectionCard title="Area Chart" desc="Filled area under the line">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="text-success-500 h-5 w-5" />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">$89,234</span>
-          </div>
-          <span className="bg-success-50 text-success-500 dark:bg-success-500/10 rounded-full px-2.5 py-1 text-xs font-medium">
-            +8.2%
-          </span>
-        </div>
-        <SimpleLineChart color="success" />
-      </SectionCard>
-      <SectionCard title="Bar Chart" desc="Comparative data across categories">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BarChart2 className="text-brand-500 h-5 w-5" />
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">Monthly Sales</span>
-          </div>
-        </div>
-        <SimpleBarChart data={[65, 80, 55, 95, 70, 85, 60, 90]} color="bg-brand-500" />
-      </SectionCard>
-      <SectionCard title="Multi-Color Bar Chart" desc="Categories with distinct colors">
-        <div className="mb-4">
-          <div className="flex items-center gap-4 text-xs text-gray-500">
-            <span className="flex items-center gap-1.5">
-              <span className="bg-brand-500 h-2 w-2 rounded-full" />
-              Revenue
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="bg-success-500 h-2 w-2 rounded-full" />
-              Profit
-            </span>
-          </div>
-        </div>
-        <div className="flex h-32 items-end gap-2">
-          {[65, 80, 55, 95, 70, 85, 60, 90].map((val, i) => (
-            <div key={i} className="flex flex-1 flex-col items-center gap-0.5">
-              <div className="flex w-full gap-0.5">
-                <div
-                  className="bg-brand-500 flex-1 rounded-t-sm"
-                  style={{ height: `${val * 0.9}px` }}
-                />
-                <div
-                  className="bg-success-500 flex-1 rounded-t-sm"
-                  style={{ height: `${val * 0.5}px` }}
-                />
-              </div>
-              <span className="text-[9px] text-gray-400">
-                {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A'][i]}
-              </span>
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-      <SectionCard title="Donut Chart" desc="Part-to-whole relationships">
-        <div className="flex items-center justify-center gap-8">
-          <div className="relative h-32 w-32">
-            <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
-              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e4e7ec" strokeWidth="3" />
-              <circle
-                cx="18"
-                cy="18"
-                r="15.9"
-                fill="none"
-                stroke="#465fff"
-                strokeWidth="3"
-                strokeDasharray="45 55"
-              />
-              <circle
-                cx="18"
-                cy="18"
-                r="15.9"
-                fill="none"
-                stroke="#12b76a"
-                strokeWidth="3"
-                strokeDasharray="30 70"
-                strokeDashoffset="-45"
-              />
-              <circle
-                cx="18"
-                cy="18"
-                r="15.9"
-                fill="none"
-                stroke="#f79009"
-                strokeWidth="3"
-                strokeDasharray="18 82"
-                strokeDashoffset="-75"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm font-bold text-gray-900 dark:text-white">93%</span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            {[
-              ['Direct', '45%', 'bg-brand-500'],
-              ['Organic', '30%', 'bg-success-500'],
-              ['Paid', '18%', 'bg-warning-500'],
-              ['Other', '7%', 'bg-gray-300'],
-            ].map(([l, p, c]) => (
-              <div key={l} className="flex items-center gap-2 text-sm">
-                <span className={`h-2 w-2 shrink-0 rounded-full ${c}`} />
-                <span className="text-gray-600 dark:text-gray-400">{l}</span>
-                <span className="ml-auto font-medium text-gray-900 dark:text-white">{p}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </SectionCard>
-      <SectionCard title="Progress Radials" desc="Circular progress indicators">
-        <div className="flex flex-wrap justify-around gap-4">
-          {[
-            { val: 75, color: '#465fff', label: 'Progress' },
-            { val: 60, color: '#12b76a', label: 'Success' },
-            { val: 40, color: '#f79009', label: 'Warning' },
-          ].map(({ val, color, label }) => {
-            const circ = 2 * Math.PI * 15.9;
-            const dash = (val / 100) * circ;
-            return (
-              <div key={label} className="flex flex-col items-center gap-2">
-                <div className="relative h-20 w-20">
-                  <svg viewBox="0 0 36 36" className="h-full w-full -rotate-90">
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e4e7ec" strokeWidth="3" />
-                    <circle
-                      cx="18"
-                      cy="18"
-                      r="15.9"
-                      fill="none"
-                      stroke={color}
-                      strokeWidth="3"
-                      strokeDasharray={`${dash} ${circ - dash}`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">{val}%</span>
-                  </div>
-                </div>
-                <span className="text-xs text-gray-500">{label}</span>
-              </div>
-            );
-          })}
-        </div>
-      </SectionCard>
-    </div>
-  </div>
-);
