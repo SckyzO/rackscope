@@ -12,13 +12,12 @@ import {
   Network,
   Settings2,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 import { api } from '../../../services/api';
-import type { RackTemplate, RackComponentTemplate } from '../../../types';
+import type { RackTemplate, RackComponentTemplate, CheckDefinition } from '../../../types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-type CompType = 'power' | 'cooling' | 'management' | 'network' | 'other';
 
 type DraftComponent = {
   _key: string;
@@ -32,22 +31,25 @@ type Draft = {
   name: string;
   u_height: number;
   components: DraftComponent[];
+  checks: string[];
 };
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const TYPE_COLOR: Record<CompType, string> = {
+const TYPE_COLOR: Record<string, string> = {
   power: '#eab308',
+  pdu: '#f97316',
   cooling: '#3b82f6',
   management: '#a855f7',
   network: '#465fff',
   other: '#6b7280',
 };
 
-const TYPE_ICON: Record<CompType, React.ElementType> = {
+const TYPE_ICON: Record<string, React.ElementType> = {
   power: Zap,
+  pdu: Zap,
   cooling: Wind,
   management: Settings2,
   network: Network,
@@ -59,6 +61,7 @@ const EMPTY_DRAFT: Draft = {
   name: '',
   u_height: 42,
   components: [],
+  checks: [],
 };
 
 const nextKey = (() => {
@@ -66,24 +69,25 @@ const nextKey = (() => {
   return () => `c${++n}`;
 })();
 
-// ── Rack preview ──────────────────────────────────────────────────────────────
+// ── Live rack visualization ───────────────────────────────────────────────────
 
-const RackPreview = ({
+const RackPanel = ({
+  label,
   draft,
   compTemplates,
-  face = 'front',
-  uPxMax = 20,
+  face,
 }: {
+  label: string;
   draft: Draft;
   compTemplates: Record<string, RackComponentTemplate>;
-  face?: 'front' | 'rear';
-  uPxMax?: number;
+  face: 'front' | 'rear';
 }) => {
   const uH = Math.max(1, draft.u_height);
-  const U_PX = Math.max(10, Math.min(uPxMax, Math.floor(600 / uH)));
+  // Dynamic U pixel height: fill ~420px per rack, min 10px, max 22px
+  const U_PX = Math.max(10, Math.min(22, Math.floor(420 / uH)));
 
-  // Filter: u-mount components show on both faces; front/rear only on their respective face
-  const visibleComponents = draft.components.filter((c) => {
+  // Components visible on this face
+  const visible = draft.components.filter((c) => {
     const loc = compTemplates[c.template_id]?.location;
     if (!loc) return false;
     if (loc === 'u-mount') return true;
@@ -93,156 +97,172 @@ const RackPreview = ({
     return false;
   });
 
-  // Build occupied map: u → { name, type, height }
+  // Build u-mount occupancy map
   const occupied = useMemo(() => {
-    const map = new Map<number, { name: string; type: CompType; height: number }>();
-    for (const c of visibleComponents) {
+    const map = new Map<number, { name: string; type: string; height: number; isStart: boolean }>();
+    for (const c of visible) {
       const tmpl = compTemplates[c.template_id];
-      if (!tmpl || tmpl.location !== 'u-mount') continue;
+      if (!tmpl || tmpl.location === 'side') continue;
       const h = tmpl.u_height ?? 1;
-      if (c.u_position < 1 || c.u_position > uH) continue;
-      const info = { name: tmpl.name, type: (tmpl.type as CompType) ?? 'other', height: h };
-      for (let i = 0; i < h; i++) map.set(c.u_position + i, info);
+      if (c.u_position < 1 || c.u_position + h - 1 > uH) continue;
+      for (let i = 0; i < h; i++) {
+        map.set(c.u_position + i, {
+          name: tmpl.name,
+          type: tmpl.type ?? 'other',
+          height: h,
+          isStart: i === 0,
+        });
+      }
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.components, compTemplates, uH, face]);
 
-  const sideComponents = visibleComponents
-    .map((c) => compTemplates[c.template_id])
-    .filter(Boolean)
-    .filter((t) => t.location === 'side');
+  const leftSide = draft.components.filter(
+    (c) => compTemplates[c.template_id]?.location === 'side' && c.side === 'left'
+  );
+  const rightSide = draft.components.filter(
+    (c) => compTemplates[c.template_id]?.location === 'side' && c.side === 'right'
+  );
+
+  const RAIL = 16; // px for side rail
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex gap-2">
-        {/* Side indicators left */}
-        <div className="flex w-5 flex-col items-center gap-px pt-5">
-          {draft.components
-            .filter((c) => {
-              const t = compTemplates[c.template_id];
-              return t?.location === 'side' && c.side === 'left';
-            })
-            .slice(0, 4)
-            .map((c) => {
-              const t = compTemplates[c.template_id];
-              const color = TYPE_COLOR[(t?.type as CompType) ?? 'other'];
-              return (
-                <div
-                  key={c._key}
-                  title={t?.name}
-                  className="h-10 w-4 rounded-sm opacity-80"
-                  style={{ backgroundColor: color }}
-                />
-              );
-            })}
+    <div>
+      {/* Face label */}
+      <div className="mb-2 text-center">
+        <span className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
+          {label}
+        </span>
+      </div>
+
+      <div className="flex items-stretch gap-1">
+        {/* Left rail */}
+        <div
+          className="shrink-0 overflow-hidden rounded-l-sm"
+          style={{
+            width: RAIL,
+            backgroundColor:
+              leftSide.length > 0
+                ? `${TYPE_COLOR[compTemplates[leftSide[0]?.template_id]?.type ?? 'other']}33`
+                : '#111827',
+            borderLeft: `3px solid ${leftSide.length > 0 ? TYPE_COLOR[compTemplates[leftSide[0]?.template_id]?.type ?? 'other'] : '#1f2937'}`,
+          }}
+        >
+          {leftSide.map((c) => {
+            const t = compTemplates[c.template_id];
+            const color = TYPE_COLOR[t?.type ?? 'other'];
+            return (
+              <div
+                key={c._key}
+                title={t?.name}
+                style={{ backgroundColor: color, opacity: 0.7, height: '100%' }}
+              />
+            );
+          })}
         </div>
 
         {/* Rack body */}
-        <div
-          className="flex-1 overflow-hidden rounded border-2 border-gray-700 bg-gray-950"
-          style={{ minWidth: 0 }}
-        >
-          {/* Top rail */}
-          <div className="h-3 border-b border-gray-700 bg-gray-900" />
+        <div className="min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-700 bg-gray-950">
+          {/* Top cap */}
+          <div className="h-2 border-b border-gray-700 bg-gray-900" />
 
           {/* U slots */}
-          <div className="flex flex-col">
-            {Array.from({ length: uH }).map((_, i) => {
-              const u = i + 1;
-              const info = occupied.get(u);
-              const isStart =
-                info &&
-                visibleComponents.some(
-                  (c) => c.u_position === u && compTemplates[c.template_id]?.location === 'u-mount'
-                );
+          {Array.from({ length: uH }).map((_, i) => {
+            const u = i + 1;
+            const slot = occupied.get(u);
 
-              return (
+            return (
+              <div
+                key={u}
+                className="flex items-stretch border-b border-gray-800/50"
+                style={{ height: U_PX }}
+              >
+                {/* U number */}
                 <div
-                  key={u}
-                  className="flex items-center border-b border-gray-800/60"
-                  style={{ height: U_PX }}
+                  className="flex w-5 shrink-0 items-center justify-end pr-0.5 font-mono text-gray-700 select-none"
+                  style={{ fontSize: Math.max(6, U_PX * 0.45) }}
                 >
-                  {/* U number */}
-                  <span
-                    className="w-5 shrink-0 text-right font-mono text-gray-600"
-                    style={{ fontSize: Math.max(7, U_PX * 0.45) }}
-                  >
-                    {u}
-                  </span>
-
-                  {/* Slot content */}
-                  <div className="ml-1 flex min-w-0 flex-1 items-center overflow-hidden">
-                    {info ? (
-                      <div
-                        className="flex w-full items-center gap-1 overflow-hidden rounded-sm px-1"
-                        style={{
-                          height: U_PX - 2,
-                          backgroundColor: `${TYPE_COLOR[info.type]}22`,
-                          borderLeft: `2px solid ${TYPE_COLOR[info.type]}`,
-                        }}
-                      >
-                        {isStart && (
-                          <span
-                            className="truncate font-mono"
-                            style={{
-                              fontSize: Math.max(7, U_PX * 0.45),
-                              color: TYPE_COLOR[info.type],
-                            }}
-                          >
-                            {info.name}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="w-full rounded-sm bg-gray-900" style={{ height: U_PX - 2 }} />
-                    )}
-                  </div>
+                  {u}
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Bottom rail */}
-          <div className="h-3 border-t border-gray-700 bg-gray-900" />
+                {/* Slot */}
+                <div className="flex min-w-0 flex-1 items-center px-0.5">
+                  {slot ? (
+                    <div
+                      className="flex h-full w-full items-center overflow-hidden rounded-sm px-1"
+                      style={{
+                        backgroundColor: `${TYPE_COLOR[slot.type]}18`,
+                        borderLeft: `2px solid ${TYPE_COLOR[slot.type]}`,
+                      }}
+                    >
+                      {slot.isStart && (
+                        <span
+                          className="truncate font-mono"
+                          style={{
+                            fontSize: Math.max(6, U_PX * 0.44),
+                            color: TYPE_COLOR[slot.type],
+                          }}
+                        >
+                          {slot.name}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-full w-full rounded-sm bg-gray-900/50" />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Bottom cap */}
+          <div className="h-2 border-t border-gray-700 bg-gray-900" />
         </div>
 
-        {/* Side indicators right */}
-        <div className="flex w-5 flex-col items-center gap-px pt-5">
-          {draft.components
-            .filter((c) => {
-              const t = compTemplates[c.template_id];
-              return t?.location === 'side' && c.side === 'right';
-            })
-            .slice(0, 4)
-            .map((c) => {
-              const t = compTemplates[c.template_id];
-              const color = TYPE_COLOR[(t?.type as CompType) ?? 'other'];
-              return (
-                <div
-                  key={c._key}
-                  title={t?.name}
-                  className="h-10 w-4 rounded-sm opacity-80"
-                  style={{ backgroundColor: color }}
-                />
-              );
-            })}
+        {/* Right rail */}
+        <div
+          className="shrink-0 overflow-hidden rounded-r-sm"
+          style={{
+            width: RAIL,
+            backgroundColor:
+              rightSide.length > 0
+                ? `${TYPE_COLOR[compTemplates[rightSide[0]?.template_id]?.type ?? 'other']}33`
+                : '#111827',
+            borderRight: `3px solid ${rightSide.length > 0 ? TYPE_COLOR[compTemplates[rightSide[0]?.template_id]?.type ?? 'other'] : '#1f2937'}`,
+          }}
+        >
+          {rightSide.map((c) => {
+            const t = compTemplates[c.template_id];
+            const color = TYPE_COLOR[t?.type ?? 'other'];
+            return (
+              <div
+                key={c._key}
+                title={t?.name}
+                style={{ backgroundColor: color, opacity: 0.7, height: '100%' }}
+              />
+            );
+          })}
         </div>
       </div>
 
-      {/* Legend */}
-      {sideComponents.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-[9px] font-semibold tracking-wider text-gray-600 uppercase">
-            Side / Front / Rear
-          </p>
-          {sideComponents.map((t, i) => (
-            <div key={i} className="flex items-center gap-1.5 text-[10px]">
+      {/* Component legend */}
+      {visible.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+          {Array.from(
+            new Map(
+              visible
+                .map((c) => compTemplates[c.template_id])
+                .filter(Boolean)
+                .map((t) => [t.id, t])
+            ).values()
+          ).map((t) => (
+            <div key={t.id} className="flex items-center gap-1 text-[10px] text-gray-500">
               <span
                 className="h-2 w-2 shrink-0 rounded-sm"
-                style={{ backgroundColor: TYPE_COLOR[(t.type as CompType) ?? 'other'] }}
+                style={{ backgroundColor: TYPE_COLOR[t.type ?? 'other'] }}
               />
-              <span className="truncate text-gray-400">{t.name}</span>
+              {t.name}
             </div>
           ))}
         </div>
@@ -268,13 +288,13 @@ const ComponentRow = ({
 }) => {
   const tmpl = compTemplates[comp.template_id];
   const isSide = tmpl?.location === 'side';
-  const isUMount = tmpl?.location === 'u-mount';
-  const TypeIcon = tmpl ? (TYPE_ICON[(tmpl.type as CompType) ?? 'other'] ?? Server) : Server;
-  const typeColor = tmpl ? TYPE_COLOR[(tmpl.type as CompType) ?? 'other'] : '#6b7280';
+  const isUMount =
+    tmpl?.location === 'u-mount' || tmpl?.location === 'front' || tmpl?.location === 'rear';
+  const TypeIcon = TYPE_ICON[tmpl?.type ?? 'other'] ?? Server;
+  const typeColor = TYPE_COLOR[tmpl?.type ?? 'other'];
 
   return (
     <tr className="group border-b border-gray-100 dark:border-gray-800">
-      {/* Template selector */}
       <td className="py-2 pr-2">
         <div className="flex items-center gap-2">
           <TypeIcon className="h-3.5 w-3.5 shrink-0" style={{ color: typeColor }} />
@@ -283,7 +303,7 @@ const ComponentRow = ({
             onChange={(e) => onChange({ ...comp, template_id: e.target.value })}
             className="focus:border-brand-500 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
-            <option value="">— select component —</option>
+            <option value="">— select —</option>
             {allTemplates.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name} ({t.type})
@@ -292,15 +312,16 @@ const ComponentRow = ({
           </select>
         </div>
       </td>
-
-      {/* Location badge */}
       <td className="px-2 py-2">
-        <span className="rounded-md bg-gray-100 px-2 py-0.5 font-mono text-[10px] text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-          {tmpl?.location ?? '—'}
-        </span>
+        {tmpl && (
+          <span
+            className="rounded px-1.5 py-0.5 font-mono text-[10px] font-medium text-white"
+            style={{ backgroundColor: `${typeColor}aa` }}
+          >
+            {tmpl.location}
+          </span>
+        )}
       </td>
-
-      {/* U position (only for u-mount) */}
       <td className="px-2 py-2">
         {isUMount ? (
           <input
@@ -308,14 +329,12 @@ const ComponentRow = ({
             min={1}
             value={comp.u_position}
             onChange={(e) => onChange({ ...comp, u_position: parseInt(e.target.value, 10) || 1 })}
-            className="focus:border-brand-500 w-16 rounded-lg border border-gray-200 bg-white px-2 py-1 text-center text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="focus:border-brand-500 w-14 rounded-lg border border-gray-200 bg-white px-2 py-1 text-center text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           />
         ) : (
           <span className="text-xs text-gray-300 dark:text-gray-700">—</span>
         )}
       </td>
-
-      {/* Side (only for side-mounted) */}
       <td className="px-2 py-2">
         {isSide ? (
           <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
@@ -338,8 +357,6 @@ const ComponentRow = ({
           <span className="text-xs text-gray-300 dark:text-gray-700">—</span>
         )}
       </td>
-
-      {/* Delete */}
       <td className="py-2 pl-2 text-right">
         <button
           type="button"
@@ -358,6 +375,7 @@ const ComponentRow = ({
 export const CosmosRackTemplateEditorPage = () => {
   const [rackTemplates, setRackTemplates] = useState<RackTemplate[]>([]);
   const [compTemplatesList, setCompTemplatesList] = useState<RackComponentTemplate[]>([]);
+  const [rackChecks, setRackChecks] = useState<CheckDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -367,7 +385,6 @@ export const CosmosRackTemplateEditorPage = () => {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [errors, setErrors] = useState<string[]>([]);
 
-  // Indexed component templates for quick lookup
   const compTemplates = useMemo(
     () => Object.fromEntries(compTemplatesList.map((t) => [t.id, t])),
     [compTemplatesList]
@@ -378,11 +395,14 @@ export const CosmosRackTemplateEditorPage = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const cat = await api.getCatalog();
+        const [cat, checksLib] = await Promise.all([
+          api.getCatalog(),
+          api.getChecks().catch(() => null),
+        ]);
         setRackTemplates(cat.rack_templates ?? []);
-        // getCatalog might not return rack_component_templates - handle gracefully
         const full = cat as unknown as { rack_component_templates?: RackComponentTemplate[] };
         setCompTemplatesList(full.rack_component_templates ?? []);
+        setRackChecks((checksLib?.checks ?? []).filter((c: CheckDefinition) => c.scope === 'rack'));
       } catch {
         /* ignore */
       } finally {
@@ -399,14 +419,13 @@ export const CosmosRackTemplateEditorPage = () => {
     setDirty(false);
     setErrors([]);
     setSaveStatus('idle');
-
-    // Flatten all component refs into our draft format
-    const allRefs = [...(tmpl.infrastructure?.rack_components ?? [])];
+    const refs = tmpl.infrastructure?.rack_components ?? [];
     setDraft({
       id: tmpl.id,
       name: tmpl.name,
       u_height: tmpl.u_height,
-      components: allRefs.map((ref) => ({
+      checks: tmpl.checks ?? [],
+      components: refs.map((ref) => ({
         _key: nextKey(),
         template_id: ref.template_id,
         u_position: ref.u_position,
@@ -415,7 +434,6 @@ export const CosmosRackTemplateEditorPage = () => {
     });
   }, []);
 
-  // ── New template ───────────────────────────────────────────────────────────
   const startNew = () => {
     setSelectedId(null);
     setIsNew(true);
@@ -425,7 +443,6 @@ export const CosmosRackTemplateEditorPage = () => {
     setDraft({ ...EMPTY_DRAFT });
   };
 
-  // ── Patch draft ────────────────────────────────────────────────────────────
   const patchDraft = (updates: Partial<Draft>) => {
     setDraft((prev) => ({ ...prev, ...updates }));
     setDirty(true);
@@ -447,13 +464,18 @@ export const CosmosRackTemplateEditorPage = () => {
   };
 
   const updateComponent = (key: string, updated: DraftComponent) => {
-    patchDraft({
-      components: draft.components.map((c) => (c._key === key ? updated : c)),
-    });
+    patchDraft({ components: draft.components.map((c) => (c._key === key ? updated : c)) });
   };
 
   const deleteComponent = (key: string) => {
     patchDraft({ components: draft.components.filter((c) => c._key !== key) });
+  };
+
+  const toggleCheck = (checkId: string) => {
+    const next = draft.checks.includes(checkId)
+      ? draft.checks.filter((c) => c !== checkId)
+      : [...draft.checks, checkId];
+    patchDraft({ checks: next });
   };
 
   // ── Validate ───────────────────────────────────────────────────────────────
@@ -461,19 +483,21 @@ export const CosmosRackTemplateEditorPage = () => {
     const errs: string[] = [];
     if (!draft.id.trim()) errs.push('Template ID is required');
     else if (!/^[a-z0-9_-]+$/.test(draft.id))
-      errs.push('Template ID must be lowercase alphanumeric, hyphens or underscores');
+      errs.push('Template ID: lowercase, digits, hyphens and underscores only');
     if (isNew && rackTemplates.some((t) => t.id === draft.id))
       errs.push(`Template ID "${draft.id}" already exists`);
     if (!draft.name.trim()) errs.push('Name is required');
     if (draft.u_height < 1 || draft.u_height > 100) errs.push('Height must be between 1 and 100U');
     for (const c of draft.components) {
-      if (!c.template_id) errs.push('All components must have a template selected');
+      if (!c.template_id) {
+        errs.push('All components must have a template selected');
+        break;
+      }
       const tmpl = compTemplates[c.template_id];
-      if (tmpl?.location === 'u-mount') {
-        if (c.u_position < 1 || c.u_position > draft.u_height)
-          errs.push(
-            `Component "${tmpl.name}" U position ${c.u_position} out of range (1–${draft.u_height})`
-          );
+      if (tmpl?.location !== 'side') {
+        const h = tmpl?.u_height ?? 1;
+        if (c.u_position < 1 || c.u_position + h - 1 > draft.u_height)
+          errs.push(`"${tmpl?.name}" (U${c.u_position}) out of rack bounds`);
       }
     }
     return errs;
@@ -488,11 +512,11 @@ export const CosmosRackTemplateEditorPage = () => {
     }
     setErrors([]);
     setSaveStatus('saving');
-
     const payload = {
       id: draft.id,
       name: draft.name,
       u_height: draft.u_height,
+      checks: draft.checks,
       infrastructure: {
         rack_components: draft.components.map((c) => {
           const tmpl = compTemplates[c.template_id];
@@ -504,14 +528,9 @@ export const CosmosRackTemplateEditorPage = () => {
         }),
       },
     };
-
     try {
-      if (isNew) {
-        await api.createTemplate({ kind: 'rack', template: payload });
-      } else {
-        await api.updateTemplate({ kind: 'rack', template: payload });
-      }
-      // Reload catalog
+      if (isNew) await api.createTemplate({ kind: 'rack', template: payload });
+      else await api.updateTemplate({ kind: 'rack', template: payload });
       const cat = await api.getCatalog();
       setRackTemplates(cat.rack_templates ?? []);
       setSaveStatus('saved');
@@ -524,7 +543,6 @@ export const CosmosRackTemplateEditorPage = () => {
     }
   };
 
-  // ── Filtered list ──────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return rackTemplates.filter(
@@ -535,35 +553,35 @@ export const CosmosRackTemplateEditorPage = () => {
   const hasSelection = isNew || selectedId !== null;
 
   return (
-    <div className="flex h-full gap-4 p-5">
-      {/* ── Left: template list ────────────────────────────────────────────── */}
-      <aside className="flex w-56 shrink-0 flex-col gap-3">
-        {/* Search + new */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-white py-1.5 pr-3 pl-8 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-            />
+    <div className="flex h-full gap-0">
+      {/* ── LEFT: template list ─────────────────────────────────────────────── */}
+      <aside className="flex w-[220px] shrink-0 flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="shrink-0 border-b border-gray-100 p-3 dark:border-gray-800">
+          <div className="mb-2 flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-1.5 pr-3 pl-8 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+            <button
+              onClick={startNew}
+              className="bg-brand-500 hover:bg-brand-600 flex items-center justify-center rounded-xl px-2.5 text-white transition-colors"
+              title="New rack template"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            onClick={startNew}
-            className="bg-brand-500 hover:bg-brand-600 flex items-center justify-center rounded-xl px-2.5 text-white transition-colors"
-            title="New rack template"
-          >
-            <Plus className="h-4 w-4" />
-          </button>
         </div>
 
-        {/* List */}
-        <div className="flex-1 overflow-y-auto rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex h-20 items-center justify-center">
-              <div className="border-t-brand-500 h-5 w-5 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
+              <div className="border-t-brand-500 h-5 w-5 animate-spin rounded-full border-2 border-gray-200" />
             </div>
           ) : filtered.length === 0 ? (
             <div className="px-4 py-6 text-center text-xs text-gray-400">
@@ -571,50 +589,53 @@ export const CosmosRackTemplateEditorPage = () => {
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {filtered.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => selectTemplate(t)}
-                  className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${
-                    selectedId === t.id && !isNew
-                      ? 'bg-brand-50 dark:bg-brand-500/10'
-                      : 'hover:bg-gray-50 dark:hover:bg-white/5'
-                  }`}
-                >
-                  <div
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                      selectedId === t.id && !isNew
-                        ? 'bg-brand-500 text-white'
-                        : 'bg-gray-100 text-gray-400 dark:bg-gray-800'
+              {filtered.map((t) => {
+                const active = selectedId === t.id && !isNew;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => selectTemplate(t)}
+                    className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${
+                      active
+                        ? 'bg-brand-50 dark:bg-brand-500/10'
+                        : 'hover:bg-gray-50 dark:hover:bg-white/5'
                     }`}
                   >
-                    <Server className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p
-                      className={`truncate text-xs font-medium ${
-                        selectedId === t.id && !isNew
-                          ? 'text-brand-600 dark:text-brand-400'
-                          : 'text-gray-700 dark:text-gray-300'
+                    <div
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                        active
+                          ? 'bg-brand-500 text-white'
+                          : 'bg-gray-100 text-gray-400 dark:bg-gray-800'
                       }`}
                     >
-                      {t.name}
-                    </p>
-                    <p className="truncate font-mono text-[10px] text-gray-400">{t.id}</p>
-                  </div>
-                  <span className="ml-auto shrink-0 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-400 dark:bg-gray-800">
-                    {t.u_height}U
-                  </span>
-                </button>
-              ))}
+                      <Server className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`truncate text-xs font-medium ${
+                          active
+                            ? 'text-brand-600 dark:text-brand-400'
+                            : 'text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {t.name}
+                      </p>
+                      <p className="truncate font-mono text-[10px] text-gray-400">{t.id}</p>
+                    </div>
+                    <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-400 dark:bg-gray-800">
+                      {t.u_height}U
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
       </aside>
 
-      {/* ── Center: editor ─────────────────────────────────────────────────── */}
+      {/* ── CENTER: editor form ─────────────────────────────────────────────── */}
       {!hasSelection ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-gray-50 dark:bg-gray-950">
           <Server className="h-10 w-10 text-gray-200 dark:text-gray-700" />
           <p className="text-sm font-medium text-gray-400">Select a template or create a new one</p>
           <button
@@ -626,207 +647,243 @@ export const CosmosRackTemplateEditorPage = () => {
           </button>
         </div>
       ) : (
-        <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <span>Rack Templates</span>
-              <ChevronRight className="h-3 w-3" />
-              <span className="font-medium text-gray-700 dark:text-gray-300">
-                {isNew ? 'New template' : draft.name}
-              </span>
-              {dirty && (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
-                  unsaved
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50 dark:bg-gray-950">
+          <div className="space-y-4 p-5">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-gray-400">
+                <span>Rack Templates</span>
+                <ChevronRight className="h-3 w-3" />
+                <span className="font-medium text-gray-700 dark:text-gray-300">
+                  {isNew ? 'New template' : draft.name}
                 </span>
-              )}
-            </div>
-            <button
-              onClick={() => void handleSave()}
-              disabled={saveStatus === 'saving' || !dirty}
-              className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-40 ${
-                saveStatus === 'saved'
-                  ? 'bg-green-500 text-white'
-                  : 'bg-brand-500 hover:bg-brand-600 text-white'
-              }`}
-            >
-              {saveStatus === 'saving' ? (
-                <>
-                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Saving…
-                </>
-              ) : saveStatus === 'saved' ? (
-                <>
-                  <Check className="h-3.5 w-3.5" />
-                  Saved
-                </>
-              ) : (
-                <>
-                  <Save className="h-3.5 w-3.5" />
-                  {isNew ? 'Create' : 'Save'}
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Errors */}
-          {errors.length > 0 && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
-              <div className="flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                {errors.length === 1 ? 'Validation error' : `${errors.length} validation errors`}
-              </div>
-              <ul className="mt-1.5 space-y-0.5 pl-6">
-                {errors.map((e, i) => (
-                  <li key={i} className="text-xs text-red-500 dark:text-red-400">
-                    {e}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* ── Identity ── */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-            <p className="mb-4 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-              Identity
-            </p>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Template ID
-                </label>
-                <input
-                  type="text"
-                  value={draft.id}
-                  onChange={(e) =>
-                    patchDraft({ id: e.target.value.toLowerCase().replace(/\s/g, '-') })
-                  }
-                  disabled={!isNew}
-                  placeholder="standard-42u"
-                  className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3 py-2 font-mono text-sm focus:outline-none disabled:bg-gray-50 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/50"
-                />
-                {!isNew && (
-                  <p className="mt-1 text-[10px] text-gray-400">
-                    ID cannot be changed after creation
-                  </p>
+                {dirty && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
+                    unsaved
+                  </span>
                 )}
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={draft.name}
-                  onChange={(e) => patchDraft({ name: e.target.value })}
-                  placeholder="Standard 42U Rack"
-                  className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Height (U)
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={draft.u_height}
-                  onChange={(e) => patchDraft({ u_height: parseInt(e.target.value, 10) || 42 })}
-                  className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3 py-2 text-center font-mono text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ── Components ── */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-                Infrastructure components ({draft.components.length})
-              </p>
               <button
-                onClick={addComponent}
-                disabled={compTemplatesList.length === 0}
-                className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+                onClick={() => void handleSave()}
+                disabled={saveStatus === 'saving' || !dirty}
+                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-40 ${
+                  saveStatus === 'saved'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-brand-500 hover:bg-brand-600 text-white'
+                }`}
               >
-                <Plus className="h-3.5 w-3.5" />
-                Add component
+                {saveStatus === 'saving' ? (
+                  <>
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Saving…
+                  </>
+                ) : saveStatus === 'saved' ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" />
+                    Saved
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3.5 w-3.5" />
+                    {isNew ? 'Create' : 'Save'}
+                  </>
+                )}
               </button>
             </div>
 
-            {compTemplatesList.length === 0 ? (
-              <p className="text-xs text-gray-400">
-                No rack component templates found. Define them in the templates library first.
+            {/* Errors */}
+            {errors.length > 0 && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+                <div className="flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  {errors.length} validation error{errors.length > 1 ? 's' : ''}
+                </div>
+                <ul className="mt-1.5 space-y-0.5 pl-6">
+                  {errors.map((e, i) => (
+                    <li key={i} className="text-xs text-red-500 dark:text-red-400">
+                      {e}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* ── Identity ── */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+              <p className="mb-4 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+                Identity
               </p>
-            ) : draft.components.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-6">
-                <Settings2 className="h-8 w-8 text-gray-200 dark:text-gray-700" />
-                <p className="text-sm text-gray-400">No components yet</p>
-                <button onClick={addComponent} className="text-brand-500 text-xs hover:underline">
-                  Add the first component →
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                    Template ID
+                  </label>
+                  <input
+                    type="text"
+                    value={draft.id}
+                    onChange={(e) =>
+                      patchDraft({ id: e.target.value.toLowerCase().replace(/\s/g, '-') })
+                    }
+                    disabled={!isNew}
+                    placeholder="standard-42u"
+                    className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3 py-2 font-mono text-sm focus:outline-none disabled:bg-gray-50 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/50"
+                  />
+                  {!isNew && (
+                    <p className="mt-1 text-[10px] text-gray-400">Immutable after creation</p>
+                  )}
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    value={draft.name}
+                    onChange={(e) => patchDraft({ name: e.target.value })}
+                    placeholder="Standard 42U Rack"
+                    className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                    Height (U)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={draft.u_height}
+                    onChange={(e) => patchDraft({ u_height: parseInt(e.target.value, 10) || 42 })}
+                    className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3 py-2 text-center font-mono text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ── Components ── */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+                  Infrastructure components ({draft.components.length})
+                </p>
+                <button
+                  onClick={addComponent}
+                  disabled={compTemplatesList.length === 0}
+                  className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add
                 </button>
               </div>
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-800">
-                    {['Component template', 'Location', 'U position', 'Side', ''].map((h) => (
-                      <th
-                        key={h}
-                        className="pb-2 text-left text-[10px] font-semibold tracking-wider text-gray-400 uppercase"
-                      >
-                        {h}
-                      </th>
+
+              {compTemplatesList.length === 0 ? (
+                <p className="text-xs text-gray-400">
+                  No rack component templates found. Define them in the component library first.
+                </p>
+              ) : draft.components.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-5">
+                  <Settings2 className="h-7 w-7 text-gray-200 dark:text-gray-700" />
+                  <p className="text-sm text-gray-400">No components yet</p>
+                  <button onClick={addComponent} className="text-brand-500 text-xs hover:underline">
+                    Add the first component →
+                  </button>
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-gray-800">
+                      {['Component', 'Location', 'U pos', 'Side', ''].map((h) => (
+                        <th
+                          key={h}
+                          className="pb-2 text-left text-[10px] font-semibold tracking-wider text-gray-400 uppercase"
+                        >
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {draft.components.map((comp) => (
+                      <ComponentRow
+                        key={comp._key}
+                        comp={comp}
+                        compTemplates={compTemplates}
+                        allTemplates={compTemplatesList}
+                        onChange={(updated) => updateComponent(comp._key, updated)}
+                        onDelete={() => deleteComponent(comp._key)}
+                      />
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {draft.components.map((comp) => (
-                    <ComponentRow
-                      key={comp._key}
-                      comp={comp}
-                      compTemplates={compTemplates}
-                      allTemplates={compTemplatesList}
-                      onChange={(updated) => updateComponent(comp._key, updated)}
-                      onDelete={() => deleteComponent(comp._key)}
-                    />
-                  ))}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* ── Health checks ── */}
+            {rackChecks.length > 0 && (
+              <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+                <div className="mb-3 flex items-center gap-2">
+                  <ShieldCheck className="text-brand-500 h-4 w-4" />
+                  <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+                    Health checks ({draft.checks.length}/{rackChecks.length} selected)
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {rackChecks.map((c) => {
+                    const active = draft.checks.includes(c.id);
+                    return (
+                      <label
+                        key={c.id}
+                        className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2 transition-colors ${
+                          active
+                            ? 'border-brand-300 bg-brand-50 dark:border-brand-700/50 dark:bg-brand-500/10'
+                            : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={active}
+                          onChange={() => toggleCheck(c.id)}
+                          className="accent-brand-500 h-3.5 w-3.5 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <p
+                            className={`truncate text-xs font-medium ${
+                              active
+                                ? 'text-brand-700 dark:text-brand-300'
+                                : 'text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {c.name || c.id}
+                          </p>
+                          <p className="truncate font-mono text-[9px] text-gray-400">{c.id}</p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Save error */}
+            {saveStatus === 'error' && (
+              <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                Failed to save template.
+              </div>
             )}
           </div>
-
-          {/* Save error */}
-          {saveStatus === 'error' && (
-            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              Failed to save template. Check the console for details.
-            </div>
-          )}
-
-          {/* ── Dual rack preview ── */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-            <p className="mb-4 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-              Preview — {draft.u_height}U
-            </p>
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <p className="mb-2 text-center text-xs font-semibold tracking-wider text-gray-500 uppercase">
-                  Front
-                </p>
-                <RackPreview draft={draft} compTemplates={compTemplates} face="front" uPxMax={28} />
-              </div>
-              <div>
-                <p className="mb-2 text-center text-xs font-semibold tracking-wider text-gray-500 uppercase">
-                  Rear
-                </p>
-                <RackPreview draft={draft} compTemplates={compTemplates} face="rear" uPxMax={28} />
-              </div>
-            </div>
-          </div>
         </div>
+      )}
+
+      {/* ── RIGHT: live rack previews ────────────────────────────────────────── */}
+      {hasSelection && (
+        <aside className="flex w-[400px] shrink-0 flex-col overflow-y-auto border-l border-gray-200 bg-gray-900 p-5 dark:border-gray-800">
+          <div className="space-y-6">
+            <RackPanel label="Front" draft={draft} compTemplates={compTemplates} face="front" />
+            <div className="border-t border-gray-700" />
+            <RackPanel label="Rear" draft={draft} compTemplates={compTemplates} face="rear" />
+          </div>
+        </aside>
       )}
     </div>
   );
