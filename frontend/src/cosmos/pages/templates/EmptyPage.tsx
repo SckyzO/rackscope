@@ -799,30 +799,38 @@ export const TemplatesShowcase = () => {
   );
 };
 
-// ── CenteredPage — blank template for settings / forms / profiles ─────────────
+// ── CenteredPage — mirrors TailAdmin blank.html with Cosmos colors ────────────
 //
-// The cards themselves are narrow and centered — the page background stays gray.
-// Use for: Settings, Profile, detail forms — anything hard to read at full width.
+// Structure (identical to blank.html):
+//   mx-auto max-w-[1536px] p-4 md:p-6   ← outer wrapper with padding
+//     Breadcrumb
+//     min-h-screen rounded-2xl card      ← bg-white dark:bg-gray-900 (Cosmos theme)
+//       mx-auto max-w-[630px] text-center ← centered content
 
 export const CenteredPage = () => {
   usePageTitle('Page Title'); // ← change this
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Page Title"
-        description="A short description."
-        // actions={<> … buttons … </>}
-      />
+    <div className="mx-auto w-full max-w-[1536px] p-1 md:p-6">
+      {/* Breadcrumb */}
+      <div className="mb-5">
+        <Breadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'Page Title' }]} />
+      </div>
 
-      {/* ContentNarrow constrains the sections to 630px and centers them */}
-      <ContentNarrow maxWidth={630}>
-        <div className="space-y-4">
-          <SectionCard title="Section title" desc="Optional description.">
-            <p className="text-sm text-gray-400 dark:text-gray-500">Content goes here.</p>
-          </SectionCard>
-        </div>
-      </ContentNarrow>
+      {/* Full-height card — bg-white light / bg-gray-900 dark (Cosmos theme) */}
+      <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-900">
+        <ContentNarrow maxWidth={630}>
+          <div className="text-center">
+            <h3 className="mb-4 text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
+              Page Title
+            </h3>
+            <p className="text-sm text-gray-500 sm:text-base dark:text-gray-400">
+              Replace this with your content. Use SectionCard for sections, column grids for
+              layouts.
+            </p>
+          </div>
+        </ContentNarrow>
+      </div>
     </div>
   );
 };
