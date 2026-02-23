@@ -18,7 +18,7 @@
  */
 
 import type { ReactNode } from 'react';
-import { Plus, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { Plus, RefreshCw, SlidersHorizontal, AlertCircle, InboxIcon } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 
 // ── Shared sub-components ─────────────────────────────────────────────────────
@@ -80,6 +80,63 @@ const LayoutLabel = ({ children }: { children: string }) => (
   </p>
 );
 
+// ── State components ──────────────────────────────────────────────────────────
+//
+// Use these inside a SectionCard or a ColBox to show loading / empty / error.
+// They fill the height of their container via h-full.
+
+/** Spinning loader — use while data is being fetched */
+export const LoadingState = ({ message = 'Loading…' }: { message?: string }) => (
+  <div className="flex flex-col items-center justify-center gap-3 py-12">
+    <div className="border-t-brand-500 h-8 w-8 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
+    <p className="text-sm text-gray-400 dark:text-gray-500">{message}</p>
+  </div>
+);
+
+/** No-data state — use when a fetch returns an empty list */
+export const EmptyState = ({
+  title = 'No data',
+  description,
+  action,
+}: {
+  title?: string;
+  description?: string;
+  action?: ReactNode;
+}) => (
+  <div className="flex flex-col items-center justify-center gap-3 py-12">
+    <InboxIcon className="h-10 w-10 text-gray-200 dark:text-gray-700" />
+    <div className="text-center">
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+      {description && (
+        <p className="mt-1 text-xs text-gray-400 dark:text-gray-600">{description}</p>
+      )}
+    </div>
+    {action}
+  </div>
+);
+
+/** Error state — use when an API call fails */
+export const ErrorState = ({
+  message = 'Something went wrong.',
+  onRetry,
+}: {
+  message?: string;
+  onRetry?: () => void;
+}) => (
+  <div className="flex flex-col items-center justify-center gap-3 py-12">
+    <AlertCircle className="h-8 w-8 text-red-400" />
+    <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
+    {onRetry && (
+      <button
+        onClick={onRetry}
+        className="text-brand-500 hover:text-brand-600 text-xs font-medium hover:underline"
+      >
+        Try again
+      </button>
+    )}
+  </div>
+);
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export const EmptyPage = () => {
@@ -130,6 +187,31 @@ export const EmptyPage = () => {
         <SectionCard title="Section title">
           <p className="text-sm text-gray-500 dark:text-gray-400">Content goes here.</p>
         </SectionCard>
+      </div>
+
+      {/* ── States ── */}
+      <div className="space-y-2">
+        <LayoutLabel>States — Loading / Empty / Error</LayoutLabel>
+        <div className="grid grid-cols-3 gap-4">
+          <SectionCard title="Loading">
+            <LoadingState message="Fetching data…" />
+          </SectionCard>
+          <SectionCard title="Empty">
+            <EmptyState
+              title="No items yet"
+              description="Create one to get started."
+              action={
+                <button className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors">
+                  <Plus className="h-4 w-4" />
+                  New
+                </button>
+              }
+            />
+          </SectionCard>
+          <SectionCard title="Error">
+            <ErrorState message="Failed to load data." onRetry={() => {}} />
+          </SectionCard>
+        </div>
       </div>
 
       {/* ── 1 Column ── */}
