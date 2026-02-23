@@ -156,6 +156,16 @@ export const EmptyPage = () => {
         </div>
       </div>
 
+      {/* ── 3 Columns — 20/50/30 ── */}
+      <div className="space-y-2">
+        <LayoutLabel>3 Columns — 20 / 50 / 30</LayoutLabel>
+        <div className="grid grid-cols-[2fr_5fr_3fr] gap-4">
+          <ColBox label="20%" />
+          <ColBox label="50%" />
+          <ColBox label="30%" />
+        </div>
+      </div>
+
       {/* ── 4 Columns ── */}
       <div className="space-y-2">
         <LayoutLabel>4 Columns — Equal 25 / 25 / 25 / 25</LayoutLabel>
