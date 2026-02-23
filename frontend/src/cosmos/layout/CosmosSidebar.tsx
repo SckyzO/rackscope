@@ -5,13 +5,11 @@ import type { ComponentType } from 'react';
 import {
   Activity,
   BarChart2,
-  HeartPulse,
   Globe,
   LayoutGrid,
   AlertTriangle,
   List,
   Bell,
-  Home,
   User,
   Columns,
   Rows,
@@ -203,38 +201,6 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           to="/cosmos/views/rack-v4/r01-01"
           icon={List}
           label="V4 · USlot List"
-          collapsed={collapsed}
-        />
-
-        <SectionLabel label="Rackscope" collapsed={collapsed} />
-        <NavItem
-          to="/cosmos/rackscope/health"
-          icon={HeartPulse}
-          label="Health Status"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/rackscope/alerts"
-          icon={AlertTriangle}
-          label="Alert Feed"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/rackscope/metrics"
-          icon={BarChart2}
-          label="Metrics"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/rackscope/infra-nav"
-          icon={Home}
-          label="Infra Navigation"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/rackscope/slurm"
-          icon={Activity}
-          label="Slurm (design)"
           collapsed={collapsed}
         />
 

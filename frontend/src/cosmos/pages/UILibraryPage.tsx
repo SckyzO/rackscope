@@ -228,6 +228,38 @@ const CATEGORIES: CategorySection[] = [
       { name: 'Sign Up', description: 'Registration page', route: '/cosmos/auth/signup' },
     ],
   },
+  {
+    id: 'examples',
+    title: 'Examples',
+    color: '#0ea5e9',
+    items: [
+      {
+        name: 'Health Status',
+        description: 'OK/WARN/CRIT/UNKNOWN badges, dots, summary bars',
+        route: '/cosmos/rackscope/health',
+      },
+      {
+        name: 'Alert Feed',
+        description: 'Alert list with severity, filters and actions',
+        route: '/cosmos/rackscope/alerts',
+      },
+      {
+        name: 'Metrics',
+        description: 'Sparklines, gauges, progress bars, PDU bars',
+        route: '/cosmos/rackscope/metrics',
+      },
+      {
+        name: 'Infra Navigation',
+        description: 'Breadcrumb, rack mini-cards, device type icons',
+        route: '/cosmos/rackscope/infra-nav',
+      },
+      {
+        name: 'Slurm (design)',
+        description: 'HPC cluster layout — node grid, wallboard',
+        route: '/cosmos/rackscope/slurm',
+      },
+    ],
+  },
 ];
 
 const ALL_FILTER = 'all';
