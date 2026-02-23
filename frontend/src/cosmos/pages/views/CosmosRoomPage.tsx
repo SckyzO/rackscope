@@ -346,6 +346,7 @@ const RackDrawer = ({
   if (!selected) return null;
   const { rack, aisle, state } = selected;
   const color = HC[state] ?? HC.UNKNOWN;
+  const StateIcon = state === 'CRIT' ? XCircle : state === 'WARN' ? AlertTriangle : CheckCircle;
 
   return (
     <>
