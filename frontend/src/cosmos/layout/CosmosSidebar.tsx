@@ -262,170 +262,168 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           collapsed={collapsed}
         />
 
-        {/* Infrastructure tree: Site → Room → Aisle → Rack */}
+        {/* Infrastructure tree — own section, dynamic based on declared sites */}
         {(rooms.length > 0 || sites.length > 0) && (
-          <div className="mt-2 space-y-0.5">
-            {!collapsed && (
-              <p className="px-3 pb-1 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
-                Infrastructure
-              </p>
-            )}
-            {sites.map((site) => {
-              const siteRooms = rooms.filter((r) => r.site_id === site.id);
-              if (siteRooms.length === 0) return null;
-              const siteExpanded = expandedSites.has(site.id);
-              return (
-                <TreeNode
-                  key={site.id}
-                  label={site.name}
-                  depth={0}
-                  expanded={siteExpanded}
-                  onToggle={() => {
-                    setExpandedSites((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(site.id)) {
-                        next.delete(site.id);
-                      } else {
-                        next.add(site.id);
-                      }
-                      return next;
-                    });
-                  }}
-                  icon={Globe}
-                  collapsed={collapsed}
-                  navigate={navigate}
-                >
-                  {siteRooms.map((room) => {
-                    const roomExpanded = expandedRooms.has(room.id);
-                    const roomPath = `/cosmos/views/${getRoomVariant()}/${room.id}`;
-                    const isRoomActive = location.pathname === roomPath;
-                    return (
-                      <TreeNode
-                        key={room.id}
-                        label={room.name}
-                        depth={1}
-                        expanded={roomExpanded}
-                        onToggle={() => {
-                          setExpandedRooms((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(room.id)) {
-                              next.delete(room.id);
-                            } else {
-                              next.add(room.id);
-                            }
-                            return next;
-                          });
-                        }}
-                        to={roomPath}
-                        isActive={isRoomActive}
-                        icon={Home}
-                        collapsed={collapsed}
-                        navigate={navigate}
-                      >
-                        {room.aisles?.map((aisle: AisleSummary) => {
-                          const aisleExpanded = expandedAisles.has(aisle.id);
-                          return (
-                            <TreeNode
-                              key={aisle.id}
-                              label={aisle.name}
-                              depth={2}
-                              expanded={aisleExpanded}
-                              onToggle={() => {
-                                setExpandedAisles((prev) => {
-                                  const next = new Set(prev);
-                                  if (next.has(aisle.id)) {
-                                    next.delete(aisle.id);
-                                  } else {
-                                    next.add(aisle.id);
-                                  }
-                                  return next;
-                                });
-                              }}
-                              collapsed={collapsed}
-                              navigate={navigate}
-                            >
-                              {aisle.racks.map((rack: RackSummary) => (
-                                <RackLink
-                                  key={rack.id}
-                                  rack={rack}
-                                  collapsed={collapsed}
-                                  navigate={navigate}
-                                  isActive={location.pathname.includes(`/rack/${rack.id}`)}
-                                />
-                              ))}
-                            </TreeNode>
-                          );
-                        })}
-                      </TreeNode>
-                    );
-                  })}
-                </TreeNode>
-              );
-            })}
-            {/* Rooms without a matching site */}
-            {rooms
-              .filter((r) => !sites.some((s) => s.id === r.site_id))
-              .map((room) => {
-                const roomExpanded = expandedRooms.has(room.id);
-                const roomPath = `/cosmos/views/room/${room.id}`;
+          <>
+            <SectionLabel label="Infrastructure" collapsed={collapsed} />
+            <div className="space-y-0.5">
+              {sites.map((site) => {
+                const siteRooms = rooms.filter((r) => r.site_id === site.id);
+                if (siteRooms.length === 0) return null;
+                const siteExpanded = expandedSites.has(site.id);
                 return (
                   <TreeNode
-                    key={room.id}
-                    label={room.name}
+                    key={site.id}
+                    label={site.name}
                     depth={0}
-                    expanded={roomExpanded}
+                    expanded={siteExpanded}
                     onToggle={() => {
-                      setExpandedRooms((prev) => {
+                      setExpandedSites((prev) => {
                         const next = new Set(prev);
-                        if (next.has(room.id)) {
-                          next.delete(room.id);
+                        if (next.has(site.id)) {
+                          next.delete(site.id);
                         } else {
-                          next.add(room.id);
+                          next.add(site.id);
                         }
                         return next;
                       });
                     }}
-                    to={roomPath}
-                    isActive={location.pathname === roomPath}
-                    icon={Home}
+                    icon={Globe}
                     collapsed={collapsed}
                     navigate={navigate}
                   >
-                    {room.aisles?.map((aisle: AisleSummary) => (
-                      <TreeNode
-                        key={aisle.id}
-                        label={aisle.name}
-                        depth={1}
-                        expanded={expandedAisles.has(aisle.id)}
-                        onToggle={() => {
-                          setExpandedAisles((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(aisle.id)) {
-                              next.delete(aisle.id);
-                            } else {
-                              next.add(aisle.id);
-                            }
-                            return next;
-                          });
-                        }}
-                        collapsed={collapsed}
-                        navigate={navigate}
-                      >
-                        {aisle.racks.map((rack: RackSummary) => (
-                          <RackLink
-                            key={rack.id}
-                            rack={rack}
-                            collapsed={collapsed}
-                            navigate={navigate}
-                            isActive={location.pathname.includes(`/rack/${rack.id}`)}
-                          />
-                        ))}
-                      </TreeNode>
-                    ))}
+                    {siteRooms.map((room) => {
+                      const roomExpanded = expandedRooms.has(room.id);
+                      const roomPath = `/cosmos/views/${getRoomVariant()}/${room.id}`;
+                      const isRoomActive = location.pathname === roomPath;
+                      return (
+                        <TreeNode
+                          key={room.id}
+                          label={room.name}
+                          depth={1}
+                          expanded={roomExpanded}
+                          onToggle={() => {
+                            setExpandedRooms((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(room.id)) {
+                                next.delete(room.id);
+                              } else {
+                                next.add(room.id);
+                              }
+                              return next;
+                            });
+                          }}
+                          to={roomPath}
+                          isActive={isRoomActive}
+                          icon={Home}
+                          collapsed={collapsed}
+                          navigate={navigate}
+                        >
+                          {room.aisles?.map((aisle: AisleSummary) => {
+                            const aisleExpanded = expandedAisles.has(aisle.id);
+                            return (
+                              <TreeNode
+                                key={aisle.id}
+                                label={aisle.name}
+                                depth={2}
+                                expanded={aisleExpanded}
+                                onToggle={() => {
+                                  setExpandedAisles((prev) => {
+                                    const next = new Set(prev);
+                                    if (next.has(aisle.id)) {
+                                      next.delete(aisle.id);
+                                    } else {
+                                      next.add(aisle.id);
+                                    }
+                                    return next;
+                                  });
+                                }}
+                                collapsed={collapsed}
+                                navigate={navigate}
+                              >
+                                {aisle.racks.map((rack: RackSummary) => (
+                                  <RackLink
+                                    key={rack.id}
+                                    rack={rack}
+                                    collapsed={collapsed}
+                                    navigate={navigate}
+                                    isActive={location.pathname.includes(`/rack/${rack.id}`)}
+                                  />
+                                ))}
+                              </TreeNode>
+                            );
+                          })}
+                        </TreeNode>
+                      );
+                    })}
                   </TreeNode>
                 );
               })}
-          </div>
+              {/* Rooms without a matching site */}
+              {rooms
+                .filter((r) => !sites.some((s) => s.id === r.site_id))
+                .map((room) => {
+                  const roomExpanded = expandedRooms.has(room.id);
+                  const roomPath = `/cosmos/views/room/${room.id}`;
+                  return (
+                    <TreeNode
+                      key={room.id}
+                      label={room.name}
+                      depth={0}
+                      expanded={roomExpanded}
+                      onToggle={() => {
+                        setExpandedRooms((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(room.id)) {
+                            next.delete(room.id);
+                          } else {
+                            next.add(room.id);
+                          }
+                          return next;
+                        });
+                      }}
+                      to={roomPath}
+                      isActive={location.pathname === roomPath}
+                      icon={Home}
+                      collapsed={collapsed}
+                      navigate={navigate}
+                    >
+                      {room.aisles?.map((aisle: AisleSummary) => (
+                        <TreeNode
+                          key={aisle.id}
+                          label={aisle.name}
+                          depth={1}
+                          expanded={expandedAisles.has(aisle.id)}
+                          onToggle={() => {
+                            setExpandedAisles((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(aisle.id)) {
+                                next.delete(aisle.id);
+                              } else {
+                                next.add(aisle.id);
+                              }
+                              return next;
+                            });
+                          }}
+                          collapsed={collapsed}
+                          navigate={navigate}
+                        >
+                          {aisle.racks.map((rack: RackSummary) => (
+                            <RackLink
+                              key={rack.id}
+                              rack={rack}
+                              collapsed={collapsed}
+                              navigate={navigate}
+                              isActive={location.pathname.includes(`/rack/${rack.id}`)}
+                            />
+                          ))}
+                        </TreeNode>
+                      ))}
+                    </TreeNode>
+                  );
+                })}
+            </div>
+          </>
         )}
 
         <SectionLabel label="Slurm" collapsed={collapsed} />
