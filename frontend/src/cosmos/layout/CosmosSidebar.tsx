@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { api } from '../../services/api';
 import type { ComponentType } from 'react';
+import type { RoomSummary, Site, AisleSummary, RackSummary } from '../../types';
 import {
   Activity,
   BarChart2,
@@ -18,6 +19,9 @@ import {
   Layers,
   ShieldCheck,
   Settings,
+  ChevronRight,
+  ChevronDown,
+  Home,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -51,8 +55,6 @@ const NavItem = ({
     }
   >
     <Icon className={`shrink-0 ${depth ? 'h-4 w-4' : 'h-5 w-5'}`} />
-    {/* Text: display:none when collapsed (removes from flex flow, like TailAdmin lg:hidden).
-        Instantly visible on group-hover. No max-width animation. */}
     <span className={`whitespace-nowrap ${collapsed ? 'hidden group-hover:inline' : ''}`}>
       {label}
     </span>
@@ -91,20 +93,134 @@ const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean 
   </>
 );
 
+// ── Infrastructure tree ────────────────────────────────────────────────────
+
+const TreeNode = ({
+  label,
+  depth = 0,
+  expanded,
+  onToggle,
+  children,
+  isActive = false,
+  icon: Icon,
+  to,
+  collapsed: sidebarCollapsed,
+  navigate,
+}: {
+  label: string;
+  depth?: number;
+  expanded: boolean;
+  onToggle: () => void;
+  children?: React.ReactNode;
+  isActive?: boolean;
+  icon?: ComponentType<{ className?: string }>;
+  to?: string;
+  collapsed: boolean;
+  navigate: (path: string) => void;
+}) => {
+  const pl = depth === 0 ? 'pl-3' : depth === 1 ? 'pl-5' : 'pl-7';
+  return (
+    <div>
+      <div className={`flex items-center gap-0 ${pl} pr-1`}>
+        {to ? (
+          <button
+            onClick={() => navigate(to)}
+            className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-medium transition-colors ${
+              isActive
+                ? 'bg-brand-500/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400'
+                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+            }`}
+          >
+            {Icon && (
+              <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-brand-500' : 'opacity-60'}`} />
+            )}
+            {!sidebarCollapsed && <span className="truncate">{label}</span>}
+          </button>
+        ) : (
+          <button
+            onClick={onToggle}
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-semibold tracking-wider text-gray-400 uppercase transition-colors hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-white/5"
+          >
+            {Icon && <Icon className="h-3.5 w-3.5 shrink-0 opacity-50" />}
+            {!sidebarCollapsed && <span className="truncate">{label}</span>}
+          </button>
+        )}
+        <button
+          onClick={onToggle}
+          className="shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-white/5"
+        >
+          {expanded ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
+        </button>
+      </div>
+      {expanded && children && (
+        <div className="ml-4 border-l border-gray-200 pl-1 dark:border-gray-800">{children}</div>
+      )}
+    </div>
+  );
+};
+
+const RackLink = ({
+  rack,
+  collapsed,
+  navigate,
+  isActive,
+}: {
+  rack: RackSummary;
+  collapsed: boolean;
+  navigate: (path: string) => void;
+  isActive: boolean;
+}) => (
+  <button
+    onClick={() => navigate(`/cosmos/views/rack/${rack.id}`)}
+    className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-xs font-medium transition-colors ${
+      isActive
+        ? 'bg-brand-500/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400'
+        : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
+    }`}
+  >
+    <Server className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-brand-500' : 'opacity-50'}`} />
+    {!collapsed && <span className="truncate">{rack.name}</span>}
+  </button>
+);
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+const VALID_ROOM_VARIANTS = new Set(['room', 'room-v2', 'room-v3']);
+
+function getRoomVariant(): string {
+  const stored = localStorage.getItem('cosmos-room-variant') ?? 'room';
+  if (!VALID_ROOM_VARIANTS.has(stored)) {
+    localStorage.setItem('cosmos-room-variant', 'room');
+    return 'room';
+  }
+  return stored;
+}
+
+// ── Sidebar ────────────────────────────────────────────────────────────────
+
 interface CosmosSidebarProps {
   collapsed: boolean;
 }
 
 export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
-  const [rooms, setRooms] = useState<{ id: string; name: string }[]>([]);
+  const [rooms, setRooms] = useState<RoomSummary[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [expandedSites, setExpandedSites] = useState<Set<string>>(new Set());
+  const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
+  const [expandedAisles, setExpandedAisles] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    api
-      .getRooms()
-      .then((data) =>
-        setRooms(Array.isArray(data) ? data.map((r) => ({ id: r.id, name: r.name })) : [])
-      )
+    Promise.all([api.getRooms(), api.getSites()])
+      .then(([roomsData, sitesData]) => {
+        setRooms(Array.isArray(roomsData) ? roomsData : []);
+        setSites(Array.isArray(sitesData) ? sitesData : []);
+      })
       .catch(() => {});
   }, []);
 
@@ -114,7 +230,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         collapsed ? 'w-[90px] hover:w-[290px]' : 'w-[290px]'
       }`}
     >
-      {/* Logo — no extra px since aside already has px-5 */}
+      {/* Logo */}
       <div className="flex h-[72px] shrink-0 items-center">
         <div className="flex items-center gap-3">
           <div className="bg-brand-500 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white">
@@ -146,37 +262,170 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           collapsed={collapsed}
         />
 
-        {rooms.length > 0 && (
-          <>
-            <p
-              className={`mt-2 mb-1 px-3 text-[10px] font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-600 ${
-                collapsed ? 'hidden group-hover:block' : ''
-              }`}
-            >
-              Rooms
-            </p>
-            {rooms.map((room) => (
-              <button
-                key={room.id}
-                onClick={() => {
-                  const VALID_ROOM_VARIANTS = new Set(['room', 'room-v2', 'room-v3']);
-                  const stored = localStorage.getItem('cosmos-room-variant') ?? 'room';
-                  const variant = VALID_ROOM_VARIANTS.has(stored) ? stored : 'room';
-                  if (!VALID_ROOM_VARIANTS.has(stored))
-                    localStorage.setItem('cosmos-room-variant', 'room');
-                  navigate(`/cosmos/views/${variant}/${room.id}`);
-                }}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
-              >
-                <MapPin className="h-4 w-4 shrink-0" />
-                <span
-                  className={`truncate whitespace-nowrap ${collapsed ? 'hidden group-hover:inline' : ''}`}
+        {/* Infrastructure tree: Site → Room → Aisle → Rack */}
+        {(rooms.length > 0 || sites.length > 0) && (
+          <div className="mt-2 space-y-0.5">
+            {!collapsed && (
+              <p className="px-3 pb-1 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                Infrastructure
+              </p>
+            )}
+            {sites.map((site) => {
+              const siteRooms = rooms.filter((r) => r.site_id === site.id);
+              if (siteRooms.length === 0) return null;
+              const siteExpanded = expandedSites.has(site.id);
+              return (
+                <TreeNode
+                  key={site.id}
+                  label={site.name}
+                  depth={0}
+                  expanded={siteExpanded}
+                  onToggle={() => {
+                    setExpandedSites((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(site.id)) {
+                        next.delete(site.id);
+                      } else {
+                        next.add(site.id);
+                      }
+                      return next;
+                    });
+                  }}
+                  icon={Globe}
+                  collapsed={collapsed}
+                  navigate={navigate}
                 >
-                  {room.name}
-                </span>
-              </button>
-            ))}
-          </>
+                  {siteRooms.map((room) => {
+                    const roomExpanded = expandedRooms.has(room.id);
+                    const roomPath = `/cosmos/views/${getRoomVariant()}/${room.id}`;
+                    const isRoomActive = location.pathname === roomPath;
+                    return (
+                      <TreeNode
+                        key={room.id}
+                        label={room.name}
+                        depth={1}
+                        expanded={roomExpanded}
+                        onToggle={() => {
+                          setExpandedRooms((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(room.id)) {
+                              next.delete(room.id);
+                            } else {
+                              next.add(room.id);
+                            }
+                            return next;
+                          });
+                        }}
+                        to={roomPath}
+                        isActive={isRoomActive}
+                        icon={Home}
+                        collapsed={collapsed}
+                        navigate={navigate}
+                      >
+                        {room.aisles?.map((aisle: AisleSummary) => {
+                          const aisleExpanded = expandedAisles.has(aisle.id);
+                          return (
+                            <TreeNode
+                              key={aisle.id}
+                              label={aisle.name}
+                              depth={2}
+                              expanded={aisleExpanded}
+                              onToggle={() => {
+                                setExpandedAisles((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(aisle.id)) {
+                                    next.delete(aisle.id);
+                                  } else {
+                                    next.add(aisle.id);
+                                  }
+                                  return next;
+                                });
+                              }}
+                              collapsed={collapsed}
+                              navigate={navigate}
+                            >
+                              {aisle.racks.map((rack: RackSummary) => (
+                                <RackLink
+                                  key={rack.id}
+                                  rack={rack}
+                                  collapsed={collapsed}
+                                  navigate={navigate}
+                                  isActive={location.pathname.includes(`/rack/${rack.id}`)}
+                                />
+                              ))}
+                            </TreeNode>
+                          );
+                        })}
+                      </TreeNode>
+                    );
+                  })}
+                </TreeNode>
+              );
+            })}
+            {/* Rooms without a matching site */}
+            {rooms
+              .filter((r) => !sites.some((s) => s.id === r.site_id))
+              .map((room) => {
+                const roomExpanded = expandedRooms.has(room.id);
+                const roomPath = `/cosmos/views/room/${room.id}`;
+                return (
+                  <TreeNode
+                    key={room.id}
+                    label={room.name}
+                    depth={0}
+                    expanded={roomExpanded}
+                    onToggle={() => {
+                      setExpandedRooms((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(room.id)) {
+                          next.delete(room.id);
+                        } else {
+                          next.add(room.id);
+                        }
+                        return next;
+                      });
+                    }}
+                    to={roomPath}
+                    isActive={location.pathname === roomPath}
+                    icon={Home}
+                    collapsed={collapsed}
+                    navigate={navigate}
+                  >
+                    {room.aisles?.map((aisle: AisleSummary) => (
+                      <TreeNode
+                        key={aisle.id}
+                        label={aisle.name}
+                        depth={1}
+                        expanded={expandedAisles.has(aisle.id)}
+                        onToggle={() => {
+                          setExpandedAisles((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(aisle.id)) {
+                              next.delete(aisle.id);
+                            } else {
+                              next.add(aisle.id);
+                            }
+                            return next;
+                          });
+                        }}
+                        collapsed={collapsed}
+                        navigate={navigate}
+                      >
+                        {aisle.racks.map((rack: RackSummary) => (
+                          <RackLink
+                            key={rack.id}
+                            rack={rack}
+                            collapsed={collapsed}
+                            navigate={navigate}
+                            isActive={location.pathname.includes(`/rack/${rack.id}`)}
+                          />
+                        ))}
+                      </TreeNode>
+                    ))}
+                  </TreeNode>
+                );
+              })}
+          </div>
         )}
 
         <SectionLabel label="Slurm" collapsed={collapsed} />
