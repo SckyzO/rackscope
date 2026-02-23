@@ -1,5 +1,6 @@
 import { AlertTriangle, Type } from 'lucide-react';
 import type { ConfigDraft } from '../useSettingsConfig';
+import { useAuth } from '../../../contexts/AuthContext';
 
 type Props = {
   draft: ConfigDraft;
@@ -42,8 +43,9 @@ const Toggle = ({
 );
 
 export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
+  const { authConfigured } = useAuth(); // live from API — not stale draft
   const auth = draft.auth;
-  const hasPassword = Boolean(auth.password_hash);
+  const hasPassword = authConfigured;
 
   const setAuth = (updates: Partial<typeof auth>) =>
     setDraft({ ...draft, auth: { ...auth, ...updates } });

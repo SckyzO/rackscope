@@ -38,6 +38,17 @@ features:
   playlist: false
   offline: true
   demo: false
+auth:
+  enabled: true
+  username: admin
+  password_hash: ''
+  secret_key: ''
+  session_duration: 24h
+  policy:
+    min_length: 6
+    max_length: 128
+    require_digit: false
+    require_symbol: false
 map:
   default_view: world
   default_zoom: 4
@@ -123,6 +134,3 @@ plugins:
       info: '#3b82f6'
 simulator: null
 slurm: null
-auth:
-  username: admin
-  password_hash: $2b$12$YWL0IHmvttmaKpEZ89YwLuJXudilBaPnLgIQS.MiY2d9mIdzh7JRq
