@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Rack, Device, DeviceTemplate } from '../../../types';
+import { RackElevation } from '../../../components/RackVisualizer';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -656,93 +657,128 @@ export const CosmosRackEditorPage = () => {
                   </span>
                 </div>
               </div>
-              {/* Rack viewport — measured for dynamic scaling */}
-              <div className="flex-1 overflow-hidden py-4">
-                <div className="mx-auto max-w-xl px-12">
-                  {/* Rack frame: border-x-[24px] = side rails, flex-col-reverse = U1 bottom */}
-                  <div
-                    ref={rackContainerRef}
-                    onDragLeave={handleRackContainerDragLeave}
-                    onDragEnd={handleDragEnd}
-                    className="relative flex flex-col-reverse rounded-sm border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-interior)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-colors duration-500"
-                  >
-                    {slots.map((u) => {
-                      const dev = uMap.get(u);
-                      const isStart = !dev || dev.u_position === u;
-                      if (!isStart) return null;
 
-                      const tpl = dev ? deviceCatalog[dev.template_id] : undefined;
-                      const devUHeight = tpl?.u_height ?? 1;
-                      const activeDragH = dragTemplate
-                        ? (dragTemplate.u_height ?? 1)
-                        : dragDevice
-                          ? (deviceCatalog[dragDevice.template_id]?.u_height ?? 1)
-                          : 0;
-                      const isHover =
-                        (dragTemplate !== null || dragDevice !== null) &&
-                        dragHoverU !== null &&
-                        u >= dragHoverU &&
-                        u < dragHoverU + activeDragH;
+              {/* Dual view: Front (editable) | Rear (read-only) */}
+              <div className="flex min-h-0 flex-1 overflow-hidden">
+                {/* ── FRONT (interactive) ── */}
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col border-r border-gray-800">
+                  <div className="shrink-0 border-b border-gray-800 py-1.5 text-center">
+                    <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+                      Front
+                    </span>
+                  </div>
+                  {/* Rack viewport — measured for dynamic scaling */}
+                  <div className="flex-1 overflow-hidden py-4">
+                    <div className="mx-auto px-6">
+                      {/* Rack frame: border-x-[24px] = side rails, flex-col-reverse = U1 bottom */}
+                      <div
+                        ref={rackContainerRef}
+                        onDragLeave={handleRackContainerDragLeave}
+                        onDragEnd={handleDragEnd}
+                        className="relative flex flex-col-reverse rounded-sm border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-interior)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-colors duration-500"
+                      >
+                        {slots.map((u) => {
+                          const dev = uMap.get(u);
+                          const isStart = !dev || dev.u_position === u;
+                          if (!isStart) return null;
 
-                      if (dev) {
-                        return (
-                          <div
-                            key={u}
-                            style={{ flex: `0 0 ${devUHeight * dynamicUPx}px` }}
-                            className="relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10"
-                            onDragEnter={() => handleSlotDragEnter(u)}
-                            onDragOver={handleSlotDragOver}
-                            onDrop={(e) => handleSlotDrop(e, u)}
-                          >
-                            <div className="pointer-events-none absolute -left-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
-                              {u}
-                            </div>
-                            <div className="pointer-events-none absolute -right-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
-                              {u}
-                            </div>
-                            <div className="relative h-full w-full px-0.5 py-[1px]">
-                              <DeviceSlot
-                                device={dev}
-                                template={tpl}
-                                uHeight={devUHeight}
-                                uPx={dynamicUPx}
-                                selected={selectedDevice?.id === dev.id}
-                                flash={selectedFlash === dev.id}
-                                dragging={dragDevice?.id === dev.id}
-                                onClick={() => handleSelectDevice(dev)}
-                                onDelete={() => deleteDevice(dev.id)}
-                                onDragStart={(e) => handleDeviceDragStart(e, dev)}
-                              />
-                            </div>
-                          </div>
-                        );
-                      }
+                          const tpl = dev ? deviceCatalog[dev.template_id] : undefined;
+                          const devUHeight = tpl?.u_height ?? 1;
+                          const activeDragH = dragTemplate
+                            ? (dragTemplate.u_height ?? 1)
+                            : dragDevice
+                              ? (deviceCatalog[dragDevice.template_id]?.u_height ?? 1)
+                              : 0;
+                          const isHover =
+                            (dragTemplate !== null || dragDevice !== null) &&
+                            dragHoverU !== null &&
+                            u >= dragHoverU &&
+                            u < dragHoverU + activeDragH;
 
-                      return (
-                        <div
-                          key={u}
-                          style={{ flex: `0 0 ${dynamicUPx}px` }}
-                          className={`relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10 transition-colors ${isHover ? 'bg-brand-500/20' : ''}`}
-                          onDragEnter={() => handleSlotDragEnter(u)}
-                          onDragOver={handleSlotDragOver}
-                          onDrop={(e) => handleSlotDrop(e, u)}
-                        >
-                          <div className="pointer-events-none absolute -left-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
-                            {u}
-                          </div>
-                          <div className="pointer-events-none absolute -right-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
-                            {u}
-                          </div>
-                          {isHover && (
-                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                              <span className="text-brand-400 font-mono text-[10px] font-bold">
-                                Drop — {dragTemplate?.name}
-                              </span>
+                          if (dev) {
+                            return (
+                              <div
+                                key={u}
+                                style={{ flex: `0 0 ${devUHeight * dynamicUPx}px` }}
+                                className="relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10"
+                                onDragEnter={() => handleSlotDragEnter(u)}
+                                onDragOver={handleSlotDragOver}
+                                onDrop={(e) => handleSlotDrop(e, u)}
+                              >
+                                <div className="pointer-events-none absolute -left-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
+                                  {u}
+                                </div>
+                                <div className="pointer-events-none absolute -right-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
+                                  {u}
+                                </div>
+                                <div className="relative h-full w-full px-0.5 py-[1px]">
+                                  <DeviceSlot
+                                    device={dev}
+                                    template={tpl}
+                                    uHeight={devUHeight}
+                                    uPx={dynamicUPx}
+                                    selected={selectedDevice?.id === dev.id}
+                                    flash={selectedFlash === dev.id}
+                                    dragging={dragDevice?.id === dev.id}
+                                    onClick={() => handleSelectDevice(dev)}
+                                    onDelete={() => deleteDevice(dev.id)}
+                                    onDragStart={(e) => handleDeviceDragStart(e, dev)}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div
+                              key={u}
+                              style={{ flex: `0 0 ${dynamicUPx}px` }}
+                              className={`relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10 transition-colors ${isHover ? 'bg-brand-500/20' : ''}`}
+                              onDragEnter={() => handleSlotDragEnter(u)}
+                              onDragOver={handleSlotDragOver}
+                              onDrop={(e) => handleSlotDrop(e, u)}
+                            >
+                              <div className="pointer-events-none absolute -left-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
+                                {u}
+                              </div>
+                              <div className="pointer-events-none absolute -right-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
+                                {u}
+                              </div>
+                              {isHover && (
+                                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                                  <span className="text-brand-400 font-mono text-[10px] font-bold">
+                                    Drop — {dragTemplate?.name}
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── REAR (read-only display) ── */}
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                  <div className="shrink-0 border-b border-gray-800 py-1.5 text-center">
+                    <span className="text-[10px] font-semibold tracking-wider text-gray-500 uppercase">
+                      Rear
+                    </span>
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+                    <RackElevation
+                      rack={{ ...rack, devices: draftDevices }}
+                      catalog={deviceCatalog}
+                      health={undefined}
+                      nodesData={{}}
+                      isRearView={true}
+                      infraComponents={[]}
+                      sideComponents={[]}
+                      allowInfraOverlap={true}
+                      pduMetrics={undefined}
+                      onDeviceClick={() => {}}
+                    />
                   </div>
                 </div>
               </div>
