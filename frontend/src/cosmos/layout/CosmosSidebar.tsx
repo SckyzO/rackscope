@@ -339,8 +339,6 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                               return next;
                             });
                           }}
-                          hasLink
-                          onLinkClick={() => navigate(roomPath)}
                           isActive={isRoomActive}
                           collapsed={collapsed}
                           navigate={navigate}
@@ -408,8 +406,6 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                           return next;
                         });
                       }}
-                      hasLink
-                      onLinkClick={() => navigate(roomPath)}
                       isActive={location.pathname === roomPath}
                       collapsed={collapsed}
                       navigate={navigate}
