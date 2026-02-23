@@ -31,7 +31,12 @@ const CATEGORIES: CategorySection[] = [
       { name: 'Alerts', description: 'Contextual feedback messages', route: '/cosmos/ui/alerts' },
       {
         name: 'Buttons',
-        description: 'Button variants and groups',
+        description: 'Primary, secondary, icon, sizes, states',
+        route: '/cosmos/ui/buttons',
+      },
+      {
+        name: 'Buttons Group',
+        description: 'Grouped buttons sharing a container',
         route: '/cosmos/ui/buttons-group',
       },
       { name: 'Cards', description: 'Content container cards', route: '/cosmos/ui/cards' },

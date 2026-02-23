@@ -16,6 +16,7 @@ import { RibbonsPage } from './pages/ui/RibbonsPage';
 import { SpinnersPage } from './pages/ui/SpinnersPage';
 import { PaginationPage } from './pages/ui/PaginationPage';
 import { ButtonsGroupPage } from './pages/ui/ButtonsGroupPage';
+import { ButtonsPage } from './pages/ui/ButtonsPage';
 import { CardsPage } from './pages/ui/CardsPage';
 import { CarouselPage } from './pages/ui/CarouselPage';
 import { DropdownsPage } from './pages/ui/DropdownsPage';
@@ -143,6 +144,7 @@ const CosmosRoutes = () => (
       <Route index element={<CosmosDashboard />} />
 
       {/* UI Elements */}
+      <Route path="ui/buttons" element={<ButtonsPage />} />
       <Route path="ui/buttons-group" element={<ButtonsGroupPage />} />
       <Route path="ui/badges" element={<BadgesPage />} />
       <Route path="ui/alerts" element={<AlertsPage />} />
