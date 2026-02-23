@@ -393,6 +393,37 @@ export const Breadcrumb = ({ items }: { items: BreadcrumbItem[] }) => (
   </nav>
 );
 
+// ── Centered / narrow layout ─────────────────────────────────────────────────
+//
+// From TailAdmin blank.html:
+//   outer: rounded-2xl border bg-white — single card wrapping ALL page content
+//   inner: mx-auto max-w-[630px]       — content constrained + centered
+//
+// Use this for: Settings, Profile, forms — anything that's hard to read full-width.
+//
+// Two components:
+//   PageCard      — the full-page outer card (replaces space-y-6 + individual SectionCards)
+//   ContentNarrow — centered width-constrained wrapper to put inside PageCard
+
+export const PageCard = ({ children }: { children: ReactNode }) => (
+  <div className="min-h-[60vh] rounded-2xl border border-gray-200 bg-white px-5 py-8 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-900">
+    {children}
+  </div>
+);
+
+/** Constrained centered column — use inside PageCard or anywhere */
+export const ContentNarrow = ({
+  children,
+  maxWidth = 680,
+}: {
+  children: ReactNode;
+  maxWidth?: number;
+}) => (
+  <div className="mx-auto w-full" style={{ maxWidth }}>
+    {children}
+  </div>
+);
+
 // ── EmptyPage — the actual blank template to copy ────────────────────────────
 //
 // This is what you duplicate when starting a new page.
@@ -453,6 +484,31 @@ export const TemplatesShowcase = () => {
 
       {/* ── SectionCard ── */}
       <div className="space-y-2">
+        {/* ── Centered / narrow layout ── */}
+        <LayoutLabel>
+          PageCard + ContentNarrow — centered layout (settings, forms, profiles)
+        </LayoutLabel>
+        <PageCard>
+          <ContentNarrow>
+            <div className="mb-6">
+              <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
+                Centered content — max 680px
+              </h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Use PageCard + ContentNarrow for settings, forms, and profile pages. The outer card
+                fills the page; the inner wrapper constrains reading width.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <ColBox label="Full card width" height={60} />
+              <div className="grid grid-cols-2 gap-4">
+                <ColBox label="50%" height={60} />
+                <ColBox label="50%" height={60} />
+              </div>
+            </div>
+          </ContentNarrow>
+        </PageCard>
+
         <LayoutLabel>SectionCard — with title, description, content</LayoutLabel>
         <SectionCard
           title="Section title"
@@ -720,6 +776,36 @@ export const TemplatesShowcase = () => {
           <ColBox label="25%" />
         </div>
       </div>
+    </div>
+  );
+};
+
+// ── CenteredPage — blank template for settings / forms / profiles ─────────────
+//
+// Route: /cosmos/templates/centered
+// Use this when full-width layout hurts readability.
+// Copy + replace content inside ContentNarrow.
+
+export const CenteredPage = () => {
+  usePageTitle('Page Title');
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Page Title"
+        description="A short description of what this page shows or lets you do."
+        // actions={<> … buttons … </>}
+      />
+
+      <PageCard>
+        <ContentNarrow>
+          <div className="space-y-6">
+            <SectionCard title="Section title" desc="Optional description.">
+              <p className="text-sm text-gray-400 dark:text-gray-500">Content goes here.</p>
+            </SectionCard>
+          </div>
+        </ContentNarrow>
+      </PageCard>
     </div>
   );
 };

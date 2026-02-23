@@ -437,6 +437,12 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           collapsed={collapsed}
         />
         <NavItem
+          to="/cosmos/templates/centered"
+          icon={PanelTop}
+          label="Centered Page"
+          collapsed={collapsed}
+        />
+        <NavItem
           to="/cosmos/templates/showcase"
           icon={Layers}
           label="Design System"
