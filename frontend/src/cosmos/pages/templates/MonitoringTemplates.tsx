@@ -28,25 +28,49 @@ import type { Rack, Device, DeviceTemplate, InfrastructureComponent } from '../.
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
 
+// 42U rack — realistic device distribution (matches BullSequana XH3000 style)
 const MOCK_RACK: Rack = {
   id: 'rack-demo',
-  name: 'Demo Rack',
-  u_height: 12,
+  name: 'Demo Rack XH3000 — 42U',
+  u_height: 42,
   aisle_id: 'aisle-01',
   devices: [
-    { id: 'dev-01', name: 'Server 01', template_id: 'server-2u', u_position: 1 } as Device,
-    { id: 'dev-02', name: 'Server 02', template_id: 'server-2u', u_position: 3 } as Device,
-    { id: 'dev-03', name: 'Switch', template_id: 'switch-1u', u_position: 10 } as Device,
-    { id: 'dev-04', name: 'PDU KVM', template_id: 'pdu-1u', u_position: 12 } as Device,
+    { id: 'dev-ib', name: 'IB Switch', template_id: 'switch-1u', u_position: 42 } as Device,
+    { id: 'dev-s01', name: 'Server Node 01', template_id: 'server-1u', u_position: 41 } as Device,
+    { id: 'dev-s02', name: 'Server Node 02', template_id: 'server-1u', u_position: 40 } as Device,
+    { id: 'dev-s03', name: 'Server Node 03', template_id: 'server-1u', u_position: 39 } as Device,
+    { id: 'dev-s04', name: 'Server Node 04', template_id: 'server-1u', u_position: 38 } as Device,
+    { id: 'dev-s05', name: 'Server Node 05', template_id: 'server-1u', u_position: 37 } as Device,
+    { id: 'dev-s06', name: 'Server Node 06', template_id: 'server-1u', u_position: 36 } as Device,
+    { id: 'dev-s07', name: 'Server Node 07', template_id: 'server-1u', u_position: 35 } as Device,
+    { id: 'dev-s08', name: 'Server Node 08', template_id: 'server-1u', u_position: 34 } as Device,
+    { id: 'dev-s09', name: 'Server Node 09', template_id: 'server-1u', u_position: 33 } as Device,
+    { id: 'dev-s10', name: 'Server Node 10', template_id: 'server-1u', u_position: 32 } as Device,
+    { id: 'dev-net1', name: 'Network SW 01', template_id: 'switch-1u', u_position: 30 } as Device,
+    { id: 'dev-net2', name: 'Network SW 02', template_id: 'switch-1u', u_position: 29 } as Device,
+    {
+      id: 'dev-st1',
+      name: 'Storage Array 01',
+      template_id: 'storage-4u',
+      u_position: 24,
+    } as Device,
+    {
+      id: 'dev-st2',
+      name: 'Storage Array 02',
+      template_id: 'storage-4u',
+      u_position: 20,
+    } as Device,
+    { id: 'dev-mgmt', name: 'Mgmt Module', template_id: 'mgmt-1u', u_position: 19 } as Device,
+    { id: 'dev-kvm', name: 'KVM Console', template_id: 'pdu-1u', u_position: 18 } as Device,
   ],
 };
 
 const MOCK_CATALOG: Record<string, DeviceTemplate> = {
-  'server-2u': {
-    id: 'server-2u',
-    name: 'Server 2U',
+  'server-1u': {
+    id: 'server-1u',
+    name: 'Server 1U',
     type: 'server',
-    u_height: 2,
+    u_height: 1,
   } as DeviceTemplate,
   'switch-1u': {
     id: 'switch-1u',
@@ -54,7 +78,14 @@ const MOCK_CATALOG: Record<string, DeviceTemplate> = {
     type: 'network',
     u_height: 1,
   } as DeviceTemplate,
-  'pdu-1u': { id: 'pdu-1u', name: 'PDU / KVM', type: 'pdu', u_height: 1 } as DeviceTemplate,
+  'storage-4u': {
+    id: 'storage-4u',
+    name: 'Storage 4U',
+    type: 'storage',
+    u_height: 4,
+  } as DeviceTemplate,
+  'mgmt-1u': { id: 'mgmt-1u', name: 'Mgmt 1U', type: 'other', u_height: 1 } as DeviceTemplate,
+  'pdu-1u': { id: 'pdu-1u', name: 'KVM / PDU 1U', type: 'pdu', u_height: 1 } as DeviceTemplate,
 };
 
 const MOCK_SIDE_COMPS: InfrastructureComponent[] = [
@@ -120,7 +151,7 @@ export const RackViewTemplate = () => {
           <div className="space-y-1.5 text-xs">
             {[
               ['Height', `${MOCK_RACK.u_height}U`],
-              ['Devices', MOCK_RACK.devices.length],
+              ['Devices', `${MOCK_RACK.devices.length} placed`],
               ['Template', 'Standard 12U'],
             ].map(([l, v]) => (
               <div key={String(l)} className="flex items-center justify-between">
@@ -177,7 +208,7 @@ export const RackViewTemplate = () => {
                 Front
               </span>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-4" style={{ height: 300 }}>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4" style={{ minHeight: 700 }}>
               <RackElevation
                 rack={MOCK_RACK}
                 catalog={MOCK_CATALOG}
@@ -198,7 +229,7 @@ export const RackViewTemplate = () => {
                 Rear
               </span>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-4" style={{ height: 300 }}>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4" style={{ minHeight: 700 }}>
               <RackElevation
                 rack={MOCK_RACK}
                 catalog={MOCK_CATALOG}
