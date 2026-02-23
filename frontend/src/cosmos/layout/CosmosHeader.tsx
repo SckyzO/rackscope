@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Moon, Sun, Bell, ChevronDown, AlertTriangle, XCircle } from 'lucide-react';
 import { api } from '../../services/api';
@@ -178,120 +179,122 @@ export const CosmosHeader = ({
             )}
           </button>
 
-          {notifOpen && (
-            <>
-              <div className="fixed inset-0 z-[9998]" onClick={() => setNotifOpen(false)} />
-              <div
-                className="shadow-theme-xl fixed z-[9999] w-96 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
-                style={{ top: notifPos.top, right: notifPos.right }}
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                    Active Alerts
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    {critCount > 0 && (
-                      <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-500/15 dark:text-red-400">
-                        <XCircle className="h-3 w-3" />
-                        {critCount} CRIT
-                      </span>
+          {notifOpen &&
+            createPortal(
+              <>
+                <div className="fixed inset-0 z-[9998]" onClick={() => setNotifOpen(false)} />
+                <div
+                  className="shadow-theme-xl fixed z-[9999] w-96 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+                  style={{ top: notifPos.top, right: notifPos.right }}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                      Active Alerts
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      {critCount > 0 && (
+                        <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-500/15 dark:text-red-400">
+                          <XCircle className="h-3 w-3" />
+                          {critCount} CRIT
+                        </span>
+                      )}
+                      {warnCount > 0 && (
+                        <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
+                          <AlertTriangle className="h-3 w-3" />
+                          {warnCount} WARN
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Alert list */}
+                  <div className="max-h-96 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
+                    {alerts.length === 0 ? (
+                      <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+                        <Bell className="h-8 w-8 text-gray-300 dark:text-gray-700" />
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          No active alerts
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-600">
+                          All nodes are healthy
+                        </p>
+                      </div>
+                    ) : (
+                      alerts.slice(0, 15).map((alert, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setNotifOpen(false);
+                            navigate(`/cosmos/views/rack/${alert.rack_id}`);
+                          }}
+                          className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                        >
+                          {/* Severity icon */}
+                          <div
+                            className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                            style={{ backgroundColor: `${SEV_COLOR[alert.state] ?? '#6b7280'}20` }}
+                          >
+                            {alert.state === 'CRIT' ? (
+                              <XCircle
+                                className="h-4 w-4"
+                                style={{ color: SEV_COLOR[alert.state] }}
+                              />
+                            ) : (
+                              <AlertTriangle
+                                className="h-4 w-4"
+                                style={{ color: SEV_COLOR[alert.state] }}
+                              />
+                            )}
+                          </div>
+                          {/* Content */}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                              {alert.node_id}
+                            </p>
+                            <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                              {alert.rack_name} · {alert.room_name}
+                            </p>
+                            {alert.checks.length > 0 && (
+                              <p className="mt-0.5 truncate font-mono text-[10px] text-gray-400">
+                                {alert.checks[0].id}
+                                {alert.checks.length > 1 ? ` +${alert.checks.length - 1}` : ''}
+                              </p>
+                            )}
+                          </div>
+                          {/* State badge */}
+                          <span
+                            className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+                            style={{ backgroundColor: SEV_COLOR[alert.state] ?? '#6b7280' }}
+                          >
+                            {alert.state}
+                          </span>
+                        </button>
+                      ))
                     )}
-                    {warnCount > 0 && (
-                      <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
-                        <AlertTriangle className="h-3 w-3" />
-                        {warnCount} WARN
-                      </span>
+                    {alerts.length > 15 && (
+                      <div className="px-4 py-2 text-center text-xs text-gray-400">
+                        +{alerts.length - 15} more alerts
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {/* Alert list */}
-                <div className="max-h-96 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
-                  {alerts.length === 0 ? (
-                    <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
-                      <Bell className="h-8 w-8 text-gray-300 dark:text-gray-700" />
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        No active alerts
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-600">
-                        All nodes are healthy
-                      </p>
-                    </div>
-                  ) : (
-                    alerts.slice(0, 15).map((alert, i) => (
-                      <button
-                        key={i}
-                        onClick={() => {
-                          setNotifOpen(false);
-                          navigate(`/cosmos/views/rack/${alert.rack_id}`);
-                        }}
-                        className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
-                      >
-                        {/* Severity icon */}
-                        <div
-                          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-                          style={{ backgroundColor: `${SEV_COLOR[alert.state] ?? '#6b7280'}20` }}
-                        >
-                          {alert.state === 'CRIT' ? (
-                            <XCircle
-                              className="h-4 w-4"
-                              style={{ color: SEV_COLOR[alert.state] }}
-                            />
-                          ) : (
-                            <AlertTriangle
-                              className="h-4 w-4"
-                              style={{ color: SEV_COLOR[alert.state] }}
-                            />
-                          )}
-                        </div>
-                        {/* Content */}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                            {alert.node_id}
-                          </p>
-                          <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                            {alert.rack_name} · {alert.room_name}
-                          </p>
-                          {alert.checks.length > 0 && (
-                            <p className="mt-0.5 truncate font-mono text-[10px] text-gray-400">
-                              {alert.checks[0].id}
-                              {alert.checks.length > 1 ? ` +${alert.checks.length - 1}` : ''}
-                            </p>
-                          )}
-                        </div>
-                        {/* State badge */}
-                        <span
-                          className="mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                          style={{ backgroundColor: SEV_COLOR[alert.state] ?? '#6b7280' }}
-                        >
-                          {alert.state}
-                        </span>
-                      </button>
-                    ))
-                  )}
-                  {alerts.length > 15 && (
-                    <div className="px-4 py-2 text-center text-xs text-gray-400">
-                      +{alerts.length - 15} more alerts
-                    </div>
-                  )}
+                  {/* Footer */}
+                  <div className="border-t border-gray-100 p-2 dark:border-gray-800">
+                    <button
+                      onClick={() => {
+                        setNotifOpen(false);
+                        navigate('/cosmos/notifications');
+                      }}
+                      className="text-brand-500 w-full rounded-lg py-2 text-center text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                    >
+                      View all alerts →
+                    </button>
+                  </div>
                 </div>
-
-                {/* Footer */}
-                <div className="border-t border-gray-100 p-2 dark:border-gray-800">
-                  <button
-                    onClick={() => {
-                      setNotifOpen(false);
-                      navigate('/cosmos/notifications');
-                    }}
-                    className="text-brand-500 w-full rounded-lg py-2 text-center text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
-                  >
-                    View all alerts →
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+              </>,
+              document.body
+            )}
         </div>
 
         {/* User menu */}
@@ -313,41 +316,43 @@ export const CosmosHeader = ({
             <ChevronDown className="h-4 w-4 text-gray-400" />
           </button>
 
-          {userOpen && (
-            <>
-              <div className="fixed inset-0 z-[9998]" onClick={() => setUserOpen(false)} />
-              <div
-                className="shadow-theme-lg fixed z-[9999] w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 dark:border-gray-800 dark:bg-gray-900"
-                style={{ top: userPos.top, right: userPos.right }}
-              >
-                <button
-                  onClick={() => {
-                    setUserOpen(false);
-                    navigate('/cosmos/profile');
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
+          {userOpen &&
+            createPortal(
+              <>
+                <div className="fixed inset-0 z-[9998]" onClick={() => setUserOpen(false)} />
+                <div
+                  className="shadow-theme-lg fixed z-[9999] w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 dark:border-gray-800 dark:bg-gray-900"
+                  style={{ top: userPos.top, right: userPos.right }}
                 >
-                  Profile
-                </button>
-                <button
-                  onClick={() => {
-                    setUserOpen(false);
-                    navigate('/cosmos/settings');
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
-                >
-                  Settings
-                </button>
-                <hr className="my-1 border-gray-100 dark:border-gray-800" />
-                <button
-                  onClick={logout}
-                  className="text-error-500 w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
-                >
-                  Sign Out
-                </button>
-              </div>
-            </>
-          )}
+                  <button
+                    onClick={() => {
+                      setUserOpen(false);
+                      navigate('/cosmos/profile');
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
+                  >
+                    Profile
+                  </button>
+                  <button
+                    onClick={() => {
+                      setUserOpen(false);
+                      navigate('/cosmos/settings');
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
+                  >
+                    Settings
+                  </button>
+                  <hr className="my-1 border-gray-100 dark:border-gray-800" />
+                  <button
+                    onClick={logout}
+                    className="text-error-500 w-full px-4 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </>,
+              document.body
+            )}
         </div>
       </div>
     </header>
