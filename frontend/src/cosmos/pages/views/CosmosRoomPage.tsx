@@ -51,11 +51,12 @@ interface DoorArcProps {
   position: number;
   w: number;
   h: number;
+  showLabel: boolean;
 }
 
 const PADDING = 24;
 
-const DoorArc = ({ side, position, w, h }: DoorArcProps) => {
+const DoorArc = ({ side, position, w, h, showLabel }: DoorArcProps) => {
   const iW = w - PADDING * 2;
   const iH = h - PADDING * 2;
   const r = 36;
@@ -97,53 +98,74 @@ const DoorArc = ({ side, position, w, h }: DoorArcProps) => {
       >
         <path d={arc} fill="none" stroke="#465fff" strokeWidth={1.5} strokeDasharray="4 2" />
       </svg>
-      <div
-        className="text-brand-500 pointer-events-none absolute z-20 font-mono text-[8px] font-bold"
-        style={{ left: lineStyle.left, top: (lineStyle.top as number) - 13 }}
-      >
-        DOOR
-      </div>
+      {showLabel && (
+        <div
+          className="text-brand-500 pointer-events-none absolute z-20 font-mono text-[8px] font-bold"
+          style={{ left: lineStyle.left, top: (lineStyle.top as number) - 13 }}
+        >
+          DOOR
+        </div>
+      )}
     </>
   );
 };
 
 // ── Compass rose ─────────────────────────────────────────────────────────────
 
-const CompassRose = ({ north }: { north: string }) => {
+const CompassRose = ({ north, showLabels }: { north: string; showLabels?: boolean }) => {
   const rotate = north === 'right' ? 90 : north === 'bottom' ? 180 : north === 'left' ? 270 : 0;
   return (
     <div
-      className="pointer-events-none absolute top-4 right-4 z-20 flex h-9 w-9 items-center justify-center"
+      className="pointer-events-none absolute top-4 right-4 z-20 flex h-14 w-14 items-center justify-center"
       style={{ transform: `rotate(${rotate}deg)` }}
     >
-      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-9 w-9">
+      <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-14 w-14">
         <circle
-          cx="18"
-          cy="18"
-          r="17"
+          cx="28"
+          cy="28"
+          r="20"
           stroke="currentColor"
           strokeWidth="1"
           className="text-gray-300 dark:text-gray-600"
         />
-        <polygon points="18,4 21,18 18,15 15,18" fill="#465fff" />
+        {/* N arrow — blue */}
+        <polygon points="28,8 31,28 28,23 25,28" fill="#465fff" />
+        {/* S arrow — muted */}
         <polygon
-          points="18,32 15,18 18,21 21,18"
+          points="28,48 25,28 28,33 31,28"
           fill="currentColor"
           className="text-gray-400 dark:text-gray-500"
         />
+        {/* W arrow — light */}
         <polygon
-          points="4,18 18,15 15,18 18,21"
+          points="8,28 28,25 23,28 28,31"
           fill="currentColor"
           className="text-gray-300 dark:text-gray-600"
         />
+        {/* E arrow — light */}
         <polygon
-          points="32,18 18,21 21,18 18,15"
+          points="48,28 28,31 33,28 28,25"
           fill="currentColor"
           className="text-gray-300 dark:text-gray-600"
         />
-        <text x="18" y="11" textAnchor="middle" fontSize="5" fontWeight="bold" fill="#465fff">
+        {/* N label — always shown */}
+        <text x="28" y="6" textAnchor="middle" fontSize="6" fontWeight="bold" fill="#465fff">
           N
         </text>
+        {/* Cardinal labels — optional */}
+        {showLabels && (
+          <>
+            <text x="28" y="54" textAnchor="middle" fontSize="5.5" fill="#6b7280">
+              S
+            </text>
+            <text x="52" y="30" textAnchor="middle" fontSize="5.5" fill="#6b7280">
+              E
+            </text>
+            <text x="4" y="30" textAnchor="middle" fontSize="5.5" fill="#6b7280">
+              O
+            </text>
+          </>
+        )}
       </svg>
     </div>
   );
@@ -183,16 +205,19 @@ const RackCell = ({
     setShowTooltip(false);
   };
 
+  const deviceCount = rack.devices?.length ?? 0;
+  const occupancy = Math.min(100, (deviceCount / (rack.u_height / 2)) * 100);
+
   return (
     <div
-      className="relative flex flex-col items-center gap-1"
+      className="relative flex flex-col items-center gap-1.5"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Rack body */}
       <button
         onClick={onClick}
-        className={`relative h-20 w-16 rounded border-2 transition-all ${
+        className={`relative h-24 w-20 rounded border-2 transition-all ${
           isSelected ? 'ring-brand-500 ring-2 ring-offset-1 dark:ring-offset-gray-900' : ''
         } ${searchMatch ? 'ring-2 ring-yellow-400 ring-offset-1' : ''} ${
           dimmed ? 'opacity-25' : ''
@@ -204,20 +229,20 @@ const RackCell = ({
           className="absolute right-0 bottom-0 left-0 rounded-sm"
           style={{
             backgroundColor: color,
-            height: `${Math.min(100, ((rack.devices?.length ?? 0) / (rack.u_height / 2)) * 100)}%`,
-            opacity: 0.35,
+            height: `${occupancy}%`,
+            opacity: 0.3,
           }}
         />
         {/* State dot */}
         <div
-          className="absolute top-1 right-1 h-2 w-2 rounded-full"
+          className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full"
           style={{ backgroundColor: color }}
         />
       </button>
 
       {/* Rack name — always visible, 2 lines max */}
       <p
-        className="w-16 text-center text-[9px] leading-tight text-gray-600 dark:text-gray-400"
+        className="w-20 text-center text-[11px] leading-tight text-gray-700 dark:text-gray-300"
         style={{
           display: '-webkit-box',
           WebkitLineClamp: 2,
@@ -229,34 +254,70 @@ const RackCell = ({
         {rack.name}
       </p>
 
-      {/* Short ID label if toggle enabled */}
+      {/* Short ID label — badge style */}
       {showLabel && (
-        <span className="font-mono text-[8px] text-gray-300 dark:text-gray-600">{rack.id}</span>
+        <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+          {rack.id}
+        </span>
       )}
 
       {/* Delayed tooltip — rich info */}
       {showTooltip && (
-        <div className="pointer-events-none absolute bottom-full left-1/2 z-[200] mb-2 min-w-[160px] -translate-x-1/2 rounded-xl bg-gray-900 px-3 py-2.5 shadow-2xl dark:bg-gray-800">
-          <p className="text-xs font-semibold text-white">{rack.name}</p>
-          <p className="mb-1.5 font-mono text-[10px] text-gray-500">{rack.id}</p>
-          <div className="space-y-1">
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-[10px] text-gray-400">State</span>
-              <span className="text-[10px] font-bold" style={{ color }}>
+        <div className="pointer-events-none absolute bottom-full left-1/2 z-[200] mb-2 min-w-[210px] -translate-x-1/2 overflow-hidden rounded-xl bg-gray-900 shadow-2xl ring-1 ring-white/5 dark:bg-gray-800">
+          {/* Colored header */}
+          <div
+            className="px-3 pt-3 pb-2.5"
+            style={{
+              background: `linear-gradient(135deg, ${color}22 0%, transparent 80%)`,
+              borderBottom: `1px solid ${color}25`,
+            }}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-xs leading-tight font-bold text-white">{rack.name}</p>
+              <span
+                className="mt-0.5 shrink-0 rounded px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-wide uppercase"
+                style={{ backgroundColor: `${color}30`, color }}
+              >
                 {state}
               </span>
             </div>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-[10px] text-gray-400">Height</span>
-              <span className="text-[10px] text-white">{rack.u_height}U</span>
-            </div>
-            {(rack.devices?.length ?? 0) > 0 && (
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-[10px] text-gray-400">Devices</span>
-                <span className="text-[10px] text-white">{rack.devices?.length}</span>
-              </div>
-            )}
+            <p className="mt-0.5 font-mono text-[9px] text-gray-500">{rack.id}</p>
           </div>
+
+          {/* Stats */}
+          <div className="space-y-2 px-3 py-2.5">
+            {/* Occupancy bar */}
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-[10px] text-gray-400">Occupancy</span>
+                <span className="font-mono text-[10px] text-gray-300">
+                  {deviceCount} device{deviceCount !== 1 ? 's' : ''} / {rack.u_height}U
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-gray-700">
+                <div
+                  className="h-1.5 rounded-full transition-all"
+                  style={{ width: `${occupancy}%`, backgroundColor: color }}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-gray-700/50 pt-2">
+              <span className="text-[10px] text-gray-400">Height</span>
+              <span className="text-right font-mono text-[10px] text-gray-200">
+                {rack.u_height}U
+              </span>
+              {deviceCount > 0 && (
+                <>
+                  <span className="text-[10px] text-gray-400">Devices</span>
+                  <span className="text-right text-[10px] font-semibold text-gray-200">
+                    {deviceCount}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
           {/* Arrow */}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-gray-900 dark:border-t-gray-800" />
         </div>
@@ -345,7 +406,7 @@ const AisleBand = ({
 
       {!collapsed && (
         <div
-          className={`mt-3 flex flex-wrap gap-2 ${rackAlign === 'right' ? 'justify-end' : 'justify-start'}`}
+          className={`mt-3 flex flex-wrap gap-3 ${rackAlign === 'right' ? 'justify-end' : 'justify-start'}`}
         >
           {aisle.racks.map((rack) => {
             const state = rackStates[rack.id] ?? 'UNKNOWN';
@@ -487,7 +548,9 @@ const RackDrawer = ({
 interface Settings {
   showGrid: boolean;
   showCompass: boolean;
+  showCardinalLabels: boolean;
   showDoor: boolean;
+  showDoorLabel: boolean;
   showDimensions: boolean;
   showRackLabels: boolean;
   showLegend: boolean;
@@ -525,10 +588,13 @@ const CustomizePanel = ({
     key: keyof Omit<Settings, 'hiddenAisles'>;
     icon: React.ElementType;
     label: string;
+    indent?: boolean;
   }[] = [
     { key: 'showGrid', icon: Grid3X3, label: 'Grid overlay' },
     { key: 'showCompass', icon: Compass, label: 'Compass rose' },
+    { key: 'showCardinalLabels', icon: Compass, label: 'Cardinal labels (N/S/E/O)', indent: true },
     { key: 'showDoor', icon: DoorOpen, label: 'Door indicator' },
+    { key: 'showDoorLabel', icon: DoorOpen, label: 'Door label', indent: true },
     { key: 'showDimensions', icon: Ruler, label: 'Room dimensions' },
     { key: 'showRackLabels', icon: Tag, label: 'Rack labels' },
     { key: 'showLegend', icon: Eye, label: 'Health legend' },
@@ -554,15 +620,21 @@ const CustomizePanel = ({
               Display
             </p>
             <div className="space-y-1">
-              {rows.map(({ key, icon: Icon, label }) => (
+              {rows.map(({ key, icon: Icon, label, indent }) => (
                 <button
                   key={key}
                   onClick={() => toggle(key)}
-                  className="flex w-full items-center justify-between rounded-xl border border-gray-100 px-3 py-2 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5"
+                  className={`flex w-full items-center justify-between rounded-xl border border-gray-100 px-3 py-2 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 ${indent ? 'ml-3 w-[calc(100%-0.75rem)]' : ''}`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <Icon className="h-4 w-4 text-gray-400" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+                    <Icon
+                      className={`h-3.5 w-3.5 ${indent ? 'text-gray-300 dark:text-gray-600' : 'text-gray-400'}`}
+                    />
+                    <span
+                      className={`${indent ? 'text-xs text-gray-500 dark:text-gray-400' : 'text-sm text-gray-700 dark:text-gray-300'}`}
+                    >
+                      {label}
+                    </span>
                   </div>
                   <div
                     className={`relative h-5 w-9 rounded-full transition-colors ${
@@ -695,7 +767,9 @@ export const CosmosRoomPage = () => {
   const [settings, setSettings] = useState<Settings>({
     showGrid: false,
     showCompass: true,
+    showCardinalLabels: true,
     showDoor: true,
+    showDoorLabel: true,
     showDimensions: true,
     showRackLabels: false,
     showLegend: true,
@@ -915,11 +989,19 @@ export const CosmosRoomPage = () => {
 
         {/* Door arc */}
         {settings.showDoor && canvasSize.w > 0 && (
-          <DoorArc side={doorSide} position={doorPos} w={canvasSize.w} h={canvasSize.h} />
+          <DoorArc
+            side={doorSide}
+            position={doorPos}
+            w={canvasSize.w}
+            h={canvasSize.h}
+            showLabel={settings.showDoorLabel}
+          />
         )}
 
         {/* Compass */}
-        {settings.showCompass && <CompassRose north={north} />}
+        {settings.showCompass && (
+          <CompassRose north={north} showLabels={settings.showCardinalLabels} />
+        )}
 
         {/* Dimensions */}
         {settings.showDimensions && (
