@@ -246,6 +246,61 @@ export const StatusRow = ({
   </button>
 );
 
+// ── Status badge ─────────────────────────────────────────────────────────────
+//
+// Three sizes:
+//   sm  — inline in a row / table cell (text-[10px])
+//   md  — standard badge (text-xs)      ← default
+//   lg  — prominent display (text-sm)
+//
+// Health dot: small colored circle for compact views.
+
+const STATUS_COLOR: Record<string, string> = {
+  OK: '#10b981',
+  WARN: '#f59e0b',
+  CRIT: '#ef4444',
+  UNKNOWN: '#6b7280',
+};
+
+type HealthStatus = 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
+
+export const StatusBadge = ({
+  status,
+  size = 'md',
+}: {
+  status: HealthStatus;
+  size?: 'sm' | 'md' | 'lg';
+}) => {
+  const sizeClass =
+    size === 'sm'
+      ? 'px-1.5 py-0.5 text-[10px]'
+      : size === 'lg'
+        ? 'px-3 py-1 text-sm'
+        : 'px-2 py-0.5 text-xs';
+  return (
+    <span
+      className={`inline-flex items-center rounded-full font-bold ${sizeClass} ${STATUS_PILL[status] ?? STATUS_PILL.UNKNOWN}`}
+    >
+      {status}
+    </span>
+  );
+};
+
+export const HealthDot = ({ status, pulse = false }: { status: HealthStatus; pulse?: boolean }) => (
+  <span className="relative flex h-2.5 w-2.5 shrink-0">
+    {pulse && (
+      <span
+        className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
+        style={{ backgroundColor: STATUS_COLOR[status] }}
+      />
+    )}
+    <span
+      className="relative inline-flex h-2.5 w-2.5 rounded-full"
+      style={{ backgroundColor: STATUS_COLOR[status] }}
+    />
+  </span>
+);
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export const EmptyPage = () => {
@@ -355,6 +410,38 @@ export const EmptyPage = () => {
             <StatusRow icon={Server} title="Rack 01-B" subtitle="Room A" status="WARN" />
             <StatusRow icon={Server} title="Rack 02-A" subtitle="Room A" status="CRIT" />
             <StatusRow icon={Server} title="Rack 02-B" subtitle="Room A" status="UNKNOWN" />
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* ── Status badges ── */}
+      <div className="space-y-2">
+        <LayoutLabel>Status badges — SM / MD / LG</LayoutLabel>
+        <SectionCard title="StatusBadge">
+          <div className="space-y-4">
+            {/* All states × all sizes */}
+            {(['sm', 'md', 'lg'] as const).map((size) => (
+              <div key={size} className="flex flex-wrap items-center gap-2">
+                <span className="w-6 font-mono text-[10px] text-gray-400">{size}</span>
+                {(['OK', 'WARN', 'CRIT', 'UNKNOWN'] as const).map((s) => (
+                  <StatusBadge key={s} status={s} size={size} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      </div>
+
+      <div className="space-y-2">
+        <LayoutLabel>Health dot — static / pulsing</LayoutLabel>
+        <SectionCard title="HealthDot">
+          <div className="flex flex-wrap gap-6">
+            {(['OK', 'WARN', 'CRIT', 'UNKNOWN'] as const).map((s) => (
+              <div key={s} className="flex items-center gap-2">
+                <HealthDot status={s} pulse />
+                <span className="text-sm text-gray-600 dark:text-gray-400">{s}</span>
+              </div>
+            ))}
           </div>
         </SectionCard>
       </div>
