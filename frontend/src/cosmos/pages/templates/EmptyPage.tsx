@@ -792,7 +792,9 @@ export const CenteredPage = () => {
   usePageTitle('Page Title'); // ← change this
 
   return (
-    <div className="flex flex-col gap-5">
+    // mx-auto + max-w matches TailAdmin's `max-w-(--breakpoint-2xl)` wrapper
+    // This prevents the card from stretching on ultra-wide screens.
+    <div className="mx-auto flex w-full max-w-[1536px] flex-col gap-5">
       {/* Breadcrumb — above the card */}
       <Breadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'Page Title' }]} />
 
