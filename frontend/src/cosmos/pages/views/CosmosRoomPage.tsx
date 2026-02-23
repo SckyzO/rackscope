@@ -20,6 +20,7 @@ import {
   SortAsc,
   Tag,
   ListFilter,
+  ChevronDown,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Room, Aisle, Rack, RoomState } from '../../../types';
@@ -222,6 +223,8 @@ interface AisleBandProps {
   searchQuery: string;
   onRackClick: (rack: Rack, aisle: Aisle) => void;
   onBadgeClick: (state: string) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 const AisleBand = ({
@@ -233,6 +236,8 @@ const AisleBand = ({
   searchQuery,
   onRackClick,
   onBadgeClick,
+  collapsed,
+  onToggleCollapse,
 }: AisleBandProps) => {
   const critCount = aisle.racks.filter((r) => rackStates[r.id] === 'CRIT').length;
   const warnCount = aisle.racks.filter((r) => rackStates[r.id] === 'WARN').length;
@@ -240,8 +245,21 @@ const AisleBand = ({
 
   return (
     <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-gray-800/30">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{aisle.name}</span>
+      <div className={`flex items-center justify-between ${collapsed ? '' : 'mb-3'}`}>
+        <button
+          onClick={onToggleCollapse}
+          className="hover:text-brand-500 dark:hover:text-brand-400 flex items-center gap-1.5 text-left transition-colors"
+        >
+          {collapsed ? (
+            <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
+          ) : (
+            <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+          )}
+          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+            {aisle.name}
+          </span>
+          <span className="text-[10px] text-gray-400">({aisle.racks.length})</span>
+        </button>
         <div className="flex items-center gap-1.5">
           {critCount > 0 && (
             <button
@@ -270,28 +288,30 @@ const AisleBand = ({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {aisle.racks.map((rack) => {
-          const state = rackStates[rack.id] ?? 'UNKNOWN';
-          const isHighlighted = highlight ? state === highlight : null;
-          const searchMatch =
-            searchQuery.length > 1 &&
-            (rack.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              rack.id.toLowerCase().includes(searchQuery.toLowerCase()));
-          return (
-            <RackCell
-              key={rack.id}
-              rack={rack}
-              state={state}
-              isSelected={selectedRackId === rack.id}
-              isHighlighted={isHighlighted}
-              showLabel={showRackLabels}
-              searchMatch={searchMatch}
-              onClick={() => onRackClick(rack, aisle)}
-            />
-          );
-        })}
-      </div>
+      {!collapsed && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {aisle.racks.map((rack) => {
+            const state = rackStates[rack.id] ?? 'UNKNOWN';
+            const isHighlighted = highlight ? state === highlight : null;
+            const searchMatch =
+              searchQuery.length > 1 &&
+              (rack.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                rack.id.toLowerCase().includes(searchQuery.toLowerCase()));
+            return (
+              <RackCell
+                key={rack.id}
+                rack={rack}
+                state={state}
+                isSelected={selectedRackId === rack.id}
+                isHighlighted={isHighlighted}
+                showLabel={showRackLabels}
+                searchMatch={searchMatch}
+                onClick={() => onRackClick(rack, aisle)}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
@@ -566,6 +586,7 @@ export const CosmosRoomPage = () => {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [collapsedAisles, setCollapsedAisles] = useState<Set<string>>(new Set());
 
   const [settings, setSettings] = useState<Settings>({
     showGrid: false,
@@ -814,6 +835,15 @@ export const CosmosRoomPage = () => {
               searchQuery={search}
               onRackClick={handleRackClick}
               onBadgeClick={handleBadgeClick}
+              collapsed={collapsedAisles.has(aisle.id)}
+              onToggleCollapse={() => {
+                setCollapsedAisles((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(aisle.id)) next.delete(aisle.id);
+                  else next.add(aisle.id);
+                  return next;
+                });
+              }}
             />
           ))}
           {sortedAisles.length === 0 && (
