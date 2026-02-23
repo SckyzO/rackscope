@@ -67,7 +67,7 @@ export const PageBreadcrumb = ({ items }: { items: PageBreadcrumbItem[] }) => (
             ) : (
               <a
                 href={item.href ?? '#'}
-                className="text-brand-500 hover:text-brand-600 flex items-center gap-1 transition-colors"
+                className="hover:text-brand-500 dark:hover:text-brand-400 flex items-center gap-1 text-gray-500 transition-colors dark:text-gray-400"
               >
                 {isFirst && <Home className="h-4 w-4" />}
                 {item.label}
