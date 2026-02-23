@@ -792,20 +792,31 @@ export const CenteredPage = () => {
   usePageTitle('Page Title'); // ← change this
 
   return (
-    <div className="min-h-[calc(100vh-9rem)] rounded-2xl border border-gray-200 bg-white px-5 py-10 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-900">
-      {/* Centered intro — title + description inside the card */}
-      <div className="mx-auto mb-8 max-w-[640px] text-center">
-        <h2 className="mb-3 text-xl font-bold text-gray-900 dark:text-white">Page Title</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          A short description of what this page shows or lets you do.
-        </p>
-      </div>
+    <div className="flex flex-col gap-5">
+      {/* Breadcrumb — above the card */}
+      <Breadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'Page Title' }]} />
 
-      {/* Constrained content — readable width */}
-      <div className="mx-auto max-w-[640px] space-y-4">
-        <SectionCard title="Section title" desc="Optional description.">
-          <p className="text-sm text-gray-400 dark:text-gray-500">Content goes here.</p>
-        </SectionCard>
+      {/*
+       * Single full-height canvas card — matches TailAdmin blank.html exactly.
+       *
+       * Key classes:
+       *   min-h-screen          fills the visible content area
+       *   bg-white              solid white in light mode
+       *   dark:bg-white/[0.03]  near-transparent in dark mode (subtle canvas)
+       *   xl:px-10 xl:py-12     generous padding on wide screens
+       *
+       * Replace the centered placeholder below with your actual content.
+       */}
+      <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-white/[0.03]">
+        {/* Centered placeholder — title + description in the middle of the canvas */}
+        <div className="mx-auto w-full max-w-[630px] text-center">
+          <h3 className="mb-4 text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
+            Page Title
+          </h3>
+          <p className="text-sm text-gray-500 sm:text-base dark:text-gray-400">
+            Replace this with your content. Use SectionCard for sections, column grids for layouts.
+          </p>
+        </div>
       </div>
     </div>
   );
