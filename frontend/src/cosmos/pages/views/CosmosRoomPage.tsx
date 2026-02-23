@@ -685,8 +685,7 @@ const RackDrawer = ({
 
 interface Settings {
   showGrid: boolean;
-  showCompass: boolean;
-  showCardinalLabels: boolean;
+  showCardinalEdges: boolean;
   showDoor: boolean;
   showDoorLabel: boolean;
   showDimensions: boolean;
@@ -729,8 +728,7 @@ const CustomizePanel = ({
     indent?: boolean;
   }[] = [
     { key: 'showGrid', icon: Grid3X3, label: 'Grid overlay' },
-    { key: 'showCompass', icon: Compass, label: 'Compass rose' },
-    { key: 'showCardinalLabels', icon: Compass, label: 'Cardinal labels (N/S/E/O)', indent: true },
+    { key: 'showCardinalEdges', icon: Compass, label: 'Cardinal edges (N/S/E/O)' },
     { key: 'showDoor', icon: DoorOpen, label: 'Door indicator' },
     { key: 'showDoorLabel', icon: DoorOpen, label: 'Door label', indent: true },
     { key: 'showDimensions', icon: Ruler, label: 'Room dimensions' },
@@ -904,8 +902,7 @@ export const CosmosRoomPage = () => {
 
   const [settings, setSettings] = useState<Settings>({
     showGrid: false,
-    showCompass: true,
-    showCardinalLabels: true,
+    showCardinalEdges: true,
     showDoor: true,
     showDoorLabel: true,
     showDimensions: true,
@@ -1027,33 +1024,6 @@ export const CosmosRoomPage = () => {
           />
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {/* Compact compass widget — shows N direction, toggleable in Customize */}
-          {settings.showCompass && (
-            <div
-              className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-2.5 py-2 text-gray-500 dark:border-gray-700 dark:text-gray-400"
-              title={`North is ${north}`}
-            >
-              <div
-                style={{
-                  transform: `rotate(${north === 'right' ? 90 : north === 'bottom' ? 180 : north === 'left' ? 270 : 0}deg)`,
-                }}
-              >
-                <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4">
-                  <circle cx="8" cy="8" r="7.25" stroke="currentColor" strokeWidth="0.75" />
-                  <polygon points="8,1.5 9.2,8 8,6.5 6.8,8" fill="#465fff" />
-                  <polygon points="8,14.5 6.8,8 8,9.5 9.2,8" fill="currentColor" />
-                  <polygon points="1.5,8 8,6.8 6.5,8 8,9.2" fill="currentColor" opacity="0.5" />
-                  <polygon points="14.5,8 8,9.2 9.5,8 8,6.8" fill="currentColor" opacity="0.5" />
-                </svg>
-              </div>
-              {settings.showCardinalLabels && (
-                <span className="font-mono text-[10px] font-bold" style={{ color: '#465fff' }}>
-                  N
-                </span>
-              )}
-            </div>
-          )}
-
           <div className="relative">
             <Search className="absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -1163,7 +1133,64 @@ export const CosmosRoomPage = () => {
           />
         )}
 
-        {/* Compass rose removed from canvas — shown as topbar widget instead */}
+        {/* Cardinal edge labels — N/S/E/O positioned on the inner room border */}
+        {settings.showCardinalEdges &&
+          (() => {
+            // Map which label goes on which edge based on orientation
+            const labels: Record<string, string> =
+              north === 'right'
+                ? { top: 'O', right: 'N', bottom: 'E', left: 'S' }
+                : north === 'bottom'
+                  ? { top: 'S', right: 'O', bottom: 'N', left: 'E' }
+                  : north === 'left'
+                    ? { top: 'E', right: 'S', bottom: 'O', left: 'N' }
+                    : { top: 'N', right: 'E', bottom: 'S', left: 'O' };
+
+            const chip = (label: string) => (
+              <span
+                className={`inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold ${
+                  label === 'N'
+                    ? 'border-brand-300 text-brand-600 dark:border-brand-700/50 dark:text-brand-400 bg-white dark:bg-gray-900'
+                    : 'border-gray-200 bg-white text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-500'
+                }`}
+              >
+                {label}
+              </span>
+            );
+
+            return (
+              <>
+                {/* Top edge — center */}
+                <div
+                  className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
+                  style={{ top: PADDING }}
+                >
+                  {chip(labels.top)}
+                </div>
+                {/* Bottom edge */}
+                <div
+                  className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 translate-y-1/2"
+                  style={{ bottom: PADDING }}
+                >
+                  {chip(labels.bottom)}
+                </div>
+                {/* Left edge */}
+                <div
+                  className="pointer-events-none absolute top-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
+                  style={{ left: PADDING }}
+                >
+                  {chip(labels.left)}
+                </div>
+                {/* Right edge */}
+                <div
+                  className="pointer-events-none absolute top-1/2 z-20 translate-x-1/2 -translate-y-1/2"
+                  style={{ right: PADDING }}
+                >
+                  {chip(labels.right)}
+                </div>
+              </>
+            );
+          })()}
 
         {/* Dimensions */}
         {settings.showDimensions && (
