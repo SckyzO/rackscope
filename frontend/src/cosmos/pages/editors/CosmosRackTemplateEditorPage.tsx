@@ -14,8 +14,15 @@ import {
   ChevronRight,
   ShieldCheck,
 } from 'lucide-react';
+import { RackElevation } from '../../../components/RackVisualizer';
 import { api } from '../../../services/api';
-import type { RackTemplate, RackComponentTemplate, CheckDefinition } from '../../../types';
+import type {
+  RackTemplate,
+  RackComponentTemplate,
+  CheckDefinition,
+  InfrastructureComponent,
+  Rack,
+} from '../../../types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -69,6 +76,67 @@ const nextKey = (() => {
   return () => `c${++n}`;
 })();
 
+// ── Helpers: convert draft → InfrastructureComponent[] ───────────────────────
+
+const VALID_INFRA_TYPES = new Set(['power', 'cooling', 'management', 'network', 'other']);
+
+function toInfraType(t: string): InfrastructureComponent['type'] {
+  return VALID_INFRA_TYPES.has(t) ? (t as InfrastructureComponent['type']) : 'other';
+}
+
+function buildInfraComponents(
+  draft: Draft,
+  compTemplates: Record<string, RackComponentTemplate>
+): {
+  sideComps: InfrastructureComponent[];
+  frontComps: InfrastructureComponent[];
+  rearComps: InfrastructureComponent[];
+} {
+  const sideComps: InfrastructureComponent[] = [];
+  const frontComps: InfrastructureComponent[] = [];
+  const rearComps: InfrastructureComponent[] = [];
+
+  for (const c of draft.components) {
+    const tmpl = compTemplates[c.template_id];
+    if (!tmpl) continue;
+
+    if (tmpl.location === 'side') {
+      sideComps.push({
+        id: c._key,
+        name: tmpl.name,
+        type: toInfraType(tmpl.type ?? 'other'),
+        model: tmpl.model,
+        location: c.side === 'left' ? 'side-left' : 'side-right',
+        u_position: c.u_position,
+        u_height: tmpl.u_height,
+      });
+    } else if (tmpl.location === 'rear') {
+      rearComps.push({
+        id: c._key,
+        name: tmpl.name,
+        type: toInfraType(tmpl.type ?? 'other'),
+        model: tmpl.model,
+        location: 'u-mount',
+        u_position: c.u_position,
+        u_height: tmpl.u_height,
+      });
+    } else {
+      // u-mount + front → show on front face
+      frontComps.push({
+        id: c._key,
+        name: tmpl.name,
+        type: toInfraType(tmpl.type ?? 'other'),
+        model: tmpl.model,
+        location: 'u-mount',
+        u_position: c.u_position,
+        u_height: tmpl.u_height,
+      });
+    }
+  }
+
+  return { sideComps, frontComps, rearComps };
+}
+
 // ── Live rack visualization ───────────────────────────────────────────────────
 
 const RackPanel = ({
@@ -82,192 +150,42 @@ const RackPanel = ({
   compTemplates: Record<string, RackComponentTemplate>;
   face: 'front' | 'rear';
 }) => {
-  const uH = Math.max(1, draft.u_height);
-  // Dynamic U pixel height: fill ~420px per rack, min 10px, max 22px
-  // Target ~900px total rack height; min 14px/U so slots remain readable
-  const U_PX = Math.max(14, Math.min(28, Math.floor(900 / uH)));
-
-  // Components visible on this face
-  const visible = draft.components.filter((c) => {
-    const loc = compTemplates[c.template_id]?.location;
-    if (!loc) return false;
-    if (loc === 'u-mount') return true;
-    if (loc === 'side') return true;
-    if (loc === 'front') return face === 'front';
-    if (loc === 'rear') return face === 'rear';
-    return false;
-  });
-
-  // Build u-mount occupancy map
-  const occupied = useMemo(() => {
-    const map = new Map<number, { name: string; type: string; height: number; isStart: boolean }>();
-    for (const c of visible) {
-      const tmpl = compTemplates[c.template_id];
-      if (!tmpl || tmpl.location === 'side') continue;
-      const h = tmpl.u_height ?? 1;
-      if (c.u_position < 1 || c.u_position + h - 1 > uH) continue;
-      for (let i = 0; i < h; i++) {
-        map.set(c.u_position + i, {
-          name: tmpl.name,
-          type: tmpl.type ?? 'other',
-          height: h,
-          isStart: i === 0,
-        });
-      }
-    }
-    return map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft.components, compTemplates, uH, face]);
-
-  const leftSide = draft.components.filter(
-    (c) => compTemplates[c.template_id]?.location === 'side' && c.side === 'left'
-  );
-  const rightSide = draft.components.filter(
-    (c) => compTemplates[c.template_id]?.location === 'side' && c.side === 'right'
+  const previewRack = useMemo(
+    () =>
+      ({
+        id: draft.id || 'preview',
+        name: draft.name || 'Preview',
+        u_height: draft.u_height,
+        devices: [],
+      }) as Rack,
+    [draft.id, draft.name, draft.u_height]
   );
 
-  const RAIL = 16; // px for side rail
+  const { sideComps, frontComps, rearComps } = useMemo(
+    () => buildInfraComponents(draft, compTemplates),
+    [draft, compTemplates]
+  );
+
+  const infraComps = face === 'front' ? frontComps : rearComps;
+  const isRear = face === 'rear';
 
   return (
     <div>
-      {/* Face label */}
-      <div className="mb-2 text-center">
-        <span className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
-          {label}
-        </span>
-      </div>
-
-      <div className="flex items-stretch gap-1">
-        {/* Left rail */}
-        <div
-          className="shrink-0 overflow-hidden rounded-l-sm"
-          style={{
-            width: RAIL,
-            backgroundColor:
-              leftSide.length > 0
-                ? `${TYPE_COLOR[compTemplates[leftSide[0]?.template_id]?.type ?? 'other']}33`
-                : '#111827',
-            borderLeft: `3px solid ${leftSide.length > 0 ? TYPE_COLOR[compTemplates[leftSide[0]?.template_id]?.type ?? 'other'] : '#1f2937'}`,
-          }}
-        >
-          {leftSide.map((c) => {
-            const t = compTemplates[c.template_id];
-            const color = TYPE_COLOR[t?.type ?? 'other'];
-            return (
-              <div
-                key={c._key}
-                title={t?.name}
-                style={{ backgroundColor: color, opacity: 0.7, height: '100%' }}
-              />
-            );
-          })}
-        </div>
-
-        {/* Rack body */}
-        <div className="min-w-0 flex-1 overflow-hidden rounded-sm border border-gray-700 bg-gray-950">
-          {/* Top cap */}
-          <div className="h-2 border-b border-gray-700 bg-gray-900" />
-
-          {/* U slots — U1 at bottom (standard datacenter convention) */}
-          {Array.from({ length: uH }).map((_, i) => {
-            const u = uH - i; // top row = highest U number, bottom = U1
-            const slot = occupied.get(u);
-
-            return (
-              <div
-                key={u}
-                className="flex items-stretch border-b border-gray-800/50"
-                style={{ height: U_PX }}
-              >
-                {/* U number */}
-                <div
-                  className="flex w-5 shrink-0 items-center justify-end pr-0.5 font-mono text-gray-700 select-none"
-                  style={{ fontSize: Math.max(6, U_PX * 0.45) }}
-                >
-                  {u}
-                </div>
-
-                {/* Slot */}
-                <div className="flex min-w-0 flex-1 items-center px-0.5">
-                  {slot ? (
-                    <div
-                      className="flex h-full w-full items-center overflow-hidden rounded-sm px-1"
-                      style={{
-                        backgroundColor: `${TYPE_COLOR[slot.type]}18`,
-                        borderLeft: `2px solid ${TYPE_COLOR[slot.type]}`,
-                      }}
-                    >
-                      {slot.isStart && (
-                        <span
-                          className="truncate font-mono"
-                          style={{
-                            fontSize: Math.max(6, U_PX * 0.44),
-                            color: TYPE_COLOR[slot.type],
-                          }}
-                        >
-                          {slot.name}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="h-full w-full rounded-sm bg-gray-900/50" />
-                  )}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Bottom cap */}
-          <div className="h-2 border-t border-gray-700 bg-gray-900" />
-        </div>
-
-        {/* Right rail */}
-        <div
-          className="shrink-0 overflow-hidden rounded-r-sm"
-          style={{
-            width: RAIL,
-            backgroundColor:
-              rightSide.length > 0
-                ? `${TYPE_COLOR[compTemplates[rightSide[0]?.template_id]?.type ?? 'other']}33`
-                : '#111827',
-            borderRight: `3px solid ${rightSide.length > 0 ? TYPE_COLOR[compTemplates[rightSide[0]?.template_id]?.type ?? 'other'] : '#1f2937'}`,
-          }}
-        >
-          {rightSide.map((c) => {
-            const t = compTemplates[c.template_id];
-            const color = TYPE_COLOR[t?.type ?? 'other'];
-            return (
-              <div
-                key={c._key}
-                title={t?.name}
-                style={{ backgroundColor: color, opacity: 0.7, height: '100%' }}
-              />
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Component legend */}
-      {visible.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-          {Array.from(
-            new Map(
-              visible
-                .map((c) => compTemplates[c.template_id])
-                .filter(Boolean)
-                .map((t) => [t.id, t])
-            ).values()
-          ).map((t) => (
-            <div key={t.id} className="flex items-center gap-1 text-[10px] text-gray-500">
-              <span
-                className="h-2 w-2 shrink-0 rounded-sm"
-                style={{ backgroundColor: TYPE_COLOR[t.type ?? 'other'] }}
-              />
-              {t.name}
-            </div>
-          ))}
-        </div>
-      )}
+      <p className="mb-2 text-center text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
+        {label}
+      </p>
+      <RackElevation
+        rack={previewRack}
+        catalog={{}}
+        health={undefined}
+        nodesData={{}}
+        isRearView={isRear}
+        infraComponents={infraComps}
+        sideComponents={sideComps}
+        allowInfraOverlap={isRear}
+        pduMetrics={undefined}
+        onDeviceClick={() => {}}
+      />
     </div>
   );
 };
