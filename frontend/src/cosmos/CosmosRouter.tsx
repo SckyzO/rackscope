@@ -69,10 +69,7 @@ import { CosmosRoomPageV9 } from './pages/views/CosmosRoomPageV9';
 import { CosmosRoomPageV10 } from './pages/views/CosmosRoomPageV10';
 
 import { CosmosDevicePage } from './pages/views/CosmosDevicePage';
-import { CosmosRackV1 } from './pages/views/CosmosRackV1';
-import { CosmosRackV2 } from './pages/views/CosmosRackV2';
-import { CosmosRackV3 } from './pages/views/CosmosRackV3';
-import { CosmosRackV4 } from './pages/views/CosmosRackV4';
+import { CosmosRackV2 as CosmosRackView } from './pages/views/CosmosRackV2';
 
 // Rackscope-specific
 import { HealthStatusPage } from './pages/rackscope/HealthStatusPage';
@@ -206,11 +203,7 @@ const CosmosRoutes = () => (
       <Route path="views/room-v8/:roomId" element={<CosmosRoomPageV8 />} />
       <Route path="views/room-v9/:roomId" element={<CosmosRoomPageV9 />} />
       <Route path="views/room-v10/:roomId" element={<CosmosRoomPageV10 />} />
-      <Route path="views/rack/:rackId" element={<CosmosRackV2 />} />
-      <Route path="views/rack-v1/:rackId" element={<CosmosRackV1 />} />
-      <Route path="views/rack-v2/:rackId" element={<CosmosRackV2 />} />
-      <Route path="views/rack-v3/:rackId" element={<CosmosRackV3 />} />
-      <Route path="views/rack-v4/:rackId" element={<CosmosRackV4 />} />
+      <Route path="views/rack/:rackId" element={<CosmosRackView />} />
       <Route path="views/device/:rackId/:deviceId" element={<CosmosDevicePage />} />
 
       {/* Rackscope UI Components */}
