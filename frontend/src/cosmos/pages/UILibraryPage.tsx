@@ -234,6 +234,51 @@ const CATEGORIES: CategorySection[] = [
     ],
   },
   {
+    id: 'monitoring',
+    title: 'Monitoring Views',
+    color: '#3b82f6',
+    items: [
+      {
+        name: 'World Map',
+        description: 'Site overview with geo markers',
+        route: '/cosmos/views/worldmap',
+      },
+      {
+        name: 'Room View',
+        description: 'Floor plan with rack health grid',
+        route: '/cosmos/views/room/room-a',
+      },
+      {
+        name: 'Rack View',
+        description: 'Front + rear elevation, device list',
+        route: '/cosmos/views/rack/r01-01',
+      },
+      {
+        name: 'Device View',
+        description: 'Device detail with metrics and checks',
+        route: '/cosmos/views/device/r01-01/r01-01-c01',
+      },
+      {
+        name: 'Room — Alt A',
+        description: 'Room layout variant — rack list + detail panel',
+        route: '/cosmos/views/room-v2/room-a',
+        tag: 'v2',
+      },
+      {
+        name: 'Room — Alt B',
+        description: 'Room with compact rack grid layout',
+        route: '/cosmos/views/room-v10/room-a',
+        tag: 'v10',
+      },
+      {
+        name: 'Rack — Alt',
+        description: 'Rack view with U-slot list layout',
+        route: '/cosmos/views/rack-v4/r01-01',
+        tag: 'v4',
+      },
+    ],
+  },
+  {
     id: 'examples',
     title: 'Examples',
     color: '#0ea5e9',
