@@ -225,6 +225,7 @@ interface AisleBandProps {
   onBadgeClick: (state: string) => void;
   collapsed: boolean;
   onToggleCollapse: () => void;
+  rackAlign: 'left' | 'right';
 }
 
 const AisleBand = ({
@@ -238,6 +239,7 @@ const AisleBand = ({
   onBadgeClick,
   collapsed,
   onToggleCollapse,
+  rackAlign,
 }: AisleBandProps) => {
   const critCount = aisle.racks.filter((r) => rackStates[r.id] === 'CRIT').length;
   const warnCount = aisle.racks.filter((r) => rackStates[r.id] === 'WARN').length;
@@ -289,7 +291,9 @@ const AisleBand = ({
       </div>
 
       {!collapsed && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div
+          className={`mt-3 flex flex-wrap gap-2 ${rackAlign === 'right' ? 'justify-end' : 'justify-start'}`}
+        >
           {aisle.racks.map((rack) => {
             const state = rackStates[rack.id] ?? 'UNKNOWN';
             const isHighlighted = highlight ? state === highlight : null;
@@ -435,6 +439,8 @@ interface Settings {
   showRackLabels: boolean;
   showLegend: boolean;
   sortBySeverity: boolean;
+  rackAlign: 'left' | 'right';
+  aisleAlign: 'top' | 'bottom';
   hiddenAisles: Set<string>;
 }
 
@@ -521,6 +527,50 @@ const CustomizePanel = ({
             </div>
           </div>
 
+          {/* Rack alignment */}
+          <div>
+            <p className="mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+              Rack Alignment
+            </p>
+            <div className="inline-flex overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+              {(['left', 'right'] as const).map((val) => (
+                <button
+                  key={val}
+                  onClick={() => setSettings({ ...settings, rackAlign: val })}
+                  className={`px-4 py-1.5 text-xs font-medium capitalize transition-colors ${
+                    settings.rackAlign === val
+                      ? 'bg-brand-500 text-white'
+                      : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5'
+                  }`}
+                >
+                  {val}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Aisle alignment */}
+          <div>
+            <p className="mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+              Aisle Alignment
+            </p>
+            <div className="inline-flex overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+              {(['top', 'bottom'] as const).map((val) => (
+                <button
+                  key={val}
+                  onClick={() => setSettings({ ...settings, aisleAlign: val })}
+                  className={`px-4 py-1.5 text-xs font-medium capitalize transition-colors ${
+                    settings.aisleAlign === val
+                      ? 'bg-brand-500 text-white'
+                      : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5'
+                  }`}
+                >
+                  {val}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {aisles.length > 0 && (
             <div>
               <div className="mb-2 flex items-center justify-between">
@@ -597,6 +647,8 @@ export const CosmosRoomPage = () => {
     showRackLabels: false,
     showLegend: true,
     sortBySeverity: false,
+    rackAlign: 'left',
+    aisleAlign: 'top',
     hiddenAisles: new Set(),
   });
 
@@ -824,7 +876,9 @@ export const CosmosRoomPage = () => {
         )}
 
         {/* Aisles content */}
-        <div className="relative z-10 flex h-full flex-col justify-center gap-3 overflow-y-auto p-8">
+        <div
+          className={`relative z-10 flex h-full flex-col gap-3 overflow-y-auto p-8 ${settings.aisleAlign === 'bottom' ? 'justify-end' : 'justify-start'}`}
+        >
           {sortedAisles.map((aisle) => (
             <AisleBand
               key={aisle.id}
@@ -837,6 +891,7 @@ export const CosmosRoomPage = () => {
               onRackClick={handleRackClick}
               onBadgeClick={handleBadgeClick}
               collapsed={collapsedAisles.has(aisle.id)}
+              rackAlign={settings.rackAlign}
               onToggleCollapse={() => {
                 setCollapsedAisles((prev) => {
                   const next = new Set(prev);
