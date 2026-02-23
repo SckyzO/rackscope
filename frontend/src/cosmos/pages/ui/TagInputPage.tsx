@@ -1,5 +1,6 @@
 import { useState, useRef, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -27,6 +28,7 @@ const TAG_COLORS = [
 ];
 
 export const TagInputPage = () => {
+  usePageTitle('Tag Input');
   const [basic, setBasic] = useState(['React', 'TypeScript']);
   const [input1, setInput1] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);

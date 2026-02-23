@@ -1,3 +1,4 @@
+import { usePageTitle } from '../../contexts/PageTitleContext';
 const SectionCard = ({
   title,
   desc,
@@ -46,62 +47,65 @@ const Tooltip = ({ pos, color, label }: { pos: Pos; color: Color; label: string 
   </div>
 );
 
-export const TooltipsPage = () => (
-  <div className="space-y-6">
-    <div>
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">Tooltips</h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Informational text appearing on hover
-      </p>
-    </div>
-    <div className="grid gap-6 lg:grid-cols-2">
-      <SectionCard title="Default (Dark)" desc="Hover to show tooltip in each position">
-        <div className="flex flex-wrap gap-8 pt-4 pb-4">
-          {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
-            <Tooltip key={pos} pos={pos} color="dark" label={`Tooltip ${pos}`} />
-          ))}
-        </div>
-      </SectionCard>
-      <SectionCard title="Brand Color" desc="Brand-colored tooltips in all positions">
-        <div className="flex flex-wrap gap-8 pt-4 pb-4">
-          {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
-            <Tooltip key={pos} pos={pos} color="brand" label={`Tooltip ${pos}`} />
-          ))}
-        </div>
-      </SectionCard>
-      <SectionCard title="White Tooltip" desc="Light background with border and shadow">
-        <div className="flex flex-wrap gap-8 pt-4 pb-4">
-          {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
-            <Tooltip key={pos} pos={pos} color="white" label={`Tooltip ${pos}`} />
-          ))}
-        </div>
-      </SectionCard>
-      <SectionCard title="With Rich Content" desc="Tooltips containing formatted text">
-        <div className="flex flex-wrap gap-8 pt-4 pb-4">
-          <div className="group relative inline-flex">
-            <button className="bg-brand-500 hover:bg-brand-600 rounded-lg px-3 py-1.5 text-xs font-medium text-white">
-              Hover me
-            </button>
-            <div className="pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-2 w-48 -translate-x-1/2 rounded-xl bg-gray-900 p-3 group-hover:visible dark:bg-gray-700">
-              <p className="text-xs font-semibold text-white">Information</p>
-              <p className="mt-1 text-xs text-gray-300">
-                This tooltip contains multiple lines of text for context.
-              </p>
-            </div>
+export const TooltipsPage = () => {
+  usePageTitle('Tooltips');
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Tooltips</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Informational text appearing on hover
+        </p>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title="Default (Dark)" desc="Hover to show tooltip in each position">
+          <div className="flex flex-wrap gap-8 pt-4 pb-4">
+            {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
+              <Tooltip key={pos} pos={pos} color="dark" label={`Tooltip ${pos}`} />
+            ))}
           </div>
-          <div className="group relative inline-flex">
-            <button className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300">
-              With Status
-            </button>
-            <div className="bg-success-500 pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg px-3 py-1.5 group-hover:visible">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-white">
-                <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                Status: Online
+        </SectionCard>
+        <SectionCard title="Brand Color" desc="Brand-colored tooltips in all positions">
+          <div className="flex flex-wrap gap-8 pt-4 pb-4">
+            {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
+              <Tooltip key={pos} pos={pos} color="brand" label={`Tooltip ${pos}`} />
+            ))}
+          </div>
+        </SectionCard>
+        <SectionCard title="White Tooltip" desc="Light background with border and shadow">
+          <div className="flex flex-wrap gap-8 pt-4 pb-4">
+            {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
+              <Tooltip key={pos} pos={pos} color="white" label={`Tooltip ${pos}`} />
+            ))}
+          </div>
+        </SectionCard>
+        <SectionCard title="With Rich Content" desc="Tooltips containing formatted text">
+          <div className="flex flex-wrap gap-8 pt-4 pb-4">
+            <div className="group relative inline-flex">
+              <button className="bg-brand-500 hover:bg-brand-600 rounded-lg px-3 py-1.5 text-xs font-medium text-white">
+                Hover me
+              </button>
+              <div className="pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-2 w-48 -translate-x-1/2 rounded-xl bg-gray-900 p-3 group-hover:visible dark:bg-gray-700">
+                <p className="text-xs font-semibold text-white">Information</p>
+                <p className="mt-1 text-xs text-gray-300">
+                  This tooltip contains multiple lines of text for context.
+                </p>
+              </div>
+            </div>
+            <div className="group relative inline-flex">
+              <button className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300">
+                With Status
+              </button>
+              <div className="bg-success-500 pointer-events-none invisible absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 rounded-lg px-3 py-1.5 group-hover:visible">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-white">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                  Status: Online
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </SectionCard>
+        </SectionCard>
+      </div>
     </div>
-  </div>
-);
+  );
+};

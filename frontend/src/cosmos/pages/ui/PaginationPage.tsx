@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -67,6 +68,7 @@ const NavBtn = ({
 );
 
 export const PaginationPage = () => {
+  usePageTitle('Pagination');
   const [p1, sp1] = useState(1);
   const [p2, sp2] = useState(1);
   const [p3, sp3] = useState(1);

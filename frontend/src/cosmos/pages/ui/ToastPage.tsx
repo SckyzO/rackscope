@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { CheckCircle, Info, AlertTriangle, XCircle, X } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -72,6 +73,7 @@ const posClass: Record<ToastPos, string> = {
 let nextId = 1;
 
 export const ToastPage = () => {
+  usePageTitle('Toast');
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [position, setPosition] = useState<ToastPos>('top-right');
 

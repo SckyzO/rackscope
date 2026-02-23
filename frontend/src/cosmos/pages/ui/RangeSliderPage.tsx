@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -23,6 +24,7 @@ const trackStyle = (val: number, color = '#465fff') => ({
 });
 
 export const RangeSliderPage = () => {
+  usePageTitle('Range Slider');
   const [basic, setBasic] = useState(50);
   const [rMin, setRMin] = useState(20);
   const [rMax, setRMax] = useState(80);

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const slides = [
   { bg: 'from-brand-500 to-brand-700', label: 'Slide 1 — Brand' },
@@ -47,6 +48,7 @@ const Slide = ({ idx }: { idx: number }) => (
 );
 
 export const CarouselPage = () => {
+  usePageTitle('Carousel');
   const c1 = useCarousel(true);
   const c2 = useCarousel(false);
   const c3 = useCarousel(false);

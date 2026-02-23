@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { MapPin, Link as LinkIcon, Twitter, Github } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 type Pos = 'top' | 'right' | 'bottom' | 'left';
 type Trigger = 'default' | 'button' | 'link';
@@ -137,39 +138,42 @@ const SectionCard = ({
   </div>
 );
 
-export const PopoversPage = () => (
-  <div className="space-y-6">
-    <div>
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">Popovers</h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Rich contextual overlays with profile card content
-      </p>
+export const PopoversPage = () => {
+  usePageTitle('Popovers');
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Popovers</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Rich contextual overlays with profile card content
+        </p>
+      </div>
+      <div className="grid gap-6">
+        <SectionCard
+          title="Default Popover"
+          desc="Click any button to reveal the profile card — 4 positions"
+        >
+          <div className="flex flex-wrap items-center gap-6 py-4">
+            {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
+              <Pop key={pos} pos={pos} trigger="default" />
+            ))}
+          </div>
+        </SectionCard>
+        <SectionCard title="Popover with Button" desc="Primary brand button triggers">
+          <div className="flex flex-wrap items-center gap-6 py-4">
+            {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
+              <Pop key={pos} pos={pos} trigger="button" />
+            ))}
+          </div>
+        </SectionCard>
+        <SectionCard title="Popover with Link" desc="Text link triggers">
+          <div className="flex flex-wrap items-center gap-6 py-4">
+            {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
+              <Pop key={pos} pos={pos} trigger="link" />
+            ))}
+          </div>
+        </SectionCard>
+      </div>
     </div>
-    <div className="grid gap-6">
-      <SectionCard
-        title="Default Popover"
-        desc="Click any button to reveal the profile card — 4 positions"
-      >
-        <div className="flex flex-wrap items-center gap-6 py-4">
-          {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
-            <Pop key={pos} pos={pos} trigger="default" />
-          ))}
-        </div>
-      </SectionCard>
-      <SectionCard title="Popover with Button" desc="Primary brand button triggers">
-        <div className="flex flex-wrap items-center gap-6 py-4">
-          {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
-            <Pop key={pos} pos={pos} trigger="button" />
-          ))}
-        </div>
-      </SectionCard>
-      <SectionCard title="Popover with Link" desc="Text link triggers">
-        <div className="flex flex-wrap items-center gap-6 py-4">
-          {(['top', 'right', 'bottom', 'left'] as Pos[]).map((pos) => (
-            <Pop key={pos} pos={pos} trigger="link" />
-          ))}
-        </div>
-      </SectionCard>
-    </div>
-  </div>
-);
+  );
+};

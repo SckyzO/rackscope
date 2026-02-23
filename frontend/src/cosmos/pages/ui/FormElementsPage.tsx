@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Phone, Link as LinkIcon, Upload } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -33,6 +34,7 @@ const inputError = `${inputBase} border-error-500 bg-white text-gray-900 placeho
 const inputSuccess = `${inputBase} border-success-500 bg-white text-gray-900 placeholder-gray-400 focus:border-success-500 dark:bg-gray-800 dark:text-white`;
 
 export const FormElementsPage = () => {
+  usePageTitle('Form Elements');
   const [showPass, setShowPass] = useState(false);
   const [checks, setChecks] = useState<Record<string, boolean>>({ a: true, b: false, c: false });
   const [radio, setRadio] = useState('opt1');

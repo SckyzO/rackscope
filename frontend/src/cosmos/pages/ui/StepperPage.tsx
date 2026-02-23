@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -62,6 +63,7 @@ const ConnectorV = ({ state }: { state: string }) => (
 );
 
 export const StepperPage = () => {
+  usePageTitle('Stepper');
   const current = 1; // Profile is active
 
   return (

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, Info, AlertTriangle, XCircle, X } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -63,6 +64,7 @@ const alerts = [
 ];
 
 export const AlertsPage = () => {
+  usePageTitle('Alerts');
   const [dismissed, setDismissed] = useState<string[]>([]);
 
   return (

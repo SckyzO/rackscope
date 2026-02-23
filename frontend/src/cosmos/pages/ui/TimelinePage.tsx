@@ -1,3 +1,4 @@
+import { usePageTitle } from '../../contexts/PageTitleContext';
 const SectionCard = ({
   title,
   desc,
@@ -64,101 +65,106 @@ const events = [
   },
 ];
 
-export const TimelinePage = () => (
-  <div className="space-y-6">
-    <div>
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">Timeline</h2>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Activity feeds and chronological event display
-      </p>
-    </div>
-    <div className="grid gap-6 lg:grid-cols-2">
-      <SectionCard title="Basic Timeline" desc="Events with colored dots and timestamps">
-        <div className="relative space-y-0">
-          <div className="absolute top-2 left-3.5 h-[calc(100%-16px)] w-0.5 bg-gray-200 dark:bg-gray-800" />
-          {events.map((ev, i) => (
-            <div key={i} className="relative flex gap-4 pb-6 last:pb-0">
-              <div className="relative z-10 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-white bg-white dark:border-gray-900 dark:bg-gray-900">
-                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: ev.color }} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{ev.title}</p>
-                  <span className="shrink-0 text-xs text-gray-400">{ev.time}</span>
-                </div>
-                <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{ev.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-      <SectionCard title="Timeline with Avatars" desc="Events with user avatar and name">
-        <div className="relative space-y-0">
-          <div className="absolute top-2 left-4 h-[calc(100%-16px)] w-0.5 bg-gray-200 dark:bg-gray-800" />
-          {events.map((ev, i) => (
-            <div key={i} className="relative flex gap-4 pb-6 last:pb-0">
-              <div
-                className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${ev.uColor}`}
-              >
-                {ev.initials}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{ev.user}</p>
-                  <span className="shrink-0 text-xs text-gray-400">{ev.time}</span>
-                </div>
-                <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{ev.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </SectionCard>
-      <SectionCard title="Compact Timeline" desc="Minimal horizontal dot timeline">
-        <div className="relative">
-          <div className="absolute top-3.5 right-0 left-0 h-0.5 bg-gray-200 dark:bg-gray-800" />
-          <div className="relative flex justify-between">
+export const TimelinePage = () => {
+  usePageTitle('Timeline');
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Timeline</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Activity feeds and chronological event display
+        </p>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard title="Basic Timeline" desc="Events with colored dots and timestamps">
+          <div className="relative space-y-0">
+            <div className="absolute top-2 left-3.5 h-[calc(100%-16px)] w-0.5 bg-gray-200 dark:bg-gray-800" />
             {events.map((ev, i) => (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <div
-                  className="relative z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white dark:border-gray-900"
-                  style={{ backgroundColor: ev.color }}
-                >
-                  <span className="text-[9px] font-bold text-white">{i + 1}</span>
+              <div key={i} className="relative flex gap-4 pb-6 last:pb-0">
+                <div className="relative z-10 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-white bg-white dark:border-gray-900 dark:bg-gray-900">
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: ev.color }} />
                 </div>
-                <span className="max-w-[60px] text-center text-[10px] leading-tight text-gray-500 dark:text-gray-400">
-                  {ev.time.split(' ').slice(0, 2).join(' ')}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {ev.title}
+                    </p>
+                    <span className="shrink-0 text-xs text-gray-400">{ev.time}</span>
+                  </div>
+                  <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{ev.desc}</p>
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      </SectionCard>
-      <SectionCard title="Card Timeline" desc="Events as bordered cards">
-        <div className="space-y-3">
-          {events.slice(0, 3).map((ev, i) => (
-            <div
-              key={i}
-              className="flex gap-3 rounded-xl border border-gray-200 p-3 dark:border-gray-800"
-              style={{ borderLeftWidth: 3, borderLeftColor: ev.color }}
-            >
-              <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${ev.uColor}`}
-              >
-                {ev.initials}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {ev.title}
-                  </span>
-                  <span className="text-xs text-gray-400">{ev.time}</span>
+        </SectionCard>
+        <SectionCard title="Timeline with Avatars" desc="Events with user avatar and name">
+          <div className="relative space-y-0">
+            <div className="absolute top-2 left-4 h-[calc(100%-16px)] w-0.5 bg-gray-200 dark:bg-gray-800" />
+            {events.map((ev, i) => (
+              <div key={i} className="relative flex gap-4 pb-6 last:pb-0">
+                <div
+                  className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${ev.uColor}`}
+                >
+                  {ev.initials}
                 </div>
-                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{ev.desc}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{ev.user}</p>
+                    <span className="shrink-0 text-xs text-gray-400">{ev.time}</span>
+                  </div>
+                  <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{ev.desc}</p>
+                </div>
               </div>
+            ))}
+          </div>
+        </SectionCard>
+        <SectionCard title="Compact Timeline" desc="Minimal horizontal dot timeline">
+          <div className="relative">
+            <div className="absolute top-3.5 right-0 left-0 h-0.5 bg-gray-200 dark:bg-gray-800" />
+            <div className="relative flex justify-between">
+              {events.map((ev, i) => (
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <div
+                    className="relative z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white dark:border-gray-900"
+                    style={{ backgroundColor: ev.color }}
+                  >
+                    <span className="text-[9px] font-bold text-white">{i + 1}</span>
+                  </div>
+                  <span className="max-w-[60px] text-center text-[10px] leading-tight text-gray-500 dark:text-gray-400">
+                    {ev.time.split(' ').slice(0, 2).join(' ')}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </SectionCard>
+          </div>
+        </SectionCard>
+        <SectionCard title="Card Timeline" desc="Events as bordered cards">
+          <div className="space-y-3">
+            {events.slice(0, 3).map((ev, i) => (
+              <div
+                key={i}
+                className="flex gap-3 rounded-xl border border-gray-200 p-3 dark:border-gray-800"
+                style={{ borderLeftWidth: 3, borderLeftColor: ev.color }}
+              >
+                <div
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${ev.uColor}`}
+                >
+                  {ev.initials}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {ev.title}
+                    </span>
+                    <span className="text-xs text-gray-400">{ev.time}</span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{ev.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      </div>
     </div>
-  </div>
-);
+  );
+};

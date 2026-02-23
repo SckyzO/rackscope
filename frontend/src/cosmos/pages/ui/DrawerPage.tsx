@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -26,6 +27,7 @@ const Overlay = ({ onClick }: { onClick: () => void }) => (
 );
 
 export const DrawerPage = () => {
+  usePageTitle('Drawer');
   const [open, setOpen] = useState<DrawerType>(null);
 
   return (

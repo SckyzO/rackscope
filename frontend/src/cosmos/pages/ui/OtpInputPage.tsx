@@ -1,5 +1,6 @@
 import { useState, useRef, type KeyboardEvent, type ChangeEvent } from 'react';
 import { Check, Loader2 } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -130,6 +131,7 @@ const ErrorOTP = () => {
 };
 
 export const OtpInputPage = () => {
+  usePageTitle('OTP Input');
   const [otp4, setOtp4] = useState('');
   const [otp6, setOtp6] = useState('');
   return (

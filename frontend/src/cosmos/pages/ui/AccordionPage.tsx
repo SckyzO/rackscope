@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, CheckCircle, Settings, Bell, User } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -78,6 +79,7 @@ const iconsItems = [
 ];
 
 export const AccordionPage = () => {
+  usePageTitle('Accordion');
   const [open1, setOpen1] = useState<string | null>('a1');
   const [open2, setOpen2] = useState<string[]>(['a1', 'a3']);
   const [openIcons, setOpenIcons] = useState<string | null>(null);

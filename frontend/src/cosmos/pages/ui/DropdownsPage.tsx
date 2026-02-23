@@ -9,6 +9,7 @@ import {
   Trash2,
   Copy,
 } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -54,6 +55,7 @@ const Item = ({
 const Divider = () => <hr className="my-1 border-gray-100 dark:border-gray-800" />;
 
 export const DropdownsPage = () => {
+  usePageTitle('Dropdowns');
   const [open, setOpen] = useState<string | null>(null);
   const toggle = (id: string) => setOpen((o) => (o === id ? null : id));
 

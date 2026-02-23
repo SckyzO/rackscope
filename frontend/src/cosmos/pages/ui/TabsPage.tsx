@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BarChart2, Bell, Users, Globe } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -31,6 +32,7 @@ const icons = [BarChart2, Bell, Users, Globe];
 const badges = [null, 8, null, 4];
 
 export const TabsPage = () => {
+  usePageTitle('Tabs');
   const [t1, st1] = useState(0);
   const [t2, st2] = useState(0);
   const [t3, st3] = useState(0);

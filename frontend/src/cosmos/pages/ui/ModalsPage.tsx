@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, CheckCircle, Info, AlertTriangle, XCircle } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 const SectionCard = ({
   title,
@@ -20,6 +21,7 @@ const SectionCard = ({
 );
 
 export const ModalsPage = () => {
+  usePageTitle('Modals');
   const [open, setOpen] = useState<string | null>(null);
   const close = () => setOpen(null);
 
