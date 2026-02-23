@@ -18,7 +18,15 @@
  */
 
 import type { ReactNode } from 'react';
-import { Plus, RefreshCw, SlidersHorizontal, AlertCircle, InboxIcon } from 'lucide-react';
+import {
+  Plus,
+  RefreshCw,
+  SlidersHorizontal,
+  AlertCircle,
+  InboxIcon,
+  ChevronRight,
+  Server,
+} from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 
 // ── Shared sub-components ─────────────────────────────────────────────────────
@@ -137,6 +145,107 @@ export const ErrorState = ({
   </div>
 );
 
+// ── List / row patterns ───────────────────────────────────────────────────────
+//
+// Three patterns used throughout the app:
+//
+//  SimpleRow   — label + value on one line (key-value pairs, metadata)
+//  ClickableRow — full-width button row with icon + title + subtitle + chevron
+//  StatusRow   — same but with a colored status badge on the right
+//
+// All rows are used inside a SectionCard with divide-y for separators.
+
+/** Key-value row — use for metadata / properties */
+export const SimpleRow = ({
+  label,
+  value,
+  mono = false,
+}: {
+  label: string;
+  value: ReactNode;
+  mono?: boolean;
+}) => (
+  <div className="flex items-center justify-between py-2.5">
+    <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+    <span
+      className={`text-sm font-medium text-gray-800 dark:text-gray-200 ${mono ? 'font-mono text-xs' : ''}`}
+    >
+      {value}
+    </span>
+  </div>
+);
+
+/** Clickable row — use for navigable lists (racks, rooms, devices…) */
+export const ClickableRow = ({
+  icon: Icon,
+  title,
+  subtitle,
+  onClick,
+}: {
+  icon?: React.ElementType;
+  title: string;
+  subtitle?: string;
+  onClick?: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className="flex w-full items-center gap-3 px-1 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+  >
+    {Icon && (
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-400 dark:bg-gray-800">
+        <Icon className="h-4 w-4" />
+      </div>
+    )}
+    <div className="min-w-0 flex-1">
+      <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">{title}</p>
+      {subtitle && <p className="truncate text-xs text-gray-400 dark:text-gray-500">{subtitle}</p>}
+    </div>
+    <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-700" />
+  </button>
+);
+
+const STATUS_PILL: Record<string, string> = {
+  OK: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400',
+  WARN: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+  CRIT: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
+  UNKNOWN: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+};
+
+/** Status row — same as ClickableRow but with a health badge */
+export const StatusRow = ({
+  icon: Icon,
+  title,
+  subtitle,
+  status,
+  onClick,
+}: {
+  icon?: React.ElementType;
+  title: string;
+  subtitle?: string;
+  status: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
+  onClick?: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className="flex w-full items-center gap-3 px-1 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+  >
+    {Icon && (
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-400 dark:bg-gray-800">
+        <Icon className="h-4 w-4" />
+      </div>
+    )}
+    <div className="min-w-0 flex-1">
+      <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">{title}</p>
+      {subtitle && <p className="truncate text-xs text-gray-400 dark:text-gray-500">{subtitle}</p>}
+    </div>
+    <span
+      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${STATUS_PILL[status] ?? STATUS_PILL.UNKNOWN}`}
+    >
+      {status}
+    </span>
+  </button>
+);
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export const EmptyPage = () => {
@@ -212,6 +321,42 @@ export const EmptyPage = () => {
             <ErrorState message="Failed to load data." onRetry={() => {}} />
           </SectionCard>
         </div>
+      </div>
+
+      {/* ── List patterns ── */}
+      <div className="space-y-2">
+        <LayoutLabel>List — SimpleRow (key / value)</LayoutLabel>
+        <SectionCard title="Metadata">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            <SimpleRow label="ID" value="rack-01-a" mono />
+            <SimpleRow label="Height" value="42U" />
+            <SimpleRow label="Template" value="Standard Air Cooled" />
+            <SimpleRow label="Devices" value={14} />
+          </div>
+        </SectionCard>
+      </div>
+
+      <div className="space-y-2">
+        <LayoutLabel>List — ClickableRow (navigable)</LayoutLabel>
+        <SectionCard title="Racks">
+          <div className="-mx-1 divide-y divide-gray-100 dark:divide-gray-800">
+            <ClickableRow icon={Server} title="Rack 01-A" subtitle="Room A · Aisle 1" />
+            <ClickableRow icon={Server} title="Rack 01-B" subtitle="Room A · Aisle 1" />
+            <ClickableRow icon={Server} title="Rack 02-A" subtitle="Room A · Aisle 2" />
+          </div>
+        </SectionCard>
+      </div>
+
+      <div className="space-y-2">
+        <LayoutLabel>List — StatusRow (with health badge)</LayoutLabel>
+        <SectionCard title="Infrastructure">
+          <div className="-mx-1 divide-y divide-gray-100 dark:divide-gray-800">
+            <StatusRow icon={Server} title="Rack 01-A" subtitle="Room A" status="OK" />
+            <StatusRow icon={Server} title="Rack 01-B" subtitle="Room A" status="WARN" />
+            <StatusRow icon={Server} title="Rack 02-A" subtitle="Room A" status="CRIT" />
+            <StatusRow icon={Server} title="Rack 02-B" subtitle="Room A" status="UNKNOWN" />
+          </div>
+        </SectionCard>
       </div>
 
       {/* ── 1 Column ── */}
