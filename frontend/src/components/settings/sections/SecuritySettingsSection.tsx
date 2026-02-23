@@ -19,16 +19,16 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
         </p>
       </div>
 
-      {/* Password warning */}
+      {/* No password yet — remind but don't block */}
       {!hasPassword && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-700/40 dark:bg-amber-500/10">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-          <p className="text-sm text-amber-700 dark:text-amber-400">
-            No password set. Go to{' '}
+        <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-700/40 dark:bg-blue-500/10">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+          <p className="text-sm text-blue-700 dark:text-blue-400">
+            No password set yet. Set one in{' '}
             <a href="/cosmos/profile" className="font-semibold underline">
-              Profile &rarr; Security
+              Profile → Change Password
             </a>{' '}
-            to set a password before enabling authentication.
+            — then come back here to enable authentication.
           </p>
         </div>
       )}

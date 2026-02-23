@@ -40,7 +40,7 @@ const StatusBanner = ({ status, error }: { status: FormStatus; error?: string })
 };
 
 const ChangeUsernameForm = () => {
-  const { user, authEnabled, refreshStatus } = useAuth();
+  const { user, authConfigured, refreshStatus } = useAuth();
   const [newUsername, setNewUsername] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState<FormStatus>('idle');
@@ -63,25 +63,13 @@ const ChangeUsernameForm = () => {
     }
   };
 
-  if (!authEnabled) {
-    return (
-      <p className="text-sm text-gray-400">
-        Authentication is not enabled. Enable it in{' '}
-        <a href="/cosmos/settings#security" className="text-brand-500 hover:underline">
-          Settings &rarr; Security
-        </a>
-        .
-      </p>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
         <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
           Current username:{' '}
           <span className="font-mono font-semibold text-gray-800 dark:text-gray-200">
-            {user?.username ?? '\u2014'}
+            {user?.username ?? 'admin'}
           </span>
         </p>
       </div>
@@ -98,25 +86,27 @@ const ChangeUsernameForm = () => {
           className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
       </div>
-      <div>
-        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-          Current password (for verification)
-        </label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
-          required
-          className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-        />
-      </div>
+      {authConfigured && (
+        <div>
+          <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+            Current password (for verification)
+          </label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+            className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          />
+        </div>
+      )}
       <button
         type="submit"
         disabled={status === 'saving'}
         className="bg-brand-500 hover:bg-brand-600 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
       >
-        {status === 'saving' ? 'Saving\u2026' : 'Change username'}
+        {status === 'saving' ? 'Saving…' : 'Change username'}
       </button>
       <StatusBanner status={status} error={error} />
     </form>
@@ -166,7 +156,7 @@ const PwInput = ({
 );
 
 const ChangePasswordForm = () => {
-  const { authEnabled } = useAuth();
+  const { authConfigured } = useAuth();
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [showCurrent, setShowCurrent] = useState(false);
@@ -195,29 +185,24 @@ const ChangePasswordForm = () => {
     }
   };
 
-  if (!authEnabled) {
-    return (
-      <p className="text-sm text-gray-400">
-        Authentication is not enabled. Enable it in{' '}
-        <a href="/cosmos/settings#security" className="text-brand-500 hover:underline">
-          Settings &rarr; Security
-        </a>
-        .
-      </p>
-    );
-  }
-
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <PwInput
-        value={currentPw}
-        onChange={setCurrentPw}
-        show={showCurrent}
-        onToggle={() => setShowCurrent((v) => !v)}
-        placeholder="••••••••"
-        label="Current password"
-        autoComplete="current-password"
-      />
+      {!authConfigured && (
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          Initial setup — no current password required.
+        </p>
+      )}
+      {authConfigured && (
+        <PwInput
+          value={currentPw}
+          onChange={setCurrentPw}
+          show={showCurrent}
+          onToggle={() => setShowCurrent((v) => !v)}
+          placeholder="••••••••"
+          label="Current password"
+          autoComplete="current-password"
+        />
+      )}
       <PwInput
         value={newPw}
         onChange={setNewPw}
