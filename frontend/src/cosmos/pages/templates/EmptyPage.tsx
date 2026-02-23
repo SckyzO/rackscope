@@ -804,12 +804,12 @@ export const CenteredPage = () => {
        * Key classes:
        *   min-h-screen          fills the visible content area
        *   bg-white              solid white in light mode
-       *   dark:bg-white/[0.03]  near-transparent in dark mode (subtle canvas)
+       *   dark:bg-gray-900      card background matching Cosmos SectionCard dark theme
        *   xl:px-10 xl:py-12     generous padding on wide screens
        *
        * Replace the centered placeholder below with your actual content.
        */}
-      <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-900">
         {/* ContentNarrow uses inline style={{ maxWidth }} — guaranteed to work */}
         <ContentNarrow maxWidth={630}>
           <div className="text-center">
