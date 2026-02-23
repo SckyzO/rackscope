@@ -99,9 +99,28 @@ def get_app_config(
 
 
 @router.put("/config")
-async def update_app_config(payload: AppConfig):
-    """Update application configuration."""
+async def update_app_config(
+    payload: AppConfig,
+    current: Annotated[AppConfig | None, Depends(get_app_config_optional)] = None,
+):
+    """Update application configuration.
+
+    Auth credentials (password_hash, secret_key) are managed exclusively via
+    /api/auth/* endpoints. If the payload arrives with empty values for those
+    fields, we preserve the existing ones to avoid accidental credential loss.
+    """
     from rackscope.api.app import apply_config
+
+    if current:
+        # Preserve credentials that the Settings UI never edits
+        if not payload.auth.password_hash and current.auth.password_hash:
+            payload = payload.model_copy(
+                update={"auth": payload.auth.model_copy(update={"password_hash": current.auth.password_hash})}
+            )
+        if not payload.auth.secret_key and current.auth.secret_key:
+            payload = payload.model_copy(
+                update={"auth": payload.auth.model_copy(update={"secret_key": current.auth.secret_key})}
+            )
 
     config_path = Path(os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml"))
     config_path.parent.mkdir(parents=True, exist_ok=True)
