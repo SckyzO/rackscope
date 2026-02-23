@@ -111,6 +111,27 @@ export const EmptyPage = () => {
         }
       />
 
+      {/* ── SectionCard ── */}
+      <div className="space-y-2">
+        <LayoutLabel>SectionCard — with title, description, content</LayoutLabel>
+        <SectionCard
+          title="Section title"
+          desc="Optional description — explains what this section contains."
+        >
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Content goes here. Replace with actual components, tables, charts, etc.
+          </p>
+        </SectionCard>
+      </div>
+
+      {/* ── SectionCard without description ── */}
+      <div className="space-y-2">
+        <LayoutLabel>SectionCard — title only</LayoutLabel>
+        <SectionCard title="Section title">
+          <p className="text-sm text-gray-500 dark:text-gray-400">Content goes here.</p>
+        </SectionCard>
+      </div>
+
       {/* ── 1 Column ── */}
       <div className="space-y-2">
         <LayoutLabel>1 Column</LayoutLabel>
