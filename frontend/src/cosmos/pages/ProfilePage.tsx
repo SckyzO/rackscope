@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { User, Lock, Eye, EyeOff, Check, X, AlertCircle } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { User, Lock, Eye, EyeOff, Check, X, AlertCircle, Camera, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
 import type { PasswordPolicy } from '../../contexts/AuthContext';
+import { useAvatar, resizeAvatar } from '../../hooks/useAvatar';
 
 type FormStatus = 'idle' | 'saving' | 'success' | 'error';
 
@@ -293,33 +294,110 @@ const ChangePasswordForm = () => {
   );
 };
 
+// ── Avatar upload section ─────────────────────────────────────────────────────
+
+const AvatarSection = ({ username }: { username: string }) => {
+  const { avatar, updateAvatar } = useAvatar();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const initial = username.charAt(0).toUpperCase();
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!inputRef.current) return;
+    inputRef.current.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file');
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const dataUrl = await resizeAvatar(file, 128);
+      updateAvatar(dataUrl);
+    } catch {
+      setError('Failed to process image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-6">
+      {/* Avatar preview */}
+      <div className="relative shrink-0">
+        {avatar ? (
+          <img
+            src={avatar}
+            alt="Avatar"
+            className="h-20 w-20 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700"
+          />
+        ) : (
+          <div className="bg-brand-500 flex h-20 w-20 items-center justify-center rounded-full text-3xl font-bold text-white">
+            {initial}
+          </div>
+        )}
+        {uploading && (
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          </div>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="space-y-2">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFile}
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+        >
+          <Camera className="h-4 w-4" />
+          {avatar ? 'Change photo' : 'Upload photo'}
+        </button>
+        {avatar && (
+          <button
+            type="button"
+            onClick={() => updateAvatar(null)}
+            className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 dark:border-gray-700 dark:hover:bg-red-900/20"
+          >
+            <Trash2 className="h-4 w-4" />
+            Remove photo
+          </button>
+        )}
+        {error && <p className="text-xs text-red-500">{error}</p>}
+        <p className="text-xs text-gray-400">JPG, PNG, GIF — cropped to 128×128</p>
+      </div>
+    </div>
+  );
+};
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export const ProfilePage = () => {
   const { user, authEnabled } = useAuth();
+  const displayName = authEnabled && user ? user.username : 'Admin';
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
       <div>
         <h1 className="text-xl font-bold text-gray-900 dark:text-white">Profile</h1>
         <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-          Manage your account credentials
+          Manage your account and credentials
         </p>
       </div>
 
-      <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-        <div className="bg-brand-500 flex h-12 w-12 items-center justify-center rounded-full text-white">
-          <User className="h-6 w-6" />
-        </div>
-        <div>
-          <p className="font-semibold text-gray-900 dark:text-white">
-            {authEnabled && user ? user.username : 'Admin'}
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {authEnabled ? 'Authenticated user' : 'Authentication disabled'}
-          </p>
-        </div>
-      </div>
+      <SectionCard title="Profile Picture" icon={Camera}>
+        <AvatarSection username={displayName} />
+      </SectionCard>
 
       <SectionCard title="Change Username" icon={User}>
         <ChangeUsernameForm />

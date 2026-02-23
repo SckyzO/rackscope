@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Moon, Sun, Bell, ChevronDown, User, AlertTriangle, XCircle } from 'lucide-react';
+import { Moon, Sun, Bell, ChevronDown, AlertTriangle, XCircle } from 'lucide-react';
 import { api } from '../../services/api';
 import type { ActiveAlert } from '../../types';
 import { CosmosSearch } from './CosmosSearch';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAvatar } from '../../hooks/useAvatar';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/cosmos': 'Analytics Dashboard',
@@ -59,6 +60,9 @@ export const CosmosHeader = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user, authEnabled } = useAuth();
+  const { avatar } = useAvatar();
+  const displayName = authEnabled && user ? user.username : 'Admin';
+  const initial = displayName.charAt(0).toUpperCase();
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
@@ -274,11 +278,15 @@ export const CosmosHeader = ({
             }}
             className="flex items-center gap-2 rounded-lg border border-gray-200 py-1.5 pr-3 pl-2 transition-colors hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
           >
-            <div className="bg-brand-500 flex h-7 w-7 items-center justify-center rounded-full text-white">
-              <User className="h-4 w-4" />
-            </div>
+            {avatar ? (
+              <img src={avatar} alt="Avatar" className="h-7 w-7 rounded-full object-cover" />
+            ) : (
+              <div className="bg-brand-500 flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold text-white">
+                {initial}
+              </div>
+            )}
             <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-              {authEnabled && user ? user.username : 'Admin'}
+              {displayName}
             </span>
             <ChevronDown className="h-4 w-4 text-gray-400" />
           </button>
