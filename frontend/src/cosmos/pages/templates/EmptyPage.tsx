@@ -26,6 +26,13 @@ import {
   InboxIcon,
   ChevronRight,
   Server,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  HelpCircle,
+  Building2,
+  Box,
+  Cpu,
 } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 
@@ -301,6 +308,91 @@ export const HealthDot = ({ status, pulse = false }: { status: HealthStatus; pul
   </span>
 );
 
+// ── Health badge (icon + label) ───────────────────────────────────────────────
+//
+// Distinct from StatusBadge (pill): this is the rounded-lg badge with icon
+// as seen on the Health Status page. Use for prominent state display.
+
+const HEALTH_CONFIG: Record<
+  HealthStatus,
+  { icon: React.ElementType; bg: string; text: string; border: string }
+> = {
+  OK: {
+    icon: CheckCircle,
+    bg: 'bg-green-50 dark:bg-green-500/10',
+    text: 'text-green-600 dark:text-green-400',
+    border: 'border-green-200 dark:border-green-500/30',
+  },
+  WARN: {
+    icon: AlertTriangle,
+    bg: 'bg-amber-50 dark:bg-amber-500/10',
+    text: 'text-amber-600 dark:text-amber-400',
+    border: 'border-amber-200 dark:border-amber-500/30',
+  },
+  CRIT: {
+    icon: XCircle,
+    bg: 'bg-red-50 dark:bg-red-500/10',
+    text: 'text-red-600 dark:text-red-400',
+    border: 'border-red-200 dark:border-red-500/30',
+  },
+  UNKNOWN: {
+    icon: HelpCircle,
+    bg: 'bg-gray-100 dark:bg-gray-800',
+    text: 'text-gray-500 dark:text-gray-400',
+    border: 'border-gray-200 dark:border-gray-700',
+  },
+};
+
+export const HealthBadge = ({ status }: { status: HealthStatus }) => {
+  const { icon: Icon, bg, text, border } = HEALTH_CONFIG[status];
+  return (
+    <span
+      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium ${bg} ${text} ${border}`}
+    >
+      <Icon className="h-4 w-4" />
+      {status}
+    </span>
+  );
+};
+
+// ── Breadcrumb ────────────────────────────────────────────────────────────────
+//
+// Clickable path: Site → Room → Aisle → Rack → Device (current, not a link).
+// Pass items in order; the last item is rendered as the current page (no link).
+
+export type BreadcrumbItem = {
+  label: string;
+  icon?: React.ElementType;
+  href?: string;
+};
+
+export const Breadcrumb = ({ items }: { items: BreadcrumbItem[] }) => (
+  <nav className="flex items-center gap-1 overflow-x-auto">
+    {items.map(({ icon: Icon, label, href }, i) => {
+      const isLast = i === items.length - 1;
+      return (
+        <div key={label} className="flex items-center gap-1">
+          {i > 0 && <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-600" />}
+          {isLast ? (
+            <span className="flex items-center gap-1.5 rounded px-2 py-1 text-sm font-semibold whitespace-nowrap text-gray-900 dark:text-white">
+              {Icon && <Icon className="text-brand-500 h-4 w-4" />}
+              {label}
+            </span>
+          ) : (
+            <a
+              href={href ?? '#'}
+              className="text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10 flex items-center gap-1.5 rounded px-2 py-1 text-sm font-medium whitespace-nowrap transition-colors"
+            >
+              {Icon && <Icon className="h-4 w-4" />}
+              {label}
+            </a>
+          )}
+        </div>
+      );
+    })}
+  </nav>
+);
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export const EmptyPage = () => {
@@ -442,6 +534,96 @@ export const EmptyPage = () => {
                 <span className="text-sm text-gray-600 dark:text-gray-400">{s}</span>
               </div>
             ))}
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* ── Health badges (icon + label) ── */}
+      <div className="space-y-2">
+        <LayoutLabel>Health badge — icon + label (rounded-lg)</LayoutLabel>
+        <SectionCard title="HealthBadge">
+          <div className="flex flex-wrap gap-3">
+            {(['OK', 'WARN', 'CRIT', 'UNKNOWN'] as const).map((s) => (
+              <HealthBadge key={s} status={s} />
+            ))}
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* ── Breadcrumb ── */}
+      <div className="space-y-2">
+        <LayoutLabel>Breadcrumb — Site → Room → Aisle → Rack → Device (current)</LayoutLabel>
+        <SectionCard title="Breadcrumb">
+          <Breadcrumb
+            items={[
+              { icon: Building2, label: 'DC Paris', href: '#' },
+              { icon: Server, label: 'Room A', href: '#' },
+              { icon: Box, label: 'Aisle 01', href: '#' },
+              { icon: Box, label: 'Rack r01-01', href: '#' },
+              { icon: Cpu, label: 'r01-01-c01' },
+            ]}
+          />
+        </SectionCard>
+      </div>
+
+      {/* ── Inline form ── */}
+      <div className="space-y-2">
+        <LayoutLabel>Inline form — text input / select / toggle inside a SectionCard</LayoutLabel>
+        <SectionCard title="Form" desc="Use this layout for settings and editor forms.">
+          <div className="space-y-4">
+            {/* Text input */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Label
+              </label>
+              <input
+                type="text"
+                placeholder="Placeholder…"
+                className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+              />
+              <p className="mt-1 text-xs text-gray-400">Optional helper text.</p>
+            </div>
+
+            {/* Select */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Select
+              </label>
+              <select className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+                <option>Option A</option>
+                <option>Option B</option>
+                <option>Option C</option>
+              </select>
+            </div>
+
+            {/* Toggle row */}
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3 dark:border-gray-700">
+              <div>
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                  Toggle option
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Short description of what this enables.
+                </p>
+              </div>
+              {/* Toggle — copy className, wire onClick + checked to your state */}
+              <button
+                type="button"
+                className="bg-brand-500 relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none"
+              >
+                <span className="pointer-events-none inline-block h-5 w-5 translate-x-5 rounded-full bg-white shadow ring-0 transition-transform" />
+              </button>
+            </div>
+
+            {/* Form actions */}
+            <div className="flex justify-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+              <button className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5">
+                Cancel
+              </button>
+              <button className="bg-brand-500 hover:bg-brand-600 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors">
+                Save
+              </button>
+            </div>
           </div>
         </SectionCard>
       </div>
