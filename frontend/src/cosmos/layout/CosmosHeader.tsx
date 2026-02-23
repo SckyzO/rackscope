@@ -99,7 +99,7 @@ export const CosmosHeader = ({
   };
 
   return (
-    <header className="dark:bg-gray-dark flex h-[72px] shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 [transition:background-color_500ms_ease,border-color_500ms_ease] dark:border-gray-800">
+    <header className="dark:bg-gray-dark relative z-30 flex h-[72px] shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 [transition:background-color_500ms_ease,border-color_500ms_ease] dark:border-gray-800">
       {/* Left: sidebar toggle + page title */}
       <div className="flex min-w-0 items-center gap-3">
         {/* Sidebar toggle — TailAdmin asymmetric hamburger */}
