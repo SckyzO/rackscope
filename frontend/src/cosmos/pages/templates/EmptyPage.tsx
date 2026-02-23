@@ -506,20 +506,23 @@ export const TemplatesShowcase = () => {
       {/* ── Canvas layout (blank.html style) ── */}
       <div className="space-y-2">
         <LayoutLabel>
-          Canvas layout — full-width card, content centered inside (blank page style)
+          Canvas layout — card with breathing room, content centered (blank page style)
         </LayoutLabel>
-        <div className="rounded-2xl border border-gray-200 bg-white px-5 py-10 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-900">
-          <ContentNarrow maxWidth={630}>
-            <div className="text-center">
-              <h3 className="mb-3 text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
-                Page Title
-              </h3>
-              <p className="text-sm text-gray-500 sm:text-base dark:text-gray-400">
-                The card fills the full width. Only the content inside is constrained to 630px and
-                centered.
-              </p>
-            </div>
-          </ContentNarrow>
+        {/* Outer padding wrapper — equivalent to TailAdmin's p-4 md:p-6 around the card */}
+        <div className="px-2 py-1 md:px-6 md:py-4">
+          <div className="rounded-2xl border border-gray-200 bg-white px-5 py-10 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-900">
+            <ContentNarrow maxWidth={630}>
+              <div className="text-center">
+                <h3 className="mb-3 text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
+                  Page Title
+                </h3>
+                <p className="text-sm text-gray-500 sm:text-base dark:text-gray-400">
+                  The card has breathing room on all sides. Content inside is constrained to 630px
+                  and centered.
+                </p>
+              </div>
+            </ContentNarrow>
+          </div>
         </div>
       </div>
 
