@@ -111,73 +111,6 @@ const DoorArc = ({ side, position, w, h, showLabel }: DoorArcProps) => {
   );
 };
 
-// ── Compass rose ─────────────────────────────────────────────────────────────
-
-const CompassRose = ({ north, showLabels }: { north: string; showLabels?: boolean }) => {
-  const rotate = north === 'right' ? 90 : north === 'bottom' ? 180 : north === 'left' ? 270 : 0;
-  return (
-    <div
-      className="pointer-events-none absolute top-3 right-3 z-20 h-20 w-20"
-      style={{ transform: `rotate(${rotate}deg)` }}
-    >
-      {/* N label — always shown */}
-      <span
-        className="absolute top-0 left-1/2 -translate-x-1/2 font-mono text-[10px] leading-none font-bold"
-        style={{ color: '#465fff' }}
-      >
-        N
-      </span>
-      {showLabels && (
-        <>
-          <span className="absolute bottom-0 left-1/2 -translate-x-1/2 font-mono text-[10px] leading-none font-medium text-gray-400 dark:text-gray-500">
-            S
-          </span>
-          <span className="absolute top-1/2 right-0 -translate-y-1/2 font-mono text-[10px] leading-none font-medium text-gray-400 dark:text-gray-500">
-            E
-          </span>
-          <span className="absolute top-1/2 left-0 -translate-y-1/2 font-mono text-[10px] leading-none font-medium text-gray-400 dark:text-gray-500">
-            O
-          </span>
-        </>
-      )}
-      {/* SVG compass — centered inside the label container */}
-      <div className="absolute inset-4 flex items-center justify-center">
-        <svg
-          viewBox="0 0 44 44"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-full w-full"
-        >
-          <circle
-            cx="22"
-            cy="22"
-            r="20"
-            stroke="currentColor"
-            strokeWidth="1"
-            className="text-gray-300 dark:text-gray-600"
-          />
-          <polygon points="22,3 25,22 22,17 19,22" fill="#465fff" />
-          <polygon
-            points="22,41 19,22 22,27 25,22"
-            fill="currentColor"
-            className="text-gray-400 dark:text-gray-500"
-          />
-          <polygon
-            points="3,22 22,19 17,22 22,25"
-            fill="currentColor"
-            className="text-gray-300 dark:text-gray-600"
-          />
-          <polygon
-            points="41,22 22,25 27,22 22,19"
-            fill="currentColor"
-            className="text-gray-300 dark:text-gray-600"
-          />
-        </svg>
-      </div>
-    </div>
-  );
-};
-
 // ── Rack cell ─────────────────────────────────────────────────────────────────
 
 interface RackCellProps {
@@ -637,15 +570,14 @@ const RackDrawer = ({
               </div>
             </div>
 
-            {/* Elevation viewport — fills remaining height, scrolls for tall racks */}
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            {/* Elevation viewport — RackElevation is %-based so it fills the flex-1 container */}
+            <div className="min-h-0 flex-1">
               {loadingRack ? (
                 <div className="flex h-full items-center justify-center">
                   <div className="border-t-brand-500 h-6 w-6 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
                 </div>
               ) : (
-                /* U_PX=24 is the native scale used by RackElevation — match it here */
-                <div style={{ height: rack.u_height * 24 }}>
+                <div className="h-full">
                   <RackElevation
                     rack={rack}
                     catalog={catalog}
@@ -1095,6 +1027,33 @@ export const CosmosRoomPage = () => {
           />
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {/* Compact compass widget — shows N direction, toggleable in Customize */}
+          {settings.showCompass && (
+            <div
+              className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-2.5 py-2 text-gray-500 dark:border-gray-700 dark:text-gray-400"
+              title={`North is ${north}`}
+            >
+              <div
+                style={{
+                  transform: `rotate(${north === 'right' ? 90 : north === 'bottom' ? 180 : north === 'left' ? 270 : 0}deg)`,
+                }}
+              >
+                <svg viewBox="0 0 16 16" fill="none" className="h-4 w-4">
+                  <circle cx="8" cy="8" r="7.25" stroke="currentColor" strokeWidth="0.75" />
+                  <polygon points="8,1.5 9.2,8 8,6.5 6.8,8" fill="#465fff" />
+                  <polygon points="8,14.5 6.8,8 8,9.5 9.2,8" fill="currentColor" />
+                  <polygon points="1.5,8 8,6.8 6.5,8 8,9.2" fill="currentColor" opacity="0.5" />
+                  <polygon points="14.5,8 8,9.2 9.5,8 8,6.8" fill="currentColor" opacity="0.5" />
+                </svg>
+              </div>
+              {settings.showCardinalLabels && (
+                <span className="font-mono text-[10px] font-bold" style={{ color: '#465fff' }}>
+                  N
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="relative">
             <Search className="absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -1204,10 +1163,7 @@ export const CosmosRoomPage = () => {
           />
         )}
 
-        {/* Compass */}
-        {settings.showCompass && (
-          <CompassRose north={north} showLabels={settings.showCardinalLabels} />
-        )}
+        {/* Compass rose removed from canvas — shown as topbar widget instead */}
 
         {/* Dimensions */}
         {settings.showDimensions && (
