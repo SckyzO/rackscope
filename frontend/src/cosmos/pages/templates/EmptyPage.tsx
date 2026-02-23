@@ -482,30 +482,44 @@ export const TemplatesShowcase = () => {
         }
       />
 
+      {/* ── Centered layout (canvas page) ── */}
+      <div className="space-y-2">
+        <LayoutLabel>
+          Centered layout — breadcrumb + single full-page card + content constrained to 630px
+        </LayoutLabel>
+        {/* Breadcrumb sits above the card */}
+        <Breadcrumb
+          items={[
+            { label: 'Home', href: '/cosmos' },
+            { label: 'Section', href: '#' },
+            { label: 'Page Title' },
+          ]}
+        />
+        {/* The canvas card: bg-white / dark:bg-gray-900, min height, generous padding */}
+        <div className="rounded-2xl border border-gray-200 bg-white px-5 py-10 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-900">
+          {/* ContentNarrow (inline style) guarantees the 630px constraint */}
+          <ContentNarrow maxWidth={630}>
+            <div className="mb-8 text-center">
+              <h3 className="mb-3 text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
+                Page Title
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Title and description live INSIDE the card. Content below is also constrained.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <ColBox label="630px content width" height={60} />
+              <div className="grid grid-cols-2 gap-4">
+                <ColBox label="50%" height={60} />
+                <ColBox label="50%" height={60} />
+              </div>
+            </div>
+          </ContentNarrow>
+        </div>
+      </div>
+
       {/* ── SectionCard ── */}
       <div className="space-y-2">
-        {/* ── Centered / narrow layout ── */}
-        <LayoutLabel>
-          Centered layout — ONE full-page card, title + content constrained to max-w-[640px]
-        </LayoutLabel>
-        <div className="rounded-2xl border border-gray-200 bg-white px-10 py-10 dark:border-gray-800 dark:bg-gray-900">
-          <div className="mx-auto mb-6 max-w-[640px] text-center">
-            <h3 className="mb-2 text-base font-semibold text-gray-800 dark:text-white/90">
-              Page title (inside the card)
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Description here. No PageHeader outside — title lives inside the card.
-            </p>
-          </div>
-          <div className="mx-auto max-w-[640px] space-y-3">
-            <ColBox label="640px max-width" height={60} />
-            <div className="grid grid-cols-2 gap-4">
-              <ColBox label="50%" height={60} />
-              <ColBox label="50%" height={60} />
-            </div>
-          </div>
-        </div>
-
         <LayoutLabel>SectionCard — with title, description, content</LayoutLabel>
         <SectionCard
           title="Section title"
