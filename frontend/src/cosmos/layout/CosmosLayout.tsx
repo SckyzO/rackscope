@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { CosmosSidebar } from './CosmosSidebar';
 import { CosmosHeader } from './CosmosHeader';
@@ -6,6 +6,13 @@ import { PageTitleProvider } from '../contexts/PageTitleContext';
 import '../cosmos.css';
 
 export const CosmosLayout = () => {
+  const [pageLoading, setPageLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPageLoading(false), 500);
+    return () => clearTimeout(t);
+  }, []);
+
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('cosmos-dark-mode');
     return saved === null ? true : saved === 'true';
@@ -31,6 +38,12 @@ export const CosmosLayout = () => {
 
   return (
     <PageTitleProvider>
+      {/* Page load preloader — matches TailAdmin's preloader.html */}
+      {pageLoading && (
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-white dark:bg-gray-950">
+          <div className="border-brand-500 h-16 w-16 animate-spin rounded-full border-4 border-t-transparent" />
+        </div>
+      )}
       <div ref={rootRef} className={isDark ? 'cosmos-root dark' : 'cosmos-root'}>
         <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
           <CosmosSidebar collapsed={sidebarCollapsed} />
