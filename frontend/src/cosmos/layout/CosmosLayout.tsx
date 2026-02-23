@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import { CosmosSidebar } from './CosmosSidebar';
 import { CosmosHeader } from './CosmosHeader';
+import { PageTitleProvider } from '../contexts/PageTitleContext';
 import '../cosmos.css';
 
 export const CosmosLayout = () => {
@@ -29,21 +30,23 @@ export const CosmosLayout = () => {
   };
 
   return (
-    <div ref={rootRef} className={isDark ? 'cosmos-root dark' : 'cosmos-root'}>
-      <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
-        <CosmosSidebar collapsed={sidebarCollapsed} />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <CosmosHeader
-            isDark={isDark}
-            toggleDark={handleToggleDark}
-            sidebarCollapsed={sidebarCollapsed}
-            onToggleSidebar={() => setSidebarCollapsed((p) => !p)}
-          />
-          <main className="cosmos-scrollbar flex-1 overflow-y-auto p-6">
-            <Outlet />
-          </main>
+    <PageTitleProvider>
+      <div ref={rootRef} className={isDark ? 'cosmos-root dark' : 'cosmos-root'}>
+        <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
+          <CosmosSidebar collapsed={sidebarCollapsed} />
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <CosmosHeader
+              isDark={isDark}
+              toggleDark={handleToggleDark}
+              sidebarCollapsed={sidebarCollapsed}
+              onToggleSidebar={() => setSidebarCollapsed((p) => !p)}
+            />
+            <main className="cosmos-scrollbar flex-1 overflow-y-auto p-6">
+              <Outlet />
+            </main>
+          </div>
         </div>
       </div>
-    </div>
+    </PageTitleProvider>
   );
 };

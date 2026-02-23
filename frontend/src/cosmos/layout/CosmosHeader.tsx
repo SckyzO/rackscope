@@ -7,6 +7,7 @@ import type { ActiveAlert } from '../../types';
 import { CosmosSearch } from './CosmosSearch';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAvatar } from '../../hooks/useAvatar';
+import { usePageTitleValue } from '../contexts/PageTitleContext';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/cosmos': 'Analytics Dashboard',
@@ -92,7 +93,9 @@ export const CosmosHeader = ({
     };
   }, []);
 
-  const pageTitle = ROUTE_LABELS[location.pathname] ?? '';
+  // Dynamic title set by pages via usePageTitle(); falls back to static ROUTE_LABELS map.
+  const contextTitle = usePageTitleValue();
+  const pageTitle = contextTitle || ROUTE_LABELS[location.pathname] || '';
   const critCount = alerts.filter((a) => a.state === 'CRIT').length;
   const warnCount = alerts.filter((a) => a.state === 'WARN').length;
 

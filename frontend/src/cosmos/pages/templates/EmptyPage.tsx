@@ -14,6 +14,7 @@
  */
 
 import type { ReactNode } from 'react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 
 // ── Shared sub-components (copy into new pages as needed) ─────────────────────
 
@@ -44,15 +45,21 @@ export const SectionCard = ({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export const EmptyPage = () => (
-  <div className="space-y-6">
-    <PageHeader
-      title="Page Title"
-      description="A short description of what this page shows or lets you do."
-    />
+export const EmptyPage = () => {
+  // usePageTitle() sets the header title dynamically.
+  // Always call this with the page title — it replaces the static ROUTE_LABELS map.
+  usePageTitle('Empty Page');
 
-    <SectionCard title="Section title" desc="Optional section description.">
-      <p className="text-sm text-gray-400">Content goes here.</p>
-    </SectionCard>
-  </div>
-);
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Page Title"
+        description="A short description of what this page shows or lets you do."
+      />
+
+      <SectionCard title="Section title" desc="Optional section description.">
+        <p className="text-sm text-gray-400">Content goes here.</p>
+      </SectionCard>
+    </div>
+  );
+};
