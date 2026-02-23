@@ -5,21 +5,14 @@ import type { ComponentType } from 'react';
 import {
   Activity,
   BarChart2,
-  LineChart,
   HeartPulse,
   Globe,
   LayoutGrid,
   AlertTriangle,
   List,
   Bell,
-  PanelTop,
   Home,
-  Table2,
-  LogIn,
-  UserPlus,
   User,
-  CalendarDays,
-  Users,
   Columns,
   Rows,
   LayoutDashboard,
@@ -148,9 +141,6 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
       <nav className="flex-1 overflow-y-auto py-4">
         <SectionLabel label="Menu" collapsed={collapsed} />
         <NavItem to="/cosmos" icon={BarChart2} label="Dashboard" collapsed={collapsed} end />
-
-        <SectionLabel label="UI Library" collapsed={collapsed} />
-        <NavItem to="/cosmos/ui" icon={Layers} label="UI Library" collapsed={collapsed} />
 
         <SectionLabel label="Monitoring" collapsed={collapsed} />
         <NavItem to="/cosmos/views/worldmap" icon={Globe} label="World Map" collapsed={collapsed} />
@@ -336,49 +326,14 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           label="Checks Library"
           collapsed={collapsed}
         />
-        <NavItem to="/cosmos/settings" icon={Settings} label="Settings" collapsed={collapsed} />
-
-        <SectionLabel label="Charts" collapsed={collapsed} />
-        <NavItem to="/cosmos/charts" icon={LineChart} label="Charts" collapsed={collapsed} />
-
-        <SectionLabel label="Tables" collapsed={collapsed} />
-        <NavItem to="/cosmos/tables" icon={Table2} label="Data Tables" collapsed={collapsed} />
-
-        <SectionLabel label="Pages" collapsed={collapsed} />
-        <NavItem to="/cosmos/profile" icon={User} label="Profile" collapsed={collapsed} />
-        <NavItem to="/cosmos/calendar" icon={CalendarDays} label="Calendar" collapsed={collapsed} />
-        <NavItem
-          to="/cosmos/notifications"
-          icon={Bell}
-          label="Notifications"
-          collapsed={collapsed}
-        />
-        <NavItem to="/cosmos/ui/avatars" icon={Users} label="Avatars" collapsed={collapsed} />
-
-        <SectionLabel label="Page Templates" collapsed={collapsed} />
-        <NavItem
-          to="/cosmos/templates/empty"
-          icon={PanelTop}
-          label="Empty Page"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/templates/centered"
-          icon={PanelTop}
-          label="Centered Page"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/templates/showcase"
-          icon={Layers}
-          label="Design System"
-          collapsed={collapsed}
-        />
-
-        <SectionLabel label="Auth" collapsed={collapsed} />
-        <NavItem to="/cosmos/auth/signin" icon={LogIn} label="Sign In" collapsed={collapsed} />
-        <NavItem to="/cosmos/auth/signup" icon={UserPlus} label="Sign Up" collapsed={collapsed} />
       </nav>
+
+      {/* Bottom sticky — UI Library, Profile, Settings */}
+      <div className="shrink-0 border-t border-gray-200 py-2 dark:border-gray-800">
+        <NavItem to="/cosmos/ui" icon={Layers} label="UI Library" collapsed={collapsed} />
+        <NavItem to="/cosmos/profile" icon={User} label="Profile" collapsed={collapsed} />
+        <NavItem to="/cosmos/settings" icon={Settings} label="Settings" collapsed={collapsed} />
+      </div>
 
       {/* Footer */}
       <div

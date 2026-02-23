@@ -20,26 +20,6 @@ interface CategorySection {
 
 const CATEGORIES: CategorySection[] = [
   {
-    title: 'Layout & Structure',
-    items: [
-      {
-        name: 'Empty Page',
-        description: 'Standard full-width page template',
-        route: '/cosmos/templates/empty',
-      },
-      {
-        name: 'Centered Page',
-        description: 'Narrow centered layout for forms',
-        route: '/cosmos/templates/centered',
-      },
-      {
-        name: 'Design System',
-        description: 'All reusable building blocks',
-        route: '/cosmos/templates/showcase',
-      },
-    ],
-  },
-  {
     title: 'Components',
     items: [
       { name: 'Badges', description: 'Status and label pills', route: '/cosmos/ui/badges' },
@@ -85,6 +65,12 @@ const CATEGORIES: CategorySection[] = [
         name: 'Stats Cards',
         description: 'KPI metric summary cards',
         route: '/cosmos/ui/stats-cards',
+      },
+      { name: 'Charts', description: 'Line, bar and area charts', route: '/cosmos/charts' },
+      {
+        name: 'Data Tables',
+        description: 'Sortable and filterable tables',
+        route: '/cosmos/tables',
       },
       { name: 'Avatars', description: 'User and entity avatars', route: '/cosmos/ui/avatars' },
       { name: 'Ribbons', description: 'Corner ribbon decorations', route: '/cosmos/ui/ribbons' },
@@ -146,18 +132,41 @@ const CATEGORIES: CategorySection[] = [
         description: 'Notification feed items',
         route: '/cosmos/ui/notifications',
       },
+      { name: 'Calendar', description: 'Date and event calendar', route: '/cosmos/calendar' },
+    ],
+  },
+  {
+    title: 'Pages',
+    items: [
+      {
+        name: 'Empty Page',
+        description: 'Standard full-width page template',
+        route: '/cosmos/templates/empty',
+      },
+      {
+        name: 'Centered Page',
+        description: 'Narrow centered layout for forms',
+        route: '/cosmos/templates/centered',
+      },
+      {
+        name: 'Design System',
+        description: 'All reusable building blocks',
+        route: '/cosmos/templates/showcase',
+      },
+      { name: 'Sign In', description: 'Authentication login page', route: '/cosmos/auth/signin' },
+      { name: 'Sign Up', description: 'Registration page', route: '/cosmos/auth/signup' },
     ],
   },
 ];
 
 const SUMMARY = [
-  { label: 'Layout', count: 3 },
   { label: 'Components', count: 9 },
   { label: 'Forms', count: 4 },
-  { label: 'Data Display', count: 5 },
+  { label: 'Data Display', count: 7 },
   { label: 'Navigation', count: 3 },
   { label: 'Feedback', count: 5 },
-  { label: 'Advanced', count: 5 },
+  { label: 'Advanced', count: 6 },
+  { label: 'Pages', count: 5 },
 ];
 
 // ── Component card ────────────────────────────────────────────────────────────
