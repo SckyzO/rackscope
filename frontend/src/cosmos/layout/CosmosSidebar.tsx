@@ -393,9 +393,15 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           collapsed={collapsed}
         />
         <NavItem
+          to="/cosmos/editors/rack-templates"
+          icon={Layers}
+          label="Rack Templates"
+          collapsed={collapsed}
+        />
+        <NavItem
           to="/cosmos/editors/templates"
           icon={Layers}
-          label="Templates"
+          label="Device Templates"
           collapsed={collapsed}
         />
         <NavItem
