@@ -416,6 +416,166 @@ const PieChart = ({
   );
 };
 
+// ── 9. Semi-circle gauge ─────────────────────────────────────────────────────
+// startAngle: -90, endAngle: 90 → half-circle gauge
+
+const SemiCircleGauge = ({
+  value,
+  label,
+  color,
+}: {
+  value: number;
+  label: string;
+  color: string;
+}) => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'radialBar' },
+    theme: baseTheme(dark),
+    colors: [color],
+    plotOptions: {
+      radialBar: {
+        startAngle: -90,
+        endAngle: 90,
+        track: { background: dark ? '#1f2937' : '#f3f4f6', startAngle: -90, endAngle: 90 },
+        hollow: { size: '60%' },
+        dataLabels: {
+          name: { show: true, color: dark ? '#9ca3af' : '#6b7280', fontSize: '13px', offsetY: -5 },
+          value: {
+            show: true,
+            fontSize: '22px',
+            fontWeight: '700',
+            color: color,
+            offsetY: -35,
+            formatter: (v) => `${Math.round(v)}%`,
+          },
+        },
+      },
+    },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shade: 'dark',
+        type: 'horizontal',
+        gradientToColors: [color + 'aa'],
+        stops: [0, 100],
+      },
+    },
+    stroke: { lineCap: 'round' },
+    labels: [label],
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[value]}
+      type="radialBar"
+      height={200}
+    />
+  );
+};
+
+// ── 10. Gradient circle ───────────────────────────────────────────────────────
+
+const GradientRadial = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'radialBar' },
+    theme: baseTheme(dark),
+    colors: [BRAND],
+    plotOptions: {
+      radialBar: {
+        hollow: { size: '70%' },
+        track: { background: dark ? '#1f2937' : '#f3f4f6', strokeWidth: '50%' },
+        dataLabels: {
+          name: { show: true, color: dark ? '#9ca3af' : '#6b7280', fontSize: '14px', offsetY: -10 },
+          value: {
+            show: true,
+            fontSize: '28px',
+            fontWeight: '700',
+            color: BRAND,
+            offsetY: 5,
+            formatter: (v) => `${Math.round(v)}%`,
+          },
+        },
+      },
+    },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shade: 'dark',
+        type: 'horizontal',
+        shadeIntensity: 0.5,
+        gradientToColors: ['#10b981'],
+        inverseColors: false,
+        opacityFrom: 1,
+        opacityTo: 1,
+        stops: [0, 100],
+      },
+    },
+    stroke: { lineCap: 'round' },
+    labels: ['Overall Health'],
+    tooltip: { theme: dark ? 'dark' : 'light' },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[78]}
+      type="radialBar"
+      height={240}
+    />
+  );
+};
+
+// ── 11. Stroked / thin gauge ──────────────────────────────────────────────────
+
+const StrokedGauge = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'radialBar' },
+    theme: baseTheme(dark),
+    colors: ['#10b981', '#f59e0b', '#ef4444', '#465fff'],
+    plotOptions: {
+      radialBar: {
+        offsetY: 0,
+        startAngle: -135,
+        endAngle: 135,
+        hollow: { size: '50%', background: 'transparent' },
+        track: { background: dark ? '#1f2937' : '#f3f4f6', strokeWidth: '20%', margin: 8 },
+        dataLabels: {
+          name: { fontSize: '13px', color: dark ? '#9ca3af' : '#6b7280', offsetY: -10 },
+          value: {
+            fontSize: '22px',
+            fontWeight: '700',
+            color: dark ? '#e5e7eb' : '#111827',
+            offsetY: 5,
+            formatter: (v) => `${Math.round(v)}%`,
+          },
+          total: {
+            show: true,
+            label: 'Cluster',
+            color: dark ? '#6b7280' : '#9ca3af',
+            fontSize: '12px',
+            formatter: () => '82%',
+          },
+        },
+      },
+    },
+    labels: ['OK', 'WARN', 'CRIT', 'UNKNOWN'],
+    tooltip: { theme: dark ? 'dark' : 'light' },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[91, 67, 42, 15]}
+      type="radialBar"
+      height={280}
+    />
+  );
+};
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export const ChartsPage = () => {
@@ -479,6 +639,22 @@ export const ChartsPage = () => {
               labels={['OK', 'WARN', 'CRIT', 'UNK']}
             />
           </div>
+        </SectionCard>
+      </div>
+      {/* ── Radial bar variants ── */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <SectionCard title="Semi-circle Gauges" desc="Half-circle format — ideal for single KPIs">
+          <div className="flex justify-around">
+            <SemiCircleGauge value={78} label="CPU" color={BRAND} />
+            <SemiCircleGauge value={62} label="Memory" color="#10b981" />
+            <SemiCircleGauge value={91} label="Disk" color="#f59e0b" />
+          </div>
+        </SectionCard>
+        <SectionCard title="Gradient Circle" desc="Full circle with gradient fill">
+          <GradientRadial />
+        </SectionCard>
+        <SectionCard title="Stroked Gauge" desc="Thin tracks, -135° to 135°, cluster total">
+          <StrokedGauge />
         </SectionCard>
       </div>
     </div>
