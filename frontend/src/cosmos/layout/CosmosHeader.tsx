@@ -295,10 +295,22 @@ export const CosmosHeader = ({
             <>
               <div className="fixed inset-0 z-30" onClick={() => setUserOpen(false)} />
               <div className="shadow-theme-lg absolute top-full right-0 z-40 mt-2 w-44 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 dark:border-gray-800 dark:bg-gray-900">
-                <button className="w-full px-4 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">
+                <button
+                  onClick={() => {
+                    setUserOpen(false);
+                    navigate('/cosmos/profile');
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
+                >
                   Profile
                 </button>
-                <button className="w-full px-4 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5">
+                <button
+                  onClick={() => {
+                    setUserOpen(false);
+                    navigate('/cosmos/settings');
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
+                >
                   Settings
                 </button>
                 <hr className="my-1 border-gray-100 dark:border-gray-800" />
