@@ -98,7 +98,8 @@ import { CosmosTopologyEditorPageV4 } from './pages/editors/CosmosTopologyEditor
 import { CosmosTopologyEditorPageV5 } from './pages/editors/CosmosTopologyEditorPageV5';
 import { CosmosTemplatesEditorPage } from './pages/editors/CosmosTemplatesEditorPage';
 import { CosmosRackEditorPage } from './pages/editors/CosmosRackEditorPage';
-import { EmptyPage, TemplatesShowcase } from './pages/templates/EmptyPage';
+import { EmptyPage, TemplatesShowcase, CenteredPage } from './pages/templates/EmptyPage';
+import { UILibraryPage } from './pages/UILibraryPage';
 import { CosmosRackTemplateEditorPage } from './pages/editors/CosmosRackTemplateEditorPage';
 
 // ── ProtectedRoute ────────────────────────────────────────────────────────────
@@ -235,7 +236,11 @@ const CosmosRoutes = () => (
 
       {/* ── Page templates (design system) ── */}
       <Route path="templates/empty" element={<EmptyPage />} />
+      <Route path="templates/centered" element={<CenteredPage />} />
       <Route path="templates/showcase" element={<TemplatesShowcase />} />
+
+      {/* UI Library hub */}
+      <Route path="ui" element={<UILibraryPage />} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Route>

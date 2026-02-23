@@ -9,26 +9,14 @@ import {
   HeartPulse,
   Globe,
   LayoutGrid,
-  Tag,
   AlertTriangle,
-  CreditCard,
-  Image as ImageIcon,
-  ChevronDown,
-  Link as LinkIcon,
   List,
-  MessageSquare,
   Bell,
-  MoreHorizontal,
-  Gauge,
-  Award,
-  Loader2,
   PanelTop,
-  Info,
   Home,
   Table2,
   LogIn,
   UserPlus,
-  FormInput,
   User,
   CalendarDays,
   Users,
@@ -120,7 +108,6 @@ interface CosmosSidebarProps {
 }
 
 export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
-  const [uiOpen, setUiOpen] = useState(false);
   const [rooms, setRooms] = useState<{ id: string; name: string }[]>([]);
   const navigate = useNavigate();
 
@@ -132,40 +119,6 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
       )
       .catch(() => {});
   }, []);
-
-  const uiItems: Array<{ to: string; icon: ComponentType<{ className?: string }>; label: string }> =
-    [
-      { to: '/cosmos/ui/buttons-group', icon: LayoutGrid, label: 'Buttons Group' },
-      { to: '/cosmos/ui/badges', icon: Tag, label: 'Badges' },
-      { to: '/cosmos/ui/alerts', icon: AlertTriangle, label: 'Alerts' },
-      { to: '/cosmos/ui/cards', icon: CreditCard, label: 'Cards' },
-      { to: '/cosmos/ui/carousel', icon: ImageIcon, label: 'Carousel' },
-      { to: '/cosmos/ui/dropdowns', icon: ChevronDown, label: 'Dropdowns' },
-      { to: '/cosmos/ui/links', icon: LinkIcon, label: 'Links' },
-      { to: '/cosmos/ui/list', icon: List, label: 'List' },
-      { to: '/cosmos/ui/modals', icon: MessageSquare, label: 'Modals' },
-      { to: '/cosmos/ui/notifications', icon: Bell, label: 'Notifications' },
-      { to: '/cosmos/ui/pagination', icon: MoreHorizontal, label: 'Pagination' },
-      { to: '/cosmos/ui/popovers', icon: MessageSquare, label: 'Popovers' },
-      { to: '/cosmos/ui/progress-bar', icon: Gauge, label: 'Progress Bar' },
-      { to: '/cosmos/ui/ribbons', icon: Award, label: 'Ribbons' },
-      { to: '/cosmos/ui/spinners', icon: Loader2, label: 'Spinners' },
-      { to: '/cosmos/ui/tabs', icon: PanelTop, label: 'Tabs' },
-      { to: '/cosmos/ui/tooltips', icon: Info, label: 'Tooltips' },
-      { to: '/cosmos/ui/form-elements', icon: FormInput, label: 'Form Elements' },
-      { to: '/cosmos/ui/avatars', icon: Users, label: 'Avatars' },
-      { to: '/cosmos/ui/accordion', icon: ChevronDown, label: 'Accordion' },
-      { to: '/cosmos/ui/stepper', icon: MoreHorizontal, label: 'Stepper' },
-      { to: '/cosmos/ui/timeline', icon: Activity, label: 'Timeline' },
-      { to: '/cosmos/ui/skeleton', icon: Loader2, label: 'Skeleton' },
-      { to: '/cosmos/ui/empty-state', icon: Info, label: 'Empty State' },
-      { to: '/cosmos/ui/toast', icon: Bell, label: 'Toast' },
-      { to: '/cosmos/ui/drawer', icon: PanelTop, label: 'Drawer' },
-      { to: '/cosmos/ui/stats-cards', icon: BarChart2, label: 'Stats Cards' },
-      { to: '/cosmos/ui/tag-input', icon: Tag, label: 'Tag Input' },
-      { to: '/cosmos/ui/range-slider', icon: Gauge, label: 'Range Slider' },
-      { to: '/cosmos/ui/otp-input', icon: FormInput, label: 'OTP Input' },
-    ];
 
   return (
     <aside
@@ -196,35 +149,8 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         <SectionLabel label="Menu" collapsed={collapsed} />
         <NavItem to="/cosmos" icon={BarChart2} label="Dashboard" collapsed={collapsed} end />
 
-        <SectionLabel label="UI Elements" collapsed={collapsed} />
-        <button
-          onClick={() => setUiOpen((p) => !p)}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
-        >
-          <LayoutGrid className="h-5 w-5 shrink-0" />
-          <span
-            className={`flex-1 text-left whitespace-nowrap ${collapsed ? 'hidden group-hover:inline' : ''}`}
-          >
-            Components
-          </span>
-          <ChevronDown
-            className={`h-4 w-4 shrink-0 ${uiOpen ? 'rotate-180' : ''} ${collapsed ? 'hidden group-hover:block' : ''}`}
-          />
-        </button>
-        {uiOpen && (
-          <div
-            className={`mt-1 ml-3 space-y-0.5 border-l-2 border-gray-200 pl-3 dark:border-gray-800 ${
-              collapsed ? 'hidden group-hover:block' : ''
-            }`}
-          >
-            {uiItems.map((item) => (
-              <NavItem key={item.to} {...item} collapsed={false} depth />
-            ))}
-          </div>
-        )}
-
-        <SectionLabel label="Navigation" collapsed={collapsed} />
-        <NavItem to="/cosmos/ui/breadcrumb" icon={Home} label="Breadcrumb" collapsed={collapsed} />
+        <SectionLabel label="UI Library" collapsed={collapsed} />
+        <NavItem to="/cosmos/ui" icon={Layers} label="UI Library" collapsed={collapsed} />
 
         <SectionLabel label="Monitoring" collapsed={collapsed} />
         <NavItem to="/cosmos/views/worldmap" icon={Globe} label="World Map" collapsed={collapsed} />
