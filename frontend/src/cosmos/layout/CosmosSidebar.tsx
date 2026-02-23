@@ -334,6 +334,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                               }
                               return next;
                             });
+                            navigate(roomPath);
                           }}
                           isActive={isRoomActive}
                           collapsed={collapsed}
@@ -345,7 +346,6 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                               <TreeNode
                                 key={aisle.id}
                                 label={aisle.name}
-                                muted
                                 muted
                                 expanded={aisleExpanded}
                                 onToggle={() => {
@@ -401,6 +401,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                           }
                           return next;
                         });
+                        navigate(roomPath);
                       }}
                       isActive={location.pathname === roomPath}
                       collapsed={collapsed}
