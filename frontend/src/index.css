@@ -42,8 +42,8 @@
   --color-brand-900: #262e89;
   --color-brand-950: #161950;
 
-  /* Gray Dark (TailAdmin dark bg) */
-  --color-gray-dark: #1a2231;
+  /* Gray Dark — aligned with Tailwind gray-900 to match SectionCard dark bg */
+  --color-gray-dark: #111827;
 
   /* Success */
   --color-success-25: #f6fef9;
