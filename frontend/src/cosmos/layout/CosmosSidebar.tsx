@@ -436,6 +436,12 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           label="Empty Page"
           collapsed={collapsed}
         />
+        <NavItem
+          to="/cosmos/templates/showcase"
+          icon={Layers}
+          label="Design System"
+          collapsed={collapsed}
+        />
 
         <SectionLabel label="Auth" collapsed={collapsed} />
         <NavItem to="/cosmos/auth/signin" icon={LogIn} label="Sign In" collapsed={collapsed} />

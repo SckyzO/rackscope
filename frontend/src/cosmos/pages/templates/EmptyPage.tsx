@@ -393,17 +393,44 @@ export const Breadcrumb = ({ items }: { items: BreadcrumbItem[] }) => (
   </nav>
 );
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── EmptyPage — the actual blank template to copy ────────────────────────────
+//
+// This is what you duplicate when starting a new page.
+// Delete / replace the placeholder content and add your own.
 
 export const EmptyPage = () => {
-  usePageTitle('Empty Page');
+  usePageTitle('Page Title'); // ← change this
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Page Title"
+        description="A short description of what this page shows or lets you do."
+        // actions={<> … buttons … </>}  ← uncomment to add action buttons
+      />
+
+      <SectionCard title="Section title" desc="Optional description.">
+        <p className="text-sm text-gray-400 dark:text-gray-500">Content goes here.</p>
+      </SectionCard>
+    </div>
+  );
+};
+
+// ── TemplatesShowcase — component library reference ───────────────────────────
+//
+// Route: /cosmos/templates/showcase
+// Shows every building block available in this file.
+// Do NOT copy this — copy EmptyPage above instead.
+
+export const TemplatesShowcase = () => {
+  usePageTitle('Design System');
 
   return (
     <div className="space-y-6">
       {/* ── Header ── */}
       <PageHeader
-        title="Page Title"
-        description="A short description of what this page shows or lets you do."
+        title="Design System"
+        description="All Cosmos building blocks — reference for new pages."
         actions={
           <>
             <button

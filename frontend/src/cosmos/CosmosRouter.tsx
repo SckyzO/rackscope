@@ -98,7 +98,7 @@ import { CosmosTopologyEditorPageV4 } from './pages/editors/CosmosTopologyEditor
 import { CosmosTopologyEditorPageV5 } from './pages/editors/CosmosTopologyEditorPageV5';
 import { CosmosTemplatesEditorPage } from './pages/editors/CosmosTemplatesEditorPage';
 import { CosmosRackEditorPage } from './pages/editors/CosmosRackEditorPage';
-import { EmptyPage } from './pages/templates/EmptyPage';
+import { EmptyPage, TemplatesShowcase } from './pages/templates/EmptyPage';
 import { CosmosRackTemplateEditorPage } from './pages/editors/CosmosRackTemplateEditorPage';
 
 // ── ProtectedRoute ────────────────────────────────────────────────────────────
@@ -235,6 +235,7 @@ const CosmosRoutes = () => (
 
       {/* ── Page templates (design system) ── */}
       <Route path="templates/empty" element={<EmptyPage />} />
+      <Route path="templates/showcase" element={<TemplatesShowcase />} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Route>
