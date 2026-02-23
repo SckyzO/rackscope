@@ -166,8 +166,11 @@ export const CosmosHeader = ({
           >
             <Bell className="h-5 w-5" />
             {alerts.length > 0 && (
-              <span className="absolute top-1 right-1">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-60" />
+              /* Outer wrapper has explicit h-4 w-4 so the ping fills + centers correctly */
+              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center">
+                {/* Ping ring — 2 iterations only, plays on mount then stops */}
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-25 [animation-iteration-count:2]" />
+                {/* Solid badge */}
                 <span className="relative flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
                   {alerts.length > 9 ? '9+' : alerts.length}
                 </span>
