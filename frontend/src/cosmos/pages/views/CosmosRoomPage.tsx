@@ -937,7 +937,11 @@ export const CosmosRoomPage = () => {
     if (!contentRef.current || canvasSize.w === 0 || canvasSize.h === 0) return;
     const naturalH = contentRef.current.scrollHeight;
     const naturalW = contentRef.current.scrollWidth;
-    const fitZoom = Math.min(canvasSize.h / naturalH, canvasSize.w / naturalW, 1);
+    // Use (canvas - 2×PADDING) so content stays inside the dashed room walls,
+    // not just inside the canvas container. PADDING=24 is the inset of the dashed border.
+    const usableH = canvasSize.h - 2 * PADDING;
+    const usableW = canvasSize.w - 2 * PADDING;
+    const fitZoom = Math.min(usableH / naturalH, usableW / naturalW, 1);
     setViewport({ zoom: Math.max(0.15, fitZoom), panX: 0, panY: 0 });
   }, [canvasSize]);
 
