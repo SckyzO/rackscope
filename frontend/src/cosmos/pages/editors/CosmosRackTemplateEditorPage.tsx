@@ -168,9 +168,9 @@ const RackPanel = ({
           {/* Top cap */}
           <div className="h-2 border-b border-gray-700 bg-gray-900" />
 
-          {/* U slots */}
+          {/* U slots — U1 at bottom (standard datacenter convention) */}
           {Array.from({ length: uH }).map((_, i) => {
-            const u = i + 1;
+            const u = uH - i; // top row = highest U number, bottom = U1
             const slot = occupied.get(u);
 
             return (
@@ -878,7 +878,10 @@ export const CosmosRackTemplateEditorPage = () => {
 
       {/* ── RIGHT: live rack previews ────────────────────────────────────────── */}
       {hasSelection && (
-        <aside className="flex w-[560px] shrink-0 flex-col overflow-y-auto border-l border-gray-200 bg-gray-900 p-5 dark:border-gray-800">
+        <aside className="flex w-[560px] shrink-0 flex-col overflow-y-auto border-l border-gray-200 bg-gray-50 p-5 dark:border-gray-800 dark:bg-gray-950">
+          <p className="mb-4 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+            Live Preview — {draft.u_height}U
+          </p>
           <div className="grid grid-cols-2 gap-4">
             <RackPanel label="Front" draft={draft} compTemplates={compTemplates} face="front" />
             <RackPanel label="Rear" draft={draft} compTemplates={compTemplates} face="rear" />
