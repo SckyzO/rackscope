@@ -22,6 +22,9 @@ import {
   Tag,
   ListFilter,
   ChevronDown,
+  Minus,
+  Plus,
+  Maximize2,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Room, Aisle, Rack, RoomState, RackState, DeviceTemplate } from '../../../types';
@@ -911,6 +914,101 @@ export const CosmosRoomPage = () => {
     hiddenAisles: new Set(),
   });
 
+  // ── Zoom / pan ─────────────────────────────────────────────────────────────
+  const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
+  const { zoom, panX, panY } = viewport;
+  const [isDragging, setIsDragging] = useState(false);
+
+  const contentRef = useRef<HTMLDivElement>(null);
+  // Keep viewport in a ref so wheel/drag callbacks avoid stale closures
+  const vpRef = useRef(viewport);
+  vpRef.current = viewport;
+  const dragRef = useRef<{
+    sx: number;
+    sy: number;
+    spx: number;
+    spy: number;
+    active: boolean;
+  } | null>(null);
+  // Track whether we've auto-fitted for the current room
+  const fittedRef = useRef(false);
+
+  const fitToCanvas = useCallback(() => {
+    if (!contentRef.current || canvasSize.w === 0 || canvasSize.h === 0) return;
+    const naturalH = contentRef.current.scrollHeight;
+    const naturalW = contentRef.current.scrollWidth;
+    const fitZoom = Math.min(canvasSize.h / naturalH, canvasSize.w / naturalW, 1);
+    setViewport({ zoom: Math.max(0.15, fitZoom), panX: 0, panY: 0 });
+  }, [canvasSize]);
+
+  // Reset fit flag when room changes
+  useEffect(() => {
+    fittedRef.current = false;
+  }, [room?.id]);
+
+  // Auto-fit once room is loaded and canvas is measured
+  useEffect(() => {
+    if (!room || canvasSize.w === 0 || fittedRef.current) return;
+    const t = setTimeout(() => {
+      fitToCanvas();
+      fittedRef.current = true;
+    }, 200);
+    return () => clearTimeout(t);
+  }, [room, canvasSize.w, fitToCanvas]);
+
+  // Scroll wheel zoom (non-passive, centered on cursor)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const handler = (e: WheelEvent) => {
+      e.preventDefault();
+      const { zoom: z, panX: px, panY: py } = vpRef.current;
+      const factor = e.deltaY < 0 ? 1.1 : 0.9;
+      const newZoom = Math.max(0.15, Math.min(3, z * factor));
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const ratio = newZoom / z;
+      setViewport({ zoom: newZoom, panX: mx - ratio * (mx - px), panY: my - ratio * (my - py) });
+    };
+    canvas.addEventListener('wheel', handler, { passive: false });
+    return () => canvas.removeEventListener('wheel', handler);
+  }, [room]); // re-attach once canvas is mounted
+
+  // Global mouse move/up for pan
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragRef.current) return;
+      const dx = e.clientX - dragRef.current.sx;
+      const dy = e.clientY - dragRef.current.sy;
+      if (!dragRef.current.active && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+      dragRef.current.active = true;
+      setIsDragging(true);
+      setViewport({
+        ...vpRef.current,
+        panX: dragRef.current.spx + dx,
+        panY: dragRef.current.spy + dy,
+      });
+    };
+    const onUp = () => {
+      if (dragRef.current) {
+        dragRef.current = null;
+        setIsDragging(false);
+      }
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, []);
+
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    dragRef.current = { sx: e.clientX, sy: e.clientY, spx: panX, spy: panY, active: false };
+  };
+
   const load = useCallback(
     async (silent = false) => {
       if (!roomId) return;
@@ -1107,6 +1205,7 @@ export const CosmosRoomPage = () => {
         ref={canvasRef}
         className="relative flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
         style={{
+          cursor: isDragging ? 'grabbing' : 'grab',
           backgroundImage: settings.showGrid
             ? `linear-gradient(to right, rgb(156 163 175 / 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgb(156 163 175 / 0.08) 1px, transparent 1px)`
             : undefined,
@@ -1114,133 +1213,137 @@ export const CosmosRoomPage = () => {
             ? `${layout?.grid?.cell ?? 28}px ${layout?.grid?.cell ?? 28}px`
             : undefined,
         }}
+        onMouseDown={handleCanvasMouseDown}
       >
-        {/* Room inner border */}
+        {/* ── Zoomable layer — everything inside scales together ── */}
         <div
-          className="absolute rounded-xl border border-dashed border-gray-200 dark:border-gray-700"
-          style={{ inset: PADDING }}
-        />
-
-        {/* Door arc */}
-        {settings.showDoor && canvasSize.w > 0 && (
-          <DoorMarker
-            side={doorSide}
-            position={doorPos}
-            w={canvasSize.w}
-            h={canvasSize.h}
-            showLabel={settings.showDoorLabel}
-            doorLabel={doorLabel}
-          />
-        )}
-
-        {/* Cardinal edge labels — N/S/E/O positioned on the inner room border */}
-        {settings.showCardinalEdges &&
-          (() => {
-            // Map which label goes on which edge based on orientation
-            const labels: Record<string, string> =
-              north === 'right'
-                ? { top: 'O', right: 'N', bottom: 'E', left: 'S' }
-                : north === 'bottom'
-                  ? { top: 'S', right: 'O', bottom: 'N', left: 'E' }
-                  : north === 'left'
-                    ? { top: 'E', right: 'S', bottom: 'O', left: 'N' }
-                    : { top: 'N', right: 'E', bottom: 'S', left: 'O' };
-
-            const chip = (label: string) => (
-              <span
-                className={`inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold ${
-                  label === 'N'
-                    ? 'border-brand-300 text-brand-600 dark:border-brand-700/50 dark:text-brand-400 bg-white dark:bg-gray-900'
-                    : 'border-gray-200 bg-white text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-500'
-                }`}
-              >
-                {label}
-              </span>
-            );
-
-            // Place chips in the outer padding gap (between canvas border and inner dashed border)
-            // so they never overlap aisle content. PADDING=24, chip is ~18px tall × 24px wide.
-            const half = PADDING / 2; // 12px — center of the gap
-
-            return (
-              <>
-                {/* Top — centered horizontally, centered vertically in top gap */}
-                <div
-                  className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
-                  style={{ top: half }}
-                >
-                  {chip(labels.top)}
-                </div>
-                {/* Bottom — centered in bottom gap */}
-                <div
-                  className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 translate-y-1/2"
-                  style={{ bottom: half }}
-                >
-                  {chip(labels.bottom)}
-                </div>
-                {/* Left — centered in left gap, at 50% height (gap is only 24px wide so no overlap) */}
-                <div
-                  className="pointer-events-none absolute top-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
-                  style={{ left: half }}
-                >
-                  {chip(labels.left)}
-                </div>
-                {/* Right — centered in right gap */}
-                <div
-                  className="pointer-events-none absolute top-1/2 z-20 translate-x-1/2 -translate-y-1/2"
-                  style={{ right: half }}
-                >
-                  {chip(labels.right)}
-                </div>
-              </>
-            );
-          })()}
-
-        {/* Dimensions */}
-        {settings.showDimensions && (
-          <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 font-mono text-[9px] text-gray-400 dark:text-gray-600">
-            {W}m × {H}m
-          </div>
-        )}
-
-        {/* Aisles content */}
-        <div
-          className={`relative z-10 flex h-full flex-col gap-3 overflow-y-auto p-8 ${settings.aisleAlign === 'bottom' ? 'justify-end' : 'justify-start'}`}
+          className="absolute inset-0"
+          style={{
+            transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+            transformOrigin: '0 0',
+          }}
         >
-          {sortedAisles.map((aisle) => (
-            <AisleBand
-              key={aisle.id}
-              aisle={aisle}
-              rackStates={rackStates}
-              selectedRackId={selectedRack?.rack.id ?? null}
-              highlight={highlight}
-              showRackLabels={settings.showRackLabels}
-              searchQuery={search}
-              onRackClick={handleRackClick}
-              onBadgeClick={handleBadgeClick}
-              collapsed={collapsedAisles.has(aisle.id)}
-              rackAlign={settings.rackAlign}
-              onToggleCollapse={() => {
-                setCollapsedAisles((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(aisle.id)) next.delete(aisle.id);
-                  else next.add(aisle.id);
-                  return next;
-                });
-              }}
+          {/* Room inner border */}
+          <div
+            className="absolute rounded-xl border border-dashed border-gray-200 dark:border-gray-700"
+            style={{ inset: PADDING }}
+          />
+
+          {/* Door marker */}
+          {settings.showDoor && canvasSize.w > 0 && (
+            <DoorMarker
+              side={doorSide}
+              position={doorPos}
+              w={canvasSize.w}
+              h={canvasSize.h}
+              showLabel={settings.showDoorLabel}
+              doorLabel={doorLabel}
             />
-          ))}
-          {sortedAisles.length === 0 && (
-            <div className="flex flex-col items-center gap-2 py-8 text-center">
-              <HelpCircle className="h-8 w-8 text-gray-200 dark:text-gray-700" />
-              <p className="text-sm text-gray-400">No aisles visible</p>
+          )}
+
+          {/* Cardinal edge labels */}
+          {settings.showCardinalEdges &&
+            (() => {
+              const labels: Record<string, string> =
+                north === 'right'
+                  ? { top: 'O', right: 'N', bottom: 'E', left: 'S' }
+                  : north === 'bottom'
+                    ? { top: 'S', right: 'O', bottom: 'N', left: 'E' }
+                    : north === 'left'
+                      ? { top: 'E', right: 'S', bottom: 'O', left: 'N' }
+                      : { top: 'N', right: 'E', bottom: 'S', left: 'O' };
+
+              const chip = (label: string) => (
+                <span
+                  className={`inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold ${
+                    label === 'N'
+                      ? 'border-brand-300 text-brand-600 dark:border-brand-700/50 dark:text-brand-400 bg-white dark:bg-gray-900'
+                      : 'border-gray-200 bg-white text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-500'
+                  }`}
+                >
+                  {label}
+                </span>
+              );
+              const half = PADDING / 2;
+              return (
+                <>
+                  <div
+                    className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
+                    style={{ top: half }}
+                  >
+                    {chip(labels.top)}
+                  </div>
+                  <div
+                    className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 translate-y-1/2"
+                    style={{ bottom: half }}
+                  >
+                    {chip(labels.bottom)}
+                  </div>
+                  <div
+                    className="pointer-events-none absolute top-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
+                    style={{ left: half }}
+                  >
+                    {chip(labels.left)}
+                  </div>
+                  <div
+                    className="pointer-events-none absolute top-1/2 z-20 translate-x-1/2 -translate-y-1/2"
+                    style={{ right: half }}
+                  >
+                    {chip(labels.right)}
+                  </div>
+                </>
+              );
+            })()}
+
+          {/* Dimensions */}
+          {settings.showDimensions && (
+            <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 font-mono text-[9px] text-gray-400 dark:text-gray-600">
+              {W}m × {H}m
             </div>
           )}
+
+          {/* Aisles — no overflow-y-auto, zoom handles fitting */}
+          <div
+            ref={contentRef}
+            className={`relative z-10 flex h-full flex-col gap-3 p-8 ${settings.aisleAlign === 'bottom' ? 'justify-end' : 'justify-start'}`}
+          >
+            {sortedAisles.map((aisle) => (
+              <AisleBand
+                key={aisle.id}
+                aisle={aisle}
+                rackStates={rackStates}
+                selectedRackId={selectedRack?.rack.id ?? null}
+                highlight={highlight}
+                showRackLabels={settings.showRackLabels}
+                searchQuery={search}
+                onRackClick={handleRackClick}
+                onBadgeClick={handleBadgeClick}
+                collapsed={collapsedAisles.has(aisle.id)}
+                rackAlign={settings.rackAlign}
+                onToggleCollapse={() => {
+                  setCollapsedAisles((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(aisle.id)) next.delete(aisle.id);
+                    else next.add(aisle.id);
+                    return next;
+                  });
+                }}
+              />
+            ))}
+            {sortedAisles.length === 0 && (
+              <div className="flex flex-col items-center gap-2 py-8 text-center">
+                <HelpCircle className="h-8 w-8 text-gray-200 dark:text-gray-700" />
+                <p className="text-sm text-gray-400">No aisles visible</p>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* ── Fixed overlays (don't zoom) ── */}
 
         {/* Legend */}
         {settings.showLegend && (
-          <div className="absolute right-4 bottom-2 z-10 flex items-center gap-2">
+          <div className="pointer-events-none absolute right-4 bottom-12 z-30 flex items-center gap-2">
             {(
               [
                 ['OK', '#10b981'],
@@ -1258,6 +1361,38 @@ export const CosmosRoomPage = () => {
             ))}
           </div>
         )}
+
+        {/* Zoom controls */}
+        <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-xl border border-gray-200 bg-white/90 px-1 py-1 shadow-lg backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/90">
+          <button
+            onClick={() => setViewport((v) => ({ ...v, zoom: Math.max(0.15, v.zoom * 0.8) }))}
+            className="flex h-6 w-6 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/10"
+            title="Zoom out"
+          >
+            <Minus className="h-3 w-3" />
+          </button>
+          <button
+            onClick={fitToCanvas}
+            className="flex h-6 min-w-[3rem] items-center justify-center rounded-lg font-mono text-[10px] font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
+            title="Fit to canvas"
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            onClick={fitToCanvas}
+            className="flex h-6 w-6 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/10"
+            title="Fit all"
+          >
+            <Maximize2 className="h-3 w-3" />
+          </button>
+          <button
+            onClick={() => setViewport((v) => ({ ...v, zoom: Math.min(3, v.zoom * 1.25) }))}
+            className="flex h-6 w-6 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/10"
+            title="Zoom in"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
       </div>
 
       {/* ── Drawers ── */}
