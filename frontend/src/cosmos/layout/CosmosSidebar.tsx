@@ -106,6 +106,7 @@ const TreeNode = ({
   to,
   collapsed: sidebarCollapsed,
   navigate,
+  header = false,
 }: {
   label: string;
   depth?: number;
@@ -117,6 +118,8 @@ const TreeNode = ({
   to?: string;
   collapsed: boolean;
   navigate: (path: string) => void;
+  /** true = aisle-style (uppercase, grey) — false = site-style (normal text) */
+  header?: boolean;
 }) => {
   const pl = depth === 0 ? 'pl-3' : depth === 1 ? 'pl-5' : 'pl-7';
   return (
@@ -139,9 +142,15 @@ const TreeNode = ({
         ) : (
           <button
             onClick={onToggle}
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-semibold tracking-wider text-gray-400 uppercase transition-colors hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-white/5"
+            className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-gray-100 dark:hover:bg-white/5 ${
+              header
+                ? 'text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500'
+                : 'text-sm font-medium text-gray-600 dark:text-gray-300'
+            }`}
           >
-            {Icon && <Icon className="h-3.5 w-3.5 shrink-0 opacity-50" />}
+            {Icon && (
+              <Icon className={`shrink-0 opacity-60 ${header ? 'h-3.5 w-3.5' : 'h-4 w-4'}`} />
+            )}
             {!sidebarCollapsed && <span className="truncate">{label}</span>}
           </button>
         )}
@@ -326,6 +335,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                                 key={aisle.id}
                                 label={aisle.name}
                                 depth={2}
+                                header
                                 expanded={aisleExpanded}
                                 onToggle={() => {
                                   setExpandedAisles((prev) => {
@@ -393,6 +403,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                           key={aisle.id}
                           label={aisle.name}
                           depth={1}
+                          header
                           expanded={expandedAisles.has(aisle.id)}
                           onToggle={() => {
                             setExpandedAisles((prev) => {
