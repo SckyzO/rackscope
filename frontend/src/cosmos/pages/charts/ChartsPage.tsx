@@ -207,7 +207,9 @@ const HeatmapChart = () => {
 
 const RealtimeChart = () => {
   const dark = useDark();
-  const chartRef = useRef<InstanceType<typeof ReactApexChart>>(null);
+  // In react-apexcharts v2, chartRef is a prop — current = ApexCharts instance directly
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chartRef = useRef<any>(null);
   // useState lazy initializer avoids calling impure functions during render
   const [initData] = useState(() =>
     Array.from({ length: 30 }, (_, i) => ({
@@ -224,8 +226,8 @@ const RealtimeChart = () => {
         ...bufRef.current.slice(-29),
         { x: last.x + 2000, y: Math.max(20, Math.min(95, last.y + (Math.random() - 0.5) * 14)) },
       ];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (chartRef.current as any)?.chart?.updateSeries([{ data: [...bufRef.current] }], false);
+      // v2: chartRef.current IS the ApexCharts instance (no .chart wrapper)
+      chartRef.current?.updateSeries?.([{ data: [...bufRef.current] }], false);
     }, 2000);
     return () => clearInterval(t);
   }, []);
@@ -275,7 +277,7 @@ const RealtimeChart = () => {
   };
   return (
     <ReactApexChart
-      ref={chartRef}
+      chartRef={chartRef}
       key={String(dark)}
       options={options}
       series={[{ name: 'CPU Load', data: initData }]}

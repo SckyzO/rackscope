@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite';
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    include: ['apexcharts', 'react-apexcharts'],
+  },
   server: {
     host: true, // Needed for Docker exposure
     port: 5173,
