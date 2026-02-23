@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   XCircle,
   CheckCircle,
+  X,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { RackElevation } from '../../../components/RackVisualizer';
@@ -24,6 +25,99 @@ import type {
   RackNodeState,
   Room,
 } from '../../../types';
+
+// ── Alerts drawer ──────────────────────────────────────────────────────────────
+
+const RackAlertsDrawer = ({
+  onClose,
+  critNodes,
+  warnNodes,
+}: {
+  onClose: () => void;
+  critNodes: string[];
+  warnNodes: string[];
+}) => {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const alertCount = critNodes.length + warnNodes.length;
+  const alertColor = critNodes.length > 0 ? '#ef4444' : '#f59e0b';
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[9990]" onClick={onClose} />
+      <div
+        className={`fixed top-[72px] right-0 z-[9991] flex h-[calc(100vh-72px)] w-[360px] flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${visible ? 'translate-x-0' : 'translate-x-full'}`}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" style={{ color: alertColor }} />
+            <span className="font-semibold text-gray-900 dark:text-white">
+              Alerts
+              <span className="ml-1.5 text-sm font-normal text-gray-400">({alertCount})</span>
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-4">
+          {critNodes.length > 0 && (
+            <>
+              <p className="mb-2 text-[10px] font-semibold tracking-wider text-red-400 uppercase">
+                Critical ({critNodes.length})
+              </p>
+              {critNodes.map((nodeId) => (
+                <div
+                  key={nodeId}
+                  className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 dark:bg-red-500/10"
+                >
+                  <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs text-red-700 dark:text-red-400">
+                    {nodeId}
+                  </span>
+                  <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[9px] font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400">
+                    CRIT
+                  </span>
+                </div>
+              ))}
+            </>
+          )}
+          {warnNodes.length > 0 && (
+            <>
+              <p
+                className={`mb-2 text-[10px] font-semibold tracking-wider text-amber-400 uppercase ${critNodes.length > 0 ? 'mt-4' : ''}`}
+              >
+                Warning ({warnNodes.length})
+              </p>
+              {warnNodes.map((nodeId) => (
+                <div
+                  key={nodeId}
+                  className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-500/10"
+                >
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs text-amber-700 dark:text-amber-400">
+                    {nodeId}
+                  </span>
+                  <span className="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+                    WARN
+                  </span>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
 
 const stateBadge = (state: string) => {
   const map: Record<string, string> = {
@@ -56,6 +150,7 @@ export const CosmosRackPage = () => {
   const [roomCtx, setRoomCtx] = useState<RoomContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewSide, setViewSide] = useState<'front' | 'both' | 'rear'>('both');
+  const [alertsOpen, setAlertsOpen] = useState(false);
 
   const loadHealth = async () => {
     if (!rackId) return;
@@ -198,6 +293,16 @@ export const CosmosRackPage = () => {
   const state = health?.state ?? 'UNKNOWN';
   const uHeight = rack.u_height ?? 42;
 
+  // Alert node lists for the drawer
+  const critNodes = Object.entries(nodes as Record<string, RackNodeState>)
+    .filter(([, n]) => n.state === 'CRIT')
+    .map(([id]) => id);
+  const warnNodes = Object.entries(nodes as Record<string, RackNodeState>)
+    .filter(([, n]) => n.state === 'WARN')
+    .map(([id]) => id);
+  const alertCount = critNodes.length + warnNodes.length;
+  const alertColor = critNodes.length > 0 ? '#ef4444' : warnNodes.length > 0 ? '#f59e0b' : null;
+
   return (
     <div className="flex h-full flex-col space-y-4">
       {/* Breadcrumb */}
@@ -270,6 +375,36 @@ export const CosmosRackPage = () => {
           >
             <RotateCcw className="h-3.5 w-3.5" />
           </button>
+
+          {/* Alert button — only when alerts exist */}
+          {alertCount > 0 && alertColor && (
+            <button
+              onClick={() => setAlertsOpen((o) => !o)}
+              title={`${alertCount} alert${alertCount > 1 ? 's' : ''}`}
+              className={`relative flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                alertsOpen
+                  ? 'border-transparent text-white'
+                  : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5'
+              }`}
+              style={
+                alertsOpen
+                  ? { backgroundColor: alertColor }
+                  : { color: alertColor, borderColor: `${alertColor}40` }
+              }
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span>
+                {alertCount} alert{alertCount > 1 ? 's' : ''}
+              </span>
+              {/* Pulsing dot when closed */}
+              {!alertsOpen && (
+                <span
+                  className="absolute -top-1 -right-1 h-2.5 w-2.5 animate-pulse rounded-full border-2 border-white dark:border-gray-950"
+                  style={{ backgroundColor: alertColor }}
+                />
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -422,6 +557,15 @@ export const CosmosRackPage = () => {
           )}
         </div>
       </div>
+
+      {/* Alerts drawer */}
+      {alertsOpen && alertCount > 0 && (
+        <RackAlertsDrawer
+          onClose={() => setAlertsOpen(false)}
+          critNodes={critNodes}
+          warnNodes={warnNodes}
+        />
+      )}
     </div>
   );
 };
