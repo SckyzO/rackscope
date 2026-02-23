@@ -15,6 +15,7 @@ import {
   Network,
   MapPin,
   GitBranch,
+  Server,
   Layers,
   ShieldCheck,
   Settings,
@@ -117,6 +118,7 @@ const TreeNode = ({
   onLinkClick,
   collapsed: sidebarCollapsed,
   muted = false,
+  primary = false,
 }: {
   label: string;
   expanded: boolean;
@@ -129,25 +131,31 @@ const TreeNode = ({
   collapsed: boolean;
   /** Muted style for aisles */
   muted?: boolean;
+  /** Primary style — matches NavItem (World Map, Notifications) for site-level nodes */
+  primary?: boolean;
 }) => (
   <div>
     <div className="flex items-center">
       {sidebarCollapsed ? (
-        /* Collapsed: icon only (only site nodes show icon) */
+        /* Collapsed: icon only */
         Icon ? (
           <button
             onClick={hasLink ? onLinkClick : onToggle}
             title={label}
-            className={`flex w-full items-center justify-center rounded-lg px-2 py-2 transition-colors ${isActive ? ACTIVE : INACTIVE}`}
+            className={`flex w-full items-center justify-center rounded-lg px-3 py-2.5 transition-colors ${isActive ? ACTIVE : INACTIVE}`}
           >
-            <Icon className={`h-4 w-4 shrink-0 ${isActive ? 'text-brand-500' : 'opacity-50'}`} />
+            <Icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-brand-500' : 'opacity-60'}`} />
           </button>
         ) : null
       ) : (
         <>
           <button
             onClick={hasLink ? onLinkClick : onToggle}
-            className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium transition-colors ${
+            className={`flex min-w-0 flex-1 items-center text-left font-medium transition-colors ${
+              primary
+                ? 'gap-3 rounded-lg px-3 py-2.5 text-sm'
+                : 'gap-2 rounded-lg px-2 py-1.5 text-xs'
+            } ${
               isActive
                 ? ACTIVE
                 : muted
@@ -157,7 +165,7 @@ const TreeNode = ({
           >
             {Icon && (
               <Icon
-                className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'text-brand-500' : 'opacity-50'}`}
+                className={`shrink-0 ${primary ? 'h-5 w-5' : 'h-3.5 w-3.5'} ${isActive ? 'text-brand-500' : 'opacity-60'}`}
               />
             )}
             <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -307,6 +315,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                       });
                     }}
                     icon={Globe}
+                    primary
                     collapsed={collapsed}
                     navigate={navigate}
                   >
