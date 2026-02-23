@@ -135,53 +135,51 @@ const TreeNode = ({
   primary?: boolean;
 }) => (
   <div>
+    {/* Row: always in DOM — CSS controls visibility like NavItem */}
     <div className="flex items-center">
-      {sidebarCollapsed ? (
-        /* Collapsed: icon only */
-        Icon ? (
-          <button
-            onClick={hasLink ? onLinkClick : onToggle}
-            title={label}
-            className={`flex w-full items-center justify-center rounded-lg px-3 py-2.5 transition-colors ${isActive ? ACTIVE : INACTIVE}`}
-          >
-            <Icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-brand-500' : 'opacity-60'}`} />
-          </button>
-        ) : null
-      ) : (
-        <>
-          <button
-            onClick={hasLink ? onLinkClick : onToggle}
-            className={`flex min-w-0 flex-1 items-center text-left font-medium transition-colors ${
-              primary
-                ? 'gap-3 rounded-lg px-3 py-2.5 text-sm'
-                : 'gap-2 rounded-lg px-2 py-1.5 text-xs'
-            } ${
-              isActive
-                ? ACTIVE
-                : muted
-                  ? 'text-gray-400 hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-white/5'
-                  : INACTIVE
-            }`}
-          >
-            {Icon && (
-              <Icon
-                className={`shrink-0 ${primary ? 'h-5 w-5' : 'h-3.5 w-3.5'} ${isActive ? 'text-brand-500' : 'opacity-60'}`}
-              />
-            )}
-            <span className="min-w-0 flex-1 truncate">{label}</span>
-          </button>
-          <button
-            onClick={onToggle}
-            className="shrink-0 rounded p-1 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-400"
-          >
-            {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-          </button>
-        </>
-      )}
+      <button
+        onClick={hasLink ? onLinkClick : onToggle}
+        title={sidebarCollapsed ? label : undefined}
+        className={`flex min-w-0 flex-1 items-center text-left font-medium transition-colors ${
+          primary ? 'gap-3 rounded-lg px-3 py-2.5 text-sm' : 'gap-2 rounded-lg px-2 py-1.5 text-xs'
+        } ${
+          isActive
+            ? ACTIVE
+            : muted
+              ? 'text-gray-400 hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-white/5'
+              : INACTIVE
+        }`}
+      >
+        {/* Icon — always visible (anchors the row in collapsed mode) */}
+        {Icon && (
+          <Icon
+            className={`shrink-0 ${primary ? 'h-5 w-5' : 'h-3.5 w-3.5'} ${isActive ? 'text-brand-500' : 'opacity-60'}`}
+          />
+        )}
+        {/* Label — hidden when collapsed, visible on hover (same as NavItem) */}
+        <span
+          className={`min-w-0 flex-1 truncate whitespace-nowrap ${sidebarCollapsed ? 'hidden group-hover:inline' : ''}`}
+        >
+          {label}
+        </span>
+      </button>
+      {/* Chevron — hidden when collapsed, visible on hover */}
+      <button
+        onClick={onToggle}
+        className={`shrink-0 rounded p-1 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-400 ${
+          sidebarCollapsed ? 'hidden group-hover:block' : ''
+        }`}
+      >
+        {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+      </button>
     </div>
-    {/* Tree line: border-l creates the | visual at each nesting level */}
-    {expanded && children && !sidebarCollapsed && (
-      <div className="ml-3 flex flex-col gap-0 border-l border-gray-200 pl-2 dark:border-gray-700">
+    {/* Children: hidden when collapsed (even expanded), shown on hover or in full mode */}
+    {expanded && children && (
+      <div
+        className={`ml-3 flex flex-col gap-0 border-l border-gray-200 pl-2 dark:border-gray-700 ${
+          sidebarCollapsed ? 'hidden group-hover:flex' : ''
+        }`}
+      >
         {children}
       </div>
     )}
@@ -199,20 +197,18 @@ const RackLink = ({
   collapsed: boolean;
   navigate: (path: string) => void;
   isActive: boolean;
-}) =>
-  collapsed ? null : (
-    <button
-      onClick={() => navigate(`/cosmos/views/rack/${rack.id}`)}
-      title={rack.name}
-      className={`flex w-full items-center rounded-lg px-2 py-1 text-left text-xs transition-colors ${
-        isActive
-          ? ACTIVE
-          : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
-      }`}
-    >
-      <span className="min-w-0 flex-1 truncate">{rack.name}</span>
-    </button>
-  );
+}) => (
+  /* Always in DOM — hidden when collapsed, shown on hover (CSS group-hover) */
+  <button
+    onClick={() => navigate(`/cosmos/views/rack/${rack.id}`)}
+    title={collapsed ? rack.name : undefined}
+    className={`flex w-full items-center rounded-lg px-2 py-1 text-left text-xs transition-colors ${
+      isActive ? ACTIVE : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
+    } ${collapsed ? 'hidden group-hover:flex' : ''}`}
+  >
+    <span className="min-w-0 flex-1 truncate whitespace-nowrap">{rack.name}</span>
+  </button>
+);
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
