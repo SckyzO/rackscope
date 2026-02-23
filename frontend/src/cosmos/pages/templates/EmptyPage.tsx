@@ -63,10 +63,12 @@ export const SectionCard = ({
 );
 
 // ── Column placeholder box ─────────────────────────────────────────────────────
+// Same style as the metric cards on MetricsPage:
+//   rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900
 
 const ColBox = ({ label, height = 80 }: { label: string; height?: number }) => (
   <div
-    className="flex items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50"
+    className="flex items-center justify-center rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
     style={{ minHeight: height }}
   >
     <span className="font-mono text-sm font-semibold text-gray-400 dark:text-gray-500">
