@@ -100,6 +100,11 @@ import { CosmosTopologyEditorPageV5 } from './pages/editors/CosmosTopologyEditor
 import { CosmosTemplatesEditorPage } from './pages/editors/CosmosTemplatesEditorPage';
 import { CosmosRackEditorPage } from './pages/editors/CosmosRackEditorPage';
 import { EmptyPage, TemplatesShowcase, CenteredPage } from './pages/templates/EmptyPage';
+import {
+  RackViewTemplate,
+  DeviceViewTemplate,
+  RoomViewTemplate,
+} from './pages/templates/MonitoringTemplates';
 import { UILibraryPage } from './pages/UILibraryPage';
 import { CosmosRackTemplateEditorPage } from './pages/editors/CosmosRackTemplateEditorPage';
 
@@ -240,6 +245,9 @@ const CosmosRoutes = () => (
       <Route path="templates/empty" element={<EmptyPage />} />
       <Route path="templates/centered" element={<CenteredPage />} />
       <Route path="templates/showcase" element={<TemplatesShowcase />} />
+      <Route path="templates/rack" element={<RackViewTemplate />} />
+      <Route path="templates/device" element={<DeviceViewTemplate />} />
+      <Route path="templates/room" element={<RoomViewTemplate />} />
 
       {/* UI Library hub */}
       <Route path="ui" element={<UILibraryPage />} />
