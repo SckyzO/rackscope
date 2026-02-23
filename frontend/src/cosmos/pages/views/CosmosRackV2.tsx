@@ -38,13 +38,6 @@ const INFRA_COLOR: Record<string, string> = {
   other: 'text-gray-400',
 };
 
-const VARIANT_LINKS = [
-  { label: 'V1', path: 'rack-v1', title: 'Maximized' },
-  { label: 'V2', path: 'rack-v2', title: 'Workbench' },
-  { label: 'V3', path: 'rack-v3', title: 'Side by Side' },
-  { label: 'V4', path: 'rack-v4', title: 'USlot List' },
-] as const;
-
 type SelectedDevice = {
   device: Device;
   state: string;
@@ -75,7 +68,6 @@ const InfraRow = ({ comp }: { comp: InfrastructureComponent }) => (
 export const CosmosRackV2 = () => {
   const { rackId } = useParams<{ rackId: string }>();
   const navigate = useNavigate();
-  const [face, setFace] = useState<'front' | 'rear'>('front');
   const [selected, setSelected] = useState<SelectedDevice | null>(null);
 
   const {
@@ -121,6 +113,15 @@ export const CosmosRackV2 = () => {
     ...frontInfra.filter((c, i, a) => a.findIndex((x) => x.id === c.id) === i),
     ...rearInfra.filter((c) => !frontInfra.find((x) => x.id === c.id)),
   ];
+
+  // Count devices by template name for the stats box
+  const deviceStats = Object.entries(
+    rack.devices.reduce<Record<string, number>>((acc, d) => {
+      const name = deviceCatalog[d.template_id]?.name ?? d.template_id ?? 'Unknown';
+      acc[name] = (acc[name] ?? 0) + 1;
+      return acc;
+    }, {})
+  ).sort(([, a], [, b]) => b - a);
 
   return (
     <div className="flex h-full gap-4">
@@ -243,80 +244,97 @@ export const CosmosRackV2 = () => {
           </div>
         )}
 
-        {/* Variant switcher */}
-        <div className="mt-auto rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50">
-          <p className="mb-2 text-[9px] font-semibold tracking-wider text-gray-400 uppercase">
-            Layout variants
-          </p>
-          <div className="flex gap-1.5">
-            {VARIANT_LINKS.map((v) => (
-              <button
-                key={v.path}
-                title={v.title}
-                onClick={() => navigate(`/cosmos/views/${v.path}/${rackId}`)}
-                className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-colors ${
-                  v.path === 'rack-v2'
-                    ? 'bg-brand-500 text-white'
-                    : 'hover:border-brand-300 hover:text-brand-500 border border-gray-200 text-gray-500 dark:border-gray-700'
-                }`}
-              >
-                {v.label}
-              </button>
-            ))}
+        {/* Device stats */}
+        {deviceStats.length > 0 && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+            <p className="mb-3 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+              Devices ({rack.devices.length})
+            </p>
+            <div className="space-y-1.5">
+              {deviceStats.map(([name, count]) => (
+                <div key={name} className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-xs text-gray-700 dark:text-gray-300">
+                    {name}
+                  </span>
+                  <span className="shrink-0 rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                    {count}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </aside>
 
-      {/* Main rack area */}
+      {/* Main rack area — front + rear side by side */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <Building2 className="text-brand-500 h-4 w-4" />
             <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              {face === 'front' ? 'Front View' : 'Rear View'}
+              {rack.name}
             </span>
             <span
               className="h-2 w-2 rounded-full"
               style={{ backgroundColor: HC[state] ?? HC.UNKNOWN }}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-              {(['front', 'rear'] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFace(f)}
-                  className={`px-3 py-1 text-xs font-medium capitalize transition-colors ${
-                    face === f
-                      ? 'bg-brand-500 text-white'
-                      : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={loadHealth}
-              className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:text-gray-600 dark:border-gray-700"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          <button
+            onClick={loadHealth}
+            className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:text-gray-600 dark:border-gray-700"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <RackElevation
-            rack={rack}
-            catalog={deviceCatalog}
-            health={health?.state}
-            nodesData={health?.nodes}
-            isRearView={face === 'rear'}
-            infraComponents={face === 'rear' ? rearInfra : frontInfra}
-            sideComponents={sideInfra}
-            allowInfraOverlap={face === 'rear'}
-            pduMetrics={health?.infra_metrics?.pdu}
-            onDeviceClick={handleDeviceClick}
-          />
+
+        {/* Dual front / rear views */}
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          {/* Front */}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col border-r border-gray-100 dark:border-gray-800">
+            <div className="shrink-0 border-b border-gray-100 px-4 py-1.5 dark:border-gray-800">
+              <span className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+                Front
+              </span>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <RackElevation
+                rack={rack}
+                catalog={deviceCatalog}
+                health={health?.state}
+                nodesData={health?.nodes}
+                isRearView={false}
+                infraComponents={frontInfra}
+                sideComponents={sideInfra}
+                allowInfraOverlap={false}
+                pduMetrics={health?.infra_metrics?.pdu}
+                onDeviceClick={handleDeviceClick}
+              />
+            </div>
+          </div>
+
+          {/* Rear */}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <div className="shrink-0 border-b border-gray-100 px-4 py-1.5 dark:border-gray-800">
+              <span className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+                Rear
+              </span>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <RackElevation
+                rack={rack}
+                catalog={deviceCatalog}
+                health={health?.state}
+                nodesData={health?.nodes}
+                isRearView={true}
+                infraComponents={rearInfra}
+                sideComponents={sideInfra}
+                allowInfraOverlap={true}
+                pduMetrics={health?.infra_metrics?.pdu}
+                onDeviceClick={handleDeviceClick}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
