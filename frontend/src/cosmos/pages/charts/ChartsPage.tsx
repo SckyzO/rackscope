@@ -381,38 +381,165 @@ const RadialBarChart = () => {
   );
 };
 
-// ── 8. Pie charts ─────────────────────────────────────────────────────────────
+// ── 8. Pie chart variants ─────────────────────────────────────────────────────
 
-const PieChart = ({
-  title,
-  series,
-  labels,
-}: {
-  title: string;
-  series: number[];
-  labels: string[];
-}) => {
+/** Simple Pie — standard colored slices */
+const SimplePie = () => {
   const dark = useDark();
   const options: ApexOptions = {
     chart: { ...baseChart(), type: 'pie' },
     theme: baseTheme(dark),
     colors: COLORS,
-    labels,
-    dataLabels: { style: { fontSize: '11px' } },
-    legend: {
-      position: 'bottom',
-      labels: { colors: dark ? '#d1d5db' : '#374151' },
-      fontSize: '12px',
-    },
+    labels: ['OK', 'WARN', 'CRIT', 'UNKNOWN', 'Maintenance'],
+    dataLabels: { style: { fontSize: '11px', fontWeight: '600' } },
+    legend: { position: 'bottom', labels: { colors: dark ? '#d1d5db' : '#374151' } },
     tooltip: { theme: dark ? 'dark' : 'light' },
-    title: {
-      text: title,
-      align: 'center',
-      style: { color: dark ? '#e5e7eb' : '#374151', fontSize: '13px', fontWeight: '600' },
-    },
+    responsive: [{ breakpoint: 480, options: { legend: { position: 'bottom' } } }],
   };
   return (
-    <ReactApexChart key={String(dark)} options={options} series={series} type="pie" height={260} />
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[44, 15, 8, 12, 21]}
+      type="pie"
+      height={280}
+    />
+  );
+};
+
+/** Monochrome Pie — single brand color with shades, label = name + % */
+const MonochromePie = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'pie' },
+    theme: {
+      ...baseTheme(dark),
+      monochrome: {
+        enabled: true,
+        color: BRAND,
+        shadeTo: dark ? 'dark' : 'light',
+        shadeIntensity: 0.65,
+      },
+    },
+    labels: ['Servers', 'Switches', 'Storage', 'PDUs', 'Cooling', 'Other'],
+    plotOptions: { pie: { dataLabels: { offset: -5 } } },
+    dataLabels: {
+      formatter: (
+        val: number,
+        opts: { w: { globals: { labels: string[] } }; seriesIndex: number }
+      ) => [opts.w.globals.labels[opts.seriesIndex], `${val.toFixed(1)}%`],
+      style: { fontSize: '11px' },
+    },
+    grid: { padding: { top: 0, bottom: 0, left: 0, right: 0 } },
+    legend: { show: false },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[25, 15, 44, 55, 41, 17]}
+      type="pie"
+      height={280}
+    />
+  );
+};
+
+/** Gradient Donut — startAngle:-90 endAngle:270, gradient fill, legend with values */
+const GradientDonut = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'donut' },
+    theme: baseTheme(dark),
+    colors: COLORS,
+    series: [44, 55, 41, 17, 15],
+    labels: ['OK', 'WARN', 'CRIT', 'UNKNOWN', 'Other'],
+    plotOptions: { pie: { startAngle: -90, endAngle: 270 } },
+    dataLabels: { enabled: false },
+    fill: { type: 'gradient' },
+    legend: {
+      position: 'bottom',
+      formatter: (
+        val: string,
+        opts: { w: { globals: { series: number[] } }; seriesIndex: number }
+      ) => `${val} — ${opts.w.globals.series[opts.seriesIndex]}`,
+      labels: { colors: dark ? '#d1d5db' : '#374151' },
+    },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[44, 55, 41, 17, 15]}
+      type="donut"
+      height={280}
+    />
+  );
+};
+
+/** Pattern Fill Donut — fill with patterns (verticalLines, squares, circles…) */
+const PatternDonut = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'donut' },
+    theme: baseTheme(dark),
+    colors: COLORS,
+    labels: ['Servers', 'Network', 'Storage', 'PDUs'],
+    dataLabels: { enabled: false },
+    fill: {
+      type: 'pattern',
+      opacity: 1,
+      pattern: {
+        enabled: true,
+        style: ['verticalLines', 'squares', 'horizontalLines', 'circles'],
+        width: 6,
+        height: 6,
+        strokeWidth: 2,
+      },
+    },
+    legend: { position: 'bottom', labels: { colors: dark ? '#d1d5db' : '#374151' } },
+    stroke: { width: 0 },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[44, 55, 41, 17]}
+      type="donut"
+      height={280}
+    />
+  );
+};
+
+/** Donut with right-side legend — compact, no data labels */
+const DonutRightLegend = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'donut' },
+    theme: baseTheme(dark),
+    colors: COLORS,
+    labels: ['OK', 'WARN', 'CRIT', 'UNKNOWN'],
+    dataLabels: { enabled: false },
+    plotOptions: { pie: { donut: { size: '65%' } } },
+    legend: {
+      position: 'right',
+      offsetY: 0,
+      height: 230,
+      labels: { colors: dark ? '#d1d5db' : '#374151' },
+    },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+    responsive: [{ breakpoint: 480, options: { chart: { width: 200 }, legend: { show: false } } }],
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[44, 25, 13, 18]}
+      type="donut"
+      height={280}
+    />
   );
 };
 
@@ -617,30 +744,39 @@ export const ChartsPage = () => {
         </SectionCard>
       </div>
 
+      {/* ── Radial bar ── */}
+      <SectionCard title="Radial Bar" desc="Multi-series radial gauge — health per device type">
+        <RadialBarChart />
+      </SectionCard>
+
+      {/* ── Pie chart variants ── */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title="Radial Bar" desc="Multi-series radial gauge — health per device type">
-          <RadialBarChart />
+        <SectionCard title="Simple Pie" desc="Standard colored slices with labels">
+          <SimplePie />
         </SectionCard>
-        <SectionCard title="Pie Charts" desc="Three pie variants side by side">
-          <div className="grid grid-cols-3 gap-2">
-            <PieChart
-              title="Servers"
-              series={[60, 25, 10, 5]}
-              labels={['OK', 'WARN', 'CRIT', 'UNK']}
-            />
-            <PieChart
-              title="Network"
-              series={[75, 15, 8, 2]}
-              labels={['OK', 'WARN', 'CRIT', 'UNK']}
-            />
-            <PieChart
-              title="Storage"
-              series={[50, 30, 12, 8]}
-              labels={['OK', 'WARN', 'CRIT', 'UNK']}
-            />
-          </div>
+        <SectionCard title="Monochrome Pie" desc="Single brand color with shades — name + % labels">
+          <MonochromePie />
         </SectionCard>
       </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard
+          title="Gradient Donut"
+          desc="startAngle:-90 endAngle:270, gradient fill, legend with values"
+        >
+          <GradientDonut />
+        </SectionCard>
+        <SectionCard title="Donut — Right Legend" desc="Compact donut, legend on the right side">
+          <DonutRightLegend />
+        </SectionCard>
+      </div>
+
+      <SectionCard
+        title="Pattern Fill Donut"
+        desc="Fill with patterns: verticalLines, squares, horizontalLines, circles"
+      >
+        <PatternDonut />
+      </SectionCard>
       {/* ── Radial bar variants ── */}
       <div className="grid gap-6 lg:grid-cols-3">
         <SectionCard title="Semi-circle Gauges" desc="Half-circle format — ideal for single KPIs">
