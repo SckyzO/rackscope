@@ -174,7 +174,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
       }`}
     >
       {/* Logo — no extra px since aside already has px-5 */}
-      <div className="flex h-[72px] shrink-0 items-center border-b border-gray-200 dark:border-gray-800">
+      <div className="flex h-[72px] shrink-0 items-center">
         <div className="flex items-center gap-3">
           <div className="bg-brand-500 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white">
             <Activity className="h-5 w-5" />
@@ -434,6 +434,12 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           to="/cosmos/templates/empty"
           icon={PanelTop}
           label="Empty Page"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/cosmos/templates/centered"
+          icon={PanelTop}
+          label="Centered Page"
           collapsed={collapsed}
         />
         <NavItem
