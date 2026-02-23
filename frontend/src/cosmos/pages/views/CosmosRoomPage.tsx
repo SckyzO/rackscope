@@ -760,9 +760,10 @@ const CustomizePanel = ({
                 <button
                   key={key}
                   onClick={() => toggle(key)}
-                  className={`flex w-full items-center justify-between rounded-xl border border-gray-100 px-3 py-2 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 ${indent ? 'ml-3 w-[calc(100%-0.75rem)]' : ''}`}
+                  className="flex w-full items-center justify-between rounded-xl border border-gray-100 px-3 py-2 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5"
                 >
-                  <div className="flex items-center gap-2.5">
+                  {/* Icon + label — indent shifts only this side, toggle stays right-aligned */}
+                  <div className={`flex items-center gap-2.5 ${indent ? 'pl-4' : ''}`}>
                     <Icon
                       className={`h-3.5 w-3.5 ${indent ? 'text-gray-300 dark:text-gray-600' : 'text-gray-400'}`}
                     />
@@ -940,6 +941,7 @@ export const CosmosRoomPage = () => {
     void load();
   }, [load]);
 
+  // Attach ResizeObserver once the canvas is in the DOM (after loading completes)
   useEffect(() => {
     if (!canvasRef.current) return;
     const obs = new ResizeObserver((entries) => {
@@ -948,7 +950,7 @@ export const CosmosRoomPage = () => {
     });
     obs.observe(canvasRef.current);
     return () => obs.disconnect();
-  }, []);
+  }, [room]); // re-run when room data arrives (canvas rendered for first time)
 
   usePageTitle(room?.name ?? 'Room');
 
@@ -1158,33 +1160,37 @@ export const CosmosRoomPage = () => {
               </span>
             );
 
+            // Place chips in the outer padding gap (between canvas border and inner dashed border)
+            // so they never overlap aisle content. PADDING=24, chip is ~18px tall × 24px wide.
+            const half = PADDING / 2; // 12px — center of the gap
+
             return (
               <>
-                {/* Top edge — center */}
+                {/* Top — centered horizontally, centered vertically in top gap */}
                 <div
                   className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
-                  style={{ top: PADDING }}
+                  style={{ top: half }}
                 >
                   {chip(labels.top)}
                 </div>
-                {/* Bottom edge */}
+                {/* Bottom — centered in bottom gap */}
                 <div
                   className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 translate-y-1/2"
-                  style={{ bottom: PADDING }}
+                  style={{ bottom: half }}
                 >
                   {chip(labels.bottom)}
                 </div>
-                {/* Left edge */}
+                {/* Left — centered in left gap, at 50% height (gap is only 24px wide so no overlap) */}
                 <div
                   className="pointer-events-none absolute top-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
-                  style={{ left: PADDING }}
+                  style={{ left: half }}
                 >
                   {chip(labels.left)}
                 </div>
-                {/* Right edge */}
+                {/* Right — centered in right gap */}
                 <div
                   className="pointer-events-none absolute top-1/2 z-20 translate-x-1/2 -translate-y-1/2"
-                  style={{ right: PADDING }}
+                  style={{ right: half }}
                 >
                   {chip(labels.right)}
                 </div>
