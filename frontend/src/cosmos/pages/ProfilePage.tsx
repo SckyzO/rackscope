@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { User, Lock, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Check, X, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
+import type { PasswordPolicy } from '../../contexts/AuthContext';
 
 type FormStatus = 'idle' | 'saving' | 'success' | 'error';
 
@@ -39,6 +40,103 @@ const StatusBanner = ({ status, error }: { status: FormStatus; error?: string })
   return null;
 };
 
+// ── Password strength rules ───────────────────────────────────────────────────
+
+type Rule = { label: string; ok: boolean };
+
+const buildRules = (pw: string, confirm: string, policy: PasswordPolicy): Rule[] => {
+  const rules: Rule[] = [
+    { label: `At least ${policy.min_length} characters`, ok: pw.length >= policy.min_length },
+  ];
+  if (policy.max_length < 512) {
+    rules.push({
+      label: `At most ${policy.max_length} characters`,
+      ok: pw.length <= policy.max_length,
+    });
+  }
+  if (policy.require_digit) {
+    rules.push({ label: 'Contains a digit (0–9)', ok: /\d/.test(pw) });
+  }
+  if (policy.require_symbol) {
+    rules.push({
+      label: 'Contains a symbol (!@#$…)',
+      ok: /[!@#$%^&*()\-_=+[\]{}|;:'",.<>?/\\`~]/.test(pw),
+    });
+  }
+  if (confirm.length > 0 || pw.length > 0) {
+    rules.push({ label: 'Passwords match', ok: pw === confirm && pw.length > 0 });
+  }
+  return rules;
+};
+
+const PasswordRules = ({ rules }: { rules: Rule[] }) => {
+  if (rules.length === 0) return null;
+  return (
+    <div className="mt-2 space-y-1">
+      {rules.map((r) => (
+        <div key={r.label} className="flex items-center gap-1.5 text-xs">
+          {r.ok ? (
+            <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+          ) : (
+            <X className="h-3.5 w-3.5 shrink-0 text-gray-300 dark:text-gray-600" />
+          )}
+          <span className={r.ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}>
+            {r.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ── PwInput helper ────────────────────────────────────────────────────────────
+
+const PwInput = ({
+  value,
+  onChange,
+  show,
+  onToggle,
+  placeholder,
+  label,
+  autoComplete,
+  required = true,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  show: boolean;
+  onToggle: () => void;
+  placeholder: string;
+  label: string;
+  autoComplete: string;
+  required?: boolean;
+}) => (
+  <div>
+    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
+      {label}
+    </label>
+    <div className="relative">
+      <input
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        required={required}
+        className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 pr-9 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        className="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  </div>
+);
+
+// ── Change Username ───────────────────────────────────────────────────────────
+
 const ChangeUsernameForm = () => {
   const { user, authConfigured, refreshStatus } = useAuth();
   const [newUsername, setNewUsername] = useState('');
@@ -65,14 +163,12 @@ const ChangeUsernameForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div>
-        <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
-          Current username:{' '}
-          <span className="font-mono font-semibold text-gray-800 dark:text-gray-200">
-            {user?.username ?? 'admin'}
-          </span>
-        </p>
-      </div>
+      <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
+        Current username:{' '}
+        <span className="font-mono font-semibold text-gray-800 dark:text-gray-200">
+          {user?.username ?? 'admin'}
+        </span>
+      </p>
       <div>
         <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
           New username
@@ -113,64 +209,26 @@ const ChangeUsernameForm = () => {
   );
 };
 
-const PwInput = ({
-  value,
-  onChange,
-  show,
-  onToggle,
-  placeholder,
-  label,
-  autoComplete,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  show: boolean;
-  onToggle: () => void;
-  placeholder: string;
-  label: string;
-  autoComplete: string;
-}) => (
-  <div>
-    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-      {label}
-    </label>
-    <div className="relative">
-      <input
-        type={show ? 'text' : 'password'}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        required
-        className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 pr-9 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-      />
-      <button
-        type="button"
-        onClick={onToggle}
-        className="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-      >
-        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-      </button>
-    </div>
-  </div>
-);
+// ── Change Password ───────────────────────────────────────────────────────────
 
 const ChangePasswordForm = () => {
-  const { authConfigured } = useAuth();
+  const { authConfigured, policy } = useAuth();
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [status, setStatus] = useState<FormStatus>('idle');
   const [error, setError] = useState<string>();
 
+  const rules = buildRules(newPw, confirmPw, policy);
+  const allRulesPass = rules.every((r) => r.ok);
+  const showRules = newPw.length > 0 || confirmPw.length > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPw.length < 6) {
-      setError('Password must be at least 6 characters');
-      setStatus('error');
-      return;
-    }
+    if (!allRulesPass) return;
     setStatus('saving');
     setError(undefined);
     try {
@@ -178,6 +236,7 @@ const ChangePasswordForm = () => {
       setStatus('success');
       setCurrentPw('');
       setNewPw('');
+      setConfirmPw('');
       setTimeout(() => setStatus('idle'), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to change password');
@@ -208,21 +267,33 @@ const ChangePasswordForm = () => {
         onChange={setNewPw}
         show={showNew}
         onToggle={() => setShowNew((v) => !v)}
-        placeholder="Min. 6 characters"
+        placeholder={`Min. ${policy.min_length} characters`}
         label="New password"
         autoComplete="new-password"
       />
+      <PwInput
+        value={confirmPw}
+        onChange={setConfirmPw}
+        show={showConfirm}
+        onToggle={() => setShowConfirm((v) => !v)}
+        placeholder="Repeat new password"
+        label="Confirm new password"
+        autoComplete="new-password"
+      />
+      {showRules && <PasswordRules rules={rules} />}
       <button
         type="submit"
-        disabled={status === 'saving'}
+        disabled={status === 'saving' || !allRulesPass}
         className="bg-brand-500 hover:bg-brand-600 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
       >
-        {status === 'saving' ? 'Saving\u2026' : 'Change password'}
+        {status === 'saving' ? 'Saving…' : authConfigured ? 'Change password' : 'Set password'}
       </button>
       <StatusBanner status={status} error={error} />
     </form>
   );
 };
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export const ProfilePage = () => {
   const { user, authEnabled } = useAuth();
@@ -236,7 +307,6 @@ export const ProfilePage = () => {
         </p>
       </div>
 
-      {/* Current identity */}
       <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
         <div className="bg-brand-500 flex h-12 w-12 items-center justify-center rounded-full text-white">
           <User className="h-6 w-6" />
@@ -251,7 +321,6 @@ export const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Security section */}
       <SectionCard title="Change Username" icon={User}>
         <ChangeUsernameForm />
       </SectionCard>

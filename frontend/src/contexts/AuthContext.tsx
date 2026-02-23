@@ -5,11 +5,26 @@ const TOKEN_KEY = 'rackscope.auth.token';
 
 export type AuthUser = { username: string };
 
+export type PasswordPolicy = {
+  min_length: number;
+  max_length: number;
+  require_digit: boolean;
+  require_symbol: boolean;
+};
+
+const DEFAULT_POLICY: PasswordPolicy = {
+  min_length: 6,
+  max_length: 128,
+  require_digit: false,
+  require_symbol: false,
+};
+
 type AuthContextValue = {
   user: AuthUser | null;
   token: string | null;
   authEnabled: boolean;
   authConfigured: boolean;
+  policy: PasswordPolicy;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
@@ -21,6 +36,7 @@ const AuthContext = createContext<AuthContextValue>({
   token: null,
   authEnabled: false,
   authConfigured: false,
+  policy: DEFAULT_POLICY,
   loading: true,
   login: async () => {},
   logout: () => {},
@@ -42,6 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authEnabled, setAuthEnabled] = useState(false);
   const [authConfigured, setAuthConfigured] = useState(false);
+  const [policy, setPolicy] = useState<PasswordPolicy>(DEFAULT_POLICY);
   const [loading, setLoading] = useState(true);
 
   const fetchStatus = useCallback(async () => {
@@ -52,9 +69,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           enabled: boolean;
           configured: boolean;
           username: string;
+          policy?: PasswordPolicy;
         };
         setAuthEnabled(s.enabled);
         setAuthConfigured(s.configured);
+        if (s.policy) setPolicy(s.policy as PasswordPolicy);
         return s.enabled;
       }
     } catch {
@@ -131,7 +150,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, authEnabled, authConfigured, loading, login, logout, refreshStatus }}
+      value={{
+        user,
+        token,
+        authEnabled,
+        authConfigured,
+        policy,
+        loading,
+        login,
+        logout,
+        refreshStatus,
+      }}
     >
       {children}
     </AuthContext.Provider>

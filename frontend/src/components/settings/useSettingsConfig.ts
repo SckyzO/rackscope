@@ -63,6 +63,10 @@ export type ConfigDraft = {
     enabled: boolean;
     session_duration: string;
     password_hash: string;
+    policy_min_length: string;
+    policy_max_length: string;
+    policy_require_digit: boolean;
+    policy_require_symbol: boolean;
   };
   plugins: {
     simulator: {
@@ -175,6 +179,10 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     enabled: config.auth?.enabled ?? false,
     session_duration: config.auth?.session_duration ?? '24h',
     password_hash: config.auth?.password_hash ?? '',
+    policy_min_length: String(config.auth?.policy?.min_length ?? 6),
+    policy_max_length: String(config.auth?.policy?.max_length ?? 128),
+    policy_require_digit: config.auth?.policy?.require_digit ?? false,
+    policy_require_symbol: config.auth?.policy?.require_symbol ?? false,
   },
   plugins: {
     simulator: {
@@ -317,6 +325,12 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
   auth: {
     enabled: draft.auth.enabled,
     session_duration: draft.auth.session_duration as '8h' | '24h' | 'unlimited',
+    policy: {
+      min_length: parseInt(draft.auth.policy_min_length, 10) || 6,
+      max_length: parseInt(draft.auth.policy_max_length, 10) || 128,
+      require_digit: draft.auth.policy_require_digit,
+      require_symbol: draft.auth.policy_require_symbol,
+    },
   },
   plugins: {
     simulator: {

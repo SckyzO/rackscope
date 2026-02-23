@@ -202,12 +202,20 @@ class SlurmConfig(BaseModel):
     mapping_path: Optional[str] = None
 
 
+class PasswordPolicyConfig(BaseModel):
+    min_length: int = Field(default=6, ge=1, le=128)
+    max_length: int = Field(default=128, ge=6, le=512)
+    require_digit: bool = False
+    require_symbol: bool = False
+
+
 class AuthConfig(BaseModel):
     enabled: bool = False
     username: str = "admin"
     password_hash: str = ""  # bcrypt hash; empty = not yet configured
     secret_key: str = ""  # JWT signing key; auto-generated at startup if empty
     session_duration: Literal["8h", "24h", "unlimited"] = "24h"
+    policy: PasswordPolicyConfig = Field(default_factory=PasswordPolicyConfig)
 
 
 class AppConfig(BaseModel):

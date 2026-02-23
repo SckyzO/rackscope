@@ -12,10 +12,10 @@ from typing import Optional, Annotated
 import bcrypt as _bcrypt
 import yaml
 from fastapi import APIRouter, HTTPException, Depends, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from jose import jwt, JWTError
 
-from rackscope.model.config import AppConfig
+from rackscope.model.config import AppConfig, PasswordPolicyConfig
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -29,6 +29,22 @@ def _verify_password(password: str, hashed: str) -> bool:
         return _bcrypt.checkpw(password.encode(), hashed.encode())
     except Exception:
         return False
+
+
+_SYMBOLS = set('!@#$%^&*()_+-=[]{}|;:\'",.<>?/\\`~')
+
+
+def _validate_policy(password: str, policy: PasswordPolicyConfig) -> Optional[str]:
+    """Returns an error message if the password violates the policy, else None."""
+    if len(password) < policy.min_length:
+        return f"Password must be at least {policy.min_length} characters"
+    if len(password) > policy.max_length:
+        return f"Password must be at most {policy.max_length} characters"
+    if policy.require_digit and not any(c.isdigit() for c in password):
+        return "Password must contain at least one digit (0–9)"
+    if policy.require_symbol and not any(c in _SYMBOLS for c in password):
+        return "Password must contain at least one symbol (!@#$…)"
+    return None
 
 # ── Dependency helpers ────────────────────────────────────────────────────────
 
@@ -96,6 +112,7 @@ class AuthStatusResponse(BaseModel):
     enabled: bool
     configured: bool  # has a password hash been set?
     username: str
+    policy: PasswordPolicyConfig = Field(default_factory=PasswordPolicyConfig)
 
 
 class ChangePasswordRequest(BaseModel):
@@ -119,6 +136,7 @@ def auth_status(app_config: Annotated[Optional[AppConfig], Depends(get_app_confi
         enabled=app_config.auth.enabled,
         configured=bool(app_config.auth.password_hash),
         username=app_config.auth.username,
+        policy=app_config.auth.policy,
     )
 
 
@@ -185,8 +203,9 @@ def change_password(
     if auth.password_hash and not _verify_password(body.current_password, auth.password_hash):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
 
-    if len(body.new_password) < 6:
-        raise HTTPException(status_code=422, detail="Password must be at least 6 characters")
+    policy_error = _validate_policy(body.new_password, auth.policy)
+    if policy_error:
+        raise HTTPException(status_code=422, detail=policy_error)
 
     new_hash = _hash_password(body.new_password)
     _update_auth_config(app_config, {"password_hash": new_hash})

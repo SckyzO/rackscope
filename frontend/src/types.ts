@@ -418,6 +418,12 @@ export interface AppConfig {
     password_hash?: string;
     secret_key?: string;
     session_duration?: '8h' | '24h' | 'unlimited';
+    policy?: {
+      min_length?: number;
+      max_length?: number;
+      require_digit?: boolean;
+      require_symbol?: boolean;
+    };
   };
 }
 

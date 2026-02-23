@@ -123,3 +123,6 @@ plugins:
       info: '#3b82f6'
 simulator: null
 slurm: null
+auth:
+  username: admin
+  password_hash: $2b$12$YWL0IHmvttmaKpEZ89YwLuJXudilBaPnLgIQS.MiY2d9mIdzh7JRq
