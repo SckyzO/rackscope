@@ -61,49 +61,45 @@ const PADDING = 24;
 const DoorMarker = ({ side, position, w, h, showLabel, doorLabel }: DoorMarkerProps) => {
   const iW = w - PADDING * 2;
   const iH = h - PADDING * 2;
+  const label = doorLabel ?? 'Door';
 
-  // Opening size in px and marker thickness
-  const OPENING = 52;
-  const THICKNESS = 28;
+  // Strip: 6px thick, 72px long, 12px from the canvas edge (center of outer padding gap)
+  const THICK = 6;
+  const LEN = 72;
+  const MARGIN = 12;
 
-  const label = doorLabel ?? 'DOOR';
-
-  // Compute marker position and shape based on which wall
-  let posStyle: React.CSSProperties = {};
-  let rounded = '';
-  let isHorizontal = false;
+  let stripStyle: React.CSSProperties = {};
+  let labelClass = '';
 
   if (side === 'west' || side === 'left') {
     const cy = PADDING + iH * position;
-    posStyle = { left: 0, top: cy - OPENING / 2, height: OPENING, width: THICKNESS };
-    rounded = 'rounded-r-xl';
+    stripStyle = { left: MARGIN, top: cy - LEN / 2, width: THICK, height: LEN };
+    labelClass = 'top-1/2 left-5 -translate-y-1/2';
   } else if (side === 'east' || side === 'right') {
     const cy = PADDING + iH * position;
-    posStyle = { right: 0, top: cy - OPENING / 2, height: OPENING, width: THICKNESS };
-    rounded = 'rounded-l-xl';
+    stripStyle = { right: MARGIN, top: cy - LEN / 2, width: THICK, height: LEN };
+    labelClass = 'top-1/2 right-5 -translate-y-1/2';
   } else if (side === 'south' || side === 'bottom') {
     const cx = PADDING + iW * position;
-    posStyle = { bottom: 0, left: cx - OPENING / 2, width: OPENING, height: THICKNESS };
-    rounded = 'rounded-t-xl';
-    isHorizontal = true;
+    stripStyle = { bottom: MARGIN, left: cx - LEN / 2, height: THICK, width: LEN };
+    labelClass = '-bottom-8 left-1/2 -translate-x-1/2';
   } else {
     // north / top
     const cx = PADDING + iW * position;
-    posStyle = { top: 0, left: cx - OPENING / 2, width: OPENING, height: THICKNESS };
-    rounded = 'rounded-b-xl';
-    isHorizontal = true;
+    stripStyle = { top: MARGIN, left: cx - LEN / 2, height: THICK, width: LEN };
+    labelClass = '-top-8 left-1/2 -translate-x-1/2';
   }
 
   return (
     <div
-      className={`pointer-events-none absolute z-20 ${rounded} border-brand-400/40 bg-brand-500/15 dark:border-brand-500/30 dark:bg-brand-500/10 flex flex-col items-center justify-center gap-0.5 border`}
-      style={posStyle}
+      className="group bg-brand-500/70 absolute z-30 cursor-default rounded-full"
+      style={{ ...stripStyle, boxShadow: '0 0 18px rgba(70,95,255,0.5)' }}
+      title={label}
     >
-      <DoorOpen
-        className={`text-brand-500 dark:text-brand-400 shrink-0 ${isHorizontal ? 'h-3.5 w-3.5' : 'h-4 w-4'}`}
-      />
-      {showLabel && !isHorizontal && (
-        <span className="text-brand-500 dark:text-brand-400 w-full truncate px-0.5 text-center font-mono text-[7px] leading-none font-bold">
+      {showLabel && (
+        <span
+          className={`pointer-events-none absolute rounded-md border border-white/10 bg-black/80 px-2.5 py-1 font-mono text-[10px] font-semibold tracking-[0.18em] whitespace-nowrap text-gray-100 uppercase opacity-0 shadow-[0_8px_20px_rgba(0,0,0,0.4)] transition-opacity group-hover:opacity-100 ${labelClass}`}
+        >
           {label}
         </span>
       )}
