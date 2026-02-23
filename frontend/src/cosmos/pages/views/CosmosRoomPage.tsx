@@ -637,14 +637,15 @@ const RackDrawer = ({
               </div>
             </div>
 
-            {/* Elevation viewport — fills remaining height, scrolls if rack is taller */}
+            {/* Elevation viewport — fills remaining height, scrolls for tall racks */}
             <div className="min-h-0 flex-1 overflow-y-auto">
               {loadingRack ? (
                 <div className="flex h-full items-center justify-center">
                   <div className="border-t-brand-500 h-6 w-6 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
                 </div>
               ) : (
-                <div style={{ height: Math.max(280, rack.u_height * 16) }}>
+                /* U_PX=24 is the native scale used by RackElevation — match it here */
+                <div style={{ height: rack.u_height * 24 }}>
                   <RackElevation
                     rack={rack}
                     catalog={catalog}
