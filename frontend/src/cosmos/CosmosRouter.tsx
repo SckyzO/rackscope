@@ -98,6 +98,7 @@ import { CosmosTopologyEditorPageV4 } from './pages/editors/CosmosTopologyEditor
 import { CosmosTopologyEditorPageV5 } from './pages/editors/CosmosTopologyEditorPageV5';
 import { CosmosTemplatesEditorPage } from './pages/editors/CosmosTemplatesEditorPage';
 import { CosmosRackEditorPage } from './pages/editors/CosmosRackEditorPage';
+import { CosmosRackTemplateEditorPage } from './pages/editors/CosmosRackTemplateEditorPage';
 
 // ── ProtectedRoute ────────────────────────────────────────────────────────────
 
@@ -229,6 +230,7 @@ const CosmosRoutes = () => (
       <Route path="editors/topology-v5" element={<CosmosTopologyEditorPageV5 />} />
       <Route path="editors/templates" element={<CosmosTemplatesEditorPage />} />
       <Route path="editors/rack" element={<CosmosRackEditorPage />} />
+      <Route path="editors/rack-templates" element={<CosmosRackTemplateEditorPage />} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Route>
