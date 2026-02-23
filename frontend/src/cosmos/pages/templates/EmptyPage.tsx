@@ -26,6 +26,7 @@ import {
   InboxIcon,
   ChevronRight,
   Server,
+  Home,
   CheckCircle,
   AlertTriangle,
   XCircle,
@@ -38,19 +39,64 @@ import { usePageTitle } from '../../contexts/PageTitleContext';
 
 // ── Shared sub-components ─────────────────────────────────────────────────────
 
+// ── PageBreadcrumb — "With Icons" variant from UI Library ────────────────────
+//
+// Usage:
+//   <PageBreadcrumb items={[
+//     { label: 'Home', href: '/cosmos' },          // first item gets Home icon
+//     { label: 'Section', href: '/cosmos/section' },
+//     { label: 'Current Page' },                    // last item = current, no href
+//   ]} />
+
+export type PageBreadcrumbItem = {
+  label: string;
+  href?: string;
+};
+
+export const PageBreadcrumb = ({ items }: { items: PageBreadcrumbItem[] }) => (
+  <nav aria-label="breadcrumb">
+    <ol className="flex flex-wrap items-center gap-1 text-sm">
+      {items.map((item, i) => {
+        const isFirst = i === 0;
+        const isLast = i === items.length - 1;
+        return (
+          <li key={item.label} className="flex items-center gap-1">
+            {i > 0 && <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />}
+            {isLast ? (
+              <span className="font-medium text-gray-900 dark:text-white">{item.label}</span>
+            ) : (
+              <a
+                href={item.href ?? '#'}
+                className="text-brand-500 hover:text-brand-600 flex items-center gap-1 transition-colors"
+              >
+                {isFirst && <Home className="h-4 w-4" />}
+                {item.label}
+              </a>
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  </nav>
+);
+
 export const PageHeader = ({
   title,
   description,
+  breadcrumb,
   actions,
 }: {
   title: string;
   description?: string;
+  /** Breadcrumb shown below the title */
+  breadcrumb?: ReactNode;
   actions?: ReactNode;
 }) => (
   <div className="flex items-start justify-between gap-4">
     <div>
       <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
-      {description && (
+      {breadcrumb && <div className="mt-1.5">{breadcrumb}</div>}
+      {!breadcrumb && description && (
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</p>
       )}
     </div>
@@ -436,7 +482,15 @@ export const EmptyPage = () => {
     <div className="space-y-6">
       <PageHeader
         title="Page Title"
-        description="A short description of what this page shows or lets you do."
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'Section', href: '#' },
+              { label: 'Page Title' },
+            ]}
+          />
+        }
         // actions={<> … buttons … </>}  ← uncomment to add action buttons
       />
 
