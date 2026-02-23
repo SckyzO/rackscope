@@ -1131,6 +1131,39 @@ export const CosmosRoomPage = () => {
               className="focus:border-brand-500 w-48 rounded-xl border border-gray-200 bg-white py-2 pr-3 pl-8 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
             />
           </div>
+
+          {/* Zoom controls — inline-flex group, same height as other topbar buttons */}
+          <div className="flex overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setViewport((v) => ({ ...v, zoom: Math.max(0.15, v.zoom * 0.8) }))}
+              className="flex items-center border-r border-gray-200 px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              title="Zoom out"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <button
+              onClick={fitToCanvas}
+              className="flex min-w-[3.5rem] items-center justify-center border-r border-gray-200 px-3 py-2 font-mono text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+              title="Fit to canvas"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              onClick={fitToCanvas}
+              className="flex items-center border-r border-gray-200 px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              title="Fit all"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewport((v) => ({ ...v, zoom: Math.min(3, v.zoom * 1.25) }))}
+              className="flex items-center px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
+              title="Zoom in"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+
           <button
             onClick={() => {
               setCustomizeOpen((o) => !o);
@@ -1295,13 +1328,6 @@ export const CosmosRoomPage = () => {
               );
             })()}
 
-          {/* Dimensions */}
-          {settings.showDimensions && (
-            <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 font-mono text-[9px] text-gray-400 dark:text-gray-600">
-              {W}m × {H}m
-            </div>
-          )}
-
           {/* Aisles — no overflow-y-auto, zoom handles fitting */}
           <div
             ref={contentRef}
@@ -1341,58 +1367,35 @@ export const CosmosRoomPage = () => {
 
         {/* ── Fixed overlays (don't zoom) ── */}
 
-        {/* Legend */}
-        {settings.showLegend && (
-          <div className="pointer-events-none absolute right-4 bottom-12 z-30 flex items-center gap-2">
-            {(
-              [
-                ['OK', '#10b981'],
-                ['WARN', '#f59e0b'],
-                ['CRIT', '#ef4444'],
-                ['UNKNOWN', '#6b7280'],
-              ] as [string, string][]
-            ).map(([label, color]) => (
-              <div key={label} className="flex items-center gap-1">
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
-                <span className="font-mono text-[8px] text-gray-400 dark:text-gray-600">
-                  {label}
-                </span>
+        {/* Legend + Dimensions — bottom-right corner */}
+        {(settings.showLegend || settings.showDimensions) && (
+          <div className="pointer-events-none absolute right-4 bottom-4 z-30 flex flex-col items-end gap-2">
+            {settings.showDimensions && (
+              <span className="font-mono text-xs text-gray-400 dark:text-gray-500">
+                {W}m × {H}m
+              </span>
+            )}
+            {settings.showLegend && (
+              <div className="flex items-center gap-3">
+                {(
+                  [
+                    ['OK', '#10b981'],
+                    ['WARN', '#f59e0b'],
+                    ['CRIT', '#ef4444'],
+                    ['UNKNOWN', '#6b7280'],
+                  ] as [string, string][]
+                ).map(([label, color]) => (
+                  <div key={label} className="flex items-center gap-1.5">
+                    <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: color }} />
+                    <span className="font-mono text-xs text-gray-400 dark:text-gray-500">
+                      {label}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
-
-        {/* Zoom controls */}
-        <div className="absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 rounded-xl border border-gray-200 bg-white/90 px-1 py-1 shadow-lg backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/90">
-          <button
-            onClick={() => setViewport((v) => ({ ...v, zoom: Math.max(0.15, v.zoom * 0.8) }))}
-            className="flex h-6 w-6 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/10"
-            title="Zoom out"
-          >
-            <Minus className="h-3 w-3" />
-          </button>
-          <button
-            onClick={fitToCanvas}
-            className="flex h-6 min-w-[3rem] items-center justify-center rounded-lg font-mono text-[10px] font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10"
-            title="Fit to canvas"
-          >
-            {Math.round(zoom * 100)}%
-          </button>
-          <button
-            onClick={fitToCanvas}
-            className="flex h-6 w-6 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/10"
-            title="Fit all"
-          >
-            <Maximize2 className="h-3 w-3" />
-          </button>
-          <button
-            onClick={() => setViewport((v) => ({ ...v, zoom: Math.min(3, v.zoom * 1.25) }))}
-            className="flex h-6 w-6 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/10"
-            title="Zoom in"
-          >
-            <Plus className="h-3 w-3" />
-          </button>
-        </div>
       </div>
 
       {/* ── Drawers ── */}
