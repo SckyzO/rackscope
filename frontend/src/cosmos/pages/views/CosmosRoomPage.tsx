@@ -45,69 +45,69 @@ const HEALTH_PILL: Record<string, string> = {
   UNKNOWN: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
 };
 
-// ── Door arc ────────────────────────────────────────────────────────────────
+// ── Door marker ─────────────────────────────────────────────────────────────
 
-interface DoorArcProps {
+interface DoorMarkerProps {
   side: string;
   position: number;
   w: number;
   h: number;
   showLabel: boolean;
+  doorLabel?: string | null;
 }
 
 const PADDING = 24;
 
-const DoorArc = ({ side, position, w, h, showLabel }: DoorArcProps) => {
+const DoorMarker = ({ side, position, w, h, showLabel, doorLabel }: DoorMarkerProps) => {
   const iW = w - PADDING * 2;
   const iH = h - PADDING * 2;
-  const r = 36;
-  let x = 0,
-    y = 0,
-    arc = '',
-    lineStyle: React.CSSProperties = {};
+
+  // Opening size in px and marker thickness
+  const OPENING = 52;
+  const THICKNESS = 28;
+
+  const label = doorLabel ?? 'DOOR';
+
+  // Compute marker position and shape based on which wall
+  let posStyle: React.CSSProperties = {};
+  let rounded = '';
+  let isHorizontal = false;
 
   if (side === 'west' || side === 'left') {
-    x = PADDING;
-    y = PADDING + iH * position - r / 2;
-    lineStyle = { left: x - 1, top: y, width: 3, height: r, backgroundColor: '#465fff' };
-    arc = `M ${x} ${y} Q ${x + r} ${y} ${x + r} ${y + r / 2} Q ${x + r} ${y + r} ${x} ${y + r}`;
+    const cy = PADDING + iH * position;
+    posStyle = { left: 0, top: cy - OPENING / 2, height: OPENING, width: THICKNESS };
+    rounded = 'rounded-r-xl';
   } else if (side === 'east' || side === 'right') {
-    x = PADDING + iW;
-    y = PADDING + iH * position - r / 2;
-    lineStyle = { left: x - 2, top: y, width: 3, height: r, backgroundColor: '#465fff' };
-    arc = `M ${x} ${y} Q ${x - r} ${y} ${x - r} ${y + r / 2} Q ${x - r} ${y + r} ${x} ${y + r}`;
+    const cy = PADDING + iH * position;
+    posStyle = { right: 0, top: cy - OPENING / 2, height: OPENING, width: THICKNESS };
+    rounded = 'rounded-l-xl';
   } else if (side === 'south' || side === 'bottom') {
-    x = PADDING + iW * position - r / 2;
-    y = PADDING + iH;
-    lineStyle = { left: x, top: y - 2, width: r, height: 3, backgroundColor: '#465fff' };
-    arc = `M ${x} ${y} Q ${x} ${y - r} ${x + r / 2} ${y - r} Q ${x + r} ${y - r} ${x + r} ${y}`;
+    const cx = PADDING + iW * position;
+    posStyle = { bottom: 0, left: cx - OPENING / 2, width: OPENING, height: THICKNESS };
+    rounded = 'rounded-t-xl';
+    isHorizontal = true;
   } else {
-    x = PADDING + iW * position - r / 2;
-    y = PADDING;
-    lineStyle = { left: x, top: y - 1, width: r, height: 3, backgroundColor: '#465fff' };
-    arc = `M ${x} ${y} Q ${x} ${y + r} ${x + r / 2} ${y + r} Q ${x + r} ${y + r} ${x + r} ${y}`;
+    // north / top
+    const cx = PADDING + iW * position;
+    posStyle = { top: 0, left: cx - OPENING / 2, width: OPENING, height: THICKNESS };
+    rounded = 'rounded-b-xl';
+    isHorizontal = true;
   }
 
   return (
-    <>
-      <div className="pointer-events-none absolute z-20" style={lineStyle} />
-      <svg
-        className="pointer-events-none absolute inset-0 z-20"
-        width={w}
-        height={h}
-        style={{ overflow: 'visible' }}
-      >
-        <path d={arc} fill="none" stroke="#465fff" strokeWidth={1.5} strokeDasharray="4 2" />
-      </svg>
-      {showLabel && (
-        <div
-          className="text-brand-500 pointer-events-none absolute z-20 font-mono text-[8px] font-bold"
-          style={{ left: lineStyle.left, top: (lineStyle.top as number) - 13 }}
-        >
-          DOOR
-        </div>
+    <div
+      className={`pointer-events-none absolute z-20 ${rounded} border-brand-400/40 bg-brand-500/15 dark:border-brand-500/30 dark:bg-brand-500/10 flex flex-col items-center justify-center gap-0.5 border`}
+      style={posStyle}
+    >
+      <DoorOpen
+        className={`text-brand-500 dark:text-brand-400 shrink-0 ${isHorizontal ? 'h-3.5 w-3.5' : 'h-4 w-4'}`}
+      />
+      {showLabel && !isHorizontal && (
+        <span className="text-brand-500 dark:text-brand-400 w-full truncate px-0.5 text-center font-mono text-[7px] leading-none font-bold">
+          {label}
+        </span>
       )}
-    </>
+    </div>
   );
 };
 
@@ -1007,6 +1007,7 @@ export const CosmosRoomPage = () => {
   const layout = room.layout;
   const doorSide = layout?.door?.side ?? 'west';
   const doorPos = layout?.door?.position ?? 0.25;
+  const doorLabel = layout?.door?.label ?? null;
   const north = layout?.orientation?.north ?? 'top';
   const W = layout?.size?.width ?? 24;
   const H = layout?.size?.height ?? 16;
@@ -1126,12 +1127,13 @@ export const CosmosRoomPage = () => {
 
         {/* Door arc */}
         {settings.showDoor && canvasSize.w > 0 && (
-          <DoorArc
+          <DoorMarker
             side={doorSide}
             position={doorPos}
             w={canvasSize.w}
             h={canvasSize.h}
             showLabel={settings.showDoorLabel}
+            doorLabel={doorLabel}
           />
         )}
 
