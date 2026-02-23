@@ -808,15 +808,18 @@ export const CenteredPage = () => {
        * Replace the centered placeholder below with your actual content.
        */}
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-white/[0.03]">
-        {/* Centered placeholder — title + description in the middle of the canvas */}
-        <div className="mx-auto w-full max-w-[630px] text-center">
-          <h3 className="mb-4 text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
-            Page Title
-          </h3>
-          <p className="text-sm text-gray-500 sm:text-base dark:text-gray-400">
-            Replace this with your content. Use SectionCard for sections, column grids for layouts.
-          </p>
-        </div>
+        {/* ContentNarrow uses inline style={{ maxWidth }} — guaranteed to work */}
+        <ContentNarrow maxWidth={630}>
+          <div className="text-center">
+            <h3 className="mb-4 text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
+              Page Title
+            </h3>
+            <p className="text-sm text-gray-500 sm:text-base dark:text-gray-400">
+              Replace this with your content. Use SectionCard for sections, column grids for
+              layouts.
+            </p>
+          </div>
+        </ContentNarrow>
       </div>
     </div>
   );
