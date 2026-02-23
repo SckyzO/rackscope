@@ -11,6 +11,7 @@ import {
   XCircle,
   X,
   Building2,
+  Pencil,
 } from 'lucide-react';
 import { RackElevation } from '../../../components/RackVisualizer';
 import { useRackData } from './useRackData';
@@ -280,19 +281,30 @@ export const CosmosRackV2 = () => {
               style={{ backgroundColor: HC[state] ?? HC.UNKNOWN }}
             />
           </div>
-          <button
-            onClick={loadHealth}
-            className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:text-gray-600 dark:border-gray-700"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => navigate(`/cosmos/editors/rack`)}
+              title="Edit rack"
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit
+            </button>
+            <button
+              onClick={loadHealth}
+              title="Refresh"
+              className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:text-gray-600 dark:border-gray-700"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Dual front / rear views */}
         <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Front */}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col border-r border-gray-100 dark:border-gray-800">
-            <div className="shrink-0 border-b border-gray-100 px-4 py-1.5 dark:border-gray-800">
+            <div className="shrink-0 border-b border-gray-100 py-1.5 text-center dark:border-gray-800">
               <span className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
                 Front
               </span>
@@ -315,7 +327,7 @@ export const CosmosRackV2 = () => {
 
           {/* Rear */}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <div className="shrink-0 border-b border-gray-100 px-4 py-1.5 dark:border-gray-800">
+            <div className="shrink-0 border-b border-gray-100 py-1.5 text-center dark:border-gray-800">
               <span className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
                 Rear
               </span>
