@@ -877,10 +877,9 @@ export const CosmosRackTemplateEditorPage = () => {
 
       {/* ── RIGHT: live rack previews ────────────────────────────────────────── */}
       {hasSelection && (
-        <aside className="flex w-[400px] shrink-0 flex-col overflow-y-auto border-l border-gray-200 bg-gray-900 p-5 dark:border-gray-800">
-          <div className="space-y-6">
+        <aside className="flex w-[560px] shrink-0 flex-col overflow-y-auto border-l border-gray-200 bg-gray-900 p-5 dark:border-gray-800">
+          <div className="grid grid-cols-2 gap-4">
             <RackPanel label="Front" draft={draft} compTemplates={compTemplates} face="front" />
-            <div className="border-t border-gray-700" />
             <RackPanel label="Rear" draft={draft} compTemplates={compTemplates} face="rear" />
           </div>
         </aside>
