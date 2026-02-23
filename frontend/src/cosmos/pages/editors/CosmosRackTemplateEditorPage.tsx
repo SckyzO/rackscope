@@ -168,24 +168,29 @@ const RackPanel = ({
 
   const infraComps = face === 'front' ? frontComps : rearComps;
   const isRear = face === 'rear';
+  // RackElevation uses h-full, so it needs an explicit height on its container.
+  // 22px per U is a comfortable size; minimum 300px for very short racks.
+  const rackHeight = Math.max(300, draft.u_height * 22);
 
   return (
     <div>
       <p className="mb-2 text-center text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
         {label}
       </p>
-      <RackElevation
-        rack={previewRack}
-        catalog={{}}
-        health={undefined}
-        nodesData={{}}
-        isRearView={isRear}
-        infraComponents={infraComps}
-        sideComponents={sideComps}
-        allowInfraOverlap={isRear}
-        pduMetrics={undefined}
-        onDeviceClick={() => {}}
-      />
+      <div style={{ height: rackHeight }}>
+        <RackElevation
+          rack={previewRack}
+          catalog={{}}
+          health={undefined}
+          nodesData={{}}
+          isRearView={isRear}
+          infraComponents={infraComps}
+          sideComponents={sideComps}
+          allowInfraOverlap={isRear}
+          pduMetrics={undefined}
+          onDeviceClick={() => {}}
+        />
+      </div>
     </div>
   );
 };
