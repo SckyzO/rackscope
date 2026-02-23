@@ -482,47 +482,44 @@ export const TemplatesShowcase = () => {
         }
       />
 
-      {/* ── Centered layout (canvas page) ── */}
+      {/* ── Centered layout ── */}
       <div className="space-y-2">
         <LayoutLabel>
-          Centered layout — breadcrumb + single full-page card + content constrained to 630px
+          Centered layout — cards constrained to 630px, centered on page (settings, forms, profiles)
         </LayoutLabel>
-        {/* Breadcrumb sits above the card */}
-        <Breadcrumb
-          items={[
-            { label: 'Home', href: '/cosmos' },
-            { label: 'Section', href: '#' },
-            { label: 'Page Title' },
-          ]}
-        />
-        {/* Canvas card — slightly different bg so the constrained zone is visible in demo */}
-        <div className="rounded-2xl border border-gray-200 bg-gray-50 px-5 py-10 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-800/50">
-          {/* Dashed outline shows the 630px constraint boundary */}
-          <div
-            className="mx-auto"
-            style={{
-              maxWidth: 630,
-              outline: '2px dashed rgba(70,95,255,0.3)',
-              outlineOffset: 8,
-              borderRadius: 12,
-            }}
-          >
-            <div className="mb-8 text-center">
-              <h3 className="mb-3 text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
-                Page Title
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Everything inside this dashed zone is constrained to 630px and centered.
-              </p>
-            </div>
-            <div className="space-y-4">
-              <ColBox label="630px max-width" height={60} />
+        {/* The CARDS themselves are narrow — ContentNarrow wraps the sections, not a canvas */}
+        <ContentNarrow maxWidth={630}>
+          <div className="space-y-4">
+            <SectionCard title="Section title" desc="This card is 630px wide and centered.">
+              <p className="text-sm text-gray-400 dark:text-gray-500">Content here.</p>
+            </SectionCard>
+            <SectionCard title="Another section">
               <div className="grid grid-cols-2 gap-4">
                 <ColBox label="50%" height={60} />
                 <ColBox label="50%" height={60} />
               </div>
-            </div>
+            </SectionCard>
           </div>
+        </ContentNarrow>
+      </div>
+
+      {/* ── Canvas layout (blank.html style) ── */}
+      <div className="space-y-2">
+        <LayoutLabel>
+          Canvas layout — full-width card, content centered inside (blank page style)
+        </LayoutLabel>
+        <div className="rounded-2xl border border-gray-200 bg-white px-5 py-10 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-900">
+          <ContentNarrow maxWidth={630}>
+            <div className="text-center">
+              <h3 className="mb-3 text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
+                Page Title
+              </h3>
+              <p className="text-sm text-gray-500 sm:text-base dark:text-gray-400">
+                The card fills the full width. Only the content inside is constrained to 630px and
+                centered.
+              </p>
+            </div>
+          </ContentNarrow>
         </div>
       </div>
 
@@ -801,50 +798,28 @@ export const TemplatesShowcase = () => {
 
 // ── CenteredPage — blank template for settings / forms / profiles ─────────────
 //
-// Route: /cosmos/templates/centered
-//
-// From TailAdmin blank.html:
-//   - ONE big card fills the whole page area (no separate PageHeader above)
-//   - Title + description are centered at the TOP of the card
-//   - Content below is also constrained to a readable max-width
-//
-// Use this for: Settings, Profile, detail forms — anything that's hard to read full-width.
+// The cards themselves are narrow and centered — the page background stays gray.
+// Use for: Settings, Profile, detail forms — anything hard to read at full width.
 
 export const CenteredPage = () => {
   usePageTitle('Page Title'); // ← change this
 
   return (
-    // mx-auto + max-w matches TailAdmin's `max-w-(--breakpoint-2xl)` wrapper
-    // This prevents the card from stretching on ultra-wide screens.
-    <div className="mx-auto flex w-full max-w-[1536px] flex-col gap-5">
-      {/* Breadcrumb — above the card */}
-      <Breadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'Page Title' }]} />
+    <div className="space-y-6">
+      <PageHeader
+        title="Page Title"
+        description="A short description."
+        // actions={<> … buttons … </>}
+      />
 
-      {/*
-       * Single full-height canvas card — matches TailAdmin blank.html exactly.
-       *
-       * Key classes:
-       *   min-h-screen          fills the visible content area
-       *   bg-white              solid white in light mode
-       *   dark:bg-gray-900      card background matching Cosmos SectionCard dark theme
-       *   xl:px-10 xl:py-12     generous padding on wide screens
-       *
-       * Replace the centered placeholder below with your actual content.
-       */}
-      <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-900">
-        {/* ContentNarrow uses inline style={{ maxWidth }} — guaranteed to work */}
-        <ContentNarrow maxWidth={630}>
-          <div className="text-center">
-            <h3 className="mb-4 text-xl font-semibold text-gray-800 sm:text-2xl dark:text-white/90">
-              Page Title
-            </h3>
-            <p className="text-sm text-gray-500 sm:text-base dark:text-gray-400">
-              Replace this with your content. Use SectionCard for sections, column grids for
-              layouts.
-            </p>
-          </div>
-        </ContentNarrow>
-      </div>
+      {/* ContentNarrow constrains the sections to 630px and centers them */}
+      <ContentNarrow maxWidth={630}>
+        <div className="space-y-4">
+          <SectionCard title="Section title" desc="Optional description.">
+            <p className="text-sm text-gray-400 dark:text-gray-500">Content goes here.</p>
+          </SectionCard>
+        </div>
+      </ContentNarrow>
     </div>
   );
 };
