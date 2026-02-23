@@ -159,7 +159,11 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
               <button
                 key={room.id}
                 onClick={() => {
-                  const variant = localStorage.getItem('cosmos-room-variant') ?? 'room';
+                  const VALID_ROOM_VARIANTS = new Set(['room', 'room-v2', 'room-v3']);
+                  const stored = localStorage.getItem('cosmos-room-variant') ?? 'room';
+                  const variant = VALID_ROOM_VARIANTS.has(stored) ? stored : 'room';
+                  if (!VALID_ROOM_VARIANTS.has(stored))
+                    localStorage.setItem('cosmos-room-variant', 'room');
                   navigate(`/cosmos/views/${variant}/${room.id}`);
                 }}
                 className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-600 transition-all hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
