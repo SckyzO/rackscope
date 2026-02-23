@@ -132,52 +132,52 @@ const TreeNode = ({
   small?: boolean;
 }) => (
   <div>
-    <div className="flex items-center pr-1">
-      {/* Label area — clickable for navigation if hasLink */}
-      <button
-        onClick={hasLink ? onLinkClick : onToggle}
-        className={`${ITEM_BASE} flex-1 ${small ? 'py-1.5 text-xs' : ''} ${isActive ? ITEM_ACTIVE : ITEM_INACTIVE}`}
-      >
-        {Icon && (
-          <Icon
-            className={`h-4 w-4 shrink-0 ${isActive ? 'text-brand-500 dark:text-brand-400' : 'opacity-50'}`}
-          />
-        )}
-        {!sidebarCollapsed && <span className="min-w-0 flex-1 truncate">{label}</span>}
-        {/* Chevron inline when sidebar is collapsed */}
-        {sidebarCollapsed &&
-          (expanded ? (
-            <ChevronDown className="h-3 w-3 shrink-0 opacity-40" />
-          ) : (
-            <ChevronRight className="h-3 w-3 shrink-0 opacity-40" />
-          ))}
-      </button>
-      {/* Separate chevron button for toggle when label is a link */}
-      {!sidebarCollapsed && hasLink && (
+    <div className="flex items-center">
+      {/* Icon-only in collapsed sidebar — just navigate / toggle on click, no chevron */}
+      {sidebarCollapsed ? (
         <button
-          onClick={onToggle}
-          className="shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-white/5"
+          onClick={hasLink ? onLinkClick : onToggle}
+          title={label}
+          className={`${ITEM_BASE} justify-center px-2 ${isActive ? ITEM_ACTIVE : ITEM_INACTIVE}`}
         >
-          {expanded ? (
-            <ChevronDown className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5" />
+          {Icon && (
+            <Icon
+              className={`h-4 w-4 shrink-0 ${isActive ? 'text-brand-500 dark:text-brand-400' : 'opacity-50'}`}
+            />
           )}
         </button>
-      )}
-      {/* Chevron for toggle-only nodes */}
-      {!sidebarCollapsed && !hasLink && (
-        <span className="pointer-events-none pr-1.5 text-gray-400 dark:text-gray-500">
-          {expanded ? (
-            <ChevronDown className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5" />
-          )}
-        </span>
+      ) : (
+        <>
+          {/* Label button — navigates (hasLink) or toggles */}
+          <button
+            onClick={hasLink ? onLinkClick : onToggle}
+            className={`${ITEM_BASE} flex-1 ${small ? 'py-1.5 text-xs' : ''} ${isActive ? ITEM_ACTIVE : ITEM_INACTIVE}`}
+          >
+            {Icon && (
+              <Icon
+                className={`h-4 w-4 shrink-0 ${isActive ? 'text-brand-500 dark:text-brand-400' : 'opacity-50'}`}
+              />
+            )}
+            <span className="min-w-0 flex-1 truncate">{label}</span>
+          </button>
+          {/* Chevron — always a clickable button for toggling */}
+          <button
+            onClick={onToggle}
+            className="shrink-0 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-white/5"
+          >
+            {expanded ? (
+              <ChevronDown className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </>
       )}
     </div>
-    {/* Children: TailAdmin dropdown style — pl-9, no border-l */}
-    {expanded && children && <div className="mt-0.5 flex flex-col gap-0.5 pl-9">{children}</div>}
+    {/* Children — only in expanded sidebar; pl-9 matches TailAdmin dropdown */}
+    {expanded && children && !sidebarCollapsed && (
+      <div className="mt-0.5 flex flex-col gap-0.5 pl-9">{children}</div>
+    )}
   </div>
 );
 
