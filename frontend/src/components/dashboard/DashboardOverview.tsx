@@ -1,17 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
+import ReactApexChart from 'react-apexcharts';
+import type { ApexOptions } from 'apexcharts';
 import { Activity, AlertTriangle, Map as MapIcon, ArrowUpRight, Database } from 'lucide-react';
 import { api } from '../../services/api';
 import type {
@@ -23,18 +13,6 @@ import type {
   PrometheusStats,
   TelemetryStats,
 } from '../../types';
-
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
 
 interface DashboardOverviewProps {
   searchQuery?: string;
@@ -245,64 +223,23 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     return activeChecksBySite.get(currentSite.id) || { checks: 0, devices: 0 };
   }, [activeChecksBySite, currentSite]);
 
-  // Chart.js configuration
-  const chartData = {
-    labels: promHistory.map((_, idx) => `T-${promHistory.length - idx - 1}`),
-    datasets: [
-      {
-        label: 'Query Time (ms)',
-        data: promHistory.map((p) => p.ms),
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        borderWidth: 2,
-        pointRadius: 3,
-        pointBackgroundColor: 'rgb(59, 130, 246)',
-        fill: true,
-        tension: 0.3,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: 'rgba(59, 130, 246, 0.5)',
-        borderWidth: 1,
-        padding: 12,
-        displayColors: false,
-        callbacks: {
-          label: (context: { parsed: { y: number } }) => `${Math.round(context.parsed.y)} ms`,
-        },
-      },
+  // ApexCharts configuration
+  const apexChartOptions: ApexOptions = {
+    chart: {
+      type: 'area',
+      background: 'transparent',
+      toolbar: { show: false },
+      sparkline: { enabled: true },
     },
-    scales: {
-      x: {
-        display: false,
-      },
-      y: {
-        display: true,
-        grid: {
-          color: 'rgba(255, 255, 255, 0.05)',
-          drawBorder: false,
-        },
-        ticks: {
-          color: 'rgba(156, 163, 175, 0.6)',
-          font: {
-            family: 'JetBrains Mono, monospace',
-            size: 10,
-          },
-          callback: (value: string | number) => `${value}ms`,
-        },
-      },
-    },
+    theme: { mode: 'dark' },
+    colors: ['#3b82f6'],
+    stroke: { curve: 'smooth', width: 2 },
+    fill: { type: 'gradient', gradient: { opacityFrom: 0.3, opacityTo: 0.01 } },
+    dataLabels: { enabled: false },
+    tooltip: { theme: 'dark', y: { formatter: (v) => `${Math.round(v)} ms` } },
+    yaxis: { show: false },
+    xaxis: { labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
+    grid: { show: false },
   };
 
   if (loading) {
@@ -586,7 +523,12 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
             {/* Chart */}
             <div className="mb-4 h-32 rounded-xl border border-white/5 bg-black/30 p-3">
-              <Line data={chartData} options={chartOptions} />
+              <ReactApexChart
+                options={apexChartOptions}
+                series={[{ name: 'Query Time', data: promHistory.map((p) => p.ms) }]}
+                type="area"
+                height={100}
+              />
             </div>
 
             {/* Stats Grid */}
