@@ -1,21 +1,20 @@
 /**
  * EmptyPage — Cosmos page template
  *
- * Copy this file, rename the export, and replace placeholder content.
- *
- * Building blocks available here:
+ * Building blocks:
  *   PageHeader   — title + description + optional action buttons (top-right)
- *   SectionCard  — white card with title, optional description, children
- *   ColBox       — placeholder box for column layouts
+ *   SectionCard  — white card with title + optional description + children
+ *   ColBox       — styled placeholder box (same as MetricsPage cards)
  *
- * Column layouts use CSS Grid. Available patterns:
- *   grid-cols-2                  → 2 equal columns
- *   grid-cols-3                  → 3 equal columns (33/33/33)
- *   grid-cols-[1fr_3fr_1fr]      → 3 columns 20/60/20
- *   grid-cols-[1fr_5fr_4fr]      → 3 columns 10/50/40
- *   grid-cols-4                  → 4 equal columns
+ * Column layouts — use directly in any page:
+ *   1 col  (no grid needed, ColBox is block)
+ *   2 cols  grid-cols-2
+ *   3 cols  grid-cols-3             33/33/33
+ *   3 cols  grid-cols-[1fr_3fr_1fr] 20/60/20
+ *   3 cols  grid-cols-[1fr_5fr_4fr] 10/50/40
+ *   4 cols  grid-cols-4
  *
- * All grids use gap-4 by default. Change to gap-5 or gap-6 for more breathing room.
+ * All grids use gap-4. Swap to gap-5 or gap-6 for more breathing room.
  */
 
 import type { ReactNode } from 'react';
@@ -62,11 +61,7 @@ export const SectionCard = ({
   </div>
 );
 
-// ── Column placeholder box ─────────────────────────────────────────────────────
-// Same style as the metric cards on MetricsPage:
-//   rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900
-
-const ColBox = ({ label, height = 80 }: { label: string; height?: number }) => (
+export const ColBox = ({ label, height = 80 }: { label: string; height?: number }) => (
   <div
     className="flex items-center justify-center rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
     style={{ minHeight: height }}
@@ -77,6 +72,14 @@ const ColBox = ({ label, height = 80 }: { label: string; height?: number }) => (
   </div>
 );
 
+// ── Layout section label ───────────────────────────────────────────────────────
+
+const LayoutLabel = ({ children }: { children: string }) => (
+  <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+    {children}
+  </p>
+);
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export const EmptyPage = () => {
@@ -84,7 +87,7 @@ export const EmptyPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* ── Header with action buttons ── */}
+      {/* ── Header ── */}
       <PageHeader
         title="Page Title"
         description="A short description of what this page shows or lets you do."
@@ -108,50 +111,61 @@ export const EmptyPage = () => {
         }
       />
 
+      {/* ── 1 Column ── */}
+      <div className="space-y-2">
+        <LayoutLabel>1 Column</LayoutLabel>
+        <ColBox label="100%" height={100} />
+      </div>
+
       {/* ── 2 Columns ── */}
-      <SectionCard title="2 Columns" desc="Equal 50 / 50">
+      <div className="space-y-2">
+        <LayoutLabel>2 Columns — 50 / 50</LayoutLabel>
         <div className="grid grid-cols-2 gap-4">
           <ColBox label="50%" />
           <ColBox label="50%" />
         </div>
-      </SectionCard>
+      </div>
 
       {/* ── 3 Columns — 33/33/33 ── */}
-      <SectionCard title="3 Columns — Equal" desc="33 / 33 / 33">
+      <div className="space-y-2">
+        <LayoutLabel>3 Columns — Equal 33 / 33 / 33</LayoutLabel>
         <div className="grid grid-cols-3 gap-4">
           <ColBox label="33%" />
           <ColBox label="33%" />
           <ColBox label="33%" />
         </div>
-      </SectionCard>
+      </div>
 
       {/* ── 3 Columns — 20/60/20 ── */}
-      <SectionCard title="3 Columns — Centered" desc="20 / 60 / 20">
+      <div className="space-y-2">
+        <LayoutLabel>3 Columns — Centered 20 / 60 / 20</LayoutLabel>
         <div className="grid grid-cols-[1fr_3fr_1fr] gap-4">
           <ColBox label="20%" />
           <ColBox label="60%" />
           <ColBox label="20%" />
         </div>
-      </SectionCard>
+      </div>
 
       {/* ── 3 Columns — 10/50/40 ── */}
-      <SectionCard title="3 Columns — Asymmetric" desc="10 / 50 / 40">
+      <div className="space-y-2">
+        <LayoutLabel>3 Columns — Asymmetric 10 / 50 / 40</LayoutLabel>
         <div className="grid grid-cols-[1fr_5fr_4fr] gap-4">
           <ColBox label="10%" />
           <ColBox label="50%" />
           <ColBox label="40%" />
         </div>
-      </SectionCard>
+      </div>
 
       {/* ── 4 Columns ── */}
-      <SectionCard title="4 Columns" desc="Equal 25 / 25 / 25 / 25">
+      <div className="space-y-2">
+        <LayoutLabel>4 Columns — Equal 25 / 25 / 25 / 25</LayoutLabel>
         <div className="grid grid-cols-4 gap-4">
           <ColBox label="25%" />
           <ColBox label="25%" />
           <ColBox label="25%" />
           <ColBox label="25%" />
         </div>
-      </SectionCard>
+      </div>
     </div>
   );
 };
