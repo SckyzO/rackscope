@@ -58,11 +58,9 @@ import { NotificationsFullPage } from './pages/NotificationsFullPage';
 // Monitoring Views (connected to real API)
 import { CosmosWorldMapPage } from './pages/views/CosmosWorldMapPage';
 import { CosmosRoomPage } from './pages/views/CosmosRoomPage';
-import { CosmosRoomPageV2 } from './pages/views/CosmosRoomPageV2';
-import { CosmosRoomPageV3 } from './pages/views/CosmosRoomPageV3';
 
 import { CosmosDevicePage } from './pages/views/CosmosDevicePage';
-import { CosmosRackV2 as CosmosRackView } from './pages/views/CosmosRackV2';
+import { CosmosRackV2 } from './pages/views/CosmosRackV2';
 
 // Rackscope-specific
 import { HealthStatusPage } from './pages/rackscope/HealthStatusPage';
@@ -83,10 +81,6 @@ import { CosmosSlurmWallboardV2Page } from './pages/slurm/CosmosSlurmWallboardV2
 import { CosmosSettingsPage } from './pages/editors/CosmosSettingsPage';
 import { CosmosChecksEditorPage } from './pages/editors/CosmosChecksEditorPage';
 import { CosmosTopologyEditorPage } from './pages/editors/CosmosTopologyEditorPage';
-import { CosmosTopologyEditorPageV2 } from './pages/editors/CosmosTopologyEditorPageV2';
-import { CosmosTopologyEditorPageV3 } from './pages/editors/CosmosTopologyEditorPageV3';
-import { CosmosTopologyEditorPageV4 } from './pages/editors/CosmosTopologyEditorPageV4';
-import { CosmosTopologyEditorPageV5 } from './pages/editors/CosmosTopologyEditorPageV5';
 import { CosmosTemplatesEditorPage } from './pages/editors/CosmosTemplatesEditorPage';
 import { CosmosRackEditorPage } from './pages/editors/CosmosRackEditorPage';
 import { EmptyPage, TemplatesShowcase, CenteredPage } from './pages/templates/EmptyPage';
@@ -187,9 +181,7 @@ const CosmosRoutes = () => (
       {/* ── Monitoring Views (live data) ── */}
       <Route path="views/worldmap" element={<CosmosWorldMapPage />} />
       <Route path="views/room/:roomId" element={<CosmosRoomPage />} />
-      <Route path="views/room-v2/:roomId" element={<CosmosRoomPageV2 />} />
-      <Route path="views/room-v3/:roomId" element={<CosmosRoomPageV3 />} />
-      <Route path="views/rack/:rackId" element={<CosmosRackView />} />
+      <Route path="views/rack/:rackId" element={<CosmosRackV2 />} />
       <Route path="views/device/:rackId/:deviceId" element={<CosmosDevicePage />} />
 
       {/* Rackscope UI Components */}
@@ -212,10 +204,6 @@ const CosmosRoutes = () => (
       <Route path="settings" element={<CosmosSettingsPage />} />
       <Route path="editors/checks" element={<CosmosChecksEditorPage />} />
       <Route path="editors/topology" element={<CosmosTopologyEditorPage />} />
-      <Route path="editors/topology-v2" element={<CosmosTopologyEditorPageV2 />} />
-      <Route path="editors/topology-v3" element={<CosmosTopologyEditorPageV3 />} />
-      <Route path="editors/topology-v4" element={<CosmosTopologyEditorPageV4 />} />
-      <Route path="editors/topology-v5" element={<CosmosTopologyEditorPageV5 />} />
       <Route path="editors/templates" element={<CosmosTemplatesEditorPage />} />
       <Route path="editors/rack" element={<CosmosRackEditorPage />} />
       <Route path="editors/rack-templates" element={<CosmosRackTemplateEditorPage />} />

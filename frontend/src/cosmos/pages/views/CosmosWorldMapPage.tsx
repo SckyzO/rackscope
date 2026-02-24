@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
-import { Link } from 'react-router-dom';
-import { Building2, MapPin, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Building2, MapPin } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Site } from '../../../types';
+import { usePageTitle } from '../../contexts/PageTitleContext';
+import {
+  PageHeader,
+  PageBreadcrumb,
+  SectionCard,
+  LoadingState,
+  EmptyState,
+  ClickableRow,
+} from '../templates/EmptyPage';
 
 export const CosmosWorldMapPage = () => {
+  usePageTitle('World Map');
+  const navigate = useNavigate();
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,31 +31,35 @@ export const CosmosWorldMapPage = () => {
   }, []);
 
   const geoSites = sites.filter((s) => s.location?.lat && s.location?.lon);
+  const totalRooms = sites.reduce((acc, s) => acc + (s.rooms?.length ?? 0), 0);
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">World Map</h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {geoSites.length} site{geoSites.length !== 1 ? 's' : ''} with geolocation
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="World Map"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'Monitoring', href: '/cosmos/views/worldmap' },
+              { label: 'World Map' },
+            ]}
+          />
+        }
+        actions={
           <span className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium">
             <span className="bg-brand-500 h-1.5 w-1.5 animate-pulse rounded-full" />
             Live
           </span>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Stats row */}
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Sites', value: sites.length },
           { label: 'With location', value: geoSites.length },
-          { label: 'Rooms', value: sites.reduce((acc, s) => acc + (s.rooms?.length ?? 0), 0) },
+          { label: 'Rooms', value: totalRooms },
         ].map((s) => (
           <div
             key={s.label}
@@ -56,14 +71,14 @@ export const CosmosWorldMapPage = () => {
         ))}
       </div>
 
-      {/* Map */}
+      {/* Map — fixed height, no SectionCard padding needed */}
       <div
         className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800"
-        style={{ height: '500px' }}
+        style={{ height: 500 }}
       >
         {loading ? (
           <div className="flex h-full items-center justify-center bg-gray-50 dark:bg-gray-900">
-            <div className="border-t-brand-500 h-8 w-8 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
+            <LoadingState message="Loading map data…" />
           </div>
         ) : (
           <MapContainer
@@ -89,9 +104,9 @@ export const CosmosWorldMapPage = () => {
               >
                 <Popup>
                   <div className="min-w-[200px]">
-                    <div className="font-semibold text-gray-900">{site.name}</div>
+                    <p className="font-semibold text-gray-900">{site.name}</p>
                     {site.description && (
-                      <div className="mt-1 text-xs text-gray-500">{site.description}</div>
+                      <p className="mt-1 text-xs text-gray-500">{site.description}</p>
                     )}
                     {site.location?.address && (
                       <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
@@ -101,16 +116,15 @@ export const CosmosWorldMapPage = () => {
                     )}
                     {site.rooms && site.rooms.length > 0 && (
                       <div className="mt-2 space-y-1">
-                        <div className="text-xs font-semibold text-gray-600">Rooms:</div>
+                        <p className="text-xs font-semibold text-gray-600">Rooms</p>
                         {site.rooms.map((room) => (
-                          <Link
+                          <button
                             key={room.id}
-                            to={`/cosmos/views/room/${room.id}`}
-                            className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                            onClick={() => navigate(`/cosmos/views/room/${room.id}`)}
+                            className="text-brand-600 hover:text-brand-700 flex w-full items-center gap-1 text-xs hover:underline"
                           >
-                            <ExternalLink className="h-3 w-3" />
                             {room.name}
-                          </Link>
+                          </button>
                         ))}
                       </div>
                     )}
@@ -123,48 +137,36 @@ export const CosmosWorldMapPage = () => {
       </div>
 
       {/* Sites list */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-white">All Sites</h3>
-        </div>
-        <div className="divide-y divide-gray-100 dark:divide-gray-800">
-          {sites.length === 0 ? (
-            <div className="flex flex-col items-center py-12 text-center">
-              <Building2 className="h-10 w-10 text-gray-300 dark:text-gray-600" />
-              <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">No sites configured</p>
-            </div>
-          ) : (
-            sites.map((site) => (
-              <div
+      <SectionCard title="All Sites" desc={`${sites.length} site${sites.length !== 1 ? 's' : ''} configured`}>
+        {loading ? (
+          <LoadingState />
+        ) : sites.length === 0 ? (
+          <EmptyState
+            title="No sites configured"
+            description="Add sites with geolocation coordinates to see them on the map."
+          />
+        ) : (
+          <div className="-mx-1 divide-y divide-gray-100 dark:divide-gray-800">
+            {sites.map((site) => (
+              <ClickableRow
                 key={site.id}
-                className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/5"
-              >
-                <div className="bg-brand-50 dark:bg-brand-500/15 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
-                  <Building2 className="text-brand-500 h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{site.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {site.rooms?.length ?? 0} room{(site.rooms?.length ?? 0) !== 1 ? 's' : ''}
-                    {site.location?.address && ` • ${site.location.address}`}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  {site.rooms?.map((room) => (
-                    <Link
-                      key={room.id}
-                      to={`/cosmos/views/room/${room.id}`}
-                      className="hover:border-brand-500 hover:text-brand-500 dark:hover:border-brand-500 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-gray-700 dark:text-gray-400"
-                    >
-                      {room.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+                icon={Building2}
+                title={site.name}
+                subtitle={[
+                  `${site.rooms?.length ?? 0} room${(site.rooms?.length ?? 0) !== 1 ? 's' : ''}`,
+                  site.location?.address,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+                onClick={() => {
+                  const firstRoom = site.rooms?.[0];
+                  if (firstRoom) navigate(`/cosmos/views/room/${firstRoom.id}`);
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </SectionCard>
     </div>
   );
 };

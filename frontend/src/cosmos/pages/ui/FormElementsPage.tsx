@@ -208,10 +208,10 @@ export const FormElementsPage = () => {
                 <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
                 <button
                   onClick={() => set(!val)}
-                  className={`relative h-6 w-11 rounded-full transition-colors ${val ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'}`}
+                  className={`relative h-6 w-11 rounded-full p-0 transition-colors ${val ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                 >
                   <span
-                    className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${val ? 'translate-x-5' : 'translate-x-1'}`}
+                    className={`absolute top-1 left-0 h-4 w-4 rounded-full bg-white shadow transition-transform ${val ? 'translate-x-6' : 'translate-x-1'}`}
                   />
                 </button>
               </label>

@@ -212,16 +212,6 @@ const RackLink = ({
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const VALID_ROOM_VARIANTS = new Set(['room', 'room-v2', 'room-v3']);
-
-function getRoomVariant(): string {
-  const stored = localStorage.getItem('cosmos-room-variant') ?? 'room';
-  if (!VALID_ROOM_VARIANTS.has(stored)) {
-    localStorage.setItem('cosmos-room-variant', 'room');
-    return 'room';
-  }
-  return stored;
-}
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
 
@@ -317,7 +307,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
                   >
                     {siteRooms.map((room) => {
                       const roomExpanded = expandedRooms.has(room.id);
-                      const roomPath = `/cosmos/views/${getRoomVariant()}/${room.id}`;
+                      const roomPath = `/cosmos/views/room/${room.id}`;
                       const isRoomActive = location.pathname === roomPath;
                       return (
                         <TreeNode
@@ -482,31 +472,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         <NavItem
           to="/cosmos/editors/topology"
           icon={GitBranch}
-          label="Topology V1"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/editors/topology-v2"
-          icon={GitBranch}
-          label="Topology V2"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/editors/topology-v3"
-          icon={GitBranch}
-          label="Topology V3"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/editors/topology-v4"
-          icon={GitBranch}
-          label="Topology V4"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/editors/topology-v5"
-          icon={GitBranch}
-          label="Topology V5"
+          label="Topology"
           collapsed={collapsed}
         />
         <NavItem

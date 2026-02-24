@@ -39,7 +39,7 @@ features:
   offline: true
   demo: false
 auth:
-  enabled: true
+  enabled: false
   username: admin
   password_hash: $2b$12$X91lqP3eT0gSs7rF9JdM0OtowhwbsugMYDDGySdrXscVmtggB4eCS
   secret_key: ''

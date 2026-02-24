@@ -59,7 +59,7 @@ interface DoorMarkerProps {
   doorLabel?: string | null;
 }
 
-const PADDING = 24;
+const PADDING = 10;
 
 const DoorMarker = ({ side, position, w, h, showLabel, doorLabel }: DoorMarkerProps) => {
   const iW = w - PADDING * 2;
@@ -69,7 +69,7 @@ const DoorMarker = ({ side, position, w, h, showLabel, doorLabel }: DoorMarkerPr
   // Strip: 6px thick, 72px long, 12px from the canvas edge (center of outer padding gap)
   const THICK = 6;
   const LEN = 72;
-  const MARGIN = 12;
+  const MARGIN = 4; // center of the 12px outer gap (PADDING/2 - THICK/2 ≈ 4)
 
   let stripStyle: React.CSSProperties = {};
   let labelClass = '';
@@ -95,7 +95,7 @@ const DoorMarker = ({ side, position, w, h, showLabel, doorLabel }: DoorMarkerPr
 
   return (
     <div
-      className="group bg-brand-500/70 absolute z-30 cursor-default rounded-full"
+      className="group bg-brand-500/70 pointer-events-auto absolute z-30 cursor-default rounded-full"
       style={{ ...stripStyle, boxShadow: '0 0 18px rgba(70,95,255,0.5)' }}
       title={label}
     >
@@ -694,7 +694,53 @@ interface Settings {
   rackAlign: 'left' | 'right';
   aisleAlign: 'top' | 'bottom';
   hiddenAisles: Set<string>;
+  refreshInterval: number; // seconds, 0 = off
 }
+
+const DEFAULT_SETTINGS: Settings = {
+  showGrid: false,
+  showCardinalEdges: true,
+  showDoor: true,
+  showDoorLabel: true,
+  showDimensions: true,
+  showRackLabels: false,
+  showLegend: true,
+  sortBySeverity: false,
+  rackAlign: 'left',
+  aisleAlign: 'top',
+  hiddenAisles: new Set(),
+  refreshInterval: 60,
+};
+
+const settingsKey = (roomId: string) => `rackscope.room.${roomId}.settings`;
+
+const loadRoomSettings = (roomId: string): Settings => {
+  try {
+    const raw = localStorage.getItem(settingsKey(roomId));
+    if (!raw) return DEFAULT_SETTINGS;
+    const p = JSON.parse(raw) as Partial<Omit<Settings, 'hiddenAisles'>> & {
+      hiddenAisles?: string[];
+    };
+    return {
+      ...DEFAULT_SETTINGS,
+      ...p,
+      hiddenAisles: new Set(Array.isArray(p.hiddenAisles) ? p.hiddenAisles : []),
+    };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+};
+
+const saveRoomSettings = (roomId: string, s: Settings) => {
+  try {
+    localStorage.setItem(
+      settingsKey(roomId),
+      JSON.stringify({ ...s, hiddenAisles: [...s.hiddenAisles] })
+    );
+  } catch {
+    // quota exceeded or private browsing — ignore
+  }
+};
 
 const CustomizePanel = ({
   settings,
@@ -750,6 +796,44 @@ const CustomizePanel = ({
           </button>
         </div>
         <div className="flex-1 space-y-5 overflow-y-auto p-4">
+          {/* Auto Refresh */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+                Auto Refresh
+              </p>
+              {settings.refreshInterval > 0 && (
+                <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[9px] font-bold text-green-600 dark:bg-green-500/15 dark:text-green-400">
+                  Active
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {(
+                [
+                  { label: 'Off', value: 0 },
+                  { label: '15s', value: 15 },
+                  { label: '30s', value: 30 },
+                  { label: '1m', value: 60 },
+                  { label: '2m', value: 120 },
+                  { label: '5m', value: 300 },
+                ] as { label: string; value: number }[]
+              ).map(({ label, value }) => (
+                <button
+                  key={value}
+                  onClick={() => setSettings({ ...settings, refreshInterval: value })}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                    settings.refreshInterval === value
+                      ? 'bg-brand-500 text-white'
+                      : 'border border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div>
             <p className="mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
               Display
@@ -900,19 +984,16 @@ export const CosmosRoomPage = () => {
   const [search, setSearch] = useState('');
   const [collapsedAisles, setCollapsedAisles] = useState<Set<string>>(new Set());
 
-  const [settings, setSettings] = useState<Settings>({
-    showGrid: false,
-    showCardinalEdges: true,
-    showDoor: true,
-    showDoorLabel: true,
-    showDimensions: true,
-    showRackLabels: false,
-    showLegend: true,
-    sortBySeverity: false,
-    rackAlign: 'left',
-    aisleAlign: 'top',
-    hiddenAisles: new Set(),
-  });
+  const [settings, setSettings] = useState<Settings>(() => loadRoomSettings(roomId ?? ''));
+
+  // Persist settings to localStorage whenever they change
+  useEffect(() => {
+    if (roomId) saveRoomSettings(roomId, settings);
+  }, [roomId, settings]);
+
+  // ── Auto-refresh countdown state (effect registered after `load` is declared) ──
+  const [countdown, setCountdown] = useState(0);
+  const countdownRef = useRef(0);
 
   // ── Zoom / pan ─────────────────────────────────────────────────────────────
   const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
@@ -920,9 +1001,11 @@ export const CosmosRoomPage = () => {
   const [isDragging, setIsDragging] = useState(false);
 
   const contentRef = useRef<HTMLDivElement>(null);
-  // Keep viewport in a ref so wheel/drag callbacks avoid stale closures
+  // Keep viewport and canvasSize in refs so callbacks avoid stale closures
   const vpRef = useRef(viewport);
   vpRef.current = viewport;
+  const canvasSizeRef = useRef(canvasSize);
+  canvasSizeRef.current = canvasSize;
   const dragRef = useRef<{
     sx: number;
     sy: number;
@@ -930,35 +1013,35 @@ export const CosmosRoomPage = () => {
     spy: number;
     active: boolean;
   } | null>(null);
-  // Track whether we've auto-fitted for the current room
-  const fittedRef = useRef(false);
 
   const fitToCanvas = useCallback(() => {
     if (!contentRef.current || canvasSize.w === 0 || canvasSize.h === 0) return;
     const naturalH = contentRef.current.scrollHeight;
     const naturalW = contentRef.current.scrollWidth;
-    // Use (canvas - 2×PADDING) so content stays inside the dashed room walls,
-    // not just inside the canvas container. PADDING=24 is the inset of the dashed border.
     const usableH = canvasSize.h - 2 * PADDING;
     const usableW = canvasSize.w - 2 * PADDING;
-    const fitZoom = Math.min(usableH / naturalH, usableW / naturalW, 1);
-    setViewport({ zoom: Math.max(0.15, fitZoom), panX: 0, panY: 0 });
+    const rawRatio = Math.min(usableH / naturalH, usableW / naturalW);
+    // Snap to exactly 1.0 if content fits — threshold at 0.97 absorbs subpixel rounding
+    const fitZoom = rawRatio >= 0.97 ? 1.0 : Math.max(0.15, rawRatio);
+    const panX = Math.max(0, (canvasSize.w - naturalW * fitZoom) / 2);
+    const panY = Math.max(0, (canvasSize.h - naturalH * fitZoom) / 2);
+    setViewport({ zoom: fitZoom, panX, panY });
   }, [canvasSize]);
 
-  // Reset fit flag when room changes
+  // Adjust panY when aisleAlign changes — flex justify-end doesn't work inside a scaled layer
   useEffect(() => {
-    fittedRef.current = false;
-  }, [room?.id]);
+    if (!contentRef.current) return;
+    const { h } = canvasSizeRef.current;
+    if (h === 0) return;
+    if (settings.aisleAlign === 'bottom') {
+      const contentH = contentRef.current.scrollHeight;
+      setViewport((v) => ({ ...v, panY: Math.max(0, h - contentH) }));
+    } else {
+      setViewport((v) => ({ ...v, panY: 0 }));
+    }
+  }, [settings.aisleAlign]);
 
-  // Auto-fit once room is loaded and canvas is measured
-  useEffect(() => {
-    if (!room || canvasSize.w === 0 || fittedRef.current) return;
-    const t = setTimeout(() => {
-      fitToCanvas();
-      fittedRef.current = true;
-    }, 200);
-    return () => clearTimeout(t);
-  }, [room, canvasSize.w, fitToCanvas]);
+  // No auto-fit on load — default is always 100%. User triggers fit manually via button.
 
   // Scroll wheel zoom (non-passive, centered on cursor)
   useEffect(() => {
@@ -967,8 +1050,8 @@ export const CosmosRoomPage = () => {
     const handler = (e: WheelEvent) => {
       e.preventDefault();
       const { zoom: z, panX: px, panY: py } = vpRef.current;
-      const factor = e.deltaY < 0 ? 1.1 : 0.9;
-      const newZoom = Math.max(0.15, Math.min(3, z * factor));
+      const delta = e.deltaY < 0 ? 0.05 : -0.05;
+      const newZoom = Math.max(0.15, Math.min(3, z + delta));
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
@@ -1038,6 +1121,26 @@ export const CosmosRoomPage = () => {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Auto-refresh — placed after `load` to avoid temporal dead zone
+  useEffect(() => {
+    if (settings.refreshInterval === 0) {
+      setCountdown(0);
+      return;
+    }
+    countdownRef.current = settings.refreshInterval;
+    setCountdown(settings.refreshInterval);
+    const tick = setInterval(() => {
+      countdownRef.current -= 1;
+      setCountdown(countdownRef.current);
+      if (countdownRef.current <= 0) {
+        void load(true);
+        countdownRef.current = settings.refreshInterval;
+        setCountdown(settings.refreshInterval);
+      }
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [settings.refreshInterval, load]);
 
   // Attach ResizeObserver once the canvas is in the DOM (after loading completes)
   useEffect(() => {
@@ -1139,9 +1242,14 @@ export const CosmosRoomPage = () => {
           {/* Zoom controls — inline-flex group, same height as other topbar buttons */}
           <div className="flex overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
             <button
-              onClick={() => setViewport((v) => ({ ...v, zoom: Math.max(0.15, v.zoom * 0.8) }))}
+              onClick={() =>
+                setViewport((v) => ({
+                  ...v,
+                  zoom: Math.max(0.15, Math.round((v.zoom - 0.05) * 100) / 100),
+                }))
+              }
               className="flex items-center border-r border-gray-200 px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-              title="Zoom out"
+              title="Zoom out (−5%)"
             >
               <Minus className="h-4 w-4" />
             </button>
@@ -1160,9 +1268,14 @@ export const CosmosRoomPage = () => {
               <Maximize2 className="h-4 w-4" />
             </button>
             <button
-              onClick={() => setViewport((v) => ({ ...v, zoom: Math.min(3, v.zoom * 1.25) }))}
+              onClick={() =>
+                setViewport((v) => ({
+                  ...v,
+                  zoom: Math.min(3, Math.round((v.zoom + 0.05) * 100) / 100),
+                }))
+              }
               className="flex items-center px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
-              title="Zoom in"
+              title="Zoom in (+5%)"
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -1182,11 +1295,21 @@ export const CosmosRoomPage = () => {
             <Settings2 className="h-4 w-4" /> Customize
           </button>
           <button
-            onClick={() => void load(true)}
+            onClick={() => {
+              void load(true);
+              if (settings.refreshInterval > 0) {
+                countdownRef.current = settings.refreshInterval;
+                setCountdown(settings.refreshInterval);
+              }
+            }}
             disabled={refreshing}
+            title={settings.refreshInterval > 0 ? `Auto-refresh every ${settings.refreshInterval}s` : 'Refresh'}
             className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {settings.refreshInterval > 0 && !refreshing && (
+              <span className="font-mono text-xs tabular-nums">{countdown}s</span>
+            )}
           </button>
         </div>
       </div>
@@ -1252,21 +1375,15 @@ export const CosmosRoomPage = () => {
         }}
         onMouseDown={handleCanvasMouseDown}
       >
-        {/* ── Zoomable layer — everything inside scales together ── */}
-        <div
-          className="absolute inset-0"
-          style={{
-            transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
-            transformOrigin: '0 0',
-          }}
-        >
-          {/* Room inner border */}
+        {/* ── Fixed room frame — border, door, cardinals — never zoom ── */}
+        <div className="pointer-events-none absolute inset-0 z-20">
+          {/* Inner dashed border */}
           <div
             className="absolute rounded-xl border border-dashed border-gray-200 dark:border-gray-700"
             style={{ inset: PADDING }}
           />
 
-          {/* Door marker */}
+          {/* Door marker — pointer-events-auto so hover tooltip still works */}
           {settings.showDoor && canvasSize.w > 0 && (
             <DoorMarker
               side={doorSide}
@@ -1305,25 +1422,25 @@ export const CosmosRoomPage = () => {
               return (
                 <>
                   <div
-                    className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
+                    className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
                     style={{ top: half }}
                   >
                     {chip(labels.top)}
                   </div>
                   <div
-                    className="pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 translate-y-1/2"
+                    className="absolute left-1/2 -translate-x-1/2 translate-y-1/2"
                     style={{ bottom: half }}
                   >
                     {chip(labels.bottom)}
                   </div>
                   <div
-                    className="pointer-events-none absolute top-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
+                    className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
                     style={{ left: half }}
                   >
                     {chip(labels.left)}
                   </div>
                   <div
-                    className="pointer-events-none absolute top-1/2 z-20 translate-x-1/2 -translate-y-1/2"
+                    className="absolute top-1/2 translate-x-1/2 -translate-y-1/2"
                     style={{ right: half }}
                   >
                     {chip(labels.right)}
@@ -1331,12 +1448,18 @@ export const CosmosRoomPage = () => {
                 </>
               );
             })()}
+        </div>
 
-          {/* Aisles — no overflow-y-auto, zoom handles fitting */}
-          <div
-            ref={contentRef}
-            className={`relative z-10 flex h-full flex-col gap-3 p-8 ${settings.aisleAlign === 'bottom' ? 'justify-end' : 'justify-start'}`}
-          >
+        {/* ── Zoomable layer — only aisles content scales ── */}
+        <div
+          className="absolute inset-0"
+          style={{
+            transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+            transformOrigin: '0 0',
+          }}
+        >
+          {/* contentRef — auto-height, top-left of layer; aisleAlign handled via panY */}
+          <div ref={contentRef} className="relative flex flex-col gap-3 p-8">
             {sortedAisles.map((aisle) => (
               <AisleBand
                 key={aisle.id}
