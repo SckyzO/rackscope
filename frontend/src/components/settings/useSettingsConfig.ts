@@ -55,9 +55,15 @@ export type ConfigDraft = {
   features: {
     notifications: boolean;
     notifications_max_visible: string;
+    worldmap: boolean;
+    dev_tools: boolean;
     playlist: boolean;
     offline: boolean;
     demo: boolean;
+  };
+  playlist: {
+    interval_seconds: string;
+    views: string[];
   };
   auth: {
     enabled: boolean;
@@ -169,11 +175,17 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     max_ids_per_query: String(config.planner?.max_ids_per_query ?? 200),
   },
   features: {
-    notifications: config.features?.notifications ?? false,
+    notifications: config.features?.notifications ?? true,
     notifications_max_visible: String(config.features?.notifications_max_visible ?? 10),
+    worldmap: config.features?.worldmap ?? true,
+    dev_tools: config.features?.dev_tools ?? false,
     playlist: config.features?.playlist ?? false,
     offline: config.features?.offline ?? false,
     demo: config.features?.demo ?? false,
+  },
+  playlist: {
+    interval_seconds: String(config.playlist?.interval_seconds ?? 30),
+    views: config.playlist?.views ?? ['/cosmos/views/worldmap', '/cosmos/slurm/overview'],
   },
   auth: {
     enabled: config.auth?.enabled ?? false,
@@ -318,9 +330,15 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
   features: {
     notifications: draft.features.notifications,
     notifications_max_visible: parseInt(draft.features.notifications_max_visible, 10) || 10,
+    worldmap: draft.features.worldmap,
+    dev_tools: draft.features.dev_tools,
     playlist: draft.features.playlist,
     offline: draft.features.offline,
     demo: draft.features.demo,
+  },
+  playlist: {
+    interval_seconds: parseInt(draft.playlist.interval_seconds, 10) || 30,
+    views: draft.playlist.views,
   },
   auth: {
     enabled: draft.auth.enabled,
