@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronRight, RotateCcw, LayoutGrid, Columns } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { RotateCcw, LayoutGrid, Columns } from 'lucide-react';
+import { usePageTitle } from '../../contexts/PageTitleContext';
+import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 import { HUDTooltip } from '../../../components/RackVisualizer';
 import { api } from '../../../services/api';
 import type {
@@ -323,6 +325,7 @@ const RackWallCard = ({
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export const CosmosSlurmWallboardPage = () => {
+  usePageTitle('Slurm Wallboard');
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
 
@@ -439,91 +442,67 @@ export const CosmosSlurmWallboardPage = () => {
 
   return (
     <div className="flex h-full flex-col gap-5">
-      {/* Header */}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex-1">
-          <nav className="mb-1 flex items-center gap-1 text-sm">
-            <Link to="/cosmos/views/worldmap" className="text-brand-500 hover:underline">
-              World Map
-            </Link>
-            <ChevronRight className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-500 dark:text-gray-400">{room?.name ?? roomId}</span>
-            <ChevronRight className="h-4 w-4 text-gray-400" />
-            <span className="font-semibold text-gray-900 dark:text-white">Slurm Wallboard</span>
-          </nav>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            {room?.name ?? 'Slurm Wallboard'}
-          </h2>
-        </div>
+      {/* Header — template */}
+      <div className="shrink-0">
+        <PageHeader
+          title={room?.name ?? 'Slurm Wallboard'}
+          breadcrumb={
+            <PageBreadcrumb items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'Slurm', href: '/cosmos/slurm/overview' },
+              { label: room?.name ?? 'Wallboard' },
+            ]} />
+          }
+          actions={
+            <div className="flex items-center gap-2">
+              {/* Summary badges */}
+              {critCount > 0 && (
+                <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-600 dark:bg-red-500/15 dark:text-red-400">
+                  {critCount} CRIT
+                </span>
+              )}
+              {warnCount > 0 && (
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
+                  {warnCount} WARN
+                </span>
+              )}
+              <span className="text-xs text-gray-400">{totalNodes} nodes</span>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Summary badges */}
-          {critCount > 0 && (
-            <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-600 dark:bg-red-500/15 dark:text-red-400">
-              {critCount} CRIT
-            </span>
-          )}
-          {warnCount > 0 && (
-            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
-              {warnCount} WARN
-            </span>
-          )}
-          <span className="text-xs text-gray-400">{totalNodes} nodes</span>
-
-          {/* Room selector */}
-          <select
-            value={roomId ?? ''}
-            onChange={(e) => navigate(`/cosmos/slurm/wallboard/${e.target.value}`)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-          >
-            {rooms.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-
-          {/* View toggle */}
-          <div className="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-            {(
-              [
-                { value: 'compact', icon: LayoutGrid, title: 'Vue compacte' },
-                { value: 'detailed', icon: Columns, title: 'Vue détaillée' },
-              ] as { value: WallboardView; icon: React.ElementType; title: string }[]
-            ).map(({ value, icon: Icon, title }) => (
-              <button
-                key={value}
-                title={title}
-                onClick={() => {
-                  setWallView(value);
-                  localStorage.setItem('slurm-wallboard-view', value);
-                }}
-                className={`p-1.5 transition-colors ${
-                  wallView === value
-                    ? 'bg-brand-500 text-white'
-                    : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
-                }`}
+              {/* Room selector */}
+              <select
+                value={roomId ?? ''}
+                onChange={(e) => navigate(`/cosmos/slurm/wallboard/${e.target.value}`)}
+                className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
               >
-                <Icon className="h-4 w-4" />
-              </button>
-            ))}
-          </div>
+                {rooms.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
 
-          {/* Refresh */}
-          <button
-            onClick={() => {
-              if (roomId) {
-                api
-                  .getSlurmRoomNodes(roomId)
-                  .then(setSlurmNodes)
-                  .catch(() => {});
-              }
-            }}
-            className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:text-gray-600 dark:border-gray-700"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
-        </div>
+              {/* View toggle */}
+              <div className="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                {([
+                  { value: 'compact', icon: LayoutGrid, title: 'Vue compacte' },
+                  { value: 'detailed', icon: Columns, title: 'Vue détaillée' },
+                ] as { value: WallboardView; icon: React.ElementType; title: string }[]).map(({ value, icon: Icon, title }) => (
+                  <button key={value} title={title}
+                    onClick={() => { setWallView(value); localStorage.setItem('slurm-wallboard-view', value); }}
+                    className={`p-1.5 transition-colors ${wallView === value ? 'bg-brand-500 text-white' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}>
+                    <Icon className="h-4 w-4" />
+                  </button>
+                ))}
+              </div>
+
+              {/* Refresh */}
+              <button
+                onClick={() => { if (roomId) api.getSlurmRoomNodes(roomId).then(setSlurmNodes).catch(() => {}); }}
+                className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:text-gray-600 dark:border-gray-700"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </button>
+            </div>
+          }
+        />
       </div>
 
       {/* Legend */}
@@ -553,9 +532,9 @@ export const CosmosSlurmWallboardPage = () => {
             No Slurm nodes found in this room
           </div>
         ) : wallView === 'compact' ? (
-          // ── Vue compacte — cartes avec dots colorés ──
+          // ── Vue compacte — même filtrage slurmRoles que la vue détaillée ──
           <div className="space-y-6">
-            {(room?.aisles ?? []).map((aisle) => (
+            {aisles.map((aisle) => (
               <div key={aisle.id}>
                 <div className="mb-3 flex items-center gap-2">
                   <span className="bg-brand-500 h-2 w-2 rounded-full opacity-60" />
@@ -576,26 +555,6 @@ export const CosmosSlurmWallboardPage = () => {
                 </div>
               </div>
             ))}
-            {(room?.standalone_racks ?? []).length > 0 && (
-              <div>
-                <div className="mb-3 flex items-center gap-2">
-                  <span className="bg-brand-500 h-2 w-2 rounded-full opacity-60" />
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Standalone
-                  </h3>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {(room?.standalone_racks ?? []).map((rack) => (
-                    <RackWallCard
-                      key={rack.id}
-                      rack={rack}
-                      templatesById={templatesById}
-                      slurmNodes={slurmNodes}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           // ── Vue détaillée — colonnes physiques ──
