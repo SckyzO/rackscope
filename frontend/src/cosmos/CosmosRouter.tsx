@@ -116,6 +116,10 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
+// ── Router ─────────────────────────────────────────────────────────────────────
+// Feature visibility is controlled via the sidebar (AppConfigContext + PluginsMenuContext).
+// Routes remain accessible for direct navigation; sidebar hides unavailable entries.
+
 const CosmosRoutes = () => (
   <Routes>
     {/* Auth — no layout, no protection */}

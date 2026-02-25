@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useAppConfigSafe } from '../contexts/AppConfigContext';
+import { usePluginsMenu } from '../../context/PluginsMenuContext';
 import { api } from '../../services/api';
 import type { ComponentType } from 'react';
 import type { RoomSummary, Site, AisleSummary, RackSummary } from '../../types';
@@ -227,6 +229,9 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
   const [expandedAisles, setExpandedAisles] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const location = useLocation();
+  const { features } = useAppConfigSafe();
+  const { isPluginActive } = usePluginsMenu();
+  const slurmActive = isPluginActive('slurm') || isPluginActive('workload-slurm');
 
   useEffect(() => {
     Promise.all([api.getRooms(), api.getSites()])
@@ -267,13 +272,12 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         <NavItem to="/cosmos" icon={BarChart2} label="Dashboard" collapsed={collapsed} end />
 
         <SectionLabel label="Monitoring" collapsed={collapsed} />
-        <NavItem to="/cosmos/views/worldmap" icon={Globe} label="World Map" collapsed={collapsed} />
-        <NavItem
-          to="/cosmos/notifications"
-          icon={Bell}
-          label="Notifications"
-          collapsed={collapsed}
-        />
+        {features.worldmap && (
+          <NavItem to="/cosmos/views/worldmap" icon={Globe} label="World Map" collapsed={collapsed} />
+        )}
+        {features.notifications && (
+          <NavItem to="/cosmos/notifications" icon={Bell} label="Notifications" collapsed={collapsed} />
+        )}
 
         {/* Infrastructure tree — own section, dynamic based on declared sites */}
         {(rooms.length > 0 || sites.length > 0) && (
@@ -435,32 +439,16 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           </>
         )}
 
-        <SectionLabel label="Slurm" collapsed={collapsed} />
-        <NavItem
-          to="/cosmos/slurm/overview"
-          icon={LayoutDashboard}
-          label="Overview"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/slurm/partitions"
-          icon={Network}
-          label="Partitions"
-          collapsed={collapsed}
-        />
-        <NavItem to="/cosmos/slurm/nodes" icon={List} label="Nodes" collapsed={collapsed} />
-        <NavItem
-          to="/cosmos/slurm/alerts"
-          icon={AlertTriangle}
-          label="Alerts"
-          collapsed={collapsed}
-        />
-        <NavItem
-          to="/cosmos/slurm/wallboard/room-a"
-          icon={MapPin}
-          label="Wallboard"
-          collapsed={collapsed}
-        />
+        {slurmActive && (
+          <>
+            <SectionLabel label="Slurm" collapsed={collapsed} />
+            <NavItem to="/cosmos/slurm/overview" icon={LayoutDashboard} label="Overview" collapsed={collapsed} />
+            <NavItem to="/cosmos/slurm/partitions" icon={Network} label="Partitions" collapsed={collapsed} />
+            <NavItem to="/cosmos/slurm/nodes" icon={List} label="Nodes" collapsed={collapsed} />
+            <NavItem to="/cosmos/slurm/alerts" icon={AlertTriangle} label="Alerts" collapsed={collapsed} />
+            <NavItem to="/cosmos/slurm/wallboard/room-a" icon={MapPin} label="Wallboard" collapsed={collapsed} />
+          </>
+        )}
 
         <SectionLabel label="Editors" collapsed={collapsed} />
         <NavItem
@@ -495,9 +483,11 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         />
       </nav>
 
-      {/* Bottom sticky — UI Library, Profile, Settings */}
+      {/* Bottom sticky — Profile, Settings, UI Library (dev only) */}
       <div className="shrink-0 border-t border-gray-200 py-2 dark:border-gray-800">
-        <NavItem to="/cosmos/ui" icon={Layers} label="UI Library" collapsed={collapsed} />
+        {features.dev_tools && (
+          <NavItem to="/cosmos/ui" icon={Layers} label="UI Library" collapsed={collapsed} />
+        )}
         <NavItem to="/cosmos/profile" icon={User} label="Profile" collapsed={collapsed} />
         <NavItem to="/cosmos/settings" icon={Settings} label="Settings" collapsed={collapsed} />
       </div>

@@ -374,6 +374,18 @@ export interface AppConfig {
     playlist?: boolean;
     offline?: boolean;
     demo?: boolean;
+    worldmap?: boolean;
+    dev_tools?: boolean;
+  };
+  playlist?: {
+    interval_seconds?: number;
+    views?: string[];
+  };
+  plugins?: {
+    [key: string]: {
+      enabled?: boolean;
+      [key: string]: unknown;
+    };
   };
   simulator?: {
     update_interval_seconds?: number;

@@ -3,6 +3,8 @@ import { Outlet } from 'react-router-dom';
 import { CosmosSidebar } from './CosmosSidebar';
 import { CosmosHeader } from './CosmosHeader';
 import { PageTitleProvider } from '../contexts/PageTitleContext';
+import { AppConfigProvider } from '../contexts/AppConfigContext';
+import { PluginsMenuProvider } from '../../context/PluginsMenuContext';
 import '../cosmos.css';
 
 export const CosmosLayout = () => {
@@ -37,6 +39,8 @@ export const CosmosLayout = () => {
   };
 
   return (
+    <AppConfigProvider>
+    <PluginsMenuProvider>
     <PageTitleProvider>
       {/* Page load preloader — matches TailAdmin's preloader.html */}
       {pageLoading && (
@@ -61,5 +65,7 @@ export const CosmosLayout = () => {
         </div>
       </div>
     </PageTitleProvider>
+    </PluginsMenuProvider>
+    </AppConfigProvider>
   );
 };
