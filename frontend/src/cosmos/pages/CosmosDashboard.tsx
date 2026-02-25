@@ -9,10 +9,12 @@ import {
   XCircle,
   AlertTriangle,
   CheckCircle,
+  Bell,
   Activity,
   Zap,
   RefreshCw,
   ChevronRight,
+  ChevronLeft,
   Layers,
   ShieldCheck,
   Network,
@@ -398,46 +400,45 @@ const StatCard = ({ icon: Icon, label, value, color, sub }: StatCardProps) => (
   </div>
 );
 
+// Severity badge — hardcoded classes (Light with Left Icon, ref: /cosmos/ui/badges)
+const AlertSevBadge = ({ state }: { state: string }) => {
+  if (state === 'CRIT')
+    return (
+      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-error-50 px-2.5 py-0.5 text-xs font-medium text-error-500 dark:bg-error-500/15">
+        <span className="h-1.5 w-1.5 rounded-full bg-error-500" />
+        Critical
+      </span>
+    );
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-warning-50 px-2.5 py-0.5 text-xs font-medium text-warning-500 dark:bg-warning-500/15">
+      <span className="h-1.5 w-1.5 rounded-full bg-warning-500" />
+      Warning
+    </span>
+  );
+};
+
 type AlertRowProps = { alert: ActiveAlert; onClick: () => void };
 
 const AlertRow = ({ alert, onClick }: AlertRowProps) => (
   <button
     onClick={onClick}
-    className="flex w-full items-start gap-3 px-5 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
-    style={{ borderLeftWidth: 3, borderLeftColor: HC[alert.state] ?? HC.UNKNOWN }}
+    className="group flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
   >
-    <div
-      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-      style={{ backgroundColor: `${HC[alert.state] ?? HC.UNKNOWN}18` }}
-    >
-      {alert.state === 'CRIT' ? (
-        <XCircle className="h-3.5 w-3.5" style={{ color: HC.CRIT }} />
-      ) : (
-        <AlertTriangle className="h-3.5 w-3.5" style={{ color: HC.WARN }} />
-      )}
-    </div>
+    <AlertSevBadge state={alert.state} />
     <div className="min-w-0 flex-1">
-      <div className="flex items-center gap-2">
-        <span className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-          {alert.node_id}
-        </span>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${SEV_PILL[alert.state] ?? ''}`}
-        >
-          {alert.state}
-        </span>
-      </div>
-      <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-        {alert.device_name} · {alert.rack_name} · {alert.room_name}
+      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+        {alert.node_id}
       </p>
-      {alert.checks.length > 0 && (
-        <p className="mt-0.5 truncate font-mono text-[10px] text-gray-400">
-          {alert.checks[0].id}
-          {alert.checks.length > 1 ? ` +${alert.checks.length - 1}` : ''}
-        </p>
-      )}
+      <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+        {[alert.device_name, alert.rack_name, alert.room_name].filter(Boolean).join(' · ')}
+      </p>
     </div>
-    <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-gray-300 dark:text-gray-700" />
+    {alert.checks.length > 0 && (
+      <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+        {alert.checks[0].id}{alert.checks.length > 1 ? ` +${alert.checks.length - 1}` : ''}
+      </span>
+    )}
+    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-300 transition-colors group-hover:text-brand-500 dark:text-gray-700" />
   </button>
 );
 
@@ -747,133 +748,147 @@ const ActiveAlertsWidget = ({
 }: {
   data: DashboardData;
   navigate: (path: string) => void;
-}) => (
-  <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-    <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
-      <div className="flex items-center gap-2">
-        <XCircle className="h-4 w-4 text-red-500" />
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Active Alerts</h2>
-        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800">
-          {data.alerts.length}
-        </span>
-      </div>
-      <button
-        onClick={() => navigate('/cosmos/notifications')}
-        className="text-brand-500 text-xs hover:underline"
-      >
-        View all →
-      </button>
-    </div>
+}) => {
+  const critCount = data.alerts.filter((a) => a.state === 'CRIT').length;
+  const warnCount = data.alerts.filter((a) => a.state === 'WARN').length;
 
-    <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-gray-100 px-5 pt-2 pb-3 dark:border-gray-800">
-      <div className="flex gap-1">
-        {['all', 'CRIT', 'WARN'].map((f) => (
-          <button
-            key={f}
-            onClick={() => {
-              data.setAlertStateFilter(f);
-              data.setAlertPage(0);
-            }}
-            className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors ${
-              data.alertStateFilter === f
-                ? 'bg-brand-500 text-white'
-                : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-            }`}
-          >
-            {f === 'all' ? 'All' : f}
-          </button>
-        ))}
-      </div>
-      {data.allRooms.length > 1 && (
-        <select
-          value={data.alertRoomFilter}
-          onChange={(e) => {
-            data.setAlertRoomFilter(e.target.value);
-            data.setAlertPage(0);
-          }}
-          className="rounded-lg border border-gray-200 bg-white px-2 py-0.5 text-[11px] text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-        >
-          <option value="all">All rooms</option>
-          {data.allRooms.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
-      )}
-      <div className="ml-auto flex items-center gap-1.5 text-[11px] text-gray-400">
-        <span>Show</span>
-        <select
-          value={data.alertLimit}
-          onChange={(e) => {
-            data.setAlertLimit(Number(e.target.value));
-            data.setAlertPage(0);
-          }}
-          className="rounded-lg border border-gray-200 bg-white px-2 py-0.5 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-        >
-          {[5, 10, 20, 50, 100].map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
 
-    {data.alerts.length === 0 ? (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10">
-        <CheckCircle className="h-8 w-8 text-green-400" />
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">All systems healthy</p>
-        <p className="text-xs text-gray-400 dark:text-gray-600">No active alerts</p>
-      </div>
-    ) : (
-      <>
-        <div className="flex-1 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
-          {data.filteredAlerts.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-8">
-              <CheckCircle className="h-7 w-7 text-green-400" />
-              <p className="text-sm text-gray-400">No alerts match the current filters</p>
-            </div>
-          ) : (
-            data.filteredAlerts.map((alert, i) => (
-              <AlertRow
-                key={i}
-                alert={alert}
-                onClick={() => navigate(`/cosmos/views/rack/${alert.rack_id}`)}
-              />
-            ))
+      {/* Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+        <div className="flex items-center gap-2.5">
+          <Bell className="h-4 w-4 text-gray-400" />
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Active Alerts</h2>
+          {critCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-error-50 px-2 py-0.5 text-[11px] font-bold text-error-500 dark:bg-error-500/15">
+              <span className="h-1.5 w-1.5 rounded-full bg-error-500" />{critCount} CRIT
+            </span>
+          )}
+          {warnCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-0.5 text-[11px] font-bold text-warning-500 dark:bg-warning-500/15">
+              <span className="h-1.5 w-1.5 rounded-full bg-warning-500" />{warnCount} WARN
+            </span>
           )}
         </div>
-        {data.filteredAlertsAll.length > data.alertLimit && (
-          <div className="flex shrink-0 items-center justify-between border-t border-gray-100 px-5 py-2.5 dark:border-gray-800">
+        <button
+          onClick={() => navigate('/cosmos/notifications')}
+          className="text-brand-500 text-xs font-medium transition-colors hover:text-brand-600"
+        >
+          View all →
+        </button>
+      </div>
+
+      {/* Toolbar — filtres style notifications */}
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-2 dark:border-gray-800">
+        <div className="flex h-8 items-center gap-0.5 rounded-lg border border-gray-200 px-1 dark:border-gray-700">
+          {[
+            { id: 'all', label: 'All', count: data.alerts.length },
+            { id: 'CRIT', label: 'Critical', count: critCount },
+            { id: 'WARN', label: 'Warning', count: warnCount },
+          ].map((f) => (
             <button
-              onClick={() => data.setAlertPage(Math.max(0, data.safeAlertPage - 1))}
-              disabled={data.safeAlertPage === 0}
-              className="rounded-lg border border-gray-200 px-3 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-30 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              key={f.id}
+              onClick={() => { data.setAlertStateFilter(f.id); data.setAlertPage(0); }}
+              className={`flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
+                data.alertStateFilter === f.id
+                  ? 'bg-brand-500 text-white'
+                  : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
+              }`}
             >
-              ← Prev
+              {f.label}
+              {f.count > 0 && (
+                <span className={`rounded-full px-1 text-[10px] font-bold ${
+                  data.alertStateFilter === f.id
+                    ? 'bg-white/20 text-white'
+                    : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                }`}>
+                  {f.count}
+                </span>
+              )}
             </button>
-            <span className="text-xs text-gray-400">
-              Page {data.safeAlertPage + 1} / {data.totalAlertPages}
-              <span className="ml-2 text-gray-300 dark:text-gray-600">
-                ({data.filteredAlertsAll.length} total)
-              </span>
-            </span>
-            <button
-              onClick={() =>
-                data.setAlertPage(Math.min(data.totalAlertPages - 1, data.safeAlertPage + 1))
-              }
-              disabled={data.safeAlertPage >= data.totalAlertPages - 1}
-              className="rounded-lg border border-gray-200 px-3 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-30 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-            >
-              Next →
-            </button>
-          </div>
+          ))}
+        </div>
+
+        {data.allRooms.length > 1 && (
+          <select
+            value={data.alertRoomFilter}
+            onChange={(e) => { data.setAlertRoomFilter(e.target.value); data.setAlertPage(0); }}
+            className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+          >
+            <option value="all">All rooms</option>
+            {data.allRooms.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
         )}
-      </>
-    )}
-  </div>
-);
+
+        <select
+          value={data.alertLimit}
+          onChange={(e) => { data.setAlertLimit(Number(e.target.value)); data.setAlertPage(0); }}
+          className="ml-auto h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+        >
+          {[5, 10, 20, 50].map((n) => (
+            <option key={n} value={n}>{n} rows</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Body */}
+      {data.alerts.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-2">
+          <CheckCircle className="h-8 w-8 text-green-400" />
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">All systems healthy</p>
+          <p className="text-xs text-gray-400 dark:text-gray-600">No active alerts</p>
+        </div>
+      ) : (
+        <>
+          <div className="flex-1 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
+            {data.filteredAlerts.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-8">
+                <CheckCircle className="h-7 w-7 text-green-400" />
+                <p className="text-sm text-gray-400">No alerts match the filters</p>
+              </div>
+            ) : (
+              data.filteredAlerts.map((alert, i) => (
+                <AlertRow
+                  key={i}
+                  alert={alert}
+                  onClick={() => navigate(`/cosmos/views/rack/${alert.rack_id}`)}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Pagination footer */}
+          {data.filteredAlertsAll.length > data.alertLimit && (
+            <div className="flex shrink-0 items-center justify-between border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
+              <button
+                onClick={() => data.setAlertPage(Math.max(0, data.safeAlertPage - 1))}
+                disabled={data.safeAlertPage === 0}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" /> Previous
+              </button>
+              <span className="text-xs text-gray-400">
+                <b className="text-gray-700 dark:text-gray-200">{data.safeAlertPage + 1}</b>
+                {' / '}
+                <b className="text-gray-700 dark:text-gray-200">{data.totalAlertPages}</b>
+              </span>
+              <button
+                onClick={() => data.setAlertPage(Math.min(data.totalAlertPages - 1, data.safeAlertPage + 1))}
+                disabled={data.safeAlertPage >= data.totalAlertPages - 1}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              >
+                Next <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
 
 // ── Widget: SlurmCluster ──────────────────────────────────────────────────────
 

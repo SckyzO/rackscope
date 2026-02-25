@@ -118,7 +118,9 @@ metrics:
   # Slurm workload manager metrics
   - name: slurm_node_status
     scope: node
-    instances: ["*"]
+    instances:
+      - compute*
+      - visu*
     labels:
       status: $status
       partition: $partition
