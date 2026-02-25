@@ -50,24 +50,37 @@ class SimulatorPlugin(RackscopePlugin):
 
     def _load_config(self, app_config: Optional[AppConfig]) -> SimulatorPluginConfig:
         """
-        Load simulator configuration from app config.
-
-        Supports both new format (plugins.simulator) and legacy format (simulator).
+        Load simulator configuration with priority chain:
+          1. config/plugins/simulator/config.yml  (dedicated file — recommended)
+          2. app.yaml plugins.simulator           (legacy embedded format)
+          3. app.yaml simulator                   (legacy top-level format)
+          4. Pydantic defaults
         """
-        raw_config = {}
+        import os
+        raw_config: dict = {}
 
-        if app_config:
-            # Try new format first (recommended)
+        # 1. Try dedicated config file first (new architecture)
+        config_file = self.config_file_path()
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, encoding="utf-8") as f:
+                    file_cfg = yaml.safe_load(f) or {}
+                if isinstance(file_cfg, dict):
+                    raw_config = file_cfg
+                    logger.info("Simulator: loaded config from %s", config_file)
+            except Exception as exc:
+                logger.warning("Simulator: failed to read %s: %s", config_file, exc)
+
+        # 2. Fallback: app.yaml plugins.simulator
+        if not raw_config and app_config:
             if hasattr(app_config, "plugins") and "simulator" in app_config.plugins:
-                raw_config = app_config.plugins["simulator"]
-                logger.info("Loading simulator config from plugins.simulator (new format)")
-            # Fallback to legacy format
+                cfg = app_config.plugins["simulator"]
+                raw_config = {k: v for k, v in cfg.items() if k != "enabled"} if isinstance(cfg, dict) else {}
+                logger.info("Simulator: loaded config from app.yaml plugins.simulator")
+            # 3. Fallback: legacy top-level
             elif hasattr(app_config, "simulator") and app_config.simulator:
                 raw_config = app_config.simulator.model_dump()
-                logger.warning(
-                    "Loading simulator config from legacy format. "
-                    "Please migrate to plugins.simulator in app.yaml"
-                )
+                logger.warning("Simulator: legacy config format — migrate to %s", config_file)
 
         # Validate and create config with defaults
         return SimulatorPluginConfig(**raw_config)

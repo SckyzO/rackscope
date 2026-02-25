@@ -38,6 +38,13 @@ features:
   playlist: false
   offline: true
   demo: false
+  worldmap: true
+  dev_tools: false
+playlist:
+  interval_seconds: 30
+  views:
+    - /cosmos/views/worldmap
+    - /cosmos/slurm/overview
 auth:
   enabled: false
   username: admin
@@ -58,79 +65,10 @@ map:
   center:
     lat: 20.0
     lon: 0.0
+# Plugin toggles — detailed config in config/plugins/{name}/config.yml
+# See PLUGINS.md for documentation
 plugins:
   simulator:
     enabled: true
-    update_interval_seconds: 20
-    seed: null
-    scenario: demo-stable
-    scale_factor: 1
-    incident_rates:
-      node_micro_failure: 0.001
-      rack_macro_failure: 0.01
-      aisle_cooling_failure: 0.005
-    incident_durations:
-      rack: 3
-      aisle: 5
-    overrides_path: config/plugins/simulator/overrides.yaml
-    default_ttl_seconds: 120
-    metrics_catalog_path: config/plugins/simulator/metrics_full.yaml
-    metrics_catalogs: []
   slurm:
     enabled: true
-    metric: slurm_node_status
-    label_node: node_id
-    label_status: status
-    label_partition: partition
-    status_map:
-      ok:
-      - allocated
-      - alloc
-      - completing
-      - comp
-      - idle
-      warn:
-      - mixed
-      - mix
-      - maint
-      - planned
-      - plnd
-      - reserved
-      - resv
-      - blocked
-      - block
-      - power_down
-      - pow_dn
-      - power_up
-      - pow_up
-      - powering_up
-      - powered_down
-      - reboot_issued
-      - reboot_req
-      crit:
-      - down
-      - drain
-      - drained
-      - draining
-      - drng
-      - fail
-      - failing
-      - failg
-      - error
-      - unknown
-      - unk
-      - noresp
-      - inval
-      info: []
-    severity_colors:
-      ok: '#22c55e'
-      warn: '#f59e0b'
-      crit: '#ef4444'
-      info: '#3b82f6'
-    roles:
-    - compute
-    - visu
-    include_unlabeled: false
-    mapping_path: config/plugins/slurm/node_mapping.yaml
-simulator: null
-slurm: null

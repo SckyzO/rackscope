@@ -210,6 +210,22 @@ class RackscopePlugin(ABC):
         """
         pass
 
+    def config_file_path(self, base_dir: str = "config/plugins") -> str:
+        """
+        Returns the path to this plugin's dedicated config file.
+
+        Convention: config/plugins/{plugin_id}/config.yml
+        This file holds all plugin-specific settings (separate from app.yaml).
+        app.yaml only contains: plugins.{id}.enabled (bool)
+
+        Args:
+            base_dir: Base directory for plugin configs (default: config/plugins)
+
+        Returns:
+            Path to the plugin's config file
+        """
+        return f"{base_dir}/{self.plugin_id}/config.yml"
+
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert plugin metadata to dictionary.

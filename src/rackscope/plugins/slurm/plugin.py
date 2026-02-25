@@ -1,7 +1,10 @@
 """Slurm Workload Plugin - Job scheduling and monitoring."""
 
 import logging
+import os
 from typing import Optional, Dict, Any
+
+import yaml
 
 from fastapi import APIRouter, FastAPI, HTTPException
 
@@ -48,33 +51,39 @@ class SlurmPlugin(RackscopePlugin):
 
     def _load_config(self, app_config: Optional[AppConfig]) -> SlurmPluginConfig:
         """
-        Load Slurm configuration from app config.
-
-        Supports both new format (plugins.slurm) and legacy format (slurm).
+        Load Slurm configuration with priority chain:
+          1. config/plugins/slurm/config.yml  (dedicated file — recommended)
+          2. app.yaml plugins.slurm           (legacy embedded format)
+          3. app.yaml slurm                   (legacy top-level format)
+          4. Pydantic defaults
         """
-        raw_config = {}
+        raw_config: Dict[str, Any] = {}
 
-        if app_config:
-            # Try new format first (recommended)
+        # 1. Try dedicated config file first (new architecture)
+        config_file = self.config_file_path()
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, encoding="utf-8") as f:
+                    file_cfg = yaml.safe_load(f) or {}
+                if isinstance(file_cfg, dict):
+                    raw_config = file_cfg
+                    logger.info("Slurm: loaded config from %s", config_file)
+            except Exception as exc:
+                logger.warning("Slurm: failed to read %s: %s", config_file, exc)
+
+        # 2. Fallback: app.yaml plugins.slurm (only enabled flag expected in new arch)
+        if not raw_config and app_config:
             if hasattr(app_config, "plugins") and "slurm" in app_config.plugins:
                 slurm_cfg = app_config.plugins["slurm"]
-                # Convert to dict, handling both dict and BaseModel
                 if hasattr(slurm_cfg, "model_dump"):
                     raw_config = slurm_cfg.model_dump()
-                elif hasattr(slurm_cfg, "dict"):
-                    raw_config = slurm_cfg.dict()
                 elif isinstance(slurm_cfg, dict):
-                    raw_config = dict(slurm_cfg)
-                else:
-                    raw_config = {}
-                logger.info("Loading Slurm config from plugins.slurm (new format)")
-            # Fallback to legacy format
+                    raw_config = {k: v for k, v in slurm_cfg.items() if k != "enabled"}
+                logger.info("Slurm: loaded config from app.yaml plugins.slurm")
+            # 3. Fallback: legacy top-level app.yaml slurm
             elif hasattr(app_config, "slurm") and app_config.slurm:
                 raw_config = app_config.slurm.model_dump()
-                logger.warning(
-                    "Loading Slurm config from legacy format. "
-                    "Please migrate to plugins.slurm in app.yaml"
-                )
+                logger.warning("Slurm: legacy config format — migrate to %s", config_file)
 
         # Ensure status_map.info exists (for backwards compatibility)
         if "status_map" in raw_config and isinstance(raw_config["status_map"], dict):

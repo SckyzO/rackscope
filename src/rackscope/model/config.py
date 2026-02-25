@@ -86,12 +86,28 @@ class PlannerConfig(BaseModel):
     max_ids_per_query: int = Field(default=200, ge=1)
 
 
+class PlaylistConfig(BaseModel):
+    """Configuration for NOC screen rotation (playlist mode)."""
+
+    interval_seconds: int = Field(default=30, ge=5, description="Seconds per view")
+    views: List[str] = Field(
+        default_factory=lambda: [
+            "/cosmos/views/worldmap",
+            "/cosmos/slurm/overview",
+        ],
+        description="Ordered list of routes to cycle through",
+    )
+
+
 class FeatureConfig(BaseModel):
-    notifications: bool = False
+    notifications: bool = True
     notifications_max_visible: int = Field(default=10, ge=1)
     playlist: bool = False
     offline: bool = False
     demo: bool = False
+    # Page visibility
+    worldmap: bool = True
+    dev_tools: bool = False  # UI Library, showcase, dev pages (off in prod)
 
 
 class IncidentRates(BaseModel):
@@ -228,6 +244,8 @@ class AppConfig(BaseModel):
     features: FeatureConfig = Field(default_factory=FeatureConfig)
     auth: AuthConfig = Field(default_factory=AuthConfig)
     map: MapConfig = Field(default_factory=MapConfig)
+
+    playlist: PlaylistConfig = Field(default_factory=PlaylistConfig)
 
     # Plugin configuration (new format - recommended)
     plugins: Dict[str, Dict[str, Any]] = Field(
