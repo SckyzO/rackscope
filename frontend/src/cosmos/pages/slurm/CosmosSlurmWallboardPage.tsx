@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ChevronRight, RotateCcw } from 'lucide-react';
+import { ChevronRight, RotateCcw, LayoutGrid, Columns } from 'lucide-react';
 import { HUDTooltip } from '../../../components/RackVisualizer';
 import { api } from '../../../services/api';
 import type {
@@ -258,6 +258,68 @@ const RackColumn = ({
   );
 };
 
+type WallboardView = 'compact' | 'detailed';
+
+// ── RackWallCard — vue compacte (dots colorés par nœud) ──────────────────────
+
+const RackWallCard = ({
+  rack,
+  templatesById,
+  slurmNodes,
+}: {
+  rack: Room['aisles'][0]['racks'][0];
+  templatesById: Map<string, DeviceTemplate>;
+  slurmNodes: SlurmRoomNodes | null;
+}) => {
+  const nodes = slurmNodes?.nodes ?? {};
+  const nodeList: { name: string; severity: string; status: string }[] = [];
+
+  rack.devices.forEach((dev) => {
+    const tpl = templatesById.get(dev.template_id);
+    const slotMap = buildSlotMap(dev, tpl);
+    Object.values(slotMap).forEach((name) => {
+      const ns = nodes[name];
+      if (ns) nodeList.push({ name, severity: ns.severity, status: ns.status });
+    });
+  });
+
+  const hasCrit = nodeList.some((n) => n.severity === 'CRIT');
+  const hasWarn = !hasCrit && nodeList.some((n) => n.severity === 'WARN');
+  const borderColor = hasCrit
+    ? '#ef4444'
+    : hasWarn
+      ? '#f59e0b'
+      : nodeList.length > 0
+        ? '#22c55e'
+        : '#374151';
+
+  return (
+    <div
+      className="rounded-xl border-2 bg-white p-2.5 dark:bg-gray-900"
+      style={{ borderColor, minWidth: 120 }}
+    >
+      <p className="mb-1.5 truncate font-mono text-[10px] font-semibold text-gray-700 dark:text-gray-300">
+        {rack.id}
+      </p>
+      <p className="mb-1.5 truncate text-[10px] text-gray-500 dark:text-gray-400">{rack.name}</p>
+      {nodeList.length === 0 ? (
+        <div className="text-[9px] italic text-gray-400">no Slurm nodes</div>
+      ) : (
+        <div className="flex flex-wrap gap-0.5">
+          {nodeList.map((n, i) => (
+            <div
+              key={i}
+              title={`${n.name}: ${n.status} (${n.severity})`}
+              className="h-3.5 w-3.5 cursor-help rounded-sm transition-transform hover:scale-125"
+              style={{ backgroundColor: SEV_COLOR[n.severity] ?? SEV_COLOR.UNKNOWN }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export const CosmosSlurmWallboardPage = () => {
@@ -273,6 +335,9 @@ export const CosmosSlurmWallboardPage = () => {
   const [refreshMs, setRefreshMs] = useState(30000);
   const [loading, setLoading] = useState(true);
   const [hover, setHover] = useState<HoverPayload | null>(null);
+  const [wallView, setWallView] = useState<WallboardView>(
+    () => (localStorage.getItem('slurm-wallboard-view') as WallboardView) ?? 'detailed'
+  );
 
   // Load rooms + config once
   useEffect(() => {
@@ -304,7 +369,7 @@ export const CosmosSlurmWallboardPage = () => {
   // Auto-redirect to first room if none selected
   useEffect(() => {
     if (roomId || rooms.length === 0) return;
-    navigate(`/cosmos/slurm/wallboard-v2/${rooms[0].id}`, { replace: true });
+    navigate(`/cosmos/slurm/wallboard/${rooms[0].id}`, { replace: true });
   }, [roomId, rooms, navigate]);
 
   // Load room data + poll Slurm
@@ -408,7 +473,7 @@ export const CosmosSlurmWallboardPage = () => {
           {/* Room selector */}
           <select
             value={roomId ?? ''}
-            onChange={(e) => navigate(`/cosmos/slurm/wallboard-v2/${e.target.value}`)}
+            onChange={(e) => navigate(`/cosmos/slurm/wallboard/${e.target.value}`)}
             className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
           >
             {rooms.map((r) => (
@@ -417,6 +482,32 @@ export const CosmosSlurmWallboardPage = () => {
               </option>
             ))}
           </select>
+
+          {/* View toggle */}
+          <div className="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            {(
+              [
+                { value: 'compact', icon: LayoutGrid, title: 'Vue compacte' },
+                { value: 'detailed', icon: Columns, title: 'Vue détaillée' },
+              ] as { value: WallboardView; icon: React.ElementType; title: string }[]
+            ).map(({ value, icon: Icon, title }) => (
+              <button
+                key={value}
+                title={title}
+                onClick={() => {
+                  setWallView(value);
+                  localStorage.setItem('slurm-wallboard-view', value);
+                }}
+                className={`p-1.5 transition-colors ${
+                  wallView === value
+                    ? 'bg-brand-500 text-white'
+                    : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+              </button>
+            ))}
+          </div>
 
           {/* Refresh */}
           <button
@@ -461,7 +552,53 @@ export const CosmosSlurmWallboardPage = () => {
           <div className="flex h-40 items-center justify-center text-gray-400">
             No Slurm nodes found in this room
           </div>
+        ) : wallView === 'compact' ? (
+          // ── Vue compacte — cartes avec dots colorés ──
+          <div className="space-y-6">
+            {(room?.aisles ?? []).map((aisle) => (
+              <div key={aisle.id}>
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="bg-brand-500 h-2 w-2 rounded-full opacity-60" />
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    {aisle.name}
+                  </h3>
+                  <span className="text-[10px] text-gray-400">({aisle.racks.length} racks)</span>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {aisle.racks.map((rack) => (
+                    <RackWallCard
+                      key={rack.id}
+                      rack={rack}
+                      templatesById={templatesById}
+                      slurmNodes={slurmNodes}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+            {(room?.standalone_racks ?? []).length > 0 && (
+              <div>
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="bg-brand-500 h-2 w-2 rounded-full opacity-60" />
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Standalone
+                  </h3>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {(room?.standalone_racks ?? []).map((rack) => (
+                    <RackWallCard
+                      key={rack.id}
+                      rack={rack}
+                      templatesById={templatesById}
+                      slurmNodes={slurmNodes}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
+          // ── Vue détaillée — colonnes physiques ──
           <div className="space-y-8">
             {aisles.map((aisle) => (
               <div key={aisle.id}>
