@@ -38,9 +38,9 @@ const AuthContext = createContext<AuthContextValue>({
   authConfigured: false,
   policy: DEFAULT_POLICY,
   loading: true,
-  login: async () => {},
-  logout: () => {},
-  refreshStatus: async () => {},
+  login: async () => { /* noop */ },
+  logout: () => { /* noop */ },
+  refreshStatus: async () => { /* noop */ },
 });
 
 // eslint-disable-next-line react-refresh/only-export-components

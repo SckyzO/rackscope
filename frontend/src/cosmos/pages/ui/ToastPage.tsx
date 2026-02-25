@@ -108,7 +108,7 @@ export const ToastPage = () => {
     const groups: Partial<Record<ToastPos, Toast[]>> = {};
     toasts.forEach((t) => {
       if (!groups[t.position]) groups[t.position] = [];
-      groups[t.position]!.push(t);
+      (groups[t.position] as Toast[]).push(t);
     });
     return groups;
   };
@@ -130,7 +130,7 @@ export const ToastPage = () => {
           key={pos}
           className={`fixed z-[9999] flex flex-col gap-2 ${posClass[pos as ToastPos]}`}
         >
-          {posToasts!.map((t) => {
+          {(posToasts as Toast[]).map((t) => {
             const cfg = toastConfig[t.type];
             const Icon = cfg.icon;
             return (

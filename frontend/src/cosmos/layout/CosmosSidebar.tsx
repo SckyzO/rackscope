@@ -234,7 +234,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         setRooms(Array.isArray(roomsData) ? roomsData : []);
         setSites(Array.isArray(sitesData) ? sitesData : []);
       })
-      .catch(() => {});
+      .catch(() => { /* noop */ });
   }, []);
 
   return (

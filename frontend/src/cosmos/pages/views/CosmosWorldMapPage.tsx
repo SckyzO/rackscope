@@ -94,7 +94,7 @@ export const CosmosWorldMapPage = () => {
             {geoSites.map((site) => (
               <CircleMarker
                 key={site.id}
-                center={[site.location!.lat!, site.location!.lon!]}
+                center={[(site.location as NonNullable<typeof site.location>).lat, (site.location as NonNullable<typeof site.location>).lon]}
                 radius={10}
                 fillColor="#465fff"
                 color="#3641f5"

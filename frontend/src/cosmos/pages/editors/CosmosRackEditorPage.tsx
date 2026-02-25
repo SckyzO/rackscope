@@ -306,7 +306,7 @@ export const CosmosRackEditorPage = () => {
         setSelectedDevice(null);
         setPlacingTemplate(null);
       })
-      .catch(() => {});
+      .catch(() => { /* noop */ });
     return () => {
       active = false;
     };

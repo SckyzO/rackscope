@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 // ── Context ───────────────────────────────────────────────────────────────────
 
 const PageTitleValueContext = createContext<string>('');
-const PageTitleSetterContext = createContext<(title: string) => void>(() => {});
+const PageTitleSetterContext = createContext<(title: string) => void>(() => { /* noop */ });
 
 // ── Provider (used once in CosmosLayout) ──────────────────────────────────────
 

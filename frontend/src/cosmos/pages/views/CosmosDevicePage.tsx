@@ -283,7 +283,7 @@ export const CosmosDevicePage = () => {
                   uPosition={device.u_position}
                   detailView={true}
                   disableZoom={true}
-                  onClick={() => {}}
+                  onClick={() => { /* noop */ }}
                   onTooltipChange={(payload) => setTooltip(payload as TooltipPayload | null)}
                 />
               </div>

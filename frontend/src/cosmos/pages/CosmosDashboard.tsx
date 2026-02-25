@@ -1211,7 +1211,7 @@ const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
   const byRoom = new Map<string, { name: string; alerts: ActiveAlert[] }>();
   for (const a of data.alerts) {
     if (!byRoom.has(a.room_id)) byRoom.set(a.room_id, { name: a.room_name, alerts: [] });
-    byRoom.get(a.room_id)!.alerts.push(a);
+    (byRoom.get(a.room_id) as { name: string; alerts: ActiveAlert[] }).alerts.push(a);
   }
   const affectedRooms = [...byRoom.values()].sort(
     (a, b) =>
@@ -1580,7 +1580,7 @@ const WorldMapWidget = ({
             {geoSites.map((site) => (
               <CircleMarker
                 key={site.id}
-                center={[site.location!.lat, site.location!.lon]}
+                center={[(site.location as NonNullable<typeof site.location>).lat, (site.location as NonNullable<typeof site.location>).lon]}
                 radius={9}
                 fillColor="#465fff"
                 color="#3641f5"

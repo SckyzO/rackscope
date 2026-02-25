@@ -24,7 +24,7 @@ export const CosmosSlurmAlertsPage = () => {
   const [allNodes, setAllNodes] = useState<SlurmNodeEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { api.getRooms().then(setRooms).catch(() => {}); }, []);
+  useEffect(() => { api.getRooms().then(setRooms).catch(() => { /* noop */ }); }, []);
 
   useEffect(() => {
     let active = true;

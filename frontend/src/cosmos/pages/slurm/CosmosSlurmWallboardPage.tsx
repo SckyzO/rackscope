@@ -239,7 +239,7 @@ const RackColumn = ({
         }}
       >
         {visibleDevices.map((dev) => {
-          const tpl = templatesById.get(dev.template_id)!;
+          const tpl = templatesById.get(dev.template_id) as DeviceTemplate;
           return (
             <DeviceBlock
               key={dev.id}
@@ -495,7 +495,7 @@ export const CosmosSlurmWallboardPage = () => {
 
               {/* Refresh */}
               <button
-                onClick={() => { if (roomId) api.getSlurmRoomNodes(roomId).then(setSlurmNodes).catch(() => {}); }}
+                onClick={() => { if (roomId) api.getSlurmRoomNodes(roomId).then(setSlurmNodes).catch(() => { /* noop */ }); }}
                 className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:text-gray-600 dark:border-gray-700"
               >
                 <RotateCcw className="h-4 w-4" />

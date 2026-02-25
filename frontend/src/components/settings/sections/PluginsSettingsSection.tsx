@@ -57,7 +57,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           simulator: { ...config.plugins.simulator, scenario: draft.plugins.simulator.scenario },
         },
       });
-      await api.restartBackend().catch(() => {});
+      await api.restartBackend().catch(() => { /* noop */ });
       setActiveScenario(draft.plugins.simulator.scenario);
       setTimeout(() => window.location.reload(), 2000);
     } catch {
@@ -525,7 +525,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                         api
                           .clearSimulatorOverrides()
                           .then(loadSimulatorData)
-                          .catch(() => {})
+                          .catch(() => { /* noop */ })
                       }
                       className="flex items-center gap-1.5 rounded-lg border border-red-500/50 px-2.5 py-1 text-xs text-red-400 transition hover:bg-red-500/10"
                     >
@@ -634,7 +634,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                           api
                             .deleteSimulatorOverride(ov.id)
                             .then(loadSimulatorData)
-                            .catch(() => {})
+                            .catch(() => { /* noop */ })
                         }
                         className="text-red-500 hover:text-red-400"
                       >

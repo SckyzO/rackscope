@@ -859,7 +859,7 @@ export const CosmosTopologyEditorPage = () => {
       if (a.id === dragFromAisleId) {
         newAisles[a.id] = a.racks.filter((r) => r.id !== dragRackId).map((r) => r.id);
       } else if (a.id === targetAisleId) {
-        newAisles[a.id] = [...a.racks.map((r) => r.id), dragRackId!];
+        newAisles[a.id] = [...a.racks.map((r) => r.id), dragRackId as string];
       } else {
         newAisles[a.id] = a.racks.map((r) => r.id);
       }

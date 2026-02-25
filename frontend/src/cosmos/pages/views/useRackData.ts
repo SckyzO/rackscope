@@ -108,7 +108,7 @@ export function useRackData(rackId: string | undefined): RackData {
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { /* noop */ });
   }, [rack]);
 
   useEffect(() => {

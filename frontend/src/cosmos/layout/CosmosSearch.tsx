@@ -235,7 +235,7 @@ function filterResults(index: SearchResult[], query: string): SearchResult[] {
   const groups: Partial<Record<Category, SearchResult[]>> = {};
   for (const r of all) {
     if (!groups[r.category]) groups[r.category] = [];
-    if (groups[r.category]!.length < 5) groups[r.category]!.push(r);
+    if ((groups[r.category] as SearchResult[]).length < 5) (groups[r.category] as SearchResult[]).push(r);
   }
   return CATEGORY_ORDER.flatMap((cat) => groups[cat] ?? []);
 }

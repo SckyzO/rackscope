@@ -1,4 +1,5 @@
-import { useState, useMemo, ReactNode, type KeyboardEvent } from 'react';
+import type { ReactNode} from 'react';
+import { useState, useMemo, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Server,
@@ -167,7 +168,7 @@ export const HUDTooltip = ({
         <div className="mx-auto h-0 w-0 border-t-[8px] border-r-[8px] border-l-[8px] border-t-[var(--color-bg-panel)]/95 border-r-transparent border-l-transparent drop-shadow-lg"></div>
       )}
     </div>,
-    document.getElementById('tooltip-root')!
+    document.getElementById('tooltip-root') as HTMLElement
   );
 };
 

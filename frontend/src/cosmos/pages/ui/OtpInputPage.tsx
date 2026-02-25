@@ -58,7 +58,7 @@ const OTP = ({
       {Array.from({ length }).map((_, i) => (
         <input
           key={i}
-          ref={(el) => (refs.current[i] = el!)}
+          ref={(el) => (refs.current[i] = el as HTMLInputElement)}
           type="text"
           inputMode="numeric"
           maxLength={1}
@@ -159,7 +159,7 @@ export const OtpInputPage = () => {
         </SectionCard>
         <SectionCard title="Success State" desc="Green borders with success indicator">
           <div>
-            <OTP length={6} value={'123456'} onChange={() => {}} success />
+            <OTP length={6} value={'123456'} onChange={() => { /* noop */ }} success />
             <div className="text-success-500 mt-3 flex items-center justify-center gap-2 text-sm">
               <Check className="h-4 w-4" />
               <span>Code verified successfully!</span>

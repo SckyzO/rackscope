@@ -188,7 +188,7 @@ const RackPanel = ({
           sideComponents={sideComps}
           allowInfraOverlap={isRear}
           pduMetrics={undefined}
-          onDeviceClick={() => {}}
+          onDeviceClick={() => { /* noop */ }}
         />
       </div>
     </div>

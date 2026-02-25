@@ -214,7 +214,7 @@ export const DrawerPage = () => {
             desc: 'Right drawer with a device edit form',
           },
         ].map(({ type, label, desc }) => (
-          <SectionCard key={type!} title={label.replace('Open ', '')} desc={desc}>
+          <SectionCard key={type as DrawerType} title={label.replace('Open ', '')} desc={desc}>
             <button
               onClick={() => setOpen(type)}
               className="bg-brand-500 hover:bg-brand-600 rounded-lg px-4 py-2 text-sm font-medium text-white"

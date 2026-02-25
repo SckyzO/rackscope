@@ -86,7 +86,7 @@ export const CosmosSlurmNodesPage = () => {
   const [perPage, setPerPage] = useState(10);
   const tableAreaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { api.getRooms().then(setRooms).catch(() => {}); }, []);
+  useEffect(() => { api.getRooms().then(setRooms).catch(() => { /* noop */ }); }, []);
 
   useEffect(() => {
     let active = true;
