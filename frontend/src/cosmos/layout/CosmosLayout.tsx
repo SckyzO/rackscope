@@ -54,7 +54,7 @@ export const CosmosLayout = () => {
               sidebarCollapsed={sidebarCollapsed}
               onToggleSidebar={() => setSidebarCollapsed((p) => !p)}
             />
-            <main className="cosmos-scrollbar flex-1 overflow-y-auto p-6">
+            <main className="cosmos-scrollbar flex flex-1 flex-col overflow-y-auto p-6">
               <Outlet />
             </main>
           </div>

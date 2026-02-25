@@ -140,7 +140,35 @@ async def get_room_state(
         if h == "WARN" and room_status != "CRIT":
             room_status = "WARN"
 
-    racks_out = {rid: {"state": rack_healths.get(rid, "UNKNOWN")} for rid in rack_ids}
+    # Build rack → node instances mapping for the room
+    rack_to_nodes: Dict[str, list] = {}
+    for site in topology.sites:
+        for room in site.rooms:
+            if room.id == room_id:
+                all_racks = [r for aisle in room.aisles for r in aisle.racks]
+                all_racks.extend(room.standalone_racks)
+                for rack in all_racks:
+                    nodes: list = []
+                    for device in rack.devices:
+                        instances = expand_device_instances(device)
+                        nodes.extend(instances if instances else [device.id])
+                    rack_to_nodes[rack.id] = nodes
+
+    # Build enriched rack states with per-rack node counts
+    racks_out = {}
+    node_states = snapshot.node_states
+    for rid in rack_ids:
+        nodes = rack_to_nodes.get(rid, [])
+        total = len(nodes)
+        crit = sum(1 for n in nodes if node_states.get(n) == "CRIT")
+        warn = sum(1 for n in nodes if node_states.get(n) == "WARN")
+        racks_out[rid] = {
+            "state": rack_healths.get(rid, "UNKNOWN"),
+            "node_total": total,
+            "node_crit": crit,
+            "node_warn": warn,
+        }
+
     return {"room_id": room_id, "state": room_status, "racks": racks_out}
 
 

@@ -25,6 +25,16 @@ import {
   Minus,
   Plus,
   Maximize2,
+  RotateCcw,
+  Lock,
+  LockOpen,
+  MouseOff,
+  LayoutGrid,
+  Square,
+  Layers,
+  AlignJustify,
+  Gauge,
+  Network,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Room, Aisle, Rack, RoomState, RackState, DeviceTemplate } from '../../../types';
@@ -47,6 +57,20 @@ const HEALTH_PILL: Record<string, string> = {
   CRIT: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
   UNKNOWN: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
 };
+
+// ── Rack style ──────────────────────────────────────────────────────────────
+
+type RackStyle =
+  | 'dot'
+  | 'compact'
+  | 'standard'
+  | 'glass'
+  | 'slots'
+  | 'cells'
+  | 'pixel'
+  | 'gauge'
+  | 'industrial'
+  | 'node';
 
 // ── Door marker ─────────────────────────────────────────────────────────────
 
@@ -115,40 +139,42 @@ const DoorMarker = ({ side, position, w, h, showLabel, doorLabel }: DoorMarkerPr
 interface RackCellProps {
   rack: Rack;
   state: string;
+  nodeCounts?: { total: number; crit: number; warn: number };
   isSelected: boolean;
   isHighlighted: boolean | null;
+  showName: boolean;
   showLabel: boolean;
   searchMatch: boolean;
+  rackStyle: RackStyle;
   onClick: () => void;
 }
 
 const RackCell = ({
   rack,
   state,
+  nodeCounts,
   isSelected,
   isHighlighted,
+  showName,
   showLabel,
   searchMatch,
+  rackStyle,
   onClick,
 }: RackCellProps) => {
   const color = HC[state] ?? HC.UNKNOWN;
   const dimmed = isHighlighted === false;
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const handleMouseEnter = () => {
-    timerRef.current = setTimeout(() => {
-      if (wrapperRef.current) {
-        const rect = wrapperRef.current.getBoundingClientRect();
-        setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top });
-      }
-      setShowTooltip(true);
-    }, 1000);
+    if (wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top });
+    }
+    setShowTooltip(true);
   };
   const handleMouseLeave = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
     setShowTooltip(false);
   };
 
@@ -159,13 +185,8 @@ const RackCell = ({
     ? createPortal(
         <div
           className="pointer-events-none fixed z-[9999] min-w-[240px] overflow-hidden rounded-xl bg-gray-900 shadow-[0_8px_40px_rgba(0,0,0,0.55)] ring-1 ring-white/10 dark:bg-gray-800"
-          style={{
-            left: tooltipPos.x,
-            top: tooltipPos.y - 8,
-            transform: 'translate(-50%, -100%)',
-          }}
+          style={{ left: tooltipPos.x, top: tooltipPos.y - 8, transform: 'translate(-50%, -100%)' }}
         >
-          {/* Colored header */}
           <div
             className="px-3.5 pt-3 pb-2.5"
             style={{
@@ -184,10 +205,7 @@ const RackCell = ({
             </div>
             <p className="mt-1 font-mono text-[10px] text-gray-500">{rack.id}</p>
           </div>
-
-          {/* Stats */}
           <div className="space-y-2.5 px-3.5 py-3">
-            {/* Occupancy bar */}
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-xs text-gray-400">Occupancy</span>
@@ -202,7 +220,6 @@ const RackCell = ({
                 />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-gray-700/50 pt-2.5">
               <span className="text-xs text-gray-400">Height</span>
               <span className="text-right font-mono text-xs text-gray-200">{rack.u_height}U</span>
@@ -216,14 +233,511 @@ const RackCell = ({
               )}
             </div>
           </div>
-
-          {/* Arrow */}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-gray-900 dark:border-t-gray-800" />
         </div>,
         document.body
       )
     : null;
 
+  const ringClass = [
+    isSelected ? 'ring-brand-500 ring-2 ring-offset-1 dark:ring-offset-gray-900' : '',
+    searchMatch ? 'ring-2 ring-yellow-400 ring-offset-1' : '',
+  ].join(' ');
+  const dimmedClass = dimmed ? 'opacity-25' : '';
+
+  // ── Dot ────────────────────────────────────────────────────────────────────
+  if (rackStyle === 'dot') {
+    return (
+      <div
+        ref={wrapperRef}
+        className="relative"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          onClick={onClick}
+          className={`relative h-10 w-8 rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
+          style={{ backgroundColor: `${color}20`, borderColor: color }}
+        >
+          <div
+            className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+        </button>
+        {tooltip}
+      </div>
+    );
+  }
+
+  // ── Compact ────────────────────────────────────────────────────────────────
+  if (rackStyle === 'compact') {
+    return (
+      <div
+        ref={wrapperRef}
+        className="relative flex flex-col items-center gap-1"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          onClick={onClick}
+          className={`relative h-16 w-14 rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
+          style={{ backgroundColor: `${color}18`, borderColor: color }}
+        >
+          <div
+            className="absolute top-1 right-1 h-2 w-2 rounded-full"
+            style={{ backgroundColor: color }}
+          />
+        </button>
+        {showName && (
+          <p
+            className="w-14 text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              wordBreak: 'break-word',
+            }}
+          >
+            {rack.name}
+          </p>
+        )}
+        {showLabel && (
+          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+            {rack.id}
+          </span>
+        )}
+        {tooltip}
+      </div>
+    );
+  }
+
+  // ── Glass ─────────────────────────────────────────────────────────────────
+  if (rackStyle === 'glass') {
+    return (
+      <div
+        ref={wrapperRef}
+        className="relative flex flex-col items-center gap-1.5"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          onClick={onClick}
+          className={`relative h-24 w-20 overflow-hidden rounded-xl border transition-all ${ringClass} ${dimmedClass}`}
+          style={{
+            background: `linear-gradient(135deg, ${color}18 0%, ${color}06 100%)`,
+            borderColor: `${color}35`,
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            boxShadow: `0 4px 24px ${color}12, inset 0 1px 0 rgba(255,255,255,0.12)`,
+          }}
+        >
+          <div
+            className="absolute -top-6 -left-6 h-20 w-20 rounded-full opacity-40"
+            style={{ background: `radial-gradient(circle, ${color}70 0%, transparent 70%)` }}
+          />
+          <div
+            className="absolute top-0 right-0 left-0 h-px"
+            style={{
+              background:
+                'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
+            }}
+          />
+          <div
+            className="absolute right-2.5 bottom-2.5 h-2 w-2 rounded-full"
+            style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }}
+          />
+        </button>
+        {showName && (
+          <p
+            className="w-20 text-center text-[11px] leading-tight text-gray-700 dark:text-gray-300"
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+                }}
+          >
+            {rack.name}
+          </p>
+        )}
+        {showLabel && (
+          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+            {rack.id}
+          </span>
+        )}
+        {tooltip}
+      </div>
+    );
+  }
+
+  // ── Slots (mini élévation) ─────────────────────────────────────────────────
+  if (rackStyle === 'slots') {
+    const totalSlots = 16;
+    const filledSlots = Math.round((occupancy / 100) * totalSlots);
+    return (
+      <div
+        ref={wrapperRef}
+        className="relative flex flex-col items-center gap-1.5"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          onClick={onClick}
+          className={`relative flex flex-col-reverse overflow-hidden rounded border-2 p-1.5 transition-all ${ringClass} ${dimmedClass}`}
+          style={{
+            gap: 2,
+            width: 52,
+            height: 96,
+            backgroundColor: `${color}08`,
+            borderColor: `${color}50`,
+          }}
+        >
+          {Array.from({ length: totalSlots }).map((_, i) => (
+            <div
+              key={i}
+              className="w-full rounded-sm transition-colors"
+              style={{
+                height: 3,
+                backgroundColor: i < filledSlots ? color : `${color}22`,
+              }}
+            />
+          ))}
+        </button>
+        {showName && (
+          <p
+            className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+            style={{
+              width: 52,
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              minHeight: '2.2em',
+            }}
+          >
+            {rack.name}
+          </p>
+        )}
+        {showLabel && (
+          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+            {rack.id}
+          </span>
+        )}
+        {tooltip}
+      </div>
+    );
+  }
+
+  // ── Cells ─────────────────────────────────────────────────────────────────
+  if (rackStyle === 'cells') {
+    const totalCells = 14;
+    const filledCells = Math.round((occupancy / 100) * totalCells);
+    return (
+      <div
+        ref={wrapperRef}
+        className="relative flex flex-col items-center gap-1.5"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          onClick={onClick}
+          className={`relative overflow-hidden rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
+          style={{
+            width: 52,
+            height: 96,
+            backgroundColor: `${color}06`,
+            borderColor: `${color}55`,
+          }}
+        >
+          <div
+            className="absolute inset-1"
+            style={{ display: 'grid', gridTemplateRows: `repeat(${totalCells}, 1fr)`, gap: 3 }}
+          >
+            {Array.from({ length: totalCells }).map((_, i) => {
+              const idx = totalCells - 1 - i;
+              const filled = idx < filledCells;
+              return (
+                <div
+                  key={i}
+                  className="rounded-sm"
+                  style={{
+                    backgroundColor: filled ? color : undefined,
+                    border: filled ? 'none' : `1px solid ${color}35`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        </button>
+        {showName && (
+          <p
+            className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+            style={{
+              width: 52,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {rack.name}
+          </p>
+        )}
+        {showLabel && (
+          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+            {rack.id}
+          </span>
+        )}
+        {tooltip}
+      </div>
+    );
+  }
+
+  // ── Pixel grid ────────────────────────────────────────────────────────────
+  if (rackStyle === 'pixel') {
+    const cols = 4;
+    const rows = 8;
+    const total = cols * rows;
+    const filledCount = Math.round((occupancy / 100) * total);
+    return (
+      <div
+        ref={wrapperRef}
+        className="relative flex flex-col items-center gap-1.5"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          onClick={onClick}
+          className={`relative overflow-hidden rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
+          style={{ width: 56, height: 96, backgroundColor: '#070710', borderColor: `${color}55` }}
+        >
+          <div
+            className="absolute inset-1.5 grid"
+            style={{
+              gridTemplateColumns: `repeat(${cols}, 1fr)`,
+              gridTemplateRows: `repeat(${rows}, 1fr)`,
+              gap: 2,
+            }}
+          >
+            {Array.from({ length: total }).map((_, i) => (
+              <div
+                key={i}
+                className="rounded-[1px]"
+                style={{ backgroundColor: i >= total - filledCount ? color : `${color}18` }}
+              />
+            ))}
+          </div>
+        </button>
+        {showName && (
+          <p
+            className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+            style={{
+              width: 56,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {rack.name}
+          </p>
+        )}
+        {showLabel && (
+          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+            {rack.id}
+          </span>
+        )}
+        {tooltip}
+      </div>
+    );
+  }
+
+  // ── Gauge ─────────────────────────────────────────────────────────────────
+  if (rackStyle === 'gauge') {
+    const pct = Math.round(occupancy);
+    return (
+      <div
+        ref={wrapperRef}
+        className="relative flex flex-col items-center gap-1.5"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          onClick={onClick}
+          className={`relative overflow-hidden rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
+          style={{
+            width: 44,
+            height: 96,
+            backgroundColor: `${color}08`,
+            borderColor: `${color}55`,
+          }}
+        >
+          <div
+            className="absolute right-0 bottom-0 left-0"
+            style={{ height: `${pct}%`, backgroundColor: color, opacity: 0.55 }}
+          />
+          {[0, 25, 50, 75, 100].map((tick) => (
+            <div
+              key={tick}
+              className="absolute right-0 w-2.5 border-t border-white/20"
+              style={{ top: `${100 - tick}%` }}
+            />
+          ))}
+          <div className="absolute top-1.5 right-0 left-0 text-center">
+            <p className="font-mono text-[9px] font-bold" style={{ color }}>
+              {pct}%
+            </p>
+          </div>
+        </button>
+        {showName && (
+          <p
+            className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+            style={{
+              width: 44,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {rack.name}
+          </p>
+        )}
+        {showLabel && (
+          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+            {rack.id}
+          </span>
+        )}
+        {tooltip}
+      </div>
+    );
+  }
+
+  // ── Industrial / SCADA ────────────────────────────────────────────────────
+  if (rackStyle === 'industrial') {
+    return (
+      <div
+        ref={wrapperRef}
+        className="relative flex flex-col items-center gap-1.5"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          onClick={onClick}
+          className={`relative h-24 w-20 overflow-hidden rounded transition-all ${ringClass} ${dimmedClass}`}
+          style={{
+            backgroundColor: '#111111',
+            border: '1px solid #2a2a2a',
+            boxShadow:
+              'inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.5)',
+          }}
+        >
+          {/* Top bar: LED + ID */}
+          <div className="flex items-center gap-1.5 border-b border-white/5 bg-black/40 px-2 py-1.5">
+            <div
+              className="h-2.5 w-2.5 shrink-0 rounded-sm"
+              style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}90` }}
+            />
+            <span className="flex-1 truncate font-mono text-[8px] text-gray-500">{rack.id}</span>
+          </div>
+          {/* Body */}
+          <div className="flex flex-col justify-end px-2 py-1.5">
+            {showName && <p className="truncate font-mono text-[9px] text-gray-500">{rack.name}</p>}
+            <p className="mt-1 font-mono text-[11px] font-bold" style={{ color }}>
+              {state}
+            </p>
+            <p className="font-mono text-[8px] text-gray-700">{rack.u_height}U</p>
+          </div>
+          {/* Corner rivets */}
+          <div className="absolute top-1 right-1 h-1 w-1 rounded-full bg-gray-700" />
+          <div className="absolute top-1 left-1 h-1 w-1 rounded-full bg-gray-700" />
+        </button>
+        {tooltip}
+      </div>
+    );
+  }
+
+  // ── Topology node ─────────────────────────────────────────────────────────
+  if (rackStyle === 'node') {
+    const svgSize = 72;
+    const cx = svgSize / 2;
+    const r = 30;
+    const circ = 2 * Math.PI * r;
+    // Arc = healthy fraction (full circle = all OK, depleting arc = more problems).
+    // Use real node counts when available, otherwise fall back to state-based estimate.
+    const problemFraction =
+      nodeCounts && nodeCounts.total > 0
+        ? (nodeCounts.crit + nodeCounts.warn) / nodeCounts.total
+        : state === 'CRIT'
+          ? 0.75
+          : state === 'WARN'
+            ? 0.35
+            : state === 'UNKNOWN'
+              ? 0.9
+              : 0;
+    const arc = (1 - problemFraction) * circ;
+    return (
+      <div
+        ref={wrapperRef}
+        className="relative flex flex-col items-center gap-1.5"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <button
+          onClick={onClick}
+          className={`relative flex items-center justify-center transition-all ${ringClass} ${dimmedClass}`}
+          style={{ width: svgSize, height: svgSize }}
+        >
+          <svg width={svgSize} height={svgSize} className="absolute inset-0">
+            <circle
+              cx={cx}
+              cy={cx}
+              r={r}
+              fill="none"
+              strokeWidth={3}
+              className="stroke-gray-200 dark:stroke-gray-800"
+            />
+            <circle
+              cx={cx}
+              cy={cx}
+              r={r}
+              fill="none"
+              strokeWidth={3}
+              stroke={color}
+              strokeDasharray={`${arc} ${circ}`}
+              strokeLinecap="round"
+              transform={`rotate(-90 ${cx} ${cx})`}
+            />
+          </svg>
+          <div
+            className="relative flex h-11 w-11 items-center justify-center rounded-full"
+            style={{ backgroundColor: `${color}18`, border: `1.5px solid ${color}45` }}
+          >
+            <Server className="h-5 w-5" style={{ color }} />
+          </div>
+        </button>
+        {showName && (
+          <p
+            className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+            style={{
+              width: 64,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {rack.name}
+          </p>
+        )}
+        {showLabel && (
+          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+            {rack.id}
+          </span>
+        )}
+        {tooltip}
+      </div>
+    );
+  }
+
+  // ── Standard (default) ────────────────────────────────────────────────────
   return (
     <div
       ref={wrapperRef}
@@ -231,50 +745,39 @@ const RackCell = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Rack body */}
       <button
         onClick={onClick}
-        className={`relative h-24 w-20 rounded border-2 transition-all ${
-          isSelected ? 'ring-brand-500 ring-2 ring-offset-1 dark:ring-offset-gray-900' : ''
-        } ${searchMatch ? 'ring-2 ring-yellow-400 ring-offset-1' : ''} ${
-          dimmed ? 'opacity-25' : ''
-        }`}
+        className={`relative h-24 w-20 rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
         style={{ backgroundColor: `${color}18`, borderColor: color }}
       >
-        {/* Fill bar */}
         <div
           className="absolute right-0 bottom-0 left-0 rounded-sm"
           style={{ backgroundColor: color, height: `${occupancy}%`, opacity: 0.3 }}
         />
-        {/* State dot */}
         <div
           className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full"
           style={{ backgroundColor: color }}
         />
       </button>
-
-      {/* Rack name — 2 lines max, consistent min-height for grid alignment */}
-      <p
-        className="w-20 text-center text-[11px] leading-tight text-gray-700 dark:text-gray-300"
-        style={{
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-          wordBreak: 'break-word',
-          minHeight: '2.4em',
-        }}
-      >
-        {rack.name}
-      </p>
-
-      {/* Short ID label — badge style */}
+      {showName && (
+        <p
+          className="w-20 text-center text-[11px] leading-tight text-gray-700 dark:text-gray-300"
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            wordBreak: 'break-word',
+            }}
+        >
+          {rack.name}
+        </p>
+      )}
       {showLabel && (
         <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
           {rack.id}
         </span>
       )}
-
       {tooltip}
     </div>
   );
@@ -285,8 +788,10 @@ const RackCell = ({
 interface AisleBandProps {
   aisle: Aisle;
   rackStates: Record<string, string>;
+  rackNodeCounts: Record<string, { total: number; crit: number; warn: number }>;
   selectedRackId: string | null;
   highlight: string | null;
+  showRackName: boolean;
   showRackLabels: boolean;
   searchQuery: string;
   onRackClick: (rack: Rack, aisle: Aisle) => void;
@@ -294,13 +799,29 @@ interface AisleBandProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
   rackAlign: 'left' | 'right';
+  rackStyle: RackStyle;
 }
+
+const AISLE_GAP: Record<RackStyle, string> = {
+  dot: 'gap-1.5',
+  compact: 'gap-2',
+  standard: 'gap-3',
+  glass: 'gap-3',
+  slots: 'gap-2',
+  cells: 'gap-2',
+  pixel: 'gap-2',
+  gauge: 'gap-2',
+  industrial: 'gap-2',
+  node: 'gap-3',
+};
 
 const AisleBand = ({
   aisle,
   rackStates,
+  rackNodeCounts,
   selectedRackId,
   highlight,
+  showRackName,
   showRackLabels,
   searchQuery,
   onRackClick,
@@ -308,13 +829,14 @@ const AisleBand = ({
   collapsed,
   onToggleCollapse,
   rackAlign,
+  rackStyle,
 }: AisleBandProps) => {
   const critCount = aisle.racks.filter((r) => rackStates[r.id] === 'CRIT').length;
   const warnCount = aisle.racks.filter((r) => rackStates[r.id] === 'WARN').length;
   const allOk = critCount === 0 && warnCount === 0;
 
   return (
-    <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-gray-800/30">
+    <div className="w-full rounded-xl border border-gray-100 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-gray-800/30">
       <div className={`flex items-center justify-between ${collapsed ? '' : 'mb-3'}`}>
         <button
           onClick={onToggleCollapse}
@@ -360,7 +882,7 @@ const AisleBand = ({
 
       {!collapsed && (
         <div
-          className={`mt-3 flex flex-wrap gap-3 ${rackAlign === 'right' ? 'justify-end' : 'justify-start'}`}
+          className={`mt-3 flex flex-wrap ${AISLE_GAP[rackStyle]} ${rackAlign === 'right' ? 'justify-end' : 'justify-start'}`}
         >
           {aisle.racks.map((rack) => {
             const state = rackStates[rack.id] ?? 'UNKNOWN';
@@ -374,10 +896,13 @@ const AisleBand = ({
                 key={rack.id}
                 rack={rack}
                 state={state}
+                nodeCounts={rackNodeCounts[rack.id]}
                 isSelected={selectedRackId === rack.id}
                 isHighlighted={isHighlighted}
+                showName={showRackName}
                 showLabel={showRackLabels}
                 searchMatch={searchMatch}
+                rackStyle={rackStyle}
                 onClick={() => onRackClick(rack, aisle)}
               />
             );
@@ -693,6 +1218,9 @@ interface Settings {
   sortBySeverity: boolean;
   rackAlign: 'left' | 'right';
   aisleAlign: 'top' | 'bottom';
+  rackStyle: RackStyle;
+  showRackName: boolean;
+  wheelZoomEnabled: boolean;
   hiddenAisles: Set<string>;
   refreshInterval: number; // seconds, 0 = off
 }
@@ -708,6 +1236,9 @@ const DEFAULT_SETTINGS: Settings = {
   sortBySeverity: false,
   rackAlign: 'left',
   aisleAlign: 'top',
+  rackStyle: 'standard',
+  showRackName: true,
+  wheelZoomEnabled: true,
   hiddenAisles: new Set(),
   refreshInterval: 60,
 };
@@ -777,9 +1308,11 @@ const CustomizePanel = ({
     { key: 'showDoor', icon: DoorOpen, label: 'Door indicator' },
     { key: 'showDoorLabel', icon: DoorOpen, label: 'Door label', indent: true },
     { key: 'showDimensions', icon: Ruler, label: 'Room dimensions' },
-    { key: 'showRackLabels', icon: Tag, label: 'Rack labels' },
+    { key: 'showRackName', icon: Tag, label: 'Rack name' },
+    { key: 'showRackLabels', icon: Tag, label: 'Rack label (ID)', indent: true },
     { key: 'showLegend', icon: Eye, label: 'Health legend' },
     { key: 'sortBySeverity', icon: SortAsc, label: 'Sort aisles by severity' },
+    { key: 'wheelZoomEnabled', icon: MouseOff, label: 'Zoom molette' },
   ];
 
   return (
@@ -862,8 +1395,8 @@ const CustomizePanel = ({
                     }`}
                   >
                     <span
-                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                        settings[key] ? 'translate-x-4' : 'translate-x-0.5'
+                      className={`absolute top-0.5 left-0 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                        settings[key] ? 'translate-x-[18px]' : 'translate-x-0.5'
                       }`}
                     />
                   </div>
@@ -911,6 +1444,42 @@ const CustomizePanel = ({
                   }`}
                 >
                   {val}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Rack Style */}
+          <div>
+            <p className="mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+              Rack Style
+            </p>
+            <div className="grid grid-cols-2 gap-1">
+              {(
+                [
+                  { value: 'dot', icon: Square, label: 'Dot' },
+                  { value: 'compact', icon: LayoutGrid, label: 'Compact' },
+                  { value: 'standard', icon: Grid3X3, label: 'Standard' },
+                  { value: 'glass', icon: Layers, label: 'Glass' },
+                  { value: 'slots', icon: AlignJustify, label: 'Slots' },
+                  { value: 'cells', icon: AlignJustify, label: 'Cells' },
+                  { value: 'pixel', icon: Grid3X3, label: 'Pixel' },
+                  { value: 'gauge', icon: Gauge, label: 'Gauge' },
+                  { value: 'industrial', icon: Gauge, label: 'Industrial' },
+                  { value: 'node', icon: Network, label: 'Node' },
+                ] as { value: RackStyle; icon: React.ElementType; label: string }[]
+              ).map(({ value, icon: Icon, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setSettings({ ...settings, rackStyle: value })}
+                  className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                    settings.rackStyle === value
+                      ? 'border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-700/50 dark:bg-brand-500/10 dark:text-brand-400'
+                      : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
+                  }`}
+                >
+                  <Icon className="h-3 w-3 shrink-0" />
+                  {label}
                 </button>
               ))}
             </div>
@@ -1001,11 +1570,17 @@ export const CosmosRoomPage = () => {
   const [isDragging, setIsDragging] = useState(false);
 
   const contentRef = useRef<HTMLDivElement>(null);
-  // Keep viewport and canvasSize in refs so callbacks avoid stale closures
+  const [viewLocked, setViewLocked] = useState(false);
+
+  // Keep viewport, canvasSize and settings in refs so callbacks avoid stale closures
   const vpRef = useRef(viewport);
   vpRef.current = viewport;
   const canvasSizeRef = useRef(canvasSize);
   canvasSizeRef.current = canvasSize;
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const viewLockedRef = useRef(viewLocked);
+  viewLockedRef.current = viewLocked;
   const dragRef = useRef<{
     sx: number;
     sy: number;
@@ -1014,19 +1589,54 @@ export const CosmosRoomPage = () => {
     active: boolean;
   } | null>(null);
 
+  // Clamp pan so content never escapes the room walls (dashed border at PADDING)
+  const clampPan = useCallback((px: number, py: number, z: number) => {
+    if (!contentRef.current) return { panX: px, panY: py };
+    const nW = contentRef.current.scrollWidth;
+    const nH = contentRef.current.scrollHeight;
+    const { w: cw, h: ch } = canvasSizeRef.current;
+    const visW = nW * z;
+    const visH = nH * z;
+    // Smaller than room → keep inside walls. Larger → limit to wall-to-wall scroll.
+    const clampedX =
+      visW <= cw - 2 * PADDING
+        ? Math.max(PADDING, Math.min(cw - PADDING - visW, px))
+        : Math.max(cw - PADDING - visW, Math.min(PADDING, px));
+    const clampedY =
+      visH <= ch - 2 * PADDING
+        ? Math.max(PADDING, Math.min(ch - PADDING - visH, py))
+        : Math.max(ch - PADDING - visH, Math.min(PADDING, py));
+    return { panX: clampedX, panY: clampedY };
+  }, []);
+
   const fitToCanvas = useCallback(() => {
     if (!contentRef.current || canvasSize.w === 0 || canvasSize.h === 0) return;
     const naturalH = contentRef.current.scrollHeight;
-    const naturalW = contentRef.current.scrollWidth;
     const usableH = canvasSize.h - 2 * PADDING;
-    const usableW = canvasSize.w - 2 * PADDING;
-    const rawRatio = Math.min(usableH / naturalH, usableW / naturalW);
-    // Snap to exactly 1.0 if content fits — threshold at 0.97 absorbs subpixel rounding
+    const rawRatio = usableH / naturalH;
+    // Snap to 1.0 if content fits — 0.97 absorbs subpixel rounding
     const fitZoom = rawRatio >= 0.97 ? 1.0 : Math.max(0.15, rawRatio);
-    const panX = Math.max(0, (canvasSize.w - naturalW * fitZoom) / 2);
-    const panY = Math.max(0, (canvasSize.h - naturalH * fitZoom) / 2);
-    setViewport({ zoom: fitZoom, panX, panY });
-  }, [canvasSize]);
+    // panX always PADDING — aisles fixed to left room wall
+    const panY =
+      fitZoom === 1.0
+        ? settings.aisleAlign === 'bottom'
+          ? Math.max(PADDING, canvasSize.h - naturalH)
+          : PADDING
+        : Math.max(PADDING, (canvasSize.h - naturalH * fitZoom) / 2);
+    setViewport({ zoom: fitZoom, panX: PADDING, panY });
+  }, [canvasSize, settings.aisleAlign]);
+
+  // Reset to 100% zoom — content snaps inside room walls, respects aisleAlign
+  const resetToDefault = useCallback(() => {
+    if (!contentRef.current) return;
+    const { h } = canvasSizeRef.current;
+    const rawY =
+      settings.aisleAlign === 'bottom'
+        ? Math.max(0, h - contentRef.current.scrollHeight)
+        : PADDING;
+    const { panY: clampedY } = clampPan(PADDING, rawY, 1);
+    setViewport({ zoom: 1, panX: PADDING, panY: clampedY });
+  }, [settings.aisleAlign, clampPan]);
 
   // Adjust panY when aisleAlign changes — flex justify-end doesn't work inside a scaled layer
   useEffect(() => {
@@ -1049,18 +1659,21 @@ export const CosmosRoomPage = () => {
     if (!canvas) return;
     const handler = (e: WheelEvent) => {
       e.preventDefault();
-      const { zoom: z, panX: px, panY: py } = vpRef.current;
+      if (viewLockedRef.current || !settingsRef.current.wheelZoomEnabled) return;
+      const { zoom: z, panY: py } = vpRef.current;
       const delta = e.deltaY < 0 ? 0.05 : -0.05;
       const newZoom = Math.max(0.15, Math.min(3, z + delta));
       const rect = canvas.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
       const ratio = newZoom / z;
-      setViewport({ zoom: newZoom, panX: mx - ratio * (mx - px), panY: my - ratio * (my - py) });
+      // panX always PADDING — aisles fixed to room walls horizontally
+      const rawPanY = my - ratio * (my - py);
+      const clamped = clampPan(PADDING, rawPanY, newZoom);
+      setViewport({ zoom: newZoom, ...clamped });
     };
     canvas.addEventListener('wheel', handler, { passive: false });
     return () => canvas.removeEventListener('wheel', handler);
-  }, [room]); // re-attach once canvas is mounted
+  }, [room, clampPan]); // re-attach once canvas is mounted
 
   // Global mouse move/up for pan
   useEffect(() => {
@@ -1071,11 +1684,11 @@ export const CosmosRoomPage = () => {
       if (!dragRef.current.active && Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
       dragRef.current.active = true;
       setIsDragging(true);
-      setViewport({
-        ...vpRef.current,
-        panX: dragRef.current.spx + dx,
-        panY: dragRef.current.spy + dy,
-      });
+      if (viewLockedRef.current) return;
+      const { zoom: z } = vpRef.current;
+      // panX always PADDING — only vertical pan allowed
+      const clamped = clampPan(PADDING, dragRef.current.spy + dy, z);
+      setViewport({ ...vpRef.current, ...clamped });
     };
     const onUp = () => {
       if (dragRef.current) {
@@ -1089,7 +1702,7 @@ export const CosmosRoomPage = () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     };
-  }, []);
+  }, [clampPan]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
@@ -1156,10 +1769,27 @@ export const CosmosRoomPage = () => {
   usePageTitle(room?.name ?? 'Room');
 
   const rackStates: Record<string, string> = {};
+  const rackNodeCounts: Record<string, { total: number; crit: number; warn: number }> = {};
   if (roomState?.racks) {
     for (const [id, val] of Object.entries(roomState.racks)) {
-      rackStates[id] =
-        typeof val === 'string' ? val : ((val as { state?: string }).state ?? 'UNKNOWN');
+      if (typeof val === 'string') {
+        rackStates[id] = val;
+      } else {
+        const v = val as {
+          state?: string;
+          node_total?: number;
+          node_crit?: number;
+          node_warn?: number;
+        };
+        rackStates[id] = v.state ?? 'UNKNOWN';
+        if (v.node_total !== undefined) {
+          rackNodeCounts[id] = {
+            total: v.node_total,
+            crit: v.node_crit ?? 0,
+            warn: v.node_warn ?? 0,
+          };
+        }
+      }
     }
   }
 
@@ -1239,47 +1869,63 @@ export const CosmosRoomPage = () => {
             />
           </div>
 
-          {/* Zoom controls — inline-flex group, same height as other topbar buttons */}
+          {/* Zoom controls — [ - | xx% | + | autosize | reset ] */}
           <div className="flex overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
             <button
               onClick={() =>
-                setViewport((v) => ({
-                  ...v,
-                  zoom: Math.max(0.15, Math.round((v.zoom - 0.05) * 100) / 100),
-                }))
+                setViewport((v) => {
+                  const newZoom = Math.max(0.15, Math.round((v.zoom - 0.05) * 100) / 100);
+                  return { ...v, zoom: newZoom, ...clampPan(v.panX, v.panY, newZoom) };
+                })
               }
               className="flex items-center border-r border-gray-200 px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
               title="Zoom out (−5%)"
             >
               <Minus className="h-4 w-4" />
             </button>
-            <button
-              onClick={fitToCanvas}
-              className="flex min-w-[3.5rem] items-center justify-center border-r border-gray-200 px-3 py-2 font-mono text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-              title="Fit to canvas"
-            >
+            <span className="flex min-w-[3.5rem] items-center justify-center border-r border-gray-200 px-3 py-2 font-mono text-sm font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300">
               {Math.round(zoom * 100)}%
-            </button>
-            <button
-              onClick={fitToCanvas}
-              className="flex items-center border-r border-gray-200 px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-              title="Fit all"
-            >
-              <Maximize2 className="h-4 w-4" />
-            </button>
+            </span>
             <button
               onClick={() =>
-                setViewport((v) => ({
-                  ...v,
-                  zoom: Math.min(3, Math.round((v.zoom + 0.05) * 100) / 100),
-                }))
+                setViewport((v) => {
+                  const newZoom = Math.min(3, Math.round((v.zoom + 0.05) * 100) / 100);
+                  return { ...v, zoom: newZoom, ...clampPan(v.panX, v.panY, newZoom) };
+                })
               }
-              className="flex items-center px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
+              className="flex items-center border-r border-gray-200 px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
               title="Zoom in (+5%)"
             >
               <Plus className="h-4 w-4" />
             </button>
+            <button
+              onClick={fitToCanvas}
+              className="flex items-center border-r border-gray-200 px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              title="Autosize — fit to canvas"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={resetToDefault}
+              className="flex items-center px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
+              title="Reset — 100%"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
           </div>
+
+          {/* Cadenas — verrouille pan + zoom */}
+          <button
+            onClick={() => setViewLocked((v) => !v)}
+            title={viewLocked ? 'Vue verrouillée — cliquer pour déverrouiller' : 'Verrouiller la vue'}
+            className={`flex items-center rounded-xl border px-2.5 py-2 transition-colors ${
+              viewLocked
+                ? 'border-amber-300 bg-amber-50 text-amber-600 dark:border-amber-700/50 dark:bg-amber-500/10 dark:text-amber-400'
+                : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
+            }`}
+          >
+            {viewLocked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
+          </button>
 
           <button
             onClick={() => {
@@ -1303,7 +1949,11 @@ export const CosmosRoomPage = () => {
               }
             }}
             disabled={refreshing}
-            title={settings.refreshInterval > 0 ? `Auto-refresh every ${settings.refreshInterval}s` : 'Refresh'}
+            title={
+              settings.refreshInterval > 0
+                ? `Auto-refresh every ${settings.refreshInterval}s`
+                : 'Refresh'
+            }
             className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -1450,21 +2100,28 @@ export const CosmosRoomPage = () => {
             })()}
         </div>
 
-        {/* ── Zoomable layer — only aisles content scales ── */}
+        {/* ── Zoomable layer ── */}
         <div
           className="absolute inset-0"
           style={{
-            transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+            // Aisles toujours collées aux murs (panX=PADDING fixe).
+            // contentRef a une largeur = (roomW/zoom) pour qu'après scale(zoom)
+            // les allées apparaissent toujours à la largeur exacte de la salle.
+            transform: `translate(${PADDING}px, ${panY}px) scale(${zoom})`,
             transformOrigin: '0 0',
           }}
         >
-          {/* contentRef — auto-height, top-left of layer; aisleAlign handled via panY */}
-          <div ref={contentRef} className="relative flex flex-col gap-3 p-8">
+          <div
+            ref={contentRef}
+            className="relative flex flex-col gap-3 p-8"
+            style={canvasSize.w > 0 ? { width: (canvasSize.w - 2 * PADDING) / zoom } : { width: '100%' }}
+          >
             {sortedAisles.map((aisle) => (
               <AisleBand
                 key={aisle.id}
                 aisle={aisle}
                 rackStates={rackStates}
+                rackNodeCounts={rackNodeCounts}
                 selectedRackId={selectedRack?.rack.id ?? null}
                 highlight={highlight}
                 showRackLabels={settings.showRackLabels}
@@ -1473,6 +2130,8 @@ export const CosmosRoomPage = () => {
                 onBadgeClick={handleBadgeClick}
                 collapsed={collapsedAisles.has(aisle.id)}
                 rackAlign={settings.rackAlign}
+                rackStyle={settings.rackStyle}
+                showRackName={settings.showRackName}
                 onToggleCollapse={() => {
                   setCollapsedAisles((prev) => {
                     const next = new Set(prev);

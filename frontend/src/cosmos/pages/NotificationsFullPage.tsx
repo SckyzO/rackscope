@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell,
@@ -7,134 +7,92 @@ import {
   RefreshCw,
   Filter,
   ChevronRight,
+  ChevronLeft,
   Server,
   Cpu,
+  Search,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import type { ActiveAlert, SlurmNodeEntry } from '../../types';
+import { usePageTitle } from '../contexts/PageTitleContext';
+import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from './templates/EmptyPage';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const SEV_COLOR: Record<string, string> = {
-  CRIT: '#ef4444',
-  WARN: '#f59e0b',
-};
-const SEV_BG: Record<string, string> = {
-  CRIT: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
-  WARN: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+/// Severity badge — classes identiques à BadgesPage (ref: /cosmos/ui/badges, Light with Left Icon)
+const SeverityBadge = ({ sev }: { sev: string }) => {
+  if (sev === 'CRIT')
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-error-50 px-3 py-1 text-xs font-medium text-error-500 dark:bg-error-500/15">
+        <span className="h-1.5 w-1.5 rounded-full bg-error-500" />
+        Critical
+      </span>
+    );
+  if (sev === 'WARN')
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-50 px-3 py-1 text-xs font-medium text-warning-500 dark:bg-warning-500/15">
+        <span className="h-1.5 w-1.5 rounded-full bg-warning-500" />
+        Warning
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+      <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+      {sev}
+    </span>
+  );
 };
 
 type FilterType = 'all' | 'crit' | 'warn' | 'infra' | 'slurm';
 
-// ── AlertRow — one infrastructure alert ───────────────────────────────────────
+type UnifiedRow =
+  | { kind: 'infra'; sev: string; data: ActiveAlert }
+  | { kind: 'slurm'; sev: string; data: SlurmNodeEntry };
 
-type AlertRowProps = {
-  alert: ActiveAlert;
-  onClick: () => void;
-};
+// Fallback heights — the ResizeObserver measures real values from the DOM
+const FALLBACK_ROW_H = 72;   // measured: badge (py-1+text-xs) in td py-3.5
+const FALLBACK_THEAD_H = 41; // measured: th py-3 + text-xs
+const SAFETY = 8;             // sub-pixel safety buffer
 
-const AlertRow = ({ alert, onClick }: AlertRowProps) => (
-  <button
-    onClick={onClick}
-    className="flex w-full items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
-    style={{ borderLeftWidth: 3, borderLeftColor: SEV_COLOR[alert.state] ?? '#6b7280' }}
-  >
-    {/* Severity icon */}
-    <div
-      className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-      style={{ backgroundColor: `${SEV_COLOR[alert.state] ?? '#6b7280'}18` }}
-    >
-      {alert.state === 'CRIT' ? (
-        <XCircle className="h-4 w-4" style={{ color: SEV_COLOR.CRIT }} />
-      ) : (
-        <AlertTriangle className="h-4 w-4" style={{ color: SEV_COLOR.WARN }} />
-      )}
-    </div>
+const REFRESH_OPTIONS = [
+  { label: 'Off', value: 0 },
+  { label: '15s', value: 15 },
+  { label: '30s', value: 30 },
+  { label: '1m', value: 60 },
+  { label: '2m', value: 120 },
+  { label: '5m', value: 300 },
+];
 
-    {/* Content */}
-    <div className="min-w-0 flex-1">
-      <div className="flex items-center gap-2">
-        <span className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-          {alert.node_id}
-        </span>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${SEV_BG[alert.state] ?? ''}`}
-        >
-          {alert.state}
-        </span>
-      </div>
-      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-        {alert.device_name} · {alert.rack_name} · {alert.room_name}
-      </p>
-      {alert.checks.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap gap-1">
-          {alert.checks.slice(0, 3).map((c, i) => (
-            <span
-              key={i}
-              className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400"
-            >
-              {c.id}
-            </span>
-          ))}
-          {alert.checks.length > 3 && (
-            <span className="text-[10px] text-gray-400">+{alert.checks.length - 3} more</span>
-          )}
-        </div>
-      )}
-    </div>
+function buildPages(current: number, total: number): (number | '...')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i);
+  if (current <= 3) return [0, 1, 2, 3, '...', total - 1];
+  if (current >= total - 4) return [0, '...', total - 4, total - 3, total - 2, total - 1];
+  return [0, '...', current - 1, current, current + 1, '...', total - 1];
+}
 
-    <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-gray-400" />
-  </button>
-);
-
-// ── SlurmRow — one Slurm alert ────────────────────────────────────────────────
-
-type SlurmRowProps = {
-  node: SlurmNodeEntry;
-  onClick: () => void;
-};
-
-const SlurmRow = ({ node, onClick }: SlurmRowProps) => (
-  <button
-    onClick={onClick}
-    className="flex w-full items-start gap-4 px-5 py-4 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
-    style={{ borderLeftWidth: 3, borderLeftColor: SEV_COLOR[node.severity] ?? '#6b7280' }}
-  >
-    <div
-      className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-      style={{ backgroundColor: `${SEV_COLOR[node.severity] ?? '#6b7280'}18` }}
-    >
-      <Cpu className="h-4 w-4" style={{ color: SEV_COLOR[node.severity] ?? '#6b7280' }} />
-    </div>
-    <div className="min-w-0 flex-1">
-      <div className="flex items-center gap-2">
-        <span className="truncate font-mono text-sm font-semibold text-gray-900 dark:text-white">
-          {node.node}
-        </span>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${SEV_BG[node.severity] ?? ''}`}
-        >
-          {node.severity}
-        </span>
-      </div>
-      <p className="mt-0.5 text-xs text-gray-500 capitalize dark:text-gray-400">
-        {node.status} · {node.partitions.join(', ') || 'no partition'}
-        {node.rack_name ? ` · ${node.rack_name}` : ''}
-      </p>
-    </div>
-    <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-gray-400" />
-  </button>
-);
-
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export const NotificationsFullPage = () => {
+  usePageTitle('Notifications');
   const navigate = useNavigate();
+
   const [infraAlerts, setInfraAlerts] = useState<ActiveAlert[]>([]);
   const [slurmAlerts, setSlurmAlerts] = useState<SlurmNodeEntry[]>([]);
+  const [slurmEnabled, setSlurmEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
   const [filter, setFilter] = useState<FilterType>('all');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const [showAll, setShowAll] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState(60);
+  const [countdown, setCountdown] = useState(60);
+  const countdownRef = useRef(60);
+  const [refreshMenuOpen, setRefreshMenuOpen] = useState(false);
+  // Dynamic rows — ResizeObserver calcule combien de lignes tiennent sans scroll
+  const [perPage, setPerPage] = useState(10);
+  const tableAreaRef = useRef<HTMLDivElement>(null);
 
   const load = async (quiet = false) => {
     if (!quiet) setLoading(true);
@@ -142,13 +100,14 @@ export const NotificationsFullPage = () => {
     try {
       const [infraData, slurmData] = await Promise.all([
         api.getActiveAlerts(),
-        api.getSlurmNodes(),
+        api.getSlurmNodes().catch(() => null),
       ]);
       setInfraAlerts(infraData?.alerts ?? []);
-      const slurmNodes = slurmData?.nodes ?? [];
-      setSlurmAlerts(
-        slurmNodes.filter((n: SlurmNodeEntry) => n.severity === 'CRIT' || n.severity === 'WARN')
-      );
+      if (slurmData !== null) {
+        setSlurmEnabled(true);
+        const nodes: SlurmNodeEntry[] = slurmData?.nodes ?? [];
+        setSlurmAlerts(nodes.filter((n) => n.severity === 'CRIT' || n.severity === 'WARN'));
+      }
     } catch {
       /* ignore */
     } finally {
@@ -157,27 +116,62 @@ export const NotificationsFullPage = () => {
     }
   };
 
+  // Initial load
+  useEffect(() => { void load(); }, []);
+
+  // ResizeObserver — mesure les vraies hauteurs depuis le DOM, recalcule perPage
   useEffect(() => {
-    load();
-    const t = setInterval(() => load(true), 30000);
-    return () => clearInterval(t);
+    if (!tableAreaRef.current) return;
+    const calc = () => {
+      const container = tableAreaRef.current;
+      if (!container) return;
+      const available = container.getBoundingClientRect().height;
+      // Mesure réelle depuis le DOM (fallback si pas encore rendu)
+      const firstRow = container.querySelector('tbody tr');
+      const thead = container.querySelector('thead');
+      const rowH = firstRow ? firstRow.getBoundingClientRect().height : FALLBACK_ROW_H;
+      const theadH = thead ? thead.getBoundingClientRect().height : FALLBACK_THEAD_H;
+      const rows = Math.max(5, Math.floor((available - theadH - SAFETY) / rowH));
+      setPerPage(rows);
+    };
+    const obs = new ResizeObserver(calc);
+    obs.observe(tableAreaRef.current);
+    return () => obs.disconnect();
   }, []);
 
-  // Filtered data
-  const filteredInfra = useMemo(() => {
-    if (filter === 'slurm') return [];
-    if (filter === 'crit') return infraAlerts.filter((a) => a.state === 'CRIT');
-    if (filter === 'warn') return infraAlerts.filter((a) => a.state === 'WARN');
-    return infraAlerts;
-  }, [infraAlerts, filter]);
+  // Auto-refresh countdown
+  useEffect(() => {
+    if (refreshInterval === 0) { setCountdown(0); return; }
+    countdownRef.current = refreshInterval;
+    setCountdown(refreshInterval);
+    const tick = setInterval(() => {
+      countdownRef.current -= 1;
+      setCountdown(countdownRef.current);
+      if (countdownRef.current <= 0) {
+        void load(true);
+        countdownRef.current = refreshInterval;
+        setCountdown(refreshInterval);
+      }
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [refreshInterval]);
 
-  const filteredSlurm = useMemo(() => {
-    if (filter === 'infra') return [];
-    if (filter === 'crit') return slurmAlerts.filter((n) => n.severity === 'CRIT');
-    if (filter === 'warn') return slurmAlerts.filter((n) => n.severity === 'WARN');
-    return slurmAlerts;
-  }, [slurmAlerts, filter]);
+  // Reset page when filters change
+  useEffect(() => { setPage(0); }, [filter, search]);
 
+  // Recalcule perPage une fois que les vraies lignes sont rendues (données chargées)
+  useEffect(() => {
+    if (!tableAreaRef.current || loading) return;
+    const container = tableAreaRef.current;
+    const available = container.getBoundingClientRect().height;
+    const firstRow = container.querySelector('tbody tr');
+    const thead = container.querySelector('thead');
+    const rowH = firstRow ? firstRow.getBoundingClientRect().height : FALLBACK_ROW_H;
+    const theadH = thead ? thead.getBoundingClientRect().height : FALLBACK_THEAD_H;
+    setPerPage(Math.max(5, Math.floor((available - theadH - SAFETY) / rowH)));
+  }, [loading]);
+
+  // Stats
   const totalCrit =
     infraAlerts.filter((a) => a.state === 'CRIT').length +
     slurmAlerts.filter((n) => n.severity === 'CRIT').length;
@@ -185,42 +179,130 @@ export const NotificationsFullPage = () => {
     infraAlerts.filter((a) => a.state === 'WARN').length +
     slurmAlerts.filter((n) => n.severity === 'WARN').length;
   const total = infraAlerts.length + slurmAlerts.length;
+  const affectedRacks = new Set(infraAlerts.map((a) => a.rack_id).filter(Boolean)).size;
 
-  const affectedRacks = new Set([...infraAlerts.map((a) => a.rack_id)]).size;
+  // Unified rows
+  const allRows = useMemo<UnifiedRow[]>(() => [
+    ...infraAlerts.map((d): UnifiedRow => ({ kind: 'infra', sev: d.state, data: d })),
+    ...slurmAlerts.map((d): UnifiedRow => ({ kind: 'slurm', sev: d.severity, data: d })),
+  ], [infraAlerts, slurmAlerts]);
+
+  // Filter + search
+  const filteredRows = useMemo<UnifiedRow[]>(() => {
+    let rows = allRows;
+    if (filter === 'crit') rows = rows.filter((r) => r.sev === 'CRIT');
+    else if (filter === 'warn') rows = rows.filter((r) => r.sev === 'WARN');
+    else if (filter === 'infra') rows = rows.filter((r) => r.kind === 'infra');
+    else if (filter === 'slurm') rows = rows.filter((r) => r.kind === 'slurm');
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      rows = rows.filter((r) => {
+        if (r.kind === 'infra') {
+          const a = r.data;
+          return (
+            a.node_id?.toLowerCase().includes(q) ||
+            a.device_name?.toLowerCase().includes(q) ||
+            a.rack_name?.toLowerCase().includes(q) ||
+            a.room_name?.toLowerCase().includes(q)
+          );
+        } else {
+          const n = r.data;
+          return (
+            n.node?.toLowerCase().includes(q) ||
+            n.status?.toLowerCase().includes(q) ||
+            n.rack_name?.toLowerCase().includes(q) ||
+            n.partitions?.some((p) => p.toLowerCase().includes(q))
+          );
+        }
+      });
+    }
+    return rows;
+  }, [allRows, filter, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / perPage));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageRows = showAll ? filteredRows : filteredRows.slice(safePage * perPage, (safePage + 1) * perPage);
+  const pageNums = buildPages(safePage, totalPages);
+  const firstEntry = filteredRows.length === 0 ? 0 : safePage * perPage + 1;
+  const lastEntry = Math.min((safePage + 1) * perPage, filteredRows.length);
+
+  const filters = [
+    { id: 'all' as FilterType, label: 'All', count: total },
+    { id: 'crit' as FilterType, label: 'Critical', count: totalCrit },
+    { id: 'warn' as FilterType, label: 'Warning', count: totalWarn },
+    { id: 'infra' as FilterType, label: 'Infrastructure', count: infraAlerts.length },
+    ...(slurmEnabled ? [{ id: 'slurm' as FilterType, label: 'Slurm', count: slurmAlerts.length }] : []),
+  ];
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-1 min-h-0 flex-col gap-5 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-            Active alerts across your infrastructure
-          </p>
-        </div>
-        <button
-          onClick={() => load(true)}
-          disabled={refreshing}
-          className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+      <div className="shrink-0">
+        <PageHeader
+          title="Notifications"
+          breadcrumb={
+            <PageBreadcrumb
+              items={[{ label: 'Home', href: '/cosmos' }, { label: 'Notifications' }]}
+            />
+          }
+          actions={
+            <div className="relative">
+              <button
+                onClick={() => setRefreshMenuOpen((v) => !v)}
+                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshInterval === 0
+                  ? 'Auto-refresh : Off'
+                  : `Auto-refresh : ${REFRESH_OPTIONS.find((o) => o.value === refreshInterval)?.label}`}
+                {refreshInterval > 0 && !refreshing && (
+                  <span className="font-mono text-xs tabular-nums text-gray-400">· {countdown}s</span>
+                )}
+              </button>
+              {refreshMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setRefreshMenuOpen(false)} />
+                  <div className="absolute right-0 top-full z-20 mt-1 min-w-[140px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                    {REFRESH_OPTIONS.map((o) => (
+                      <button
+                        key={o.value}
+                        onClick={() => { setRefreshInterval(o.value); setRefreshMenuOpen(false); }}
+                        className={`flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${
+                          refreshInterval === o.value
+                            ? 'font-semibold text-brand-500'
+                            : 'text-gray-600 dark:text-gray-300'
+                        }`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${refreshInterval === o.value ? 'bg-brand-500' : ''}`} />
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          }
+        />
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: 'Total alerts', value: total, icon: Bell, color: 'text-gray-500' },
-          { label: 'CRIT', value: totalCrit, icon: XCircle, color: 'text-red-500' },
-          { label: 'WARN', value: totalWarn, icon: AlertTriangle, color: 'text-amber-500' },
-          { label: 'Affected racks', value: affectedRacks, icon: Server, color: 'text-brand-500' },
-        ].map((s) => (
+      {/* Stats */}
+      <div className="grid shrink-0 grid-cols-2 gap-4 sm:grid-cols-4">
+        {(
+          [
+            { label: 'Total alerts', value: total, icon: Bell, bg: 'bg-gray-100 dark:bg-gray-800', color: 'text-gray-600 dark:text-gray-400' },
+            { label: 'Critical', value: totalCrit, icon: XCircle, bg: 'bg-red-50 dark:bg-red-500/10', color: 'text-red-500' },
+            { label: 'Warning', value: totalWarn, icon: AlertTriangle, bg: 'bg-amber-50 dark:bg-amber-500/10', color: 'text-amber-500' },
+            { label: 'Affected racks', value: affectedRacks, icon: Server, bg: 'bg-brand-50 dark:bg-brand-500/10', color: 'text-brand-500' },
+          ] as const
+        ).map((s) => (
           <div
             key={s.label}
-            className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+            className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900"
           >
-            <s.icon className={`h-5 w-5 shrink-0 ${s.color}`} />
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${s.bg}`}>
+              <s.icon className={`h-6 w-6 ${s.color}`} />
+            </div>
             <div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{s.value}</p>
               <p className="text-xs text-gray-400">{s.label}</p>
@@ -229,119 +311,269 @@ export const NotificationsFullPage = () => {
         ))}
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-1 dark:border-gray-800 dark:bg-gray-900">
-        <Filter className="ml-2 h-3.5 w-3.5 shrink-0 text-gray-400" />
-        {(
-          [
-            { id: 'all', label: 'All', count: total },
-            { id: 'crit', label: 'CRIT', count: totalCrit },
-            { id: 'warn', label: 'WARN', count: totalWarn },
-            { id: 'infra', label: 'Infrastructure', count: infraAlerts.length },
-            { id: 'slurm', label: 'Slurm', count: slurmAlerts.length },
-          ] as { id: FilterType; label: string; count: number }[]
-        ).map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              filter === f.id
-                ? 'bg-brand-500 text-white'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            }`}
-          >
-            {f.label}
-            {f.count > 0 && (
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+      {/* Table card — fills remaining height */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+
+        {/* Toolbar — all elements h-9 (36px) */}
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
+          {/* Search — h-9 */}
+          <div className="relative min-w-[220px] flex-1">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search alerts…"
+              className="focus:border-brand-500 h-9 w-full rounded-lg border border-gray-200 pr-4 pl-9 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+            />
+          </div>
+
+          {/* Filters — h-9, même bordure + arrondi que la search */}
+          <div className="flex h-9 items-center gap-0.5 rounded-lg border border-gray-200 px-1.5 dark:border-gray-700">
+            <Filter className="mr-1 h-3.5 w-3.5 shrink-0 text-gray-400" />
+            {filters.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors ${
                   filter === f.id
-                    ? 'bg-white/20 text-white'
-                    : 'bg-gray-100 text-gray-500 dark:bg-gray-800'
+                    ? 'bg-brand-500 text-white shadow-sm'
+                    : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
                 }`}
               >
-                {f.count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Alert lists */}
-      {loading ? (
-        <div className="flex h-40 items-center justify-center">
-          <div className="border-t-brand-500 h-8 w-8 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
-        </div>
-      ) : filteredInfra.length === 0 && filteredSlurm.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-gray-200 bg-white py-16 dark:border-gray-800 dark:bg-gray-900">
-          <Bell className="h-12 w-12 text-gray-200 dark:text-gray-800" />
-          <p className="text-base font-semibold text-gray-500 dark:text-gray-400">No alerts</p>
-          <p className="text-sm text-gray-400 dark:text-gray-600">
-            {filter === 'all' ? 'All nodes are healthy' : `No ${filter.toUpperCase()} alerts`}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {/* Infrastructure alerts */}
-          {filteredInfra.length > 0 && (
-            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
-                <div className="flex items-center gap-2">
-                  <Server className="text-brand-500 h-4 w-4" />
-                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Infrastructure
-                  </h2>
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800">
-                    {filteredInfra.length}
+                {f.label}
+                {f.count > 0 && (
+                  <span
+                    className={`rounded-full px-1.5 py-px text-[10px] font-bold leading-none ${
+                      filter === f.id
+                        ? 'bg-white/25 text-white'
+                        : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {f.count}
                   </span>
-                </div>
-              </div>
-              <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                {filteredInfra.map((alert, i) => (
-                  <AlertRow
-                    key={i}
-                    alert={alert}
-                    onClick={() => navigate(`/cosmos/views/rack/${alert.rack_id}`)}
-                  />
-                ))}
-              </div>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Désactiver pagination — h-9, même style box */}
+          <button
+            onClick={() => setShowAll((v) => !v)}
+            className={`flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-medium transition-colors ${
+              showAll
+                ? 'border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-700/50 dark:bg-brand-500/10 dark:text-brand-400'
+                : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
+            }`}
+          >
+            <div className={`relative h-4 w-7 rounded-full transition-colors ${showAll ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-600'}`}>
+              <span className={`absolute top-0.5 left-0 h-3 w-3 rounded-full bg-white shadow transition-transform ${showAll ? 'translate-x-[14px]' : 'translate-x-0.5'}`} />
             </div>
-          )}
+            Show all notifications
+          </button>
+        </div>
 
-          {/* Slurm alerts */}
-          {filteredSlurm.length > 0 && (
-            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-              <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
-                <div className="flex items-center gap-2">
-                  <Cpu className="h-4 w-4 text-purple-500" />
-                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Slurm</h2>
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800">
-                    {filteredSlurm.length}
-                  </span>
+        {/* Table area — hauteur mesurée, perPage calculé dynamiquement */}
+        <div ref={tableAreaRef} className="min-h-0 flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex h-full items-center justify-center">
+              <LoadingState message="Loading alerts…" />
+            </div>
+          ) : filteredRows.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <EmptyState
+                title="No alerts"
+                description={
+                  search
+                    ? `No results for "${search}"`
+                    : filter === 'all'
+                      ? 'All nodes are healthy'
+                      : `No ${filter.toUpperCase()} alerts`
+                }
+              />
+            </div>
+          ) : (
+            <table className="w-full table-fixed">
+              {/* Largeurs proportionnelles — stables de 700px à 4K */}
+              <colgroup>
+                <col style={{ width: '10%' }} /> {/* Severity  */}
+                <col style={{ width: '12%' }} /> {/* Name      */}
+                <col style={{ width: '10%' }} /> {/* Type      */}
+                <col style={{ width: '20%' }} /> {/* Location  */}
+                <col style={{ width: '13%' }} /> {/* Rack      */}
+                <col style={{ width: '11%' }} /> {/* Room      */}
+                <col style={{ width: '16%' }} /> {/* Checks    */}
+                <col style={{ width: '8%'  }} /> {/* Action    */}
+              </colgroup>
+              <thead className="sticky top-0 z-10">
+                <tr className="border-b border-gray-100 dark:border-gray-800">
+                  {['Severity', 'Name', 'Type', 'Location', 'Rack', 'Room', 'Checks'].map((h) => (
+                    <th key={h} className="bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                      {h}
+                    </th>
+                  ))}
+                  <th className="bg-gray-50 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {pageRows.map((row, i) => {
+
+                  if (row.kind === 'infra') {
+                    const a = row.data;
+                    return (
+                      <tr key={`i-${i}`} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                        <td className="px-4 py-3.5">
+                          <SeverityBadge sev={row.sev} />
+                        </td>
+                        <td className="truncate px-4 py-3.5 text-sm font-medium text-gray-900 dark:text-white">
+                          {a.node_id}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
+                            <Server className="h-3.5 w-3.5 shrink-0 text-brand-500" />
+                            Infrastructure
+                          </span>
+                        </td>
+                        <td className="truncate px-4 py-3.5 text-sm text-gray-600 dark:text-gray-300">
+                          {a.device_name ?? '—'}
+                        </td>
+                        <td className="truncate px-4 py-3.5 text-sm text-gray-600 dark:text-gray-300">
+                          {a.rack_name ?? '—'}
+                        </td>
+                        <td className="truncate px-4 py-3.5 text-sm text-gray-600 dark:text-gray-300">
+                          {a.room_name ?? '—'}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {a.checks.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {a.checks.slice(0, 2).map((c, j) => (
+                                <span key={j} className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                                  {c.id}
+                                </span>
+                              ))}
+                              {a.checks.length > 2 && (
+                                <span className="text-[10px] text-gray-400">+{a.checks.length - 2}</span>
+                              )}
+                            </div>
+                          ) : <span className="text-[10px] text-gray-300 dark:text-gray-700">—</span>}
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <button
+                            onClick={() => navigate(`/cosmos/views/rack/${a.rack_id}`)}
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-brand-700/50 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+                          >
+                            View rack <ChevronRight className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  } else {
+                    const n = row.data;
+                    return (
+                      <tr key={`s-${i}`} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                        <td className="px-4 py-3.5">
+                          <SeverityBadge sev={row.sev} />
+                        </td>
+                        <td className="truncate px-4 py-3.5 font-mono text-sm font-medium text-gray-900 dark:text-white">
+                          {n.node}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
+                            <Cpu className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                            Slurm
+                          </span>
+                        </td>
+                        <td className="truncate px-4 py-3.5 text-sm capitalize text-gray-600 dark:text-gray-300">
+                          {n.status}
+                          {n.partitions.length > 0 && ` · ${n.partitions.join(', ')}`}
+                        </td>
+                        <td className="truncate px-4 py-3.5 text-sm text-gray-600 dark:text-gray-300">
+                          {n.rack_name ?? '—'}
+                        </td>
+                        <td className="truncate px-4 py-3.5 text-sm text-gray-600 dark:text-gray-300">
+                          —
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className="text-[10px] text-gray-300 dark:text-gray-700">—</span>
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <button
+                            onClick={() =>
+                              n.rack_id
+                                ? navigate(`/cosmos/views/rack/${n.rack_id}`)
+                                : navigate('/cosmos/slurm/alerts')
+                            }
+                            className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-brand-700/50 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+                          >
+                            View <ChevronRight className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  }
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Pagination footer */}
+        {!loading && filteredRows.length > 0 && (
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3 dark:border-gray-800">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {showAll ? (
+                <>Showing all <b className="text-gray-700 dark:text-gray-200">{filteredRows.length}</b> results</>
+              ) : (
+                <>
+                  Showing{' '}
+                  <b className="text-gray-700 dark:text-gray-200">{firstEntry}–{lastEntry}</b>
+                  {' '}of{' '}
+                  <b className="text-gray-700 dark:text-gray-200">{filteredRows.length}</b> results
+                </>
+              )}
+            </p>
+
+            {!showAll && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={safePage === 0}
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Previous
+                </button>
+                <div className="flex items-center gap-1">
+                  {pageNums.map((p, i) =>
+                    p === '...' ? (
+                      <span key={`e-${i}`} className="flex h-9 w-9 items-center justify-center text-sm text-gray-400">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p as number)}
+                        className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                          p === safePage
+                            ? 'bg-brand-500 text-white'
+                            : 'border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
+                        }`}
+                      >
+                        {(p as number) + 1}
+                      </button>
+                    )
+                  )}
                 </div>
                 <button
-                  onClick={() => navigate('/cosmos/slurm/alerts')}
-                  className="text-brand-500 text-xs hover:underline"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={safePage === totalPages - 1}
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
                 >
-                  View Slurm dashboard →
+                  Next <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-              <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                {filteredSlurm.map((node, i) => (
-                  <SlurmRow
-                    key={i}
-                    node={node}
-                    onClick={() =>
-                      node.rack_id
-                        ? navigate(`/cosmos/views/rack/${node.rack_id}`)
-                        : navigate('/cosmos/slurm/alerts')
-                    }
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
