@@ -60,7 +60,7 @@ import { CosmosWorldMapPage } from './pages/views/CosmosWorldMapPage';
 import { CosmosRoomPage } from './pages/views/CosmosRoomPage';
 
 import { CosmosDevicePage } from './pages/views/CosmosDevicePage';
-import { CosmosRackV2 } from './pages/views/CosmosRackV2';
+import { CosmosRackPage } from './pages/views/CosmosRackPage';
 
 // Rackscope-specific
 import { HealthStatusPage } from './pages/rackscope/HealthStatusPage';
@@ -75,7 +75,6 @@ import { CosmosSlurmNodesPage } from './pages/slurm/CosmosSlurmNodesPage';
 import { CosmosSlurmAlertsPage } from './pages/slurm/CosmosSlurmAlertsPage';
 import { CosmosSlurmPartitionsPage } from './pages/slurm/CosmosSlurmPartitionsPage';
 import { CosmosSlurmWallboardPage } from './pages/slurm/CosmosSlurmWallboardPage';
-import { CosmosSlurmWallboardV2Page } from './pages/slurm/CosmosSlurmWallboardV2Page';
 
 // Editors
 import { CosmosSettingsPage } from './pages/editors/CosmosSettingsPage';
@@ -181,7 +180,7 @@ const CosmosRoutes = () => (
       {/* ── Monitoring Views (live data) ── */}
       <Route path="views/worldmap" element={<CosmosWorldMapPage />} />
       <Route path="views/room/:roomId" element={<CosmosRoomPage />} />
-      <Route path="views/rack/:rackId" element={<CosmosRackV2 />} />
+      <Route path="views/rack/:rackId" element={<CosmosRackPage />} />
       <Route path="views/device/:rackId/:deviceId" element={<CosmosDevicePage />} />
 
       {/* Rackscope UI Components */}
@@ -197,7 +196,6 @@ const CosmosRoutes = () => (
       <Route path="slurm/alerts" element={<CosmosSlurmAlertsPage />} />
       <Route path="slurm/partitions" element={<CosmosSlurmPartitionsPage />} />
       <Route path="slurm/wallboard/:roomId" element={<CosmosSlurmWallboardPage />} />
-      <Route path="slurm/wallboard-v2/:roomId" element={<CosmosSlurmWallboardV2Page />} />
 
       {/* ── Editors ── */}
       <Route path="editors/settings" element={<CosmosSettingsPage />} />
