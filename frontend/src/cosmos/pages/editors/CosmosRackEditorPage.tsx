@@ -668,7 +668,7 @@ export const CosmosRackEditorPage = () => {
               )}
               <button
                 onClick={() => setWizardOpen(true)}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 New Rack
