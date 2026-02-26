@@ -228,55 +228,64 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
           </div>
           <p className="text-xs text-[var(--color-text-base)] opacity-30">No layout defined — simple component</p>
         </div>
-      ) : (
-        <div className="flex flex-1 flex-col overflow-y-auto py-4">
-          {/* Front view */}
-          <div className={hasRear ? 'mb-4' : ''}>
-            <div className="flex items-center justify-center pb-2">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">Front</span>
+      ) : (() => {
+        // When both views are active: flex split so no scroll needed.
+        // When only one view: fixed height = u_height × 120px.
+        const hasBoth = hasFront && hasRear;
+        const fixedH = Math.max(120, template.u_height * 120);
+        const rackEl = (isRear: boolean) => (
+          <RackElevation
+            rack={synthRack}
+            catalog={synthCatalog}
+            isRearView={isRear}
+            nodesData={{}}
+            infraComponents={[]}
+            sideComponents={[]}
+            rearInfraComponents={[]}
+            pduMetrics={{}}
+            fullWidth
+            disableZoom
+            disableTooltip
+          />
+        );
+        return (
+          <div className={hasBoth ? 'flex min-h-0 flex-1 flex-col' : 'flex flex-1 flex-col overflow-y-auto py-4'}>
+            {/* Front */}
+            <div className={hasBoth ? 'flex min-h-0 flex-1 flex-col border-b border-[var(--color-border)]/20' : 'mb-4'}>
+              <div className="flex shrink-0 items-center justify-center py-2">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">Front</span>
+              </div>
+              {hasBoth ? (
+                <div className="mx-auto min-h-0 w-4/5 flex-1 [&_*]:!cursor-default">
+                  {rackEl(false)}
+                </div>
+              ) : (
+                <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: fixedH }}>
+                  {rackEl(false)}
+                </div>
+              )}
             </div>
-            {/* Fixed height = u_height × 48px for rackmount proportions */}
-            <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: Math.max(120, template.u_height * 120) }}>
-              <RackElevation
-                rack={synthRack}
-                catalog={synthCatalog}
-                isRearView={false}
-                nodesData={{}}
-                infraComponents={[]}
-                sideComponents={[]}
-                rearInfraComponents={[]}
-                pduMetrics={{}}
-                fullWidth
-                disableZoom
-                disableTooltip
-              />
-            </div>
-          </div>
 
-          {/* Rear view */}
-          {hasRear && (
-            <div>
-              <div className="flex items-center justify-center pb-2">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
+            {/* Rear */}
+            {hasRear && (
+              <div className={hasBoth ? 'flex min-h-0 flex-1 flex-col' : ''}>
+                <div className="flex shrink-0 items-center justify-center py-2">
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
+                </div>
+                {hasBoth ? (
+                  <div className="mx-auto min-h-0 w-4/5 flex-1 [&_*]:!cursor-default">
+                    {rackEl(true)}
+                  </div>
+                ) : (
+                  <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: fixedH }}>
+                    {rackEl(true)}
+                  </div>
+                )}
               </div>
-              <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: Math.max(120, template.u_height * 120) }}>
-                <RackElevation
-                  rack={synthRack}
-                  catalog={synthCatalog}
-                  isRearView={true}
-                  nodesData={{}}
-                  infraComponents={[]}
-                  sideComponents={[]}
-                  rearInfraComponents={[]}
-                  pduMetrics={{}}
-                  fullWidth
-                  disableZoom
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 };
