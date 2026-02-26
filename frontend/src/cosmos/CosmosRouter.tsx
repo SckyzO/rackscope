@@ -91,6 +91,7 @@ import {
 } from './pages/templates/MonitoringTemplates';
 import { UILibraryPage } from './pages/UILibraryPage';
 import { CosmosRackTemplateEditorPage } from './pages/editors/CosmosRackTemplateEditorPage';
+import { DatacenterEditorPage } from './pages/editors/DatacenterEditorPage';
 
 // ── ProtectedRoute ────────────────────────────────────────────────────────────
 
@@ -213,6 +214,7 @@ const CosmosRoutes = () => (
       <Route path="editors/templates" element={<CosmosTemplatesEditorPage />} />
       <Route path="editors/rack" element={<CosmosRackEditorPage />} />
       <Route path="editors/rack-templates" element={<CosmosRackTemplateEditorPage />} />
+      <Route path="editors/datacenter" element={<DatacenterEditorPage />} />
 
       {/* ── Page templates (design system) ── */}
       <Route path="templates/empty" element={<EmptyPage />} />
