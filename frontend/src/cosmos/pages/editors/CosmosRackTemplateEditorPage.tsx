@@ -38,19 +38,32 @@ import {
 // Types
 // ---------------------------------------------------------------------------
 
+type RackCompRefDraft = {
+  template_id: string;
+  u_position: string;
+  u_height: string;   // '' = use template default
+  side: string;       // '' = use template default
+};
+
 type RackDraft = {
   id: string;
   name: string;
   u_height: string;
   checks: string[];
+  rackCompRefs: RackCompRefDraft[];
 };
-
 
 const toDraft = (tpl: RackTemplate): RackDraft => ({
   id: tpl.id,
   name: tpl.name,
   u_height: String(tpl.u_height ?? 42),
   checks: tpl.checks ?? [],
+  rackCompRefs: (tpl.infrastructure?.rack_components ?? []).map((r) => ({
+    template_id: r.template_id,
+    u_position: String(r.u_position ?? ''),
+    u_height: r.u_height != null ? String(r.u_height) : '',
+    side: r.side ?? '',
+  })),
 });
 
 const draftToTemplate = (draft: RackDraft, base?: RackTemplate): Record<string, unknown> => ({
@@ -58,7 +71,15 @@ const draftToTemplate = (draft: RackDraft, base?: RackTemplate): Record<string, 
   name: draft.name.trim(),
   u_height: parseInt(draft.u_height) || 42,
   checks: draft.checks,
-  infrastructure: base?.infrastructure ?? { components: [] },
+  infrastructure: {
+    ...(base?.infrastructure ?? {}),
+    rack_components: draft.rackCompRefs.map((r) => ({
+      template_id: r.template_id,
+      u_position: parseInt(r.u_position) || 1,
+      ...(r.u_height ? { u_height: parseInt(r.u_height) } : {}),
+      ...(r.side ? { side: r.side } : {}),
+    })),
+  },
 });
 
 // ---------------------------------------------------------------------------
@@ -164,8 +185,8 @@ const RackPreview = ({
 
   return (
     <div className="flex h-full flex-col">
-      {/* View label */}
-      <div className="shrink-0 border-b border-[var(--color-border)]/20 px-5 py-2.5">
+      {/* View label — centered */}
+      <div className="shrink-0 flex items-center justify-center border-b border-[var(--color-border)]/20 py-2.5">
         <span className={`text-[11px] font-bold uppercase tracking-widest ${
           view === 'rear' ? 'text-amber-400/80' : 'text-brand-400/80'
         }`}>
@@ -543,10 +564,12 @@ const NewTemplateForm = ({
 const EditorPanel = ({
   template,
   allChecks,
+  rackComponentCatalog,
   onSaved,
 }: {
   template: RackTemplate;
   allChecks: CheckDefinition[];
+  rackComponentCatalog: RackComponentTemplate[];
   onSaved: () => void;
 }) => {
   const [draft, setDraft] = useState<RackDraft>(() => toDraft(template));
@@ -883,7 +906,103 @@ const EditorPanel = ({
             )}
           </div>
         </SectionCard>
+
+        {/* Rack Components */}
+        <SectionCard title="Rack Components" icon={Layers} desc="Components mounted in this rack (PDUs, switches, cooling…)">
+          {draft.rackCompRefs.length > 0 && (
+            <div className="mb-4 space-y-2">
+              {draft.rackCompRefs.map((ref, idx) => {
+                const tpl = rackComponentCatalog.find((c) => c.id === ref.template_id);
+                const col = RAIL_COLORS[tpl?.type ?? 'other'] ?? RAIL_COLORS.other;
+                return (
+                  <div key={idx} className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 p-2.5 dark:border-gray-800 dark:bg-gray-800/40">
+                    <div className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: col.border }} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-gray-800 dark:text-gray-200">{tpl?.name ?? ref.template_id}</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="text-[10px] text-gray-400">U</span>
+                      <input
+                        type="number" min={1} max={52} value={ref.u_position}
+                        onChange={(e) => { const next = [...draft.rackCompRefs]; next[idx] = { ...next[idx], u_position: e.target.value }; updateDraft('rackCompRefs', next); }}
+                        className="focus:border-brand-500 w-12 rounded-lg border border-gray-200 px-2 py-1 text-center font-mono text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                        title="U Position"
+                      />
+                    </div>
+                    {(tpl?.location === 'side' || ref.side) && (
+                      <select
+                        value={ref.side}
+                        onChange={(e) => { const next = [...draft.rackCompRefs]; next[idx] = { ...next[idx], side: e.target.value }; updateDraft('rackCompRefs', next); }}
+                        className="focus:border-brand-500 w-20 rounded-lg border border-gray-200 px-2 py-1 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                      >
+                        <option value="">default</option>
+                        <option value="left">Left</option>
+                        <option value="right">Right</option>
+                      </select>
+                    )}
+                    <button
+                      onClick={() => updateDraft('rackCompRefs', draft.rackCompRefs.filter((_, i) => i !== idx))}
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
+                      title="Remove"
+                    ><X className="h-3.5 w-3.5" /></button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <AddRackCompRefForm rackComponentCatalog={rackComponentCatalog} onAdd={(ref) => updateDraft('rackCompRefs', [...draft.rackCompRefs, ref])} />
+        </SectionCard>
       </div>
+    </div>
+  );
+};
+
+// ── AddRackCompRefForm ────────────────────────────────────────────────────────
+
+const AddRackCompRefForm = ({
+  rackComponentCatalog,
+  onAdd,
+}: {
+  rackComponentCatalog: RackComponentTemplate[];
+  onAdd: (ref: RackCompRefDraft) => void;
+}) => {
+  const [templateId, setTemplateId] = useState('');
+  const [uPosition, setUPosition] = useState('');
+  const [side, setSide] = useState('');
+  const selectedTpl = rackComponentCatalog.find((c) => c.id === templateId);
+  const isSide = selectedTpl?.location === 'side';
+  const handleAdd = () => {
+    if (!templateId || !uPosition) return;
+    onAdd({ template_id: templateId, u_position: uPosition, u_height: '', side: isSide ? side : '' });
+    setTemplateId(''); setUPosition(''); setSide('');
+  };
+  const inputCls = 'focus:border-brand-500 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200';
+  return (
+    <div className="flex flex-wrap items-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+      <div className="flex-1" style={{ minWidth: 160 }}>
+        <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">Component</label>
+        <select value={templateId} onChange={(e) => { setTemplateId(e.target.value); setSide(''); }} className={`w-full ${inputCls}`}>
+          <option value="">— Select —</option>
+          {rackComponentCatalog.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.type}, {c.u_height}U)</option>)}
+        </select>
+      </div>
+      <div style={{ width: 72 }}>
+        <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">U Position</label>
+        <input type="number" min={1} max={52} value={uPosition} onChange={(e) => setUPosition(e.target.value)} placeholder="1" className={`w-full ${inputCls}`} />
+      </div>
+      {isSide && (
+        <div style={{ width: 80 }}>
+          <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">Side</label>
+          <select value={side} onChange={(e) => setSide(e.target.value)} className={`w-full ${inputCls}`}>
+            <option value="">default</option>
+            <option value="left">Left</option>
+            <option value="right">Right</option>
+          </select>
+        </div>
+      )}
+      <button onClick={handleAdd} disabled={!templateId || !uPosition} className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
+        <Plus className="h-3.5 w-3.5" /> Add
+      </button>
     </div>
   );
 };
@@ -1396,9 +1515,8 @@ export const CosmosRackTemplateEditorPage = () => {
       const components = catalog?.rack_component_templates ?? [];
       setRackComponents(components);
       setChecks(checksData?.checks ?? []);
-      // Open all component groups by default
-      const types = new Set(components.map((c) => c.type));
-      setOpenComponentGroups(types);
+      // Collapsed by default — user opens manually
+      setOpenComponentGroups(new Set());
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : 'Failed to load data.');
     } finally {
@@ -1588,45 +1706,52 @@ export const CosmosRackTemplateEditorPage = () => {
                     {byType.size === 0 ? (
                       <p className="px-4 py-6 text-center text-xs text-gray-400">No rack components</p>
                     ) : (
-                      <div className="divide-y divide-gray-100 px-4 dark:divide-gray-800">
+                      <div className="space-y-1 p-2">
                         {Array.from(byType.entries()).map(([type, comps]) => {
                           const isOpen = openComponentGroups.has(type);
-                          const style = COMP_TYPE_STYLES[type] ?? COMP_TYPE_STYLES.other;
+                          const col = RAIL_COLORS[type] ?? RAIL_COLORS.other;
                           return (
-                            <div key={type}>
+                            <div key={type} className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
+                              {/* Accordion header */}
                               <button
                                 onClick={() => setOpenComponentGroups((prev) => {
                                   const next = new Set(prev);
                                   if (isOpen) { next.delete(type); } else { next.add(type); }
                                   return next;
                                 })}
-                                className="flex w-full items-center justify-between py-3 text-left transition-colors"
+                                className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
                               >
-                                <div className="flex items-center gap-2">
-                                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold capitalize ${style}`}>{type}</span>
-                                  <span className="text-[10px] text-gray-400">{comps.length}</span>
-                                </div>
-                                <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                                {/* Color dot */}
+                                <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: col.border }} />
+                                <span className="flex-1 text-xs font-semibold capitalize text-gray-700 dark:text-gray-300">{type}</span>
+                                <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">{comps.length}</span>
+                                <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                               </button>
+
+                              {/* Accordion body */}
                               {isOpen && (
-                                <div className="space-y-1 pb-2">
-                                  {comps.map((comp) => (
-                                    <button
-                                      key={comp.id}
-                                      onClick={() => { setSelectedComponentId(comp.id); setSelectedId(null); }}
-                                      className={[
-                                        'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-all',
-                                        selectedComponentId === comp.id
-                                          ? 'bg-brand-50 dark:bg-brand-500/10'
-                                          : 'hover:bg-gray-50 dark:hover:bg-white/5',
-                                      ].join(' ')}
-                                    >
-                                      <div className="min-w-0 flex-1">
-                                        <p className={`text-xs font-semibold ${selectedComponentId === comp.id ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}>{comp.name}</p>
-                                        <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">{comp.id} · {comp.u_height}U · {comp.location}</p>
-                                      </div>
-                                    </button>
-                                  ))}
+                                <div className="border-t border-gray-100 dark:border-gray-800">
+                                  {comps.map((comp) => {
+                                    const selected = selectedComponentId === comp.id;
+                                    return (
+                                      <button
+                                        key={comp.id}
+                                        onClick={() => { setSelectedComponentId(comp.id); setSelectedId(null); }}
+                                        className={[
+                                          'flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors',
+                                          selected
+                                            ? 'bg-brand-50 dark:bg-brand-500/10'
+                                            : 'hover:bg-gray-50 dark:hover:bg-white/5',
+                                        ].join(' ')}
+                                      >
+                                        <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: col.border, opacity: selected ? 1 : 0.4 }} />
+                                        <div className="min-w-0 flex-1">
+                                          <p className={`truncate text-xs font-medium ${selected ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}>{comp.name}</p>
+                                          <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">{comp.u_height}U · {comp.location}{comp.side ? ` · ${comp.side}` : ''}</p>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -1665,7 +1790,7 @@ export const CosmosRackTemplateEditorPage = () => {
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-6">
-                  <EditorPanel key={selectedTemplate.id} template={selectedTemplate} allChecks={checks} onSaved={() => { void loadData(); }} />
+                  <EditorPanel key={selectedTemplate.id} template={selectedTemplate} allChecks={checks} rackComponentCatalog={rackComponents} onSaved={() => { void loadData(); }} />
                 </div>
               </>
             ) : selectedComponent ? (
