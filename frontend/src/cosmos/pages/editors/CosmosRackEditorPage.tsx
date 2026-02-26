@@ -31,8 +31,6 @@ import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const U_PX_MAX = 32;
-const U_PX_MIN = 10;
 
 const DEVICE_TYPES = ['server', 'storage', 'network', 'pdu', 'cooling'] as const;
 
@@ -209,7 +207,6 @@ export const CosmosRackEditorPage = () => {
   // Canvas sizing
   const rackContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
-  const [canvasH, setCanvasH] = useState(600);
   const deviceCounterRef = useRef(0);
 
   // Undo — single-level, clears after 5 s
@@ -300,15 +297,6 @@ export const CosmosRackEditorPage = () => {
     return () => window.removeEventListener('beforeunload', handler);
   }, [dirty]);
 
-  // ── Canvas resize ─────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    const el = canvasRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => setCanvasH(entries[0].contentRect.height));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   // ── Derived values ────────────────────────────────────────────────────────
 
@@ -324,7 +312,6 @@ export const CosmosRackEditorPage = () => {
   const totalU = rack?.u_height ?? 42;
   const usedU = draftDevices.reduce((acc, d) => acc + (deviceCatalog[d.template_id]?.u_height ?? 1), 0);
   const density = totalU > 0 ? usedU / totalU : 0;
-  const uPx = Math.max(U_PX_MIN, Math.min(U_PX_MAX, Math.floor(canvasH / totalU)));
 
   const filteredRacks = useMemo(() => {
     if (!rackSearch.trim()) return allRacks;
@@ -797,14 +784,14 @@ export const CosmosRackEditorPage = () => {
                 </div>
               </div>
 
-              {/* Rack visualization */}
+              {/* Rack visualization — rack fills full height via flex distribution */}
               <div ref={canvasRef} className="relative flex-1 overflow-hidden py-5">
-                <div className="mx-auto h-full w-full max-w-sm px-6">
+                <div className="mx-auto flex h-full w-full max-w-sm flex-col px-6">
                   <div
                     ref={rackContainerRef}
                     onDragLeave={handleRackDragLeave}
                     onDragEnd={handleDragEnd}
-                    className="relative flex flex-col-reverse rounded-sm border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-frame)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-colors duration-500"
+                    className="relative flex flex-1 flex-col-reverse rounded-sm border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-frame)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-colors duration-500"
                   >
                     {slots.map((u) => {
                       const dev = uMap.get(u);
@@ -830,8 +817,8 @@ export const CosmosRackEditorPage = () => {
                         return (
                           <div
                             key={u}
-                            style={{ flex: `0 0 ${devH * uPx}px` }}
-                            className="relative flex min-h-0 w-full items-center border-b border-gray-800/40"
+                            style={{ flex: devH }}
+                            className="relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10"
                             onDragEnter={() => handleSlotDragEnter(u)}
                             onDragOver={handleSlotDragOver}
                             onDrop={(e) => handleSlotDrop(e, u)}
@@ -903,7 +890,7 @@ export const CosmosRackEditorPage = () => {
                       return (
                         <div
                           key={u}
-                          style={{ flex: `0 0 ${uPx}px` }}
+                          style={{ flex: 1 }}
                           className={[
                             'relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10 transition-colors',
                             hovered
