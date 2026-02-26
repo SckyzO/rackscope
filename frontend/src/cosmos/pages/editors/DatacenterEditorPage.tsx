@@ -27,6 +27,7 @@ import {
 type ViewLevel = 'sites' | 'rooms' | 'room-editor';
 
 import { RoomEditorCanvas } from '../../components/datacenter/RoomEditorCanvas';
+import { DatacenterWizard } from '../../components/datacenter/DatacenterWizard';
 
 // ── YamlDrawer ────────────────────────────────────────────────────────────────
 
@@ -237,45 +238,60 @@ const ContextMenu = ({ open, onEditYaml, onDelete, onClose }: ContextMenuProps) 
   );
 };
 
-// ── DeleteConfirmDialog ───────────────────────────────────────────────────────
+// ── DeleteConfirmDialog — Default Modal design ────────────────────────────────
 
 type DeleteConfirmProps = {
   open: boolean;
   entityName: string;
+  entityType?: string;
   onConfirm: () => void;
   onCancel: () => void;
 };
 
-const DeleteConfirmDialog = ({ open, entityName, onConfirm, onCancel }: DeleteConfirmProps) => {
+const DeleteConfirmDialog = ({
+  open,
+  entityName,
+  entityType = 'item',
+  onConfirm,
+  onCancel,
+}: DeleteConfirmProps) => {
   if (!open) return null;
 
   return (
-    <>
-      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
-      <div className="fixed top-1/2 left-1/2 z-50 w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-gray-700 bg-gray-900 p-6 shadow-2xl">
-        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-red-500/15">
-          <Trash2 className="h-5 w-5 text-red-400" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
+        <button
+          onClick={onCancel}
+          className="absolute top-4 right-4 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-red-50 dark:bg-red-500/10">
+          <Trash2 className="h-5 w-5 text-red-500 dark:text-red-400" />
         </div>
-        <h3 className="mb-1.5 text-sm font-semibold text-white">Delete {entityName}?</h3>
-        <p className="mb-5 text-xs text-gray-500">
-          This action cannot be undone. All data associated with this entry will be removed.
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Delete {entityType}?
+        </h3>
+        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+          You are about to permanently delete <span className="font-semibold text-gray-700 dark:text-gray-300">{entityName}</span>.
+          This action cannot be undone and all associated data will be removed.
         </p>
-        <div className="flex justify-end gap-2">
+        <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onCancel}
-            className="rounded-xl border border-gray-700 px-4 py-2 text-sm text-gray-400 hover:bg-white/5"
+            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600"
+            className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600"
           >
             Delete
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
@@ -466,7 +482,8 @@ const SiteCard = ({ site, onDrillDown, onEditYaml, onDelete }: SiteCardProps) =>
 
       <DeleteConfirmDialog
         open={deleteOpen}
-        entityName={`site "${site.name}"`}
+        entityType="site"
+        entityName={site.name}
         onConfirm={() => { setDeleteOpen(false); onDelete(); }}
         onCancel={() => setDeleteOpen(false)}
       />
@@ -544,7 +561,8 @@ const RoomCard = ({ room, onDrillDown, onEditYaml, onDelete }: RoomCardProps) =>
 
       <DeleteConfirmDialog
         open={deleteOpen}
-        entityName={`room "${room.name}"`}
+        entityType="room"
+        entityName={room.name}
         onConfirm={() => { setDeleteOpen(false); onDelete(); }}
         onCancel={() => setDeleteOpen(false)}
       />
@@ -587,6 +605,7 @@ export const DatacenterEditorPage = () => {
   const [addingRoom, setAddingRoom] = useState(false);
   const [addingAisle, setAddingAisle] = useState(false);
   const [addAisleError, setAddAisleError] = useState<string | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   // YamlDrawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -628,6 +647,8 @@ export const DatacenterEditorPage = () => {
         if (!active) return;
         setSites(sitesData);
         setRackTemplates(catalogData.rack_templates ?? []);
+        // Auto-start wizard on first install
+        if (sitesData.length === 0) setWizardOpen(true);
       } catch (err) {
         if (!active) return;
         setError(err instanceof Error ? err.message : 'Failed to load data');
@@ -654,6 +675,22 @@ export const DatacenterEditorPage = () => {
       setCurrentRoom(room);
     } catch {
       // silently ignore
+    }
+  };
+
+  // ── Wizard completion ────────────────────────────────────────────────────────
+
+  const handleWizardComplete = async (siteId: string) => {
+    setWizardOpen(false);
+    // Reload sites so the new site appears, then drill into it
+    try {
+      const sitesData = await api.getSites();
+      setSites(sitesData);
+      const created = sitesData.find((s) => s.id === siteId);
+      if (created) handleDrillDownSite(created);
+    } catch {
+      // fallback: just reload
+      await reloadSites();
     }
   };
 
@@ -834,19 +871,34 @@ export const DatacenterEditorPage = () => {
                 {error}
               </div>
             </div>
+          ) : wizardOpen ? (
+            /* ── First-install wizard (or "New Datacenter" wizard) ── */
+            <DatacenterWizard
+              onComplete={(siteId) => void handleWizardComplete(siteId)}
+              onDismiss={sites.length > 0 ? () => setWizardOpen(false) : undefined}
+            />
           ) : sites.length === 0 && !addingSite ? (
+            /* Fallback empty state (after wizard is dismissed) */
             <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
               <EmptyState
                 title="No sites yet"
-                description="Add your first datacenter site to get started."
+                description="Use the guided wizard or add a site manually."
                 action={
-                  <button
-                    onClick={() => setAddingSite(true)}
-                    className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Site
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setWizardOpen(true)}
+                      className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Setup Wizard
+                    </button>
+                    <button
+                      onClick={() => setAddingSite(true)}
+                      className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+                    >
+                      Add Site manually
+                    </button>
+                  </div>
                 }
               />
             </div>
@@ -879,7 +931,23 @@ export const DatacenterEditorPage = () => {
                   onCancel={() => setAddingSite(false)}
                 />
               ) : (
-                <AddCard label="Add Site" onClick={() => setAddingSite(true)} />
+                /* Two options: wizard or manual */
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setWizardOpen(true)}
+                    title="Guided setup wizard — recommended for new datacenters"
+                    className="flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-brand-300 bg-brand-50/50 p-4 text-brand-500 transition-colors hover:border-brand-400 hover:bg-brand-50 dark:border-brand-700/50 dark:bg-brand-500/5 dark:text-brand-400 dark:hover:bg-brand-500/10"
+                  >
+                    <Plus className="h-5 w-5" />
+                    <span className="text-xs font-semibold">New Datacenter (Wizard)</span>
+                  </button>
+                  <button
+                    onClick={() => setAddingSite(true)}
+                    className="flex min-h-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-dashed border-gray-200 px-4 py-2 text-xs font-medium text-gray-400 transition-colors hover:border-gray-300 hover:text-gray-500 dark:border-gray-700 dark:text-gray-600 dark:hover:border-gray-600"
+                  >
+                    Add site manually
+                  </button>
+                </div>
               )}
             </div>
           )}

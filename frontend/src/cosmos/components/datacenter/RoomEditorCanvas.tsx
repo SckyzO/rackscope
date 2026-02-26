@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Server,
   ChevronRight,
+  Trash2,
 } from 'lucide-react';
 import type { Room, Aisle, Rack, RackTemplate } from '../../../types';
 import { api } from '../../../services/api';
@@ -40,6 +41,63 @@ const Tooltip = ({ text, children }: { text: string; children: ReactNode }) => (
     </div>
   </div>
 );
+
+// ── DeleteConfirmModal — Default Modal design ─────────────────────────────────
+
+interface DeleteConfirmModalProps {
+  open: boolean;
+  entityType: string;
+  entityName: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+const DeleteConfirmModal = ({
+  open,
+  entityType,
+  entityName,
+  onConfirm,
+  onCancel,
+}: DeleteConfirmModalProps) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
+        <button
+          onClick={onCancel}
+          className="absolute top-4 right-4 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-red-50 dark:bg-red-500/10">
+          <Trash2 className="h-5 w-5 text-red-500 dark:text-red-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Delete {entityType}?
+        </h3>
+        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+          You are about to permanently delete{' '}
+          <span className="font-semibold text-gray-700 dark:text-gray-300">{entityName}</span>.
+          This will remove all racks within this aisle. This action cannot be undone.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ── YamlDrawer ────────────────────────────────────────────────────────────────
 
@@ -594,6 +652,7 @@ export const RoomEditorCanvas = ({
   const [addingRack, setAddingRack] = useState<string | null>(null);
   const [yamlDrawerOpen, setYamlDrawerOpen] = useState(false);
   const [yamlTarget, setYamlTarget] = useState<YamlDrawerTarget | null>(null);
+  const [pendingDeleteAisleId, setPendingDeleteAisleId] = useState<string | null>(null);
 
   // ── Save state — lifted to parent via callbacks ───────────────────────────
   const [isDirty, setIsDirty] = useState(false);
@@ -755,13 +814,20 @@ export const RoomEditorCanvas = ({
     updateRoom({ ...room, aisles: newAisles });
   };
 
-  const handleDeleteAisle = async (aisleId: string) => {
+  // handleDeleteAisle shows the confirmation modal; actual deletion is in confirmDeleteAisle
+  const handleDeleteAisle = (aisleId: string) => {
+    setPendingDeleteAisleId(aisleId);
+  };
+
+  const confirmDeleteAisle = async () => {
+    if (!pendingDeleteAisleId) return;
+    const aisleId = pendingDeleteAisleId;
+    setPendingDeleteAisleId(null);
     // Optimistic update
     const newAisles = room.aisles.filter((a) => a.id !== aisleId);
     updateRoom({ ...room, aisles: newAisles });
-    // Immediate API call — deletions are destructive
+    // Immediate API call — deletion is destructive
     await api.deleteAisle(aisleId).catch((_err) => { /* optimistic update already applied */ });
-    // Aisle deleted successfully means the room layout is clean — mark not dirty
     setIsDirty(false);
   };
 
@@ -840,6 +906,17 @@ export const RoomEditorCanvas = ({
         <YamlDrawer
           target={yamlTarget}
           onClose={() => { setYamlDrawerOpen(false); setYamlTarget(null); }}
+        />
+      )}
+
+      {/* Aisle delete confirmation */}
+      {pendingDeleteAisleId && (
+        <DeleteConfirmModal
+          open
+          entityType="aisle"
+          entityName={room.aisles.find((a) => a.id === pendingDeleteAisleId)?.name ?? pendingDeleteAisleId}
+          onConfirm={() => void confirmDeleteAisle()}
+          onCancel={() => setPendingDeleteAisleId(null)}
         />
       )}
     </>
