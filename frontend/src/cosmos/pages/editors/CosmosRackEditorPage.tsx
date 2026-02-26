@@ -776,7 +776,7 @@ export const CosmosRackEditorPage = () => {
 
               {/* Rack visualization */}
               <div ref={canvasRef} className="flex-1 overflow-hidden py-5">
-                <div className="mx-auto max-w-2xl px-10">
+                <div className="h-full px-6">
                   <div
                     ref={rackContainerRef}
                     onDragLeave={handleRackDragLeave}
