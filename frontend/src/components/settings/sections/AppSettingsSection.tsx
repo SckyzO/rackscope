@@ -1,7 +1,5 @@
 import React from 'react';
-import {
-  Info, FolderOpen, RefreshCw, Database, Zap, MapPin,
-} from 'lucide-react';
+import { Info, FolderOpen, RefreshCw, Database, Zap } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
 import { FormToggle } from '../common/FormToggle';
@@ -104,54 +102,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         />
       </FormSection>
 
-      <FormSection title="Map Settings" icon={MapPin} iconColor="text-sky-500" iconBg="bg-sky-50 dark:bg-sky-500/10">
-        <FormField
-          label="Default View"
-          value={draft.map.default_view}
-          onChange={(value) => update('map', 'default_view', value)}
-        />
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            label="Default Zoom"
-            value={draft.map.default_zoom}
-            onChange={(value) => update('map', 'default_zoom', value)}
-            type="number"
-          />
-          <FormField
-            label="Min Zoom"
-            value={draft.map.min_zoom}
-            onChange={(value) => update('map', 'min_zoom', value)}
-            type="number"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            label="Max Zoom"
-            value={draft.map.max_zoom}
-            onChange={(value) => update('map', 'max_zoom', value)}
-            type="number"
-          />
-          <FormToggle
-            label="Zoom Controls"
-            checked={draft.map.zoom_controls}
-            onChange={(value) => update('map', 'zoom_controls', value)}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            label="Center Latitude"
-            value={draft.map.center_lat}
-            onChange={(value) => update('map', 'center_lat', value)}
-            type="number"
-          />
-          <FormField
-            label="Center Longitude"
-            value={draft.map.center_lon}
-            onChange={(value) => update('map', 'center_lon', value)}
-            type="number"
-          />
-        </div>
-      </FormSection>
+      {/* Map Settings moved to Views tab → no duplicate here */}
 
       <FormSection title="Features" icon={Zap} iconColor="text-brand-500" iconBg="bg-brand-50 dark:bg-brand-500/10">
         <FormToggle
