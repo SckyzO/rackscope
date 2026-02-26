@@ -1,1043 +1,612 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
-import Editor, { type OnMount } from '@monaco-editor/react';
-import yaml from 'js-yaml';
-import { Pencil, Trash2, Plus, X, Check, ChevronRight } from 'lucide-react';
-import { api } from '../../../services/api';
+import { useState, useEffect, useMemo } from 'react';
+import Editor from '@monaco-editor/react';
+import {
+  Search,
+  ClipboardCopy,
+  Check,
+  BookOpen,
+  Code2,
+  SlidersHorizontal,
+  Tag,
+  Link2,
+} from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
+import {
+  PageHeader,
+  PageBreadcrumb,
+  SectionCard,
+  EmptyState,
+  LoadingState,
+  ErrorState,
+} from '../templates/EmptyPage';
+import { api } from '../../../services/api';
+import type { CheckDefinition, ChecksLibrary, Catalog } from '../../../types';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+// ── Badge helpers ─────────────────────────────────────────────────────────────
 
-type CheckRule = {
-  op: string;
-  value: number | string;
-  severity: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
+const KIND_BADGE: Record<string, string> = {
+  server: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+  storage: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+  network: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-400',
+  pdu: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400',
+  cooling: 'bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-400',
 };
+const KIND_FALLBACK = 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
 
-type CheckDef = {
-  id: string;
-  name?: string;
-  scope?: string;
-  kind?: string;
-  expr?: string;
-  output?: 'bool' | 'numeric';
-  rules?: CheckRule[];
+const SCOPE_BADGE: Record<string, string> = {
+  node: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+  chassis: 'bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400',
+  rack: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400',
 };
+const SCOPE_FALLBACK = 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500';
 
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
-
-// ---------------------------------------------------------------------------
-// ScopeBadge
-// ---------------------------------------------------------------------------
-
-const SCOPE_COLORS: Record<string, string> = {
-  node: 'border-blue-500/40 bg-blue-500/10 text-blue-400',
-  chassis: 'border-purple-500/40 bg-purple-500/10 text-purple-400',
-  rack: 'border-amber-500/40 bg-amber-500/10 text-amber-400',
+const OUTPUT_BADGE: Record<string, string> = {
+  bool: 'bg-slate-100 text-slate-600 dark:bg-slate-700/40 dark:text-slate-400',
+  numeric: 'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400',
 };
+const OUTPUT_FALLBACK = 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500';
 
-const ScopeBadge = ({ scope }: { scope?: string }) => {
-  const cls = SCOPE_COLORS[scope ?? ''] ?? 'border-gray-700 bg-gray-800 text-gray-400';
-  return (
-    <span className={`rounded border px-2 py-0.5 font-mono text-[9px] font-bold uppercase ${cls}`}>
-      {scope ?? 'unknown'}
-    </span>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// KindBadge
-// ---------------------------------------------------------------------------
-
-const KIND_COLORS: Record<string, string> = {
-  server: 'border-green-500/30 bg-green-500/10 text-green-400',
-  storage: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
-  pdu: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400',
-  ipmi: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400',
-  switch: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
-  cooling: 'border-sky-500/30 bg-sky-500/10 text-sky-400',
-};
-
-const KindBadge = ({ kind }: { kind?: string }) => {
-  if (!kind) return null;
-  const cls = KIND_COLORS[kind] ?? 'border-gray-700 bg-gray-800 text-gray-400';
-  return (
-    <span className={`rounded border px-2 py-0.5 font-mono text-[9px] font-bold uppercase ${cls}`}>
-      {kind}
-    </span>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// CheckCard helpers
-// ---------------------------------------------------------------------------
-
-const SEV_ACCENT: Record<string, string> = {
-  CRIT: '#ef4444',
-  WARN: '#f59e0b',
-  OK: '#22c55e',
-  UNKNOWN: '#374151',
-};
-
-const SEV_RULE_CLS: Record<string, string> = {
-  OK: 'bg-green-500/15 text-green-400 border border-green-500/20',
-  WARN: 'bg-amber-500/15 text-amber-400 border border-amber-500/20',
-  CRIT: 'bg-red-500/15 text-red-400 border border-red-500/20',
-  UNKNOWN: 'bg-gray-800 text-gray-500 border border-gray-700',
-};
-
-const worstSeverity = (rules?: CheckRule[]): string => {
-  if (!rules || rules.length === 0) return 'UNKNOWN';
-  for (const sev of ['CRIT', 'WARN', 'OK']) {
-    if (rules.some((r) => r.severity === sev)) return sev;
-  }
-  return 'UNKNOWN';
-};
-
-// ---------------------------------------------------------------------------
-// CheckCard
-// ---------------------------------------------------------------------------
-
-type CheckCardProps = {
-  check: CheckDef;
-  onEdit: () => void;
-  onDelete: () => void;
-};
-
-const CheckCard = ({ check, onEdit, onDelete }: CheckCardProps) => {
-  const accent = SEV_ACCENT[worstSeverity(check.rules)] ?? SEV_ACCENT.UNKNOWN;
-
-  return (
-    <div
-      className="flex flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-900"
-      style={{ borderTopWidth: 3, borderTopColor: accent }}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
-        <div className="min-w-0 flex-1 space-y-2">
-          {/* Badges row */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <ScopeBadge scope={check.scope} />
-            <KindBadge kind={check.kind} />
-            {check.output && (
-              <span className="rounded-full bg-gray-800 px-2 py-0.5 text-[10px] font-medium text-gray-500">
-                {check.output}
-              </span>
-            )}
-          </div>
-          {/* ID */}
-          <h3 className="truncate font-mono text-sm font-bold text-white" title={check.id}>
-            {check.id}
-          </h3>
-          {/* Name */}
-          {check.name && check.name !== check.id && (
-            <p className="truncate text-xs text-gray-500">{check.name}</p>
-          )}
-        </div>
-        {/* Actions — always visible, subtle */}
-        <div className="flex shrink-0 gap-1 pt-0.5">
-          <button
-            onClick={onEdit}
-            title="Edit"
-            className="hover:text-brand-400 rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-800"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={onDelete}
-            title="Delete"
-            className="rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-800 hover:text-red-400"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Expression */}
-      {check.expr && (
-        <div className="mx-4 mb-3 rounded-xl bg-gray-950 px-3 py-2.5">
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <span className="bg-brand-500/60 h-1.5 w-1.5 rounded-full" />
-            <span className="text-[10px] font-semibold tracking-wider text-gray-600 uppercase">
-              expr
-            </span>
-          </div>
-          <p className="line-clamp-2 font-mono text-[11px] leading-relaxed break-all text-gray-400">
-            {check.expr}
-          </p>
-        </div>
-      )}
-
-      {/* Rules footer */}
-      {check.rules && check.rules.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5 border-t border-gray-800 px-4 py-3">
-          {check.rules.map((rule, i) => (
-            <span
-              key={i}
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${SEV_RULE_CLS[rule.severity] ?? SEV_RULE_CLS.UNKNOWN}`}
-            >
-              <span className="font-mono opacity-80">
-                {rule.op} {String(rule.value)}
-              </span>
-              <span className="opacity-50">→</span>
-              <span>{rule.severity}</span>
-            </span>
-          ))}
-        </div>
-      ) : (
-        <div className="border-t border-gray-800 px-4 py-2.5">
-          <span className="text-[11px] text-gray-700">No rules defined</span>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// CheckWizard — add / edit a check (Cosmos TailAdmin style)
-// ---------------------------------------------------------------------------
-
-type CheckFormData = {
-  id: string;
-  name: string;
-  scope: string;
-  kind: string;
-  expr: string;
-  output: 'bool' | 'numeric';
-  rules: CheckRule[];
-};
-
-const EMPTY_FORM: CheckFormData = {
-  id: '',
-  name: '',
-  scope: 'node',
-  kind: '',
-  expr: '',
-  output: 'bool',
-  rules: [],
-};
-
-type CheckFormProps = {
-  initial: CheckFormData;
-  isEdit: boolean;
-  onSave: (data: CheckFormData) => void;
-  onCancel: () => void;
-};
-
-type WizardStep = 'identity' | 'expression' | 'rules' | 'review';
-const WIZARD_STEPS: WizardStep[] = ['identity', 'expression', 'rules', 'review'];
-const STEP_LABELS: Record<WizardStep, string> = {
-  identity: 'Identity',
-  expression: 'Expression',
-  rules: 'Rules',
-  review: 'Review',
-};
-
-const SEV_PILL: Record<string, string> = {
-  OK: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400',
-  WARN: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+const SEVERITY_BADGE: Record<string, string> = {
   CRIT: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
+  WARN: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+  OK: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400',
   UNKNOWN: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
 };
 
-const SCOPE_OPTIONS = [
-  { value: 'node', label: 'Node', desc: 'Per instance (server, blade...)' },
-  { value: 'chassis', label: 'Chassis', desc: 'Multi-node chassis' },
-  { value: 'rack', label: 'Rack', desc: 'Rack-level aggregation' },
-];
+const pill = (cls: string, label: string) => (
+  <span
+    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}
+  >
+    {label}
+  </span>
+);
 
-const KIND_OPTIONS = ['server', 'storage', 'network', 'pdu', 'cooling', 'ipmi', 'other'];
+// ── Filter chip ───────────────────────────────────────────────────────────────
 
-const cosmosInput =
-  'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:placeholder:text-gray-600';
+const FilterChip = ({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+      active
+        ? 'bg-brand-500 text-white'
+        : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+    }`}
+  >
+    {label}
+  </button>
+);
 
-const CheckForm = ({ initial, isEdit, onSave, onCancel }: CheckFormProps) => {
-  const [step, setStep] = useState<WizardStep>(isEdit ? 'identity' : 'identity');
-  const [form, setForm] = useState<CheckFormData>(initial);
+// ── Check list item ───────────────────────────────────────────────────────────
 
-  const stepIdx = WIZARD_STEPS.indexOf(step);
+const CheckListItem = ({
+  check,
+  selected,
+  onClick,
+}: {
+  check: CheckDefinition;
+  selected: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className={`w-full rounded-xl px-3 py-2.5 text-left transition-colors ${
+      selected
+        ? 'bg-brand-50 dark:bg-brand-500/10 border-brand-200 dark:border-brand-500/30 border'
+        : 'border border-transparent hover:bg-gray-50 dark:hover:bg-white/5'
+    }`}
+  >
+    <p
+      className={`truncate font-mono text-xs font-bold ${
+        selected ? 'text-brand-700 dark:text-brand-300' : 'text-gray-800 dark:text-gray-200'
+      }`}
+    >
+      {check.id}
+    </p>
+    {check.name && (
+      <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">{check.name}</p>
+    )}
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      {check.kind && pill(KIND_BADGE[check.kind] ?? KIND_FALLBACK, check.kind)}
+      {pill(SCOPE_BADGE[check.scope] ?? SCOPE_FALLBACK, check.scope)}
+      {check.output && pill(OUTPUT_BADGE[check.output] ?? OUTPUT_FALLBACK, check.output)}
+    </div>
+  </button>
+);
 
-  const canNext =
-    step === 'identity'
-      ? Boolean(form.id.trim()) && Boolean(form.scope)
-      : step === 'expression'
-        ? Boolean(form.expr.trim())
-        : true;
+// ── YAML serializer (minimal, for clipboard export) ───────────────────────────
 
-  const addRule = () =>
-    setForm((f) => ({
-      ...f,
-      rules: [...f.rules, { op: '==', value: 0, severity: 'CRIT' as const }],
-    }));
+const toYaml = (check: CheckDefinition): string => {
+  const lines: string[] = ['checks:'];
+  lines.push(`  - id: ${check.id}`);
+  lines.push(`    name: "${check.name ?? ''}"`);
+  if (check.kind) lines.push(`    kind: ${check.kind}`);
+  lines.push(`    scope: ${check.scope}`);
+  if (check.output) lines.push(`    output: ${check.output}`);
+  lines.push(`    expr: |`);
+  const exprLines = check.expr.split('\n');
+  for (const l of exprLines) lines.push(`      ${l}`);
+  if (check.rules && check.rules.length > 0) {
+    lines.push(`    rules:`);
+    for (const r of check.rules) {
+      lines.push(`      - op: "${r.op}"`);
+      lines.push(`        value: ${r.value}`);
+      lines.push(`        severity: ${r.severity}`);
+    }
+  }
+  return lines.join('\n');
+};
 
-  const updateRule = (i: number, patch: Partial<CheckRule>) =>
-    setForm((f) => {
-      const rules = [...f.rules];
-      rules[i] = { ...rules[i], ...patch };
-      return { ...f, rules };
+// ── Usage cross-reference ─────────────────────────────────────────────────────
+
+type UsageEntry = { kind: 'device' | 'rack' | 'component'; id: string; name: string };
+
+const buildUsageMap = (catalog: Catalog): Map<string, UsageEntry[]> => {
+  const map = new Map<string, UsageEntry[]>();
+  const add = (checkId: string, entry: UsageEntry) => {
+    const arr = map.get(checkId) ?? [];
+    arr.push(entry);
+    map.set(checkId, arr);
+  };
+  for (const t of catalog.device_templates) {
+    for (const c of t.checks ?? []) add(c, { kind: 'device', id: t.id, name: t.name });
+  }
+  for (const t of catalog.rack_templates) {
+    for (const c of t.checks ?? []) add(c, { kind: 'rack', id: t.id, name: t.name });
+  }
+  for (const t of catalog.rack_component_templates) {
+    for (const c of t.checks ?? []) add(c, { kind: 'component', id: t.id, name: t.name });
+  }
+  return map;
+};
+
+// ── Detail panel ──────────────────────────────────────────────────────────────
+
+const USAGE_KIND_BADGE: Record<string, string> = {
+  device: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+  rack: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400',
+  component: 'bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400',
+};
+
+const CheckDetail = ({
+  check,
+  usageMap,
+  isDark,
+}: {
+  check: CheckDefinition;
+  usageMap: Map<string, UsageEntry[]>;
+  isDark: boolean;
+}) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    void navigator.clipboard.writeText(toYaml(check)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     });
-
-  const removeRule = (i: number) =>
-    setForm((f) => ({ ...f, rules: f.rules.filter((_, j) => j !== i) }));
-
-  const handleNext = () => {
-    if (stepIdx < WIZARD_STEPS.length - 1) setStep(WIZARD_STEPS[stepIdx + 1]);
   };
-  const handleBack = () => {
-    if (stepIdx > 0) setStep(WIZARD_STEPS[stepIdx - 1]);
-  };
+
+  const usages = usageMap.get(check.id) ?? [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-800 px-6 py-4">
-          <div>
-            <h2 className="text-base font-bold text-white">
-              {isEdit ? `Edit: ${form.id}` : 'New Check'}
-            </h2>
-            <p className="mt-0.5 text-xs text-gray-400">
-              {isEdit ? 'Modify the check definition' : 'Add a health check to this file'}
-            </p>
-          </div>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-300">
-            <X className="h-5 w-5" />
-          </button>
+    <div className="space-y-4">
+      {/* Detail header row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-mono text-base font-bold text-gray-900 dark:text-white">{check.id}</p>
+          {check.name && (
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{check.name}</p>
+          )}
         </div>
+        <button
+          onClick={handleCopy}
+          title="Copy YAML to clipboard"
+          className="flex shrink-0 items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+        >
+          {copied ? (
+            <>
+              <Check className="h-3.5 w-3.5 text-green-500" />
+              Copied
+            </>
+          ) : (
+            <>
+              <ClipboardCopy className="h-3.5 w-3.5" />
+              Export YAML
+            </>
+          )}
+        </button>
+      </div>
 
-        {/* Step indicators */}
-        <div className="flex items-center gap-1 border-b border-gray-800 px-6 py-3">
-          {WIZARD_STEPS.map((s, i) => (
-            <div key={s} className="flex items-center gap-1">
-              <div
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold transition-colors ${
-                  i < stepIdx
-                    ? 'bg-brand-500 text-white'
-                    : i === stepIdx
-                      ? 'bg-brand-500/20 text-brand-400 ring-brand-500 ring-1'
-                      : 'bg-gray-800 text-gray-600'
-                }`}
-              >
-                {i < stepIdx ? <Check className="h-3 w-3" /> : i + 1}
-              </div>
-              <span
-                className={`text-xs font-medium ${i === stepIdx ? 'text-white' : 'text-gray-600'}`}
-              >
-                {STEP_LABELS[s]}
+      {/* Identity */}
+      <SectionCard
+        title="Identity"
+        icon={Tag}
+        iconBg="bg-gray-100 dark:bg-gray-800"
+        iconColor="text-gray-500 dark:text-gray-400"
+      >
+        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          <div className="flex items-center justify-between py-2.5">
+            <span className="text-sm text-gray-500 dark:text-gray-400">ID</span>
+            <span className="font-mono text-xs font-semibold text-gray-800 dark:text-gray-200">
+              {check.id}
+            </span>
+          </div>
+          {check.name && (
+            <div className="flex items-center justify-between py-2.5">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Name</span>
+              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                {check.name}
               </span>
-              {i < WIZARD_STEPS.length - 1 && (
-                <ChevronRight className="mx-0.5 h-3.5 w-3.5 text-gray-700" />
-              )}
+            </div>
+          )}
+          <div className="flex items-center justify-between py-2.5">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Kind</span>
+            {check.kind ? (
+              pill(KIND_BADGE[check.kind] ?? KIND_FALLBACK, check.kind)
+            ) : (
+              <span className="text-xs text-gray-400 dark:text-gray-600">—</span>
+            )}
+          </div>
+          <div className="flex items-center justify-between py-2.5">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Scope</span>
+            {pill(SCOPE_BADGE[check.scope] ?? SCOPE_FALLBACK, check.scope)}
+          </div>
+          <div className="flex items-center justify-between py-2.5">
+            <span className="text-sm text-gray-500 dark:text-gray-400">Output</span>
+            {check.output ? (
+              pill(OUTPUT_BADGE[check.output] ?? OUTPUT_FALLBACK, check.output)
+            ) : (
+              <span className="text-xs text-gray-400 dark:text-gray-600">—</span>
+            )}
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* PromQL Expression */}
+      <SectionCard
+        title="PromQL Expression"
+        desc="Query evaluated by the telemetry planner."
+        icon={Code2}
+        iconBg="bg-gray-100 dark:bg-gray-800"
+        iconColor="text-gray-500 dark:text-gray-400"
+      >
+        <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+          <Editor
+            height="120px"
+            language="promql"
+            value={check.expr}
+            theme={isDark ? 'vs-dark' : 'light'}
+            options={{
+              readOnly: true,
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              lineNumbers: 'off',
+              folding: false,
+              wordWrap: 'on',
+              fontSize: 12,
+              renderLineHighlight: 'none',
+              overviewRulerLanes: 0,
+              scrollbar: { vertical: 'hidden', horizontal: 'hidden' },
+              padding: { top: 10, bottom: 10 },
+            }}
+          />
+        </div>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+          {[
+            { token: '$instances', desc: 'Node instance IDs' },
+            { token: '$chassis', desc: 'Chassis IDs' },
+            { token: '$racks', desc: 'Rack IDs' },
+          ].map(({ token, desc }) => (
+            <div key={token} className="flex items-center gap-1.5">
+              <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                {token}
+              </code>
+              <span className="text-[11px] text-gray-400 dark:text-gray-600">{desc}</span>
             </div>
           ))}
         </div>
+      </SectionCard>
 
-        {/* Step content */}
-        <div className="max-h-[60vh] overflow-y-auto p-6">
-          {step === 'identity' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-400">Check ID *</label>
-                  <input
-                    autoFocus
-                    value={form.id}
-                    onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))}
-                    disabled={isEdit}
-                    placeholder="my_check_id"
-                    className={cosmosInput + (isEdit ? ' opacity-50' : '')}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-400">Display name</label>
-                  <input
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    placeholder="Human readable name"
-                    className={cosmosInput}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-400">Scope *</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {SCOPE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setForm((f) => ({ ...f, scope: opt.value }))}
-                      className={`rounded-xl border p-3 text-left transition-all ${
-                        form.scope === opt.value
-                          ? 'border-brand-500 bg-brand-500/15'
-                          : 'border-gray-700 bg-gray-900 hover:border-gray-600'
-                      }`}
-                    >
-                      <p
-                        className={`text-xs font-bold ${form.scope === opt.value ? 'text-brand-400' : 'text-gray-300'}`}
-                      >
-                        {opt.label}
-                      </p>
-                      <p className="mt-0.5 text-[10px] text-gray-400">{opt.desc}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-400">Kind</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {KIND_OPTIONS.map((k) => (
-                    <button
-                      key={k}
-                      onClick={() => setForm((f) => ({ ...f, kind: f.kind === k ? '' : k }))}
-                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-all ${
-                        form.kind === k
-                          ? 'border-brand-500 bg-brand-500 text-white'
-                          : 'border-gray-700 text-gray-500 hover:border-gray-600 hover:text-gray-300'
-                      }`}
-                    >
-                      {k}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 'expression' && (
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-gray-400">PromQL Expression *</label>
-                <textarea
-                  autoFocus
-                  value={form.expr}
-                  onChange={(e) => setForm((f) => ({ ...f, expr: e.target.value }))}
-                  placeholder={`metric_name{instance=~"$instances"}`}
-                  rows={4}
-                  className={cosmosInput + ' resize-none font-mono text-xs'}
-                />
-                <p className="text-[11px] text-gray-600">
-                  Use <code className="rounded bg-gray-800 px-1 font-mono">$instances</code>,{' '}
-                  <code className="rounded bg-gray-800 px-1 font-mono">$chassis</code>, or{' '}
-                  <code className="rounded bg-gray-800 px-1 font-mono">$racks</code> as
-                  placeholders.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-400">Output type</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {(['bool', 'numeric'] as const).map((out) => (
-                    <button
-                      key={out}
-                      onClick={() => setForm((f) => ({ ...f, output: out }))}
-                      className={`rounded-xl border p-4 text-left transition-all ${
-                        form.output === out
-                          ? 'border-brand-500 bg-brand-500/15'
-                          : 'border-gray-700 bg-gray-900 hover:border-gray-600'
-                      }`}
-                    >
-                      <p
-                        className={`text-sm font-bold ${form.output === out ? 'text-brand-400' : 'text-gray-300'}`}
-                      >
-                        {out}
-                      </p>
-                      <p className="mt-1 text-[11px] text-gray-400">
-                        {out === 'bool' ? 'Returns 0 or 1 (up/down)' : 'Returns a numeric value'}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 'rules' && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-white">Severity rules</p>
-                  <p className="mt-0.5 text-xs text-gray-500">
-                    Define when the check triggers a warning or critical alert
-                  </p>
-                </div>
-                <button
-                  onClick={addRule}
-                  className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
-                >
-                  <Plus className="h-3.5 w-3.5" /> Add Rule
-                </button>
-              </div>
-
-              {form.rules.length === 0 && (
-                <div className="flex h-28 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-700">
-                  <p className="text-sm text-gray-600">No rules defined</p>
-                  <p className="text-xs text-gray-700">
-                    Click "Add Rule" to set severity thresholds
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                {form.rules.map((rule, i) => (
-                  <div
+      {/* Threshold Rules */}
+      <SectionCard
+        title="Threshold Rules"
+        desc="Conditions mapped to severity levels."
+        icon={SlidersHorizontal}
+        iconBg="bg-gray-100 dark:bg-gray-800"
+        iconColor="text-gray-500 dark:text-gray-400"
+      >
+        {check.rules && check.rules.length > 0 ? (
+          <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/60">
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    Op
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    Value
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">
+                    Severity
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                {check.rules.map((rule, i) => (
+                  <tr
                     key={i}
-                    className="space-y-3 rounded-xl border border-gray-700 bg-gray-800/60 p-3"
+                    className="transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.03]"
                   >
-                    {/* Row 1: condition */}
-                    <div className="flex items-center gap-3">
-                      <span className="shrink-0 text-xs font-medium text-gray-500">
-                        Rule {i + 1}
-                      </span>
-                      <div className="flex flex-1 items-center gap-2">
-                        <span className="text-xs text-gray-600">when</span>
-                        <select
-                          value={rule.op}
-                          onChange={(e) => updateRule(i, { op: e.target.value })}
-                          className="focus:border-brand-500 rounded-lg border border-gray-600 bg-gray-900 px-2.5 py-1.5 font-mono text-sm text-gray-200 focus:outline-none"
-                        >
-                          {['==', '!=', '>', '>=', '<', '<='].map((op) => (
-                            <option key={op} value={op}>
-                              {op}
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          type="number"
-                          value={String(rule.value)}
-                          onChange={(e) =>
-                            updateRule(i, { value: parseFloat(e.target.value) || 0 })
-                          }
-                          className="focus:border-brand-500 w-24 rounded-lg border border-gray-600 bg-gray-900 px-3 py-1.5 text-center font-mono text-sm text-gray-200 focus:outline-none"
-                        />
-                      </div>
-                      <button
-                        onClick={() => removeRule(i)}
-                        className="shrink-0 text-gray-600 transition-colors hover:text-red-400"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    {/* Row 2: severity selector */}
-                    <div className="flex items-center gap-2">
-                      <span className="shrink-0 text-xs text-gray-600">→ severity</span>
-                      <div className="flex flex-1 gap-1.5">
-                        {(['OK', 'WARN', 'CRIT', 'UNKNOWN'] as const).map((sev) => (
-                          <button
-                            key={sev}
-                            onClick={() => updateRule(i, { severity: sev })}
-                            className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all ${
-                              rule.severity === sev
-                                ? SEV_PILL[sev]
-                                : 'bg-gray-700/50 text-gray-500 hover:bg-gray-700 hover:text-gray-300'
-                            }`}
-                          >
-                            {sev}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                    <td className="px-4 py-2.5">
+                      <code className="font-mono text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {rule.op}
+                      </code>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <code className="font-mono text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {String(rule.value)}
+                      </code>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {pill(SEVERITY_BADGE[rule.severity] ?? SEVERITY_BADGE.UNKNOWN, rule.severity)}
+                    </td>
+                  </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 dark:text-gray-600">No threshold rules defined.</p>
+        )}
+      </SectionCard>
+
+      {/* Usage */}
+      <SectionCard
+        title="Used by Templates"
+        desc="Templates that reference this check."
+        icon={Link2}
+        iconBg="bg-gray-100 dark:bg-gray-800"
+        iconColor="text-gray-500 dark:text-gray-400"
+      >
+        {usages.length > 0 ? (
+          <div className="space-y-1.5">
+            {usages.map((u) => (
+              <div
+                key={`${u.kind}-${u.id}`}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5"
+              >
+                {pill(USAGE_KIND_BADGE[u.kind] ?? KIND_FALLBACK, u.kind)}
+                <span className="font-mono text-xs text-gray-700 dark:text-gray-300">{u.id}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-600">{u.name}</span>
               </div>
-            </div>
-          )}
-
-          {step === 'review' && (
-            <div className="space-y-4">
-              <p className="text-sm font-semibold text-white">
-                Ready to {isEdit ? 'update' : 'add'}
-              </p>
-              <div className="space-y-3 rounded-xl border border-gray-800 bg-gray-800/50 p-4">
-                {[
-                  { label: 'ID', value: form.id, mono: true },
-                  ...(form.name ? [{ label: 'Name', value: form.name, mono: false }] : []),
-                  { label: 'Scope', value: form.scope, mono: false },
-                  ...(form.kind ? [{ label: 'Kind', value: form.kind, mono: false }] : []),
-                  { label: 'Output', value: form.output, mono: false },
-                ].map(({ label, value, mono }) => (
-                  <div key={label} className="flex items-center justify-between gap-4 text-sm">
-                    <span className="text-gray-400">{label}</span>
-                    <span className={`text-gray-200 ${mono ? 'font-mono text-xs' : 'font-medium'}`}>
-                      {value}
-                    </span>
-                  </div>
-                ))}
-                {form.expr && (
-                  <div className="space-y-1">
-                    <span className="text-xs text-gray-400">Expression</span>
-                    <p className="rounded-lg bg-gray-900 px-3 py-2 font-mono text-xs break-all text-gray-300">
-                      {form.expr}
-                    </p>
-                  </div>
-                )}
-                {form.rules.length > 0 && (
-                  <div className="space-y-1.5">
-                    <span className="text-xs text-gray-400">Rules ({form.rules.length})</span>
-                    {form.rules.map((r, i) => (
-                      <div key={i} className="flex items-center gap-2 text-xs text-gray-400">
-                        <span className="font-mono">
-                          {r.op} {String(r.value)}
-                        </span>
-                        <span>→</span>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${SEV_PILL[r.severity] ?? SEV_PILL.UNKNOWN}`}
-                        >
-                          {r.severity}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-gray-800 px-6 py-4">
-          <button
-            onClick={stepIdx === 0 ? onCancel : handleBack}
-            className="flex items-center gap-1.5 rounded-xl border border-gray-700 px-4 py-2 text-sm font-medium text-gray-400 hover:bg-white/5"
-          >
-            {stepIdx === 0 ? (
-              <>
-                <X className="h-4 w-4" /> Cancel
-              </>
-            ) : (
-              <>
-                <ChevronRight className="h-4 w-4 rotate-180" /> Back
-              </>
-            )}
-          </button>
-
-          {step !== 'review' ? (
-            <button
-              onClick={handleNext}
-              disabled={!canNext}
-              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
-            >
-              Next <ChevronRight className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                if (form.id.trim()) onSave(form);
-              }}
-              disabled={!form.id.trim()}
-              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
-            >
-              <Check className="h-4 w-4" />
-              {isEdit ? 'Update Check' : 'Add Check'}
-            </button>
-          )}
-        </div>
-      </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 dark:text-gray-600">
+            Not referenced by any template.
+          </p>
+        )}
+      </SectionCard>
     </div>
   );
 };
 
-// ---------------------------------------------------------------------------
-// FileListItem
-// ---------------------------------------------------------------------------
+// ── Page ──────────────────────────────────────────────────────────────────────
 
-type FileListItemProps = {
-  name: string;
-  selected: boolean;
-  onClick: () => void;
-  dirty: boolean;
-};
-
-const FileListItem = ({ name, selected, onClick, dirty }: FileListItemProps) => (
-  <button
-    onClick={onClick}
-    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-xs transition-all ${
-      selected
-        ? 'bg-brand-500/15 text-brand-400 font-semibold'
-        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
-    }`}
-  >
-    <span className="flex-1 truncate font-mono">{name}</span>
-    {dirty && (
-      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" title="Unsaved changes" />
-    )}
-  </button>
-);
-
-// ---------------------------------------------------------------------------
-// Main Component
-// ---------------------------------------------------------------------------
+const KIND_FILTERS = ['All', 'server', 'storage', 'network', 'pdu', 'cooling'];
+const SCOPE_FILTERS = ['All', 'node', 'chassis', 'rack'];
 
 export const CosmosChecksEditorPage = () => {
-  const [files, setFiles] = useState<string[]>([]);
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [content, setContent] = useState('');
-  const [savedContent, setSavedContent] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [loadingFile, setLoadingFile] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [view, setView] = useState<'yaml' | 'visual'>('visual');
-  const [checkForm, setCheckForm] = useState<{
-    open: boolean;
-    initial: CheckFormData;
-    isEdit: boolean;
-    editId: string | null;
-  }>({ open: false, initial: EMPTY_FORM, isEdit: false, editId: null });
-  const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
-
-  // Parse checks from YAML content for visual view
-  const parsedChecks = useMemo((): CheckDef[] => {
-    if (!content.trim()) return [];
-    try {
-      const data = yaml.load(content) as { checks?: CheckDef[] };
-      return Array.isArray(data?.checks) ? data.checks : [];
-    } catch {
-      return [];
-    }
-  }, [content]);
-
-  const isDirty = content !== savedContent;
-
-  // Load file list
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      try {
-        const data = await api.getChecksFiles();
-        if (!active) return;
-        const names = Array.isArray(data)
-          ? (data as string[])
-          : Array.isArray((data as { files?: { name: string }[] }).files)
-            ? (data as { files: { name: string }[] }).files.map((f) => f.name)
-            : [];
-        setFiles(names);
-        if (names.length > 0 && !selectedFile) setSelectedFile(names[0]);
-        setLoading(false);
-      } catch {
-        if (active) setLoading(false);
-      }
-    };
-    void load();
-    return () => {
-      active = false;
-    };
-  }, [selectedFile]);
-
-  // Load file content when selection changes
-  useEffect(() => {
-    if (!selectedFile) return;
-    let active = true;
-    const load = async () => {
-      setLoadingFile(true);
-      try {
-        const data = await api.getChecksFile(selectedFile);
-        if (!active) return;
-        const text =
-          typeof data === 'string' ? data : ((data as { content?: string }).content ?? '');
-        setContent(text);
-        setSavedContent(text);
-      } catch {
-        if (active) setContent('');
-      } finally {
-        if (active) setLoadingFile(false);
-      }
-    };
-    void load();
-    return () => {
-      active = false;
-    };
-  }, [selectedFile]);
-
-  // Save
-  const handleSave = async () => {
-    if (!selectedFile) return;
-    setSaveStatus('saving');
-    setSaveError(null);
-    try {
-      await api.updateChecksFile(selectedFile, content);
-      setSavedContent(content);
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 1500);
-    } catch (e) {
-      setSaveError(e instanceof Error ? e.message : 'Save failed');
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
-    }
-  };
-
-  // Serialize updated checks array back to YAML and update content
-  const serializeChecks = (checks: CheckDef[]) => {
-    const cleaned = checks.map((c) => {
-      const obj: Record<string, unknown> = { id: c.id };
-      if (c.name) obj.name = c.name;
-      if (c.scope) obj.scope = c.scope;
-      if (c.kind) obj.kind = c.kind;
-      if (c.expr) obj.expr = c.expr;
-      if (c.output) obj.output = c.output;
-      if (c.rules && c.rules.length > 0) obj.rules = c.rules;
-      return obj;
-    });
-    return yaml.dump({ checks: cleaned }, { indent: 2, lineWidth: 120 });
-  };
-
-  const handleSaveCheck = (data: CheckFormData) => {
-    const newCheck: CheckDef = {
-      id: data.id.trim(),
-      ...(data.name.trim() ? { name: data.name.trim() } : {}),
-      ...(data.scope ? { scope: data.scope } : {}),
-      ...(data.kind.trim() ? { kind: data.kind.trim() } : {}),
-      ...(data.expr.trim() ? { expr: data.expr.trim() } : {}),
-      output: data.output,
-      ...(data.rules.length > 0 ? { rules: data.rules } : {}),
-    };
-    let updated: CheckDef[];
-    if (checkForm.isEdit && checkForm.editId) {
-      updated = parsedChecks.map((c) => (c.id === checkForm.editId ? newCheck : c));
-    } else {
-      updated = [...parsedChecks, newCheck];
-    }
-    setContent(serializeChecks(updated));
-    setCheckForm({ open: false, initial: EMPTY_FORM, isEdit: false, editId: null });
-  };
-
-  const handleDeleteCheck = (id: string) => {
-    const updated = parsedChecks.filter((c) => c.id !== id);
-    setContent(serializeChecks(updated));
-  };
-
-  const openAddForm = () =>
-    setCheckForm({ open: true, initial: EMPTY_FORM, isEdit: false, editId: null });
-
-  const openEditForm = (check: CheckDef) =>
-    setCheckForm({
-      open: true,
-      isEdit: true,
-      editId: check.id,
-      initial: {
-        id: check.id,
-        name: check.name ?? '',
-        scope: check.scope ?? 'node',
-        kind: check.kind ?? '',
-        expr: check.expr ?? '',
-        output: check.output ?? 'bool',
-        rules: check.rules ?? [],
-      },
-    });
-
   usePageTitle('Checks Library');
 
+  const [library, setLibrary] = useState<ChecksLibrary | null>(null);
+  const [catalog, setCatalog] = useState<Catalog | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [search, setSearch] = useState('');
+  const [kindFilter, setKindFilter] = useState('All');
+  const [scopeFilter, setScopeFilter] = useState('All');
+  const [selected, setSelected] = useState<CheckDefinition | null>(null);
+
+  // Detect dark mode from document class (ThemeContext applies it to <html>)
+  const [isDark, setIsDark] = useState(
+    () => document.documentElement.classList.contains('dark')
+  );
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+
+  const load = () => {
+    setLoading(true);
+    setError(null);
+    Promise.all([api.getChecks(), api.getCatalog()])
+      .then(([lib, cat]) => {
+        setLibrary(lib);
+        setCatalog(cat as Catalog);
+      })
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : 'Failed to load checks library.');
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const usageMap = useMemo(
+    () => (catalog ? buildUsageMap(catalog) : new Map<string, UsageEntry[]>()),
+    [catalog]
+  );
+
+  const filtered = useMemo(() => {
+    if (!library) return [];
+    return library.checks.filter((c) => {
+      const q = search.toLowerCase();
+      const matchSearch =
+        !q ||
+        c.id.toLowerCase().includes(q) ||
+        (c.name ?? '').toLowerCase().includes(q) ||
+        c.expr.toLowerCase().includes(q);
+      const matchKind = kindFilter === 'All' || c.kind === kindFilter;
+      const matchScope = scopeFilter === 'All' || c.scope === scopeFilter;
+      return matchSearch && matchKind && matchScope;
+    });
+  }, [library, search, kindFilter, scopeFilter]);
+
+  // Auto-select first item when filters change and current selection is not visible
+  useEffect(() => {
+    if (filtered.length > 0 && (!selected || !filtered.find((c) => c.id === selected.id))) {
+      setSelected(filtered[0]);
+    } else if (filtered.length === 0) {
+      setSelected(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered]);
+
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="shrink-0 border-b border-gray-800 bg-gray-950 px-6 py-4">
-        <PageHeader
-          title="Checks Library"
-          description="Health check definitions — visual editor and YAML"
-          breadcrumb={
-            <PageBreadcrumb
-              items={[
-                { label: 'Home', href: '/cosmos' },
-                { label: 'Editors' },
-                { label: 'Checks Library' },
-              ]}
-            />
-          }
-          actions={
-            <>
-              {/* View toggle */}
-              <div className="inline-flex overflow-hidden rounded-lg border border-gray-700">
-                {(['visual', 'yaml'] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setView(v)}
-                    className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                      view === v
-                        ? 'bg-brand-500 text-white'
-                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
-                    }`}
-                  >
-                    {v === 'visual' ? 'Visual' : 'YAML'}
-                  </button>
+    <div className="space-y-5">
+      <PageHeader
+        title="Checks Library"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'Editors', href: '#' },
+              { label: 'Checks Library' },
+            ]}
+          />
+        }
+      />
+
+      {loading && (
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+          <LoadingState message="Loading checks library…" />
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+          <ErrorState message={error} onRetry={load} />
+        </div>
+      )}
+
+      {!loading && !error && library && (
+        <div className="flex gap-4" style={{ alignItems: 'flex-start' }}>
+          {/* ── Left panel ── */}
+          <div
+            className="shrink-0 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+            style={{ width: 300 }}
+          >
+            {/* Search */}
+            <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+              <div className="relative">
+                <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                <input
+                  type="text"
+                  placeholder="Search checks…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 py-2 pr-3 pl-9 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+                />
+              </div>
+            </div>
+
+            {/* Kind filters */}
+            <div className="border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
+              <p className="mb-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase dark:text-gray-600">
+                Kind
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {KIND_FILTERS.map((k) => (
+                  <FilterChip
+                    key={k}
+                    label={k}
+                    active={kindFilter === k}
+                    onClick={() => setKindFilter(k)}
+                  />
                 ))}
               </div>
-              {/* Save */}
-              <button
-                onClick={() => void handleSave()}
-                disabled={!isDirty || !selectedFile || saveStatus === 'saving'}
-                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
-                  isDirty && selectedFile
-                    ? 'bg-brand-500 hover:bg-brand-600 text-white'
-                    : 'cursor-not-allowed bg-gray-800 text-gray-500'
-                }`}
-              >
-                {saveStatus === 'saving' ? (
-                  'Saving...'
-                ) : saveStatus === 'saved' ? (
-                  <>
-                    <Check className="h-4 w-4" /> Saved
-                  </>
-                ) : saveStatus === 'error' ? (
-                  'Error'
-                ) : (
-                  <>
-                    <Check className="h-4 w-4" /> {isDirty ? 'Save' : 'Saved'}
-                  </>
-                )}
-              </button>
-            </>
-          }
-        />
-      </div>
+            </div>
 
-      {/* Body */}
-      <div className="flex min-h-0 flex-1">
-        {/* LEFT: File list */}
-        <aside className="flex w-64 shrink-0 flex-col overflow-y-auto border-r border-gray-800 bg-gray-950">
-          <div className="border-b border-gray-800 px-4 py-3">
-            <span className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
-              Files
-            </span>
-          </div>
-          <div className="flex-1 space-y-1 p-3">
-            {loading ? (
-              <div className="py-4 text-center text-xs text-gray-600">Loading...</div>
-            ) : files.length === 0 ? (
-              <div className="py-4 text-center text-xs text-gray-600">No files found</div>
-            ) : (
-              files.map((name) => (
-                <FileListItem
-                  key={name}
-                  name={name}
-                  selected={selectedFile === name}
-                  dirty={selectedFile === name && isDirty}
-                  onClick={() => setSelectedFile(name)}
-                />
-              ))
-            )}
-          </div>
-          <div className="border-t border-gray-800 px-4 py-2">
-            <span className="text-xs text-gray-600">
-              {files.length} file{files.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-        </aside>
+            {/* Scope filters */}
+            <div className="border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
+              <p className="mb-2 text-[10px] font-semibold tracking-widest text-gray-400 uppercase dark:text-gray-600">
+                Scope
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {SCOPE_FILTERS.map((s) => (
+                  <FilterChip
+                    key={s}
+                    label={s}
+                    active={scopeFilter === s}
+                    onClick={() => setScopeFilter(s)}
+                  />
+                ))}
+              </div>
+            </div>
 
-        {/* MAIN: YAML or Visual */}
-        <main className="min-h-0 flex-1 overflow-hidden">
-          {!selectedFile ? (
-            <div className="flex h-full items-center justify-center">
-              <p className="font-mono text-[11px] tracking-widest text-gray-600 uppercase">
-                Select a file
+            {/* Result count */}
+            <div className="border-b border-gray-100 px-4 py-2 dark:border-gray-800">
+              <p className="text-xs text-gray-400 dark:text-gray-600">
+                {filtered.length} check{filtered.length !== 1 ? 's' : ''}
+                {library.checks.length !== filtered.length && ` of ${library.checks.length}`}
               </p>
             </div>
-          ) : loadingFile ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="border-t-brand-500 h-8 w-8 animate-spin rounded-full border-2 border-gray-700" />
-            </div>
-          ) : view === 'yaml' ? (
-            /* YAML View: Monaco */
-            <div className="h-full">
-              <Editor
-                height="100%"
-                defaultLanguage="yaml"
-                value={content}
-                onMount={(editor) => {
-                  editorRef.current = editor;
-                }}
-                onChange={(value) => setContent(value ?? '')}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 13,
-                  wordWrap: 'on',
-                  scrollBeyondLastLine: false,
-                  tabSize: 2,
-                  padding: { top: 16, bottom: 16 },
-                  fontFamily: 'JetBrains Mono, monospace',
-                }}
-                theme="vs-dark"
-              />
-            </div>
-          ) : (
-            /* Visual View: check cards */
-            <div className="custom-scrollbar h-full overflow-y-auto p-6">
-              {saveError && (
-                <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 font-mono text-xs text-red-400">
-                  {saveError}
-                </div>
-              )}
-              {parsedChecks.length === 0 ? (
-                <div className="flex h-64 flex-col items-center justify-center gap-4">
-                  <p className="font-mono text-[11px] tracking-widest text-gray-600 uppercase">
-                    {content.trim() ? 'No checks found (YAML parse error?)' : 'File is empty'}
-                  </p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={openAddForm}
-                      className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
-                    >
-                      <Plus className="h-3.5 w-3.5" /> Add First Check
-                    </button>
-                    <button
-                      onClick={() => setView('yaml')}
-                      className="rounded-xl border border-gray-700 px-3 py-1.5 text-xs text-gray-400 hover:text-gray-200"
-                    >
-                      Edit YAML
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-4 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-400">
-                      {parsedChecks.length} check{parsedChecks.length !== 1 ? 's' : ''} —{' '}
-                      {selectedFile}
-                    </span>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={openAddForm}
-                        className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-white"
-                      >
-                        <Plus className="h-3.5 w-3.5" /> Add Check
-                      </button>
-                      <button
-                        onClick={() => setView('yaml')}
-                        className="hover:text-brand-500 text-xs text-gray-400"
-                      >
-                        Edit YAML →
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {parsedChecks.map((check) => (
-                      <CheckCard
-                        key={check.id}
-                        check={check}
-                        onEdit={() => openEditForm(check)}
-                        onDelete={() => handleDeleteCheck(check.id)}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </main>
-      </div>
 
-      {/* Add / Edit check modal */}
-      {checkForm.open && (
-        <CheckForm
-          initial={checkForm.initial}
-          isEdit={checkForm.isEdit}
-          onSave={handleSaveCheck}
-          onCancel={() =>
-            setCheckForm({ open: false, initial: EMPTY_FORM, isEdit: false, editId: null })
-          }
-        />
+            {/* Check list */}
+            <div className="max-h-[calc(100vh-22rem)] overflow-y-auto p-2">
+              {filtered.length === 0 ? (
+                <EmptyState
+                  title="No checks match"
+                  description="Try adjusting the filters or search."
+                />
+              ) : (
+                <div className="space-y-1">
+                  {filtered.map((c) => (
+                    <CheckListItem
+                      key={c.id}
+                      check={c}
+                      selected={selected?.id === c.id}
+                      onClick={() => setSelected(c)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Right panel ── */}
+          <div className="min-w-0 flex-1">
+            {selected ? (
+              <CheckDetail check={selected} usageMap={usageMap} isDark={isDark} />
+            ) : (
+              <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+                <EmptyState
+                  title="Select a check to view its definition"
+                  description="Pick a check from the list on the left."
+                  action={
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800">
+                      <BookOpen className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                    </div>
+                  }
+                />
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
