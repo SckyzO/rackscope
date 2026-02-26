@@ -229,12 +229,11 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
           <p className="text-xs text-[var(--color-text-base)] opacity-30">No layout defined — simple component</p>
         </div>
       ) : (() => {
-        // When both views active: halve U_PX so total fits the panel without scroll.
-        // 1U both: 2×60=120px · 5U both: 2×300=600px — always compact enough.
-        // Single view: full 120px/U for a comfortable preview.
+        // aspect-ratio = 6 / u_height keeps rack-mount proportions as panel resizes.
+        // Width drives height — both dimensions scale together, like a real server face-on.
+        // 1U ≈ 6:1 (very flat), 4U ≈ 1.5:1, 8U ≈ 0.75:1
         const hasBoth = hasFront && hasRear;
-        const uPx = hasBoth ? 60 : 120;
-        const fixedH = Math.max(uPx, template.u_height * uPx);
+        const aspectRatio = 6 / template.u_height;
 
         const rackEl = (isRear: boolean) => (
           <RackElevation
@@ -253,13 +252,14 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
         );
 
         return (
-          <div className="flex flex-1 flex-col overflow-y-auto py-4">
+          <div className="flex flex-1 flex-col overflow-y-auto py-4 px-4">
             {/* Front */}
             <div className={hasBoth ? 'mb-3' : ''}>
               <div className="flex items-center justify-center pb-2">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">Front</span>
               </div>
-              <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: fixedH }}>
+              {/* aspect-ratio: height = width / aspectRatio → scales proportionally */}
+              <div className="w-full [&_*]:!cursor-default" style={{ aspectRatio }}>
                 {rackEl(false)}
               </div>
             </div>
@@ -270,7 +270,7 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
                 <div className="flex items-center justify-center pb-2">
                   <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
                 </div>
-                <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: fixedH }}>
+                <div className="w-full [&_*]:!cursor-default" style={{ aspectRatio }}>
                   {rackEl(true)}
                 </div>
               </div>
