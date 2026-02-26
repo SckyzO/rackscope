@@ -226,10 +226,10 @@ const RackCard = ({
         onDragStart={(e) => { e.stopPropagation(); onDragStart(rack.id, aisleId); }}
         onDragEnd={onDragEnd}
         className={[
-          'group w-[148px] cursor-grab select-none rounded-xl border bg-white p-3 transition-all duration-200 active:cursor-grabbing dark:bg-gray-800',
+          'group w-[148px] cursor-grab select-none rounded-xl border bg-white p-3 transition-all duration-150 active:cursor-grabbing dark:bg-gray-800',
           isDragging
             ? 'scale-[1.04] rotate-[0.8deg] shadow-2xl ring-2 ring-brand-500/60 border-brand-400/50 dark:border-brand-500/50 opacity-90'
-            : 'border-gray-200 hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:hover:border-gray-600',
+            : 'border-gray-200 hover:border-brand-400/70 hover:shadow-lg hover:ring-2 hover:ring-brand-500/20 hover:ring-offset-1 dark:border-gray-700 dark:hover:border-brand-500/60 dark:hover:ring-brand-500/25 dark:hover:ring-offset-gray-800',
         ].join(' ')}
       >
         {/* Header: grip + icon + U-height badge */}
@@ -267,29 +267,32 @@ const RackCard = ({
           )}
         </div>
 
-        {/* Action row — native title tooltips to avoid overflow clipping */}
+        {/* Action row */}
         <div className="mt-2 flex items-center gap-0.5 border-t border-gray-100 pt-2 dark:border-gray-700/80">
-          <button
-            title="View YAML"
-            onClick={(e) => { e.stopPropagation(); onEditYaml(rack); }}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-          >
-            <FileCode className="h-3.5 w-3.5" />
-          </button>
-          <button
-            title="Open in Rack Editor"
-            onClick={(e) => { e.stopPropagation(); navigate(`/cosmos/editors/rack?rackId=${rack.id}`); }}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-          </button>
-          <button
-            title="Remove from aisle"
-            onClick={(e) => { e.stopPropagation(); onDeleteRack(aisleId, rack.id); }}
-            className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip text="View YAML definition">
+            <button
+              onClick={(e) => { e.stopPropagation(); onEditYaml(rack); }}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            >
+              <FileCode className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip text="Open in Rack Editor">
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate(`/cosmos/editors/rack?rackId=${rack.id}`); }}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip text="Remove rack from aisle">
+            <button
+              onClick={(e) => { e.stopPropagation(); onDeleteRack(aisleId, rack.id); }}
+              className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>
