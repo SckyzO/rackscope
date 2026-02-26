@@ -1,16 +1,28 @@
+/**
+ * CosmosRackEditorPage — rebuilt from scratch
+ *
+ * Layout: PageHeader (EmptyPage template) + 3-panel workspace
+ *   Left  (~260px) : Tabs [Racks | Templates]
+ *   Center (flex)  : Rack visualization — always dark, hero of the page
+ *   Right (~280px) : Context panel — placement form / device editor / empty state
+ */
+
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Search,
   Server,
-  Layers,
+  HardDrive,
   Network,
   Zap,
   Thermometer,
+  Box,
   GripVertical,
   X,
   Check,
   Loader2,
   AlertTriangle,
+  Save,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Rack, Device, DeviceTemplate } from '../../../types';
@@ -19,354 +31,330 @@ import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const U_PX = 28; // max pixels per U — dynamic scaling will reduce this
+const U_PX_MAX = 32;
+const U_PX_MIN = 10;
 
-const TYPE_BG: Record<string, string> = {
-  server: '#0d1f3c',
-  storage: '#241a04',
-  network: '#071d27',
-  pdu: '#241f03',
-  cooling: '#051d1d',
-  other: '#141a22',
-};
-const TYPE_BORDER: Record<string, string> = {
-  server: '#2563eb',
-  storage: '#d97706',
-  network: '#0891b2',
-  pdu: '#ca8a04',
-  cooling: '#0d9488',
-  other: '#374151',
-};
-const TYPE_TEXT: Record<string, string> = {
-  server: '#60a5fa',
-  storage: '#fbbf24',
-  network: '#38bdf8',
-  pdu: '#facc15',
-  cooling: '#2dd4bf',
-  other: '#9ca3af',
+const DEVICE_TYPES = ['server', 'storage', 'network', 'pdu', 'cooling'] as const;
+
+const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  server:  { bg: '#0d1f3c', border: '#2563eb', text: '#60a5fa' },
+  storage: { bg: '#241a04', border: '#d97706', text: '#fbbf24' },
+  network: { bg: '#071d27', border: '#0891b2', text: '#38bdf8' },
+  pdu:     { bg: '#241f03', border: '#ca8a04', text: '#facc15' },
+  cooling: { bg: '#051d1d', border: '#0d9488', text: '#2dd4bf' },
+  other:   { bg: '#141a22', border: '#374151', text: '#9ca3af' },
 };
 
-// ── TypeIcon ──────────────────────────────────────────────────────────────────
-
-const ICONS: Record<string, React.ElementType> = {
+const TYPE_ICONS: Record<string, React.ElementType> = {
   server: Server,
-  storage: Layers,
+  storage: HardDrive,
   network: Network,
   pdu: Zap,
   cooling: Thermometer,
 };
 
-type TypeIconProps = {
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const TypeIcon = ({
+  type,
+  className,
+  style,
+}: {
   type: string;
   className?: string;
   style?: React.CSSProperties;
-};
-
-const TypeIcon = ({ type, className, style }: TypeIconProps) => {
-  const Icon = ICONS[type] ?? Server;
+}) => {
+  const Icon = TYPE_ICONS[type] ?? Box;
   return <Icon className={className} style={style} />;
 };
 
-// ── RackListItem ──────────────────────────────────────────────────────────────
+const c = (type: string) => TYPE_COLORS[type] ?? TYPE_COLORS.other;
 
-type RackListItemProps = {
-  rack: { id: string; name: string; roomName: string; aisleName: string };
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface RackEntry {
+  id: string;
+  name: string;
+  roomName: string;
+  aisleName: string;
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+const RackListItem = ({
+  rack,
+  selected,
+  onClick,
+}: {
+  rack: RackEntry;
   selected: boolean;
   onClick: () => void;
-};
-
-const RackListItem = ({ rack, selected, onClick }: RackListItemProps) => (
+}) => (
   <button
     onClick={onClick}
-    className={`flex w-full flex-col rounded-xl px-3 py-2.5 text-left transition-all ${
-      selected ? 'border-brand-500 bg-brand-500/15 border-l-2' : 'hover:bg-white/5'
-    }`}
+    className={[
+      'flex w-full flex-col gap-0.5 rounded-xl px-3 py-2.5 text-left transition-all',
+      selected
+        ? 'bg-brand-50 dark:bg-brand-500/10'
+        : 'hover:bg-gray-50 dark:hover:bg-white/5',
+    ].join(' ')}
   >
     <span
-      className={`truncate text-xs font-semibold ${selected ? 'text-brand-400' : 'text-gray-300'}`}
+      className={`truncate text-xs font-semibold ${
+        selected
+          ? 'text-brand-600 dark:text-brand-400'
+          : 'text-gray-700 dark:text-gray-300'
+      }`}
     >
       {rack.name}
     </span>
-    <span className="truncate text-[10px] text-gray-600">
-      {rack.roomName} · {rack.aisleName}
+    <span className="truncate text-[10px] text-gray-400 dark:text-gray-600">
+      {rack.roomName} › {rack.aisleName}
     </span>
   </button>
 );
 
-// ── RoomGroupHeader ───────────────────────────────────────────────────────────
-
-const RoomGroupHeader = ({ name }: { name: string }) => (
-  <div className="mt-2 mb-1 px-3 text-[10px] font-semibold tracking-wider text-gray-700 uppercase first:mt-0">
-    {name}
-  </div>
-);
-
-// ── TemplateCard ──────────────────────────────────────────────────────────────
-
-type TemplateCardProps = {
+const TemplateCard = ({
+  template,
+  onDragStart,
+}: {
   template: DeviceTemplate;
   onDragStart: (e: React.DragEvent) => void;
-};
-
-const TemplateCard = ({ template, onDragStart }: TemplateCardProps) => (
-  <div
-    draggable
-    onDragStart={onDragStart}
-    className="flex cursor-grab items-center gap-2.5 rounded-xl border border-gray-800 bg-gray-900 p-3 transition-all hover:border-gray-600 active:cursor-grabbing active:opacity-60"
-  >
-    <div
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-      style={{
-        backgroundColor: TYPE_BG[template.type] ?? TYPE_BG.other,
-        border: `1px solid ${TYPE_BORDER[template.type] ?? TYPE_BORDER.other}`,
-      }}
-    >
-      <TypeIcon
-        type={template.type}
-        className="h-4 w-4"
-        style={{ color: TYPE_TEXT[template.type] ?? TYPE_TEXT.other }}
-      />
-    </div>
-    <div className="min-w-0 flex-1">
-      <p className="truncate text-xs font-semibold text-gray-300">{template.name}</p>
-      <p className="text-[10px] text-gray-600">
-        {template.type} · {template.u_height}U
-      </p>
-    </div>
-    <GripVertical className="h-4 w-4 shrink-0 text-gray-700" />
-  </div>
-);
-
-// ── DeviceSlot — placed device in the rack ────────────────────────────────────
-
-type DeviceSlotProps = {
-  device: Device;
-  template: DeviceTemplate | undefined;
-  uHeight: number;
-  uPx: number;
-  selected: boolean;
-  flash: boolean;
-  dragging: boolean;
-  onClick: () => void;
-  onDelete: () => void;
-  onDragStart: (e: React.DragEvent) => void;
-};
-
-const DeviceSlot = ({
-  device,
-  template,
-  uHeight,
-  uPx,
-  selected,
-  flash,
-  dragging,
-  onClick,
-  onDelete,
-  onDragStart,
-}: DeviceSlotProps) => {
-  const type = template?.type ?? 'other';
+}) => {
+  const col = c(template.type);
   return (
     <div
       draggable
       onDragStart={onDragStart}
-      onClick={onClick}
-      style={{
-        height: uHeight * uPx,
-        backgroundColor: TYPE_BG[type] ?? TYPE_BG.other,
-        borderLeft: selected
-          ? `4px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}`
-          : `3px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}`,
-        outline:
-          selected || flash ? `2px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}` : undefined,
-        outlineOffset: selected || flash ? '1px' : undefined,
-        opacity: dragging ? 0.4 : 1,
-      }}
-      className="relative flex w-full cursor-grab items-center gap-2 px-2 transition-all hover:brightness-125 active:cursor-grabbing"
+      className="group flex cursor-grab items-center gap-2.5 rounded-xl border border-gray-100 bg-white p-3 transition-all hover:border-gray-200 hover:shadow-sm active:cursor-grabbing active:opacity-70 dark:border-gray-800 dark:bg-gray-800/60 dark:hover:border-gray-700"
     >
-      {/* Selection pulse indicator */}
-      {selected && (
-        <span
-          className="absolute top-1/2 left-0 h-2 w-2 -translate-y-1/2 animate-pulse rounded-full"
-          style={{ backgroundColor: TYPE_BORDER[type] ?? TYPE_BORDER.other, left: '-10px' }}
-        />
-      )}
-      <div className="min-w-0 flex-1">
-        <p
-          className="truncate text-xs font-semibold"
-          style={{ color: TYPE_TEXT[type] ?? TYPE_TEXT.other }}
-        >
-          {device.name || device.id}
-        </p>
-        {uHeight > 1 && <p className="truncate font-mono text-[10px] text-gray-600">{device.id}</p>}
-      </div>
-      {/* Delete button */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete();
-        }}
-        className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-500/20 text-red-400 transition-colors hover:bg-red-500 hover:text-white"
-        title="Remove device"
+      <div
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+        style={{ backgroundColor: col.bg, border: `1px solid ${col.border}` }}
       >
-        <X className="h-3 w-3" />
-      </button>
+        <TypeIcon type={template.type} className="h-4 w-4" style={{ color: col.text }} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-semibold text-gray-800 dark:text-gray-200">
+          {template.name}
+        </p>
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 capitalize">
+          {template.type} · {template.u_height}U
+        </p>
+      </div>
+      <GripVertical className="h-3.5 w-3.5 shrink-0 text-gray-300 opacity-0 transition-opacity group-hover:opacity-100 dark:text-gray-600" />
     </div>
   );
 };
 
+// ── Form field helper ─────────────────────────────────────────────────────────
+
+const FormField = ({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) => (
+  <div className="space-y-1.5">
+    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400">{label}</label>
+    {children}
+    {hint && <p className="text-[10px] text-gray-400 dark:text-gray-600">{hint}</p>}
+  </div>
+);
+
+const inputCls =
+  'focus:border-brand-500 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-600';
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export const CosmosRackEditorPage = () => {
-  const [allRacks, setAllRacks] = useState<
-    Array<{ id: string; name: string; roomName: string; aisleName: string }>
-  >([]);
-  const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const initialRackId = searchParams.get('rackId');
+
+  // ── State ─────────────────────────────────────────────────────────────────
+
+  const [allRacks, setAllRacks] = useState<RackEntry[]>([]);
+  const [selectedRackId, setSelectedRackId] = useState<string | null>(initialRackId);
   const [rack, setRack] = useState<Rack | null>(null);
   const [deviceCatalog, setDeviceCatalog] = useState<Record<string, DeviceTemplate>>({});
   const [draftDevices, setDraftDevices] = useState<Device[]>([]);
   const [dirty, setDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+
+  // Left panel
+  const [leftTab, setLeftTab] = useState<'racks' | 'templates'>('racks');
   const [rackSearch, setRackSearch] = useState('');
-  const [dragTemplate, setDragTemplate] = useState<DeviceTemplate | null>(null);
-  const [dragDevice, setDragDevice] = useState<Device | null>(null);
-  const [dragHoverU, setDragHoverU] = useState<number | null>(null);
-  // Refs for synchronous access in event handlers (React state batching can cause stale closures)
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+
+  // DnD
   const dragTemplateRef = useRef<DeviceTemplate | null>(null);
   const dragDeviceRef = useRef<Device | null>(null);
-  const rackContainerRef = useRef<HTMLDivElement>(null);
-  const mainPanelRef = useRef<HTMLDivElement>(null);
-  const deviceCounterRef = useRef(0);
-  const [mainPanelH, setMainPanelH] = useState(700);
-  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
-  const [selectedFlash, setSelectedFlash] = useState<string | null>(null);
-  const [placingTemplate, setPlacingTemplate] = useState<{
-    template: DeviceTemplate;
-    u: number;
-  } | null>(null);
-  const [newDeviceName, setNewDeviceName] = useState('');
-  const [newDeviceInstance, setNewDeviceInstance] = useState('');
-  const [newDeviceId, setNewDeviceId] = useState('');
+  const [dragHoverU, setDragHoverU] = useState<number | null>(null);
+  const [dragTemplate, setDragTemplate] = useState<DeviceTemplate | null>(null);
+  const [dragDevice, setDragDevice] = useState<Device | null>(null);
 
-  // Load all racks + catalog
+  // Placement form (shown after template drop)
+  const [placing, setPlacing] = useState<{ template: DeviceTemplate; u: number } | null>(null);
+  const [placingForm, setPlacingForm] = useState({ name: '', id: '', instance: '' });
+
+  // Selected device + edit form
+  const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', id: '', instance: '' });
+  const [editDirty, setEditDirty] = useState(false);
+
+  // Canvas sizing
+  const rackContainerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [canvasH, setCanvasH] = useState(600);
+  const deviceCounterRef = useRef(0);
+
+  // ── Page title ────────────────────────────────────────────────────────────
+
+  usePageTitle(rack ? `${rack.name} — Rack Editor` : 'Rack Editor');
+
+  // ── Load data ─────────────────────────────────────────────────────────────
+
   useEffect(() => {
     let active = true;
     const load = async () => {
       try {
         const [rooms, catalog] = await Promise.all([api.getRooms(), api.getCatalog()]);
         if (!active) return;
-        const racks: Array<{ id: string; name: string; roomName: string; aisleName: string }> = [];
+
+        const racks: RackEntry[] = [];
         (Array.isArray(rooms) ? rooms : []).forEach((room) => {
           (room.aisles ?? []).forEach((aisle) => {
             (aisle.racks ?? []).forEach((r) => {
-              racks.push({
-                id: r.id,
-                name: r.name || r.id,
-                roomName: room.name,
-                aisleName: aisle.name,
-              });
+              racks.push({ id: r.id, name: r.name || r.id, roomName: room.name, aisleName: aisle.name });
             });
           });
           (room.standalone_racks ?? []).forEach((r) => {
-            racks.push({
-              id: r.id,
-              name: r.name || r.id,
-              roomName: room.name,
-              aisleName: 'Standalone',
-            });
+            racks.push({ id: r.id, name: r.name || r.id, roomName: room.name, aisleName: 'Standalone' });
           });
         });
         setAllRacks(racks);
-        const dc: Record<string, DeviceTemplate> = {};
-        (catalog?.device_templates ?? []).forEach((t: DeviceTemplate) => {
-          dc[t.id] = t;
-        });
-        setDeviceCatalog(dc);
-        if (racks.length > 0 && !selectedRackId) setSelectedRackId(racks[0].id);
-      } catch {
-        /* ignore */
-      }
-    };
-    load();
-    return () => {
-      active = false;
-    };
-  }, [selectedRackId]);
 
-  // Load rack on selection change
+        const dc: Record<string, DeviceTemplate> = {};
+        (catalog?.device_templates ?? []).forEach((t: DeviceTemplate) => { dc[t.id] = t; });
+        setDeviceCatalog(dc);
+
+        // Auto-select: URL param → first rack
+        if (!selectedRackId && racks.length > 0) setSelectedRackId(racks[0].id);
+      } catch { /* noop */ }
+    };
+    void load();
+    return () => { active = false; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Load selected rack ────────────────────────────────────────────────────
+
   useEffect(() => {
     if (!selectedRackId) return;
     let active = true;
-    api
-      .getRack(selectedRackId)
+    api.getRack(selectedRackId)
       .then((data) => {
         if (!active) return;
         setRack(data);
         setDraftDevices(data?.devices ?? []);
         setDirty(false);
         setSelectedDevice(null);
-        setPlacingTemplate(null);
+        setPlacing(null);
+        setEditDirty(false);
       })
-      .catch(() => { /* noop */ });
-    return () => {
-      active = false;
-    };
+      .catch(() => {});
+    return () => { active = false; };
   }, [selectedRackId]);
 
-  // U occupancy map
+  // ── Sync edit form when device selected ──────────────────────────────────
+
+  useEffect(() => {
+    if (!selectedDevice) return;
+    setEditForm({
+      name: selectedDevice.name || '',
+      id: selectedDevice.id || '',
+      instance:
+        typeof selectedDevice.instance === 'string'
+          ? selectedDevice.instance
+          : selectedDevice.instance
+          ? JSON.stringify(selectedDevice.instance)
+          : '',
+    });
+    setEditDirty(false);
+  }, [selectedDevice]);
+
+  // ── Navigation warning ────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (dirty) { e.preventDefault(); e.returnValue = ''; }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty]);
+
+  // ── Canvas resize ─────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => setCanvasH(entries[0].contentRect.height));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // ── Derived values ────────────────────────────────────────────────────────
+
   const uMap = useMemo(() => {
     const map = new Map<number, Device>();
     draftDevices.forEach((dev) => {
-      const tpl = deviceCatalog[dev.template_id];
-      const h = tpl?.u_height ?? 1;
+      const h = deviceCatalog[dev.template_id]?.u_height ?? 1;
       for (let u = dev.u_position; u < dev.u_position + h; u++) map.set(u, dev);
     });
     return map;
   }, [draftDevices, deviceCatalog]);
 
-  // Dynamic U pixel height — scale rack to fill available viewport
-  const uHeight = rack?.u_height ?? 42;
-  // Measure the center <main> panel and scale U height to fit without scrolling
-  useEffect(() => {
-    const el = mainPanelRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      setMainPanelH(entries[0].contentRect.height);
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const totalU = rack?.u_height ?? 42;
+  const usedU = draftDevices.reduce((acc, d) => acc + (deviceCatalog[d.template_id]?.u_height ?? 1), 0);
+  const density = totalU > 0 ? usedU / totalU : 0;
+  const uPx = Math.max(U_PX_MIN, Math.min(U_PX_MAX, Math.floor(Math.max(160, canvasH - 80) / totalU)));
 
-  // Available height = main panel minus rack sub-header (52px) and padding (48px)
-  const rackAreaH = Math.max(200, mainPanelH - 100);
-  const dynamicUPx = Math.max(12, Math.min(U_PX, Math.floor(rackAreaH / uHeight)));
-
-  // Filtered rack list
   const filteredRacks = useMemo(() => {
     if (!rackSearch.trim()) return allRacks;
     const q = rackSearch.toLowerCase();
     return allRacks.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) ||
-        r.roomName.toLowerCase().includes(q) ||
-        r.aisleName.toLowerCase().includes(q)
+      (r) => r.name.toLowerCase().includes(q) || r.roomName.toLowerCase().includes(q)
     );
   }, [allRacks, rackSearch]);
 
-  // Group filtered racks by room
   const racksByRoom = useMemo(() => {
-    const groups = new Map<string, typeof filteredRacks>();
+    const groups = new Map<string, RackEntry[]>();
     filteredRacks.forEach((r) => {
-      const existing = groups.get(r.roomName) ?? [];
-      existing.push(r);
-      groups.set(r.roomName, existing);
+      const g = groups.get(r.roomName) ?? [];
+      g.push(r);
+      groups.set(r.roomName, g);
     });
     return groups;
   }, [filteredRacks]);
 
-  // DnD
-  const handleDragStart = (e: React.DragEvent, tpl: DeviceTemplate) => {
+  const filteredTemplates = useMemo(
+    () =>
+      Object.values(deviceCatalog).filter(
+        (t) =>
+          (!templateSearch ||
+            t.name.toLowerCase().includes(templateSearch.toLowerCase()) ||
+            t.id.toLowerCase().includes(templateSearch.toLowerCase())) &&
+          (!typeFilter || t.type === typeFilter)
+      ),
+    [deviceCatalog, templateSearch, typeFilter]
+  );
+
+  // ── DnD handlers ─────────────────────────────────────────────────────────
+
+  const handleTemplateDragStart = (e: React.DragEvent, tpl: DeviceTemplate) => {
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('text/plain', tpl.id);
     dragTemplateRef.current = tpl;
@@ -403,98 +391,99 @@ export const CosmosRackEditorPage = () => {
 
   const handleSlotDrop = (e: React.DragEvent, u: number) => {
     e.preventDefault();
-    if (!rack) {
-      setDragHoverU(null);
-      return;
-    }
+    if (!rack) { setDragHoverU(null); return; }
 
     let activeDevice = dragDeviceRef.current;
     const activeTpl = dragTemplateRef.current;
 
+    // Recover device from dataTransfer if ref was lost (cross-component drop)
     if (!activeDevice && !activeTpl) {
-      const transferId = e.dataTransfer.getData('text/plain');
-      if (transferId) {
-        const recovered = draftDevices.find((d) => d.id === transferId);
-        if (recovered) activeDevice = recovered;
-      }
+      const id = e.dataTransfer.getData('text/plain');
+      activeDevice = draftDevices.find((d) => d.id === id) ?? null;
     }
 
     if (activeDevice) {
       const h = deviceCatalog[activeDevice.template_id]?.u_height ?? 1;
-      const ownSlots = new Set(Array.from({ length: h }, (_, i) => activeDevice.u_position + i));
+      const own = new Set(Array.from({ length: h }, (_, i) => activeDevice!.u_position + i));
       const valid = Array.from({ length: h }, (_, i) => u + i).every(
-        (slot) => slot >= 1 && slot <= rack.u_height && (!uMap.has(slot) || ownSlots.has(slot))
+        (slot) => slot >= 1 && slot <= rack.u_height && (!uMap.has(slot) || own.has(slot))
       );
       if (valid && u !== activeDevice.u_position) {
         setDraftDevices((prev) =>
-          prev.map((d) => (d.id === activeDevice.id ? { ...d, u_position: u } : d))
+          prev.map((d) => (d.id === activeDevice!.id ? { ...d, u_position: u } : d))
         );
         setDirty(true);
+        if (selectedDevice?.id === activeDevice.id)
+          setSelectedDevice((prev) => (prev ? { ...prev, u_position: u } : null));
       }
       dragDeviceRef.current = null;
-      dragTemplateRef.current = null;
       setDragDevice(null);
       setDragHoverU(null);
       return;
     }
 
-    if (!activeTpl) {
-      setDragHoverU(null);
-      return;
-    }
+    if (!activeTpl) { setDragHoverU(null); return; }
+
     const h = activeTpl.u_height ?? 1;
     const valid = Array.from({ length: h }, (_, i) => u + i).every(
       (slot) => slot >= 1 && slot <= rack.u_height && !uMap.has(slot)
     );
-    if (!valid) {
-      setDragHoverU(null);
-      return;
-    }
-    setPlacingTemplate({ template: activeTpl, u });
-    setNewDeviceName(activeTpl.name);
-    setNewDeviceInstance('');
+    if (!valid) { setDragHoverU(null); return; }
+
     deviceCounterRef.current += 1;
-    setNewDeviceId(`dev-${deviceCounterRef.current}`);
+    setPlacing({ template: activeTpl, u });
+    setPlacingForm({ name: activeTpl.name, id: `dev-${deviceCounterRef.current}`, instance: '' });
     dragTemplateRef.current = null;
     setDragTemplate(null);
     setDragHoverU(null);
+    setSelectedDevice(null);
   };
 
-  const handleRackContainerDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleRackDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     const related = e.relatedTarget as Node | null;
-    if (!rackContainerRef.current?.contains(related)) {
-      setDragHoverU(null);
-    }
+    if (!rackContainerRef.current?.contains(related)) setDragHoverU(null);
   };
+
+  // ── Device CRUD ───────────────────────────────────────────────────────────
 
   const confirmPlacement = () => {
-    if (!placingTemplate || !rack) return;
+    if (!placing || !rack) return;
     const newDev: Device = {
-      id: newDeviceId || `dev-${deviceCounterRef.current}`,
-      name: newDeviceName || placingTemplate.template.name,
-      template_id: placingTemplate.template.id,
-      u_position: placingTemplate.u,
-      instance: newDeviceInstance.trim() || null,
+      id: placingForm.id.trim() || `dev-${deviceCounterRef.current}`,
+      name: placingForm.name.trim() || placing.template.name,
+      template_id: placing.template.id,
+      u_position: placing.u,
+      instance: placingForm.instance.trim() || null,
       nodes: null,
       labels: null,
     };
     setDraftDevices((prev) => [...prev, newDev]);
     setDirty(true);
-    setPlacingTemplate(null);
+    setPlacing(null);
     setSelectedDevice(newDev);
   };
 
   const deleteDevice = (deviceId: string) => {
     setDraftDevices((prev) => prev.filter((d) => d.id !== deviceId));
     setDirty(true);
-    if (selectedDevice?.id === deviceId) setSelectedDevice(null);
+    setSelectedDevice((prev) => (prev?.id === deviceId ? null : prev));
   };
 
-  const handleSelectDevice = (dev: Device) => {
-    setSelectedDevice(dev);
-    setSelectedFlash(dev.id);
-    setTimeout(() => setSelectedFlash(null), 500);
+  const applyDeviceEdit = () => {
+    if (!selectedDevice) return;
+    const updated: Device = {
+      ...selectedDevice,
+      name: editForm.name.trim() || selectedDevice.name,
+      id: editForm.id.trim() || selectedDevice.id,
+      instance: editForm.instance.trim() || null,
+    };
+    setDraftDevices((prev) => prev.map((d) => (d.id === selectedDevice.id ? updated : d)));
+    setSelectedDevice(updated);
+    setDirty(true);
+    setEditDirty(false);
   };
+
+  // ── Save ──────────────────────────────────────────────────────────────────
 
   const handleSave = async () => {
     if (!selectedRackId) return;
@@ -503,178 +492,296 @@ export const CosmosRackEditorPage = () => {
       await api.updateRackDevices(selectedRackId, draftDevices);
       setDirty(false);
       setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 1500);
+      setTimeout(() => setSaveStatus('idle'), 2000);
     } catch {
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     }
   };
 
-  const slots = Array.from({ length: uHeight }, (_, i) => i + 1);
-  const filteredTemplates = Object.values(deviceCatalog).filter(
-    (t) =>
-      (!search ||
-        t.name.toLowerCase().includes(search.toLowerCase()) ||
-        t.id.toLowerCase().includes(search.toLowerCase())) &&
-      (!typeFilter || t.type === typeFilter)
-  );
+  // ── Keyboard shortcuts (declared after handleSave + deleteDevice) ────────
 
-  usePageTitle('Rack Editor');
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const active = document.activeElement;
+      const isInput = active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA';
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        if (dirty) void handleSave();
+        return;
+      }
+      if (e.key === 'Escape') { setSelectedDevice(null); setPlacing(null); return; }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedDevice && !isInput) {
+        deleteDevice(selectedDevice.id);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [dirty, selectedDevice]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Rack slot helpers ─────────────────────────────────────────────────────
+
+  const slots = Array.from({ length: totalU }, (_, i) => i + 1);
+  const selectedRackEntry = allRacks.find((r) => r.id === selectedRackId);
+
+  const dragH = dragTemplate
+    ? (dragTemplate.u_height ?? 1)
+    : dragDevice
+    ? (deviceCatalog[dragDevice.template_id]?.u_height ?? 1)
+    : 0;
+
+  const isSlotHovered = (u: number) =>
+    (dragTemplate !== null || dragDevice !== null) &&
+    dragHoverU !== null &&
+    u >= dragHoverU &&
+    u < dragHoverU + dragH;
+
+  const isHoverValid = (u: number) =>
+    dragHoverU !== null &&
+    Array.from({ length: dragH }, (_, i) => dragHoverU + i).every((slot) =>
+      slot >= 1 &&
+      slot <= totalU &&
+      (dragDevice
+        ? !uMap.has(slot) || uMap.get(slot)?.id === dragDevice.id
+        : !uMap.has(slot))
+    ) &&
+    isSlotHovered(u);
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="shrink-0 border-b border-gray-800 bg-gray-950 px-6 py-4">
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="shrink-0">
         <PageHeader
           title="Rack Editor"
-          description="Drag templates onto rack slots to place devices"
           breadcrumb={
             <PageBreadcrumb
               items={[
                 { label: 'Home', href: '/cosmos' },
                 { label: 'Editors' },
-                { label: 'Rack Editor' },
+                ...(selectedRackEntry
+                  ? [
+                      {
+                        label: selectedRackEntry.roomName,
+                        onClick: () => { /* Could navigate to datacenter editor */ },
+                      },
+                      { label: rack?.name ?? selectedRackId ?? 'Rack' },
+                    ]
+                  : [{ label: 'Rack Editor' }]),
               ]}
             />
           }
           actions={
-            <>
+            <div className="flex items-center gap-2">
+              {saveStatus === 'error' && (
+                <span className="flex items-center gap-1.5 text-xs text-red-500">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Save failed
+                </span>
+              )}
+              {saveStatus === 'saved' && (
+                <span className="flex items-center gap-1.5 text-xs text-green-500 dark:text-green-400">
+                  <Check className="h-3.5 w-3.5" /> Saved
+                </span>
+              )}
               {dirty && (
                 <button
                   onClick={() => void handleSave()}
                   disabled={saveStatus === 'saving'}
-                  className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-60"
                 >
                   {saveStatus === 'saving' ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Check className="h-4 w-4" />
+                    <Save className="h-4 w-4" />
                   )}
-                  Save
+                  Save Changes
                 </button>
               )}
-              {saveStatus === 'saved' && (
-                <span className="flex items-center gap-1.5 text-xs text-green-400">
-                  <Check className="h-3.5 w-3.5" /> Saved
-                </span>
-              )}
-              {saveStatus === 'error' && (
-                <span className="flex items-center gap-1.5 text-xs text-red-400">
-                  <AlertTriangle className="h-3.5 w-3.5" /> Error
-                </span>
-              )}
-            </>
+            </div>
           }
         />
       </div>
 
-      {/* 4-column body */}
-      <div className="flex min-h-0 flex-1">
-        {/* COLUMN 1: Rack list (220px) */}
-        <aside className="flex w-[220px] shrink-0 flex-col overflow-hidden border-r border-gray-800 bg-gray-950">
-          <div className="shrink-0 border-b border-gray-800 p-3">
-            <div className="mb-2 px-1 text-[10px] font-semibold tracking-wider text-gray-600 uppercase">
-              Racks
-            </div>
-            <div className="relative">
-              <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-gray-600" />
-              <input
-                value={rackSearch}
-                onChange={(e) => setRackSearch(e.target.value)}
-                placeholder="Search racks..."
-                className="focus:border-brand-500 w-full rounded-xl border border-gray-800 bg-gray-900 py-2 pr-3 pl-8 text-xs text-gray-300 placeholder:text-gray-600 focus:outline-none"
-              />
-            </div>
+      {/* ── 3-panel workspace ──────────────────────────────────────────────── */}
+      <div className="mt-5 flex min-h-0 flex-1 gap-5">
+
+        {/* ── LEFT PANEL: Racks + Templates ─────────────────────────────── */}
+        <div className="flex w-[260px] shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+
+          {/* Tabs */}
+          <div className="flex shrink-0 border-b border-gray-100 dark:border-gray-800">
+            {(['racks', 'templates'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setLeftTab(tab)}
+                className={[
+                  'flex-1 py-3 text-xs font-semibold capitalize transition-colors',
+                  leftTab === tab
+                    ? 'border-b-2 border-brand-500 text-brand-600 dark:text-brand-400'
+                    : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300',
+                ].join(' ')}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
-          <div className="flex-1 overflow-y-auto px-2 py-2">
-            {Array.from(racksByRoom.entries()).map(([roomName, racks]) => (
-              <div key={roomName}>
-                <RoomGroupHeader name={roomName} />
-                {racks.map((r) => (
-                  <RackListItem
-                    key={r.id}
-                    rack={r}
-                    selected={selectedRackId === r.id}
-                    onClick={() => setSelectedRackId(r.id)}
+
+          {/* ── Racks tab ────────────────────────────────────────────────── */}
+          {leftTab === 'racks' && (
+            <>
+              <div className="shrink-0 p-3">
+                <div className="relative">
+                  <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                  <input
+                    value={rackSearch}
+                    onChange={(e) => setRackSearch(e.target.value)}
+                    placeholder="Search racks…"
+                    className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-2 pr-3 pl-8 text-xs placeholder-gray-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-600"
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-2 pb-3">
+                {Array.from(racksByRoom.entries()).map(([roomName, racks]) => (
+                  <div key={roomName}>
+                    <p className="mt-2 mb-1 px-3 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600 first:mt-0">
+                      {roomName}
+                    </p>
+                    {racks.map((r) => (
+                      <RackListItem
+                        key={r.id}
+                        rack={r}
+                        selected={selectedRackId === r.id}
+                        onClick={() => {
+                          if (dirty && !confirm('Unsaved changes — switch racks anyway?')) return;
+                          setSelectedRackId(r.id);
+                        }}
+                      />
+                    ))}
+                  </div>
+                ))}
+                {filteredRacks.length === 0 && (
+                  <p className="px-3 py-6 text-center text-xs text-gray-400">No racks found</p>
+                )}
+              </div>
+
+              <div className="shrink-0 border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
+                <p className="text-[10px] text-gray-400 dark:text-gray-600">
+                  {allRacks.length} rack{allRacks.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* ── Templates tab ────────────────────────────────────────────── */}
+          {leftTab === 'templates' && (
+            <>
+              <div className="shrink-0 space-y-2 p-3">
+                <div className="relative">
+                  <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                  <input
+                    value={templateSearch}
+                    onChange={(e) => setTemplateSearch(e.target.value)}
+                    placeholder="Search templates…"
+                    className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-2 pr-3 pl-8 text-xs placeholder-gray-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-600"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {(['', ...DEVICE_TYPES] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTypeFilter(t)}
+                      className={[
+                        'rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize transition-colors',
+                        typeFilter === t
+                          ? 'bg-brand-500 text-white'
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:hover:bg-gray-700',
+                      ].join(' ')}
+                    >
+                      {t || 'All'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-1.5 overflow-y-auto px-3 pb-3">
+                {filteredTemplates.map((t) => (
+                  <TemplateCard
+                    key={t.id}
+                    template={t}
+                    onDragStart={(e) => handleTemplateDragStart(e, t)}
                   />
                 ))}
+                {filteredTemplates.length === 0 && (
+                  <p className="py-6 text-center text-xs text-gray-400">No templates found</p>
+                )}
               </div>
-            ))}
-            {filteredRacks.length === 0 && (
-              <p className="px-3 py-4 text-center text-xs text-gray-700">No racks found</p>
-            )}
-          </div>
-          <div className="shrink-0 border-t border-gray-800 px-4 py-2">
-            <p className="text-[10px] text-gray-700">{allRacks.length} racks</p>
-          </div>
-        </aside>
 
-        {/* COLUMN 2: Template library (240px) */}
-        <aside className="flex w-60 shrink-0 flex-col overflow-hidden border-r border-gray-800 bg-gray-950">
-          <div className="space-y-2 border-b border-gray-800 p-3">
-            <div className="relative">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-600" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search templates..."
-                className="focus:border-brand-500 w-full rounded-xl border border-gray-800 bg-gray-900 py-2 pr-3 pl-9 text-xs text-gray-300 placeholder:text-gray-600 focus:outline-none"
-              />
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {['', 'server', 'storage', 'network', 'pdu'].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTypeFilter(t)}
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors ${typeFilter === t ? 'bg-brand-500 text-white' : 'bg-gray-800 text-gray-500 hover:text-gray-300'}`}
-                >
-                  {t || 'All'}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex-1 space-y-1.5 overflow-y-auto p-3">
-            {filteredTemplates.map((t) => (
-              <TemplateCard key={t.id} template={t} onDragStart={(e) => handleDragStart(e, t)} />
-            ))}
-          </div>
-          <div className="border-t border-gray-800 px-4 py-2">
-            <p className="text-[10px] text-gray-700">Drag a template onto a rack slot</p>
-          </div>
-        </aside>
+              <div className="shrink-0 border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
+                <p className="text-[10px] text-gray-400 dark:text-gray-600">
+                  Drag a template onto a free rack slot
+                </p>
+              </div>
+            </>
+          )}
+        </div>
 
-        {/* COLUMN 3: Rack visualization (flex) */}
-        <main
-          ref={mainPanelRef}
-          className="min-h-0 flex-1 overflow-hidden bg-[var(--color-bg-base)]"
-        >
+        {/* ── CENTER: Rack canvas ────────────────────────────────────────── */}
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-950">
           {!rack ? (
-            <div className="flex h-full items-center justify-center">
-              <Loader2 className="text-brand-500 h-8 w-8 animate-spin" />
+            <div className="flex flex-1 items-center justify-center">
+              {allRacks.length === 0 ? (
+                <div className="text-center">
+                  <Server className="mx-auto mb-3 h-10 w-10 text-gray-700" />
+                  <p className="text-sm text-gray-600">No racks in topology</p>
+                  <p className="mt-1 text-xs text-gray-700">
+                    Add racks in the Datacenter Editor first
+                  </p>
+                </div>
+              ) : (
+                <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
+              )}
             </div>
           ) : (
-            <div className="flex h-full flex-col">
-              <div className="shrink-0 border-b border-gray-800 px-6 py-3">
+            <>
+              {/* Rack info bar */}
+              <div className="shrink-0 border-b border-gray-800 px-5 py-3">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-sm font-semibold text-white">{rack.name}</h2>
+                  <h2 className="text-sm font-bold text-white">{rack.name}</h2>
                   <span className="rounded-full bg-gray-800 px-2 py-0.5 font-mono text-[10px] text-gray-500">
                     {rack.id}
                   </span>
-                  <span className="text-xs text-gray-600">{uHeight}U</span>
-                  <span className="text-xs text-gray-600">
+                  <span className="text-[11px] text-gray-600">{totalU}U</span>
+                  <span className="text-[11px] text-gray-600">
                     {draftDevices.length} device{draftDevices.length !== 1 ? 's' : ''}
                   </span>
+
+                  {/* Density bar */}
+                  <div className="ml-auto flex items-center gap-2">
+                    <span className="text-[10px] text-gray-600">{usedU}/{totalU}U</span>
+                    <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-800">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-500"
+                        style={{ width: `${Math.min(100, density * 100)}%` }}
+                      />
+                    </div>
+                    <span className="w-7 text-right text-[10px] text-gray-600">
+                      {Math.round(density * 100)}%
+                    </span>
+                  </div>
                 </div>
               </div>
-              {/* Rack viewport — measured for dynamic scaling */}
-              <div className="flex-1 overflow-hidden py-4">
-                <div className="mx-auto max-w-xl px-12">
-                  {/* Rack frame: border-x-[24px] = side rails, flex-col-reverse = U1 bottom */}
+
+              {/* Rack visualization */}
+              <div ref={canvasRef} className="flex-1 overflow-hidden py-5">
+                <div className="mx-auto max-w-2xl px-10">
                   <div
                     ref={rackContainerRef}
-                    onDragLeave={handleRackContainerDragLeave}
+                    onDragLeave={handleRackDragLeave}
                     onDragEnd={handleDragEnd}
-                    className="relative flex flex-col-reverse rounded-sm border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-interior)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-colors duration-500"
+                    className="relative flex flex-col-reverse rounded-sm border-x-[22px] border-gray-700 bg-gray-900 shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
                   >
                     {slots.map((u) => {
                       const dev = uMap.get(u);
@@ -682,71 +789,121 @@ export const CosmosRackEditorPage = () => {
                       if (!isStart) return null;
 
                       const tpl = dev ? deviceCatalog[dev.template_id] : undefined;
-                      const devUHeight = tpl?.u_height ?? 1;
-                      const activeDragH = dragTemplate
-                        ? (dragTemplate.u_height ?? 1)
-                        : dragDevice
-                          ? (deviceCatalog[dragDevice.template_id]?.u_height ?? 1)
-                          : 0;
-                      const isHover =
-                        (dragTemplate !== null || dragDevice !== null) &&
-                        dragHoverU !== null &&
-                        u >= dragHoverU &&
-                        u < dragHoverU + activeDragH;
+                      const devH = tpl?.u_height ?? 1;
+                      const col = c(tpl?.type ?? 'other');
+                      const hovered = isSlotHovered(u);
+                      const valid = hovered && isHoverValid(u);
+
+                      // U rail number — shown on both sides inside border-x
+                      const UNum = ({ align }: { align: 'left' | 'right' }) => (
+                        <div
+                          className={`pointer-events-none absolute top-0 flex h-full w-[20px] items-center justify-center font-mono text-[8px] font-bold select-none ${
+                            dev ? 'text-gray-500' : 'text-gray-700'
+                          } ${align === 'left' ? '-left-[20px]' : '-right-[20px]'}`}
+                        >
+                          {u}
+                        </div>
+                      );
 
                       if (dev) {
                         return (
                           <div
                             key={u}
-                            style={{ flex: `0 0 ${devUHeight * dynamicUPx}px` }}
-                            className="relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10"
+                            style={{ flex: `0 0 ${devH * uPx}px` }}
+                            className="relative flex min-h-0 w-full items-center border-b border-gray-800/40"
                             onDragEnter={() => handleSlotDragEnter(u)}
                             onDragOver={handleSlotDragOver}
                             onDrop={(e) => handleSlotDrop(e, u)}
                           >
-                            <div className="pointer-events-none absolute -left-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
-                              {u}
-                            </div>
-                            <div className="pointer-events-none absolute -right-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
-                              {u}
-                            </div>
-                            <div className="relative h-full w-full px-0.5 py-[1px]">
-                              <DeviceSlot
-                                device={dev}
-                                template={tpl}
-                                uHeight={devUHeight}
-                                uPx={dynamicUPx}
-                                selected={selectedDevice?.id === dev.id}
-                                flash={selectedFlash === dev.id}
-                                dragging={dragDevice?.id === dev.id}
-                                onClick={() => handleSelectDevice(dev)}
-                                onDelete={() => deleteDevice(dev.id)}
+                            <UNum align="left" />
+                            <UNum align="right" />
+
+                            <div className="h-full w-full px-0.5 py-[1px]">
+                              <div
+                                draggable
                                 onDragStart={(e) => handleDeviceDragStart(e, dev)}
-                              />
+                                onClick={() =>
+                                  setSelectedDevice(dev.id === selectedDevice?.id ? null : dev)
+                                }
+                                style={{
+                                  backgroundColor: col.bg,
+                                  borderLeft:
+                                    selectedDevice?.id === dev.id
+                                      ? `4px solid ${col.border}`
+                                      : `3px solid ${col.border}`,
+                                  outline:
+                                    selectedDevice?.id === dev.id
+                                      ? `2px solid ${col.border}`
+                                      : undefined,
+                                  outlineOffset: '1px',
+                                  opacity: dragDevice?.id === dev.id ? 0.25 : 1,
+                                }}
+                                className="group/dev relative flex h-full w-full cursor-grab items-center gap-2 px-2.5 transition-all hover:brightness-125 active:cursor-grabbing"
+                              >
+                                <TypeIcon
+                                  type={tpl?.type ?? 'other'}
+                                  className="h-3.5 w-3.5 shrink-0 opacity-50"
+                                  style={{ color: col.text }}
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <p
+                                    className="truncate text-xs font-semibold"
+                                    style={{ color: col.text }}
+                                  >
+                                    {dev.name || dev.id}
+                                  </p>
+                                  {devH > 1 && (
+                                    <p className="truncate font-mono text-[10px] text-gray-600">
+                                      {dev.id}
+                                    </p>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteDevice(dev.id);
+                                  }}
+                                  title="Remove device (Del)"
+                                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-500/20 text-red-400 opacity-0 transition-all hover:bg-red-500 hover:text-white group-hover/dev:opacity-100"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         );
                       }
 
+                      // Empty slot
                       return (
                         <div
                           key={u}
-                          style={{ flex: `0 0 ${dynamicUPx}px` }}
-                          className={`relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10 transition-colors ${isHover ? 'bg-brand-500/20' : ''}`}
+                          style={{ flex: `0 0 ${uPx}px` }}
+                          className={[
+                            'relative flex min-h-0 w-full items-center border-b border-gray-800/25 transition-colors',
+                            hovered
+                              ? valid
+                                ? 'bg-brand-500/20'
+                                : 'bg-red-500/15'
+                              : '',
+                          ].join(' ')}
                           onDragEnter={() => handleSlotDragEnter(u)}
                           onDragOver={handleSlotDragOver}
                           onDrop={(e) => handleSlotDrop(e, u)}
                         >
-                          <div className="pointer-events-none absolute -left-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
-                            {u}
-                          </div>
-                          <div className="pointer-events-none absolute -right-[20px] z-10 flex h-full w-4 items-center justify-center font-mono text-[9px] font-black text-white opacity-40 select-none">
-                            {u}
-                          </div>
-                          {isHover && (
-                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                              <span className="text-brand-400 font-mono text-[10px] font-bold">
-                                Drop — {dragTemplate?.name}
+                          <UNum align="left" />
+                          <UNum align="right" />
+
+                          {hovered && (
+                            <div className="pointer-events-none absolute inset-0 flex items-center px-3">
+                              <span
+                                className={`font-mono text-[10px] font-bold ${
+                                  valid ? 'text-brand-400' : 'text-red-400'
+                                }`}
+                              >
+                                {valid
+                                  ? `U${dragHoverU} — ${dragTemplate?.name ?? dragDevice?.name ?? ''}`
+                                  : 'Slot occupied'}
                               </span>
                             </div>
                           )}
@@ -756,152 +913,234 @@ export const CosmosRackEditorPage = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </>
           )}
-        </main>
+        </div>
 
-        {/* COLUMN 4: Detail / placement form (280px) */}
-        <aside className="flex w-[280px] shrink-0 flex-col overflow-y-auto border-l border-gray-800 bg-gray-950">
-          {placingTemplate ? (
-            <div className="space-y-4 p-5">
-              <div>
-                <h3 className="text-sm font-bold text-white">Place device</h3>
+        {/* ── RIGHT PANEL: Context ───────────────────────────────────────── */}
+        <div className="flex w-[280px] shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+
+          {/* ── Placement form ─────────────────────────────────────────── */}
+          {placing ? (
+            <div className="flex flex-1 flex-col">
+              <div className="shrink-0 border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+                <p className="text-sm font-bold text-gray-900 dark:text-white">Place device</p>
                 <p className="mt-0.5 text-xs text-gray-500">
-                  {placingTemplate.template.name} at U{placingTemplate.u}
+                  {placing.template.name} at U{placing.u}
                 </p>
               </div>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-400">Device name</label>
-                  <input
-                    value={newDeviceName}
-                    onChange={(e) => setNewDeviceName(e.target.value)}
-                    className="focus:border-brand-500 w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-200 focus:outline-none"
+
+              <div className="flex-1 space-y-4 overflow-y-auto p-5">
+                {/* Template preview badge */}
+                <div
+                  className="flex items-center gap-2.5 rounded-xl p-3"
+                  style={{
+                    backgroundColor: c(placing.template.type).bg,
+                    border: `1px solid ${c(placing.template.type).border}`,
+                  }}
+                >
+                  <TypeIcon
+                    type={placing.template.type}
+                    className="h-4 w-4 shrink-0"
+                    style={{ color: c(placing.template.type).text }}
                   />
+                  <span className="min-w-0 flex-1 truncate text-xs font-semibold" style={{ color: c(placing.template.type).text }}>
+                    {placing.template.name}
+                  </span>
+                  <span className="text-[10px] text-gray-600">{placing.template.u_height}U</span>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-400">Device ID</label>
+
+                <FormField label="Device name">
                   <input
-                    value={newDeviceId}
-                    onChange={(e) => setNewDeviceId(e.target.value)}
-                    placeholder="auto-generated"
-                    className="focus:border-brand-500 w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 font-mono text-xs text-gray-400 focus:outline-none"
+                    autoFocus
+                    value={placingForm.name}
+                    onChange={(e) => setPlacingForm((f) => ({ ...f, name: e.target.value }))}
+                    placeholder={placing.template.name}
+                    className={inputCls}
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-400">Instance / node name</label>
+                </FormField>
+
+                <FormField label="Device ID">
                   <input
-                    value={newDeviceInstance}
-                    onChange={(e) => setNewDeviceInstance(e.target.value)}
-                    placeholder="e.g. compute001 or compute[001-004]"
-                    className="focus:border-brand-500 w-full rounded-xl border border-gray-700 bg-gray-900 px-3 py-2 font-mono text-xs text-gray-300 placeholder:text-gray-600 focus:outline-none"
+                    value={placingForm.id}
+                    onChange={(e) => setPlacingForm((f) => ({ ...f, id: e.target.value }))}
+                    placeholder="dev-001"
+                    className={`${inputCls} font-mono text-xs`}
                   />
-                  <p className="text-[10px] text-gray-700">
-                    Maps this device to Prometheus metrics
-                  </p>
-                </div>
+                </FormField>
+
+                <FormField
+                  label="Instance / node"
+                  hint="Maps this device to Prometheus metrics. Supports patterns: compute[001-004]"
+                >
+                  <input
+                    value={placingForm.instance}
+                    onChange={(e) => setPlacingForm((f) => ({ ...f, instance: e.target.value }))}
+                    placeholder="compute001"
+                    className={`${inputCls} font-mono text-xs`}
+                  />
+                </FormField>
               </div>
-              <div className="flex gap-2">
+
+              <div className="shrink-0 flex items-center gap-2 border-t border-gray-100 p-4 dark:border-gray-800">
                 <button
-                  onClick={() => setPlacingTemplate(null)}
-                  className="flex-1 rounded-xl border border-gray-700 py-2 text-sm text-gray-400 hover:bg-white/5"
+                  onClick={() => setPlacing(null)}
+                  className="flex-1 rounded-xl border border-gray-200 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmPlacement}
-                  className="bg-brand-500 hover:bg-brand-600 flex-1 rounded-xl py-2 text-sm font-semibold text-white"
+                  className="bg-brand-500 hover:bg-brand-600 flex-1 rounded-xl py-2 text-sm font-semibold text-white transition-colors"
                 >
                   Place
                 </button>
               </div>
             </div>
+
+          /* ── Device edit panel ────────────────────────────────────────── */
           ) : selectedDevice ? (
             (() => {
-              const type = deviceCatalog[selectedDevice.template_id]?.type ?? 'other';
+              const tpl = deviceCatalog[selectedDevice.template_id];
+              const type = tpl?.type ?? 'other';
+              const col = c(type);
               return (
-                <div className="space-y-4">
-                  {/* Device preview header */}
+                <div className="flex flex-1 flex-col">
+                  {/* Device header */}
                   <div
-                    className="mx-5 mt-5 flex items-center gap-3 rounded-xl p-3"
-                    style={{
-                      backgroundColor: TYPE_BG[type] ?? TYPE_BG.other,
-                      border: `1px solid ${TYPE_BORDER[type] ?? TYPE_BORDER.other}`,
-                    }}
+                    className="shrink-0 flex items-center gap-2.5 px-5 py-4"
+                    style={{ borderBottom: `2px solid ${col.border}` }}
                   >
-                    <TypeIcon
-                      type={type}
-                      className="h-5 w-5 shrink-0"
-                      style={{ color: TYPE_TEXT[type] }}
-                    />
+                    <div
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                      style={{ backgroundColor: col.bg, border: `1px solid ${col.border}` }}
+                    >
+                      <TypeIcon type={type} className="h-4 w-4" style={{ color: col.text }} />
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold" style={{ color: TYPE_TEXT[type] }}>
+                      <p className="truncate text-xs font-bold text-gray-900 dark:text-white">
                         {selectedDevice.name || selectedDevice.id}
                       </p>
-                      <p className="text-[10px] text-gray-600">
-                        {type} · U{selectedDevice.u_position}
+                      <p className="text-[10px] capitalize text-gray-400">
+                        {type} · U{selectedDevice.u_position} · {tpl?.u_height ?? 1}U
                       </p>
                     </div>
                     <button
                       onClick={() => setSelectedDevice(null)}
-                      className="shrink-0 text-gray-600 hover:text-gray-300"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  {/* Info fields */}
-                  <div className="mx-5 space-y-2 rounded-xl border border-gray-800 bg-gray-900 p-3">
-                    {[
-                      { label: 'U Position', value: `U${selectedDevice.u_position}` },
-                      {
-                        label: 'Template',
-                        value:
-                          deviceCatalog[selectedDevice.template_id]?.name ??
-                          selectedDevice.template_id,
-                      },
-                      { label: 'Type', value: type },
-                      {
-                        label: 'Height',
-                        value: `${deviceCatalog[selectedDevice.template_id]?.u_height ?? 1}U`,
-                      },
-                    ].map(({ label, value }) => (
-                      <div key={label} className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500">{label}</span>
-                        <span className="font-mono text-gray-300">{value}</span>
-                      </div>
-                    ))}
-                    {selectedDevice.instance && (
-                      <div className="flex items-start justify-between gap-2 text-xs">
-                        <span className="shrink-0 text-gray-500">Instance</span>
-                        <span className="text-right font-mono break-all text-gray-300">
-                          {typeof selectedDevice.instance === 'string'
-                            ? selectedDevice.instance
-                            : JSON.stringify(selectedDevice.instance)}
-                        </span>
-                      </div>
-                    )}
+
+                  {/* Editable fields */}
+                  <div className="flex-1 space-y-4 overflow-y-auto p-5">
+                    <FormField label="Device name">
+                      <input
+                        value={editForm.name}
+                        onChange={(e) => { setEditForm((f) => ({ ...f, name: e.target.value })); setEditDirty(true); }}
+                        placeholder={selectedDevice.id}
+                        className={inputCls}
+                      />
+                    </FormField>
+
+                    <FormField label="Device ID">
+                      <input
+                        value={editForm.id}
+                        onChange={(e) => { setEditForm((f) => ({ ...f, id: e.target.value })); setEditDirty(true); }}
+                        placeholder="dev-001"
+                        className={`${inputCls} font-mono text-xs`}
+                      />
+                    </FormField>
+
+                    <FormField
+                      label="Instance / node"
+                      hint="Prometheus identity. Supports patterns: compute[001-004]"
+                    >
+                      <input
+                        value={editForm.instance}
+                        onChange={(e) => { setEditForm((f) => ({ ...f, instance: e.target.value })); setEditDirty(true); }}
+                        placeholder="compute001"
+                        className={`${inputCls} font-mono text-xs`}
+                      />
+                    </FormField>
+
+                    {/* Read-only info */}
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800/50">
+                      {[
+                        { label: 'Template', value: tpl?.name ?? selectedDevice.template_id },
+                        { label: 'U position', value: `U${selectedDevice.u_position}` },
+                        { label: 'Height', value: `${tpl?.u_height ?? 1}U` },
+                      ].map(({ label, value }) => (
+                        <div key={label} className="flex items-center justify-between py-1 text-xs">
+                          <span className="text-gray-400">{label}</span>
+                          <span className="font-mono text-gray-600 dark:text-gray-400">{value}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="px-5 pb-5">
+
+                  {/* Actions */}
+                  <div className="shrink-0 space-y-2 border-t border-gray-100 p-4 dark:border-gray-800">
+                    {editDirty && (
+                      <button
+                        onClick={applyDeviceEdit}
+                        className="bg-brand-500 hover:bg-brand-600 flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-sm font-semibold text-white transition-colors"
+                      >
+                        <Check className="h-4 w-4" /> Apply changes
+                      </button>
+                    )}
                     <button
                       onClick={() => deleteDevice(selectedDevice.id)}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/20"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
                     >
-                      <X className="h-4 w-4" /> Remove Device
+                      <X className="h-4 w-4" /> Remove device
                     </button>
                   </div>
                 </div>
               );
             })()
+
+          /* ── Empty state ──────────────────────────────────────────────── */
           ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-              <Server className="h-10 w-10 text-gray-800" />
-              <p className="text-sm text-gray-600">No device selected</p>
-              <p className="text-xs text-gray-700">
-                Drag a template onto a free slot, or click a device
-              </p>
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800">
+                <Server className="h-6 w-6 text-gray-300 dark:text-gray-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  No device selected
+                </p>
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-600">
+                  Click a device to view and edit it, or drag a template from the library
+                </p>
+              </div>
+              {rack && (
+                <div className="mt-2 space-y-1 text-left w-full rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800/50">
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider dark:text-gray-600">Shortcuts</p>
+                  {[
+                    ['Del', 'Remove selected device'],
+                    ['Esc', 'Deselect / cancel'],
+                    ['⌘S', 'Save changes'],
+                  ].map(([key, desc]) => (
+                    <div key={key} className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400 dark:text-gray-500">{desc}</span>
+                      <kbd className="rounded bg-gray-200 px-1.5 py-0.5 font-mono text-[10px] text-gray-500 dark:bg-gray-700 dark:text-gray-400">{key}</kbd>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!rack && allRacks.length > 0 && (
+                <button
+                  onClick={() => setLeftTab('racks')}
+                  className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                >
+                  Select a rack
+                </button>
+              )}
             </div>
           )}
-        </aside>
+        </div>
       </div>
     </div>
   );
