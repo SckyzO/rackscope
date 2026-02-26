@@ -120,24 +120,36 @@ const UPositionStepper = ({
   const dec = () => num > min && onChange(String(num - 1));
   const inc = () => num < max && onChange(String(num + 1));
 
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (raw === '') { onChange(''); return; }
+    const n = parseInt(raw);
+    if (!isNaN(n)) onChange(String(Math.min(max, Math.max(min, n))));
+  };
+
   return (
-    <div className="flex items-center overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+    <div className="flex items-center overflow-hidden rounded-lg border border-gray-200 focus-within:border-brand-500 dark:border-gray-700">
       <button
         type="button"
         onClick={dec}
         disabled={num <= min}
-        className="flex h-7 w-6 items-center justify-center text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+        className="flex h-7 w-6 shrink-0 items-center justify-center text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-gray-800 dark:hover:text-gray-300"
       >
         <span className="text-sm leading-none">−</span>
       </button>
-      <span className="min-w-[28px] select-none text-center font-mono text-xs font-semibold text-gray-700 dark:text-gray-200">
-        {num}
-      </span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={value}
+        onChange={handleInput}
+        onBlur={() => { if (!value || isNaN(parseInt(value))) onChange(String(min)); }}
+        className="w-8 bg-transparent text-center font-mono text-xs font-semibold text-gray-700 focus:outline-none dark:text-gray-200"
+      />
       <button
         type="button"
         onClick={inc}
         disabled={num >= max}
-        className="flex h-7 w-6 items-center justify-center text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+        className="flex h-7 w-6 shrink-0 items-center justify-center text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-gray-800 dark:hover:text-gray-300"
       >
         <span className="text-sm leading-none">+</span>
       </button>
