@@ -1,545 +1,274 @@
-import { useState, useEffect, useCallback } from 'react';
+/**
+ * CosmosTemplatesEditorPage — Device Template Editor
+ *
+ * Layout: list (w-80, accordion by type) | form (w-[560px]) | preview (flex, dark)
+ * Preview: RackElevation with synthetic rack — front on top, rear below
+ * Live preview: form edits reflected instantly (no save required)
+ */
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus,
   Server,
-  HardDrive,
-  Network,
-  Zap,
-  Wind,
-  Box,
-  Tag,
-  X,
   Save,
-  RotateCcw,
+  X,
+  CheckSquare,
+  Layers,
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
   ChevronDown,
-  ChevronRight,
+  FileCode2,
   Search,
-  LayoutGrid,
 } from 'lucide-react';
+import MonacoEditor from '@monaco-editor/react';
+import jsYaml from 'js-yaml';
+import { api } from '../../../services/api';
+import type { DeviceTemplate, DeviceRearComponent, CheckDefinition, Rack, Device } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import {
   PageHeader,
   PageBreadcrumb,
   SectionCard,
-  EmptyState,
   LoadingState,
   ErrorState,
+  EmptyState,
 } from '../templates/EmptyPage';
-import { api } from '../../../services/api';
-import type { DeviceTemplate, LayoutConfig, CheckDefinition } from '../../../types';
+import { RackElevation } from '../../../components/RackVisualizer';
 
-// ── Type definitions ───────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-type DeviceType = 'server' | 'storage' | 'network' | 'pdu' | 'cooling' | 'other';
+const TYPE_COLORS: Record<string, { border: string; bg: string; text: string }> = {
+  server:  { border: '#2563eb', bg: 'rgba(37,99,235,0.12)',  text: '#60a5fa' },
+  storage: { border: '#d97706', bg: 'rgba(217,119,6,0.12)',  text: '#fbbf24' },
+  network: { border: '#0891b2', bg: 'rgba(8,145,178,0.12)',  text: '#38bdf8' },
+  pdu:     { border: '#ca8a04', bg: 'rgba(202,138,4,0.12)',  text: '#facc15' },
+  cooling: { border: '#0d9488', bg: 'rgba(13,148,136,0.12)', text: '#2dd4bf' },
+  other:   { border: '#374151', bg: 'rgba(55,65,81,0.12)',   text: '#9ca3af' },
+};
+const col = (type: string) => TYPE_COLORS[type] ?? TYPE_COLORS.other;
 
-// ── Type color mapping ─────────────────────────────────────────────────────────
+const STORAGE_TYPES = ['eseries', 'netapp', 'ddn', 'ibm', 'pure', 'other'];
+const REAR_COMP_TYPES = ['psu', 'fan', 'io', 'hydraulics', 'other'] as const;
 
-const TYPE_CONFIG: Record<
-  DeviceType,
-  { label: string; icon: React.ElementType; color: string; bg: string; border: string }
-> = {
-  server: {
-    label: 'Server',
-    icon: Server,
-    color: 'text-blue-600 dark:text-blue-400',
-    bg: 'bg-blue-50 dark:bg-blue-500/10',
-    border: 'border-blue-200 dark:border-blue-500/30',
-  },
-  storage: {
-    label: 'Storage',
-    icon: HardDrive,
-    color: 'text-amber-600 dark:text-amber-400',
-    bg: 'bg-amber-50 dark:bg-amber-500/10',
-    border: 'border-amber-200 dark:border-amber-500/30',
-  },
-  network: {
-    label: 'Network',
-    icon: Network,
-    color: 'text-cyan-600 dark:text-cyan-400',
-    bg: 'bg-cyan-50 dark:bg-cyan-500/10',
-    border: 'border-cyan-200 dark:border-cyan-500/30',
-  },
-  pdu: {
-    label: 'PDU',
-    icon: Zap,
-    color: 'text-yellow-600 dark:text-yellow-400',
-    bg: 'bg-yellow-50 dark:bg-yellow-500/10',
-    border: 'border-yellow-200 dark:border-yellow-500/30',
-  },
-  cooling: {
-    label: 'Cooling',
-    icon: Wind,
-    color: 'text-teal-600 dark:text-teal-400',
-    bg: 'bg-teal-50 dark:bg-teal-500/10',
-    border: 'border-teal-200 dark:border-teal-500/30',
-  },
-  other: {
-    label: 'Other',
-    icon: Box,
-    color: 'text-gray-600 dark:text-gray-400',
-    bg: 'bg-gray-50 dark:bg-gray-800',
-    border: 'border-gray-200 dark:border-gray-700',
-  },
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type DeviceDraft = {
+  name: string;
+  id: string;
+  type: string;
+  storage_type: string;
+  role: string;
+  u_height: string;
+  frontEnabled: boolean;
+  frontRows: string;
+  frontCols: string;
+  rearEnabled: boolean;
+  rearRows: string;
+  rearCols: string;
+  rearComponents: DeviceRearComponent[];
+  checks: string[];
 };
 
-const normalizeType = (type: string): DeviceType => {
-  const lower = type.toLowerCase();
-  if (lower in TYPE_CONFIG) return lower as DeviceType;
-  return 'other';
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const buildMatrix = (rows: number, cols: number): number[][] =>
+  Array.from({ length: rows }, (_, r) =>
+    Array.from({ length: cols }, (_, c2) => r * cols + c2 + 1)
+  );
+
+const slugify = (s: string) =>
+  s.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+const toDraft = (tpl: DeviceTemplate): DeviceDraft => ({
+  name: tpl.name,
+  id: tpl.id,
+  type: tpl.type,
+  storage_type: tpl.storage_type ?? '',
+  role: tpl.role ?? '',
+  u_height: String(tpl.u_height ?? 1),
+  frontEnabled: !!(tpl.layout ?? tpl.disk_layout),
+  frontRows: String((tpl.layout ?? tpl.disk_layout)?.rows ?? 1),
+  frontCols: String((tpl.layout ?? tpl.disk_layout)?.cols ?? 1),
+  rearEnabled: !!(tpl.rear_layout),
+  rearRows: String(tpl.rear_layout?.rows ?? 1),
+  rearCols: String(tpl.rear_layout?.cols ?? 1),
+  rearComponents: tpl.rear_components ?? [],
+  checks: tpl.checks ?? [],
+});
+
+const draftToTemplate = (draft: DeviceDraft, base?: DeviceTemplate): Record<string, unknown> => {
+  const fr = parseInt(draft.frontRows) || 1;
+  const fc = parseInt(draft.frontCols) || 1;
+  const rr = parseInt(draft.rearRows) || 1;
+  const rc = parseInt(draft.rearCols) || 1;
+
+  const prevFront = base?.layout ?? base?.disk_layout;
+  const frontMatrix =
+    prevFront && prevFront.rows === fr && prevFront.cols === fc
+      ? prevFront.matrix
+      : buildMatrix(fr, fc);
+
+  const prevRear = base?.rear_layout;
+  const rearMatrix =
+    prevRear && prevRear.rows === rr && prevRear.cols === rc
+      ? prevRear.matrix
+      : buildMatrix(rr, rc);
+
+  return {
+    id: draft.id.trim(),
+    name: draft.name.trim(),
+    type: draft.type,
+    u_height: parseInt(draft.u_height) || 1,
+    ...(draft.storage_type ? { storage_type: draft.storage_type } : {}),
+    ...(draft.role.trim() ? { role: draft.role.trim() } : {}),
+    ...(draft.frontEnabled ? { layout: { type: 'grid', rows: fr, cols: fc, matrix: frontMatrix } } : {}),
+    ...(draft.rearEnabled ? { rear_layout: { type: 'grid', rows: rr, cols: rc, matrix: rearMatrix } } : {}),
+    rear_components: draft.rearComponents,
+    checks: draft.checks,
+  };
 };
 
-// ── Layout preview ─────────────────────────────────────────────────────────────
+const draftToPreviewTemplate = (draft: DeviceDraft, base?: DeviceTemplate): DeviceTemplate =>
+  draftToTemplate(draft, base) as unknown as DeviceTemplate;
 
-const LayoutPreview = ({
-  layout,
-  variant = 'front',
+// ── TemplateItem ──────────────────────────────────────────────────────────────
+
+const TemplateItem = ({
+  template,
+  selected,
+  onClick,
 }: {
-  layout: LayoutConfig;
-  variant?: 'front' | 'rear';
+  template: DeviceTemplate;
+  selected: boolean;
+  onClick: () => void;
 }) => {
-  const isFront = variant === 'front';
-  const cellCls = isFront
-    ? 'flex items-center justify-center rounded border border-brand-200 bg-brand-50 text-[10px] font-semibold text-brand-600 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-400'
-    : 'flex items-center justify-center rounded border border-gray-200 bg-gray-50 text-[10px] font-semibold text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400';
-
-  const matrix = layout.matrix ?? [];
-
+  const c = col(template.type);
   return (
-    <div
-      className="inline-grid gap-0.5"
-      style={{
-        gridTemplateColumns: `repeat(${layout.cols}, 24px)`,
-        gridTemplateRows: `repeat(${layout.rows}, 24px)`,
-      }}
+    <button
+      onClick={onClick}
+      className={[
+        'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-all',
+        selected ? 'bg-brand-50 dark:bg-brand-500/10' : 'hover:bg-gray-50 dark:hover:bg-white/5',
+      ].join(' ')}
     >
-      {matrix.map((row, ri) =>
-        row.map((slot, ci) => (
-          <div key={`${ri}-${ci}`} className={cellCls}>
-            {slot}
-          </div>
-        ))
-      )}
-    </div>
+      <div
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+        style={{ backgroundColor: c.bg, border: `1px solid ${c.border}` }}
+      >
+        <Server className="h-3.5 w-3.5" style={{ color: c.text }} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-xs font-semibold ${selected ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}>
+          {template.name}
+        </p>
+        <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">
+          {template.u_height}U{template.layout ? ` · ${template.layout.rows}×${template.layout.cols}` : ''}
+        </p>
+      </div>
+    </button>
   );
 };
 
-// ── New template modal ─────────────────────────────────────────────────────────
+// ── DevicePreview ─────────────────────────────────────────────────────────────
 
-interface NewTemplateModalProps {
-  onClose: () => void;
-  onCreated: (template: DeviceTemplate) => void;
-}
+const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
+  const hasFront = !!(template.layout ?? template.disk_layout);
+  const hasRear = !!(template.rear_layout) || (template.rear_components?.length ?? 0) > 0;
+  const c = col(template.type);
 
-const NewTemplateModal = ({ onClose, onCreated }: NewTemplateModalProps) => {
-  const [name, setName] = useState('');
-  const [id, setId] = useState('');
-  const [type, setType] = useState<DeviceType>('server');
-  const [uHeight, setUHeight] = useState(1);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const autoId = name
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '');
-
-  const handleCreate = async () => {
-    if (!name.trim()) {
-      setError('Name is required.');
-      return;
-    }
-    const finalId = id.trim() || autoId;
-    if (!finalId) {
-      setError('ID is required.');
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      await api.createTemplate({
-        kind: 'device',
-        template: { id: finalId, name: name.trim(), type, u_height: uHeight },
-      });
-      onCreated({ id: finalId, name: name.trim(), type, u_height: uHeight });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create template.');
-      setSaving(false);
-    }
+  const synthDevice: Device = {
+    id: 'preview',
+    name: template.name,
+    template_id: template.id,
+    u_position: 1,
+    instance: '',
+    nodes: undefined,
+    labels: undefined,
   };
 
-  const inputCls =
-    'w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500';
-  const labelCls = 'mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300';
+  const synthRack: Rack = {
+    id: 'preview-rack',
+    name: template.name,
+    u_height: template.u_height,
+    devices: [synthDevice],
+  };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-900">
-        <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-            New Device Template
-          </h3>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className={labelCls}>Name</label>
-            <input
-              type="text"
-              placeholder="e.g. Dell PowerEdge R750"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={inputCls}
-              autoFocus
-            />
-          </div>
-
-          <div>
-            <label className={labelCls}>ID</label>
-            <input
-              type="text"
-              placeholder={autoId || 'e.g. dell-poweredge-r750'}
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              className={`${inputCls} font-mono`}
-            />
-            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-              Leave blank to auto-generate from name.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Type</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value as DeviceType)}
-                className={inputCls}
-              >
-                {(Object.keys(TYPE_CONFIG) as DeviceType[]).map((t) => (
-                  <option key={t} value={t}>
-                    {TYPE_CONFIG[t].label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>U Height</label>
-              <input
-                type="number"
-                min={1}
-                max={42}
-                value={uHeight}
-                onChange={(e) => setUHeight(Number(e.target.value))}
-                className={inputCls}
-              />
-            </div>
-          </div>
-
-          {error && (
-            <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
-              {error}
-            </p>
-          )}
-        </div>
-
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleCreate}
-            disabled={saving}
-            className="flex items-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
-          >
-            {saving ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            ) : (
-              <Plus className="h-4 w-4" />
-            )}
-            Create
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ── Left panel — template list ─────────────────────────────────────────────────
-
-interface TemplateListProps {
-  templates: DeviceTemplate[];
-  selectedId: string | null;
-  onSelect: (template: DeviceTemplate) => void;
-}
-
-const TemplateList = ({ templates, selectedId, onSelect }: TemplateListProps) => {
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-
-  const filtered = templates.filter((t) => {
-    const matchSearch =
-      !search ||
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.id.toLowerCase().includes(search.toLowerCase());
-    const matchType = !typeFilter || normalizeType(t.type) === typeFilter;
-    return matchSearch && matchType;
-  });
-
-  const grouped: Record<string, DeviceTemplate[]> = {};
-  for (const t of filtered) {
-    const key = normalizeType(t.type);
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(t);
-  }
-
-  const typeOrder: DeviceType[] = ['server', 'storage', 'network', 'pdu', 'cooling', 'other'];
-  const sortedGroups = typeOrder.filter((k) => grouped[k]?.length);
-
-  const toggleGroup = (key: string) =>
-    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
+  const synthCatalog: Record<string, DeviceTemplate> = { [template.id]: template };
 
   return (
     <div className="flex h-full flex-col">
-      {/* Search */}
-      <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search templates…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
-        />
-      </div>
-
-      {/* Type filter chips */}
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        <button
-          onClick={() => setTypeFilter(null)}
-          className={`rounded-lg border px-2 py-0.5 text-xs font-medium transition-colors ${
-            !typeFilter
-              ? 'border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-400'
-              : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
-          }`}
-        >
-          All
-        </button>
-        {(Object.keys(TYPE_CONFIG) as DeviceType[]).map((t) => {
-          const cfg = TYPE_CONFIG[t];
-          const active = typeFilter === t;
-          return (
-            <button
-              key={t}
-              onClick={() => setTypeFilter(active ? null : t)}
-              className={`rounded-lg border px-2 py-0.5 text-xs font-medium transition-colors ${
-                active
-                  ? `${cfg.border} ${cfg.bg} ${cfg.color}`
-                  : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
-              }`}
-            >
-              {cfg.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Groups */}
-      <div className="flex-1 space-y-2 overflow-y-auto">
-        {sortedGroups.length === 0 && (
-          <p className="py-8 text-center text-xs text-gray-400 dark:text-gray-600">
-            No templates found.
+      {/* Header */}
+      <div className="shrink-0 border-b border-[var(--color-border)]/20 px-5 py-2.5">
+        <div className="flex items-center gap-2">
+          <div
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
+            style={{ backgroundColor: c.bg, border: `1px solid ${c.border}` }}
+          >
+            <Server className="h-3 w-3" style={{ color: c.text }} />
+          </div>
+          <p className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--color-text-base)]">
+            {template.name}
           </p>
-        )}
-        {sortedGroups.map((groupKey) => {
-          const items = grouped[groupKey];
-          const cfg = TYPE_CONFIG[groupKey as DeviceType];
-          const Icon = cfg.icon;
-          const isCollapsed = collapsed[groupKey];
-
-          return (
-            <div key={groupKey}>
-              <button
-                onClick={() => toggleGroup(groupKey)}
-                className={`flex w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${cfg.color} ${cfg.bg} ${cfg.border}`}
-              >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="flex-1 text-left">{cfg.label}</span>
-                <span className="font-mono text-[10px] opacity-60">{items.length}</span>
-                {isCollapsed ? (
-                  <ChevronRight className="h-3 w-3 opacity-60" />
-                ) : (
-                  <ChevronDown className="h-3 w-3 opacity-60" />
-                )}
-              </button>
-
-              {!isCollapsed && (
-                <div className="mt-0.5 space-y-0.5">
-                  {items.map((tpl) => {
-                    const isSelected = tpl.id === selectedId;
-                    const layoutInfo = tpl.layout
-                      ? `${tpl.layout.rows}×${tpl.layout.cols}`
-                      : null;
-
-                    return (
-                      <button
-                        key={tpl.id}
-                        onClick={() => onSelect(tpl)}
-                        className={`flex w-full items-start gap-2 rounded-xl px-2.5 py-2 text-left transition-colors ${
-                          isSelected
-                            ? 'bg-brand-50 dark:bg-brand-500/10'
-                            : 'hover:bg-gray-50 dark:hover:bg-white/5'
-                        }`}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className={`truncate text-sm font-medium ${
-                              isSelected
-                                ? 'text-brand-600 dark:text-brand-400'
-                                : 'text-gray-800 dark:text-gray-200'
-                            }`}
-                          >
-                            {tpl.name}
-                          </p>
-                          <p className="truncate font-mono text-[10px] text-gray-400 dark:text-gray-500">
-                            {tpl.id}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-1">
-                          <span className="rounded border border-gray-200 bg-white px-1 py-0.5 font-mono text-[10px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-                            {tpl.u_height}U
-                          </span>
-                          {layoutInfo && (
-                            <span className="flex items-center gap-0.5 text-[10px] text-gray-400 dark:text-gray-500">
-                              <LayoutGrid className="h-3 w-3" />
-                              {layoutInfo}
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-// ── Check tag ──────────────────────────────────────────────────────────────────
-
-const CheckTag = ({ id, onRemove }: { id: string; onRemove: () => void }) => (
-  <span className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-0.5 font-mono text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-    <Tag className="h-3 w-3 text-gray-400 dark:text-gray-500" />
-    {id}
-    <button
-      onClick={onRemove}
-      className="ml-0.5 rounded text-gray-400 transition-colors hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
-    >
-      <X className="h-3 w-3" />
-    </button>
-  </span>
-);
-
-// ── Layout editor section ──────────────────────────────────────────────────────
-
-interface LayoutEditorProps {
-  label: string;
-  layout: LayoutConfig | undefined;
-  variant: 'front' | 'rear';
-  onChange: (layout: LayoutConfig | undefined) => void;
-}
-
-const buildMatrix = (rows: number, cols: number): number[][] => {
-  let slot = 1;
-  return Array.from({ length: rows }, () => Array.from({ length: cols }, () => slot++));
-};
-
-const LayoutEditor = ({ label, layout, variant, onChange }: LayoutEditorProps) => {
-  const [enabled, setEnabled] = useState(!!layout);
-  const [rows, setRows] = useState(layout?.rows ?? 2);
-  const [cols, setCols] = useState(layout?.cols ?? 2);
-
-  const handleToggle = (val: boolean) => {
-    setEnabled(val);
-    if (!val) {
-      onChange(undefined);
-    } else {
-      onChange({ type: 'grid', rows, cols, matrix: buildMatrix(rows, cols) });
-    }
-  };
-
-  const handleDimensionChange = (newRows: number, newCols: number) => {
-    setRows(newRows);
-    setCols(newCols);
-    if (enabled) {
-      onChange({ type: 'grid', rows: newRows, cols: newCols, matrix: buildMatrix(newRows, newCols) });
-    }
-  };
-
-  const inputCls =
-    'w-16 rounded-xl border border-gray-200 px-2 py-1.5 text-center text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white';
-
-  return (
-    <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
-        <button
-          type="button"
-          onClick={() => handleToggle(!enabled)}
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-            enabled ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'
-          }`}
-        >
-          <span
-            className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow ring-0 transition-transform ${enabled ? 'translate-x-4' : 'translate-x-0'}`}
-          />
-        </button>
+          <span className="shrink-0 text-[11px] text-[var(--color-text-base)] opacity-40">
+            {template.u_height}U
+          </span>
+        </div>
       </div>
 
-      {enabled && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-500 dark:text-gray-400">Rows</label>
-              <input
-                type="number"
-                min={1}
-                max={16}
-                value={rows}
-                onChange={(e) => handleDimensionChange(Number(e.target.value), cols)}
-                className={inputCls}
-              />
+      {!hasFront && !hasRear ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6">
+          <div
+            className="flex w-full max-w-xs items-center justify-center rounded-xl py-10"
+            style={{ backgroundColor: c.bg, border: `2px solid ${c.border}` }}
+          >
+            <p className="text-sm font-bold capitalize" style={{ color: c.text }}>
+              {template.type} · {template.u_height}U
+            </p>
+          </div>
+          <p className="text-xs text-[var(--color-text-base)] opacity-30">No layout defined — simple component</p>
+        </div>
+      ) : (
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Front view */}
+          <div className={`flex min-h-0 flex-col ${hasRear ? 'flex-1 border-b border-[var(--color-border)]/20' : 'flex-1'}`}>
+            <div className="flex shrink-0 items-center justify-center py-2">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">Front</span>
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-500 dark:text-gray-400">Cols</label>
-              <input
-                type="number"
-                min={1}
-                max={16}
-                value={cols}
-                onChange={(e) => handleDimensionChange(rows, Number(e.target.value))}
-                className={inputCls}
+            <div className="min-h-0 flex-1">
+              <RackElevation
+                rack={synthRack}
+                catalog={synthCatalog}
+                isRearView={false}
+                nodesData={{}}
+                infraComponents={[]}
+                sideComponents={[]}
+                rearInfraComponents={[]}
+                pduMetrics={{}}
+                fullWidth
               />
             </div>
           </div>
 
-          {layout && (
-            <div>
-              <p className="mb-1.5 text-xs text-gray-400 dark:text-gray-500">Preview</p>
-              <LayoutPreview layout={layout} variant={variant} />
+          {/* Rear view */}
+          {hasRear && (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="flex shrink-0 items-center justify-center py-2">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
+              </div>
+              <div className="min-h-0 flex-1">
+                <RackElevation
+                  rack={synthRack}
+                  catalog={synthCatalog}
+                  isRearView={true}
+                  nodesData={{}}
+                  infraComponents={[]}
+                  sideComponents={[]}
+                  rearInfraComponents={[]}
+                  pduMetrics={{}}
+                  fullWidth
+                />
+              </div>
             </div>
           )}
         </div>
@@ -548,278 +277,425 @@ const LayoutEditor = ({ label, layout, variant, onChange }: LayoutEditorProps) =
   );
 };
 
-// ── Template editor panel ──────────────────────────────────────────────────────
+// ── LayoutGridPreview ─────────────────────────────────────────────────────────
 
-interface TemplateEditorProps {
+const LayoutGridPreview = ({ rows, cols, type }: { rows: number; cols: number; type: string }) => {
+  const c = col(type);
+  const matrix = buildMatrix(rows, cols);
+  const cellSize = cols > 8 ? 12 : cols > 5 ? 16 : 20;
+
+  return (
+    <div
+      className="mt-3 inline-grid gap-[2px] rounded-lg p-2"
+      style={{ gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`, backgroundColor: 'rgba(0,0,0,0.05)' }}
+    >
+      {matrix.flat().map((slot) => (
+        <div
+          key={slot}
+          className="flex items-center justify-center rounded-[2px] font-mono font-bold"
+          style={{ width: cellSize, height: cellSize, fontSize: cellSize < 16 ? 7 : 8, backgroundColor: c.bg, border: `1px solid ${c.border}`, color: c.text }}
+        >
+          {cellSize >= 14 ? slot : ''}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ── EditorPanel ───────────────────────────────────────────────────────────────
+
+const inputCls =
+  'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-600';
+const labelCls = 'block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5';
+
+const EditorPanel = ({
+  template,
+  allChecks,
+  onSaved,
+  onDraftChange,
+}: {
   template: DeviceTemplate;
-  availableChecks: CheckDefinition[];
-  onSaved: (updated: DeviceTemplate) => void;
-}
-
-const TemplateEditor = ({ template, availableChecks, onSaved }: TemplateEditorProps) => {
-  const [draft, setDraft] = useState<DeviceTemplate>({ ...template });
+  allChecks: CheckDefinition[];
+  onSaved: () => void;
+  onDraftChange?: (draft: DeviceDraft) => void;
+}) => {
+  const [draft, setDraft] = useState<DeviceDraft>(() => toDraft(template));
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [checkSearch, setCheckSearch] = useState('');
+  const [newRearId, setNewRearId] = useState('');
+  const [newRearName, setNewRearName] = useState('');
+  const [newRearType, setNewRearType] = useState<typeof REAR_COMP_TYPES[number]>('psu');
 
   useEffect(() => {
-    setDraft({ ...template });
+    setDraft(toDraft(template));
     setDirty(false);
+    setSaveStatus('idle');
     setSaveError(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template.id]);
+  }, [template]);
 
-  const update = <K extends keyof DeviceTemplate>(key: K, value: DeviceTemplate[K]) => {
-    setDraft((prev) => ({ ...prev, [key]: value }));
+  const update = useCallback(<K extends keyof DeviceDraft>(key: K, value: DeviceDraft[K]) => {
+    setDraft((d) => {
+      const next = { ...d, [key]: value };
+      onDraftChange?.(next);
+      return next;
+    });
     setDirty(true);
-  };
+    setSaveStatus('idle');
+  }, [onDraftChange]);
+
+  const validationErrors = useMemo(() => {
+    const errs: string[] = [];
+    if (!draft.name.trim()) errs.push('Name is required.');
+    const u = parseInt(draft.u_height);
+    if (!u || u <= 0 || u > 100) errs.push('U height must be 1–100.');
+    return errs;
+  }, [draft]);
 
   const handleSave = async () => {
-    setSaving(true);
-    setSaveError(null);
+    if (validationErrors.length > 0) return;
+    setSaving(true); setSaveError(null);
     try {
-      await api.updateTemplate({
-        kind: 'device',
-        template: draft as unknown as Record<string, unknown>,
-      });
+      await api.updateTemplate({ kind: 'device', template: draftToTemplate(draft, template) });
+      setSaveStatus('saved');
       setDirty(false);
-      onSaved(draft);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save.');
-    } finally {
-      setSaving(false);
-    }
+      onSaved();
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Save failed.');
+      setSaveStatus('error');
+    } finally { setSaving(false); }
   };
 
-  const handleDiscard = () => {
-    setDraft({ ...template });
-    setDirty(false);
-    setSaveError(null);
-  };
-
-  const removeCheck = (id: string) => {
-    update(
-      'checks',
-      (draft.checks ?? []).filter((c) => c !== id)
-    );
-  };
-
-  const addCheck = (id: string) => {
-    if (!(draft.checks ?? []).includes(id)) {
-      update('checks', [...(draft.checks ?? []), id]);
-    }
-    setCheckSearch('');
-  };
-
-  const suggestedChecks = availableChecks.filter(
-    (c) =>
-      !(draft.checks ?? []).includes(c.id) &&
-      (checkSearch === '' ||
-        c.id.toLowerCase().includes(checkSearch.toLowerCase()) ||
-        c.name.toLowerCase().includes(checkSearch.toLowerCase()))
+  const filteredChecks = useMemo(
+    () =>
+      allChecks.filter(
+        (c) =>
+          !draft.checks.includes(c.id) &&
+          (!checkSearch ||
+            (c.name ?? '').toLowerCase().includes(checkSearch.toLowerCase()) ||
+            c.id.toLowerCase().includes(checkSearch.toLowerCase()))
+      ),
+    [allChecks, draft.checks, checkSearch]
   );
 
-  const inputCls =
-    'w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500';
-  const labelCls =
-    'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
+  const fr = parseInt(draft.frontRows) || 1;
+  const fc = parseInt(draft.frontCols) || 1;
+  const rr = parseInt(draft.rearRows) || 1;
+  const rc = parseInt(draft.rearCols) || 1;
 
   return (
-    <div className="space-y-4">
-      {/* Panel header with save/discard */}
-      <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-5 py-3 dark:border-gray-800 dark:bg-gray-900">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-            {draft.name}
-          </p>
-          <p className="font-mono text-xs text-gray-400 dark:text-gray-500">{draft.id}</p>
+    <div className="flex h-full flex-col">
+      {/* Panel header */}
+      <div className="shrink-0 flex items-center justify-between px-5 py-3.5">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold text-gray-900 dark:text-white">{template.name}</p>
+          <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">{template.id}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 ml-3">
           {dirty && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
-              Unsaved
-            </span>
+            <button
+              onClick={() => { const d = toDraft(template); setDraft(d); setDirty(false); onDraftChange?.(d); }}
+              className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+            >
+              <X className="h-3 w-3" /> Discard
+            </button>
           )}
           <button
-            onClick={handleDiscard}
-            disabled={!dirty || saving}
-            className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-1.5 text-xs text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+            onClick={() => void handleSave()}
+            disabled={!dirty || !!validationErrors.length || saving}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              saveStatus === 'saved' ? 'bg-green-500 text-white'
+              : dirty && !validationErrors.length ? 'bg-brand-500 text-white hover:bg-brand-600'
+              : 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600'
+            }`}
           >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Discard
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!dirty || saving}
-            className="flex items-center gap-1.5 rounded-xl bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {saving ? (
-              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            ) : (
-              <Save className="h-3.5 w-3.5" />
-            )}
-            Save
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : saveStatus === 'saved' ? <CheckCircle2 className="h-3.5 w-3.5" />
+              : <Save className="h-3.5 w-3.5" />}
+            {saving ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : 'Save'}
           </button>
         </div>
       </div>
 
-      {saveError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
-          {saveError}
+      {saveStatus === 'error' && saveError && (
+        <div className="shrink-0 flex items-center gap-2 border-y border-red-200 bg-red-50 px-5 py-2 text-xs text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {saveError}
         </div>
       )}
 
-      {/* Identity */}
-      <SectionCard title="Identity" desc="Core properties of this template.">
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Name</label>
-              <input
-                type="text"
-                value={draft.name}
-                onChange={(e) => update('name', e.target.value)}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>ID</label>
-              <input
-                type="text"
-                value={draft.id}
-                readOnly
-                className={`${inputCls} cursor-not-allowed font-mono opacity-60`}
-              />
-              <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-600">Read-only</p>
-            </div>
-          </div>
+      <div className="flex-1 space-y-5 overflow-y-auto px-5 pb-5">
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Type</label>
-              <select
-                value={draft.type}
-                onChange={(e) => update('type', e.target.value)}
-                className={inputCls}
-              >
-                {(Object.keys(TYPE_CONFIG) as DeviceType[]).map((t) => (
-                  <option key={t} value={t}>
-                    {TYPE_CONFIG[t].label}
-                  </option>
-                ))}
-              </select>
+        {/* Identity */}
+        <SectionCard title="Identity">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Name *</label>
+                <input value={draft.name} onChange={(e) => update('name', e.target.value)} placeholder="DL380 Gen10" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Template ID</label>
+                <input value={draft.id} disabled className={`${inputCls} cursor-not-allowed opacity-60`} />
+              </div>
             </div>
-            <div>
-              <label className={labelCls}>U Height</label>
-              <input
-                type="number"
-                min={1}
-                max={42}
-                value={draft.u_height}
-                onChange={(e) => update('u_height', Number(e.target.value))}
-                className={inputCls}
-              />
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className={labelCls}>Type</label>
+                <select value={draft.type} onChange={(e) => update('type', e.target.value)} className={inputCls}>
+                  {['server','storage','network','pdu','cooling','other'].map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>U Height</label>
+                <input type="number" min={1} max={100} value={draft.u_height} onChange={(e) => update('u_height', e.target.value)} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Role <span className="text-gray-400">(opt.)</span></label>
+                <input value={draft.role} onChange={(e) => update('role', e.target.value)} placeholder="compute" className={inputCls} />
+              </div>
             </div>
-          </div>
-
-          {normalizeType(draft.type) === 'storage' && (
-            <div>
-              <label className={labelCls}>Storage Type</label>
-              <input
-                type="text"
-                value={draft.storage_type ?? ''}
-                onChange={(e) => update('storage_type', e.target.value || null)}
-                placeholder="e.g. eseries, netapp, ddn"
-                className={`${inputCls} font-mono`}
-              />
-              <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-600">
-                Optional. Used for vendor-specific behavior in checks.
+            {draft.type === 'storage' && (
+              <div>
+                <label className={labelCls}>Storage type</label>
+                <select value={draft.storage_type} onChange={(e) => update('storage_type', e.target.value)} className={inputCls}>
+                  <option value="">— None —</option>
+                  {STORAGE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            )}
+            {validationErrors.length > 0 && validationErrors.map((msg, i) => (
+              <p key={i} className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="h-3 w-3 shrink-0" /> {msg}
               </p>
+            ))}
+          </div>
+        </SectionCard>
+
+        {/* Front Layout */}
+        <SectionCard title="Front Layout" desc="Node / slot grid visible on the front panel">
+          <div className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 dark:border-gray-800">
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Enable front layout</p>
+              <p className="text-xs text-gray-400 dark:text-gray-600">Compute nodes, storage slots, network ports…</p>
+            </div>
+            <button type="button" onClick={() => update('frontEnabled', !draft.frontEnabled)}
+              className={`relative h-6 w-11 rounded-full transition-colors ${draft.frontEnabled ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
+              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${draft.frontEnabled ? 'left-6' : 'left-1'}`} />
+            </button>
+          </div>
+          {draft.frontEnabled && (
+            <div className="mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Rows</label>
+                  <input type="number" min={1} max={32} value={draft.frontRows} onChange={(e) => update('frontRows', e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Columns</label>
+                  <input type="number" min={1} max={32} value={draft.frontCols} onChange={(e) => update('frontCols', e.target.value)} className={inputCls} />
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-gray-400 dark:text-gray-600">{fr} × {fc} = {fr * fc} slots</p>
+              <LayoutGridPreview rows={fr} cols={fc} type={draft.type} />
             </div>
           )}
-        </div>
-      </SectionCard>
+        </SectionCard>
 
-      {/* Front layout */}
-      <SectionCard
-        title="Front Layout"
-        desc="Grid layout for the front panel (compute nodes, blades)."
-      >
-        <LayoutEditor
-          label="Front panel"
-          layout={draft.layout}
-          variant="front"
-          onChange={(l) => update('layout', l)}
-        />
-      </SectionCard>
-
-      {/* Rear layout */}
-      <SectionCard title="Rear Layout" desc="Optional rear panel layout (PSUs, IO modules).">
-        <LayoutEditor
-          label="Rear panel"
-          layout={draft.rear_layout}
-          variant="rear"
-          onChange={(l) => update('rear_layout', l)}
-        />
-      </SectionCard>
-
-      {/* Checks */}
-      <SectionCard title="Health Checks" desc="Check IDs assigned to this template.">
-        <div className="space-y-3">
-          {/* Assigned checks */}
-          <div className="flex min-h-8 flex-wrap gap-1.5">
-            {(draft.checks ?? []).length === 0 ? (
-              <p className="text-xs text-gray-400 dark:text-gray-600">No checks assigned.</p>
-            ) : (
-              (draft.checks ?? []).map((checkId) => (
-                <CheckTag key={checkId} id={checkId} onRemove={() => removeCheck(checkId)} />
-              ))
-            )}
+        {/* Rear Layout */}
+        <SectionCard title="Rear Layout" desc="Grid on the rear face (dual-sided chassis, blade enclosures…)">
+          <div className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 dark:border-gray-800">
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Enable rear layout</p>
+              <p className="text-xs text-gray-400 dark:text-gray-600">Rear-facing node grid</p>
+            </div>
+            <button type="button" onClick={() => update('rearEnabled', !draft.rearEnabled)}
+              className={`relative h-6 w-11 rounded-full transition-colors ${draft.rearEnabled ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
+              <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${draft.rearEnabled ? 'left-6' : 'left-1'}`} />
+            </button>
           </div>
+          {draft.rearEnabled && (
+            <div className="mt-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Rows</label>
+                  <input type="number" min={1} max={32} value={draft.rearRows} onChange={(e) => update('rearRows', e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Columns</label>
+                  <input type="number" min={1} max={32} value={draft.rearCols} onChange={(e) => update('rearCols', e.target.value)} className={inputCls} />
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-gray-400 dark:text-gray-600">{rr} × {rc} = {rr * rc} slots</p>
+              <LayoutGridPreview rows={rr} cols={rc} type={draft.type} />
+            </div>
+          )}
+        </SectionCard>
 
-          {/* Add check */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search and add a check…"
-              value={checkSearch}
-              onChange={(e) => setCheckSearch(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
-            />
-          </div>
-
-          {checkSearch && suggestedChecks.length > 0 && (
-            <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-              {suggestedChecks.slice(0, 12).map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => addCheck(c.id)}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
-                >
-                  <Plus className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                  <span className="font-mono text-xs text-gray-600 dark:text-gray-300">{c.id}</span>
-                  {c.name && (
-                    <span className="truncate text-xs text-gray-400 dark:text-gray-500">
-                      — {c.name}
-                    </span>
-                  )}
-                </button>
+        {/* Rear Components */}
+        <SectionCard title="Rear Components" icon={Layers} desc="PSUs, fans, IO modules shown in the rear preview">
+          {draft.rearComponents.length > 0 && (
+            <div className="mb-4 space-y-2">
+              {draft.rearComponents.map((comp, idx) => (
+                <div key={comp.id || idx} className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-800/40">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">{comp.name}</p>
+                    <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">{comp.id} · {comp.type}</p>
+                  </div>
+                  <button
+                    onClick={() => update('rearComponents', draft.rearComponents.filter((_, i) => i !== idx))}
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
+                  ><X className="h-3.5 w-3.5" /></button>
+                </div>
               ))}
             </div>
           )}
+          <div className="flex flex-wrap items-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+            <div style={{ minWidth: 80, flex: 1 }}>
+              <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">ID</label>
+              <input value={newRearId} onChange={(e) => setNewRearId(e.target.value)} placeholder="psu-1"
+                className="focus:border-brand-500 w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" />
+            </div>
+            <div style={{ minWidth: 100, flex: 2 }}>
+              <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">Name</label>
+              <input value={newRearName} onChange={(e) => setNewRearName(e.target.value)} placeholder="PSU 1"
+                className="focus:border-brand-500 w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200" />
+            </div>
+            <div style={{ width: 85 }}>
+              <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">Type</label>
+              <select value={newRearType} onChange={(e) => setNewRearType(e.target.value as typeof REAR_COMP_TYPES[number])}
+                className="focus:border-brand-500 w-full rounded-xl border border-gray-200 bg-white px-2 py-1.5 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                {REAR_COMP_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <button
+              onClick={() => {
+                if (!newRearId.trim() || !newRearName.trim()) return;
+                update('rearComponents', [...draft.rearComponents, { id: newRearId.trim(), name: newRearName.trim(), type: newRearType }]);
+                setNewRearId(''); setNewRearName('');
+              }}
+              disabled={!newRearId.trim() || !newRearName.trim()}
+              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add
+            </button>
+          </div>
+        </SectionCard>
 
-          {checkSearch && suggestedChecks.length === 0 && (
-            <p className="text-xs text-gray-400 dark:text-gray-600">No matching checks found.</p>
+        {/* Checks */}
+        <SectionCard title="Checks" icon={CheckSquare} desc="Health checks assigned to this device type">
+          {draft.checks.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {draft.checks.map((id) => {
+                const chk = allChecks.find((c) => c.id === id);
+                return (
+                  <span key={id} className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-400">
+                    {chk?.name ?? id}
+                    <button onClick={() => update('checks', draft.checks.filter((c) => c !== id))}
+                      className="rounded p-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-500/20">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
           )}
-        </div>
-      </SectionCard>
+          <div className="space-y-2">
+            <input value={checkSearch} onChange={(e) => setCheckSearch(e.target.value)} placeholder="Filter checks…"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs placeholder-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:placeholder-gray-600 dark:focus:bg-gray-800"
+            />
+            {filteredChecks.length === 0 ? (
+              <p className="py-2 text-center text-xs text-gray-400 dark:text-gray-600">
+                {checkSearch ? 'No matching checks.' : 'No checks available.'}
+              </p>
+            ) : (
+              <div className="max-h-40 space-y-0.5 overflow-y-auto">
+                {filteredChecks.slice(0, 20).map((chk) => (
+                  <button key={chk.id} onClick={() => update('checks', [...draft.checks, chk.id])}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-xs transition-colors hover:bg-brand-50 dark:hover:bg-brand-500/10">
+                    <Plus className="h-3 w-3 shrink-0 text-brand-500" />
+                    <span className="flex-1 truncate text-gray-700 dark:text-gray-300">{chk.name ?? chk.id}</span>
+                    <span className="shrink-0 font-mono text-[9px] uppercase text-gray-400">{chk.scope}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      </div>
     </div>
   );
 };
 
-// ── Main page ──────────────────────────────────────────────────────────────────
+// ── YamlDrawer ────────────────────────────────────────────────────────────────
+
+const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: {
+  open: boolean; title: string; initialYaml: string;
+  onSave: (yaml: string) => Promise<void>; onClose: () => void;
+}) => {
+  const [value, setValue] = useState(initialYaml);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => { setValue(initialYaml); setSaved(false); setParseError(null); setSaveError(null); }, [initialYaml, open]);
+
+  const handleChange = (val: string | undefined) => {
+    const v = val ?? ''; setValue(v);
+    try { jsYaml.load(v); setParseError(null); }
+    catch (e) { setParseError(e instanceof Error ? e.message : 'Invalid YAML'); }
+  };
+
+  const handleSave = async () => {
+    if (parseError) return;
+    setSaving(true); setSaveError(null);
+    try { await onSave(value); setSaved(true); setTimeout(() => setSaved(false), 2000); }
+    catch (err) { setSaveError(err instanceof Error ? err.message : 'Save failed'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <>
+      {open && <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />}
+      <div className={`fixed top-0 right-0 z-50 flex h-full w-[680px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <FileCode2 className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-semibold text-white">{title}</span>
+            {parseError && <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-400">Invalid YAML</span>}
+          </div>
+          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-white/10 hover:text-gray-300"><X className="h-4 w-4" /></button>
+        </div>
+        <div className="min-h-0 flex-1">
+          <MonacoEditor height="100%" defaultLanguage="yaml" theme="vs-dark" value={value} onChange={handleChange}
+            options={{ fontSize: 13, minimap: { enabled: false }, lineNumbers: 'on', scrollBeyondLastLine: false, wordWrap: 'on', tabSize: 2, padding: { top: 12, bottom: 12 } }} />
+        </div>
+        {parseError && <div className="shrink-0 border-t border-red-500/20 bg-red-500/5 px-5 py-2.5"><p className="font-mono text-xs text-red-400">{parseError}</p></div>}
+        <div className="shrink-0 border-t border-gray-800 px-5 py-4">
+          {saveError && <div className="mb-3 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2"><AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-400" /><span className="text-xs text-red-400">{saveError}</span></div>}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-gray-600">{parseError ? '⚠ Fix YAML errors before saving' : '✓ Valid YAML'}</span>
+            <div className="flex items-center gap-2">
+              <button onClick={onClose} className="rounded-xl border border-gray-700 px-4 py-2 text-sm text-gray-400 hover:bg-white/5">Cancel</button>
+              <button onClick={() => void handleSave()} disabled={saving || !!parseError}
+                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
+                {saved ? 'Saved' : 'Save YAML'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 
 export const CosmosTemplatesEditorPage = () => {
   usePageTitle('Device Templates');
@@ -827,117 +703,184 @@ export const CosmosTemplatesEditorPage = () => {
   const [templates, setTemplates] = useState<DeviceTemplate[]>([]);
   const [checks, setChecks] = useState<CheckDefinition[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<DeviceTemplate | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [openTypes, setOpenTypes] = useState<Set<string>>(new Set()); // collapsed by default
   const [showNewModal, setShowNewModal] = useState(false);
 
+  // YAML drawer
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerTitle, setDrawerTitle] = useState('');
+  const [drawerYaml, setDrawerYaml] = useState('');
+  const drawerOnSaveRef = useRef<(yaml: string) => Promise<void>>(() => Promise.resolve());
+
+  // Live preview
+  const [previewDraft, setPreviewDraft] = useState<DeviceDraft | null>(null);
+
+  const openYamlDrawer = (title: string, entity: unknown, onSave: (yaml: string) => Promise<void>) => {
+    setDrawerTitle(title); setDrawerYaml(jsYaml.dump(entity, { lineWidth: 120 }));
+    drawerOnSaveRef.current = onSave; setDrawerOpen(true);
+  };
+
   const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setLoadError(null);
     try {
-      const [catalogData, checksData] = await Promise.all([api.getCatalog(), api.getChecks()]);
-      setTemplates(catalogData.device_templates ?? []);
-      setChecks(checksData.checks ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load templates.');
-    } finally {
-      setLoading(false);
-    }
+      const [catalog, checksData] = await Promise.all([api.getCatalog(), api.getChecks()]);
+      setTemplates(catalog?.device_templates ?? []);
+      setChecks(checksData?.checks ?? []);
+    } catch (e) { setLoadError(e instanceof Error ? e.message : 'Failed to load.'); }
+    finally { setLoading(false); }
   }, []);
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  useEffect(() => { void loadData(); }, [loadData]);
+  useEffect(() => { setPreviewDraft(null); }, [selectedId]);
 
-  const handleCreated = (tpl: DeviceTemplate) => {
-    setTemplates((prev) => [...prev, tpl]);
-    setSelected(tpl);
-    setShowNewModal(false);
-  };
+  const selectedTemplate = useMemo(() => templates.find((t) => t.id === selectedId) ?? null, [templates, selectedId]);
+  const existingIds = useMemo(() => templates.map((t) => t.id), [templates]);
 
-  const handleSaved = (updated: DeviceTemplate) => {
-    setTemplates((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-    setSelected(updated);
-  };
+  const grouped = useMemo(() => {
+    const filtered = templates.filter(
+      (t) => !search || t.name.toLowerCase().includes(search.toLowerCase()) || t.id.toLowerCase().includes(search.toLowerCase())
+    );
+    const map = new Map<string, DeviceTemplate[]>();
+    for (const tpl of filtered) {
+      const g = map.get(tpl.type) ?? [];
+      g.push(tpl);
+      map.set(tpl.type, g);
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [templates, search]);
+
+  const previewTemplate = useMemo((): DeviceTemplate | null => {
+    if (!selectedTemplate) return null;
+    if (!previewDraft) return selectedTemplate;
+    return draftToPreviewTemplate(previewDraft, selectedTemplate);
+  }, [selectedTemplate, previewDraft]);
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col space-y-5">
       <PageHeader
         title="Device Templates"
-        breadcrumb={
-          <PageBreadcrumb
-            items={[
-              { label: 'Home', href: '/cosmos' },
-              { label: 'Editors', href: '#' },
-              { label: 'Device Templates' },
-            ]}
-          />
-        }
+        breadcrumb={<PageBreadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'Editors' }, { label: 'Device Templates' }]} />}
         actions={
-          <button
-            onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
-          >
-            <Plus className="h-4 w-4" />
-            New Template
-          </button>
+          !loading && !loadError ? (
+            <button onClick={() => setShowNewModal(true)}
+              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors">
+              <Plus className="h-4 w-4" /> New Template
+            </button>
+          ) : undefined
         }
       />
 
-      {loading && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-          <LoadingState message="Loading templates…" />
+      {loading ? (
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 dark:border-gray-800 dark:bg-gray-900">
+          <LoadingState message="Loading device templates…" />
         </div>
-      )}
-
-      {!loading && error && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-          <ErrorState message={error} onRetry={loadData} />
+      ) : loadError ? (
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 dark:border-gray-800 dark:bg-gray-900">
+          <ErrorState message={loadError} onRetry={() => { void loadData(); }} />
         </div>
-      )}
+      ) : (
+        <div className="flex min-h-0 flex-1 gap-5">
 
-      {!loading && !error && (
-        <div className="flex items-start gap-4">
-          {/* Left panel */}
-          <div className="w-72 shrink-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-            {templates.length === 0 ? (
-              <EmptyState
-                title="No templates yet"
-                description="Create your first device template."
-                action={
+          {/* ── LEFT: list ────────────────────────────────────────────────── */}
+          <div className="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+            <div className="shrink-0 p-3">
+              <div className="relative">
+                <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search templates…"
+                  className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-2 pr-3 pl-8 text-xs placeholder-gray-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-600" />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {grouped.length === 0 ? (
+                <div className="px-4 py-6"><EmptyState title={search ? 'No templates match.' : 'No device templates yet.'} /></div>
+              ) : (
+                <div className="space-y-1 p-2">
+                  {grouped.map(([type, items]) => {
+                    const isOpen = openTypes.has(type);
+                    const c = col(type);
+                    return (
+                      <div key={type} className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
+                        <button
+                          onClick={() => setOpenTypes((prev) => {
+                            const next = new Set(prev);
+                            if (isOpen) { next.delete(type); } else { next.add(type); }
+                            return next;
+                          })}
+                          className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                        >
+                          <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: c.border }} />
+                          <span className="flex-1 text-xs font-semibold capitalize text-gray-700 dark:text-gray-300">{type}</span>
+                          <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">{items.length}</span>
+                          <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isOpen && (
+                          <div className="space-y-0.5 border-t border-gray-100 p-1 dark:border-gray-800">
+                            {items.map((tpl) => (
+                              <TemplateItem key={tpl.id} template={tpl} selected={selectedId === tpl.id} onClick={() => setSelectedId(tpl.id)} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="shrink-0 border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
+              <p className="text-[10px] text-gray-400 dark:text-gray-600">{templates.length} template{templates.length !== 1 ? 's' : ''}</p>
+            </div>
+          </div>
+
+          {/* ── FORM ──────────────────────────────────────────────────────── */}
+          <div className="flex w-[560px] shrink-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+            {selectedTemplate ? (
+              <>
+                <div className="shrink-0 flex items-center justify-end border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
                   <button
-                    onClick={() => setShowNewModal(true)}
-                    className="flex items-center gap-1.5 rounded-xl bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
+                    onClick={() => openYamlDrawer(
+                      `Device Template — ${selectedTemplate.name}`, selectedTemplate,
+                      async (yaml) => {
+                        const parsed = jsYaml.load(yaml) as Record<string, unknown>;
+                        await api.updateTemplate({ kind: 'device', template: parsed });
+                        await loadData();
+                      }
+                    )}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
                   >
-                    <Plus className="h-4 w-4" />
-                    New Template
+                    <FileCode2 className="h-3.5 w-3.5" /> Edit YAML
                   </button>
-                }
-              />
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  <EditorPanel key={selectedTemplate.id} template={selectedTemplate} allChecks={checks} onDraftChange={setPreviewDraft} onSaved={() => { void loadData(); }} />
+                </div>
+              </>
             ) : (
-              <TemplateList
-                templates={templates}
-                selectedId={selected?.id ?? null}
-                onSelect={setSelected}
-              />
+              <div className="flex h-full items-center justify-center p-6 text-center">
+                <div>
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-800">
+                    <Server className="h-7 w-7 text-gray-300 dark:text-gray-600" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Select a template to edit</p>
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Right panel */}
-          <div className="min-w-0 flex-1">
-            {selected ? (
-              <TemplateEditor
-                key={selected.id}
-                template={selected}
-                availableChecks={checks}
-                onSaved={handleSaved}
-              />
+          {/* ── PREVIEW (front + rear stacked) ────────────────────────────── */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[var(--color-border)]/30 bg-[var(--color-rack-interior)] transition-colors duration-500">
+            {previewTemplate ? (
+              <DevicePreview template={previewTemplate} />
             ) : (
-              <div className="flex min-h-72 items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-                <EmptyState
-                  title="No template selected"
-                  description="Select a template from the list to edit it."
-                />
+              <div className="flex h-full flex-col items-center justify-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-border)]/20">
+                  <Server className="h-6 w-6 text-[var(--color-text-base)] opacity-30" />
+                </div>
+                <p className="text-sm text-[var(--color-text-base)] opacity-40">Select a template to preview</p>
               </div>
             )}
           </div>
@@ -945,8 +888,82 @@ export const CosmosTemplatesEditorPage = () => {
       )}
 
       {showNewModal && (
-        <NewTemplateModal onClose={() => setShowNewModal(false)} onCreated={handleCreated} />
+        <NewTemplateModal existingIds={existingIds} onCreated={(id) => { setShowNewModal(false); void loadData().then(() => setSelectedId(id)); }} onClose={() => setShowNewModal(false)} />
       )}
+
+      <YamlDrawer open={drawerOpen} title={drawerTitle} initialYaml={drawerYaml} onSave={drawerOnSaveRef.current} onClose={() => setDrawerOpen(false)} />
+    </div>
+  );
+};
+
+// ── NewTemplateModal ──────────────────────────────────────────────────────────
+
+const NewTemplateModal = ({
+  existingIds,
+  onCreated,
+  onClose,
+}: {
+  existingIds: string[];
+  onCreated: (id: string) => void;
+  onClose: () => void;
+}) => {
+  const [form, setForm] = useState({ name: '', id: '', type: 'server', uHeight: '1' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const autoId = slugify(form.name);
+  const effectiveId = form.id.trim() || autoId;
+
+  const handleCreate = async () => {
+    if (!form.name.trim()) { setError('Name is required'); return; }
+    if (existingIds.includes(effectiveId)) { setError('ID already exists'); return; }
+    setSaving(true); setError(null);
+    try {
+      await api.createTemplate({ kind: 'device', template: {
+        id: effectiveId, name: form.name.trim(), type: form.type,
+        u_height: parseInt(form.uHeight) || 1, checks: [], rear_components: [],
+      }});
+      onCreated(effectiveId);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Failed'); setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X className="h-5 w-5" /></button>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">New Device Template</h3>
+        <div className="mt-5 space-y-4">
+          <div>
+            <label className={labelCls}>Name *</label>
+            <input autoFocus value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="DL380 Gen10" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>ID <span className="text-gray-400">(auto-generated)</span></label>
+            <input value={form.id} onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))} placeholder={autoId || 'device-id'} className={`${inputCls} font-mono text-xs`} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls}>Type</label>
+              <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} className={inputCls}>
+                {['server','storage','network','pdu','cooling','other'].map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>U Height</label>
+              <input type="number" min={1} max={100} value={form.uHeight} onChange={(e) => setForm((f) => ({ ...f, uHeight: e.target.value }))} className={inputCls} />
+            </div>
+          </div>
+          {error && <p className="text-xs text-red-500 dark:text-red-400">{error}</p>}
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button onClick={onClose} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">Cancel</button>
+          <button onClick={() => void handleCreate()} disabled={saving}
+            className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {saving ? 'Creating…' : 'Create'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
