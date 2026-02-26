@@ -103,6 +103,48 @@ const COMP_TYPE_STYLES: Record<string, string> = {
 // RackPreview — visual rack representation using CSS theme variables
 // ---------------------------------------------------------------------------
 
+// ── UPositionStepper — replaces ugly native number spinners ─────────────────
+
+const UPositionStepper = ({
+  value,
+  onChange,
+  min = 1,
+  max = 52,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  min?: number;
+  max?: number;
+}) => {
+  const num = parseInt(value) || min;
+  const dec = () => num > min && onChange(String(num - 1));
+  const inc = () => num < max && onChange(String(num + 1));
+
+  return (
+    <div className="flex items-center overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+      <button
+        type="button"
+        onClick={dec}
+        disabled={num <= min}
+        className="flex h-7 w-6 items-center justify-center text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+      >
+        <span className="text-sm leading-none">−</span>
+      </button>
+      <span className="min-w-[28px] select-none text-center font-mono text-xs font-semibold text-gray-700 dark:text-gray-200">
+        {num}
+      </span>
+      <button
+        type="button"
+        onClick={inc}
+        disabled={num >= max}
+        className="flex h-7 w-6 items-center justify-center text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+      >
+        <span className="text-sm leading-none">+</span>
+      </button>
+    </div>
+  );
+};
+
 const RAIL_COLORS: Record<string, { bg: string; border: string; text: string; abbr: string }> = {
   power:      { bg: 'rgba(202,138,4,0.15)',   border: '#ca8a04', text: '#facc15', abbr: 'PWR' },
   cooling:    { bg: 'rgba(8,145,178,0.15)',   border: '#0891b2', text: '#38bdf8', abbr: 'CLG' },
@@ -922,11 +964,9 @@ const EditorPanel = ({
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <span className="text-[10px] text-gray-400">U</span>
-                      <input
-                        type="number" min={1} max={52} value={ref.u_position}
-                        onChange={(e) => { const next = [...draft.rackCompRefs]; next[idx] = { ...next[idx], u_position: e.target.value }; updateDraft('rackCompRefs', next); }}
-                        className="focus:border-brand-500 w-12 rounded-lg border border-gray-200 px-2 py-1 text-center font-mono text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
-                        title="U Position"
+                      <UPositionStepper
+                        value={ref.u_position}
+                        onChange={(v) => { const next = [...draft.rackCompRefs]; next[idx] = { ...next[idx], u_position: v }; updateDraft('rackCompRefs', next); }}
                       />
                     </div>
                     {(tpl?.location === 'side' || ref.side) && (
@@ -986,9 +1026,9 @@ const AddRackCompRefForm = ({
           {rackComponentCatalog.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.type}, {c.u_height}U)</option>)}
         </select>
       </div>
-      <div style={{ width: 72 }}>
+      <div>
         <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">U Position</label>
-        <input type="number" min={1} max={52} value={uPosition} onChange={(e) => setUPosition(e.target.value)} placeholder="1" className={`w-full ${inputCls}`} />
+        <UPositionStepper value={uPosition || '1'} onChange={setUPosition} />
       </div>
       {isSide && (
         <div style={{ width: 80 }}>
