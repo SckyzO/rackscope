@@ -248,6 +248,7 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
                 pduMetrics={{}}
                 fullWidth
                 disableZoom
+                disableTooltip
               />
             </div>
           </div>

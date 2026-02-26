@@ -216,6 +216,8 @@ export const RackElevation = ({
   fullWidth?: boolean;
   /** Disable the hover scale-up zoom effect on devices */
   disableZoom?: boolean;
+  /** Disable HUD tooltips (useful in preview/editor contexts with no real health data) */
+  disableTooltip?: boolean;
 }) => {
   const [tooltip, setTooltip] = useState<HUDTooltipProps | null>(null);
   const uMap = new Map<number, Device>();
@@ -346,7 +348,7 @@ export const RackElevation = ({
                         isRearView={faceRearView}
                         uPosition={u}
                         onClick={onDeviceClick ? () => onDeviceClick(device) : undefined}
-                        onTooltipChange={setTooltip}
+                        onTooltipChange={disableTooltip ? undefined : setTooltip}
                         disableZoom={disableZoom}
                       />
                     </div>
