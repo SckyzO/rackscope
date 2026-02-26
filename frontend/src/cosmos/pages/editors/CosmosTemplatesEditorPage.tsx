@@ -229,49 +229,48 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
           <p className="text-xs text-[var(--color-text-base)] opacity-30">No layout defined — simple component</p>
         </div>
       ) : (
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-y-auto py-4">
           {/* Front view */}
-          <div className={`flex min-h-0 flex-col ${hasRear ? 'flex-1 border-b border-[var(--color-border)]/20' : 'flex-1'}`}>
-            <div className="flex shrink-0 items-center justify-center py-2">
+          <div className={hasRear ? 'mb-4' : ''}>
+            <div className="flex items-center justify-center pb-2">
               <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">Front</span>
             </div>
-            <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden">
-              <div className="h-full w-1/2">
+            {/* Fixed height = u_height × 48px for rackmount proportions */}
+            <div className="mx-auto w-4/5" style={{ height: Math.max(56, template.u_height * 48) }}>
+              <RackElevation
+                rack={synthRack}
+                catalog={synthCatalog}
+                isRearView={false}
+                nodesData={{}}
+                infraComponents={[]}
+                sideComponents={[]}
+                rearInfraComponents={[]}
+                pduMetrics={{}}
+                fullWidth
+                disableZoom
+              />
+            </div>
+          </div>
+
+          {/* Rear view */}
+          {hasRear && (
+            <div>
+              <div className="flex items-center justify-center pb-2">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
+              </div>
+              <div className="mx-auto w-4/5" style={{ height: Math.max(56, template.u_height * 48) }}>
                 <RackElevation
                   rack={synthRack}
                   catalog={synthCatalog}
-                  isRearView={false}
+                  isRearView={true}
                   nodesData={{}}
                   infraComponents={[]}
                   sideComponents={[]}
                   rearInfraComponents={[]}
                   pduMetrics={{}}
                   fullWidth
+                  disableZoom
                 />
-              </div>
-            </div>
-          </div>
-
-          {/* Rear view */}
-          {hasRear && (
-            <div className="flex min-h-0 flex-1 flex-col">
-              <div className="flex shrink-0 items-center justify-center py-2">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
-              </div>
-              <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden">
-                <div className="h-full w-1/2">
-                  <RackElevation
-                    rack={synthRack}
-                    catalog={synthCatalog}
-                    isRearView={true}
-                    nodesData={{}}
-                    infraComponents={[]}
-                    sideComponents={[]}
-                    rearInfraComponents={[]}
-                    pduMetrics={{}}
-                    fullWidth
-                  />
-                </div>
               </div>
             </div>
           )}

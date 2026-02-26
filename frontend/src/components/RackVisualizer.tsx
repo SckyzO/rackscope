@@ -189,6 +189,7 @@ export const RackElevation = ({
   onDeviceClick,
   pduMetrics,
   fullWidth = false,
+  disableZoom = false,
 }: {
   rack: Rack;
   catalog: Record<string, DeviceTemplate>;
@@ -213,6 +214,8 @@ export const RackElevation = ({
     }
   >;
   fullWidth?: boolean;
+  /** Disable the hover scale-up zoom effect on devices */
+  disableZoom?: boolean;
 }) => {
   const [tooltip, setTooltip] = useState<HUDTooltipProps | null>(null);
   const uMap = new Map<number, Device>();
@@ -344,6 +347,7 @@ export const RackElevation = ({
                         uPosition={u}
                         onClick={onDeviceClick ? () => onDeviceClick(device) : undefined}
                         onTooltipChange={setTooltip}
+                        disableZoom={disableZoom}
                       />
                     </div>
                   )}
