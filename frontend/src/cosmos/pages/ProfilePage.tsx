@@ -482,7 +482,7 @@ export const ProfilePage = () => {
   const displayName = authEnabled && user ? user.username : 'Admin';
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-[760px] space-y-6">
       <PageHeader
         title="Profile"
         breadcrumb={
@@ -495,7 +495,7 @@ export const ProfilePage = () => {
         }
       />
 
-      <div className="mx-auto w-full max-w-[760px] space-y-4">
+      <div className="space-y-4">
         {/* Account — avatar + username */}
         <SectionCard
           title="Account"

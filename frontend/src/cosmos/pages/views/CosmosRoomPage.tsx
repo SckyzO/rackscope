@@ -1852,7 +1852,7 @@ export const CosmosRoomPage = () => {
           <PageBreadcrumb
             items={[
               { label: 'Home', href: '/cosmos' },
-              { label: 'Monitoring', href: '/cosmos/views/worldmap' },
+              { label: 'Infrastructure' },
               { label: room.name },
             ]}
           />

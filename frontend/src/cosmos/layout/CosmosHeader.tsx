@@ -401,9 +401,15 @@ export const CosmosHeader = ({
                       ))
                     )}
                     {alerts.length > 15 && (
-                      <div className="px-4 py-2 text-center text-xs text-gray-400">
-                        +{alerts.length - 15} more alerts
-                      </div>
+                      <button
+                        onClick={() => {
+                          setNotifOpen(false);
+                          navigate('/cosmos/notifications');
+                        }}
+                        className="text-brand-500 w-full px-4 py-2 text-center text-xs font-medium transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                      >
+                        View all {alerts.length} alerts →
+                      </button>
                     )}
                   </div>
 
