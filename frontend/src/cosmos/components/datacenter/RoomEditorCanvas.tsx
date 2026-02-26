@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import MonacoEditor from '@monaco-editor/react';
+import jsYaml from 'js-yaml';
 import {
   GripVertical,
   Plus,
@@ -8,6 +10,8 @@ import {
   ExternalLink,
   Server,
   ChevronRight,
+  Save,
+  Loader2,
 } from 'lucide-react';
 import type { Room, Aisle, Rack, RackTemplate } from '../../../types';
 import { api } from '../../../services/api';
@@ -32,59 +36,74 @@ interface YamlDrawerProps {
   onClose: () => void;
 }
 
-const YamlDrawer = ({ target, onClose }: YamlDrawerProps) => (
-  <>
-    {/* Overlay */}
-    <div
-      className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
-    />
-    {/* Drawer */}
-    <div className="dark:bg-gray-dark fixed top-0 right-0 z-50 flex h-full w-[480px] flex-col bg-white shadow-2xl">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-        <div className="flex items-center gap-2.5">
-          <FileCode className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-            {target.data.name}
-          </h3>
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 font-mono text-[10px] text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-            {target.type}
-          </span>
+const YamlDrawer = ({ target, onClose }: YamlDrawerProps) => {
+  const yamlValue = jsYaml.dump(target.data, { lineWidth: 120 });
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      {/* Drawer — dark to match Monaco */}
+      <div className="fixed top-0 right-0 z-50 flex h-full w-[540px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl">
+        {/* Header */}
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <FileCode className="h-4 w-4 text-gray-500" />
+            <h3 className="text-sm font-semibold text-white">{target.data.name}</h3>
+            <span className="rounded-full bg-gray-800 px-2 py-0.5 font-mono text-[10px] text-gray-400">
+              {target.type}
+            </span>
+            <span className="rounded-full bg-gray-800 px-2 py-0.5 text-[10px] text-gray-500">
+              read-only
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-white/10 hover:text-gray-300"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-        <button
-          onClick={onClose}
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-5">
-        <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
-          Current aisle data (read-only preview)
-        </p>
-        <textarea
-          readOnly
-          value={JSON.stringify(target.data, null, 2)}
-          className="h-full w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-mono text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300"
-          style={{ minHeight: '360px' }}
-        />
-      </div>
+        {/* Monaco editor — read only */}
+        <div className="min-h-0 flex-1">
+          <MonacoEditor
+            height="100%"
+            defaultLanguage="yaml"
+            theme="vs-dark"
+            value={yamlValue}
+            options={{
+              readOnly: true,
+              fontSize: 13,
+              minimap: { enabled: false },
+              lineNumbers: 'on',
+              scrollBeyondLastLine: false,
+              wordWrap: 'on',
+              tabSize: 2,
+              padding: { top: 12, bottom: 12 },
+              renderLineHighlight: 'none',
+              cursorStyle: 'line',
+              contextmenu: false,
+            }}
+          />
+        </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-end gap-2 border-t border-gray-200 px-5 py-4 dark:border-gray-800">
-        <button
-          onClick={onClose}
-          className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
-        >
-          Close
-        </button>
+        {/* Footer */}
+        <div className="shrink-0 border-t border-gray-800 px-5 py-4">
+          <button
+            onClick={onClose}
+            className="rounded-xl border border-gray-700 px-4 py-2 text-sm text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-300"
+          >
+            Close
+          </button>
+        </div>
       </div>
-    </div>
-  </>
-);
+    </>
+  );
+};
 
 // ── RackCard ──────────────────────────────────────────────────────────────────
 
@@ -127,7 +146,7 @@ const RackCard = ({
 
       <div
         draggable
-        onDragStart={() => onDragStart(rack.id, aisleId)}
+        onDragStart={(e) => { e.stopPropagation(); onDragStart(rack.id, aisleId); }}
         className="group w-[148px] cursor-grab select-none rounded-xl border border-gray-200 bg-gray-50 p-2.5 transition-all active:cursor-grabbing active:opacity-70 dark:border-gray-700 dark:bg-gray-800/50"
       >
         {/* Drag handle row */}
@@ -488,21 +507,6 @@ const AisleBand = ({
                   onEditYaml={onEditYamlRack}
                 />
               ))}
-
-              {/* Drop zone at end of aisle */}
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onDrop={(e) => onRackDropEmpty(e, aisle.id)}
-                className={[
-                  'h-[120px] w-[40px] shrink-0 rounded-xl border-2 border-dashed transition-all',
-                  dragOverAisleEmpty === aisle.id
-                    ? 'border-brand-500 bg-brand-500/10 dark:border-brand-500/70 dark:bg-brand-500/10'
-                    : 'border-gray-100 dark:border-gray-800',
-                ].join(' ')}
-              />
             </>
           )}
         </div>
@@ -542,6 +546,40 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
   const [addingRack, setAddingRack] = useState<string | null>(null);
   const [yamlDrawerOpen, setYamlDrawerOpen] = useState(false);
   const [yamlTarget, setYamlTarget] = useState<YamlDrawerTarget | null>(null);
+
+  // ── Save state — nothing auto-saves, user must click Save ─────────────────
+  const [isDirty, setIsDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedOk, setSavedOk] = useState(false);
+
+  const handleSaveAll = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      // Save each aisle's rack order
+      for (const aisle of room.aisles) {
+        await api.updateAisleRacks(aisle.id, room.id, aisle.racks.map((r) => r.id));
+      }
+      // Save the aisle order in the room
+      const aislesRecord: Record<string, string[]> = {};
+      room.aisles.forEach((a) => { aislesRecord[a.id] = a.racks.map((r) => r.id); });
+      await api.updateRoomAisles(room.id, aislesRecord);
+      setIsDirty(false);
+      setSavedOk(true);
+      setTimeout(() => setSavedOk(false), 2000);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Helper: update local state + mark dirty (no API call)
+  const updateRoom = (updated: Room) => {
+    onRoomUpdate(updated);
+    setIsDirty(true);
+  };
 
   // ── Aisle DnD handlers ────────────────────────────────────────────────────
 
@@ -590,16 +628,8 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
     dragAisleRef.current = null;
 
     // Optimistic update
-    onRoomUpdate({ ...room, aisles: newAisles });
-
-    // Persist to API
-    const aislesRecord: Record<string, string[]> = {};
-    newAisles.forEach((a) => {
-      aislesRecord[a.id] = a.racks.map((r) => r.id);
-    });
-    await api.updateRoomAisles(room.id, aislesRecord).catch((_err) => {
-      /* ignore — optimistic update already applied */
-    });
+    updateRoom({ ...room, aisles: newAisles });
+    // API call deferred — use Save button
   };
 
   // ── Rack DnD handlers ─────────────────────────────────────────────────────
@@ -665,7 +695,7 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
     });
 
     // Optimistic update
-    onRoomUpdate({ ...room, aisles: newAisles });
+    updateRoom({ ...room, aisles: newAisles });
 
     // Persist
     const targetAisle = newAisles.find((a) => a.id === targetAisleId);
@@ -711,7 +741,7 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
     });
 
     setAddingRack(null);
-    onRoomUpdate({ ...room, aisles: newAisles });
+    updateRoom({ ...room, aisles: newAisles });
 
     // Persist rack order to API
     const targetAisle = newAisles.find((a) => a.id === aisleId);
@@ -734,29 +764,14 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
       return aisle;
     });
 
-    onRoomUpdate({ ...room, aisles: newAisles });
-
-    const targetAisle = newAisles.find((a) => a.id === aisleId);
-    if (targetAisle) {
-      await api
-        .updateAisleRacks(
-          aisleId,
-          room.id,
-          targetAisle.racks.map((r) => r.id)
-        )
-        .catch((_err) => { /* ignore — optimistic update already applied */ });
-    }
+    updateRoom({ ...room, aisles: newAisles });
+    // API call deferred — use Save button
   };
 
   const handleDeleteAisle = async (aisleId: string) => {
     const newAisles = room.aisles.filter((a) => a.id !== aisleId);
-    onRoomUpdate({ ...room, aisles: newAisles });
-
-    const aislesRecord: Record<string, string[]> = {};
-    newAisles.forEach((a) => {
-      aislesRecord[a.id] = a.racks.map((r) => r.id);
-    });
-    await api.updateRoomAisles(room.id, aislesRecord).catch((_err) => { /* ignore — optimistic update already applied */ });
+    updateRoom({ ...room, aisles: newAisles });
+    // API call deferred — use Save button
   };
 
   // ── YAML drawer handlers ──────────────────────────────────────────────────
@@ -798,6 +813,23 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
 
   return (
     <>
+      {/* Save bar — only visible when there are unsaved changes */}
+      {(isDirty || saving || savedOk || saveError) && (
+        <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
+          <span className="text-sm text-amber-400">
+            {saving ? 'Saving…' : savedOk ? '✓ Saved' : saveError ? `Error: ${saveError}` : 'Unsaved changes'}
+          </span>
+          <button
+            onClick={() => void handleSaveAll()}
+            disabled={saving}
+            className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            Save Changes
+          </button>
+        </div>
+      )}
+
       <div className="space-y-3">
         {room.aisles.map((aisle) => (
           <AisleBand

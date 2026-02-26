@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Building2,
   DoorOpen,
-  AlignJustify,
-  Server,
   Plus,
   MoreHorizontal,
   X,
@@ -13,11 +11,9 @@ import {
   FileCode2,
   Trash2,
   ChevronRight,
-  Layers,
-  LayoutGrid,
 } from 'lucide-react';
 import { api } from '../../../services/api';
-import type { Site, Room, Aisle, RackTemplate } from '../../../types';
+import type { Site, Room, RackTemplate } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import {
   PageHeader,
@@ -25,8 +21,6 @@ import {
   LoadingState,
   EmptyState,
 } from '../templates/EmptyPage';
-import { useNavigate } from 'react-router-dom';
-
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type ViewLevel = 'sites' | 'rooms' | 'room-editor';
@@ -34,6 +28,9 @@ type ViewLevel = 'sites' | 'rooms' | 'room-editor';
 import { RoomEditorCanvas } from '../../components/datacenter/RoomEditorCanvas';
 
 // ── YamlDrawer ────────────────────────────────────────────────────────────────
+
+import MonacoEditor from '@monaco-editor/react';
+import jsYaml from 'js-yaml';
 
 type YamlDrawerProps = {
   open: boolean;
@@ -47,42 +44,56 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
   const [value, setValue] = useState(initialYaml);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Sync textarea when drawer opens with new content
+  // Sync editor when drawer opens with new content
   useEffect(() => {
     setValue(initialYaml);
     setSaved(false);
-    setError(null);
+    setParseError(null);
+    setSaveError(null);
   }, [initialYaml, open]);
 
+  // Validate YAML on every change
+  const handleChange = (val: string | undefined) => {
+    const newVal = val ?? '';
+    setValue(newVal);
+    try {
+      jsYaml.load(newVal);
+      setParseError(null);
+    } catch (e) {
+      setParseError(e instanceof Error ? e.message : 'Invalid YAML');
+    }
+  };
+
   const handleSave = async () => {
+    if (parseError) return;
     setSaving(true);
-    setError(null);
+    setSaveError(null);
     try {
       await onSave(value);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed');
+      setSaveError(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setSaving(false);
     }
   };
 
+  const isValid = !parseError;
+
   return (
     <>
       {/* Backdrop */}
       {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       )}
 
-      {/* Drawer panel */}
+      {/* Drawer panel — 680px wide */}
       <div
-        className={`fixed top-0 right-0 z-50 flex h-full w-[480px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl transition-transform duration-300 ${
+        className={`fixed top-0 right-0 z-50 flex h-full w-[680px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl transition-transform duration-300 ${
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -91,6 +102,16 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
           <div className="flex items-center gap-2.5">
             <FileCode2 className="h-4 w-4 text-gray-500" />
             <span className="text-sm font-semibold text-white">{title}</span>
+            {parseError && (
+              <span className="flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-medium text-red-400">
+                <AlertTriangle className="h-3 w-3" /> Invalid YAML
+              </span>
+            )}
+            {isValid && value !== initialYaml && (
+              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-400">
+                Unsaved
+              </span>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -100,241 +121,68 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
           </button>
         </div>
 
-        {/* Editor */}
-        <div className="min-h-0 flex-1 p-4">
-          <textarea
+        {/* Monaco Editor */}
+        <div className="min-h-0 flex-1">
+          <MonacoEditor
+            height="100%"
+            defaultLanguage="yaml"
+            theme="vs-dark"
             value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className="h-full w-full resize-none rounded-xl border border-gray-700 bg-gray-900 p-4 font-mono text-sm leading-relaxed text-gray-200 placeholder-gray-600 focus:border-gray-600 focus:outline-none"
-            spellCheck={false}
+            onChange={handleChange}
+            options={{
+              fontSize: 13,
+              minimap: { enabled: false },
+              lineNumbers: 'on',
+              scrollBeyondLastLine: false,
+              wordWrap: 'on',
+              tabSize: 2,
+              renderLineHighlight: 'line',
+              padding: { top: 12, bottom: 12 },
+            }}
           />
         </div>
 
+        {/* Validation error */}
+        {parseError && (
+          <div className="shrink-0 border-t border-red-500/20 bg-red-500/5 px-5 py-2.5">
+            <p className="font-mono text-xs text-red-400">{parseError}</p>
+          </div>
+        )}
+
         {/* Footer */}
         <div className="shrink-0 border-t border-gray-800 px-5 py-4">
-          {error && (
+          {saveError && (
             <div className="mb-3 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-400" />
-              <span className="text-xs text-red-400">{error}</span>
+              <span className="text-xs text-red-400">{saveError}</span>
             </div>
           )}
-          <div className="flex items-center justify-end gap-2">
-            <button
-              onClick={onClose}
-              className="rounded-xl border border-gray-700 px-4 py-2 text-sm text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => void handleSave()}
-              disabled={saving}
-              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-60"
-            >
-              {saving ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : saved ? (
-                <Check className="h-3.5 w-3.5" />
-              ) : null}
-              {saved ? 'Saved' : 'Save'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
-
-// ── AddRackModal ──────────────────────────────────────────────────────────────
-
-type AddRackModalProps = {
-  open: boolean;
-  aisleId: string;
-  roomId: string;
-  rackTemplates: RackTemplate[];
-  onSave: (rack: { id: string; name: string; u_height: number; template_id?: string }) => Promise<void>;
-  onSaveAndEdit: (rack: { id: string; name: string; u_height: number; template_id?: string }) => void;
-  onClose: () => void;
-};
-
-const AddRackModal = ({
-  open,
-  rackTemplates,
-  onSave,
-  onSaveAndEdit,
-  onClose,
-}: AddRackModalProps) => {
-  const [rackId, setRackId] = useState('');
-  const [name, setName] = useState('');
-  const [uHeight, setUHeight] = useState(42);
-  const [templateId, setTemplateId] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const idRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (open) {
-      setRackId('');
-      setName('');
-      setUHeight(42);
-      setTemplateId('');
-      setError(null);
-      setTimeout(() => idRef.current?.focus(), 50);
-    }
-  }, [open]);
-
-  if (!open) return null;
-
-  const buildPayload = () => ({
-    id: rackId.trim(),
-    name: name.trim(),
-    u_height: uHeight,
-    ...(templateId ? { template_id: templateId } : {}),
-  });
-
-  const validate = () => {
-    if (!rackId.trim()) return 'Rack ID is required';
-    if (!name.trim()) return 'Rack name is required';
-    if (uHeight < 1 || uHeight > 100) return 'U Height must be 1–100';
-    return null;
-  };
-
-  const handleAdd = async () => {
-    const err = validate();
-    if (err) { setError(err); return; }
-    setSaving(true);
-    setError(null);
-    try {
-      await onSave(buildPayload());
-      onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Save failed');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleAddAndEdit = () => {
-    const err = validate();
-    if (err) { setError(err); return; }
-    onSaveAndEdit(buildPayload());
-    onClose();
-  };
-
-  return (
-    <>
-      <div
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="fixed top-1/2 left-1/2 z-50 w-[440px] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-gray-700 bg-gray-900 shadow-2xl">
-        {/* Modal header */}
-        <div className="flex items-center justify-between border-b border-gray-800 px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-800">
-              <Server className="h-3.5 w-3.5 text-gray-400" />
-            </div>
-            <span className="text-sm font-semibold text-white">Add Rack</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-white/10 hover:text-gray-300"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Form */}
-        <div className="space-y-4 p-6">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-1 space-y-1.5">
-              <label className="block text-xs font-medium text-gray-400">
-                Rack ID <span className="text-red-400">*</span>
-              </label>
-              <input
-                ref={idRef}
-                value={rackId}
-                onChange={(e) => setRackId(e.target.value)}
-                placeholder="r01-06"
-                className="focus:border-brand-500 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 font-mono text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
-              />
-            </div>
-            <div className="col-span-1 space-y-1.5">
-              <label className="block text-xs font-medium text-gray-400">
-                U Height
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={uHeight}
-                onChange={(e) => setUHeight(Number(e.target.value))}
-                className="focus:border-brand-500 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 focus:outline-none"
-              />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-gray-600">
+              {parseError ? '⚠ Fix YAML errors before saving' : isValid ? '✓ Valid YAML' : ''}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onClose}
+                className="rounded-xl border border-gray-700 px-4 py-2 text-sm text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void handleSave()}
+                disabled={saving || !isValid}
+                title={parseError ? 'Cannot save: YAML is invalid' : 'Save changes'}
+                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {saving ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : saved ? (
+                  <Check className="h-3.5 w-3.5" />
+                ) : null}
+                {saved ? 'Saved' : 'Save YAML'}
+              </button>
             </div>
           </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-gray-400">
-              Name <span className="text-red-400">*</span>
-            </label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Rack XH3000 Compute 06"
-              className="focus:border-brand-500 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-gray-400">
-              Template <span className="text-gray-600">(optional)</span>
-            </label>
-            <select
-              value={templateId}
-              onChange={(e) => setTemplateId(e.target.value)}
-              className="focus:border-brand-500 w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 focus:outline-none"
-            >
-              <option value="">— No template —</option>
-              {rackTemplates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-400" />
-              <span className="text-xs text-red-400">{error}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-2 border-t border-gray-800 px-6 py-4">
-          <button
-            onClick={onClose}
-            className="rounded-xl border border-gray-700 px-4 py-2 text-sm text-gray-400 transition-colors hover:bg-white/5"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => void handleAdd()}
-            disabled={saving}
-            className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-60"
-          >
-            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Add Rack
-          </button>
-          <button
-            onClick={handleAddAndEdit}
-            disabled={saving}
-            className="flex items-center gap-1.5 rounded-xl border border-gray-700 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5 disabled:opacity-60"
-          >
-            Add &amp; Open Editor
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
         </div>
       </div>
     </>
@@ -715,81 +563,6 @@ const AddCard = ({ label, onClick }: { label: string; onClick: () => void }) => 
   </button>
 );
 
-// ── AisleRow ──────────────────────────────────────────────────────────────────
-
-type AisleRowProps = {
-  aisle: Aisle;
-  roomId: string;
-  rackTemplates: RackTemplate[];
-  onAisleAdded: () => void;
-};
-
-const AisleRow = ({ aisle, roomId, rackTemplates, onAisleAdded }: AisleRowProps) => {
-  const navigate = useNavigate();
-  const [addRackOpen, setAddRackOpen] = useState(false);
-  const [racks, setRacks] = useState(aisle.racks ?? []);
-
-  const handleSaveRack = async (rack: { id: string; name: string; u_height: number; template_id?: string }) => {
-    const updatedRackIds = [...racks.map((r) => r.id), rack.id];
-    await api.updateAisleRacks(aisle.id, roomId, updatedRackIds);
-    setRacks([...racks, { id: rack.id, name: rack.name, u_height: rack.u_height, template_id: rack.template_id, devices: [], aisle_id: aisle.id }]);
-    onAisleAdded();
-  };
-
-  const handleSaveAndEdit = (rack: { id: string; name: string; u_height: number; template_id?: string }) => {
-    navigate(`/cosmos/editors/rack?rackId=${encodeURIComponent(rack.id)}`);
-  };
-
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      {/* Aisle header */}
-      <div className="flex items-center gap-2.5 border-b border-gray-100 px-5 py-3 dark:border-gray-800">
-        <AlignJustify className="h-3.5 w-3.5 text-gray-400 dark:text-gray-600" />
-        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{aisle.name}</span>
-        <span className="font-mono text-[10px] text-gray-400 dark:text-gray-700">({aisle.id})</span>
-        <div className="ml-auto flex items-center gap-1.5">
-          <StatChip value={racks.length} label={racks.length === 1 ? 'rack' : 'racks'} />
-          <button
-            onClick={() => setAddRackOpen(true)}
-            className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-500 dark:hover:bg-white/5"
-          >
-            <Plus className="h-3 w-3" />
-            Add Rack
-          </button>
-        </div>
-      </div>
-
-      {/* Rack chips */}
-      <div className="flex flex-wrap gap-2 p-4">
-        {racks.length === 0 ? (
-          <p className="text-xs text-gray-400 dark:text-gray-700">No racks in this aisle.</p>
-        ) : (
-          racks.map((rack) => (
-            <button
-              key={rack.id}
-              onClick={() => navigate(`/cosmos/editors/rack?rackId=${encodeURIComponent(rack.id)}`)}
-              className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-brand-400 hover:text-brand-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-brand-600 dark:hover:text-brand-400"
-            >
-              <Server className="h-3 w-3" />
-              {rack.name || rack.id}
-            </button>
-          ))
-        )}
-      </div>
-
-      <AddRackModal
-        open={addRackOpen}
-        aisleId={aisle.id}
-        roomId={roomId}
-        rackTemplates={rackTemplates}
-        onSave={handleSaveRack}
-        onSaveAndEdit={handleSaveAndEdit}
-        onClose={() => setAddRackOpen(false)}
-      />
-    </div>
-  );
-};
-
 // ── Main page component ───────────────────────────────────────────────────────
 
 export const DatacenterEditorPage = () => {
@@ -969,12 +742,8 @@ export const DatacenterEditorPage = () => {
           <PageBreadcrumb
             items={breadcrumbItems.map((item) => ({
               label: item.label,
-              href:
-                'onClick' in item
-                  ? '#'
-                  : 'href' in item
-                    ? item.href
-                    : undefined,
+              href: !('onClick' in item) && 'href' in item ? item.href : undefined,
+              onClick: 'onClick' in item ? (item as { onClick: () => void }).onClick : undefined,
             }))}
           />
         }
@@ -1007,48 +776,6 @@ export const DatacenterEditorPage = () => {
         }
       />
 
-      {/* Clickable breadcrumb navigation strip */}
-      {(level === 'rooms' || level === 'room-editor') && (
-        <nav className="flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-gray-200 bg-white px-5 py-3 dark:border-gray-800 dark:bg-gray-900">
-          <button
-            onClick={() => { setLevel('sites'); setCurrentSite(null); setCurrentRoom(null); }}
-            className="text-brand-500 dark:text-brand-400 flex items-center gap-1.5 text-sm font-medium hover:underline"
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            Sites
-          </button>
-
-          {currentSite && (
-            <>
-              <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-700" />
-              {level === 'room-editor' ? (
-                <button
-                  onClick={() => setLevel('rooms')}
-                  className="text-brand-500 dark:text-brand-400 flex items-center gap-1.5 text-sm font-medium hover:underline"
-                >
-                  <Building2 className="h-3.5 w-3.5" />
-                  {currentSite.name}
-                </button>
-              ) : (
-                <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
-                  <Building2 className="h-3.5 w-3.5 text-brand-500" />
-                  {currentSite.name}
-                </span>
-              )}
-            </>
-          )}
-
-          {level === 'room-editor' && currentRoom && (
-            <>
-              <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-700" />
-              <span className="flex items-center gap-1.5 text-sm font-semibold text-gray-900 dark:text-white">
-                <DoorOpen className="h-3.5 w-3.5 text-brand-500" />
-                {currentRoom.name}
-              </span>
-            </>
-          )}
-        </nav>
-      )}
 
       {/* ── Level 0: Sites grid ─────────────────────────────────────────────── */}
       {level === 'sites' && (
@@ -1196,28 +923,19 @@ export const DatacenterEditorPage = () => {
               />
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
-              <button
-                onClick={() =>
-                  openYamlDrawer(
-                    `Room YAML — ${currentRoom.name}`,
-                    currentRoom,
-                    async () => Promise.resolve()
-                  )
-                }
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-              >
-                <FileCode2 className="h-3.5 w-3.5" />
-                Edit Room YAML
-              </button>
-              <button
-                onClick={() => setAddingAisle(true)}
-                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-white transition-colors"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add Aisle
-              </button>
-            </div>
+            <button
+              onClick={() =>
+                openYamlDrawer(
+                  `Room YAML — ${currentRoom.name}`,
+                  currentRoom,
+                  async () => Promise.resolve()
+                )
+              }
+              className="ml-auto flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+            >
+              <FileCode2 className="h-3.5 w-3.5" />
+              View Room YAML
+            </button>
           </div>
 
           {/* Add aisle inline form */}
@@ -1244,36 +962,6 @@ export const DatacenterEditorPage = () => {
             onRoomUpdate={(updated) => setCurrentRoom(updated)}
           />
 
-          {/* Aisles list */}
-          {(currentRoom.aisles ?? []).length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 px-1">
-                <Layers className="h-4 w-4 text-gray-400 dark:text-gray-600" />
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Aisles &amp; Racks
-                </h3>
-              </div>
-              {(currentRoom.aisles ?? []).map((aisle) => (
-                <AisleRow
-                  key={aisle.id}
-                  aisle={aisle}
-                  roomId={currentRoom.id}
-                  rackTemplates={rackTemplates}
-                  onAisleAdded={() => void reloadRoom(currentRoom.id)}
-                />
-              ))}
-            </div>
-          )}
-
-          {(currentRoom.aisles ?? []).length === 0 && !addingAisle && (
-            <div className="rounded-2xl border border-dashed border-gray-200 p-8 text-center dark:border-gray-800">
-              <AlignJustify className="mx-auto mb-3 h-8 w-8 text-gray-300 dark:text-gray-700" />
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-500">No aisles yet</p>
-              <p className="mt-1 text-xs text-gray-400 dark:text-gray-700">
-                Add the first aisle to organize racks in this room.
-              </p>
-            </div>
-          )}
         </section>
       )}
 
