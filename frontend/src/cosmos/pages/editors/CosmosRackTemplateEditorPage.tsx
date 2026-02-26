@@ -68,6 +68,176 @@ const COMP_TYPE_STYLES: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// RackPreview — visual rack representation using CSS theme variables
+// ---------------------------------------------------------------------------
+
+const RAIL_COLORS: Record<string, { bg: string; border: string; text: string; abbr: string }> = {
+  power:      { bg: 'rgba(202,138,4,0.15)',   border: '#ca8a04', text: '#facc15', abbr: 'PWR' },
+  cooling:    { bg: 'rgba(8,145,178,0.15)',   border: '#0891b2', text: '#38bdf8', abbr: 'CLG' },
+  management: { bg: 'rgba(124,58,237,0.15)', border: '#7c3aed', text: '#a78bfa', abbr: 'MGT' },
+  network:    { bg: 'rgba(5,150,105,0.15)',  border: '#059669', text: '#34d399', abbr: 'NET' },
+  other:      { bg: 'rgba(75,85,99,0.15)',   border: '#4b5563', text: '#9ca3af', abbr: 'OTH' },
+};
+
+const RackPreview = ({ template }: { template: RackTemplate }) => {
+  const uHeight = template.u_height ?? 42;
+  const infra = template.infrastructure ?? {};
+
+  const allInfraComponents: InfrastructureComponent[] = [
+    ...(infra.components ?? []),
+    ...(infra.front_components ?? []),
+    ...(infra.rear_components ?? []),
+  ];
+
+  const sideComponents: InfrastructureComponent[] = infra.side_components ?? [];
+
+  // Build u-mount occupancy map (start U → component)
+  const uMountMap = new Map<number, { comp: InfrastructureComponent; h: number }>();
+  const occupiedU = new Set<number>();
+  allInfraComponents.forEach((comp) => {
+    if ((comp.location === 'u-mount' || !comp.location) && comp.u_position) {
+      const h = comp.u_height ?? 1;
+      uMountMap.set(comp.u_position, { comp, h });
+      for (let u = comp.u_position; u < comp.u_position + h; u++) occupiedU.add(u);
+    }
+  });
+
+  const leftRail = sideComponents.filter((c) => c.location === 'side-left');
+  const rightRail = sideComponents.filter((c) => c.location === 'side-right');
+
+  const slots = Array.from({ length: uHeight }, (_, i) => i + 1);
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Title bar */}
+      <div className="shrink-0 border-b border-[var(--color-border)]/20 px-5 py-3">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-bold text-[var(--color-text-base)]">{template.name}</p>
+          <span className="rounded-full bg-[var(--color-border)]/20 px-2 py-0.5 font-mono text-[10px] text-[var(--color-text-base)] opacity-50">
+            {template.id}
+          </span>
+          <span className="ml-auto text-[11px] text-[var(--color-text-base)] opacity-40">
+            {uHeight}U
+          </span>
+        </div>
+      </div>
+
+      {/* Rack */}
+      <div className="flex flex-1 items-start justify-center gap-2 overflow-hidden py-5 px-4">
+        {/* Left rail */}
+        {leftRail.length > 0 && (
+          <div className="flex h-full flex-col gap-0.5">
+            {leftRail.map((comp, i) => {
+              const col = RAIL_COLORS[comp.type] ?? RAIL_COLORS.other;
+              return (
+                <div
+                  key={i}
+                  title={comp.name}
+                  className="flex items-center justify-center rounded-sm"
+                  style={{
+                    width: 22,
+                    flex: comp.u_height ?? 2,
+                    backgroundColor: col.bg,
+                    border: `1px solid ${col.border}`,
+                    writingMode: 'vertical-lr',
+                    transform: 'rotate(180deg)',
+                  }}
+                >
+                  <span className="font-mono text-[7px] font-black" style={{ color: col.text }}>
+                    {col.abbr}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Rack body */}
+        <div
+          className="relative flex h-full flex-1 flex-col-reverse border-x-[20px] transition-colors duration-500"
+          style={{
+            borderColor: 'var(--color-rack-frame)',
+            backgroundColor: 'var(--color-rack-frame)',
+            maxWidth: 280,
+          }}
+        >
+          {slots.map((u) => {
+            const mount = uMountMap.get(u);
+            const isOccupied = occupiedU.has(u) && !mount;
+
+            if (isOccupied) return null; // part of multi-U block
+
+            if (mount) {
+              const col = RAIL_COLORS[mount.comp.type] ?? RAIL_COLORS.other;
+              return (
+                <div
+                  key={u}
+                  style={{ flex: mount.h, backgroundColor: col.bg, borderLeft: `3px solid ${col.border}` }}
+                  className="relative flex items-center px-2.5 transition-all"
+                >
+                  <div className="pointer-events-none absolute -left-[18px] flex h-full w-[18px] items-center justify-center font-mono text-[8px] font-black text-[var(--color-text-base)] opacity-40 select-none">
+                    {u}
+                  </div>
+                  <div className="pointer-events-none absolute -right-[18px] flex h-full w-[18px] items-center justify-center font-mono text-[8px] font-black text-[var(--color-text-base)] opacity-40 select-none">
+                    {u}
+                  </div>
+                  <span className="truncate text-[10px] font-semibold" style={{ color: col.text }}>
+                    {mount.comp.name}
+                  </span>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={u}
+                style={{ flex: 1 }}
+                className="relative flex items-center border-b border-[var(--color-border)]/10 transition-colors"
+              >
+                <div className="pointer-events-none absolute -left-[18px] flex h-full w-[18px] items-center justify-center font-mono text-[8px] font-black text-[var(--color-text-base)] opacity-40 select-none">
+                  {u}
+                </div>
+                <div className="pointer-events-none absolute -right-[18px] flex h-full w-[18px] items-center justify-center font-mono text-[8px] font-black text-[var(--color-text-base)] opacity-40 select-none">
+                  {u}
+                </div>
+                <div className="h-full w-full bg-[var(--color-empty-slot)] opacity-30" />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Right rail */}
+        {rightRail.length > 0 && (
+          <div className="flex h-full flex-col gap-0.5">
+            {rightRail.map((comp, i) => {
+              const col = RAIL_COLORS[comp.type] ?? RAIL_COLORS.other;
+              return (
+                <div
+                  key={i}
+                  title={comp.name}
+                  className="flex items-center justify-center rounded-sm"
+                  style={{
+                    width: 22,
+                    flex: comp.u_height ?? 2,
+                    backgroundColor: col.bg,
+                    border: `1px solid ${col.border}`,
+                    writingMode: 'vertical-lr',
+                  }}
+                >
+                  <span className="font-mono text-[7px] font-black" style={{ color: col.text }}>
+                    {col.abbr}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
 // ComponentChip
 // ---------------------------------------------------------------------------
 
@@ -847,19 +1017,37 @@ export const CosmosRackTemplateEditorPage = () => {
             </div>
           </div>
 
-          {/* RIGHT PANEL */}
-          <div className="min-h-0 flex-1 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+          {/* CENTER PANEL — rack visualization (always dark, matches rack editor) */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[var(--color-border)]/30 bg-[var(--color-rack-interior)] transition-colors duration-500">
             {selectedTemplate ? (
-              <EditorPanel
-                key={selectedTemplate.id}
-                template={selectedTemplate}
-                allChecks={checks}
-                onSaved={() => {
-                  void loadData();
-                }}
-              />
+              <RackPreview template={selectedTemplate} />
             ) : (
-              <div className="flex h-full items-center justify-center">
+              <div className="flex h-full flex-col items-center justify-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-border)]/20">
+                  <Server className="h-6 w-6 text-[var(--color-text-base)] opacity-30" />
+                </div>
+                <p className="text-sm text-[var(--color-text-base)] opacity-40">
+                  Select a template to preview the rack
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT PANEL — editor form */}
+          <div className="flex w-[320px] shrink-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+            {selectedTemplate ? (
+              <div className="flex-1 overflow-y-auto p-6">
+                <EditorPanel
+                  key={selectedTemplate.id}
+                  template={selectedTemplate}
+                  allChecks={checks}
+                  onSaved={() => {
+                    void loadData();
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center p-6">
                 <div className="text-center">
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-800">
                     <Server className="h-7 w-7 text-gray-300 dark:text-gray-600" />
