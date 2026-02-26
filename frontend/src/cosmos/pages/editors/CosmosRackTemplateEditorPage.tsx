@@ -625,6 +625,7 @@ const EditorPanel = ({
   allChecks: CheckDefinition[];
   rackComponentCatalog: RackComponentTemplate[];
   onSaved: () => void;
+  onDraftChange?: (draft: RackDraft) => void;
 }) => {
   const [draft, setDraft] = useState<RackDraft>(() => toDraft(template));
   const [dirty, setDirty] = useState(false);
@@ -641,10 +642,14 @@ const EditorPanel = ({
   }, [template]);
 
   const updateDraft = useCallback(<K extends keyof RackDraft>(key: K, value: RackDraft[K]) => {
-    setDraft((d) => ({ ...d, [key]: value }));
+    setDraft((d) => {
+      const next = { ...d, [key]: value };
+      onDraftChange?.(next);
+      return next;
+    });
     setDirty(true);
     setSaveStatus('idle');
-  }, []);
+  }, [onDraftChange]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const validationErrors = useMemo(() => {
     const errs: string[] = [];
@@ -1582,6 +1587,33 @@ export const CosmosRackTemplateEditorPage = () => {
     [rackComponents, selectedComponentId]
   );
 
+  // Live preview — tracks draft edits from EditorPanel without saving
+  const [previewDraft, setPreviewDraft] = useState<RackDraft | null>(null);
+
+  // Reset preview when template selection changes
+  useEffect(() => { setPreviewDraft(null); }, [selectedId]);
+
+  // Build the preview template from draft + saved template (for RackPreview)
+  const previewTemplate = useMemo((): RackTemplate | null => {
+    if (!selectedTemplate) return null;
+    if (!previewDraft) return selectedTemplate;
+    return {
+      ...selectedTemplate,
+      name: previewDraft.name || selectedTemplate.name,
+      u_height: parseInt(previewDraft.u_height) || selectedTemplate.u_height,
+      checks: previewDraft.checks,
+      infrastructure: {
+        ...selectedTemplate.infrastructure,
+        rack_components: previewDraft.rackCompRefs.map((r) => ({
+          template_id: r.template_id,
+          u_position: parseInt(r.u_position) || 1,
+          ...(r.u_height ? { u_height: parseInt(r.u_height) } : {}),
+          ...(r.side ? { side: r.side as 'left' | 'right' } : {}),
+        })),
+      },
+    };
+  }, [selectedTemplate, previewDraft]);
+
   const handleCreated = async (newId: string) => {
     setShowNewForm(false);
     await loadData();
@@ -1816,7 +1848,7 @@ export const CosmosRackTemplateEditorPage = () => {
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-6">
-                  <EditorPanel key={selectedTemplate.id} template={selectedTemplate} allChecks={checks} rackComponentCatalog={rackComponents} onSaved={() => { void loadData(); }} />
+                  <EditorPanel key={selectedTemplate.id} template={selectedTemplate} allChecks={checks} rackComponentCatalog={rackComponents} onDraftChange={setPreviewDraft} onSaved={() => { void loadData(); }} />
                 </div>
               </>
             ) : selectedComponent ? (
@@ -1855,13 +1887,13 @@ export const CosmosRackTemplateEditorPage = () => {
           <div className="flex min-h-0 flex-1 gap-2 overflow-hidden rounded-2xl border border-[var(--color-border)]/30 bg-[var(--color-rack-interior)] transition-colors duration-500">
             {selectedTemplate ? (
               <>
-                {/* Front view */}
+                {/* Front view — live preview (no save needed) */}
                 <div className="flex min-h-0 flex-1 flex-col border-r border-[var(--color-border)]/20">
-                  <RackPreview template={selectedTemplate} view="front" rackComponentCatalog={rackComponents} />
+                  <RackPreview template={previewTemplate ?? selectedTemplate} view="front" rackComponentCatalog={rackComponents} />
                 </div>
-                {/* Rear view */}
+                {/* Rear view — live preview */}
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <RackPreview template={selectedTemplate} view="rear" rackComponentCatalog={rackComponents} />
+                  <RackPreview template={previewTemplate ?? selectedTemplate} view="rear" rackComponentCatalog={rackComponents} />
                 </div>
               </>
             ) : (
