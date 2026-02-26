@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus,
   Server,
@@ -13,7 +13,11 @@ import {
   ChevronDown,
   Activity,
   BarChart2,
+  FileCode2,
+  Cpu,
 } from 'lucide-react';
+import MonacoEditor from '@monaco-editor/react';
+import jsYaml from 'js-yaml';
 import { api } from '../../../services/api';
 import type {
   RackTemplate,
@@ -970,6 +974,263 @@ const RackComponentDetailPanel = ({ component }: { component: RackComponentTempl
 };
 
 // ---------------------------------------------------------------------------
+// YamlDrawer — Monaco read/write with js-yaml validation (same as DC editor)
+// ---------------------------------------------------------------------------
+
+type YamlDrawerProps = {
+  open: boolean;
+  title: string;
+  initialYaml: string;
+  onSave: (yaml: string) => Promise<void>;
+  onClose: () => void;
+};
+
+const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerProps) => {
+  const [value, setValue] = useState(initialYaml);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setValue(initialYaml);
+    setSaved(false);
+    setParseError(null);
+    setSaveError(null);
+  }, [initialYaml, open]);
+
+  const handleChange = (val: string | undefined) => {
+    const v = val ?? '';
+    setValue(v);
+    try { jsYaml.load(v); setParseError(null); }
+    catch (e) { setParseError(e instanceof Error ? e.message : 'Invalid YAML'); }
+  };
+
+  const handleSave = async () => {
+    if (parseError) return;
+    setSaving(true); setSaveError(null);
+    try {
+      await onSave(value);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <>
+      {open && <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />}
+      <div className={`fixed top-0 right-0 z-50 flex h-full w-[680px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+        {/* Header */}
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <FileCode2 className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-semibold text-white">{title}</span>
+            {parseError && (
+              <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-400">
+                Invalid YAML
+              </span>
+            )}
+          </div>
+          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-white/10 hover:text-gray-300">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {/* Monaco */}
+        <div className="min-h-0 flex-1">
+          <MonacoEditor height="100%" defaultLanguage="yaml" theme="vs-dark" value={value} onChange={handleChange}
+            options={{ fontSize: 13, minimap: { enabled: false }, lineNumbers: 'on', scrollBeyondLastLine: false, wordWrap: 'on', tabSize: 2, padding: { top: 12, bottom: 12 } }}
+          />
+        </div>
+        {/* Validation error */}
+        {parseError && (
+          <div className="shrink-0 border-t border-red-500/20 bg-red-500/5 px-5 py-2.5">
+            <p className="font-mono text-xs text-red-400">{parseError}</p>
+          </div>
+        )}
+        {/* Footer */}
+        <div className="shrink-0 border-t border-gray-800 px-5 py-4">
+          {saveError && (
+            <div className="mb-3 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-400" />
+              <span className="text-xs text-red-400">{saveError}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-gray-600">
+              {parseError ? '⚠ Fix YAML errors before saving' : '✓ Valid YAML'}
+            </span>
+            <div className="flex items-center gap-2">
+              <button onClick={onClose} className="rounded-xl border border-gray-700 px-4 py-2 text-sm text-gray-400 hover:bg-white/5">
+                Cancel
+              </button>
+              <button
+                onClick={() => void handleSave()}
+                disabled={saving || !!parseError}
+                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
+                {saved ? 'Saved' : 'Save YAML'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// NewTemplateChoiceModal — choose Rack Template or Rack Component
+// ---------------------------------------------------------------------------
+
+const NewTemplateChoiceModal = ({
+  onChoose,
+  onClose,
+}: {
+  onChoose: (kind: 'rack' | 'rack-component') => void;
+  onClose: () => void;
+}) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+    <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
+      <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+        <X className="h-5 w-5" />
+      </button>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">New Template</h3>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">What type of template do you want to create?</p>
+      <div className="mt-5 space-y-3">
+        <button
+          onClick={() => onChoose('rack')}
+          className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-brand-300 hover:bg-brand-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-brand-600/50 dark:hover:bg-brand-500/10"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/15">
+            <Server className="h-5 w-5 text-brand-500" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Rack Template</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Define a rack model (u_height, infrastructure, checks)</p>
+          </div>
+        </button>
+        <button
+          onClick={() => onChoose('rack-component')}
+          className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-amber-300 hover:bg-amber-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-amber-600/50 dark:hover:bg-amber-500/10"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-500/15">
+            <Cpu className="h-5 w-5 text-amber-500" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Rack Component</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Define a PDU, cooling unit, switch or other component</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// ---------------------------------------------------------------------------
+// NewRackComponentForm
+// ---------------------------------------------------------------------------
+
+const COMPONENT_TYPES = ['pdu', 'cooling', 'power', 'network', 'management', 'other'] as const;
+const COMPONENT_LOCATIONS = ['side', 'u-mount', 'front', 'rear'] as const;
+
+const NewRackComponentForm = ({
+  onCancel,
+  onCreated,
+}: {
+  onCancel: () => void;
+  onCreated: (id: string) => void;
+}) => {
+  const [form, setForm] = useState({ name: '', id: '', type: 'pdu', location: 'side', uHeight: '2', model: '', uPosition: '', side: 'left' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const autoId = form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const effectiveId = form.id.trim() || autoId;
+
+  const handleCreate = async () => {
+    if (!form.name.trim()) { setError('Name is required'); return; }
+    setSaving(true); setError(null);
+    try {
+      await api.createTemplate({
+        kind: 'rack',
+        template: {
+          id: effectiveId,
+          name: form.name.trim(),
+          type: form.type,
+          location: form.location,
+          u_height: parseInt(form.uHeight) || 2,
+          ...(form.model.trim() ? { model: form.model.trim() } : {}),
+          ...(form.uPosition ? { u_position: parseInt(form.uPosition) } : {}),
+          ...(form.location === 'side' ? { side: form.side } : {}),
+          checks: [],
+          metrics: [],
+        },
+      });
+      onCreated(effectiveId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create');
+      setSaving(false);
+    }
+  };
+
+  const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200';
+  const labelCls = 'block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1';
+
+  return (
+    <div className="rounded-2xl border border-brand-500/30 bg-white p-5 shadow-sm dark:border-brand-500/20 dark:bg-gray-900">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">New Rack Component</h3>
+        <button onClick={onCancel} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"><X className="h-4 w-4" /></button>
+      </div>
+      <div className="space-y-3">
+        <div><label className={labelCls}>Name *</label><input autoFocus value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="PDU Raritan 16U" className={inputCls} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls}>Type</label>
+            <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} className={inputCls}>
+              {COMPONENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Location</label>
+            <select value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} className={inputCls}>
+              {COMPONENT_LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className={labelCls}>U Height</label><input type="number" min={1} max={52} value={form.uHeight} onChange={(e) => setForm((f) => ({ ...f, uHeight: e.target.value }))} className={inputCls} /></div>
+          <div><label className={labelCls}>Model</label><input value={form.model} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))} placeholder="optional" className={inputCls} /></div>
+        </div>
+        {/* Position in rack */}
+        <div className="grid grid-cols-2 gap-3">
+          <div><label className={labelCls}>U Position <span className="text-gray-400">(optional)</span></label><input type="number" min={1} max={52} value={form.uPosition} onChange={(e) => setForm((f) => ({ ...f, uPosition: e.target.value }))} placeholder="e.g. 1" className={inputCls} /></div>
+          {form.location === 'side' && (
+            <div>
+              <label className={labelCls}>Rail side</label>
+              <select value={form.side} onChange={(e) => setForm((f) => ({ ...f, side: e.target.value }))} className={inputCls}>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+          )}
+        </div>
+        {error && <p className="text-xs text-red-500">{error}</p>}
+        <div className="flex justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+          <button onClick={onCancel} className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 dark:border-gray-700">Cancel</button>
+          <button onClick={() => void handleCreate()} disabled={saving} className="flex items-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Create
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
 
@@ -987,9 +1248,24 @@ export const CosmosRackTemplateEditorPage = () => {
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [componentSearch, setComponentSearch] = useState('');
+  // New template flow: choice modal → rack form or component form
+  const [showChoiceModal, setShowChoiceModal] = useState(false);
   const [showNewForm, setShowNewForm] = useState(false);
+  const [showNewCompForm, setShowNewCompForm] = useState(false);
   // Accordion open state for component groups
   const [openComponentGroups, setOpenComponentGroups] = useState<Set<string>>(new Set());
+  // YAML drawer
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerTitle, setDrawerTitle] = useState('');
+  const [drawerYaml, setDrawerYaml] = useState('');
+  const drawerOnSaveRef = useRef<(yaml: string) => Promise<void>>(() => Promise.resolve());
+
+  const openYamlDrawer = (title: string, entity: unknown, onSave: (yaml: string) => Promise<void>) => {
+    setDrawerTitle(title);
+    setDrawerYaml(jsYaml.dump(entity, { lineWidth: 120 }));
+    drawerOnSaveRef.current = onSave;
+    setDrawerOpen(true);
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -1065,8 +1341,8 @@ export const CosmosRackTemplateEditorPage = () => {
         actions={
           !loading && !loadError ? (
             <button
-              onClick={() => setShowNewForm(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-[var(--color-accent)] px-3 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90"
+              onClick={() => setShowChoiceModal(true)}
+              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
             >
               <Plus className="h-4 w-4" />
               New Template
@@ -1115,13 +1391,17 @@ export const CosmosRackTemplateEditorPage = () => {
             {/* Racks tab */}
             {leftTab === 'racks' && (
               <>
-                {showNewForm && (
+                {(showNewForm || showNewCompForm) && (
                   <div className="shrink-0 p-3">
-                    <NewTemplateForm
+                    {showNewForm && <NewTemplateForm
                       onCancel={() => setShowNewForm(false)}
                       onCreated={(id) => { void handleCreated(id); }}
                       existingIds={existingIds}
-                    />
+                    />}
+                    {showNewCompForm && <NewRackComponentForm
+                      onCancel={() => setShowNewCompForm(false)}
+                      onCreated={(id) => { setShowNewCompForm(false); void loadData().then(() => { setLeftTab('components'); setSelectedComponentId(id); setSelectedId(null); }); }}
+                    />}
                   </div>
                 )}
                 <div className="shrink-0 p-3">
@@ -1246,11 +1526,48 @@ export const CosmosRackTemplateEditorPage = () => {
           {/* ── FORM PANEL ─────────────────────────────────────────────── */}
           <div className="flex w-[560px] shrink-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
             {selectedTemplate ? (
-              <div className="flex-1 overflow-y-auto p-6">
-                <EditorPanel key={selectedTemplate.id} template={selectedTemplate} allChecks={checks} onSaved={() => { void loadData(); }} />
-              </div>
+              <>
+                {/* YAML button strip */}
+                <div className="shrink-0 flex items-center justify-end border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
+                  <button
+                    onClick={() => openYamlDrawer(
+                      `Rack Template — ${selectedTemplate.name}`,
+                      selectedTemplate,
+                      async (yaml) => {
+                        const parsed = jsYaml.load(yaml) as Record<string, unknown>;
+                        await api.updateTemplate({ kind: 'rack', template: parsed });
+                        await loadData();
+                      }
+                    )}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                  >
+                    <FileCode2 className="h-3.5 w-3.5" /> Edit YAML
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6">
+                  <EditorPanel key={selectedTemplate.id} template={selectedTemplate} allChecks={checks} onSaved={() => { void loadData(); }} />
+                </div>
+              </>
             ) : selectedComponent ? (
-              <RackComponentDetailPanel component={selectedComponent} />
+              <>
+                <div className="shrink-0 flex items-center justify-end border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
+                  <button
+                    onClick={() => openYamlDrawer(
+                      `Component — ${selectedComponent.name}`,
+                      selectedComponent,
+                      async (yaml) => {
+                        const parsed = jsYaml.load(yaml) as Record<string, unknown>;
+                        await api.updateTemplate({ kind: 'rack', template: parsed });
+                        await loadData();
+                      }
+                    )}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                  >
+                    <FileCode2 className="h-3.5 w-3.5" /> Edit YAML
+                  </button>
+                </div>
+                <RackComponentDetailPanel component={selectedComponent} />
+              </>
             ) : (
               <div className="flex h-full items-center justify-center p-6 text-center">
                 <div>
@@ -1287,6 +1604,27 @@ export const CosmosRackTemplateEditorPage = () => {
           </div>
         </div>
       )}
+
+      {/* Choice modal */}
+      {showChoiceModal && (
+        <NewTemplateChoiceModal
+          onChoose={(kind) => {
+            setShowChoiceModal(false);
+            if (kind === 'rack') { setShowNewForm(true); setLeftTab('racks'); }
+            else { setShowNewCompForm(true); setLeftTab('components'); }
+          }}
+          onClose={() => setShowChoiceModal(false)}
+        />
+      )}
+
+      {/* YAML drawer */}
+      <YamlDrawer
+        open={drawerOpen}
+        title={drawerTitle}
+        initialYaml={drawerYaml}
+        onSave={drawerOnSaveRef.current}
+        onClose={() => setDrawerOpen(false)}
+      />
     </div>
   );
 };
