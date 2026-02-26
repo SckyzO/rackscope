@@ -13,6 +13,7 @@ import {
   Bell,
   User,
   LayoutDashboard,
+  LayoutGrid,
   Network,
   MapPin,
   GitBranch,
@@ -297,6 +298,14 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
             to="/cosmos/notifications"
             icon={Bell}
             label="Notifications"
+            collapsed={collapsed}
+          />
+        )}
+        {features.aisle_dashboard && (
+          <NavItem
+            to="/cosmos/views/aisle"
+            icon={LayoutGrid}
+            label="Cluster Dashboard"
             collapsed={collapsed}
           />
         )}

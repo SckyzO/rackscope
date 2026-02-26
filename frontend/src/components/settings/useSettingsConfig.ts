@@ -57,6 +57,7 @@ export type ConfigDraft = {
     notifications_max_visible: string;
     toast_duration_seconds: string;
     worldmap: boolean;
+    aisle_dashboard: boolean;
     dev_tools: boolean;
     playlist: boolean;
     offline: boolean;
@@ -180,6 +181,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     notifications_max_visible: String(config.features?.notifications_max_visible ?? 10),
     toast_duration_seconds: String(config.features?.toast_duration_seconds ?? 15),
     worldmap: config.features?.worldmap ?? true,
+    aisle_dashboard: config.features?.aisle_dashboard ?? true,
     dev_tools: config.features?.dev_tools ?? false,
     playlist: config.features?.playlist ?? false,
     offline: config.features?.offline ?? false,
@@ -334,6 +336,7 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
     notifications_max_visible: parseInt(draft.features.notifications_max_visible, 10) || 10,
     toast_duration_seconds: parseInt(draft.features.toast_duration_seconds, 10) || 15,
     worldmap: draft.features.worldmap,
+    aisle_dashboard: draft.features.aisle_dashboard,
     dev_tools: draft.features.dev_tools,
     playlist: draft.features.playlist,
     offline: draft.features.offline,

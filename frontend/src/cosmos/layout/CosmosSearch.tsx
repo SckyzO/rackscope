@@ -63,6 +63,13 @@ const PAGES: SearchResult[] = [
     href: '/cosmos/views/worldmap',
   },
   {
+    id: 'aisle-dashboard',
+    label: 'Cluster Dashboard',
+    sublabel: 'Infrastructure',
+    category: 'page',
+    href: '/cosmos/views/aisle',
+  },
+  {
     id: 'notifications',
     label: 'Notifications',
     sublabel: 'Monitoring',

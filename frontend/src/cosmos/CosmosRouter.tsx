@@ -58,6 +58,7 @@ import { NotificationsFullPage } from './pages/NotificationsFullPage';
 // Monitoring Views (connected to real API)
 import { CosmosWorldMapPage } from './pages/views/CosmosWorldMapPage';
 import { CosmosRoomPage } from './pages/views/CosmosRoomPage';
+import { CosmosAisleDashboardPage } from './pages/views/CosmosAisleDashboardPage';
 
 import { CosmosDevicePage } from './pages/views/CosmosDevicePage';
 import { CosmosRackPage } from './pages/views/CosmosRackPage';
@@ -185,6 +186,7 @@ const CosmosRoutes = () => (
 
       {/* ── Monitoring Views (live data) ── */}
       <Route path="views/worldmap" element={<CosmosWorldMapPage />} />
+      <Route path="views/aisle" element={<CosmosAisleDashboardPage />} />
       <Route path="views/room/:roomId" element={<CosmosRoomPage />} />
       <Route path="views/rack/:rackId" element={<CosmosRackPage />} />
       <Route path="views/device/:rackId/:deviceId" element={<CosmosDevicePage />} />

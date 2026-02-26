@@ -136,6 +136,11 @@ return (
               tooltip: 'Show the World Map page and its sidebar link.',
             },
             {
+              key: 'aisle_dashboard' as const,
+              label: 'Cluster Dashboard',
+              tooltip: 'Show the small cluster / aisle dashboard page in navigation.',
+            },
+            {
               key: 'notifications' as const,
               label: 'Notifications',
               tooltip: 'Show the Notifications page and the badge in the header.',
