@@ -235,18 +235,20 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
             <div className="flex shrink-0 items-center justify-center py-2">
               <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">Front</span>
             </div>
-            <div className="min-h-0 flex-1">
-              <RackElevation
-                rack={synthRack}
-                catalog={synthCatalog}
-                isRearView={false}
-                nodesData={{}}
-                infraComponents={[]}
-                sideComponents={[]}
-                rearInfraComponents={[]}
-                pduMetrics={{}}
-                fullWidth
-              />
+            <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden">
+              <div className="h-full w-1/2">
+                <RackElevation
+                  rack={synthRack}
+                  catalog={synthCatalog}
+                  isRearView={false}
+                  nodesData={{}}
+                  infraComponents={[]}
+                  sideComponents={[]}
+                  rearInfraComponents={[]}
+                  pduMetrics={{}}
+                  fullWidth
+                />
+              </div>
             </div>
           </div>
 
@@ -256,18 +258,20 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
               <div className="flex shrink-0 items-center justify-center py-2">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
               </div>
-              <div className="min-h-0 flex-1">
-                <RackElevation
-                  rack={synthRack}
-                  catalog={synthCatalog}
-                  isRearView={true}
-                  nodesData={{}}
-                  infraComponents={[]}
-                  sideComponents={[]}
-                  rearInfraComponents={[]}
-                  pduMetrics={{}}
-                  fullWidth
-                />
+              <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden">
+                <div className="h-full w-1/2">
+                  <RackElevation
+                    rack={synthRack}
+                    catalog={synthCatalog}
+                    isRearView={true}
+                    nodesData={{}}
+                    infraComponents={[]}
+                    sideComponents={[]}
+                    rearInfraComponents={[]}
+                    pduMetrics={{}}
+                    fullWidth
+                  />
+                </div>
               </div>
             </div>
           )}
