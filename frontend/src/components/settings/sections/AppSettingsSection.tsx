@@ -122,6 +122,13 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
           checked={draft.features.demo}
           onChange={(value) => update('features', 'demo', value)}
         />
+        <FormField
+          label="Alert Toast Duration (seconds)"
+          tooltip="How long WARN/CRIT alert toast notifications stay visible before auto-dismissing. Default: 15."
+          value={draft.features.toast_duration_seconds}
+          onChange={(value) => update('features', 'toast_duration_seconds', value)}
+          type="number"
+        />
         <p className="text-[11px] text-gray-400 dark:text-gray-600">
           Notifications, Playlist and page visibility are configured in the <strong>Views</strong> tab.
         </p>

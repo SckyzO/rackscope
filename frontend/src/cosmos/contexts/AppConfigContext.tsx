@@ -6,6 +6,7 @@ import type { AppConfig } from '../../types';
 // Feature flags with safe defaults (fail-open: show everything if config not loaded)
 interface AppFeatures {
   notifications: boolean;
+  toast_duration_seconds: number;
   worldmap: boolean;
   dev_tools: boolean;
   playlist: boolean;
@@ -28,6 +29,7 @@ interface AppConfigContextType {
 
 const DEFAULT_FEATURES: AppFeatures = {
   notifications: true,
+  toast_duration_seconds: 15,
   worldmap: true,
   dev_tools: false,
   playlist: false,
@@ -62,6 +64,7 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
   // Derive feature flags — default true for core features, false for opt-in
   const features: AppFeatures = {
     notifications: config?.features?.notifications !== false,
+    toast_duration_seconds: Number(config?.features?.toast_duration_seconds ?? 15),
     worldmap: config?.features?.worldmap !== false,
     dev_tools: config?.features?.dev_tools === true,
     playlist: config?.features?.playlist === true,

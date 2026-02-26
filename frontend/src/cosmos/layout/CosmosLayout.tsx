@@ -9,6 +9,7 @@ import { PluginsMenuProvider } from '../../context/PluginsMenuContext';
 import { PlaylistProvider } from '../contexts/PlaylistContext';
 import { usePlaylistSafe } from '../contexts/PlaylistContext';
 import { PlaylistCountdownBar } from '../components/PlaylistCountdown';
+import { AlertToastContainer } from '../components/AlertToastContainer';
 import '../cosmos.css';
 
 // ── KioskExitButton ────────────────────────────────────────────────────────────
@@ -111,6 +112,8 @@ const CosmosInnerLayout = () => {
       <PlaylistCountdownBar />
       {/* Kiosk exit float button */}
       <KioskExitButton />
+      {/* Alert toast notifications — bottom-right, polled from /api/alerts/active */}
+      <AlertToastContainer />
     </>
   );
 };

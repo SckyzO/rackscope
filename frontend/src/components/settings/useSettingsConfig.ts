@@ -55,6 +55,7 @@ export type ConfigDraft = {
   features: {
     notifications: boolean;
     notifications_max_visible: string;
+    toast_duration_seconds: string;
     worldmap: boolean;
     dev_tools: boolean;
     playlist: boolean;
@@ -177,6 +178,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
   features: {
     notifications: config.features?.notifications ?? true,
     notifications_max_visible: String(config.features?.notifications_max_visible ?? 10),
+    toast_duration_seconds: String(config.features?.toast_duration_seconds ?? 15),
     worldmap: config.features?.worldmap ?? true,
     dev_tools: config.features?.dev_tools ?? false,
     playlist: config.features?.playlist ?? false,
@@ -330,6 +332,7 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
   features: {
     notifications: draft.features.notifications,
     notifications_max_visible: parseInt(draft.features.notifications_max_visible, 10) || 10,
+    toast_duration_seconds: parseInt(draft.features.toast_duration_seconds, 10) || 15,
     worldmap: draft.features.worldmap,
     dev_tools: draft.features.dev_tools,
     playlist: draft.features.playlist,

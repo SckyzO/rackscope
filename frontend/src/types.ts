@@ -373,6 +373,7 @@ export interface AppConfig {
   features?: {
     notifications?: boolean;
     notifications_max_visible?: number;
+    toast_duration_seconds?: number;
     playlist?: boolean;
     offline?: boolean;
     demo?: boolean;
