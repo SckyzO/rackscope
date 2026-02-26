@@ -190,6 +190,7 @@ export const RackElevation = ({
   pduMetrics,
   fullWidth = false,
   disableZoom = false,
+  disableTooltip = false,
 }: {
   rack: Rack;
   catalog: Record<string, DeviceTemplate>;
