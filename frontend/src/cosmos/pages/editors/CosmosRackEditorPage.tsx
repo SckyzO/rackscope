@@ -666,6 +666,13 @@ export const CosmosRackEditorPage = () => {
                   <Check className="h-3.5 w-3.5" /> Saved
                 </span>
               )}
+              <button
+                onClick={() => setWizardOpen(true)}
+                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+              >
+                <Plus className="h-4 w-4" />
+                New Rack
+              </button>
               {dirty && (
                 <button
                   onClick={() => void handleSave()}
@@ -713,8 +720,8 @@ export const CosmosRackEditorPage = () => {
           {/* ── Racks tab ─────────────────────────────────────────────────── */}
           {leftTab === 'racks' && (
             <>
-              {/* Search + New Rack */}
-              <div className="shrink-0 space-y-2 p-3">
+              {/* Search */}
+              <div className="shrink-0 p-3">
                 <div className="relative">
                   <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
                   <input
@@ -724,12 +731,6 @@ export const CosmosRackEditorPage = () => {
                     className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-2 pr-3 pl-8 text-xs placeholder-gray-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-600"
                   />
                 </div>
-                <button
-                  onClick={() => setWizardOpen(true)}
-                  className="bg-brand-500 hover:bg-brand-600 flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-white transition-colors"
-                >
-                  <Plus className="h-3.5 w-3.5" /> New Rack
-                </button>
               </div>
 
               {/* Accordion list — Flush Style grouped by room */}
