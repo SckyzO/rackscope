@@ -141,6 +141,8 @@ export interface RackComponentTemplate {
   model?: string;
   role?: string;
   location: 'side' | 'u-mount' | 'front' | 'rear';
+  side?: 'left' | 'right';       // default rail side when location='side'
+  u_position?: number;            // default U position in rack
   u_height: number;
   checks?: string[];
   metrics?: string[];

@@ -18,7 +18,7 @@ from rackscope.model.catalog import DeviceTemplate
 class TemplateWriteRequest(BaseModel):
     """Request model for creating/updating templates."""
 
-    kind: Literal["device", "rack"]
+    kind: Literal["device", "rack", "rack_component"]
     template: Dict[str, Any]
 
 

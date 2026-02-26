@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   Loader2,
   ChevronDown,
-  Activity,
   BarChart2,
   FileCode2,
   Cpu,
@@ -124,10 +123,10 @@ const RackPreview = ({
   const sideComponents: InfrastructureComponent[] = infra.side_components ?? [];
   // Rack components with location='side' go on the rails
   const rackCompLeft = resolvedRackComponents.filter(({ ref, tpl }) =>
-    tpl.location === 'side' && ref.side === 'left'
+    tpl.location === 'side' && (ref.side === 'left' || (!ref.side && tpl.side === 'left'))
   );
   const rackCompRight = resolvedRackComponents.filter(({ ref, tpl }) =>
-    tpl.location === 'side' && (ref.side === 'right' || (!ref.side && tpl.location === 'side'))
+    tpl.location === 'side' && (ref.side === 'right' || (!ref.side && tpl.side === 'right') || (!ref.side && !tpl.side))
   );
 
   // Build u-mount occupancy map (start U → component)
@@ -893,81 +892,202 @@ const EditorPanel = ({
 // RackComponentDetailPanel
 // ---------------------------------------------------------------------------
 
-const TYPE_BADGE_STYLES: Record<string, string> = {
-  pdu:     'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/30',
-  cooling: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-400 dark:border-sky-500/30',
-  power:   'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30',
-  network: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30',
-  management: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/30',
-  other:   'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
+
+type CompDraft = {
+  name: string;
+  type: string;
+  location: string;
+  side: string;
+  u_height: string;
+  u_position: string;
+  model: string;
+  role: string;
+  checks: string[];
+  metrics: string[];
 };
 
-const RackComponentDetailPanel = ({ component }: { component: RackComponentTemplate }) => {
-  const typeStyle = TYPE_BADGE_STYLES[component.type] ?? TYPE_BADGE_STYLES.other;
-  const col = RAIL_COLORS[component.type] ?? RAIL_COLORS.other;
+const toDraftComp = (c: RackComponentTemplate): CompDraft => ({
+  name: c.name,
+  type: c.type,
+  location: c.location,
+  side: c.side ?? 'left',
+  u_height: String(c.u_height),
+  u_position: c.u_position != null ? String(c.u_position) : '',
+  model: c.model ?? '',
+  role: c.role ?? '',
+  checks: c.checks ?? [],
+  metrics: c.metrics ?? [],
+});
+
+const RackComponentDetailPanel = ({
+  component,
+  onSaved,
+}: {
+  component: RackComponentTemplate;
+  onSaved: () => void;
+}) => {
+  const [draft, setDraft] = useState<CompDraft>(() => toDraftComp(component));
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [newCheck, setNewCheck] = useState('');
+  const [newMetric, setNewMetric] = useState('');
+
+  useEffect(() => {
+    setDraft(toDraftComp(component));
+    setDirty(false);
+    setSaveStatus('idle');
+    setSaveError(null);
+  }, [component]);
+
+  const update = <K extends keyof CompDraft>(key: K, value: CompDraft[K]) => {
+    setDraft((d) => ({ ...d, [key]: value }));
+    setDirty(true);
+    setSaveStatus('idle');
+  };
+
+  const handleSave = async () => {
+    setSaving(true); setSaveError(null);
+    try {
+      await api.updateTemplate({
+        kind: 'rack_component',
+        template: {
+          id: component.id,
+          name: draft.name.trim(),
+          type: draft.type,
+          location: draft.location,
+          ...(draft.location === 'side' ? { side: draft.side } : {}),
+          u_height: parseInt(draft.u_height) || component.u_height,
+          ...(draft.u_position ? { u_position: parseInt(draft.u_position) } : {}),
+          ...(draft.model.trim() ? { model: draft.model.trim() } : {}),
+          ...(draft.role.trim() ? { role: draft.role.trim() } : {}),
+          checks: draft.checks,
+          metrics: draft.metrics,
+        },
+      });
+      setDirty(false);
+      setSaveStatus('saved');
+      onSaved();
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Save failed');
+      setSaveStatus('error');
+    } finally { setSaving(false); }
+  };
+
+  const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-600';
+  const labelCls = 'block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5';
+  const col = RAIL_COLORS[draft.type] ?? RAIL_COLORS.other;
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="shrink-0 border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-        <div className="flex items-start gap-3">
-          <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-            style={{ backgroundColor: col.bg, border: `1px solid ${col.border}` }}
-          >
+      {/* Header with save actions */}
+      <div className="shrink-0 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: col.bg, border: `1px solid ${col.border}` }}>
             <Layers className="h-4 w-4" style={{ color: col.text }} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-gray-900 dark:text-white">{component.name}</p>
-            <p className="mt-0.5 font-mono text-[10px] text-gray-400 dark:text-gray-600">{component.id}</p>
+            <p className="truncate text-sm font-bold text-gray-900 dark:text-white">{component.name}</p>
+            <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">{component.id}</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {dirty && <button onClick={() => { setDraft(toDraftComp(component)); setDirty(false); }} className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"><X className="h-3 w-3"/>Discard</button>}
+            <button
+              onClick={() => void handleSave()}
+              disabled={!dirty || saving}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${saveStatus === 'saved' ? 'bg-green-500 text-white' : dirty ? 'bg-brand-500 text-white hover:bg-brand-600' : 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600'}`}
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin"/> : saveStatus === 'saved' ? <CheckCircle2 className="h-3.5 w-3.5"/> : <Save className="h-3.5 w-3.5"/>}
+              {saving ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : 'Save'}
+            </button>
           </div>
         </div>
+        {saveError && <p className="mt-2 text-xs text-red-500">{saveError}</p>}
       </div>
 
       <div className="flex-1 space-y-5 overflow-y-auto p-5">
-        {/* Properties */}
-        <SectionCard title="Properties" desc="Component definition">
-          <div className="space-y-2">
-            {[
-              { label: 'Type',     value: <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${typeStyle}`}>{component.type}</span> },
-              { label: 'Location', value: <span className="rounded bg-gray-100 px-2 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400">{component.location}</span> },
-              { label: 'U Height', value: <span className="font-mono text-sm font-bold text-gray-800 dark:text-gray-200">{component.u_height}<span className="ml-0.5 text-xs font-normal text-gray-400">U</span></span> },
-              ...(component.model ? [{ label: 'Model', value: <span className="text-sm text-gray-700 dark:text-gray-300">{component.model}</span> }] : []),
-              ...(component.role  ? [{ label: 'Role',  value: <span className="text-sm text-gray-700 dark:text-gray-300">{component.role}</span>  }] : []),
-            ].map(({ label, value }) => (
-              <div key={label} className="flex items-center justify-between rounded-lg px-3 py-2 odd:bg-gray-50 dark:odd:bg-gray-800/40">
-                <span className="text-xs font-medium text-gray-500 dark:text-gray-500">{label}</span>
-                <div>{value}</div>
+        {/* Identity */}
+        <SectionCard title="Identity" desc="Component properties">
+          <div className="space-y-4">
+            <div><label className={labelCls}>Name *</label><input value={draft.name} onChange={(e) => update('name', e.target.value)} className={inputCls} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Type</label>
+                <select value={draft.type} onChange={(e) => update('type', e.target.value)} className={inputCls}>
+                  {['pdu','cooling','power','network','management','other'].map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
               </div>
-            ))}
+              <div>
+                <label className={labelCls}>Location</label>
+                <select value={draft.location} onChange={(e) => update('location', e.target.value)} className={inputCls}>
+                  {['side','u-mount','front','rear'].map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><label className={labelCls}>U Height</label><input type="number" min={1} max={52} value={draft.u_height} onChange={(e) => update('u_height', e.target.value)} className={inputCls}/></div>
+              <div><label className={labelCls}>Model</label><input value={draft.model} onChange={(e) => update('model', e.target.value)} placeholder="optional" className={inputCls}/></div>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* Placement defaults */}
+        <SectionCard title="Default placement" desc="Where this component sits in a rack by default">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>U Position <span className="text-gray-400">(starting U)</span></label>
+                <input type="number" min={1} max={52} value={draft.u_position} onChange={(e) => update('u_position', e.target.value)} placeholder="e.g. 1" className={inputCls}/>
+              </div>
+              {draft.location === 'side' && (
+                <div>
+                  <label className={labelCls}>Rail side</label>
+                  <select value={draft.side} onChange={(e) => update('side', e.target.value)} className={inputCls}>
+                    <option value="left">Left rail</option>
+                    <option value="right">Right rail</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            {draft.location === 'side' && (
+              <p className="text-xs text-gray-400 dark:text-gray-600">
+                U Position = starting unit on the rail. U Height = how many units it occupies (U{draft.u_position || '?'} → U{(parseInt(draft.u_position) || 1) + (parseInt(draft.u_height) || 1) - 1}).
+              </p>
+            )}
           </div>
         </SectionCard>
 
         {/* Checks */}
-        {(component.checks?.length ?? 0) > 0 && (
-          <SectionCard title="Checks" icon={CheckSquare}>
-            <div className="flex flex-wrap gap-1.5">
-              {component.checks!.map((id) => (
-                <span key={id} className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-400">
-                  <CheckSquare className="h-3 w-3 opacity-70" />{id}
-                </span>
-              ))}
-            </div>
-          </SectionCard>
-        )}
+        <SectionCard title="Checks" icon={CheckSquare}>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {draft.checks.map((id) => (
+              <span key={id} className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-400">
+                {id}
+                <button onClick={() => { update('checks', draft.checks.filter((c) => c !== id)); }} className="rounded p-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-500/20"><X className="h-3 w-3"/></button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input value={newCheck} onChange={(e) => setNewCheck(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newCheck.trim()) { update('checks', [...draft.checks, newCheck.trim()]); setNewCheck(''); }}} placeholder="check_id (Enter to add)" className={`${inputCls} text-xs`}/>
+          </div>
+        </SectionCard>
 
         {/* Metrics */}
-        {(component.metrics?.length ?? 0) > 0 && (
-          <SectionCard title="Metrics" icon={BarChart2} desc="Prometheus metrics exposed by this component">
-            <div className="flex flex-wrap gap-1.5">
-              {component.metrics!.map((m) => (
-                <span key={m} className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 font-mono text-[11px] text-brand-600 dark:border-brand-700/30 dark:bg-brand-500/10 dark:text-brand-400">
-                  <Activity className="h-3 w-3 opacity-70" />{m}
-                </span>
-              ))}
-            </div>
-          </SectionCard>
-        )}
+        <SectionCard title="Metrics" icon={BarChart2} desc="Prometheus metrics collected for this component">
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {draft.metrics.map((m) => (
+              <span key={m} className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 font-mono text-[11px] text-brand-600 dark:border-brand-700/30 dark:bg-brand-500/10 dark:text-brand-400">
+                {m}
+                <button onClick={() => { update('metrics', draft.metrics.filter((x) => x !== m)); }} className="rounded p-0.5 hover:bg-brand-100 dark:hover:bg-brand-500/20"><X className="h-3 w-3"/></button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input value={newMetric} onChange={(e) => setNewMetric(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newMetric.trim()) { update('metrics', [...draft.metrics, newMetric.trim()]); setNewMetric(''); }}} placeholder="metric_name (Enter to add)" className={`${inputCls} font-mono text-xs`}/>
+          </div>
+        </SectionCard>
       </div>
     </div>
   );
@@ -1566,7 +1686,7 @@ export const CosmosRackTemplateEditorPage = () => {
                     <FileCode2 className="h-3.5 w-3.5" /> Edit YAML
                   </button>
                 </div>
-                <RackComponentDetailPanel component={selectedComponent} />
+                <RackComponentDetailPanel component={selectedComponent} onSaved={() => { void loadData(); }} />
               </>
             ) : (
               <div className="flex h-full items-center justify-center p-6 text-center">

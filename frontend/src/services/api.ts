@@ -206,7 +206,7 @@ export const api = {
     return fetchWithCache('/api/catalog', 'catalog');
   },
   createTemplate: async (payload: {
-    kind: 'device' | 'rack';
+    kind: 'device' | 'rack' | 'rack_component';
     template: Record<string, unknown>;
   }) => {
     const res = await apiFetch('/api/catalog/templates', {
@@ -224,7 +224,7 @@ export const api = {
     return data;
   },
   updateTemplate: async (payload: {
-    kind: 'device' | 'rack';
+    kind: 'device' | 'rack' | 'rack_component';
     template: Record<string, unknown>;
   }) => {
     const res = await apiFetch('/api/catalog/templates', {
@@ -242,7 +242,7 @@ export const api = {
     return data;
   },
   validateTemplate: async (payload: {
-    kind: 'device' | 'rack';
+    kind: 'device' | 'rack' | 'rack_component';
     template: Record<string, unknown>;
   }) => {
     const res = await apiFetch('/api/catalog/templates/validate', {

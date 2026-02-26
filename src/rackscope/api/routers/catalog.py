@@ -11,7 +11,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
 
-from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate
+from rackscope.model.catalog import Catalog, DeviceTemplate, RackTemplate, RackComponentTemplate
 from rackscope.model.config import AppConfig
 from rackscope.model.loader import load_catalog, dump_yaml
 from rackscope.api.dependencies import get_app_config, get_catalog_optional
@@ -29,6 +29,23 @@ def _find_device_template_path(templates_dir: Path, template_id: str) -> Optiona
     if not matches:
         return None
     return matches[0]
+
+
+def _find_rack_component_path(templates_dir: Path, template_id: str) -> Optional[Path]:
+    """Find path to rack component template YAML file by template ID."""
+    comp_dir = templates_dir / "rack_components"
+    if not comp_dir.exists():
+        return None
+    for yaml_file in comp_dir.rglob("*.yaml"):
+        import yaml as _yaml
+        try:
+            data = _yaml.safe_load(yaml_file.read_text()) or {}
+            for t in data.get("rack_component_templates", []):
+                if t.get("id") == template_id:
+                    return yaml_file
+        except Exception:
+            continue
+    return None
 
 
 def _safe_segment(value: str, fallback: str) -> str:
@@ -68,6 +85,20 @@ def write_template(
         target_dir = templates_dir / "devices" / type_dir
         key = "templates"
         filename = f"{_safe_segment(template.id, 'device')}.yaml"
+    elif payload.kind == "rack_component":
+        template = RackComponentTemplate(**payload.template)
+        target_dir = templates_dir / "rack_components"
+        key = "rack_component_templates"
+        filename = f"{_safe_segment(template.id, 'component')}.yaml"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_path = target_dir / filename
+        if target_path.exists():
+            raise HTTPException(status_code=400, detail=f"Component template already exists: {template.id}")
+        data = {key: [template.model_dump()]}
+        target_path.write_text(dump_yaml(data))
+        from rackscope.api import app as app_module
+        app_module.CATALOG = load_catalog(templates_dir)
+        return template
     else:
         template = RackTemplate(**payload.template)
         if catalog and catalog.get_rack_template(template.id):
@@ -111,6 +142,32 @@ def update_template(
         target_path = target_dir / filename
         if existing_path and existing_path != target_path:
             existing_path.unlink(missing_ok=True)
+    elif payload.kind == "rack_component":
+        template = RackComponentTemplate(**payload.template)
+        target_dir = templates_dir / "rack_components"
+        key = "rack_component_templates"
+        filename = f"{_safe_segment(template.id, 'component')}.yaml"
+        # Find existing file (might have different name)
+        existing_path = _find_rack_component_path(templates_dir, template.id)
+        target_path = target_dir / filename
+        if existing_path and existing_path != target_path:
+            # Update in-place to avoid duplicates
+            import yaml as _yaml
+            data = _yaml.safe_load(existing_path.read_text()) or {}
+            comps = data.get("rack_component_templates", [])
+            data["rack_component_templates"] = [
+                template.model_dump() if c.get("id") == template.id else c for c in comps
+            ]
+            existing_path.write_text(dump_yaml(data))
+            from rackscope.api import app as app_module
+            app_module.CATALOG = load_catalog(templates_dir)
+            return template
+        target_dir.mkdir(parents=True, exist_ok=True)
+        data = {key: [template.model_dump()]}
+        target_path.write_text(dump_yaml(data))
+        from rackscope.api import app as app_module
+        app_module.CATALOG = load_catalog(templates_dir)
+        return template
     else:
         template = RackTemplate(**payload.template)
         target_dir = templates_dir / "racks"

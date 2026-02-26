@@ -66,7 +66,9 @@ class RackComponentTemplate(BaseModel):
     model: Optional[str] = None
     role: Optional[str] = None
     location: Literal["side", "u-mount", "front", "rear"] = "u-mount"
+    side: Optional[Literal["left", "right"]] = None   # default rail side when location='side'
     u_height: int
+    u_position: Optional[int] = None   # default position in rack
     checks: List[str] = Field(default_factory=list)
     metrics: List[str] = Field(default_factory=list)
 
