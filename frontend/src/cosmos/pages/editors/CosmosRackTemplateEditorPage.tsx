@@ -1,868 +1,881 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Plus,
-  Trash2,
-  Save,
-  Check,
-  AlertCircle,
-  Search,
   Server,
-  Zap,
-  Wind,
-  Network,
-  Settings2,
-  ChevronRight,
-  ShieldCheck,
+  Save,
+  X,
+  CheckSquare,
+  Layers,
+  Tag,
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
 } from 'lucide-react';
-import { RackElevation } from '../../../components/RackVisualizer';
 import { api } from '../../../services/api';
-import type {
-  RackTemplate,
-  RackComponentTemplate,
-  CheckDefinition,
-  InfrastructureComponent,
-  Rack,
-} from '../../../types';
+import type { RackTemplate, InfrastructureComponent, CheckDefinition } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
+import {
+  PageHeader,
+  PageBreadcrumb,
+  SectionCard,
+  LoadingState,
+  ErrorState,
+  EmptyState,
+} from '../templates/EmptyPage';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
-type DraftComponent = {
-  _key: string;
-  template_id: string;
-  u_position: number;
-  side: 'left' | 'right';
-};
-
-type Draft = {
+type RackDraft = {
   id: string;
   name: string;
-  u_height: number;
-  components: DraftComponent[];
+  u_height: string;
   checks: string[];
 };
 
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+const toDraft = (tpl: RackTemplate): RackDraft => ({
+  id: tpl.id,
+  name: tpl.name,
+  u_height: String(tpl.u_height ?? 42),
+  checks: tpl.checks ?? [],
+});
 
-const TYPE_COLOR: Record<string, string> = {
-  power: '#eab308',
-  pdu: '#f97316',
-  cooling: '#3b82f6',
-  management: '#a855f7',
-  network: '#465fff',
-  other: '#6b7280',
+const draftToTemplate = (draft: RackDraft, base?: RackTemplate): Record<string, unknown> => ({
+  id: draft.id.trim(),
+  name: draft.name.trim(),
+  u_height: parseInt(draft.u_height) || 42,
+  checks: draft.checks,
+  infrastructure: base?.infrastructure ?? { components: [] },
+});
+
+// ---------------------------------------------------------------------------
+// Component type styles
+// ---------------------------------------------------------------------------
+
+const COMP_TYPE_STYLES: Record<string, string> = {
+  power:
+    'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30',
+  cooling:
+    'bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-400 dark:border-sky-500/30',
+  management:
+    'bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/15 dark:text-violet-400 dark:border-violet-500/30',
+  network:
+    'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30',
+  other:
+    'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
 };
 
-const TYPE_ICON: Record<string, React.ElementType> = {
-  power: Zap,
-  pdu: Zap,
-  cooling: Wind,
-  management: Settings2,
-  network: Network,
-  other: Server,
-};
+// ---------------------------------------------------------------------------
+// ComponentChip
+// ---------------------------------------------------------------------------
 
-const EMPTY_DRAFT: Draft = {
-  id: '',
-  name: '',
-  u_height: 42,
-  components: [],
-  checks: [],
-};
-
-const nextKey = (() => {
-  let n = 0;
-  return () => `c${++n}`;
-})();
-
-// ── Helpers: convert draft → InfrastructureComponent[] ───────────────────────
-
-const VALID_INFRA_TYPES = new Set(['power', 'cooling', 'management', 'network', 'other']);
-
-function toInfraType(t: string): InfrastructureComponent['type'] {
-  return VALID_INFRA_TYPES.has(t) ? (t as InfrastructureComponent['type']) : 'other';
-}
-
-function buildInfraComponents(
-  draft: Draft,
-  compTemplates: Record<string, RackComponentTemplate>
-): {
-  sideComps: InfrastructureComponent[];
-  frontComps: InfrastructureComponent[];
-  rearComps: InfrastructureComponent[];
-} {
-  const sideComps: InfrastructureComponent[] = [];
-  const frontComps: InfrastructureComponent[] = [];
-  const rearComps: InfrastructureComponent[] = [];
-
-  for (const c of draft.components) {
-    const tmpl = compTemplates[c.template_id];
-    if (!tmpl) continue;
-
-    if (tmpl.location === 'side') {
-      sideComps.push({
-        id: c._key,
-        name: tmpl.name,
-        type: toInfraType(tmpl.type ?? 'other'),
-        model: tmpl.model,
-        location: c.side === 'left' ? 'side-left' : 'side-right',
-        u_position: c.u_position,
-        u_height: tmpl.u_height,
-      });
-    } else if (tmpl.location === 'rear') {
-      rearComps.push({
-        id: c._key,
-        name: tmpl.name,
-        type: toInfraType(tmpl.type ?? 'other'),
-        model: tmpl.model,
-        location: 'u-mount',
-        u_position: c.u_position,
-        u_height: tmpl.u_height,
-      });
-    } else {
-      // u-mount + front → show on front face
-      frontComps.push({
-        id: c._key,
-        name: tmpl.name,
-        type: toInfraType(tmpl.type ?? 'other'),
-        model: tmpl.model,
-        location: 'u-mount',
-        u_position: c.u_position,
-        u_height: tmpl.u_height,
-      });
-    }
-  }
-
-  return { sideComps, frontComps, rearComps };
-}
-
-// ── Live rack visualization ───────────────────────────────────────────────────
-
-const RackPanel = ({
-  label,
-  draft,
-  compTemplates,
-  face,
-}: {
-  label: string;
-  draft: Draft;
-  compTemplates: Record<string, RackComponentTemplate>;
-  face: 'front' | 'rear';
-}) => {
-  const previewRack = useMemo(
-    () =>
-      ({
-        id: draft.id || 'preview',
-        name: draft.name || 'Preview',
-        u_height: draft.u_height,
-        devices: [],
-      }) as Rack,
-    [draft.id, draft.name, draft.u_height]
-  );
-
-  const { sideComps, frontComps, rearComps } = useMemo(
-    () => buildInfraComponents(draft, compTemplates),
-    [draft, compTemplates]
-  );
-
-  const infraComps = face === 'front' ? frontComps : rearComps;
-  const isRear = face === 'rear';
-  // RackElevation uses h-full, so it needs an explicit height on its container.
-  // 22px per U is a comfortable size; minimum 300px for very short racks.
-  const rackHeight = Math.max(300, draft.u_height * 22);
-
+const ComponentChip = ({ component }: { component: InfrastructureComponent }) => {
+  const typeStyle = COMP_TYPE_STYLES[component.type] ?? COMP_TYPE_STYLES.other;
   return (
-    <div>
-      <p className="mb-2 text-center text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
-        {label}
-      </p>
-      <div style={{ height: rackHeight }}>
-        <RackElevation
-          rack={previewRack}
-          catalog={{}}
-          health={undefined}
-          nodesData={{}}
-          isRearView={isRear}
-          infraComponents={infraComps}
-          sideComponents={sideComps}
-          allowInfraOverlap={isRear}
-          pduMetrics={undefined}
-          onDeviceClick={() => { /* noop */ }}
-        />
+    <div className="flex items-center gap-2 rounded-xl border border-gray-100 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900/50">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-medium text-gray-800 dark:text-gray-200">
+          {component.name}
+        </p>
+        <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">{component.id}</p>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <span
+          className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${typeStyle}`}
+        >
+          {component.type}
+        </span>
+        <span className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-500 dark:bg-gray-800 dark:text-gray-500">
+          {component.location}
+        </span>
       </div>
     </div>
   );
 };
 
-// ── Component row ─────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// TemplateItem
+// ---------------------------------------------------------------------------
 
-const ComponentRow = ({
-  comp,
-  compTemplates,
-  allTemplates,
-  onChange,
-  onDelete,
+const TemplateItem = ({
+  template,
+  selected,
+  onClick,
 }: {
-  comp: DraftComponent;
-  compTemplates: Record<string, RackComponentTemplate>;
-  allTemplates: RackComponentTemplate[];
-  onChange: (updated: DraftComponent) => void;
-  onDelete: () => void;
+  template: RackTemplate;
+  selected: boolean;
+  onClick: () => void;
 }) => {
-  const tmpl = compTemplates[comp.template_id];
-  const isSide = tmpl?.location === 'side';
-  const isUMount =
-    tmpl?.location === 'u-mount' || tmpl?.location === 'front' || tmpl?.location === 'rear';
-  const TypeIcon = TYPE_ICON[tmpl?.type ?? 'other'] ?? Server;
-  const typeColor = TYPE_COLOR[tmpl?.type ?? 'other'];
+  const checksCount = template.checks?.length ?? 0;
+  const compCount =
+    (template.infrastructure?.components?.length ?? 0) +
+    (template.infrastructure?.rear_components?.length ?? 0) +
+    (template.infrastructure?.side_components?.length ?? 0) +
+    (template.infrastructure?.rack_components?.length ?? 0);
 
   return (
-    <tr className="group border-b border-gray-100 dark:border-gray-800">
-      <td className="py-2 pr-2">
-        <div className="flex items-center gap-2">
-          <TypeIcon className="h-3.5 w-3.5 shrink-0" style={{ color: typeColor }} />
-          <select
-            value={comp.template_id}
-            onChange={(e) => onChange({ ...comp, template_id: e.target.value })}
-            className="focus:border-brand-500 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-          >
-            <option value="">— select —</option>
-            {allTemplates.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name} ({t.type})
-              </option>
-            ))}
-          </select>
-        </div>
-      </td>
-      <td className="px-2 py-2">
-        {tmpl && (
-          <span
-            className="rounded px-1.5 py-0.5 font-mono text-[10px] font-medium text-white"
-            style={{ backgroundColor: `${typeColor}aa` }}
-          >
-            {tmpl.location}
-          </span>
-        )}
-      </td>
-      <td className="px-2 py-2">
-        {isUMount ? (
-          <input
-            type="number"
-            min={1}
-            value={comp.u_position}
-            onChange={(e) => onChange({ ...comp, u_position: parseInt(e.target.value, 10) || 1 })}
-            className="focus:border-brand-500 w-14 rounded-lg border border-gray-200 bg-white px-2 py-1 text-center text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-          />
-        ) : (
-          <span className="text-xs text-gray-300 dark:text-gray-700">—</span>
-        )}
-      </td>
-      <td className="px-2 py-2">
-        {isSide ? (
-          <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-            {(['left', 'right'] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => onChange({ ...comp, side: s })}
-                className={`px-2.5 py-0.5 text-[10px] font-medium capitalize transition-colors ${
-                  comp.side === s
-                    ? 'bg-brand-500 text-white'
-                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5'
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <span className="text-xs text-gray-300 dark:text-gray-700">—</span>
-        )}
-      </td>
-      <td className="py-2 pl-2 text-right">
-        <button
-          type="button"
-          onClick={onDelete}
-          className="rounded p-1 text-gray-300 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 dark:text-gray-700 dark:hover:bg-red-900/20"
+    <button
+      onClick={onClick}
+      className={`group w-full rounded-xl border px-3 py-3 text-left transition-all ${
+        selected
+          ? 'border-[var(--color-accent)]/40 bg-[var(--color-accent)]/8 dark:bg-[var(--color-accent)]/10'
+          : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900/40 dark:hover:border-gray-700 dark:hover:bg-gray-800/50'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+            selected
+              ? 'bg-[var(--color-accent)]/20 text-[var(--color-accent)]'
+              : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:group-hover:bg-gray-700'
+          }`}
         >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </td>
-    </tr>
+          <Server className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-gray-800 dark:text-gray-100">
+            {template.name}
+          </p>
+          <p className="mt-0.5 truncate font-mono text-[10px] text-gray-400 dark:text-gray-600">
+            {template.id}
+          </p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-mono text-[10px] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+              {template.u_height}U
+            </span>
+            {checksCount > 0 && (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400">
+                <CheckSquare className="h-2.5 w-2.5" />
+                {checksCount}
+              </span>
+            )}
+            {compCount > 0 && (
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-700/40 dark:text-slate-400">
+                <Layers className="h-2.5 w-2.5" />
+                {compCount}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </button>
   );
 };
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// NewTemplateForm
+// ---------------------------------------------------------------------------
 
-export const CosmosRackTemplateEditorPage = () => {
-  const [rackTemplates, setRackTemplates] = useState<RackTemplate[]>([]);
-  const [compTemplatesList, setCompTemplatesList] = useState<RackComponentTemplate[]>([]);
-  const [rackChecks, setRackChecks] = useState<CheckDefinition[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
-  const [isNew, setIsNew] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-  const [errors, setErrors] = useState<string[]>([]);
+const NewTemplateForm = ({
+  onCancel,
+  onCreated,
+  existingIds,
+}: {
+  onCancel: () => void;
+  onCreated: (id: string) => void;
+  existingIds: string[];
+}) => {
+  const [name, setName] = useState('');
+  const [id, setId] = useState('');
+  const [uHeight, setUHeight] = useState('42');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const compTemplates = useMemo(
-    () => Object.fromEntries(compTemplatesList.map((t) => [t.id, t])),
-    [compTemplatesList]
-  );
+  const autoId = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
 
-  // ── Load ───────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [cat, checksLib] = await Promise.all([
-          api.getCatalog(),
-          api.getChecks().catch(() => null),
-        ]);
-        setRackTemplates(cat.rack_templates ?? []);
-        const full = cat as unknown as { rack_component_templates?: RackComponentTemplate[] };
-        setCompTemplatesList(full.rack_component_templates ?? []);
-        setRackChecks((checksLib?.checks ?? []).filter((c: CheckDefinition) => c.scope === 'rack'));
-      } catch {
-        /* ignore */
-      } finally {
-        setLoading(false);
-      }
-    };
-    void load();
-  }, []);
+  const effectiveId = id.trim() || autoId;
 
-  // ── Select template ────────────────────────────────────────────────────────
-  const selectTemplate = useCallback((tmpl: RackTemplate) => {
-    setSelectedId(tmpl.id);
-    setIsNew(false);
-    setDirty(false);
-    setErrors([]);
-    setSaveStatus('idle');
-    const refs = tmpl.infrastructure?.rack_components ?? [];
-    setDraft({
-      id: tmpl.id,
-      name: tmpl.name,
-      u_height: tmpl.u_height,
-      checks: tmpl.checks ?? [],
-      components: refs.map((ref) => ({
-        _key: nextKey(),
-        template_id: ref.template_id,
-        u_position: ref.u_position,
-        side: ref.side ?? 'left',
-      })),
-    });
-  }, []);
-
-  const startNew = () => {
-    setSelectedId(null);
-    setIsNew(true);
-    setDirty(false);
-    setErrors([]);
-    setSaveStatus('idle');
-    setDraft({ ...EMPTY_DRAFT });
-  };
-
-  const patchDraft = (updates: Partial<Draft>) => {
-    setDraft((prev) => ({ ...prev, ...updates }));
-    setDirty(true);
-    setSaveStatus('idle');
-  };
-
-  const addComponent = () => {
-    patchDraft({
-      components: [
-        ...draft.components,
-        {
-          _key: nextKey(),
-          template_id: compTemplatesList[0]?.id ?? '',
-          u_position: 1,
-          side: 'left',
-        },
-      ],
-    });
-  };
-
-  const updateComponent = (key: string, updated: DraftComponent) => {
-    patchDraft({ components: draft.components.map((c) => (c._key === key ? updated : c)) });
-  };
-
-  const deleteComponent = (key: string) => {
-    patchDraft({ components: draft.components.filter((c) => c._key !== key) });
-  };
-
-  const toggleCheck = (checkId: string) => {
-    const next = draft.checks.includes(checkId)
-      ? draft.checks.filter((c) => c !== checkId)
-      : [...draft.checks, checkId];
-    patchDraft({ checks: next });
-  };
-
-  // ── Validate ───────────────────────────────────────────────────────────────
-  const validate = (): string[] => {
+  const validationErrors = useMemo(() => {
     const errs: string[] = [];
-    if (!draft.id.trim()) errs.push('Template ID is required');
-    else if (!/^[a-z0-9_-]+$/.test(draft.id))
-      errs.push('Template ID: lowercase, digits, hyphens and underscores only');
-    if (isNew && rackTemplates.some((t) => t.id === draft.id))
-      errs.push(`Template ID "${draft.id}" already exists`);
-    if (!draft.name.trim()) errs.push('Name is required');
-    if (draft.u_height < 1 || draft.u_height > 100) errs.push('Height must be between 1 and 100U');
-    for (const c of draft.components) {
-      if (!c.template_id) {
-        errs.push('All components must have a template selected');
-        break;
-      }
-      const tmpl = compTemplates[c.template_id];
-      if (tmpl?.location !== 'side') {
-        const h = tmpl?.u_height ?? 1;
-        if (c.u_position < 1 || c.u_position + h - 1 > draft.u_height)
-          errs.push(`"${tmpl?.name}" (U${c.u_position}) out of rack bounds`);
-      }
-    }
+    if (!name.trim()) errs.push('Name is required.');
+    if (!effectiveId) errs.push('ID is required.');
+    const u = parseInt(uHeight);
+    if (!u || u <= 0 || u > 52) errs.push('U height must be between 1 and 52.');
+    if (existingIds.includes(effectiveId)) errs.push('ID already exists.');
     return errs;
-  };
+  }, [name, effectiveId, uHeight, existingIds]);
 
-  // ── Save ───────────────────────────────────────────────────────────────────
-  const handleSave = async () => {
-    const errs = validate();
-    if (errs.length > 0) {
-      setErrors(errs);
-      return;
-    }
-    setErrors([]);
-    setSaveStatus('saving');
-    const payload = {
-      id: draft.id,
-      name: draft.name,
-      u_height: draft.u_height,
-      checks: draft.checks,
-      infrastructure: {
-        rack_components: draft.components.map((c) => {
-          const tmpl = compTemplates[c.template_id];
-          return {
-            template_id: c.template_id,
-            u_position: c.u_position,
-            ...(tmpl?.location === 'side' ? { side: c.side } : {}),
-          };
-        }),
-      },
-    };
+  const handleCreate = async () => {
+    if (validationErrors.length > 0) return;
+    setSaving(true);
+    setError(null);
     try {
-      if (isNew) await api.createTemplate({ kind: 'rack', template: payload });
-      else await api.updateTemplate({ kind: 'rack', template: payload });
-      const cat = await api.getCatalog();
-      setRackTemplates(cat.rack_templates ?? []);
-      setSaveStatus('saved');
-      setDirty(false);
-      setIsNew(false);
-      setSelectedId(draft.id);
-      setTimeout(() => setSaveStatus('idle'), 3000);
-    } catch {
-      setSaveStatus('error');
+      const template = {
+        id: effectiveId,
+        name: name.trim(),
+        u_height: parseInt(uHeight) || 42,
+        checks: [],
+        infrastructure: { components: [] },
+      };
+      await api.createTemplate({ kind: 'rack', template });
+      onCreated(effectiveId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create template.');
+      setSaving(false);
     }
   };
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return rackTemplates.filter(
-      (t) => !q || t.name.toLowerCase().includes(q) || t.id.toLowerCase().includes(q)
-    );
-  }, [rackTemplates, search]);
-
-  const hasSelection = isNew || selectedId !== null;
-
-  usePageTitle('Rack Templates');
+  const inputCls =
+    'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-[var(--color-accent)] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-600 dark:focus:border-[var(--color-accent)]';
+  const labelCls = 'block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1';
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
-        <PageHeader
-          title="Rack Templates"
-          description="Define rack infrastructure — PDUs, cooling and management components"
-          breadcrumb={
-            <PageBreadcrumb
-              items={[
-                { label: 'Home', href: '/cosmos' },
-                { label: 'Editors' },
-                { label: 'Rack Templates' },
-              ]}
-            />
-          }
-          actions={
-            hasSelection ? (
-              <button
-                onClick={() => void handleSave()}
-                disabled={saveStatus === 'saving' || !dirty}
-                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-40 ${
-                  saveStatus === 'saved'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-brand-500 hover:bg-brand-600 text-white'
-                }`}
-              >
-                {saveStatus === 'saving' ? (
-                  <>
-                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Saving…
-                  </>
-                ) : saveStatus === 'saved' ? (
-                  <>
-                    <Check className="h-3.5 w-3.5" />
-                    Saved
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-3.5 w-3.5" />
-                    {isNew ? 'Create' : 'Save'}
-                  </>
-                )}
-              </button>
-            ) : undefined
-          }
-        />
+    <div className="rounded-2xl border border-[var(--color-accent)]/30 bg-white p-5 shadow-sm dark:border-[var(--color-accent)]/20 dark:bg-gray-900">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+          New Rack Template
+        </h3>
+        <button
+          onClick={onCancel}
+          className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
-      <div className="flex min-h-0 flex-1 gap-0">
-      {/* ── LEFT: template list ─────────────────────────────────────────────── */}
-      <aside className="flex w-[220px] shrink-0 flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <div className="shrink-0 border-b border-gray-100 p-3 dark:border-gray-800">
-          <div className="mb-2 flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 py-1.5 pr-3 pl-8 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
-            <button
-              onClick={startNew}
-              className="bg-brand-500 hover:bg-brand-600 flex items-center justify-center rounded-xl px-2.5 text-white transition-colors"
-              title="New rack template"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
+      <div className="space-y-3">
+        <div>
+          <label className={labelCls}>Name *</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Standard Air Cooled 42U"
+            className={inputCls}
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className={labelCls}>
+            ID{' '}
+            <span className="text-gray-400 dark:text-gray-600">(auto-generated if empty)</span>
+          </label>
+          <input
+            type="text"
+            value={id}
+            onChange={(e) => setId(e.target.value)}
+            placeholder={autoId || 'rack-template-id'}
+            className={inputCls}
+          />
+          {!id && autoId && (
+            <p className="mt-1 font-mono text-[10px] text-gray-400 dark:text-gray-600">
+              Will use: {autoId}
+            </p>
+          )}
+        </div>
+        <div>
+          <label className={labelCls}>U Height *</label>
+          <input
+            type="number"
+            min={1}
+            max={52}
+            value={uHeight}
+            onChange={(e) => setUHeight(e.target.value)}
+            className={inputCls}
+          />
+        </div>
+        {validationErrors.length > 0 && (
+          <div className="space-y-0.5">
+            {validationErrors.map((msg, i) => (
+              <p
+                key={i}
+                className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"
+              >
+                <AlertTriangle className="h-3 w-3 shrink-0" />
+                {msg}
+              </p>
+            ))}
+          </div>
+        )}
+        {error && <p className="text-[11px] text-red-500 dark:text-red-400">{error}</p>}
+        <div className="flex justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+          <button
+            onClick={onCancel}
+            className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              void handleCreate();
+            }}
+            disabled={validationErrors.length > 0 || saving}
+            className="flex items-center gap-1.5 rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            Create
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// EditorPanel
+// ---------------------------------------------------------------------------
+
+const EditorPanel = ({
+  template,
+  allChecks,
+  onSaved,
+}: {
+  template: RackTemplate;
+  allChecks: CheckDefinition[];
+  onSaved: () => void;
+}) => {
+  const [draft, setDraft] = useState<RackDraft>(() => toDraft(template));
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [checkSearch, setCheckSearch] = useState('');
+
+  useEffect(() => {
+    setDraft(toDraft(template));
+    setDirty(false);
+    setSaveStatus('idle');
+    setSaveError(null);
+  }, [template]);
+
+  const updateDraft = useCallback(<K extends keyof RackDraft>(key: K, value: RackDraft[K]) => {
+    setDraft((d) => ({ ...d, [key]: value }));
+    setDirty(true);
+    setSaveStatus('idle');
+  }, []);
+
+  const validationErrors = useMemo(() => {
+    const errs: string[] = [];
+    if (!draft.id.trim()) errs.push('Template ID is required.');
+    if (!draft.name.trim()) errs.push('Name is required.');
+    const u = parseInt(draft.u_height);
+    if (!u || u <= 0 || u > 52) errs.push('U height must be between 1 and 52.');
+    return errs;
+  }, [draft]);
+
+  const handleSave = async () => {
+    if (validationErrors.length > 0) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const templateData = draftToTemplate(draft, template);
+      await api.updateTemplate({ kind: 'rack', template: templateData });
+      setSaveStatus('saved');
+      setDirty(false);
+      onSaved();
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Save failed.');
+      setSaveStatus('error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDiscard = () => {
+    setDraft(toDraft(template));
+    setDirty(false);
+    setSaveStatus('idle');
+    setSaveError(null);
+  };
+
+  const toggleCheck = (checkId: string, checked: boolean) => {
+    updateDraft(
+      'checks',
+      checked ? [...draft.checks, checkId] : draft.checks.filter((id) => id !== checkId)
+    );
+  };
+
+  const removeCheck = (checkId: string) => {
+    updateDraft(
+      'checks',
+      draft.checks.filter((id) => id !== checkId)
+    );
+  };
+
+  const allComponents: InfrastructureComponent[] = [
+    ...(template.infrastructure?.components ?? []),
+    ...(template.infrastructure?.front_components ?? []),
+    ...(template.infrastructure?.rear_components ?? []),
+    ...(template.infrastructure?.side_components ?? []),
+  ];
+
+  const rackComponents = template.infrastructure?.rack_components ?? [];
+
+  const rackChecks = allChecks.filter(
+    (c) => c.scope === 'rack' || c.kind === 'pdu' || c.kind === 'cooling'
+  );
+  const filteredChecks = rackChecks.filter(
+    (c) =>
+      !checkSearch ||
+      (c.name ?? '').toLowerCase().includes(checkSearch.toLowerCase()) ||
+      c.id.toLowerCase().includes(checkSearch.toLowerCase())
+  );
+
+  const inputCls =
+    'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-[var(--color-accent)] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-600 dark:focus:border-[var(--color-accent)]';
+  const labelCls = 'block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5';
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      {/* Panel header */}
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent)]/15 text-[var(--color-accent)]">
+            <Server className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-gray-900 dark:text-white">
+              {template.name}
+            </p>
+            <p className="truncate font-mono text-[10px] text-gray-400 dark:text-gray-600">
+              {template.id}
+            </p>
           </div>
         </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {dirty && (
+            <button
+              onClick={handleDiscard}
+              className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+            >
+              <X className="h-3.5 w-3.5" />
+              Discard
+            </button>
+          )}
+          <button
+            onClick={() => {
+              void handleSave();
+            }}
+            disabled={!dirty || validationErrors.length > 0 || saving}
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+              saveStatus === 'saved'
+                ? 'bg-emerald-500 text-white'
+                : dirty && validationErrors.length === 0
+                  ? 'bg-[var(--color-accent)] text-white hover:opacity-90'
+                  : 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600'
+            }`}
+          >
+            {saving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : saveStatus === 'saved' ? (
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
+            {saving ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : 'Save'}
+          </button>
+        </div>
+      </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="flex h-20 items-center justify-center">
-              <div className="border-t-brand-500 h-5 w-5 animate-spin rounded-full border-2 border-gray-200" />
+      {saveStatus === 'error' && saveError && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          {saveError}
+        </div>
+      )}
+
+      {/* Scrollable sections */}
+      <div className="flex-1 space-y-5 overflow-y-auto pr-1">
+        {/* Identity */}
+        <SectionCard title="Identity" desc="Core template properties.">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Name *</label>
+                <input
+                  type="text"
+                  value={draft.name}
+                  onChange={(e) => updateDraft('name', e.target.value)}
+                  placeholder="Standard Air Cooled"
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Template ID</label>
+                <input
+                  type="text"
+                  value={draft.id}
+                  disabled
+                  className={`${inputCls} cursor-not-allowed opacity-60`}
+                />
+              </div>
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="px-4 py-6 text-center text-xs text-gray-400">
-              {search ? 'No results' : 'No rack templates'}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>U Height *</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={52}
+                  value={draft.u_height}
+                  onChange={(e) => updateDraft('u_height', e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+              <div className="flex items-end pb-0.5">
+                <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-2.5 dark:border-gray-800 dark:bg-gray-800/50">
+                  <p className="text-[10px] font-medium text-gray-400 dark:text-gray-600">
+                    Height
+                  </p>
+                  <p className="font-mono text-lg font-bold text-gray-800 dark:text-gray-100">
+                    {parseInt(draft.u_height) || 42}
+                    <span className="ml-1 text-sm font-normal text-gray-400">U</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+            {validationErrors.length > 0 && (
+              <div className="space-y-1">
+                {validationErrors.map((msg, i) => (
+                  <p
+                    key={i}
+                    className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"
+                  >
+                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                    {msg}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        </SectionCard>
+
+        {/* Infrastructure */}
+        <SectionCard
+          title="Infrastructure"
+          desc="Components defined in the template (read-only — edit YAML directly)."
+          icon={Layers}
+        >
+          {allComponents.length === 0 && rackComponents.length === 0 ? (
+            <div className="py-4 text-center text-xs text-gray-400 dark:text-gray-600">
+              No infrastructure components defined.
             </div>
           ) : (
-            <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {filtered.map((t) => {
-                const active = selectedId === t.id && !isNew;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => selectTemplate(t)}
-                    className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${
-                      active
-                        ? 'bg-brand-50 dark:bg-brand-500/10'
-                        : 'hover:bg-gray-50 dark:hover:bg-white/5'
-                    }`}
-                  >
-                    <div
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                        active
-                          ? 'bg-brand-500 text-white'
-                          : 'bg-gray-100 text-gray-400 dark:bg-gray-800'
-                      }`}
-                    >
-                      <Server className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`truncate text-xs font-medium ${
-                          active
-                            ? 'text-brand-600 dark:text-brand-400'
-                            : 'text-gray-700 dark:text-gray-300'
-                        }`}
+            <div className="space-y-4">
+              {allComponents.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                    Components ({allComponents.length})
+                  </p>
+                  <div className="grid gap-2">
+                    {allComponents.map((comp) => (
+                      <ComponentChip key={comp.id} component={comp} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {rackComponents.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                    Rack Components ({rackComponents.length})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {rackComponents.map((ref, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 font-mono text-[11px] text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
                       >
-                        {t.name}
-                      </p>
-                      <p className="truncate font-mono text-[10px] text-gray-400">{t.id}</p>
-                    </div>
-                    <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-400 dark:bg-gray-800">
-                      {t.u_height}U
-                    </span>
-                  </button>
+                        <Tag className="h-3 w-3 shrink-0 opacity-50" />
+                        {ref.template_id}
+                        <span className="text-gray-300 dark:text-gray-700">·</span>
+                        U{ref.u_position}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </SectionCard>
+
+        {/* Checks */}
+        <SectionCard
+          title="Checks"
+          desc="Health checks assigned to this rack template."
+          icon={CheckSquare}
+        >
+          {draft.checks.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {draft.checks.map((checkId) => {
+                const check = allChecks.find((c) => c.id === checkId);
+                return (
+                  <span
+                    key={checkId}
+                    className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-400"
+                  >
+                    {check?.name ?? checkId}
+                    <button
+                      onClick={() => removeCheck(checkId)}
+                      className="ml-0.5 rounded p-0.5 transition-colors hover:bg-indigo-100 dark:hover:bg-indigo-500/20"
+                      title="Remove check"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
                 );
               })}
             </div>
           )}
-        </div>
-      </aside>
 
-      {/* ── CENTER: editor form ─────────────────────────────────────────────── */}
-      {!hasSelection ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-gray-50 dark:bg-gray-950">
-          <Server className="h-10 w-10 text-gray-200 dark:text-gray-700" />
-          <p className="text-sm font-medium text-gray-400">Select a template or create a new one</p>
-          <button
-            onClick={startNew}
-            className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium text-white transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            New rack template
-          </button>
-        </div>
-      ) : (
-        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50 dark:bg-gray-950">
-          <div className="space-y-4 p-5">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <span>Rack Templates</span>
-                <ChevronRight className="h-3 w-3" />
-                <span className="font-medium text-gray-700 dark:text-gray-300">
-                  {isNew ? 'New template' : draft.name}
-                </span>
-                {dirty && (
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
-                    unsaved
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => void handleSave()}
-                disabled={saveStatus === 'saving' || !dirty}
-                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-40 ${
-                  saveStatus === 'saved'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-brand-500 hover:bg-brand-600 text-white'
-                }`}
-              >
-                {saveStatus === 'saving' ? (
-                  <>
-                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Saving…
-                  </>
-                ) : saveStatus === 'saved' ? (
-                  <>
-                    <Check className="h-3.5 w-3.5" />
-                    Saved
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-3.5 w-3.5" />
-                    {isNew ? 'Create' : 'Save'}
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Errors */}
-            {errors.length > 0 && (
-              <div className="rounded-xl border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
-                <div className="flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  {errors.length} validation error{errors.length > 1 ? 's' : ''}
-                </div>
-                <ul className="mt-1.5 space-y-0.5 pl-6">
-                  {errors.map((e, i) => (
-                    <li key={i} className="text-xs text-red-500 dark:text-red-400">
-                      {e}
-                    </li>
-                  ))}
-                </ul>
+          <div className="space-y-2">
+            <input
+              type="text"
+              value={checkSearch}
+              onChange={(e) => setCheckSearch(e.target.value)}
+              placeholder="Filter checks…"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs placeholder-gray-400 focus:border-[var(--color-accent)] focus:bg-white focus:outline-none dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-300 dark:placeholder-gray-600 dark:focus:bg-gray-800"
+            />
+            {filteredChecks.length === 0 ? (
+              <p className="py-2 text-center text-xs text-gray-400 dark:text-gray-600">
+                {checkSearch ? 'No matching checks.' : 'No rack-scope checks available.'}
+              </p>
+            ) : (
+              <div className="max-h-48 space-y-0.5 overflow-y-auto">
+                {filteredChecks.map((check) => {
+                  const on = draft.checks.includes(check.id);
+                  return (
+                    <label
+                      key={check.id}
+                      className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-xs transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={(e) => toggleCheck(check.id, e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-gray-300 accent-[var(--color-accent)] dark:border-gray-600"
+                      />
+                      <span className="flex-1 truncate text-gray-700 dark:text-gray-300">
+                        {check.name ?? check.id}
+                      </span>
+                      <span className="shrink-0 font-mono text-[9px] uppercase text-gray-400 dark:text-gray-600">
+                        {check.scope}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             )}
+          </div>
+        </SectionCard>
+      </div>
+    </div>
+  );
+};
 
-            {/* ── Identity ── */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-              <p className="mb-4 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-                Identity
-              </p>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                    Template ID
-                  </label>
-                  <input
-                    type="text"
-                    value={draft.id}
-                    onChange={(e) =>
-                      patchDraft({ id: e.target.value.toLowerCase().replace(/\s/g, '-') })
-                    }
-                    disabled={!isNew}
-                    placeholder="standard-42u"
-                    className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3 py-2 font-mono text-sm focus:outline-none disabled:bg-gray-50 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:disabled:bg-gray-800/50"
-                  />
-                  {!isNew && (
-                    <p className="mt-1 text-[10px] text-gray-400">Immutable after creation</p>
-                  )}
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    value={draft.name}
-                    onChange={(e) => patchDraft({ name: e.target.value })}
-                    placeholder="Standard 42U Rack"
-                    className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                    Height (U)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={draft.u_height}
-                    onChange={(e) => patchDraft({ u_height: parseInt(e.target.value, 10) || 42 })}
-                    className="focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3 py-2 text-center font-mono text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                  />
-                </div>
-              </div>
-            </div>
+// ---------------------------------------------------------------------------
+// Main page
+// ---------------------------------------------------------------------------
 
-            {/* ── Components ── */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-                  Infrastructure components ({draft.components.length})
-                </p>
+export const CosmosRackTemplateEditorPage = () => {
+  usePageTitle('Rack Templates');
+
+  const [templates, setTemplates] = useState<RackTemplate[]>([]);
+  const [checks, setChecks] = useState<CheckDefinition[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [showNewForm, setShowNewForm] = useState(false);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [catalog, checksData] = await Promise.all([api.getCatalog(), api.getChecks()]);
+      setTemplates(catalog?.rack_templates ?? []);
+      setChecks(checksData?.checks ?? []);
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : 'Failed to load data.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  const selectedTemplate = useMemo(
+    () => templates.find((t) => t.id === selectedId) ?? null,
+    [templates, selectedId]
+  );
+
+  const grouped = useMemo(() => {
+    const filtered = templates.filter(
+      (t) =>
+        !search ||
+        t.name.toLowerCase().includes(search.toLowerCase()) ||
+        t.id.toLowerCase().includes(search.toLowerCase())
+    );
+    const map = new Map<number, RackTemplate[]>();
+    for (const tpl of filtered) {
+      const h = tpl.u_height ?? 42;
+      if (!map.has(h)) map.set(h, []);
+      const bucket = map.get(h);
+      if (bucket) bucket.push(tpl);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
+  }, [templates, search]);
+
+  const existingIds = useMemo(() => templates.map((t) => t.id), [templates]);
+
+  const handleCreated = async (newId: string) => {
+    setShowNewForm(false);
+    await loadData();
+    setSelectedId(newId);
+  };
+
+  return (
+    <div className="flex h-full min-h-0 flex-col space-y-5">
+      {/* Page header */}
+      <PageHeader
+        title="Rack Templates"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'Editors', href: '#' },
+              { label: 'Rack Templates' },
+            ]}
+          />
+        }
+        actions={
+          !loading && !loadError ? (
+            <button
+              onClick={() => setShowNewForm(true)}
+              className="flex items-center gap-1.5 rounded-xl bg-[var(--color-accent)] px-3 py-2 text-sm font-semibold text-white transition-colors hover:opacity-90"
+            >
+              <Plus className="h-4 w-4" />
+              New Template
+            </button>
+          ) : undefined
+        }
+      />
+
+      {/* Body */}
+      {loading ? (
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 dark:border-gray-800 dark:bg-gray-900">
+          <LoadingState message="Loading rack templates…" />
+        </div>
+      ) : loadError ? (
+        <div className="rounded-2xl border border-gray-200 bg-white p-8 dark:border-gray-800 dark:bg-gray-900">
+          <ErrorState
+            message={loadError}
+            onRetry={() => {
+              void loadData();
+            }}
+          />
+        </div>
+      ) : (
+        <div className="flex min-h-0 flex-1 gap-5">
+          {/* LEFT PANEL */}
+          <div className="flex w-80 shrink-0 flex-col gap-3">
+            {showNewForm && (
+              <NewTemplateForm
+                onCancel={() => setShowNewForm(false)}
+                onCreated={(id) => {
+                  void handleCreated(id);
+                }}
+                existingIds={existingIds}
+              />
+            )}
+
+            <div className="relative">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search templates…"
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 pr-8 text-sm placeholder-gray-400 focus:border-[var(--color-accent)] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:placeholder-gray-600 dark:focus:border-[var(--color-accent)]"
+              />
+              {search && (
                 <button
-                  onClick={addComponent}
-                  disabled={compTemplatesList.length === 0}
-                  className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
-                  <Plus className="h-3.5 w-3.5" />
-                  Add
+                  <X className="h-3.5 w-3.5" />
                 </button>
-              </div>
-
-              {compTemplatesList.length === 0 ? (
-                <p className="text-xs text-gray-400">
-                  No rack component templates found. Define them in the component library first.
-                </p>
-              ) : draft.components.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-5">
-                  <Settings2 className="h-7 w-7 text-gray-200 dark:text-gray-700" />
-                  <p className="text-sm text-gray-400">No components yet</p>
-                  <button onClick={addComponent} className="text-brand-500 text-xs hover:underline">
-                    Add the first component →
-                  </button>
-                </div>
-              ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100 dark:border-gray-800">
-                      {['Component', 'Location', 'U pos', 'Side', ''].map((h) => (
-                        <th
-                          key={h}
-                          className="pb-2 text-left text-[10px] font-semibold tracking-wider text-gray-400 uppercase"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {draft.components.map((comp) => (
-                      <ComponentRow
-                        key={comp._key}
-                        comp={comp}
-                        compTemplates={compTemplates}
-                        allTemplates={compTemplatesList}
-                        onChange={(updated) => updateComponent(comp._key, updated)}
-                        onDelete={() => deleteComponent(comp._key)}
-                      />
-                    ))}
-                  </tbody>
-                </table>
               )}
             </div>
 
-            {/* ── Health checks ── */}
-            {rackChecks.length > 0 && (
-              <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-                <div className="mb-3 flex items-center gap-2">
-                  <ShieldCheck className="text-brand-500 h-4 w-4" />
-                  <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-                    Health checks ({draft.checks.length}/{rackChecks.length} selected)
+            <div className="flex-1 overflow-y-auto">
+              {grouped.length === 0 ? (
+                <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+                  <EmptyState
+                    title={
+                      search ? 'No templates match your search.' : 'No rack templates yet.'
+                    }
+                    description={!search ? 'Click "New Template" to create one.' : undefined}
+                    action={
+                      search ? (
+                        <button
+                          onClick={() => setSearch('')}
+                          className="text-xs text-[var(--color-accent)] hover:underline"
+                        >
+                          Clear search
+                        </button>
+                      ) : undefined
+                    }
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {grouped.map(([uHeight, items]) => (
+                    <div key={uHeight}>
+                      <p className="mb-2 px-1 text-[10px] font-bold tracking-widest text-gray-400 uppercase dark:text-gray-600">
+                        {uHeight}U Racks
+                      </p>
+                      <div className="space-y-1.5">
+                        {items.map((tpl) => (
+                          <TemplateItem
+                            key={tpl.id}
+                            template={tpl}
+                            selected={selectedId === tpl.id}
+                            onClick={() => setSelectedId(tpl.id)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT PANEL */}
+          <div className="min-h-0 flex-1 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+            {selectedTemplate ? (
+              <EditorPanel
+                key={selectedTemplate.id}
+                template={selectedTemplate}
+                allChecks={checks}
+                onSaved={() => {
+                  void loadData();
+                }}
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <div className="text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-800">
+                    <Server className="h-7 w-7 text-gray-300 dark:text-gray-600" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Select a template to edit
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400 dark:text-gray-600">
+                    or create a new one using the button above
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {rackChecks.map((c) => {
-                    const active = draft.checks.includes(c.id);
-                    return (
-                      <label
-                        key={c.id}
-                        className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2 transition-colors ${
-                          active
-                            ? 'border-brand-300 bg-brand-50 dark:border-brand-700/50 dark:bg-brand-500/10'
-                            : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={active}
-                          onChange={() => toggleCheck(c.id)}
-                          className="accent-brand-500 h-3.5 w-3.5 shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <p
-                            className={`truncate text-xs font-medium ${
-                              active
-                                ? 'text-brand-700 dark:text-brand-300'
-                                : 'text-gray-700 dark:text-gray-300'
-                            }`}
-                          >
-                            {c.name || c.id}
-                          </p>
-                          <p className="truncate font-mono text-[9px] text-gray-400">{c.id}</p>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Save error */}
-            {saveStatus === 'error' && (
-              <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                Failed to save template.
               </div>
             )}
           </div>
         </div>
       )}
-
-      {/* ── RIGHT: live rack previews ────────────────────────────────────────── */}
-      {hasSelection && (
-        <aside className="flex w-[560px] shrink-0 flex-col overflow-y-auto border-l border-gray-200 bg-gray-50 p-5 dark:border-gray-800 dark:bg-gray-950">
-          <p className="mb-4 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-            Live Preview — {draft.u_height}U
-          </p>
-          <div className="grid grid-cols-2 gap-4">
-            <RackPanel label="Front" draft={draft} compTemplates={compTemplates} face="front" />
-            <RackPanel label="Rear" draft={draft} compTemplates={compTemplates} face="rear" />
-          </div>
-        </aside>
-      )}
-      </div>
     </div>
   );
 };
