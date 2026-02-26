@@ -320,7 +320,7 @@ export const CosmosRackEditorPage = () => {
   const totalU = rack?.u_height ?? 42;
   const usedU = draftDevices.reduce((acc, d) => acc + (deviceCatalog[d.template_id]?.u_height ?? 1), 0);
   const density = totalU > 0 ? usedU / totalU : 0;
-  const uPx = Math.max(U_PX_MIN, Math.min(U_PX_MAX, Math.floor(Math.max(160, canvasH - 80) / totalU)));
+  const uPx = Math.max(U_PX_MIN, Math.min(U_PX_MAX, Math.floor(canvasH / totalU)));
 
   const filteredRacks = useMemo(() => {
     if (!rackSearch.trim()) return allRacks;
@@ -776,7 +776,7 @@ export const CosmosRackEditorPage = () => {
 
               {/* Rack visualization */}
               <div ref={canvasRef} className="flex-1 overflow-hidden py-5">
-                <div className="h-full px-6">
+                <div className="mx-auto h-full w-full max-w-sm px-6">
                   <div
                     ref={rackContainerRef}
                     onDragLeave={handleRackDragLeave}
