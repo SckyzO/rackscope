@@ -145,11 +145,45 @@ export const api = {
     markSuccess();
     return data;
   },
+  deleteSite: async (siteId: string) => {
+    const res = await apiFetch(`/api/topology/sites/${encodeURIComponent(siteId)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+    writeCache('sites', null);
+    writeCache('rooms', null);
+    markSuccess();
+    return res.json();
+  },
+  deleteRoom: async (roomId: string) => {
+    const res = await apiFetch(`/api/topology/rooms/${encodeURIComponent(roomId)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+    writeCache('rooms', null);
+    markSuccess();
+    return res.json();
+  },
+  deleteAisle: async (aisleId: string) => {
+    const res = await apiFetch(`/api/topology/aisles/${encodeURIComponent(aisleId)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+    writeCache('rooms', null);
+    markSuccess();
+    return res.json();
+  },
   createRoomAisles: async (roomId: string, aisles: { id?: string | null; name: string }[]) => {
+    // Filter out null/empty ids to avoid 422 from backend Dict[str, str] validation
+    const payload = aisles.map((a) => {
+      const entry: { name: string; id?: string } = { name: a.name };
+      if (a.id) entry.id = a.id;
+      return entry;
+    });
     const res = await apiFetch(`/api/topology/rooms/${encodeURIComponent(roomId)}/aisles/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ aisles }),
+      body: JSON.stringify({ aisles: payload }),
     });
     if (!res.ok) {
       logClientError(

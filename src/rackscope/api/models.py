@@ -40,7 +40,7 @@ class RoomCreate(BaseModel):
 class RoomAislesCreate(BaseModel):
     """Request model for creating aisles in a room."""
 
-    aisles: List[Dict[str, str]]
+    aisles: List[Dict[str, Optional[str]]]
 
 
 class AisleOrderUpdate(BaseModel):

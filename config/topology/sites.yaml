@@ -9,6 +9,8 @@ sites:
   rooms:
   - id: room-a
     name: Room A
+  - id: reqs
+    name: reqs
 - id: dc2
   name: Secondary Datacenter
   description: Secondary site
@@ -19,3 +21,8 @@ sites:
   rooms:
   - id: room-b
     name: Room B
+- id: test-3
+  name: test 3
+  rooms:
+  - id: test
+    name: test

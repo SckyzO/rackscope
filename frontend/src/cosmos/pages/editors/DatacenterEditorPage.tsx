@@ -11,13 +11,14 @@ import {
   FileCode2,
   Trash2,
   ChevronRight,
+  ArrowLeft,
+  Save,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Site, Room, RackTemplate } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import {
   PageHeader,
-  PageBreadcrumb,
   LoadingState,
   EmptyState,
 } from '../templates/EmptyPage';
@@ -566,11 +567,18 @@ const AddCard = ({ label, onClick }: { label: string; onClick: () => void }) => 
 // ── Main page component ───────────────────────────────────────────────────────
 
 export const DatacenterEditorPage = () => {
-  usePageTitle('Datacenter Editor');
-
   const [level, setLevel] = useState<ViewLevel>('sites');
   const [currentSite, setCurrentSite] = useState<Site | null>(null);
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null);
+
+  usePageTitle(
+    level === 'room-editor' && currentRoom
+      ? `${currentRoom.name} — Editor`
+      : level === 'rooms' && currentSite
+      ? `${currentSite.name} — Rooms`
+      : 'Datacenter Editor'
+  );
+
   const [sites, setSites] = useState<Site[]>([]);
   const [rackTemplates, setRackTemplates] = useState<RackTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -587,6 +595,24 @@ export const DatacenterEditorPage = () => {
   const [drawerOnSave, setDrawerOnSave] = useState<(yaml: string) => Promise<void>>(
     () => () => Promise.resolve()
   );
+
+  // Canvas save state — lifted from RoomEditorCanvas
+  const canvasSaveRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const [canvasIsDirty, setCanvasIsDirty] = useState(false);
+  const [canvasSaving, setCanvasSaving] = useState(false);
+  const [canvasSavedOk, setCanvasSavedOk] = useState(false);
+
+  const handleCanvasSave = async () => {
+    if (!canvasSaveRef.current) return;
+    setCanvasSaving(true);
+    try {
+      await canvasSaveRef.current();
+      setCanvasSavedOk(true);
+      setTimeout(() => setCanvasSavedOk(false), 2000);
+    } finally {
+      setCanvasSaving(false);
+    }
+  };
 
   // Load sites + catalog on mount
   useEffect(() => {
@@ -695,84 +721,101 @@ export const DatacenterEditorPage = () => {
     ? (sites.find((s) => s.id === currentSite.id)?.rooms ?? [])
     : [];
 
-  // ── Breadcrumb ──────────────────────────────────────────────────────────────
-  const breadcrumbItems = (() => {
-    const items = [
-      {
-        label: 'Home',
-        href: '/cosmos',
-      },
-      {
-        label: 'Editors',
-      },
-      {
-        label: 'Datacenter',
-        href: '/cosmos/editors/datacenter',
-        onClick: () => {
-          setLevel('sites');
-          setCurrentSite(null);
-          setCurrentRoom(null);
-        },
-      },
-    ];
-
-    if (level === 'rooms' && currentSite) {
-      items.push({ label: currentSite.name });
-    }
-    if (level === 'room-editor' && currentSite) {
-      items.push({
-        label: currentSite.name,
-        onClick: () => setLevel('rooms'),
-      });
-    }
-    if (level === 'room-editor' && currentRoom) {
-      items.push({ label: currentRoom.name });
-    }
-    return items;
-  })();
-
   // ── Render ──────────────────────────────────────────────────────────────────
+
+  const pageTitle =
+    level === 'room-editor' && currentRoom
+      ? currentRoom.name
+      : level === 'rooms' && currentSite
+      ? currentSite.name
+      : 'Datacenter Editor';
+
+  const pageDescription =
+    level === 'room-editor' ? 'Aisles & Racks'
+    : level === 'rooms' ? 'Select a room to edit'
+    : 'Manage your datacenter sites and rooms';
 
   return (
     <div className="space-y-5">
       {/* Page header */}
       <PageHeader
-        title="Datacenter Editor"
-        breadcrumb={
-          <PageBreadcrumb
-            items={breadcrumbItems.map((item) => ({
-              label: item.label,
-              href: !('onClick' in item) && 'href' in item ? item.href : undefined,
-              onClick: 'onClick' in item ? (item as { onClick: () => void }).onClick : undefined,
-            }))}
-          />
-        }
+        title={pageTitle}
+        description={pageDescription}
         actions={
-          level === 'sites' ? (
-            <button
-              onClick={() => setAddingSite(true)}
-              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Add Site
-            </button>
-          ) : level === 'rooms' && currentSite ? (
-            <button
-              onClick={() => setAddingRoom(true)}
-              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Add Room
-            </button>
-          ) : level === 'room-editor' && currentRoom ? (
-            <button
-              onClick={() => setAddingAisle(true)}
-              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Add Aisle
-            </button>
-          ) : null
+          <div className="flex items-center gap-2">
+            {/* Back button */}
+            {level === 'rooms' && (
+              <button
+                title="Back to sites"
+                onClick={() => { setLevel('sites'); setCurrentSite(null); setCurrentRoom(null); setCanvasIsDirty(false); }}
+                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Sites
+              </button>
+            )}
+            {level === 'room-editor' && (
+              <button
+                title={`Back to rooms in ${currentSite?.name ?? ''}`}
+                onClick={() => { setLevel('rooms'); setCurrentRoom(null); setCanvasIsDirty(false); }}
+                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Rooms
+              </button>
+            )}
+
+            {/* Save button — only when canvas has unsaved changes */}
+            {level === 'room-editor' && (canvasIsDirty || canvasSavedOk) && (
+              <button
+                title="Save aisle/rack layout changes"
+                onClick={() => void handleCanvasSave()}
+                disabled={canvasSaving}
+                className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-600 disabled:opacity-60"
+              >
+                {canvasSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : canvasSavedOk ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {canvasSavedOk ? 'Saved' : 'Save'}
+              </button>
+            )}
+
+            {/* Primary action */}
+            {level === 'sites' && (
+              <button
+                title="Add a new datacenter site"
+                onClick={() => setAddingSite(true)}
+                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Add Site
+              </button>
+            )}
+            {level === 'rooms' && currentSite && (
+              <button
+                title={`Add a room to ${currentSite.name}`}
+                onClick={() => setAddingRoom(true)}
+                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Add Room
+              </button>
+            )}
+            {level === 'room-editor' && currentRoom && (
+              <button
+                title="Add a new aisle to this room"
+                onClick={() => setAddingAisle(true)}
+                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Add Aisle
+              </button>
+            )}
+          </div>
         }
       />
 
@@ -821,7 +864,9 @@ export const DatacenterEditorPage = () => {
                       async () => Promise.resolve()
                     )
                   }
-                  onDelete={() => void reloadSites()}
+                  onDelete={() => {
+                    void api.deleteSite(site.id).then(() => reloadSites());
+                  }}
                 />
               ))}
 
@@ -874,7 +919,9 @@ export const DatacenterEditorPage = () => {
                       async () => Promise.resolve()
                     )
                   }
-                  onDelete={() => void reloadSites()}
+                  onDelete={() => {
+                    void api.deleteRoom(room.id).then(() => reloadSites());
+                  }}
                 />
               ))}
 
@@ -955,11 +1002,13 @@ export const DatacenterEditorPage = () => {
             </div>
           )}
 
-          {/* Canvas placeholder */}
+          {/* Canvas */}
           <RoomEditorCanvas
             room={currentRoom}
             rackTemplates={rackTemplates}
             onRoomUpdate={(updated) => setCurrentRoom(updated)}
+            onDirtyChange={setCanvasIsDirty}
+            saveRef={canvasSaveRef}
           />
 
         </section>

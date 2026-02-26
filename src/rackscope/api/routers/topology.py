@@ -7,6 +7,7 @@ Endpoints for topology management (sites, rooms, aisles, racks, devices).
 from pathlib import Path
 from typing import List, Optional, Dict, Annotated
 
+import shutil
 import yaml
 from fastapi import APIRouter, HTTPException, Depends
 
@@ -357,6 +358,113 @@ async def update_aisle_racks(
     # Reload topology to keep in-memory state aligned.
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {"status": "ok", "aisle_id": aisle_id, "racks": payload.racks}
+
+
+@router.delete("/api/topology/sites/{site_id}")
+async def delete_site(
+    site_id: str,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+):
+    """Delete a site and all its rooms/aisles/racks."""
+    from rackscope.api import app as app_module
+
+    base_dir = Path(app_config.paths.topology)
+    sites_path = base_dir / "sites.yaml"
+    if not sites_path.exists():
+        raise HTTPException(status_code=404, detail="Sites file not found")
+
+    data = yaml.safe_load(sites_path.read_text()) or {}
+    sites = data.get("sites") or []
+    updated = [s for s in sites if s.get("id") != site_id]
+    if len(updated) == len(sites):
+        raise HTTPException(status_code=404, detail=f"Site {site_id!r} not found")
+
+    data["sites"] = updated
+    sites_path.write_text(dump_yaml(data))
+
+    site_dir = base_dir / "datacenters" / site_id
+    if site_dir.exists():
+        shutil.rmtree(site_dir)
+
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    return {"status": "deleted", "site_id": site_id}
+
+
+@router.delete("/api/topology/rooms/{room_id}")
+async def delete_room(
+    room_id: str,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    topology: Annotated[Topology, Depends(get_topology)],
+):
+    """Delete a room and its aisles/racks."""
+    from rackscope.api import app as app_module
+
+    target_site_id = None
+    for site in topology.sites:
+        if any(room.id == room_id for room in site.rooms):
+            target_site_id = site.id
+            break
+    if not target_site_id:
+        raise HTTPException(status_code=404, detail=f"Room {room_id!r} not found")
+
+    base_dir = Path(app_config.paths.topology)
+    sites_path = base_dir / "sites.yaml"
+    data = yaml.safe_load(sites_path.read_text()) or {}
+    for site_entry in data.get("sites") or []:
+        if site_entry.get("id") == target_site_id:
+            site_entry["rooms"] = [
+                r for r in (site_entry.get("rooms") or []) if r.get("id") != room_id
+            ]
+            break
+    sites_path.write_text(dump_yaml(data))
+
+    room_dir = base_dir / "datacenters" / target_site_id / "rooms" / room_id
+    if room_dir.exists():
+        shutil.rmtree(room_dir)
+
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    return {"status": "deleted", "room_id": room_id}
+
+
+@router.delete("/api/topology/aisles/{aisle_id}")
+async def delete_aisle(
+    aisle_id: str,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    topology: Annotated[Topology, Depends(get_topology)],
+):
+    """Delete an aisle and its racks."""
+    from rackscope.api import app as app_module
+
+    target_site_id = None
+    target_room_id = None
+    for site in topology.sites:
+        for room in site.rooms:
+            if any(a.id == aisle_id for a in room.aisles):
+                target_site_id = site.id
+                target_room_id = room.id
+                break
+        if target_room_id:
+            break
+    if not target_room_id:
+        raise HTTPException(status_code=404, detail=f"Aisle {aisle_id!r} not found")
+
+    base_dir = Path(app_config.paths.topology)
+    room_path = base_dir / "datacenters" / target_site_id / "rooms" / target_room_id / "room.yaml"
+    if room_path.exists():
+        room_data = yaml.safe_load(room_path.read_text()) or {}
+        room_data["aisles"] = [
+            a for a in (room_data.get("aisles") or []) if a.get("id") != aisle_id
+        ]
+        room_path.write_text(dump_yaml(room_data))
+
+    aisle_dir = (
+        base_dir / "datacenters" / target_site_id / "rooms" / target_room_id / "aisles" / aisle_id
+    )
+    if aisle_dir.exists():
+        shutil.rmtree(aisle_dir)
+
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    return {"status": "deleted", "aisle_id": aisle_id}
 
 
 # Racks endpoints

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MonacoEditor from '@monaco-editor/react';
 import jsYaml from 'js-yaml';
@@ -10,8 +10,6 @@ import {
   ExternalLink,
   Server,
   ChevronRight,
-  Save,
-  Loader2,
 } from 'lucide-react';
 import type { Room, Aisle, Rack, RackTemplate } from '../../../types';
 import { api } from '../../../services/api';
@@ -22,13 +20,32 @@ interface RoomEditorCanvasProps {
   room: Room;
   rackTemplates: RackTemplate[];
   onRoomUpdate: (updatedRoom: Room) => void;
+  /** Called whenever the dirty/clean state changes */
+  onDirtyChange?: (isDirty: boolean) => void;
+  /** Ref that will hold the save function — call from parent Save button */
+  saveRef?: React.MutableRefObject<(() => Promise<void>) | undefined>;
 }
+
+// ── Tooltip ──────────────────────────────────────────────────────────────────
+
+const Tooltip = ({ text, children }: { text: string; children: ReactNode }) => (
+  <div className="group relative inline-flex">
+    {children}
+    <div
+      aria-hidden
+      className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:bg-gray-700"
+    >
+      {text}
+      <div className="absolute top-full left-1/2 h-0 w-0 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
+    </div>
+  </div>
+);
 
 // ── YamlDrawer ────────────────────────────────────────────────────────────────
 
 interface YamlDrawerTarget {
-  type: 'aisle';
-  data: Aisle;
+  type: 'aisle' | 'rack';
+  data: Aisle | Rack;
 }
 
 interface YamlDrawerProps {
@@ -42,17 +59,16 @@ const YamlDrawer = ({ target, onClose }: YamlDrawerProps) => {
   return (
     <>
       {/* Overlay */}
-      <div
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       {/* Drawer — dark to match Monaco */}
       <div className="fixed top-0 right-0 z-50 flex h-full w-[540px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl">
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-5 py-4">
           <div className="flex items-center gap-2.5">
             <FileCode className="h-4 w-4 text-gray-500" />
-            <h3 className="text-sm font-semibold text-white">{target.data.name}</h3>
+            <h3 className="text-sm font-semibold text-white">
+              {'name' in target.data ? target.data.name : target.data.id}
+            </h3>
             <span className="rounded-full bg-gray-800 px-2 py-0.5 font-mono text-[10px] text-gray-400">
               {target.type}
             </span>
@@ -85,7 +101,6 @@ const YamlDrawer = ({ target, onClose }: YamlDrawerProps) => {
               tabSize: 2,
               padding: { top: 12, bottom: 12 },
               renderLineHighlight: 'none',
-              cursorStyle: 'line',
               contextmenu: false,
             }}
           />
@@ -111,7 +126,9 @@ interface RackCardProps {
   rack: Rack;
   aisleId: string;
   isDragTarget: boolean;
+  isDragging: boolean;
   onDragStart: (rackId: string, aisleId: string) => void;
+  onDragEnd: () => void;
   onDragOver: (e: React.DragEvent, aisleId: string, rackId: string) => void;
   onDragLeave: () => void;
   onDrop: (e: React.DragEvent, targetAisleId: string, afterRackId: string | null) => void;
@@ -123,7 +140,9 @@ const RackCard = ({
   rack,
   aisleId,
   isDragTarget,
+  isDragging,
   onDragStart,
+  onDragEnd,
   onDragOver,
   onDragLeave,
   onDrop,
@@ -131,6 +150,7 @@ const RackCard = ({
   onEditYaml,
 }: RackCardProps) => {
   const navigate = useNavigate();
+  const hasTemplate = !!rack.template_id;
 
   return (
     <div
@@ -147,64 +167,87 @@ const RackCard = ({
       <div
         draggable
         onDragStart={(e) => { e.stopPropagation(); onDragStart(rack.id, aisleId); }}
-        className="group w-[148px] cursor-grab select-none rounded-xl border border-gray-200 bg-gray-50 p-2.5 transition-all active:cursor-grabbing active:opacity-70 dark:border-gray-700 dark:bg-gray-800/50"
+        onDragEnd={onDragEnd}
+        className={[
+          'group relative flex w-[156px] overflow-hidden cursor-grab select-none rounded-xl border bg-white transition-all duration-200 active:cursor-grabbing dark:bg-gray-800',
+          isDragging
+            ? 'scale-[1.04] rotate-[0.8deg] shadow-2xl ring-2 ring-brand-500/60 border-brand-400/50 dark:border-brand-500/50 opacity-90'
+            : 'border-gray-200 hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:hover:border-gray-600',
+        ].join(' ')}
       >
-        {/* Drag handle row */}
-        <div className="mb-2 flex items-center gap-1.5">
-          <GripVertical className="h-3.5 w-3.5 shrink-0 text-gray-300 dark:text-gray-600" />
-          <Server className="h-3 w-3 shrink-0 text-gray-300 dark:text-gray-600" />
-        </div>
+        {/* Left accent stripe */}
+        <div
+          className={`w-1 shrink-0 transition-colors ${
+            hasTemplate
+              ? 'bg-brand-400 dark:bg-brand-500'
+              : 'bg-gray-200 dark:bg-gray-700'
+          }`}
+        />
 
-        {/* Rack ID */}
-        <p className="truncate font-mono text-[11px] font-semibold text-gray-800 dark:text-gray-200">
-          {rack.id}
-        </p>
+        {/* Card body */}
+        <div className="min-w-0 flex-1 p-2.5">
+          {/* Header: grip + icon + U-height badge */}
+          <div className="mb-1.5 flex items-center gap-1">
+            <GripVertical className="h-3.5 w-3.5 shrink-0 text-gray-300 dark:text-gray-600" />
+            <Server className="h-3 w-3 shrink-0 text-gray-300 dark:text-gray-600" />
+            <span className="ml-auto rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-gray-500 dark:bg-gray-700/80 dark:text-gray-400">
+              {rack.u_height}U
+            </span>
+          </div>
 
-        {/* Rack name */}
-        <p className="mt-0.5 truncate text-[11px] text-gray-400 dark:text-gray-500">
-          {rack.name}
-        </p>
+          {/* Rack ID */}
+          <p className="truncate font-mono text-[11px] font-bold leading-tight text-gray-800 dark:text-gray-200">
+            {rack.id}
+          </p>
 
-        {/* Stats row */}
-        <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-600">
-          {rack.u_height}U
-          {rack.devices.length > 0 && (
-            <> &middot; {rack.devices.length} dev</>
+          {/* Rack name (only if different from id) */}
+          {rack.name && rack.name !== rack.id && (
+            <p className="mt-0.5 truncate text-[11px] leading-tight text-gray-400 dark:text-gray-500">
+              {rack.name}
+            </p>
           )}
-        </p>
 
-        {/* Action buttons */}
-        <div className="mt-2.5 flex items-center gap-1 border-t border-gray-100 pt-2 dark:border-gray-700">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEditYaml(rack);
-            }}
-            title="View YAML"
-            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-          >
-            <FileCode className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/cosmos/editors/rack?rackId=${rack.id}`);
-            }}
-            title="Open in Rack Editor"
-            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-          >
-            <ExternalLink className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteRack(aisleId, rack.id);
-            }}
-            title="Remove from aisle"
-            className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          {/* Device count */}
+          {rack.devices.length > 0 && (
+            <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-600">
+              {rack.devices.length} device{rack.devices.length !== 1 ? 's' : ''}
+            </p>
+          )}
+
+          {/* Template badge */}
+          {rack.template_id && (
+            <p className="mt-1 truncate text-[10px] text-brand-500/80 dark:text-brand-400/70">
+              {rack.template_id}
+            </p>
+          )}
+
+          {/* Action row */}
+          <div className="mt-2 flex items-center gap-0.5 border-t border-gray-100 pt-2 dark:border-gray-700/80">
+            <Tooltip text="View YAML">
+              <button
+                onClick={(e) => { e.stopPropagation(); onEditYaml(rack); }}
+                className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              >
+                <FileCode className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+            <Tooltip text="Open Rack Editor">
+              <button
+                onClick={(e) => { e.stopPropagation(); navigate(`/cosmos/editors/rack?rackId=${rack.id}`); }}
+                className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+            <Tooltip text="Remove from aisle">
+              <button
+                onClick={(e) => { e.stopPropagation(); onDeleteRack(aisleId, rack.id); }}
+                className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+          </div>
         </div>
       </div>
     </div>
@@ -248,13 +291,11 @@ const AddRackForm = ({
 
   const handleAdd = () => {
     if (!form.id.trim()) return;
-    // TODO: api.createRack(aisleId, rackData) — backend endpoint needed
     onAdd(buildRack());
   };
 
   const handleAddAndEdit = () => {
     if (!form.id.trim()) return;
-    // TODO: api.createRack(aisleId, rackData) — backend endpoint needed
     const rack = buildRack();
     onAddAndEdit(rack);
     navigate(`/cosmos/editors/rack?rackId=${rack.id}&aisleId=${aisleId}`);
@@ -283,9 +324,7 @@ const AddRackForm = ({
 
         {/* Name */}
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-            Name <span className="text-red-400">*</span>
-          </label>
+          <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Name</label>
           <input
             type="text"
             placeholder="Rack XH3000 Compute 06"
@@ -326,7 +365,7 @@ const AddRackForm = ({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 pb-0">
+        <div className="flex items-center gap-2">
           <button
             onClick={onCancel}
             className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -363,12 +402,14 @@ interface AisleBandProps {
   isDragOverAisle: boolean;
   dragOverRack: { aisleId: string; rackId: string } | null;
   dragOverAisleEmpty: string | null;
+  draggingRackId: string | null;
   addingRack: string | null;
   onAisleDragStart: (aisleId: string) => void;
   onAisleDragOver: (e: React.DragEvent, aisleId: string) => void;
   onAisleDragLeave: () => void;
   onAisleDrop: (e: React.DragEvent, targetAisleId: string) => void;
   onRackDragStart: (rackId: string, fromAisleId: string) => void;
+  onRackDragEnd: () => void;
   onRackDragOver: (e: React.DragEvent, aisleId: string, rackId: string) => void;
   onRackDragLeave: () => void;
   onRackDrop: (e: React.DragEvent, targetAisleId: string, afterRackId: string | null) => void;
@@ -388,12 +429,14 @@ const AisleBand = ({
   isDragOverAisle,
   dragOverRack,
   dragOverAisleEmpty,
+  draggingRackId,
   addingRack,
   onAisleDragStart,
   onAisleDragOver,
   onAisleDragLeave,
   onAisleDrop,
   onRackDragStart,
+  onRackDragEnd,
   onRackDragOver,
   onRackDragLeave,
   onRackDrop,
@@ -423,49 +466,50 @@ const AisleBand = ({
     >
       {/* Aisle header */}
       <div className="mb-3 flex items-center gap-2">
-        {/* Drag handle */}
-        <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-gray-300 active:cursor-grabbing dark:text-gray-600" />
+        <Tooltip text="Drag to reorder aisle">
+          <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-gray-300 active:cursor-grabbing dark:text-gray-600" />
+        </Tooltip>
 
-        {/* Aisle name */}
         <span className="flex-1 truncate text-sm font-semibold text-gray-800 dark:text-gray-200">
           {aisle.name}
         </span>
 
-        {/* Rack count badge */}
         <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">
           {aisle.racks.length} rack{aisle.racks.length !== 1 ? 's' : ''}
         </span>
 
-        {/* Action buttons */}
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => onEditYamlAisle(aisle)}
-            title="View YAML"
-            className="flex h-7 items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
-          >
-            <FileCode className="h-3.5 w-3.5" />
-            YAML
-          </button>
-          <button
-            onClick={() => onSetAddingRack(isAddingHere ? null : aisle.id)}
-            title="Add rack to this aisle"
-            className={[
-              'flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-medium transition-colors',
-              isAddingHere
-                ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 dark:border-brand-500/50'
-                : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800',
-            ].join(' ')}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Rack
-          </button>
-          <button
-            onClick={() => onDeleteAisle(aisle.id)}
-            title="Delete aisle"
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500 dark:border-gray-700 dark:hover:border-red-500/30 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip text="View aisle YAML">
+            <button
+              onClick={() => onEditYamlAisle(aisle)}
+              className="flex h-7 items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+            >
+              <FileCode className="h-3.5 w-3.5" />
+              YAML
+            </button>
+          </Tooltip>
+          <Tooltip text="Add a rack to this aisle">
+            <button
+              onClick={() => onSetAddingRack(isAddingHere ? null : aisle.id)}
+              className={[
+                'flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-medium transition-colors',
+                isAddingHere
+                  ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 dark:border-brand-500/50'
+                  : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800',
+              ].join(' ')}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Rack
+            </button>
+          </Tooltip>
+          <Tooltip text="Delete this aisle">
+            <button
+              onClick={() => onDeleteAisle(aisle.id)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500 dark:border-gray-700 dark:hover:border-red-500/30 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -475,10 +519,7 @@ const AisleBand = ({
           {aisle.racks.length === 0 ? (
             /* Empty aisle drop zone */
             <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
               onDrop={(e) => onRackDropEmpty(e, aisle.id)}
               className={[
                 'flex h-24 w-full items-center justify-center rounded-xl border-2 border-dashed text-sm transition-all',
@@ -499,7 +540,9 @@ const AisleBand = ({
                   isDragTarget={
                     dragOverRack?.aisleId === aisle.id && dragOverRack?.rackId === rack.id
                   }
+                  isDragging={draggingRackId === rack.id}
                   onDragStart={onRackDragStart}
+                  onDragEnd={onRackDragEnd}
                   onDragOver={onRackDragOver}
                   onDragLeave={onRackDragLeave}
                   onDrop={onRackDrop}
@@ -530,50 +573,55 @@ const AisleBand = ({
 
 // ── RoomEditorCanvas (main export) ────────────────────────────────────────────
 
-export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEditorCanvasProps) => {
+export const RoomEditorCanvas = ({
+  room,
+  rackTemplates,
+  onRoomUpdate,
+  onDirtyChange,
+  saveRef,
+}: RoomEditorCanvasProps) => {
   // ── Aisle DnD refs / state ────────────────────────────────────────────────
   const dragAisleRef = useRef<string | null>(null);
   const [dragOverAisle, setDragOverAisle] = useState<string | null>(null);
 
   // ── Rack DnD refs / state ─────────────────────────────────────────────────
   const dragRackRef = useRef<{ rackId: string; fromAisleId: string } | null>(null);
-  const [dragOverRack, setDragOverRack] = useState<{ aisleId: string; rackId: string } | null>(
-    null
-  );
+  const [dragOverRack, setDragOverRack] = useState<{ aisleId: string; rackId: string } | null>(null);
   const [dragOverAisleEmpty, setDragOverAisleEmpty] = useState<string | null>(null);
+  const [draggingRackId, setDraggingRackId] = useState<string | null>(null);
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [addingRack, setAddingRack] = useState<string | null>(null);
   const [yamlDrawerOpen, setYamlDrawerOpen] = useState(false);
   const [yamlTarget, setYamlTarget] = useState<YamlDrawerTarget | null>(null);
 
-  // ── Save state — nothing auto-saves, user must click Save ─────────────────
+  // ── Save state — lifted to parent via callbacks ───────────────────────────
   const [isDirty, setIsDirty] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [savedOk, setSavedOk] = useState(false);
 
+  // Keep saveRef and dirty callback in sync
   const handleSaveAll = async () => {
     setSaving(true);
-    setSaveError(null);
     try {
-      // Save each aisle's rack order
       for (const aisle of room.aisles) {
         await api.updateAisleRacks(aisle.id, room.id, aisle.racks.map((r) => r.id));
       }
-      // Save the aisle order in the room
       const aislesRecord: Record<string, string[]> = {};
       room.aisles.forEach((a) => { aislesRecord[a.id] = a.racks.map((r) => r.id); });
       await api.updateRoomAisles(room.id, aislesRecord);
       setIsDirty(false);
-      setSavedOk(true);
-      setTimeout(() => setSavedOk(false), 2000);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setSaving(false);
     }
   };
+
+  // Update saveRef every render so parent always has latest closure
+  if (saveRef) saveRef.current = handleSaveAll;
+
+  // Notify parent when dirty changes
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Helper: update local state + mark dirty (no API call)
   const updateRoom = (updated: Room) => {
@@ -585,59 +633,47 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
 
   const handleAisleDragStart = (aisleId: string) => {
     dragAisleRef.current = aisleId;
-    // Clear rack drag state so aisle drag takes precedence
     dragRackRef.current = null;
   };
 
   const handleAisleDragOver = (e: React.DragEvent, aisleId: string) => {
-    // Only handle aisle drag-over when we're actually dragging an aisle
     if (!dragAisleRef.current) return;
     e.preventDefault();
     e.stopPropagation();
-    if (dragAisleRef.current !== aisleId) {
-      setDragOverAisle(aisleId);
-    }
+    if (dragAisleRef.current !== aisleId) setDragOverAisle(aisleId);
   };
 
-  const handleAisleDragLeave = () => {
-    setDragOverAisle(null);
-  };
+  const handleAisleDragLeave = () => { setDragOverAisle(null); };
 
   const handleAisleDrop = async (e: React.DragEvent, targetAisleId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverAisle(null);
-
     if (!dragAisleRef.current || dragAisleRef.current === targetAisleId) {
       dragAisleRef.current = null;
       return;
     }
-
     const newAisles = [...room.aisles];
     const fromIdx = newAisles.findIndex((a) => a.id === dragAisleRef.current);
     const toIdx = newAisles.findIndex((a) => a.id === targetAisleId);
-
-    if (fromIdx === -1 || toIdx === -1) {
-      dragAisleRef.current = null;
-      return;
-    }
-
+    if (fromIdx === -1 || toIdx === -1) { dragAisleRef.current = null; return; }
     const [moved] = newAisles.splice(fromIdx, 1);
     newAisles.splice(toIdx, 0, moved);
-
     dragAisleRef.current = null;
-
-    // Optimistic update
     updateRoom({ ...room, aisles: newAisles });
-    // API call deferred — use Save button
   };
 
   // ── Rack DnD handlers ─────────────────────────────────────────────────────
 
   const handleRackDragStart = (rackId: string, fromAisleId: string) => {
-    // Clear aisle drag when starting a rack drag
     dragAisleRef.current = null;
     dragRackRef.current = { rackId, fromAisleId };
+    setDraggingRackId(rackId);
+  };
+
+  const handleRackDragEnd = () => {
+    setDraggingRackId(null);
+    dragRackRef.current = null;
   };
 
   const handleRackDragOver = (e: React.DragEvent, aisleId: string, rackId: string) => {
@@ -648,9 +684,7 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
     setDragOverRack({ aisleId, rackId });
   };
 
-  const handleRackDragLeave = () => {
-    setDragOverRack(null);
-  };
+  const handleRackDragLeave = () => { setDragOverRack(null); };
 
   const handleRackDrop = async (
     e: React.DragEvent,
@@ -661,23 +695,16 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
     e.stopPropagation();
     setDragOverRack(null);
     setDragOverAisleEmpty(null);
-
     if (!dragRackRef.current) return;
-
     const { rackId, fromAisleId } = dragRackRef.current;
     dragRackRef.current = null;
-
     if (fromAisleId === targetAisleId && afterRackId === rackId) return;
 
-    // Remove from source aisle
     const withRemoved = room.aisles.map((aisle) => {
-      if (aisle.id === fromAisleId) {
-        return { ...aisle, racks: aisle.racks.filter((r) => r.id !== rackId) };
-      }
+      if (aisle.id === fromAisleId) return { ...aisle, racks: aisle.racks.filter((r) => r.id !== rackId) };
       return aisle;
     });
 
-    // Insert into target aisle
     const newAisles = withRemoved.map((aisle) => {
       if (aisle.id === targetAisleId) {
         const movingRack = room.aisles.flatMap((a) => a.racks).find((r) => r.id === rackId);
@@ -694,33 +721,7 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
       return aisle;
     });
 
-    // Optimistic update
     updateRoom({ ...room, aisles: newAisles });
-
-    // Persist
-    const targetAisle = newAisles.find((a) => a.id === targetAisleId);
-    if (targetAisle) {
-      await api
-        .updateAisleRacks(
-          targetAisleId,
-          room.id,
-          targetAisle.racks.map((r) => r.id)
-        )
-        .catch((_err) => { /* ignore — optimistic update already applied */ });
-    }
-
-    if (fromAisleId !== targetAisleId) {
-      const sourceAisle = newAisles.find((a) => a.id === fromAisleId);
-      if (sourceAisle) {
-        await api
-          .updateAisleRacks(
-            fromAisleId,
-            room.id,
-            sourceAisle.racks.map((r) => r.id)
-          )
-          .catch((_err) => { /* ignore — optimistic update already applied */ });
-      }
-    }
   };
 
   const handleRackDropEmpty = async (e: React.DragEvent, targetAisleId: string) => {
@@ -734,44 +735,34 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
 
   const handleAddRack = async (aisleId: string, rack: Rack) => {
     const newAisles = room.aisles.map((aisle) => {
-      if (aisle.id === aisleId) {
-        return { ...aisle, racks: [...aisle.racks, rack] };
-      }
+      if (aisle.id === aisleId) return { ...aisle, racks: [...aisle.racks, rack] };
       return aisle;
     });
-
     setAddingRack(null);
     updateRoom({ ...room, aisles: newAisles });
-
-    // Persist rack order to API
     const targetAisle = newAisles.find((a) => a.id === aisleId);
     if (targetAisle) {
-      await api
-        .updateAisleRacks(
-          aisleId,
-          room.id,
-          targetAisle.racks.map((r) => r.id)
-        )
-        .catch((_err) => { /* ignore — optimistic update already applied */ });
+      await api.updateAisleRacks(aisleId, room.id, targetAisle.racks.map((r) => r.id))
+        .catch((_err) => { /* optimistic update already applied */ });
     }
   };
 
-  const handleDeleteRack = async (aisleId: string, rackId: string) => {
+  const handleDeleteRack = (aisleId: string, rackId: string) => {
     const newAisles = room.aisles.map((aisle) => {
-      if (aisle.id === aisleId) {
-        return { ...aisle, racks: aisle.racks.filter((r) => r.id !== rackId) };
-      }
+      if (aisle.id === aisleId) return { ...aisle, racks: aisle.racks.filter((r) => r.id !== rackId) };
       return aisle;
     });
-
     updateRoom({ ...room, aisles: newAisles });
-    // API call deferred — use Save button
   };
 
   const handleDeleteAisle = async (aisleId: string) => {
+    // Optimistic update
     const newAisles = room.aisles.filter((a) => a.id !== aisleId);
     updateRoom({ ...room, aisles: newAisles });
-    // API call deferred — use Save button
+    // Immediate API call — deletions are destructive
+    await api.deleteAisle(aisleId).catch((_err) => { /* optimistic update already applied */ });
+    // Aisle deleted successfully means the room layout is clean — mark not dirty
+    setIsDirty(false);
   };
 
   // ── YAML drawer handlers ──────────────────────────────────────────────────
@@ -781,17 +772,8 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
     setYamlDrawerOpen(true);
   };
 
-  // For now rack YAML uses the same drawer pattern (aisle type wraps the rack data)
   const handleEditYamlRack = (rack: Rack) => {
-    // Wrap as an aisle-shaped target for the drawer (reuse pattern)
-    setYamlTarget({
-      type: 'aisle',
-      data: {
-        id: rack.id,
-        name: rack.name,
-        racks: [rack],
-      },
-    });
+    setYamlTarget({ type: 'rack', data: rack });
     setYamlDrawerOpen(true);
   };
 
@@ -813,20 +795,11 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
 
   return (
     <>
-      {/* Save bar — only visible when there are unsaved changes */}
-      {(isDirty || saving || savedOk || saveError) && (
-        <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5">
-          <span className="text-sm text-amber-400">
-            {saving ? 'Saving…' : savedOk ? '✓ Saved' : saveError ? `Error: ${saveError}` : 'Unsaved changes'}
-          </span>
-          <button
-            onClick={() => void handleSaveAll()}
-            disabled={saving}
-            className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-600 disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            Save Changes
-          </button>
+      {/* Subtle saving indicator */}
+      {saving && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-2 text-xs text-amber-500">
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+          Saving changes…
         </div>
       )}
 
@@ -840,12 +813,14 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
             isDragOverAisle={dragOverAisle === aisle.id}
             dragOverRack={dragOverRack}
             dragOverAisleEmpty={dragOverAisleEmpty}
+            draggingRackId={draggingRackId}
             addingRack={addingRack}
             onAisleDragStart={handleAisleDragStart}
             onAisleDragOver={handleAisleDragOver}
             onAisleDragLeave={handleAisleDragLeave}
             onAisleDrop={handleAisleDrop}
             onRackDragStart={handleRackDragStart}
+            onRackDragEnd={handleRackDragEnd}
             onRackDragOver={handleRackDragOver}
             onRackDragLeave={handleRackDragLeave}
             onRackDrop={handleRackDrop}
@@ -864,10 +839,7 @@ export const RoomEditorCanvas = ({ room, rackTemplates, onRoomUpdate }: RoomEdit
       {yamlDrawerOpen && yamlTarget && (
         <YamlDrawer
           target={yamlTarget}
-          onClose={() => {
-            setYamlDrawerOpen(false);
-            setYamlTarget(null);
-          }}
+          onClose={() => { setYamlDrawerOpen(false); setYamlTarget(null); }}
         />
       )}
     </>

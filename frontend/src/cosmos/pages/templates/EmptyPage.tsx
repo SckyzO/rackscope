@@ -51,6 +51,7 @@ import { usePageTitle } from '../../contexts/PageTitleContext';
 export type PageBreadcrumbItem = {
   label: string;
   href?: string;
+  onClick?: () => void;
 };
 
 export const PageBreadcrumb = ({ items }: { items: PageBreadcrumbItem[] }) => (
@@ -59,16 +60,20 @@ export const PageBreadcrumb = ({ items }: { items: PageBreadcrumbItem[] }) => (
       {items.map((item, i) => {
         const isFirst = i === 0;
         const isLast = i === items.length - 1;
+        const linkCls =
+          'hover:text-brand-500 dark:hover:text-brand-400 flex items-center gap-1 text-gray-500 transition-colors dark:text-gray-400';
         return (
           <li key={item.label} className="flex items-center gap-1">
             {i > 0 && <ChevronRight className="h-4 w-4 text-gray-300 dark:text-gray-600" />}
             {isLast ? (
               <span className="font-medium text-gray-900 dark:text-white">{item.label}</span>
+            ) : item.onClick ? (
+              <button onClick={item.onClick} className={linkCls}>
+                {isFirst && <Home className="h-4 w-4" />}
+                {item.label}
+              </button>
             ) : (
-              <a
-                href={item.href ?? '#'}
-                className="hover:text-brand-500 dark:hover:text-brand-400 flex items-center gap-1 text-gray-500 transition-colors dark:text-gray-400"
-              >
+              <a href={item.href ?? '#'} className={linkCls}>
                 {isFirst && <Home className="h-4 w-4" />}
                 {item.label}
               </a>
