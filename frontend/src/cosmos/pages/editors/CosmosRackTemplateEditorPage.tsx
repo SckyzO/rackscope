@@ -1152,32 +1152,6 @@ const RackComponentDetailPanel = ({
           </div>
         </SectionCard>
 
-        {/* Placement defaults */}
-        <SectionCard title="Default placement" desc="Where this component sits in a rack by default">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>U Position <span className="text-gray-400">(starting U)</span></label>
-                <input type="number" min={1} max={52} value={draft.u_position} onChange={(e) => update('u_position', e.target.value)} placeholder="e.g. 1" className={inputCls}/>
-              </div>
-              {draft.location === 'side' && (
-                <div>
-                  <label className={labelCls}>Rail side</label>
-                  <select value={draft.side} onChange={(e) => update('side', e.target.value)} className={inputCls}>
-                    <option value="left">Left rail</option>
-                    <option value="right">Right rail</option>
-                  </select>
-                </div>
-              )}
-            </div>
-            {draft.location === 'side' && (
-              <p className="text-xs text-gray-400 dark:text-gray-600">
-                U Position = starting unit on the rail. U Height = how many units it occupies (U{draft.u_position || '?'} → U{(parseInt(draft.u_position) || 1) + (parseInt(draft.u_height) || 1) - 1}).
-              </p>
-            )}
-          </div>
-        </SectionCard>
-
         {/* Checks */}
         <SectionCard title="Checks" icon={CheckSquare}>
           <div className="mb-3 flex flex-wrap gap-1.5">
