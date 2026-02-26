@@ -258,8 +258,8 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
               <div className="flex items-center justify-center pb-2">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">Front</span>
               </div>
-              {/* aspect-ratio: height = width / aspectRatio → scales proportionally */}
-              <div className="w-full [&_*]:!cursor-default" style={{ aspectRatio }}>
+              {/* max-width:720 = 6×120px caps height at 120px/U; panel narrower → both dimensions shrink */}
+              <div className="mx-auto w-full [&_*]:!cursor-default" style={{ aspectRatio, maxWidth: 720 }}>
                 {rackEl(false)}
               </div>
             </div>
@@ -270,7 +270,7 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
                 <div className="flex items-center justify-center pb-2">
                   <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
                 </div>
-                <div className="w-full [&_*]:!cursor-default" style={{ aspectRatio }}>
+                <div className="mx-auto w-full [&_*]:!cursor-default" style={{ aspectRatio, maxWidth: 720 }}>
                   {rackEl(true)}
                 </div>
               </div>
