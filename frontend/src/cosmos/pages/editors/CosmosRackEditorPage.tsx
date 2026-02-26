@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Search,
   Server,
@@ -25,6 +25,7 @@ import {
   Save,
   ChevronDown,
   Plus,
+  ExternalLink,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Rack, Device, DeviceTemplate, RackTemplate } from '../../../types';
@@ -34,7 +35,6 @@ import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 
-const DEVICE_TYPES = ['server', 'storage', 'network', 'pdu', 'cooling'] as const;
 
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   server:  { bg: '#0d1f3c', border: '#2563eb', text: '#60a5fa' },
@@ -180,6 +180,7 @@ const inputCls =
 
 export const CosmosRackEditorPage = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialRackId = searchParams.get('rackId');
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -196,9 +197,9 @@ export const CosmosRackEditorPage = () => {
   const [leftTab, setLeftTab] = useState<'racks' | 'templates'>('racks');
   const [rackSearch, setRackSearch] = useState('');
   const [templateSearch, setTemplateSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
   // Accordion open rooms (flush style)
   const [openRooms, setOpenRooms] = useState<Set<string>>(new Set());
+  const [openTemplateTypes, setOpenTemplateTypes] = useState<Set<string>>(new Set());
 
   // Rack templates + aisle list (for New Rack wizard)
   const [rackTemplates, setRackTemplates] = useState<RackTemplate[]>([]);
@@ -263,8 +264,6 @@ export const CosmosRackEditorPage = () => {
         });
         setAllRacks(racks);
         setAllAisles(aisles);
-        // Open all rooms by default so accordion shows content
-        setOpenRooms(new Set(aisles.map((a) => a.roomName)));
 
         const dc: Record<string, DeviceTemplate> = {};
         (catalog?.device_templates ?? []).forEach((t: DeviceTemplate) => { dc[t.id] = t; });
@@ -294,7 +293,7 @@ export const CosmosRackEditorPage = () => {
         setPlacing(null);
         setEditDirty(false);
       })
-      .catch(() => {});
+      .catch(() => undefined);
     return () => { active = false; };
   }, [selectedRackId]);
 
@@ -365,10 +364,9 @@ export const CosmosRackEditorPage = () => {
         (t) =>
           (!templateSearch ||
             t.name.toLowerCase().includes(templateSearch.toLowerCase()) ||
-            t.id.toLowerCase().includes(templateSearch.toLowerCase())) &&
-          (!typeFilter || t.type === typeFilter)
+            t.id.toLowerCase().includes(templateSearch.toLowerCase()))
       ),
-    [deviceCatalog, templateSearch, typeFilter]
+    [deviceCatalog, templateSearch]
   );
 
   // ── DnD handlers ─────────────────────────────────────────────────────────
@@ -422,17 +420,18 @@ export const CosmosRackEditorPage = () => {
     }
 
     if (activeDevice) {
-      const h = deviceCatalog[activeDevice.template_id]?.u_height ?? 1;
-      const own = new Set(Array.from({ length: h }, (_, i) => activeDevice!.u_position + i));
+      const ad = activeDevice; // narrowed const to avoid non-null assertions in callbacks
+      const h = deviceCatalog[ad.template_id]?.u_height ?? 1;
+      const own = new Set(Array.from({ length: h }, (_, i) => ad.u_position + i));
       const valid = Array.from({ length: h }, (_, i) => u + i).every(
         (slot) => slot >= 1 && slot <= rack.u_height && (!uMap.has(slot) || own.has(slot))
       );
-      if (valid && u !== activeDevice.u_position) {
+      if (valid && u !== ad.u_position) {
         setDraftDevices((prev) =>
-          prev.map((d) => (d.id === activeDevice!.id ? { ...d, u_position: u } : d))
+          prev.map((d) => (d.id === ad.id ? { ...d, u_position: u } : d))
         );
         setDirty(true);
-        if (selectedDevice?.id === activeDevice.id)
+        if (selectedDevice?.id === ad.id)
           setSelectedDevice((prev) => (prev ? { ...prev, u_position: u } : null));
       }
       dragDeviceRef.current = null;
@@ -697,7 +696,7 @@ export const CosmosRackEditorPage = () => {
 
         {/* ── LEFT PANEL: Racks + Templates ─────────────────────────────── */}
 
-        <div className="flex w-[300px] shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
 
           {/* Tabs */}
           <div className="flex shrink-0 border-b border-gray-100 dark:border-gray-800">
@@ -733,41 +732,33 @@ export const CosmosRackEditorPage = () => {
                 </div>
               </div>
 
-              {/* Accordion list — Flush Style grouped by room */}
+              {/* Accordion — card style, collapsed by default */}
               <div className="flex-1 overflow-y-auto">
                 {filteredRacks.length === 0 ? (
                   <p className="px-4 py-6 text-center text-xs text-gray-400">No racks found</p>
                 ) : (
-                  <div className="divide-y divide-gray-100 px-4 dark:divide-gray-800">
+                  <div className="space-y-1 p-2">
                     {Array.from(racksByRoom.entries()).map(([roomName, racks]) => {
                       const isOpen = openRooms.has(roomName);
                       return (
-                        <div key={roomName}>
-                          {/* Accordion header — room name */}
+                        <div key={roomName} className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
                           <button
                             onClick={() => setOpenRooms((prev) => {
                               const next = new Set(prev);
                               if (isOpen) { next.delete(roomName); } else { next.add(roomName); }
                               return next;
                             })}
-                            className="flex w-full items-center justify-between py-3 text-left transition-colors"
+                            className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
                           >
-                            <span className={`text-xs font-semibold ${isOpen ? 'text-brand-500' : 'text-gray-700 dark:text-gray-300'}`}>
-                              {roomName}
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] text-gray-400 dark:text-gray-600">
-                                {racks.length}
-                              </span>
-                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isOpen ? 'text-brand-500 rotate-180' : 'text-gray-400'}`} />
-                            </div>
+                            <div className="h-2 w-2 shrink-0 rounded-full bg-brand-500/60" />
+                            <span className="flex-1 text-xs font-semibold text-gray-700 dark:text-gray-300">{roomName}</span>
+                            <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">{racks.length}</span>
+                            <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                           </button>
 
-                          {/* Accordion content — racks grouped by aisle */}
                           {isOpen && (
-                            <div className="pb-2">
+                            <div className="border-t border-gray-100 dark:border-gray-800">
                               {(() => {
-                                // Group by aisle within this room
                                 const byAisle = new Map<string, { aisleName: string; racks: RackEntry[] }>();
                                 racks.forEach((r) => {
                                   const key = r.aisleId || 'standalone';
@@ -776,8 +767,8 @@ export const CosmosRackEditorPage = () => {
                                   byAisle.set(key, existing);
                                 });
                                 return Array.from(byAisle.entries()).map(([aisleKey, { aisleName, racks: aisleRacks }]) => (
-                                  <div key={aisleKey} className="mb-1">
-                                    <p className="mb-0.5 px-1 text-[10px] font-medium tracking-wide text-gray-400 dark:text-gray-600">
+                                  <div key={aisleKey} className="pt-1 pb-2">
+                                    <p className="mb-0.5 px-3 text-[10px] font-medium tracking-wide text-gray-400 dark:text-gray-600">
                                       {aisleName}
                                     </p>
                                     {aisleRacks.map((r) => (
@@ -811,10 +802,10 @@ export const CosmosRackEditorPage = () => {
             </>
           )}
 
-          {/* ── Templates tab ────────────────────────────────────────────── */}
+          {/* ── Templates tab — accordion by type, collapsed by default ───── */}
           {leftTab === 'templates' && (
             <>
-              <div className="shrink-0 space-y-2 p-3">
+              <div className="shrink-0 p-3">
                 <div className="relative">
                   <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
                   <input
@@ -824,35 +815,56 @@ export const CosmosRackEditorPage = () => {
                     className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-2 pr-3 pl-8 text-xs placeholder-gray-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-600"
                   />
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {(['', ...DEVICE_TYPES] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTypeFilter(t)}
-                      className={[
-                        'rounded-full px-2.5 py-0.5 text-[10px] font-semibold capitalize transition-colors',
-                        typeFilter === t
-                          ? 'bg-brand-500 text-white'
-                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:hover:bg-gray-700',
-                      ].join(' ')}
-                    >
-                      {t || 'All'}
-                    </button>
-                  ))}
-                </div>
               </div>
 
-              <div className="flex-1 space-y-1.5 overflow-y-auto px-3 pb-3">
-                {filteredTemplates.map((t) => (
-                  <TemplateCard
-                    key={t.id}
-                    template={t}
-                    onDragStart={(e) => handleTemplateDragStart(e, t)}
-                  />
-                ))}
-                {filteredTemplates.length === 0 && (
+              <div className="flex-1 overflow-y-auto">
+                {filteredTemplates.length === 0 ? (
                   <p className="py-6 text-center text-xs text-gray-400">No templates found</p>
-                )}
+                ) : (() => {
+                  // Group by type
+                  const byType = new Map<string, DeviceTemplate[]>();
+                  filteredTemplates.forEach((t) => {
+                    const g = byType.get(t.type) ?? [];
+                    g.push(t);
+                    byType.set(t.type, g);
+                  });
+                  return (
+                    <div className="space-y-1 p-2">
+                      {Array.from(byType.entries()).map(([type, templates]) => {
+                        const isOpen = openTemplateTypes.has(type);
+                        const col = TYPE_COLORS[type] ?? TYPE_COLORS.other;
+                        return (
+                          <div key={type} className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
+                            <button
+                              onClick={() => setOpenTemplateTypes((prev) => {
+                                const next = new Set(prev);
+                                if (isOpen) { next.delete(type); } else { next.add(type); }
+                                return next;
+                              })}
+                              className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                            >
+                              <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: col.border }} />
+                              <span className="flex-1 text-xs font-semibold capitalize text-gray-700 dark:text-gray-300">{type}</span>
+                              <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">{templates.length}</span>
+                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                            {isOpen && (
+                              <div className="space-y-1.5 border-t border-gray-100 p-2 dark:border-gray-800">
+                                {templates.map((t) => (
+                                  <TemplateCard
+                                    key={t.id}
+                                    template={t}
+                                    onDragStart={(e) => handleTemplateDragStart(e, t)}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="shrink-0 border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
@@ -1077,7 +1089,7 @@ export const CosmosRackEditorPage = () => {
         </div>
 
         {/* ── RIGHT PANEL: Context ───────────────────────────────────────── */}
-        <div className="flex w-[300px] shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
 
           {/* ── Placement form ─────────────────────────────────────────── */}
           {placing ? (
@@ -1249,6 +1261,13 @@ export const CosmosRackEditorPage = () => {
                         <Check className="h-4 w-4" /> Apply changes
                       </button>
                     )}
+                    <button
+                      onClick={() => navigate('/cosmos/editors/templates')}
+                      title="Open this template in the Device Template editor"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                    >
+                      <ExternalLink className="h-4 w-4" /> Open template editor
+                    </button>
                     <button
                       onClick={() => deleteDevice(selectedDevice.id)}
                       className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"

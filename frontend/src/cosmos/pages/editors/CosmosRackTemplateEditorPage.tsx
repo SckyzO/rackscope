@@ -650,7 +650,7 @@ const EditorPanel = ({
     });
     setDirty(true);
     setSaveStatus('idle');
-  }, [onDraftChange]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [onDraftChange]);
 
   const validationErrors = useMemo(() => {
     const errs: string[] = [];
