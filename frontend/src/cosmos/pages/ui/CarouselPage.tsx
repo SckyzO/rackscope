@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
+import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const slides = [
   { bg: 'from-brand-500 to-brand-700', label: 'Slide 1 — Brand' },
@@ -8,24 +9,6 @@ const slides = [
   { bg: 'from-warning-500 to-warning-700', label: 'Slide 3 — Warning' },
   { bg: 'from-error-500 to-error-700', label: 'Slide 4 — Error' },
 ];
-
-const SectionCard = ({
-  title,
-  desc,
-  children,
-}: {
-  title: string;
-  desc?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-    <div className="mb-5">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-      {desc && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
-    </div>
-    {children}
-  </div>
-);
 
 function useCarousel(auto = false) {
   const [idx, setIdx] = useState(0);
@@ -56,12 +39,19 @@ export const CarouselPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Carousel</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Image and content slideshow components
-        </p>
-      </div>
+      <PageHeader
+        title="Carousel"
+        description="Image and content slideshow components"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'UI Library', href: '/cosmos/ui' },
+              { label: 'Carousel' },
+            ]}
+          />
+        }
+      />
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="Slides Only" desc="Auto-rotating, no controls">
           <Slide idx={c1.idx} />

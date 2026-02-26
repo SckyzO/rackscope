@@ -1,24 +1,7 @@
 import { useState, useRef, type KeyboardEvent, type ChangeEvent } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-
-const SectionCard = ({
-  title,
-  desc,
-  children,
-}: {
-  title: string;
-  desc?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-    <div className="mb-5">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-      {desc && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
-    </div>
-    {children}
-  </div>
-);
+import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const OTP = ({
   length,
@@ -136,12 +119,19 @@ export const OtpInputPage = () => {
   const [otp6, setOtp6] = useState('');
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">OTP Input</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          One-time password and verification code inputs
-        </p>
-      </div>
+      <PageHeader
+        title="OTP Input"
+        description="One-time password and verification code inputs"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'UI Library', href: '/cosmos/ui' },
+              { label: 'OTP Input' },
+            ]}
+          />
+        }
+      />
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="4-digit OTP" desc="Type digits, auto-advances to next box">
           <OTP length={4} value={otp4} onChange={setOtp4} />
@@ -159,7 +149,14 @@ export const OtpInputPage = () => {
         </SectionCard>
         <SectionCard title="Success State" desc="Green borders with success indicator">
           <div>
-            <OTP length={6} value={'123456'} onChange={() => { /* noop */ }} success />
+            <OTP
+              length={6}
+              value={'123456'}
+              onChange={() => {
+                /* noop */
+              }}
+              success
+            />
             <div className="text-success-500 mt-3 flex items-center justify-center gap-2 text-sm">
               <Check className="h-4 w-4" />
               <span>Code verified successfully!</span>

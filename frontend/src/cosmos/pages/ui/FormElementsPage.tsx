@@ -1,24 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Phone, Link as LinkIcon, Upload } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-
-const SectionCard = ({
-  title,
-  desc,
-  children,
-}: {
-  title: string;
-  desc?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-    <div className="mb-5">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-      {desc && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
-    </div>
-    {children}
-  </div>
-);
+import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const Label = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
   <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -43,12 +26,19 @@ export const FormElementsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Form Elements</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Input components for data collection
-        </p>
-      </div>
+      <PageHeader
+        title="Form Elements"
+        description="Input components for data collection"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'UI Library', href: '/cosmos/ui' },
+              { label: 'Form Elements' },
+            ]}
+          />
+        }
+      />
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="Text Inputs" desc="Basic input field variations">
           <div className="space-y-4">

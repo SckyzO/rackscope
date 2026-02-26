@@ -1,23 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-
-const SectionCard = ({
-  title,
-  desc,
-  children,
-}: {
-  title: string;
-  desc?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-    <div className="mb-5">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-      {desc && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
-    </div>
-    {children}
-  </div>
-);
+import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const PrimaryBtn = ({ children }: { children: React.ReactNode }) => (
   <button className="border-brand-400 bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 border-r px-4 py-2 text-sm font-medium text-white transition-colors last:border-r-0">
@@ -35,12 +18,19 @@ export const ButtonsGroupPage = () => {
   usePageTitle('Buttons Group');
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Button Groups</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Grouped buttons sharing a unified container
-        </p>
-      </div>
+      <PageHeader
+        title="Button Groups"
+        description="Grouped buttons sharing a unified container"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'UI Library', href: '/cosmos/ui' },
+              { label: 'Button Groups' },
+            ]}
+          />
+        }
+      />
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="Primary Basic" desc="Three primary buttons in a group">
           <div className="border-brand-500 inline-flex overflow-hidden rounded-lg border">

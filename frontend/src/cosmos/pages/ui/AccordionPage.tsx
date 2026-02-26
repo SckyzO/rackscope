@@ -1,24 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, CheckCircle, Settings, Bell, User } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-
-const SectionCard = ({
-  title,
-  desc,
-  children,
-}: {
-  title: string;
-  desc?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-    <div className="mb-5">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-      {desc && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
-    </div>
-    {children}
-  </div>
-);
+import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const items = [
   {
@@ -86,12 +69,19 @@ export const AccordionPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Accordion</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Collapsible content sections
-        </p>
-      </div>
+      <PageHeader
+        title="Accordion"
+        description="Collapsible content sections"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'UI Library', href: '/cosmos/ui' },
+              { label: 'Accordion' },
+            ]}
+          />
+        }
+      />
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="Basic Accordion" desc="Only one item open at a time">
           <div className="divide-y divide-gray-200 overflow-hidden rounded-xl border border-gray-200 dark:divide-gray-800 dark:border-gray-800">

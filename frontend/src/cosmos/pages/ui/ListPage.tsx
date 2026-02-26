@@ -1,23 +1,6 @@
 import { CheckCircle, Mail, Send, FileText, Trash2, AlertCircle } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-
-const SectionCard = ({
-  title,
-  desc,
-  children,
-}: {
-  title: string;
-  desc?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-    <div className="mb-5">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-      {desc && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
-    </div>
-    {children}
-  </div>
-);
+import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const items = [
   'Lorem ipsum dolor sit amet',
@@ -31,12 +14,19 @@ export const ListPage = () => {
   usePageTitle('List');
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Lists</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Various list styles and components
-        </p>
-      </div>
+      <PageHeader
+        title="Lists"
+        description="Various list styles and components"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'UI Library', href: '/cosmos/ui' },
+              { label: 'List' },
+            ]}
+          />
+        }
+      />
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="Unordered List" desc="Basic bulleted list">
           <ul className="space-y-2">

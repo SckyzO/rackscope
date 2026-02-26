@@ -11,7 +11,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-import { PageHeader, SectionCard } from '../templates/EmptyPage';
+import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 // ── Button base classes (exact TailAdmin patterns) ────────────────────────────
 
@@ -32,7 +32,19 @@ export const ButtonsPage = () => {
   usePageTitle('Buttons');
   return (
     <div className="space-y-6">
-      <PageHeader title="Buttons" description="Button variants from the TailAdmin design system" />
+      <PageHeader
+        title="Buttons"
+        description="Button variants from the TailAdmin design system"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'UI Library', href: '/cosmos/ui' },
+              { label: 'Buttons' },
+            ]}
+          />
+        }
+      />
 
       {/* ── Primary ── */}
       <SectionCard title="Primary" desc="Solid brand-500 background — two sizes">

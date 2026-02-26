@@ -1,23 +1,6 @@
 import { Search, Database, Bell, AlertTriangle, Wifi, Plus, RefreshCw } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-
-const SectionCard = ({
-  title,
-  desc,
-  children,
-}: {
-  title: string;
-  desc?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-    <div className="mb-5">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-      {desc && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
-    </div>
-    {children}
-  </div>
-);
+import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const EmptyState = ({
   icon: Icon,
@@ -53,12 +36,19 @@ export const EmptyStatePage = () => {
   usePageTitle('Empty State');
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Empty State</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Placeholder UI for empty content areas
-        </p>
-      </div>
+      <PageHeader
+        title="Empty State"
+        description="Placeholder UI for empty content areas"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'UI Library', href: '/cosmos/ui' },
+              { label: 'Empty State' },
+            ]}
+          />
+        }
+      />
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="No Results" desc="Search returned no matches">
           <EmptyState

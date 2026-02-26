@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Search, X } from 'lucide-react';
 import { usePageTitle } from '../contexts/PageTitleContext';
+import { PageHeader, PageBreadcrumb } from './templates/EmptyPage';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -351,15 +352,18 @@ export const UILibraryPage = () => {
   return (
     <div className="space-y-5">
       {/* ── Header ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">UI Library</h2>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-            {hasQuery
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <PageHeader
+          title="UI Library"
+          description={
+            hasQuery
               ? `${filteredCount} of ${totalCount} components`
-              : `${totalCount} components across ${CATEGORIES.length} categories`}
-          </p>
-        </div>
+              : `${totalCount} components across ${CATEGORIES.length} categories`
+          }
+          breadcrumb={
+            <PageBreadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'UI Library' }]} />
+          }
+        />
 
         {/* Search */}
         <div className="relative w-full sm:w-64">

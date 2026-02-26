@@ -10,24 +10,7 @@ import {
   Copy,
 } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-
-const SectionCard = ({
-  title,
-  desc,
-  children,
-}: {
-  title: string;
-  desc?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-    <div className="mb-5">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-      {desc && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
-    </div>
-    {children}
-  </div>
-);
+import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const Menu = ({ children }: { children: React.ReactNode }) => (
   <div className="shadow-theme-lg absolute top-full left-0 z-50 mt-2 w-48 rounded-xl border border-gray-200 bg-white py-1 dark:border-gray-800 dark:bg-gray-900">
@@ -61,12 +44,19 @@ export const DropdownsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Dropdowns</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Contextual menus for actions and options
-        </p>
-      </div>
+      <PageHeader
+        title="Dropdowns"
+        description="Contextual menus for actions and options"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'UI Library', href: '/cosmos/ui' },
+              { label: 'Dropdowns' },
+            ]}
+          />
+        }
+      />
       <div className="grid gap-6 lg:grid-cols-2">
         <SectionCard title="Default Dropdown" desc="Basic list of actions">
           <div className="relative inline-block">
