@@ -83,6 +83,7 @@ import { CosmosTopologyEditorPage } from './pages/editors/CosmosTopologyEditorPa
 import { CosmosTemplatesEditorPage } from './pages/editors/CosmosTemplatesEditorPage';
 import { CosmosRackEditorPage } from './pages/editors/CosmosRackEditorPage';
 import { EmptyPage, TemplatesShowcase, CenteredPage } from './pages/templates/EmptyPage';
+import { PlaylistCenterPage } from './pages/PlaylistCenterPage';
 import {
   RackViewTemplate,
   DeviceViewTemplate,
@@ -200,6 +201,9 @@ const CosmosRoutes = () => (
       <Route path="slurm/alerts" element={<CosmosSlurmAlertsPage />} />
       <Route path="slurm/partitions" element={<CosmosSlurmPartitionsPage />} />
       <Route path="slurm/wallboard/:roomId" element={<CosmosSlurmWallboardPage />} />
+
+      {/* ── Playlist ── */}
+      <Route path="playlist" element={<PlaylistCenterPage />} />
 
       {/* ── Editors ── */}
       <Route path="editors/settings" element={<CosmosSettingsPage />} />

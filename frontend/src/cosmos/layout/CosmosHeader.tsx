@@ -1,7 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Moon, Sun, Bell, ChevronDown, AlertTriangle, XCircle, SkipBack, SkipForward, Play, Pause } from 'lucide-react';
+import {
+  Moon,
+  Sun,
+  Bell,
+  ChevronDown,
+  AlertTriangle,
+  XCircle,
+  SkipBack,
+  SkipForward,
+  Play,
+  Pause,
+  X,
+} from 'lucide-react';
 import { api } from '../../services/api';
 import type { ActiveAlert } from '../../types';
 import { CosmosSearch } from './CosmosSearch';
@@ -154,43 +166,111 @@ export const CosmosHeader = ({
 
       {/* Right: actions */}
       <div className="flex items-center gap-2">
-
-        {/* Playlist controls — visible only when features.playlist = true */}
-        {playlist.enabled && playlist.views.length > 0 && (
-          <div className={`flex items-center overflow-hidden rounded-xl border transition-colors ${
-            playlist.isPlaying
-              ? 'border-brand-400 bg-brand-50 dark:border-brand-700/50 dark:bg-brand-500/10'
-              : 'border-gray-200 dark:border-gray-800'
-          }`}>
-            <button
-              onClick={playlist.prev}
-              title="Previous view"
-              className="flex h-10 w-9 items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-            >
-              <SkipBack className="h-4 w-4" />
-            </button>
-            <button
-              onClick={playlist.toggle}
-              title={playlist.isPlaying ? 'Pause playlist' : 'Start playlist'}
-              className={`flex h-10 w-10 items-center justify-center transition-colors ${
+        {/* Playlist controls — visible only when features.playlist = true and queue has items */}
+        {playlist.enabled && playlist.queue.length > 0 && (
+          <>
+            {/* Main control strip */}
+            <div
+              className={`flex items-center overflow-hidden rounded-xl border transition-colors ${
                 playlist.isPlaying
-                  ? 'text-brand-500 hover:bg-brand-100 dark:hover:bg-brand-500/20'
-                  : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
+                  ? 'border-brand-400 bg-brand-50 dark:border-brand-700/50 dark:bg-brand-500/10'
+                  : 'border-gray-200 dark:border-gray-800'
               }`}
             >
-              {playlist.isPlaying
-                ? <Pause className="h-4 w-4" />
-                : <Play className="h-4 w-4" />
-              }
-            </button>
-            <button
-              onClick={playlist.next}
-              title="Next view"
-              className="flex h-10 w-9 items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
-            >
-              <SkipForward className="h-4 w-4" />
-            </button>
-          </div>
+              {/* Prev button — shows title when playing */}
+              <button
+                onClick={playlist.prev}
+                title="Previous view"
+                className="flex h-10 items-center justify-center gap-1.5 px-2 text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+              >
+                <SkipBack className="h-3.5 w-3.5 shrink-0" />
+                {playlist.isPlaying &&
+                  playlist.queue.length > 1 &&
+                  (() => {
+                    const prevIdx =
+                      (playlist.currentIndex - 1 + playlist.queue.length) % playlist.queue.length;
+                    const prevTitle = playlist.queue[prevIdx]?.title;
+                    return prevTitle ? (
+                      <span className="max-w-[80px] truncate text-xs">{prevTitle}</span>
+                    ) : null;
+                  })()}
+              </button>
+
+              {/* Play / Pause */}
+              <button
+                onClick={playlist.toggle}
+                title={playlist.isPlaying ? 'Pause playlist' : 'Start playlist'}
+                className={`flex h-10 w-10 shrink-0 items-center justify-center transition-colors ${
+                  playlist.isPlaying
+                    ? 'text-brand-500 hover:bg-brand-100 dark:hover:bg-brand-500/20'
+                    : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
+                }`}
+              >
+                {playlist.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </button>
+
+              {/* Dot position indicators (max 8; otherwise counter) */}
+              {playlist.isPlaying &&
+                (() => {
+                  const total = playlist.queue.length;
+                  const cur = playlist.currentIndex;
+                  if (total <= 8) {
+                    return (
+                      <div className="flex items-center gap-0.5 px-1">
+                        {Array.from({ length: total }).map((_, i) => (
+                          <span
+                            key={i}
+                            className={`inline-block rounded-full transition-all ${
+                              i === cur
+                                ? 'bg-brand-500 h-2 w-2'
+                                : 'h-1.5 w-1.5 bg-gray-300 dark:bg-gray-700'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    );
+                  }
+                  return (
+                    <span className="px-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+                      {cur + 1}/{total}
+                    </span>
+                  );
+                })()}
+
+              {/* Next button — shows title when playing */}
+              <button
+                onClick={playlist.next}
+                title="Next view"
+                className="flex h-10 items-center justify-center gap-1.5 px-2 text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+              >
+                {playlist.isPlaying &&
+                  playlist.queue.length > 1 &&
+                  (() => {
+                    const nextIdx = (playlist.currentIndex + 1) % playlist.queue.length;
+                    const nextTitle = playlist.queue[nextIdx]?.title;
+                    return nextTitle ? (
+                      <span className="max-w-[80px] truncate text-xs">{nextTitle}</span>
+                    ) : null;
+                  })()}
+                <SkipForward className="h-3.5 w-3.5 shrink-0" />
+              </button>
+            </div>
+
+            {/* Exit button — shown when playlist is active (playing, or in focused/kiosk mode) */}
+            {(playlist.isPlaying || playlist.mode !== 'normal') && (
+              <button
+                onClick={() => {
+                  playlist.pause();
+                  navigate('/cosmos/playlist');
+                }}
+                title="Exit playlist"
+                className="flex h-10 items-center gap-1.5 rounded-xl border border-gray-200 px-3 text-sm text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5"
+              >
+                <X className="h-3.5 w-3.5" />
+                <span className="text-xs font-medium">Exit</span>
+              </button>
+            )}
+          </>
         )}
 
         {/* Dark mode toggle */}

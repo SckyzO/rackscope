@@ -22,6 +22,7 @@ import {
   Settings,
   ChevronRight,
   ChevronDown,
+  MonitorPlay,
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -213,7 +214,6 @@ const RackLink = ({
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-
 // ── Sidebar ────────────────────────────────────────────────────────────────
 
 interface CosmosSidebarProps {
@@ -239,7 +239,9 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         setRooms(Array.isArray(roomsData) ? roomsData : []);
         setSites(Array.isArray(sitesData) ? sitesData : []);
       })
-      .catch(() => { /* noop */ });
+      .catch(() => {
+        /* noop */
+      });
   }, []);
 
   return (
@@ -273,10 +275,20 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
 
         <SectionLabel label="Monitoring" collapsed={collapsed} />
         {features.worldmap && (
-          <NavItem to="/cosmos/views/worldmap" icon={Globe} label="World Map" collapsed={collapsed} />
+          <NavItem
+            to="/cosmos/views/worldmap"
+            icon={Globe}
+            label="World Map"
+            collapsed={collapsed}
+          />
         )}
         {features.notifications && (
-          <NavItem to="/cosmos/notifications" icon={Bell} label="Notifications" collapsed={collapsed} />
+          <NavItem
+            to="/cosmos/notifications"
+            icon={Bell}
+            label="Notifications"
+            collapsed={collapsed}
+          />
         )}
 
         {/* Infrastructure tree — own section, dynamic based on declared sites */}
@@ -442,11 +454,31 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         {slurmActive && (
           <>
             <SectionLabel label="Slurm" collapsed={collapsed} />
-            <NavItem to="/cosmos/slurm/overview" icon={LayoutDashboard} label="Overview" collapsed={collapsed} />
-            <NavItem to="/cosmos/slurm/partitions" icon={Network} label="Partitions" collapsed={collapsed} />
+            <NavItem
+              to="/cosmos/slurm/overview"
+              icon={LayoutDashboard}
+              label="Overview"
+              collapsed={collapsed}
+            />
+            <NavItem
+              to="/cosmos/slurm/partitions"
+              icon={Network}
+              label="Partitions"
+              collapsed={collapsed}
+            />
             <NavItem to="/cosmos/slurm/nodes" icon={List} label="Nodes" collapsed={collapsed} />
-            <NavItem to="/cosmos/slurm/alerts" icon={AlertTriangle} label="Alerts" collapsed={collapsed} />
-            <NavItem to="/cosmos/slurm/wallboard/room-a" icon={MapPin} label="Wallboard" collapsed={collapsed} />
+            <NavItem
+              to="/cosmos/slurm/alerts"
+              icon={AlertTriangle}
+              label="Alerts"
+              collapsed={collapsed}
+            />
+            <NavItem
+              to="/cosmos/slurm/wallboard/room-a"
+              icon={MapPin}
+              label="Wallboard"
+              collapsed={collapsed}
+            />
           </>
         )}
 
@@ -481,6 +513,14 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           label="Checks Library"
           collapsed={collapsed}
         />
+        {features.playlist && (
+          <NavItem
+            to="/cosmos/playlist"
+            icon={MonitorPlay}
+            label="Playlist"
+            collapsed={collapsed}
+          />
+        )}
       </nav>
 
       {/* Bottom sticky — Profile, Settings, UI Library (dev only) */}
