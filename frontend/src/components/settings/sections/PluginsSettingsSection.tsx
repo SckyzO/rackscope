@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Play, Trash2, Plus, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronRight, Play, Trash2, Plus, RefreshCw, FlaskConical, Cpu } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { SimulatorScenario, SimulatorOverride } from '../../../types';
 import { FormField } from '../common/FormField';
@@ -196,16 +196,18 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
         className="rounded-xl border border-[var(--color-border)] p-6"
         style={{ backgroundColor: 'var(--color-bg-panel)' }}
       >
-        <div className="mb-4">
-          <h3
-            className="text-sm font-bold tracking-wider uppercase"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            Simulator Plugin
-          </h3>
-          <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-            Metrics simulator for testing without real hardware
-          </p>
+        <div className="mb-4 flex items-start gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-500/10">
+            <FlaskConical className="h-4 w-4 text-amber-500" />
+          </div>
+          <div className="pt-0.5">
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+              Simulator Plugin
+            </h3>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              Metrics simulator for testing without real hardware
+            </p>
+          </div>
         </div>
 
         <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
@@ -654,16 +656,18 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
         className="rounded-xl border border-[var(--color-border)] p-6"
         style={{ backgroundColor: 'var(--color-bg-panel)' }}
       >
-        <div className="mb-4">
-          <h3
-            className="text-sm font-bold tracking-wider uppercase"
-            style={{ color: 'var(--color-text-primary)' }}
-          >
-            Slurm Plugin
-          </h3>
-          <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>
-            Workload manager integration for HPC clusters
-          </p>
+        <div className="mb-4 flex items-start gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/10">
+            <Cpu className="h-4 w-4 text-blue-500" />
+          </div>
+          <div className="pt-0.5">
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+              Slurm Plugin
+            </h3>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              Workload manager integration for HPC clusters
+            </p>
+          </div>
         </div>
 
         <FormToggle

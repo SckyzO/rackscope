@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
-import { usePluginsMenu } from '../../context/PluginsMenuContext';
 import { api } from '../../services/api';
 import type { ComponentType } from 'react';
 import type { RoomSummary, Site, AisleSummary, RackSummary } from '../../types';
@@ -229,9 +228,10 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
   const [expandedAisles, setExpandedAisles] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const location = useLocation();
-  const { features } = useAppConfigSafe();
-  const { isPluginActive } = usePluginsMenu();
-  const slurmActive = isPluginActive('slurm') || isPluginActive('workload-slurm');
+  const { features, plugins } = useAppConfigSafe();
+  // plugins.slurm reads app.yaml plugins.slurm.enabled — source of truth
+  // (Slurm plugin registers its menu section as id="workload", not "slurm")
+  const slurmActive = plugins.slurm;
 
   useEffect(() => {
     Promise.all([api.getRooms(), api.getSites()])

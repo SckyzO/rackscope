@@ -1,4 +1,5 @@
 import React from 'react';
+import { Activity, Tag, KeyRound, ShieldCheck } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
 import { FormToggle } from '../common/FormToggle';
@@ -71,8 +72,8 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
   };
 
   return (
-    <div className="space-y-8">
-      <FormSection title="Prometheus Connection">
+    <div className="space-y-4">
+      <FormSection title="Prometheus Connection" icon={Activity} iconColor="text-purple-500" iconBg="bg-purple-50 dark:bg-purple-500/10">
         <FormField
           label="Prometheus URL"
           value={draft.telemetry.prometheus_url}
@@ -101,7 +102,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
         />
       </FormSection>
 
-      <FormSection title="Label Mapping">
+      <FormSection title="Label Mapping" icon={Tag} iconColor="text-blue-500" iconBg="bg-blue-50 dark:bg-blue-500/10">
         <FormField
           label="Identity Label"
           value={draft.telemetry.identity_label}
@@ -128,7 +129,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
         />
       </FormSection>
 
-      <FormSection title="Authentication (Optional)">
+      <FormSection title="Authentication (Optional)" icon={KeyRound} iconColor="text-amber-500" iconBg="bg-amber-50 dark:bg-amber-500/10">
         <FormToggle
           label="Enable Authentication"
           description="Enable basic authentication for Prometheus"
@@ -154,7 +155,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
         )}
       </FormSection>
 
-      <FormSection title="TLS Configuration (Optional)">
+      <FormSection title="TLS Configuration (Optional)" icon={ShieldCheck} iconColor="text-green-500" iconBg="bg-green-50 dark:bg-green-500/10">
         <FormToggle
           label="TLS Verify"
           description="Verify server TLS certificates"

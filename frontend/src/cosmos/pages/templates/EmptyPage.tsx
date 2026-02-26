@@ -107,16 +107,29 @@ export const PageHeader = ({
 export const SectionCard = ({
   title,
   desc,
+  icon: Icon,
+  iconColor = 'text-gray-500 dark:text-gray-400',
+  iconBg = 'bg-gray-100 dark:bg-gray-800',
   children,
 }: {
   title: string;
   desc?: string;
+  icon?: React.ElementType;
+  iconColor?: string;
+  iconBg?: string;
   children?: ReactNode;
 }) => (
   <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-    <div className="mb-5">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-      {desc && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
+    <div className="mb-5 flex items-start gap-3">
+      {Icon && (
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
+          <Icon className={`h-4 w-4 ${iconColor}`} />
+        </div>
+      )}
+      <div className={Icon ? 'pt-0.5' : ''}>
+        <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
+        {desc && <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
+      </div>
     </div>
     {children}
   </div>

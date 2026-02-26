@@ -1,4 +1,7 @@
 import React from 'react';
+import {
+  Info, FolderOpen, RefreshCw, Database, Zap, MapPin,
+} from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
 import { FormToggle } from '../common/FormToggle';
@@ -24,8 +27,8 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
   };
 
   return (
-    <div className="space-y-8">
-      <FormSection title="Application Info">
+    <div className="space-y-4">
+      <FormSection title="Application Info" icon={Info} iconColor="text-brand-500" iconBg="bg-brand-50 dark:bg-brand-500/10">
         <FormField
           label="Application Name"
           value={draft.app.name}
@@ -38,7 +41,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         />
       </FormSection>
 
-      <FormSection title="Paths">
+      <FormSection title="Paths" icon={FolderOpen} iconColor="text-amber-500" iconBg="bg-amber-50 dark:bg-amber-500/10">
         <FormField
           label="Topology Path"
           value={draft.paths.topology}
@@ -65,7 +68,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         />
       </FormSection>
 
-      <FormSection title="Refresh Intervals" description="UI refresh intervals in seconds">
+      <FormSection title="Refresh Intervals" description="UI refresh intervals in seconds" icon={RefreshCw} iconColor="text-green-500" iconBg="bg-green-50 dark:bg-green-500/10">
         <FormField
           label="Room State Refresh (seconds)"
           value={draft.refresh.room_state_seconds}
@@ -80,7 +83,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         />
       </FormSection>
 
-      <FormSection title="Cache" description="Prometheus query cache TTL (two-level caching)">
+      <FormSection title="Cache" description="Prometheus query cache TTL (two-level caching)" icon={Database} iconColor="text-purple-500" iconBg="bg-purple-50 dark:bg-purple-500/10">
         <FormField
           label="Legacy TTL (seconds)"
           value={draft.cache.ttl_seconds}
@@ -101,7 +104,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         />
       </FormSection>
 
-      <FormSection title="Map Settings">
+      <FormSection title="Map Settings" icon={MapPin} iconColor="text-sky-500" iconBg="bg-sky-50 dark:bg-sky-500/10">
         <FormField
           label="Default View"
           value={draft.map.default_view}
@@ -150,7 +153,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         </div>
       </FormSection>
 
-      <FormSection title="Features">
+      <FormSection title="Features" icon={Zap} iconColor="text-brand-500" iconBg="bg-brand-50 dark:bg-brand-500/10">
         <FormToggle
           label="Notifications"
           description="Enable in-app notifications"

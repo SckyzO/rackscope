@@ -1,4 +1,4 @@
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Globe, LayoutDashboard, MonitorPlay } from 'lucide-react';
 import type { ConfigDraft } from '../useSettingsConfig';
 import { SettingField, SettingTooltip } from '../../../cosmos/components/SettingTooltip';
 import { SectionCard } from '../../../cosmos/pages/templates/EmptyPage';
@@ -61,7 +61,7 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
   return (
     <div className="space-y-6">
       {/* ── Map ── */}
-      <SectionCard title="World Map" desc="Configure the default view of the world map">
+      <SectionCard title="World Map" desc="Configure the default view of the world map" icon={Globe} iconColor="text-sky-500" iconBg="bg-sky-50 dark:bg-sky-500/10">
         <div className="grid grid-cols-2 gap-4">
           <SettingField
             label="Default zoom"
@@ -141,7 +141,7 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
       </SectionCard>
 
       {/* ── Pages ── */}
-      <SectionCard title="Pages & Navigation" desc="Enable or disable sections of the application">
+      <SectionCard title="Pages & Navigation" desc="Enable or disable sections of the application" icon={LayoutDashboard} iconColor="text-brand-500" iconBg="bg-brand-50 dark:bg-brand-500/10">
         {(
           [
             {
@@ -181,6 +181,9 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
       {/* ── Playlist ── */}
       <SectionCard
         title="Playlist Mode"
+        icon={MonitorPlay}
+        iconColor="text-purple-500"
+        iconBg="bg-purple-50 dark:bg-purple-500/10"
         desc="Automatically rotate through views — ideal for NOC screens"
       >
         <div className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 dark:border-gray-800">

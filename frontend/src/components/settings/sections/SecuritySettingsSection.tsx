@@ -1,4 +1,5 @@
-import { AlertTriangle, Type } from 'lucide-react';
+import { AlertTriangle, Type, Lock, ShieldAlert } from 'lucide-react';
+import { FormSection } from '../common/FormSection';
 import type { ConfigDraft } from '../useSettingsConfig';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -51,17 +52,10 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
     setDraft({ ...draft, auth: { ...auth, ...updates } });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* ── Authentication ── */}
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-            Authentication
-          </h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Protect the Cosmos UI with a username and password.
-          </p>
-        </div>
+      <FormSection title="Authentication" description="Protect the Cosmos UI with a username and password." icon={Lock} iconColor="text-red-500" iconBg="bg-red-50 dark:bg-red-500/10">
+        <div className="space-y-4">
 
         {!hasPassword && (
           <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-700/40 dark:bg-blue-500/10">
@@ -110,18 +104,12 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
               : `Session expires after ${auth.session_duration}.`}
           </p>
         </div>
-      </div>
+        </div>
+      </FormSection>
 
       {/* ── Password Policy ── */}
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-            Password Policy
-          </h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Rules enforced when setting or changing the password.
-          </p>
-        </div>
+      <FormSection title="Password Policy" description="Rules enforced when setting or changing the password." icon={ShieldAlert} iconColor="text-orange-500" iconBg="bg-orange-50 dark:bg-orange-500/10">
+        <div className="space-y-4">
 
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -164,7 +152,8 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
           value={auth.policy_require_symbol}
           onChange={(v) => setAuth({ policy_require_symbol: v })}
         />
-      </div>
+        </div>
+      </FormSection>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Cpu } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
 import type { ConfigDraft } from '../useSettingsConfig';
@@ -26,8 +27,8 @@ export const PlannerSettingsSection: React.FC<PlannerSettingsSectionProps> = ({
   };
 
   return (
-    <div className="space-y-8">
-      <FormSection
+    <div className="space-y-4">
+      <FormSection icon={Cpu} iconColor="text-indigo-500" iconBg="bg-indigo-50 dark:bg-indigo-500/10"
         title="Query Planner"
         description="Configures how health checks are batched and cached"
       >
