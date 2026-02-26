@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Moon, Sun, Bell, ChevronDown, AlertTriangle, XCircle } from 'lucide-react';
+import { Moon, Sun, Bell, ChevronDown, AlertTriangle, XCircle, SkipBack, SkipForward, Play, Pause } from 'lucide-react';
 import { api } from '../../services/api';
 import type { ActiveAlert } from '../../types';
 import { CosmosSearch } from './CosmosSearch';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAvatar } from '../../hooks/useAvatar';
 import { usePageTitleValue } from '../contexts/PageTitleContext';
+import { usePlaylistSafe } from '../contexts/PlaylistContext';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/cosmos': 'Analytics Dashboard',
@@ -96,6 +97,7 @@ export const CosmosHeader = ({
   // Dynamic title set by pages via usePageTitle(); falls back to static ROUTE_LABELS map.
   const contextTitle = usePageTitleValue();
   const pageTitle = contextTitle || ROUTE_LABELS[location.pathname] || '';
+  const playlist = usePlaylistSafe();
   const critCount = alerts.filter((a) => a.state === 'CRIT').length;
   const warnCount = alerts.filter((a) => a.state === 'WARN').length;
 
@@ -152,6 +154,45 @@ export const CosmosHeader = ({
 
       {/* Right: actions */}
       <div className="flex items-center gap-2">
+
+        {/* Playlist controls — visible only when features.playlist = true */}
+        {playlist.enabled && playlist.views.length > 0 && (
+          <div className={`flex items-center overflow-hidden rounded-xl border transition-colors ${
+            playlist.isPlaying
+              ? 'border-brand-400 bg-brand-50 dark:border-brand-700/50 dark:bg-brand-500/10'
+              : 'border-gray-200 dark:border-gray-800'
+          }`}>
+            <button
+              onClick={playlist.prev}
+              title="Previous view"
+              className="flex h-10 w-9 items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+            >
+              <SkipBack className="h-4 w-4" />
+            </button>
+            <button
+              onClick={playlist.toggle}
+              title={playlist.isPlaying ? 'Pause playlist' : 'Start playlist'}
+              className={`flex h-10 w-10 items-center justify-center transition-colors ${
+                playlist.isPlaying
+                  ? 'text-brand-500 hover:bg-brand-100 dark:hover:bg-brand-500/20'
+                  : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
+              }`}
+            >
+              {playlist.isPlaying
+                ? <Pause className="h-4 w-4" />
+                : <Play className="h-4 w-4" />
+              }
+            </button>
+            <button
+              onClick={playlist.next}
+              title="Next view"
+              className="flex h-10 w-9 items-center justify-center text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5"
+            >
+              <SkipForward className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* Dark mode toggle */}
         <button
           onClick={toggleDark}
