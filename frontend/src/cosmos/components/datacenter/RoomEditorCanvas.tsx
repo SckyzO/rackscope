@@ -208,7 +208,6 @@ const RackCard = ({
   onEditYaml,
 }: RackCardProps) => {
   const navigate = useNavigate();
-  const hasTemplate = !!rack.template_id;
 
   return (
     <div
@@ -227,85 +226,70 @@ const RackCard = ({
         onDragStart={(e) => { e.stopPropagation(); onDragStart(rack.id, aisleId); }}
         onDragEnd={onDragEnd}
         className={[
-          'group relative flex w-[156px] overflow-hidden cursor-grab select-none rounded-xl border bg-white transition-all duration-200 active:cursor-grabbing dark:bg-gray-800',
+          'group w-[148px] cursor-grab select-none rounded-xl border bg-white p-3 transition-all duration-200 active:cursor-grabbing dark:bg-gray-800',
           isDragging
             ? 'scale-[1.04] rotate-[0.8deg] shadow-2xl ring-2 ring-brand-500/60 border-brand-400/50 dark:border-brand-500/50 opacity-90'
             : 'border-gray-200 hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:hover:border-gray-600',
         ].join(' ')}
       >
-        {/* Left accent stripe */}
-        <div
-          className={`w-1 shrink-0 transition-colors ${
-            hasTemplate
-              ? 'bg-brand-400 dark:bg-brand-500'
-              : 'bg-gray-200 dark:bg-gray-700'
-          }`}
-        />
+        {/* Header: grip + icon + U-height badge */}
+        <div className="mb-2 flex items-center gap-1">
+          <GripVertical className="h-3.5 w-3.5 shrink-0 text-gray-300 dark:text-gray-600" />
+          <Server className="h-3 w-3 shrink-0 text-gray-300 dark:text-gray-600" />
+          <span className="ml-auto rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-gray-500 dark:bg-gray-700/80 dark:text-gray-400">
+            {rack.u_height}U
+          </span>
+        </div>
 
-        {/* Card body */}
-        <div className="min-w-0 flex-1 p-2.5">
-          {/* Header: grip + icon + U-height badge */}
-          <div className="mb-1.5 flex items-center gap-1">
-            <GripVertical className="h-3.5 w-3.5 shrink-0 text-gray-300 dark:text-gray-600" />
-            <Server className="h-3 w-3 shrink-0 text-gray-300 dark:text-gray-600" />
-            <span className="ml-auto rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-gray-500 dark:bg-gray-700/80 dark:text-gray-400">
-              {rack.u_height}U
-            </span>
-          </div>
+        {/* Rack ID */}
+        <p className="font-mono text-[11px] font-bold leading-tight text-gray-800 dark:text-gray-200 break-all">
+          {rack.id}
+        </p>
 
-          {/* Rack ID */}
-          <p className="truncate font-mono text-[11px] font-bold leading-tight text-gray-800 dark:text-gray-200">
-            {rack.id}
+        {/* Rack name — up to 2 lines */}
+        {rack.name && rack.name !== rack.id && (
+          <p className="mt-0.5 line-clamp-2 text-[11px] leading-tight text-gray-400 dark:text-gray-500">
+            {rack.name}
           </p>
+        )}
 
-          {/* Rack name (only if different from id) */}
-          {rack.name && rack.name !== rack.id && (
-            <p className="mt-0.5 truncate text-[11px] leading-tight text-gray-400 dark:text-gray-500">
-              {rack.name}
-            </p>
-          )}
-
-          {/* Device count */}
+        {/* Stats row */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
           {rack.devices.length > 0 && (
-            <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-600">
-              {rack.devices.length} device{rack.devices.length !== 1 ? 's' : ''}
-            </p>
+            <span className="text-[10px] text-gray-400 dark:text-gray-600">
+              {rack.devices.length} dev
+            </span>
           )}
-
-          {/* Template badge */}
           {rack.template_id && (
-            <p className="mt-1 truncate text-[10px] text-brand-500/80 dark:text-brand-400/70">
+            <span className="max-w-full truncate text-[10px] text-brand-500/70 dark:text-brand-400/60">
               {rack.template_id}
-            </p>
+            </span>
           )}
+        </div>
 
-          {/* Action row */}
-          <div className="mt-2 flex items-center gap-0.5 border-t border-gray-100 pt-2 dark:border-gray-700/80">
-            <Tooltip text="View YAML">
-              <button
-                onClick={(e) => { e.stopPropagation(); onEditYaml(rack); }}
-                className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-              >
-                <FileCode className="h-3.5 w-3.5" />
-              </button>
-            </Tooltip>
-            <Tooltip text="Open Rack Editor">
-              <button
-                onClick={(e) => { e.stopPropagation(); navigate(`/cosmos/editors/rack?rackId=${rack.id}`); }}
-                className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </button>
-            </Tooltip>
-            <Tooltip text="Remove from aisle">
-              <button
-                onClick={(e) => { e.stopPropagation(); onDeleteRack(aisleId, rack.id); }}
-                className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </Tooltip>
-          </div>
+        {/* Action row — native title tooltips to avoid overflow clipping */}
+        <div className="mt-2 flex items-center gap-0.5 border-t border-gray-100 pt-2 dark:border-gray-700/80">
+          <button
+            title="View YAML"
+            onClick={(e) => { e.stopPropagation(); onEditYaml(rack); }}
+            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+          >
+            <FileCode className="h-3.5 w-3.5" />
+          </button>
+          <button
+            title="Open in Rack Editor"
+            onClick={(e) => { e.stopPropagation(); navigate(`/cosmos/editors/rack?rackId=${rack.id}`); }}
+            className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+          </button>
+          <button
+            title="Remove from aisle"
+            onClick={(e) => { e.stopPropagation(); onDeleteRack(aisleId, rack.id); }}
+            className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
     </div>
@@ -571,10 +555,9 @@ const AisleBand = ({
         </div>
       </div>
 
-      {/* Rack row */}
-      <div className="cosmos-scrollbar overflow-x-auto pb-1">
-        <div className="flex items-start gap-2.5 pr-2">
-          {aisle.racks.length === 0 ? (
+      {/* Rack row — wraps to multiple rows when aisle has many racks */}
+      <div className="flex flex-wrap items-start gap-2.5">
+        {aisle.racks.length === 0 ? (
             /* Empty aisle drop zone */
             <div
               onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
@@ -610,7 +593,6 @@ const AisleBand = ({
               ))}
             </>
           )}
-        </div>
       </div>
 
       {/* Add rack form */}

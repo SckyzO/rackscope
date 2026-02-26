@@ -19,6 +19,7 @@ import type { Site, Room, RackTemplate } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import {
   PageHeader,
+  PageBreadcrumb,
   LoadingState,
   EmptyState,
 } from '../templates/EmptyPage';
@@ -758,6 +759,29 @@ export const DatacenterEditorPage = () => {
     ? (sites.find((s) => s.id === currentSite.id)?.rooms ?? [])
     : [];
 
+  // ── Breadcrumb ──────────────────────────────────────────────────────────────
+
+  const breadcrumbItems = (() => {
+    const items: { label: string; href?: string; onClick?: () => void }[] = [
+      { label: 'Home', href: '/cosmos' },
+      { label: 'Editors' },
+      {
+        label: 'Datacenter',
+        onClick: () => { setLevel('sites'); setCurrentSite(null); setCurrentRoom(null); setCanvasIsDirty(false); },
+      },
+    ];
+    if (level === 'rooms' && currentSite) {
+      items.push({ label: currentSite.name });
+    }
+    if (level === 'room-editor' && currentSite) {
+      items.push({ label: currentSite.name, onClick: () => { setLevel('rooms'); setCurrentRoom(null); setCanvasIsDirty(false); } });
+    }
+    if (level === 'room-editor' && currentRoom) {
+      items.push({ label: currentRoom.name });
+    }
+    return items;
+  })();
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   const pageTitle =
@@ -767,17 +791,12 @@ export const DatacenterEditorPage = () => {
       ? currentSite.name
       : 'Datacenter Editor';
 
-  const pageDescription =
-    level === 'room-editor' ? 'Aisles & Racks'
-    : level === 'rooms' ? 'Select a room to edit'
-    : 'Manage your datacenter sites and rooms';
-
   return (
     <div className="space-y-5">
       {/* Page header */}
       <PageHeader
         title={pageTitle}
-        description={pageDescription}
+        breadcrumb={<PageBreadcrumb items={breadcrumbItems} />}
         actions={
           <div className="flex items-center gap-2">
             {/* Back button */}
