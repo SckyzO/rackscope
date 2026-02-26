@@ -5,7 +5,7 @@ Endpoints for topology management (sites, rooms, aisles, racks, devices).
 """
 
 from pathlib import Path
-from typing import List, Optional, Dict, Annotated
+from typing import Any, List, Optional, Dict, Annotated
 
 import shutil
 import yaml
@@ -27,6 +27,7 @@ from rackscope.api.models import (
     SiteCreate,
     RoomCreate,
     RoomAislesCreate,
+    RackCreate,
     AisleOrderUpdate,
     RackTemplateUpdate,
     RackDeviceCreate,
@@ -465,6 +466,69 @@ async def delete_aisle(
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
     return {"status": "deleted", "aisle_id": aisle_id}
+
+
+@router.post("/api/topology/aisles/{aisle_id}/racks")
+async def create_rack(
+    aisle_id: str,
+    payload: RackCreate,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+    topology: Annotated[Topology, Depends(get_topology)],
+):
+    """Create a new rack inside an aisle."""
+    from rackscope.api import app as app_module
+
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Rack name is required")
+    if payload.u_height < 1 or payload.u_height > 100:
+        raise HTTPException(status_code=400, detail="u_height must be between 1 and 100")
+
+    # Locate aisle in topology
+    target_site_id = None
+    target_room_id = None
+    for site in topology.sites:
+        for room in site.rooms:
+            if any(a.id == aisle_id for a in room.aisles):
+                target_site_id = site.id
+                target_room_id = room.id
+                break
+        if target_room_id:
+            break
+    if not target_room_id:
+        raise HTTPException(status_code=404, detail=f"Aisle {aisle_id!r} not found")
+
+    base_dir = Path(app_config.paths.topology)
+    rack_id = safe_segment(payload.id or name, "rack")
+
+    # Prevent duplicate rack IDs across the whole topology
+    for site in topology.sites:
+        for room in site.rooms:
+            for aisle in room.aisles:
+                if any(r.id == rack_id for r in aisle.racks):
+                    raise HTTPException(status_code=400, detail=f"Rack id {rack_id!r} already exists")
+
+    # Write rack YAML file
+    rack_dir = (
+        base_dir / "datacenters" / target_site_id / "rooms" / target_room_id / "aisles" / aisle_id / "racks"
+    )
+    rack_dir.mkdir(parents=True, exist_ok=True)
+    rack_payload: Dict[str, Any] = {"id": rack_id, "name": name, "u_height": payload.u_height, "devices": []}
+    if payload.template_id:
+        rack_payload["template_id"] = payload.template_id
+    (rack_dir / f"{rack_id}.yaml").write_text(dump_yaml(rack_payload))
+
+    # Update aisle.yaml to include new rack id
+    aisle_path = topology_service.get_aisle_path(target_room_id, aisle_id, app_config, topology)
+    if aisle_path and aisle_path.exists():
+        aisle_data = yaml.safe_load(aisle_path.read_text()) or {}
+        racks = aisle_data.get("racks") or []
+        racks.append(rack_id)
+        aisle_data["racks"] = racks
+        aisle_path.write_text(dump_yaml(aisle_data))
+
+    app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    return {"rack_id": rack_id, "name": name, "aisle_id": aisle_id}
 
 
 # Racks endpoints

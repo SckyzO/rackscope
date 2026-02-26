@@ -23,9 +23,11 @@ import {
   Loader2,
   AlertTriangle,
   Save,
+  ChevronDown,
+  Plus,
 } from 'lucide-react';
 import { api } from '../../../services/api';
-import type { Rack, Device, DeviceTemplate } from '../../../types';
+import type { Rack, Device, DeviceTemplate, RackTemplate } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
@@ -73,8 +75,16 @@ const c = (type: string) => TYPE_COLORS[type] ?? TYPE_COLORS.other;
 interface RackEntry {
   id: string;
   name: string;
+  roomId: string;
   roomName: string;
+  aisleId: string;
   aisleName: string;
+}
+
+interface AisleEntry {
+  id: string;
+  name: string;
+  roomName: string;
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -133,7 +143,7 @@ const TemplateCard = ({
         <TypeIcon type={template.type} className="h-4 w-4" style={{ color: col.text }} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-semibold text-gray-800 dark:text-gray-200">
+        <p className="text-xs font-semibold leading-snug text-gray-800 dark:text-gray-200">
           {template.name}
         </p>
         <p className="text-[10px] text-gray-400 dark:text-gray-500 capitalize">
@@ -187,6 +197,18 @@ export const CosmosRackEditorPage = () => {
   const [rackSearch, setRackSearch] = useState('');
   const [templateSearch, setTemplateSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  // Accordion open rooms (flush style)
+  const [openRooms, setOpenRooms] = useState<Set<string>>(new Set());
+
+  // Rack templates + aisle list (for New Rack wizard)
+  const [rackTemplates, setRackTemplates] = useState<RackTemplate[]>([]);
+  const [allAisles, setAllAisles] = useState<AisleEntry[]>([]);
+
+  // New Rack wizard
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardForm, setWizardForm] = useState({ name: '', id: '', uHeight: '42', templateId: '', aisleId: '' });
+  const [wizardSaving, setWizardSaving] = useState(false);
+  const [wizardError, setWizardError] = useState<string | null>(null);
 
   // DnD
   const dragTemplateRef = useRef<DeviceTemplate | null>(null);
@@ -227,21 +249,27 @@ export const CosmosRackEditorPage = () => {
         if (!active) return;
 
         const racks: RackEntry[] = [];
+        const aisles: AisleEntry[] = [];
         (Array.isArray(rooms) ? rooms : []).forEach((room) => {
           (room.aisles ?? []).forEach((aisle) => {
+            aisles.push({ id: aisle.id, name: aisle.name, roomName: room.name });
             (aisle.racks ?? []).forEach((r) => {
-              racks.push({ id: r.id, name: r.name || r.id, roomName: room.name, aisleName: aisle.name });
+              racks.push({ id: r.id, name: r.name || r.id, roomId: room.id, roomName: room.name, aisleId: aisle.id, aisleName: aisle.name });
             });
           });
           (room.standalone_racks ?? []).forEach((r) => {
-            racks.push({ id: r.id, name: r.name || r.id, roomName: room.name, aisleName: 'Standalone' });
+            racks.push({ id: r.id, name: r.name || r.id, roomId: room.id, roomName: room.name, aisleId: '', aisleName: 'Standalone' });
           });
         });
         setAllRacks(racks);
+        setAllAisles(aisles);
+        // Open all rooms by default so accordion shows content
+        setOpenRooms(new Set(aisles.map((a) => a.roomName)));
 
         const dc: Record<string, DeviceTemplate> = {};
         (catalog?.device_templates ?? []).forEach((t: DeviceTemplate) => { dc[t.id] = t; });
         setDeviceCatalog(dc);
+        setRackTemplates(catalog?.rack_templates ?? []);
 
         // Auto-select: URL param → first rack
         if (!selectedRackId && racks.length > 0) setSelectedRackId(racks[0].id);
@@ -508,6 +536,50 @@ export const CosmosRackEditorPage = () => {
     }
   };
 
+  // ── New Rack wizard ───────────────────────────────────────────────────────
+
+  const slugify = (s: string) =>
+    s.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+  const handleWizardCreate = async () => {
+    if (!wizardForm.name.trim()) { setWizardError('Rack name is required'); return; }
+    if (!wizardForm.aisleId) { setWizardError('Please select an aisle'); return; }
+    setWizardSaving(true);
+    setWizardError(null);
+    try {
+      const result = await api.createRack(wizardForm.aisleId, {
+        name: wizardForm.name.trim(),
+        id: wizardForm.id.trim() || null,
+        u_height: parseInt(wizardForm.uHeight, 10) || 42,
+        template_id: wizardForm.templateId || null,
+      });
+      setWizardOpen(false);
+      setWizardForm({ name: '', id: '', uHeight: '42', templateId: '', aisleId: '' });
+      // Reload rack list and select new rack
+      const rooms = await api.getRooms();
+      const racks: RackEntry[] = [];
+      const aisles: AisleEntry[] = [];
+      (Array.isArray(rooms) ? rooms : []).forEach((room) => {
+        (room.aisles ?? []).forEach((aisle) => {
+          aisles.push({ id: aisle.id, name: aisle.name, roomName: room.name });
+          (aisle.racks ?? []).forEach((r) => {
+            racks.push({ id: r.id, name: r.name || r.id, roomId: room.id, roomName: room.name, aisleId: aisle.id, aisleName: aisle.name });
+          });
+        });
+        (room.standalone_racks ?? []).forEach((r) => {
+          racks.push({ id: r.id, name: r.name || r.id, roomId: room.id, roomName: room.name, aisleId: '', aisleName: 'Standalone' });
+        });
+      });
+      setAllRacks(racks);
+      setAllAisles(aisles);
+      setSelectedRackId(result.rack_id);
+    } catch (err) {
+      setWizardError(err instanceof Error ? err.message : 'Failed to create rack');
+    } finally {
+      setWizardSaving(false);
+    }
+  };
+
   // ── Keyboard shortcuts (declared after handleSave + deleteDevice) ────────
 
   useEffect(() => {
@@ -618,7 +690,7 @@ export const CosmosRackEditorPage = () => {
 
         {/* ── LEFT PANEL: Racks + Templates ─────────────────────────────── */}
 
-        <div className="flex w-[260px] shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex w-[300px] shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
 
           {/* Tabs */}
           <div className="flex shrink-0 border-b border-gray-100 dark:border-gray-800">
@@ -638,10 +710,11 @@ export const CosmosRackEditorPage = () => {
             ))}
           </div>
 
-          {/* ── Racks tab ────────────────────────────────────────────────── */}
+          {/* ── Racks tab ─────────────────────────────────────────────────── */}
           {leftTab === 'racks' && (
             <>
-              <div className="shrink-0 p-3">
+              {/* Search + New Rack */}
+              <div className="shrink-0 space-y-2 p-3">
                 <div className="relative">
                   <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
                   <input
@@ -651,29 +724,81 @@ export const CosmosRackEditorPage = () => {
                     className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-2 pr-3 pl-8 text-xs placeholder-gray-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-600"
                   />
                 </div>
+                <button
+                  onClick={() => setWizardOpen(true)}
+                  className="bg-brand-500 hover:bg-brand-600 flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold text-white transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" /> New Rack
+                </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-2 pb-3">
-                {Array.from(racksByRoom.entries()).map(([roomName, racks]) => (
-                  <div key={roomName}>
-                    <p className="mt-2 mb-1 px-3 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600 first:mt-0">
-                      {roomName}
-                    </p>
-                    {racks.map((r) => (
-                      <RackListItem
-                        key={r.id}
-                        rack={r}
-                        selected={selectedRackId === r.id}
-                        onClick={() => {
-                          if (dirty && !confirm('Unsaved changes — switch racks anyway?')) return;
-                          setSelectedRackId(r.id);
-                        }}
-                      />
-                    ))}
+              {/* Accordion list — Flush Style grouped by room */}
+              <div className="flex-1 overflow-y-auto">
+                {filteredRacks.length === 0 ? (
+                  <p className="px-4 py-6 text-center text-xs text-gray-400">No racks found</p>
+                ) : (
+                  <div className="divide-y divide-gray-100 px-4 dark:divide-gray-800">
+                    {Array.from(racksByRoom.entries()).map(([roomName, racks]) => {
+                      const isOpen = openRooms.has(roomName);
+                      return (
+                        <div key={roomName}>
+                          {/* Accordion header — room name */}
+                          <button
+                            onClick={() => setOpenRooms((prev) => {
+                              const next = new Set(prev);
+                              if (isOpen) { next.delete(roomName); } else { next.add(roomName); }
+                              return next;
+                            })}
+                            className="flex w-full items-center justify-between py-3 text-left transition-colors"
+                          >
+                            <span className={`text-xs font-semibold ${isOpen ? 'text-brand-500' : 'text-gray-700 dark:text-gray-300'}`}>
+                              {roomName}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-gray-400 dark:text-gray-600">
+                                {racks.length}
+                              </span>
+                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isOpen ? 'text-brand-500 rotate-180' : 'text-gray-400'}`} />
+                            </div>
+                          </button>
+
+                          {/* Accordion content — racks grouped by aisle */}
+                          {isOpen && (
+                            <div className="pb-2">
+                              {(() => {
+                                // Group by aisle within this room
+                                const byAisle = new Map<string, { aisleName: string; racks: RackEntry[] }>();
+                                racks.forEach((r) => {
+                                  const key = r.aisleId || 'standalone';
+                                  const existing = byAisle.get(key) ?? { aisleName: r.aisleName, racks: [] };
+                                  existing.racks.push(r);
+                                  byAisle.set(key, existing);
+                                });
+                                return Array.from(byAisle.entries()).map(([aisleKey, { aisleName, racks: aisleRacks }]) => (
+                                  <div key={aisleKey} className="mb-1">
+                                    <p className="mb-0.5 px-1 text-[10px] font-medium tracking-wide text-gray-400 dark:text-gray-600">
+                                      {aisleName}
+                                    </p>
+                                    {aisleRacks.map((r) => (
+                                      <RackListItem
+                                        key={r.id}
+                                        rack={r}
+                                        selected={selectedRackId === r.id}
+                                        onClick={() => {
+                                          if (dirty && !confirm('Unsaved changes — switch racks anyway?')) return;
+                                          setSelectedRackId(r.id);
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
-                {filteredRacks.length === 0 && (
-                  <p className="px-3 py-6 text-center text-xs text-gray-400">No racks found</p>
                 )}
               </div>
 
@@ -951,7 +1076,7 @@ export const CosmosRackEditorPage = () => {
         </div>
 
         {/* ── RIGHT PANEL: Context ───────────────────────────────────────── */}
-        <div className="flex w-[280px] shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex w-[300px] shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
 
           {/* ── Placement form ─────────────────────────────────────────── */}
           {placing ? (
@@ -1175,6 +1300,119 @@ export const CosmosRackEditorPage = () => {
           )}
         </div>
       </div>
+
+      {/* ── New Rack Wizard Modal ──────────────────────────────────────────── */}
+      {wizardOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
+            <button
+              onClick={() => { setWizardOpen(false); setWizardError(null); }}
+              className="absolute top-4 right-4 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">New Rack</h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Create an empty rack and add it to an aisle
+            </p>
+
+            <div className="mt-5 space-y-4">
+              {/* Name */}
+              <FormField label="Rack name *">
+                <input
+                  autoFocus
+                  value={wizardForm.name}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setWizardForm((f) => ({
+                      ...f,
+                      name,
+                      id: f.id || slugify(name),
+                    }));
+                  }}
+                  placeholder="Rack XH3000 Compute 01"
+                  className={inputCls}
+                />
+              </FormField>
+
+              {/* ID */}
+              <FormField label="Rack ID" hint="Auto-generated — used in YAML files and URLs">
+                <input
+                  value={wizardForm.id}
+                  onChange={(e) => setWizardForm((f) => ({ ...f, id: e.target.value }))}
+                  placeholder="rack-compute-01"
+                  className={`${inputCls} font-mono text-xs`}
+                />
+              </FormField>
+
+              {/* U-height + template side by side */}
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="U Height">
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={wizardForm.uHeight}
+                    onChange={(e) => setWizardForm((f) => ({ ...f, uHeight: e.target.value }))}
+                    className={inputCls}
+                  />
+                </FormField>
+                <FormField label="Rack template">
+                  <select
+                    value={wizardForm.templateId}
+                    onChange={(e) => setWizardForm((f) => ({ ...f, templateId: e.target.value }))}
+                    className={inputCls}
+                  >
+                    <option value="">— None —</option>
+                    {rackTemplates.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+
+              {/* Target aisle */}
+              <FormField label="Add to aisle *">
+                <select
+                  value={wizardForm.aisleId}
+                  onChange={(e) => setWizardForm((f) => ({ ...f, aisleId: e.target.value }))}
+                  className={inputCls}
+                >
+                  <option value="">— Select an aisle —</option>
+                  {allAisles.map((a) => (
+                    <option key={a.id} value={a.id}>{a.roomName} › {a.name}</option>
+                  ))}
+                </select>
+              </FormField>
+
+              {wizardError && (
+                <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 dark:border-red-500/30 dark:bg-red-500/10">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+                  <p className="text-xs text-red-600 dark:text-red-400">{wizardError}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                onClick={() => { setWizardOpen(false); setWizardError(null); }}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void handleWizardCreate()}
+                disabled={wizardSaving}
+                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-60"
+              >
+                {wizardSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                {wizardSaving ? 'Creating…' : 'Create Rack'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -401,6 +401,20 @@ export const api = {
     markSuccess();
     return data;
   },
+  createRack: async (
+    aisleId: string,
+    payload: { id?: string | null; name: string; u_height: number; template_id?: string | null }
+  ) => {
+    const res = await apiFetch(`/api/topology/aisles/${encodeURIComponent(aisleId)}/racks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+    writeCache('rooms', null);
+    markSuccess();
+    return res.json();
+  },
   updateRackTemplate: async (rackId: string, templateId: string | null) => {
     const res = await apiFetch(`/api/topology/racks/${encodeURIComponent(rackId)}/template`, {
       method: 'PUT',

@@ -43,6 +43,15 @@ class RoomAislesCreate(BaseModel):
     aisles: List[Dict[str, Optional[str]]]
 
 
+class RackCreate(BaseModel):
+    """Request model for creating a new rack inside an aisle."""
+
+    id: Optional[str] = None
+    name: str
+    u_height: int = 42
+    template_id: Optional[str] = None
+
+
 class AisleOrderUpdate(BaseModel):
     """Request model for updating aisle rack order."""
 
