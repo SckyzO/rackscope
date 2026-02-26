@@ -23,6 +23,8 @@ import type {
   InfrastructureComponent,
   Rack,
 } from '../../../types';
+import { usePageTitle } from '../../contexts/PageTitleContext';
+import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -476,8 +478,57 @@ export const CosmosRackTemplateEditorPage = () => {
 
   const hasSelection = isNew || selectedId !== null;
 
+  usePageTitle('Rack Templates');
+
   return (
-    <div className="flex h-full gap-0">
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="shrink-0 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
+        <PageHeader
+          title="Rack Templates"
+          description="Define rack infrastructure — PDUs, cooling and management components"
+          breadcrumb={
+            <PageBreadcrumb
+              items={[
+                { label: 'Home', href: '/cosmos' },
+                { label: 'Editors' },
+                { label: 'Rack Templates' },
+              ]}
+            />
+          }
+          actions={
+            hasSelection ? (
+              <button
+                onClick={() => void handleSave()}
+                disabled={saveStatus === 'saving' || !dirty}
+                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-40 ${
+                  saveStatus === 'saved'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-brand-500 hover:bg-brand-600 text-white'
+                }`}
+              >
+                {saveStatus === 'saving' ? (
+                  <>
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Saving…
+                  </>
+                ) : saveStatus === 'saved' ? (
+                  <>
+                    <Check className="h-3.5 w-3.5" />
+                    Saved
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3.5 w-3.5" />
+                    {isNew ? 'Create' : 'Save'}
+                  </>
+                )}
+              </button>
+            ) : undefined
+          }
+        />
+      </div>
+      <div className="flex min-h-0 flex-1 gap-0">
       {/* ── LEFT: template list ─────────────────────────────────────────────── */}
       <aside className="flex w-[220px] shrink-0 flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
         <div className="shrink-0 border-b border-gray-100 p-3 dark:border-gray-800">
@@ -811,6 +862,7 @@ export const CosmosRackTemplateEditorPage = () => {
           </div>
         </aside>
       )}
+      </div>
     </div>
   );
 };

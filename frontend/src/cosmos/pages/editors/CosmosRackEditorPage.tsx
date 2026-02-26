@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Rack, Device, DeviceTemplate } from '../../../types';
+import { usePageTitle } from '../../contexts/PageTitleContext';
+import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -517,45 +519,53 @@ export const CosmosRackEditorPage = () => {
       (!typeFilter || t.type === typeFilter)
   );
 
+  usePageTitle('Rack Editor');
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-gray-800 bg-gray-950 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-brand-500/10 flex h-9 w-9 items-center justify-center rounded-xl">
-            <Server className="text-brand-500 h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-white">Rack Editor</h1>
-            <p className="text-xs text-gray-500">Drag templates onto rack slots to place devices</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {dirty && (
-            <button
-              onClick={() => void handleSave()}
-              disabled={saveStatus === 'saving'}
-              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {saveStatus === 'saving' ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Check className="h-4 w-4" />
+      <div className="shrink-0 border-b border-gray-800 bg-gray-950 px-6 py-4">
+        <PageHeader
+          title="Rack Editor"
+          description="Drag templates onto rack slots to place devices"
+          breadcrumb={
+            <PageBreadcrumb
+              items={[
+                { label: 'Home', href: '/cosmos' },
+                { label: 'Editors' },
+                { label: 'Rack Editor' },
+              ]}
+            />
+          }
+          actions={
+            <>
+              {dirty && (
+                <button
+                  onClick={() => void handleSave()}
+                  disabled={saveStatus === 'saving'}
+                  className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {saveStatus === 'saving' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                  Save
+                </button>
               )}
-              Save
-            </button>
-          )}
-          {saveStatus === 'saved' && (
-            <span className="flex items-center gap-1.5 text-xs text-green-400">
-              <Check className="h-3.5 w-3.5" /> Saved
-            </span>
-          )}
-          {saveStatus === 'error' && (
-            <span className="flex items-center gap-1.5 text-xs text-red-400">
-              <AlertTriangle className="h-3.5 w-3.5" /> Error
-            </span>
-          )}
-        </div>
+              {saveStatus === 'saved' && (
+                <span className="flex items-center gap-1.5 text-xs text-green-400">
+                  <Check className="h-3.5 w-3.5" /> Saved
+                </span>
+              )}
+              {saveStatus === 'error' && (
+                <span className="flex items-center gap-1.5 text-xs text-red-400">
+                  <AlertTriangle className="h-3.5 w-3.5" /> Error
+                </span>
+              )}
+            </>
+          }
+        />
       </div>
 
       {/* 4-column body */}

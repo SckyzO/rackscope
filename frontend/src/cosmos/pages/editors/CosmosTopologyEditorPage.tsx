@@ -14,11 +14,12 @@ import {
   Loader2,
   AlertTriangle,
   ExternalLink,
-  GitBranch,
   Wand2,
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { Site, Room, Aisle, Rack, RackTemplate } from '../../../types';
+import { usePageTitle } from '../../contexts/PageTitleContext';
+import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
 // ─── SaveBadge ───────────────────────────────────────────────────────────────
 
@@ -909,6 +910,8 @@ export const CosmosTopologyEditorPage = () => {
     await withSave(() => api.updateRoomAisles(selectedRoom.id, newAisles));
   };
 
+  usePageTitle('Datacenter Editor');
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -922,26 +925,32 @@ export const CosmosTopologyEditorPage = () => {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-gray-800 bg-gray-950 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-brand-500/10 flex h-9 w-9 items-center justify-center rounded-xl">
-            <GitBranch className="text-brand-500 h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-white">Topology Editor</h1>
-            <p className="text-xs text-gray-500">Manage your datacenter hierarchy</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <SaveBadge status={saveStatus} />
-          <button
-            onClick={() => setWizardOpen(true)}
-            className="border-brand-500/40 bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-colors"
-          >
-            <Wand2 className="h-4 w-4" />
-            Create Wizard
-          </button>
-        </div>
+      <div className="shrink-0 border-b border-gray-800 bg-gray-950 px-6 py-4">
+        <PageHeader
+          title="Datacenter Editor"
+          description="Manage your datacenter hierarchy — sites, rooms, aisles and racks"
+          breadcrumb={
+            <PageBreadcrumb
+              items={[
+                { label: 'Home', href: '/cosmos' },
+                { label: 'Editors' },
+                { label: 'Datacenter Editor' },
+              ]}
+            />
+          }
+          actions={
+            <>
+              <SaveBadge status={saveStatus} />
+              <button
+                onClick={() => setWizardOpen(true)}
+                className="border-brand-500/40 bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium transition-colors"
+              >
+                <Wand2 className="h-4 w-4" />
+                Create Wizard
+              </button>
+            </>
+          }
+        />
       </div>
 
       {/* 3-column body */}

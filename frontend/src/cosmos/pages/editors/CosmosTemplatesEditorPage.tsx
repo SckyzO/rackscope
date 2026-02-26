@@ -3,6 +3,8 @@ import Editor, { type OnMount } from '@monaco-editor/react';
 import yaml from 'js-yaml';
 import { api } from '../../../services/api';
 import type { DeviceTemplate, CheckDefinition } from '../../../types';
+import { usePageTitle } from '../../contexts/PageTitleContext';
+import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
 // ---------------------------------------------------------------------------
 // Types & helpers
@@ -443,6 +445,8 @@ export const CosmosTemplatesEditorPage = () => {
     'mt-1 w-full rounded-lg border border-[var(--color-border)] bg-black/30 px-3 py-2 text-xs text-gray-200 focus:border-[var(--color-accent)]/50 focus:outline-none';
   const labelCls = 'block text-xs text-gray-400';
 
+  usePageTitle('Device Templates');
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -454,66 +458,70 @@ export const CosmosTemplatesEditorPage = () => {
   return (
     <div className="custom-scrollbar h-full overflow-y-auto p-8">
       {/* Header */}
-      <header className="mb-8 flex items-center justify-between">
-        <div>
-          <div className="font-mono text-[10px] tracking-[0.45em] text-gray-500 uppercase">
-            Templates
-          </div>
-          <h1 className="text-3xl font-black tracking-tight text-[var(--color-text-base)] uppercase">
-            Editor
-          </h1>
-          <div className="mt-1 font-mono text-[11px] tracking-[0.2em] text-gray-500 uppercase">
-            Device template
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              setSelectedId('');
-              setIsEditing(false);
-              setDraft(DEFAULT_DRAFT);
-              setStatus('idle');
-              setError(null);
-            }}
-            className="rounded-lg border border-[var(--color-border)] px-3 py-2 font-mono text-[10px] tracking-widest text-gray-400 uppercase transition-colors hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
-          >
-            New
-          </button>
-          <button
-            onClick={() => {
-              setShowYaml((p) => !p);
-              setYamlSource('form');
-            }}
-            className="rounded-lg border border-[var(--color-border)] px-3 py-2 font-mono text-[10px] tracking-widest text-gray-400 uppercase transition-colors hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
-          >
-            {showYaml ? 'Hide YAML' : 'Show YAML'}
-          </button>
-          <button
-            onClick={() => {
-              void handleSave();
-            }}
-            disabled={!canSave || status === 'saving'}
-            className={`rounded-lg px-4 py-2 font-mono text-xs font-bold tracking-widest uppercase transition-colors ${
-              canSave
-                ? 'border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/25'
-                : 'cursor-not-allowed border border-white/10 bg-white/5 text-gray-500'
-            }`}
-          >
-            {status === 'saving'
-              ? 'Saving...'
-              : status === 'saved'
-                ? 'Saved ✓'
-                : isEditing
-                  ? 'Update'
-                  : 'Save'}
-          </button>
-        </div>
-      </header>
+      <div className="mb-8">
+        <PageHeader
+          title="Device Templates"
+          description="Create and edit device hardware templates"
+          breadcrumb={
+            <PageBreadcrumb
+              items={[
+                { label: 'Home', href: '/cosmos' },
+                { label: 'Editors' },
+                { label: 'Device Templates' },
+              ]}
+            />
+          }
+          actions={
+            <>
+              <button
+                onClick={() => {
+                  setSelectedId('');
+                  setIsEditing(false);
+                  setDraft(DEFAULT_DRAFT);
+                  setStatus('idle');
+                  setError(null);
+                }}
+                className="rounded-lg border border-[var(--color-border)] px-3 py-2 font-mono text-[10px] tracking-widest text-gray-400 uppercase transition-colors hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
+              >
+                New
+              </button>
+              <button
+                onClick={() => {
+                  setShowYaml((p) => !p);
+                  setYamlSource('form');
+                }}
+                className="rounded-lg border border-[var(--color-border)] px-3 py-2 font-mono text-[10px] tracking-widest text-gray-400 uppercase transition-colors hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)]"
+              >
+                {showYaml ? 'Hide YAML' : 'Show YAML'}
+              </button>
+              <button
+                onClick={() => {
+                  void handleSave();
+                }}
+                disabled={!canSave || status === 'saving'}
+                className={`rounded-lg px-4 py-2 font-mono text-xs font-bold tracking-widest uppercase transition-colors ${
+                  canSave
+                    ? 'border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/15 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/25'
+                    : 'cursor-not-allowed border border-white/10 bg-white/5 text-gray-500'
+                }`}
+              >
+                {status === 'saving'
+                  ? 'Saving...'
+                  : status === 'saved'
+                    ? 'Saved ✓'
+                    : isEditing
+                      ? 'Update'
+                      : 'Save'}
+              </button>
+            </>
+          }
+        />
+      </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_480px]">
         {/* LEFT: Form */}
         <section className="space-y-5 rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6">
-          <h2 className="text-lg font-bold tracking-[0.2em] text-gray-200 uppercase">
+          <h2 className="text-sm font-semibold text-gray-200">
             Device Template
           </h2>
 
@@ -806,11 +814,8 @@ export const CosmosTemplatesEditorPage = () => {
 
         {/* RIGHT: Preview */}
         <aside className="rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg-panel)] p-6">
-          <div className="font-mono text-[10px] tracking-[0.35em] text-gray-500 uppercase">
-            Preview
-          </div>
-          <h2 className="mb-4 text-lg font-bold tracking-[0.2em] text-gray-200 uppercase">
-            {showYaml ? 'YAML' : 'Device Layout'}
+          <h2 className="mb-4 text-sm font-semibold text-gray-200">
+            Preview — {showYaml ? 'YAML' : 'Device Layout'}
           </h2>
 
           {showYaml ? (

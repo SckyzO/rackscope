@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import yaml from 'js-yaml';
-import { Pencil, Trash2, Plus, X, Check, ChevronRight, ShieldCheck } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Check, ChevronRight } from 'lucide-react';
 import { api } from '../../../services/api';
+import { usePageTitle } from '../../contexts/PageTitleContext';
+import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -826,63 +828,69 @@ export const CosmosChecksEditorPage = () => {
       },
     });
 
+  usePageTitle('Checks Library');
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-gray-800 bg-gray-950 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-brand-500/10 flex h-9 w-9 items-center justify-center rounded-xl">
-            <ShieldCheck className="text-brand-500 h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-white">Checks Library Editor</h1>
-            <p className="text-xs text-gray-500">
-              {selectedFile ? selectedFile : 'Health check definitions'}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* View toggle */}
-          <div className="inline-flex overflow-hidden rounded-lg border border-gray-700">
-            {(['visual', 'yaml'] as const).map((v) => (
+      <div className="shrink-0 border-b border-gray-800 bg-gray-950 px-6 py-4">
+        <PageHeader
+          title="Checks Library"
+          description="Health check definitions — visual editor and YAML"
+          breadcrumb={
+            <PageBreadcrumb
+              items={[
+                { label: 'Home', href: '/cosmos' },
+                { label: 'Editors' },
+                { label: 'Checks Library' },
+              ]}
+            />
+          }
+          actions={
+            <>
+              {/* View toggle */}
+              <div className="inline-flex overflow-hidden rounded-lg border border-gray-700">
+                {(['visual', 'yaml'] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                      view === v
+                        ? 'bg-brand-500 text-white'
+                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                    }`}
+                  >
+                    {v === 'visual' ? 'Visual' : 'YAML'}
+                  </button>
+                ))}
+              </div>
+              {/* Save */}
               <button
-                key={v}
-                onClick={() => setView(v)}
-                className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                  view === v
-                    ? 'bg-brand-500 text-white'
-                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                onClick={() => void handleSave()}
+                disabled={!isDirty || !selectedFile || saveStatus === 'saving'}
+                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+                  isDirty && selectedFile
+                    ? 'bg-brand-500 hover:bg-brand-600 text-white'
+                    : 'cursor-not-allowed bg-gray-800 text-gray-500'
                 }`}
               >
-                {v === 'visual' ? 'Visual' : 'YAML'}
+                {saveStatus === 'saving' ? (
+                  'Saving...'
+                ) : saveStatus === 'saved' ? (
+                  <>
+                    <Check className="h-4 w-4" /> Saved
+                  </>
+                ) : saveStatus === 'error' ? (
+                  'Error'
+                ) : (
+                  <>
+                    <Check className="h-4 w-4" /> {isDirty ? 'Save' : 'Saved'}
+                  </>
+                )}
               </button>
-            ))}
-          </div>
-          {/* Save */}
-          <button
-            onClick={() => void handleSave()}
-            disabled={!isDirty || !selectedFile || saveStatus === 'saving'}
-            className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
-              isDirty && selectedFile
-                ? 'bg-brand-500 hover:bg-brand-600 text-white'
-                : 'cursor-not-allowed bg-gray-800 text-gray-500'
-            }`}
-          >
-            {saveStatus === 'saving' ? (
-              'Saving...'
-            ) : saveStatus === 'saved' ? (
-              <>
-                <Check className="h-4 w-4" /> Saved
-              </>
-            ) : saveStatus === 'error' ? (
-              'Error'
-            ) : (
-              <>
-                <Check className="h-4 w-4" /> {isDirty ? 'Save' : 'Saved'}
-              </>
-            )}
-          </button>
-        </div>
+            </>
+          }
+        />
       </div>
 
       {/* Body */}
