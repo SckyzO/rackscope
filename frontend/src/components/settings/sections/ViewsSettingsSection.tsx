@@ -1,4 +1,5 @@
-import { X, Plus, Globe, LayoutDashboard, MonitorPlay } from 'lucide-react';
+import { Globe, LayoutDashboard, MonitorPlay, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { ConfigDraft } from '../useSettingsConfig';
 import { SettingField, SettingTooltip } from '../../../cosmos/components/SettingTooltip';
 import { SectionCard } from '../../../cosmos/pages/templates/EmptyPage';
@@ -31,7 +32,6 @@ const inputCls =
 
 export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
   const f = draft.features;
-  const p = draft.playlist;
   const m = draft.map;
 
   const setFeature = <K extends keyof ConfigDraft['features']>(
@@ -39,26 +39,12 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
     val: ConfigDraft['features'][K]
   ) => setDraft({ ...draft, features: { ...f, [key]: val } });
 
-  const setPlaylist = <K extends keyof ConfigDraft['playlist']>(
-    key: K,
-    val: ConfigDraft['playlist'][K]
-  ) => setDraft({ ...draft, playlist: { ...p, [key]: val } });
-
   const setMap = <K extends keyof ConfigDraft['map']>(
     key: K,
     val: ConfigDraft['map'][K]
   ) => setDraft({ ...draft, map: { ...m, [key]: val } });
 
-  const addView = () =>
-    setPlaylist('views', [...p.views, '/cosmos/views/worldmap']);
-
-  const removeView = (i: number) =>
-    setPlaylist('views', p.views.filter((_, idx) => idx !== i));
-
-  const updateView = (i: number, val: string) =>
-    setPlaylist('views', p.views.map((v, idx) => (idx === i ? val : v)));
-
-  return (
+return (
     <div className="space-y-6">
       {/* ── Map ── */}
       <SectionCard title="World Map" desc="Configure the default view of the world map" icon={Globe} iconColor="text-sky-500" iconBg="bg-sky-50 dark:bg-sky-500/10">
@@ -197,54 +183,14 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
         </div>
 
         {f.playlist && (
-          <div className="mt-4 space-y-4">
-            <SettingField
-              label="Interval (seconds)"
-              tooltip="How long each view is displayed before switching to the next. Minimum 5s."
-            >
-              <input
-                type="number"
-                min={5}
-                value={p.interval_seconds}
-                onChange={(e) => setPlaylist('interval_seconds', e.target.value)}
-                className={inputCls}
-              />
-            </SettingField>
-
-            <div>
-              <div className="mb-2 flex items-center gap-1.5">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Views</span>
-                <SettingTooltip text="Ordered list of routes to cycle through. Drag to reorder." />
-              </div>
-              <div className="space-y-2">
-                {p.views.map((view, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      value={view}
-                      onChange={(e) => updateView(i, e.target.value)}
-                      placeholder="/cosmos/views/worldmap"
-                      className={`${inputCls} flex-1`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeView(i)}
-                      className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-white/5"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addView}
-                  className="flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-500 transition-colors hover:border-brand-400 hover:text-brand-500 dark:border-gray-700"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Add view
-                </button>
-              </div>
-            </div>
-          </div>
+          <Link
+            to="/cosmos/playlist"
+            className="mt-3 flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/15"
+          >
+            <MonitorPlay className="h-4 w-4 shrink-0" />
+            Configure views, intervals and display mode
+            <ArrowRight className="ml-auto h-4 w-4" />
+          </Link>
         )}
       </SectionCard>
     </div>

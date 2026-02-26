@@ -32,6 +32,26 @@ import {
   type PlaylistQueueItem,
   type PlaylistMode,
 } from '../playlist/PlaylistRegistry';
+
+// ── Duration presets ──────────────────────────────────────────────────────────
+const DURATION_PRESETS = [
+  { label: '30s', value: 30 },
+  { label: '1m',  value: 60 },
+  { label: '2m',  value: 120 },
+  { label: '5m',  value: 300 },
+  { label: '10m', value: 600 },
+  { label: '15m', value: 900 },
+  { label: '30m', value: 1800 },
+];
+
+// Find nearest preset value, or 0 if no match (= use global)
+const snapToPreset = (v: number): number => {
+  if (v <= 0) return 0;
+  const exact = DURATION_PRESETS.find((p) => p.value === v);
+  return exact ? exact.value : v;
+};
+
+const selectCls = 'focus:border-brand-400 h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer';
 import { api } from '../../services/api';
 import type { RoomSummary } from '../../types';
 
@@ -67,7 +87,6 @@ const QueueItemRow = ({
   onMoveUp,
   onMoveDown,
   onDurationChange,
-  globalInterval,
 }: {
   item: PlaylistQueueItem;
   index: number;
@@ -76,57 +95,33 @@ const QueueItemRow = ({
   onMoveUp: () => void;
   onMoveDown: () => void;
   onDurationChange: (seconds: number) => void;
-  globalInterval: number;
-}) => {
-  const [durationStr, setDurationStr] = useState(item.duration > 0 ? String(item.duration) : '');
+}) => (
+  <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-white px-3 py-2.5 dark:border-gray-800 dark:bg-gray-900/50">
+    <GripVertical className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-700" />
+    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+      {index + 1}
+    </span>
+    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800">
+      <RegistryIcon name={item.iconName} className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
+    </div>
+    <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+      {item.title}
+    </span>
 
-  const handleDurationBlur = () => {
-    const n = parseInt(durationStr, 10);
-    if (!isNaN(n) && n > 0) {
-      onDurationChange(Math.max(5, n));
-    } else {
-      setDurationStr('');
-      onDurationChange(0);
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-white px-3 py-2.5 dark:border-gray-800 dark:bg-gray-900/50">
-      {/* Drag handle visual — no drag-and-drop lib, just visual cue */}
-      <GripVertical className="h-4 w-4 shrink-0 text-gray-300 dark:text-gray-700" />
-
-      {/* Position badge */}
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-        {index + 1}
-      </span>
-
-      {/* Icon */}
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800">
-        <RegistryIcon
-          name={item.iconName}
-          className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400"
-        />
-      </div>
-
-      {/* Title */}
-      <span className="min-w-0 flex-1 truncate text-sm font-medium text-gray-800 dark:text-gray-200">
-        {item.title}
-      </span>
-
-      {/* Duration input */}
-      <div className="flex items-center gap-1">
-        <Clock className="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-600" />
-        <input
-          type="number"
-          min={5}
-          value={durationStr}
-          onChange={(e) => setDurationStr(e.target.value)}
-          onBlur={handleDurationBlur}
-          placeholder={String(globalInterval)}
-          className="focus:border-brand-400 dark:focus:border-brand-600 w-14 rounded-lg border border-gray-200 bg-transparent px-2 py-1 text-right text-xs text-gray-600 placeholder-gray-300 focus:outline-none dark:border-gray-700 dark:text-gray-300 dark:placeholder-gray-600"
-        />
-        <span className="text-xs text-gray-400 dark:text-gray-600">s</span>
-      </div>
+    {/* Duration — preset selector */}
+    <div className="flex items-center gap-1.5">
+      <Clock className="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-600" />
+      <select
+        value={snapToPreset(item.duration)}
+        onChange={(e) => onDurationChange(parseInt(e.target.value, 10))}
+        className={selectCls}
+      >
+        <option value={0}>Global</option>
+        {DURATION_PRESETS.map((p) => (
+          <option key={p.value} value={p.value}>{p.label}</option>
+        ))}
+      </select>
+    </div>
 
       {/* Reorder buttons */}
       <div className="flex flex-col gap-0.5">
@@ -158,7 +153,6 @@ const QueueItemRow = ({
       </button>
     </div>
   );
-};
 
 // ── Page ────────────────────────────────────────────────────────────────────
 
@@ -171,8 +165,9 @@ export const PlaylistCenterPage = () => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [localQueue, setLocalQueue] = useState<PlaylistQueueItem[]>(playlist.queue);
-  const [localInterval, setLocalInterval] = useState(playlist.globalInterval);
-  const [intervalStr, setIntervalStr] = useState(String(playlist.globalInterval));
+  const [localInterval, setLocalInterval] = useState(
+    snapToPreset(playlist.globalInterval) || 30
+  );
 
   useEffect(() => {
     api
@@ -218,12 +213,6 @@ export const PlaylistCenterPage = () => {
     );
   }, []);
 
-  const handleIntervalBlur = () => {
-    const n = parseInt(intervalStr, 10);
-    const v = isNaN(n) ? 30 : Math.max(5, n);
-    setLocalInterval(v);
-    setIntervalStr(String(v));
-  };
 
   const startPlaylist = (mode: PlaylistMode) => {
     if (localQueue.length === 0) return;
@@ -371,7 +360,6 @@ export const PlaylistCenterPage = () => {
                   onMoveUp={() => moveItem(index, 'up')}
                   onMoveDown={() => moveItem(index, 'down')}
                   onDurationChange={(s) => updateItemDuration(index, s)}
-                  globalInterval={localInterval}
                 />
               ))
             )}
@@ -388,17 +376,15 @@ export const PlaylistCenterPage = () => {
                   Default time per slide (per-slide overrides above)
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={5}
-                  value={intervalStr}
-                  onChange={(e) => setIntervalStr(e.target.value)}
-                  onBlur={handleIntervalBlur}
-                  className="focus:border-brand-400 dark:focus:border-brand-600 w-16 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-right text-sm font-medium text-gray-800 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                />
-                <span className="text-sm text-gray-500 dark:text-gray-400">s</span>
-              </div>
+              <select
+                value={localInterval}
+                onChange={(e) => setLocalInterval(parseInt(e.target.value, 10))}
+                className={`${selectCls} w-20 text-sm font-medium`}
+              >
+                {DURATION_PRESETS.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
             </div>
           </div>
 

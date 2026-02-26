@@ -8,6 +8,7 @@ import { AppConfigProvider } from '../contexts/AppConfigContext';
 import { PluginsMenuProvider } from '../../context/PluginsMenuContext';
 import { PlaylistProvider } from '../contexts/PlaylistContext';
 import { usePlaylistSafe } from '../contexts/PlaylistContext';
+import { PlaylistCountdownBar } from '../components/PlaylistCountdown';
 import '../cosmos.css';
 
 // ── KioskExitButton ────────────────────────────────────────────────────────────
@@ -106,6 +107,8 @@ const CosmosInnerLayout = () => {
         </div>
       </div>
 
+      {/* Kiosk countdown bar — thin brand bar at bottom of screen */}
+      <PlaylistCountdownBar />
       {/* Kiosk exit float button */}
       <KioskExitButton />
     </>

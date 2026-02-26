@@ -84,14 +84,11 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
   const [queue, setQueueState] = useState<PlaylistQueueItem[]>(() => {
     const stored = loadQueue();
     if (stored.length > 0) return stored;
-    // Fall back to legacy config views
-    return config.views.filter(Boolean).map((route, i) => ({
-      id: `legacy-${i}`,
-      title: route,
-      route,
-      iconName: 'BarChart2',
-      duration: 0,
-    }));
+    // Default queue: Dashboard + Notifications
+    return [
+      { id: 'dashboard', title: 'Dashboard', route: '/cosmos', iconName: 'BarChart2', duration: 0 },
+      { id: 'notifications', title: 'Notifications', route: '/cosmos/notifications', iconName: 'Bell', duration: 0 },
+    ];
   });
   const [globalInterval, setGlobalIntervalState] = useState<number>(() =>
     loadInterval(config.interval_seconds)

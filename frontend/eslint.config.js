@@ -35,6 +35,11 @@ export default defineConfig([
       '@typescript-eslint/no-unnecessary-condition': 'off', // needs project
       // React
       'react-hooks/rules-of-hooks': 'error',
+      // React Compiler rules (react-hooks v7) — disabled: we don't use the React Compiler
+      'react-hooks/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/set-state-in-render': 'off',
+      'react-hooks/no-deriving-state-in-effects': 'off',
     },
   },
 ]);

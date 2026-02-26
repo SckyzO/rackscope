@@ -35,7 +35,7 @@ planner:
 features:
   notifications: true
   notifications_max_visible: 10
-  playlist: false
+  playlist: true
   offline: true
   demo: false
   worldmap: true

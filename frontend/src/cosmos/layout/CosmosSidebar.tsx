@@ -270,8 +270,11 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4">
-        <SectionLabel label="Menu" collapsed={collapsed} />
+        <SectionLabel label="Main" collapsed={collapsed} />
         <NavItem to="/cosmos" icon={BarChart2} label="Dashboard" collapsed={collapsed} end />
+        {features.playlist && (
+          <NavItem to="/cosmos/playlist" icon={MonitorPlay} label="Playlist" collapsed={collapsed} />
+        )}
 
         <SectionLabel label="Monitoring" collapsed={collapsed} />
         {features.worldmap && (
@@ -513,14 +516,6 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
           label="Checks Library"
           collapsed={collapsed}
         />
-        {features.playlist && (
-          <NavItem
-            to="/cosmos/playlist"
-            icon={MonitorPlay}
-            label="Playlist"
-            collapsed={collapsed}
-          />
-        )}
       </nav>
 
       {/* Bottom sticky — Profile, Settings, UI Library (dev only) */}

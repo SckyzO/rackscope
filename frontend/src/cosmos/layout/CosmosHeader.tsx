@@ -21,6 +21,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useAvatar } from '../../hooks/useAvatar';
 import { usePageTitleValue } from '../contexts/PageTitleContext';
 import { usePlaylistSafe } from '../contexts/PlaylistContext';
+import { PlaylistCountdownCircle } from '../components/PlaylistCountdown';
 
 const ROUTE_LABELS: Record<string, string> = {
   '/cosmos': 'Analytics Dashboard',
@@ -195,6 +196,9 @@ export const CosmosHeader = ({
                     ) : null;
                   })()}
               </button>
+
+              {/* Countdown circle — shows elapsed time as shrinking arc */}
+              {playlist.isPlaying && <PlaylistCountdownCircle />}
 
               {/* Play / Pause */}
               <button
