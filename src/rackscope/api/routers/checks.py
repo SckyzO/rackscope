@@ -7,14 +7,23 @@ Endpoints for health checks library management.
 from pathlib import Path
 from typing import Annotated, Dict, Any, Optional
 
+import httpx
 import yaml
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 from pydantic import ValidationError
 
 from rackscope.model.checks import CheckDefinition, ChecksLibrary
 from rackscope.model.config import AppConfig
 from rackscope.model.loader import load_checks_library, dump_yaml
 from rackscope.api.dependencies import get_app_config, get_checks_library_optional
+
+
+class CheckTestRequest(BaseModel):
+    """Request model for testing a PromQL check expression."""
+
+    expr: str
+    variables: Dict[str, str] = {}
 
 router = APIRouter(prefix="/api/checks", tags=["checks"])
 
@@ -150,3 +159,42 @@ def write_checks_file(
     # Reload checks library to keep in-memory state aligned.
     app_module.CHECKS_LIBRARY = load_checks_library(base_dir)
     return {"status": "ok", "name": target.name}
+
+
+@router.post("/test")
+async def test_check_query(
+    payload: CheckTestRequest,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+):
+    """Test a PromQL expression by substituting variables and querying Prometheus."""
+    expr = payload.expr.strip()
+    if not expr:
+        raise HTTPException(status_code=400, detail="Expression is required")
+
+    # Substitute $var placeholders with user-provided values
+    for key, value in payload.variables.items():
+        expr = expr.replace(f"${key}", value)
+
+    prom_url = getattr(app_config.telemetry, "prometheus_url", None) or "http://localhost:9090"
+    prom_url = prom_url.rstrip("/")
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(
+                f"{prom_url}/api/v1/query",
+                params={"query": expr},
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Prometheus query timed out (15s)")
+    except httpx.ConnectError as exc:
+        raise HTTPException(status_code=502, detail=f"Cannot reach Prometheus: {exc}")
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    if resp.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Prometheus returned HTTP {resp.status_code}: {resp.text[:300]}",
+        )
+
+    return {"expr": expr, "prometheus": resp.json()}

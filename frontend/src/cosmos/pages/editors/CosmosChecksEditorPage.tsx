@@ -22,6 +22,8 @@ import {
   Search,
   Info,
   Tag,
+  Play,
+  ChevronUp,
 } from 'lucide-react';
 import MonacoEditor from '@monaco-editor/react';
 import jsYaml from 'js-yaml';
@@ -277,6 +279,188 @@ const inputCls =
   'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-600';
 const labelCls = 'block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5';
 
+// ── Severity evaluation helpers ───────────────────────────────────────────────
+
+const SEVERITY_ORDER = ['OK', 'UNKNOWN', 'WARN', 'CRIT'];
+
+const evalSeverity = (value: number, rules: RuleDraft[]): string => {
+  let worst = 'OK';
+  for (const rule of rules) {
+    const v = Number(rule.value);
+    let matches = false;
+    if (rule.op === '==' && value === v) matches = true;
+    if (rule.op === '!=' && value !== v) matches = true;
+    if (rule.op === '>' && value > v) matches = true;
+    if (rule.op === '>=' && value >= v) matches = true;
+    if (rule.op === '<' && value < v) matches = true;
+    if (rule.op === '<=' && value <= v) matches = true;
+    if (matches && SEVERITY_ORDER.indexOf(rule.severity) > SEVERITY_ORDER.indexOf(worst)) {
+      worst = rule.severity;
+    }
+  }
+  return worst;
+};
+
+// ── TestQueryPanel ────────────────────────────────────────────────────────────
+
+/** Detect $variable placeholders in a PromQL expression */
+const detectVars = (expr: string): string[] => {
+  const matches = expr.match(/\$([a-zA-Z_][a-zA-Z0-9_]*)/g) ?? [];
+  return [...new Set(matches.map((m) => m.slice(1)))];
+};
+
+const TestQueryPanel = ({
+  expr,
+  rules,
+}: {
+  expr: string;
+  rules: RuleDraft[];
+}) => {
+  const vars = useMemo(() => detectVars(expr), [expr]);
+  const [varValues, setVarValues] = useState<Record<string, string>>({});
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<null | { expr: string; rows: Array<{ labels: Record<string, string>; value: number; severity: string }> }>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const substituted = useMemo(() => {
+    let e = expr;
+    for (const [k, v] of Object.entries(varValues)) {
+      e = e.replace(new RegExp(`\\$${k}`, 'g'), v || `$${k}`);
+    }
+    return e;
+  }, [expr, varValues]);
+
+  const handleRun = async () => {
+    setRunning(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await api.testCheckQuery(expr, varValues);
+      const series = res.prometheus?.data?.result ?? [];
+      const rows = series.map((s) => {
+        const value = parseFloat(s.value[1]);
+        return {
+          labels: s.metric,
+          value,
+          severity: evalSeverity(value, rules),
+        };
+      });
+      setResult({ expr: res.expr, rows });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Query failed');
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const severitySummary = result
+    ? Object.entries(
+        result.rows.reduce((acc, r) => { acc[r.severity] = (acc[r.severity] ?? 0) + 1; return acc; }, {} as Record<string, number>)
+      ).sort(([a], [b]) => SEVERITY_ORDER.indexOf(b) - SEVERITY_ORDER.indexOf(a))
+    : [];
+
+  return (
+    <div className="mt-4 overflow-hidden rounded-xl border border-brand-200 bg-brand-50/50 dark:border-brand-700/30 dark:bg-brand-500/5">
+      {/* Variable inputs */}
+      {vars.length > 0 && (
+        <div className="border-b border-brand-200/60 px-4 py-3 dark:border-brand-700/20">
+          <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-brand-600/70 dark:text-brand-400/70">
+            Variables
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {vars.map((v) => (
+              <div key={v} className="flex items-center gap-1.5">
+                <span className="shrink-0 font-mono text-[11px] font-semibold text-brand-600 dark:text-brand-400">${v}</span>
+                <input
+                  value={varValues[v] ?? ''}
+                  onChange={(e) => setVarValues((prev) => ({ ...prev, [v]: e.target.value }))}
+                  placeholder={`e.g. ${v === 'instances' ? 'compute001' : v === 'jobs' ? 'node' : v === 'racks' ? 'rack-01' : '.*'}`}
+                  className="focus:border-brand-500 w-40 rounded-lg border border-brand-200 bg-white px-2.5 py-1.5 font-mono text-xs placeholder-gray-400 focus:outline-none dark:border-brand-700/40 dark:bg-gray-900 dark:text-gray-200 dark:placeholder-gray-600"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Substituted query preview + run button */}
+      <div className="flex items-start gap-3 px-4 py-3">
+        <div className="min-w-0 flex-1">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-brand-600/70 dark:text-brand-400/70">Query</p>
+          <p className="font-mono text-[11px] break-all text-gray-700 dark:text-gray-300">{substituted}</p>
+        </div>
+        <button
+          onClick={() => void handleRun()}
+          disabled={running}
+          className="bg-brand-500 hover:bg-brand-600 flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-60"
+        >
+          {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+          {running ? 'Running…' : 'Run'}
+        </button>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mx-4 mb-3 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span className="font-mono">{error}</span>
+        </div>
+      )}
+
+      {/* Results */}
+      {result && (
+        <div className="border-t border-brand-200/60 dark:border-brand-700/20">
+          {/* Summary */}
+          <div className="flex items-center gap-3 px-4 py-2.5">
+            <span className="text-xs text-gray-500 dark:text-gray-400">{result.rows.length} series</span>
+            {severitySummary.map(([sev, count]) => {
+              const s = SEVERITY_COLORS[sev] ?? SEVERITY_COLORS.UNKNOWN;
+              return (
+                <span key={sev} className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${s.light}`}>
+                  {count} {sev}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* Rows */}
+          {result.rows.length === 0 ? (
+            <p className="px-4 pb-3 text-xs text-gray-400 dark:text-gray-600">No data returned</p>
+          ) : (
+            <div className="max-h-56 overflow-y-auto">
+              {result.rows.map((row, i) => {
+                const s = SEVERITY_COLORS[row.severity] ?? SEVERITY_COLORS.UNKNOWN;
+                // Show the most relevant label (instance, job, rack_id, etc.)
+                const mainLabel =
+                  row.labels.instance ?? row.labels.rack_id ?? row.labels.job ?? Object.values(row.labels)[0] ?? '—';
+                const extraLabels = Object.entries(row.labels).filter(([k]) => k !== '__name__' && row.labels.instance ? k !== 'instance' : true);
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 border-t border-gray-100 px-4 py-2 dark:border-gray-800"
+                    style={{ borderLeft: `3px solid ${s.border}` }}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-mono text-xs font-semibold text-gray-800 dark:text-gray-200">{mainLabel}</p>
+                      {extraLabels.length > 1 && (
+                        <p className="truncate font-mono text-[10px] text-gray-400 dark:text-gray-600">
+                          {extraLabels.slice(0, 3).map(([k, v]) => `${k}="${v}"`).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                    <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-300">{row.value}</span>
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${s.light}`}>{row.severity}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const EditorPanel = ({
   check,
   onSaved,
@@ -310,6 +494,8 @@ const EditorPanel = ({
     setDirty(true);
     setSaveStatus('idle');
   }, [onDraftChange]);
+
+  const [showTest, setShowTest] = useState(false);
 
   const validationErrors = useMemo(() => {
     const errs: string[] = [];
@@ -453,15 +639,34 @@ const EditorPanel = ({
               }}
             />
           </div>
-          {/* Variable reference */}
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {EXPR_VARS.map(({ label, desc }) => (
-              <span key={label} title={desc}
-                className="inline-flex cursor-help items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2 py-0.5 font-mono text-[10px] text-brand-600 dark:border-brand-700/30 dark:bg-brand-500/10 dark:text-brand-400">
-                <Info className="h-2.5 w-2.5" />{label}
-              </span>
-            ))}
+          {/* Variable reference + Test button */}
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              {EXPR_VARS.map(({ label, desc }) => (
+                <span key={label} title={desc}
+                  className="inline-flex cursor-help items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2 py-0.5 font-mono text-[10px] text-brand-600 dark:border-brand-700/30 dark:bg-brand-500/10 dark:text-brand-400">
+                  <Info className="h-2.5 w-2.5" />{label}
+                </span>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowTest((v) => !v)}
+              className={[
+                'flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors',
+                showTest
+                  ? 'border-brand-500 bg-brand-500 text-white'
+                  : 'border-brand-200 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20',
+              ].join(' ')}
+            >
+              {showTest ? <ChevronUp className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              Test query
+            </button>
           </div>
+
+          {/* Test panel */}
+          {showTest && (
+            <TestQueryPanel expr={draft.expr} rules={draft.rules} />
+          )}
         </SectionCard>
 
         {/* Threshold rules */}

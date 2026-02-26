@@ -365,6 +365,22 @@ export const api = {
     markSuccess();
     return data;
   },
+  testCheckQuery: async (
+    expr: string,
+    variables: Record<string, string>
+  ): Promise<{ expr: string; prometheus: { status: string; data: { resultType: string; result: Array<{ metric: Record<string, string>; value: [number, string] }> } } }> => {
+    const res = await apiFetch('/api/checks/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expr, variables }),
+    });
+    if (!res.ok) {
+      let message = `Query failed: ${res.status}`;
+      try { const body = await res.json(); message = body?.detail ?? message; } catch { /* noop */ }
+      throw new Error(typeof message === 'string' ? message : JSON.stringify(message));
+    }
+    return res.json();
+  },
   getRoomState: async (roomId: string): Promise<RoomState> => {
     // Cache with very short TTL (5s) for performance while keeping data fresh
     return fetchWithCache(`/api/rooms/${roomId}/state`, `room.${roomId}.state`, 5000);
