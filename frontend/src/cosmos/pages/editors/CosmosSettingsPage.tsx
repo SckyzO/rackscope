@@ -13,6 +13,7 @@ import {
   MonitorPlay,
 } from 'lucide-react';
 import { useSettingsConfig } from '../../../components/settings/useSettingsConfig';
+import { useAppConfigSafe } from '../../contexts/AppConfigContext';
 import { AppSettingsSection } from '../../../components/settings/sections/AppSettingsSection';
 import { TelemetrySettingsSection } from '../../../components/settings/sections/TelemetrySettingsSection';
 import { PlannerSettingsSection } from '../../../components/settings/sections/PlannerSettingsSection';
@@ -38,6 +39,7 @@ const TAB_IDS = TABS.map((t) => t.id);
 export const CosmosSettingsPage = () => {
   usePageTitle('Settings');
   const { draft, setDraft, loading, saving, saved, saveConfig } = useSettingsConfig();
+  const { refresh: refreshAppConfig } = useAppConfigSafe();
   const location = useLocation();
   const navigate = useNavigate();
   const [saveError, setSaveError] = useState(false);
@@ -58,6 +60,9 @@ export const CosmosSettingsPage = () => {
     setSaveError(false);
     try {
       await saveConfig();
+      // Immediately refresh the app config context so sidebar/features update
+      // without waiting for the full page reload
+      void refreshAppConfig();
     } catch {
       setSaveError(true);
     }

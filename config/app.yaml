@@ -100,6 +100,7 @@ plugins:
       - alloc
       - completing
       - comp
+      - idle
       - mixed
       - mix
       warn:
@@ -132,8 +133,7 @@ plugins:
       - unk
       - noresp
       - inval
-      info:
-      - idle
+      info: []
     severity_colors:
       ok: '#22c55e'
       warn: '#f59e0b'

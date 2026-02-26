@@ -4,6 +4,7 @@ Metrics Router
 Endpoints for metrics library management and data querying.
 """
 
+from pathlib import Path
 from typing import Optional, Annotated
 
 from fastapi import APIRouter, HTTPException, Depends, Query
@@ -180,3 +181,30 @@ async def list_tags():
         tags.update(metric.tags)
 
     return {"tags": sorted(tags)}
+
+
+@router.get("/files")
+async def list_metrics_files(
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+):
+    """List YAML files in the metrics directory that start with 'metrics_'.
+    Used by the Simulator plugin settings to populate the catalog path dropdown.
+    """
+    if not app_config:
+        return {"files": []}
+
+    metrics_path = Path(app_config.paths.metrics)
+    # Look in parent directory of the library path (metrics files live alongside the library)
+    search_dirs = [metrics_path, metrics_path.parent]
+
+    files = []
+    seen = set()
+    for search_dir in search_dirs:
+        if not search_dir.exists() or not search_dir.is_dir():
+            continue
+        for f in sorted(search_dir.glob("metrics_*.yaml")) + sorted(search_dir.glob("metrics_*.yml")):
+            if f.name not in seen:
+                seen.add(f.name)
+                files.append({"name": f.name, "path": str(f)})
+
+    return {"files": files}

@@ -312,6 +312,9 @@ export const api = {
   getActiveAlerts: async (): Promise<{ alerts: ActiveAlert[] }> => {
     return fetchWithCache('/api/alerts/active', 'alerts.active');
   },
+  getMetricsFiles: async (): Promise<{ files: Array<{ name: string; path: string }> }> => {
+    return fetchWithCache('/api/metrics/files', 'metrics.files');
+  },
   getChecks: async (): Promise<ChecksLibrary> => {
     return fetchWithCache('/api/checks', 'checks.library');
   },

@@ -4,6 +4,7 @@ import { api } from '../../../services/api';
 import type { SimulatorScenario, SimulatorOverride } from '../../../types';
 import { FormField } from '../common/FormField';
 import { FormToggle } from '../common/FormToggle';
+import { FormSelect } from '../common/FormSelect';
 import type { ConfigDraft } from '../useSettingsConfig';
 
 interface PluginsSettingsSectionProps {
@@ -17,6 +18,18 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 }) => {
   const [simulatorSettingsOpen, setSimulatorSettingsOpen] = useState(false);
   const [slurmSettingsOpen, setSlurmSettingsOpen] = useState(false);
+
+  // Metrics files for catalog path dropdown
+  const [metricsFiles, setMetricsFiles] = useState<Array<{ name: string; path: string }>>([]);
+  const [metricsFilesLoading, setMetricsFilesLoading] = useState(false);
+
+  useEffect(() => {
+    setMetricsFilesLoading(true);
+    api.getMetricsFiles()
+      .then((data) => setMetricsFiles(data.files ?? []))
+      .catch(() => undefined)
+      .finally(() => setMetricsFilesLoading(false));
+  }, []);
 
   // Simulator control panel state
   const [scenarios, setScenarios] = useState<SimulatorScenario[]>([]);
@@ -396,11 +409,14 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               onChange={(value) => updateSimulator('default_ttl_seconds', value)}
               type="number"
             />
-            <FormField
+            <FormSelect
               label="Metrics Catalog Path"
-              value={draft.plugins.simulator.metrics_catalog_path}
+              tooltip="YAML file used as the metrics catalog (files starting with metrics_)"
+              value={draft.plugins.simulator.metrics_catalog_path ?? ''}
               onChange={(value) => updateSimulator('metrics_catalog_path', value)}
-              placeholder="config/plugins/simulator/metrics_full.yaml"
+              loading={metricsFilesLoading}
+              placeholder="— Select a metrics file —"
+              options={metricsFiles.map((f) => ({ value: f.path, label: f.name }))}
             />
 
             {/* Metrics Catalogs */}

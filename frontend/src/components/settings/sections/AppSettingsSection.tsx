@@ -117,36 +117,14 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
 
       <FormSection title="Features" icon={Zap} iconColor="text-brand-500" iconBg="bg-brand-50 dark:bg-brand-500/10">
         <FormToggle
-          label="Notifications"
-          description="Enable in-app notifications"
-          checked={draft.features.notifications}
-          onChange={(value) => update('features', 'notifications', value)}
-        />
-        <FormField
-          label="Max Visible Notifications"
-          tooltip="Maximum number of notifications shown simultaneously in the notification panel."
-          value={draft.features.notifications_max_visible}
-          onChange={(value) => update('features', 'notifications_max_visible', value)}
-          type="number"
-        />
-        <FormToggle
-          label="Playlist Mode"
-          description="Auto-rotate between views"
-          checked={draft.features.playlist}
-          onChange={(value) => update('features', 'playlist', value)}
-        />
-        <FormToggle
-          label="Offline Mode"
-          description="Allow offline operation"
-          checked={draft.features.offline}
-          onChange={(value) => update('features', 'offline', value)}
-        />
-        <FormToggle
           label="Demo Mode"
-          description="Enable demonstration mode — uses the Simulator plugin as the data source"
+          description="Use the Simulator plugin as the data source — enable the Simulator plugin too"
           checked={draft.features.demo}
           onChange={(value) => update('features', 'demo', value)}
         />
+        <p className="text-[11px] text-gray-400 dark:text-gray-600">
+          Notifications, Playlist and page visibility are configured in the <strong>Views</strong> tab.
+        </p>
       </FormSection>
     </div>
   );
