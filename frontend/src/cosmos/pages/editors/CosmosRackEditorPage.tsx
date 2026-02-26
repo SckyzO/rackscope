@@ -212,6 +212,10 @@ export const CosmosRackEditorPage = () => {
   const [canvasH, setCanvasH] = useState(600);
   const deviceCounterRef = useRef(0);
 
+  // Undo — single-level, clears after 5 s
+  const [undoItem, setUndoItem] = useState<Device | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ── Page title ────────────────────────────────────────────────────────────
 
   usePageTitle(rack ? `${rack.name} — Rack Editor` : 'Rack Editor');
@@ -464,10 +468,28 @@ export const CosmosRackEditorPage = () => {
   };
 
   const deleteDevice = (deviceId: string) => {
+    const found = draftDevices.find((d) => d.id === deviceId);
     setDraftDevices((prev) => prev.filter((d) => d.id !== deviceId));
     setDirty(true);
     setSelectedDevice((prev) => (prev?.id === deviceId ? null : prev));
+    // Set undo — auto-clears after 5 s
+    if (found) {
+      setUndoItem(found);
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = setTimeout(() => setUndoItem(null), 5000);
+    }
   };
+
+  const handleUndo = () => {
+    if (!undoItem) return;
+    setDraftDevices((prev) => [...prev, undoItem]);
+    setUndoItem(null);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setDirty(true);
+  };
+
+  // Cleanup undo timer on unmount
+  useEffect(() => () => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); }, []);
 
   const applyDeviceEdit = () => {
     if (!selectedDevice) return;
@@ -608,6 +630,7 @@ export const CosmosRackEditorPage = () => {
       <div className="mt-5 flex min-h-0 flex-1 gap-5">
 
         {/* ── LEFT PANEL: Racks + Templates ─────────────────────────────── */}
+
         <div className="flex w-[260px] shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
 
           {/* Tabs */}
@@ -729,7 +752,7 @@ export const CosmosRackEditorPage = () => {
         </div>
 
         {/* ── CENTER: Rack canvas ────────────────────────────────────────── */}
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-950">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[var(--color-border)]/30 bg-[var(--color-rack-interior)] transition-colors duration-500">
           {!rack ? (
             <div className="flex flex-1 items-center justify-center">
               {allRacks.length === 0 ? (
@@ -747,27 +770,27 @@ export const CosmosRackEditorPage = () => {
           ) : (
             <>
               {/* Rack info bar */}
-              <div className="shrink-0 border-b border-gray-800 px-5 py-3">
+              <div className="shrink-0 border-b border-[var(--color-border)]/20 px-5 py-3 transition-colors duration-500">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-sm font-bold text-white">{rack.name}</h2>
-                  <span className="rounded-full bg-gray-800 px-2 py-0.5 font-mono text-[10px] text-gray-500">
+                  <h2 className="text-sm font-bold text-[var(--color-text-base)]">{rack.name}</h2>
+                  <span className="rounded-full bg-[var(--color-border)]/20 px-2 py-0.5 font-mono text-[10px] text-[var(--color-text-base)] opacity-50">
                     {rack.id}
                   </span>
-                  <span className="text-[11px] text-gray-600">{totalU}U</span>
-                  <span className="text-[11px] text-gray-600">
+                  <span className="text-[11px] text-[var(--color-text-base)] opacity-40">{totalU}U</span>
+                  <span className="text-[11px] text-[var(--color-text-base)] opacity-40">
                     {draftDevices.length} device{draftDevices.length !== 1 ? 's' : ''}
                   </span>
 
                   {/* Density bar */}
                   <div className="ml-auto flex items-center gap-2">
-                    <span className="text-[10px] text-gray-600">{usedU}/{totalU}U</span>
-                    <div className="h-1.5 w-24 overflow-hidden rounded-full bg-gray-800">
+                    <span className="text-[10px] text-[var(--color-text-base)] opacity-40">{usedU}/{totalU}U</span>
+                    <div className="h-1.5 w-24 overflow-hidden rounded-full bg-[var(--color-border)]/30">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-500"
                         style={{ width: `${Math.min(100, density * 100)}%` }}
                       />
                     </div>
-                    <span className="w-7 text-right text-[10px] text-gray-600">
+                    <span className="w-7 text-right text-[10px] text-[var(--color-text-base)] opacity-40">
                       {Math.round(density * 100)}%
                     </span>
                   </div>
@@ -775,13 +798,13 @@ export const CosmosRackEditorPage = () => {
               </div>
 
               {/* Rack visualization */}
-              <div ref={canvasRef} className="flex-1 overflow-hidden py-5">
+              <div ref={canvasRef} className="relative flex-1 overflow-hidden py-5">
                 <div className="mx-auto h-full w-full max-w-sm px-6">
                   <div
                     ref={rackContainerRef}
                     onDragLeave={handleRackDragLeave}
                     onDragEnd={handleDragEnd}
-                    className="relative flex flex-col-reverse rounded-sm border-x-[22px] border-gray-700 bg-gray-900 shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
+                    className="relative flex flex-col-reverse rounded-sm border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-frame)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-colors duration-500"
                   >
                     {slots.map((u) => {
                       const dev = uMap.get(u);
@@ -797,9 +820,7 @@ export const CosmosRackEditorPage = () => {
                       // U rail number — shown on both sides inside border-x
                       const UNum = ({ align }: { align: 'left' | 'right' }) => (
                         <div
-                          className={`pointer-events-none absolute top-0 flex h-full w-[20px] items-center justify-center font-mono text-[8px] font-bold select-none ${
-                            dev ? 'text-gray-500' : 'text-gray-700'
-                          } ${align === 'left' ? '-left-[20px]' : '-right-[20px]'}`}
+                          className={`pointer-events-none absolute top-0 flex h-full w-[20px] items-center justify-center font-mono text-[8px] font-black select-none text-[var(--color-text-base)] opacity-40 ${align === 'left' ? '-left-[20px]' : '-right-[20px]'}`}
                         >
                           {u}
                         </div>
@@ -825,27 +846,30 @@ export const CosmosRackEditorPage = () => {
                                 onClick={() =>
                                   setSelectedDevice(dev.id === selectedDevice?.id ? null : dev)
                                 }
-                                style={{
-                                  backgroundColor: col.bg,
-                                  borderLeft:
-                                    selectedDevice?.id === dev.id
-                                      ? `4px solid ${col.border}`
-                                      : `3px solid ${col.border}`,
-                                  outline:
-                                    selectedDevice?.id === dev.id
-                                      ? `2px solid ${col.border}`
-                                      : undefined,
-                                  outlineOffset: '1px',
-                                  opacity: dragDevice?.id === dev.id ? 0.25 : 1,
-                                }}
-                                className="group/dev relative flex h-full w-full cursor-grab items-center gap-2 px-2.5 transition-all hover:brightness-125 active:cursor-grabbing"
+                                style={{ opacity: dragDevice?.id === dev.id ? 0.25 : 1 }}
+                                className="group/dev relative flex h-full w-full cursor-grab items-center bg-[var(--color-device-surface)] transition-all hover:brightness-110 active:cursor-grabbing rounded-[2px]"
                               >
-                                <TypeIcon
-                                  type={tpl?.type ?? 'other'}
-                                  className="h-3.5 w-3.5 shrink-0 opacity-50"
-                                  style={{ color: col.text }}
-                                />
-                                <div className="min-w-0 flex-1">
+                                {/* Left status bar — same pattern as rack view */}
+                                <div
+                                  className="absolute left-0 top-0 h-full w-1.5 shrink-0 rounded-l-[2px] opacity-90"
+                                  style={{ backgroundColor: col.border }}
+                                >
+                                  <div
+                                    className="absolute inset-0 opacity-40"
+                                    style={{ filter: 'blur(4px)', backgroundColor: col.border }}
+                                  />
+                                </div>
+
+                                {/* Selected outline */}
+                                {selectedDevice?.id === dev.id && (
+                                  <div
+                                    className="pointer-events-none absolute inset-0 rounded-[2px]"
+                                    style={{ outline: `2px solid ${col.border}`, outlineOffset: '1px' }}
+                                  />
+                                )}
+
+                                {/* Content */}
+                                <div className="min-w-0 flex-1 pl-4 pr-2">
                                   <p
                                     className="truncate text-xs font-semibold"
                                     style={{ color: col.text }}
@@ -853,18 +877,19 @@ export const CosmosRackEditorPage = () => {
                                     {dev.name || dev.id}
                                   </p>
                                   {devH > 1 && (
-                                    <p className="truncate font-mono text-[10px] text-gray-600">
+                                    <p className="truncate font-mono text-[10px] text-[var(--color-text-base)] opacity-40">
                                       {dev.id}
                                     </p>
                                   )}
                                 </div>
+
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     deleteDevice(dev.id);
                                   }}
                                   title="Remove device (Del)"
-                                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-500/20 text-red-400 opacity-0 transition-all hover:bg-red-500 hover:text-white group-hover/dev:opacity-100"
+                                  className="mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-500/20 text-red-400 opacity-0 transition-all hover:bg-red-500 hover:text-white group-hover/dev:opacity-100"
                                 >
                                   <X className="h-3 w-3" />
                                 </button>
@@ -880,7 +905,7 @@ export const CosmosRackEditorPage = () => {
                           key={u}
                           style={{ flex: `0 0 ${uPx}px` }}
                           className={[
-                            'relative flex min-h-0 w-full items-center border-b border-gray-800/25 transition-colors',
+                            'relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10 transition-colors',
                             hovered
                               ? valid
                                 ? 'bg-brand-500/20'
@@ -893,6 +918,11 @@ export const CosmosRackEditorPage = () => {
                         >
                           <UNum align="left" />
                           <UNum align="right" />
+
+                          {/* Empty slot fill */}
+                          {!hovered && (
+                            <div className="absolute inset-0 bg-[var(--color-empty-slot)] opacity-30" />
+                          )}
 
                           {hovered && (
                             <div className="pointer-events-none absolute inset-0 flex items-center px-3">
@@ -912,6 +942,22 @@ export const CosmosRackEditorPage = () => {
                     })}
                   </div>
                 </div>
+
+                {/* Undo toast — floats over rack canvas */}
+                {undoItem && (
+                  <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5 shadow-2xl">
+                    <span className="text-xs text-gray-400">
+                      <span className="font-semibold text-white">{undoItem.name || undoItem.id}</span>{' '}
+                      removed
+                    </span>
+                    <button
+                      onClick={handleUndo}
+                      className="rounded-lg bg-brand-500 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-brand-600"
+                    >
+                      Undo
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}
