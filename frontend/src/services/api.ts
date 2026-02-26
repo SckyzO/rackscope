@@ -5,6 +5,7 @@ import type {
   Device,
   DeviceTemplate,
   RackTemplate,
+  RackComponentTemplate,
   Rack,
   DeviceContext,
   AppConfig,
@@ -200,6 +201,7 @@ export const api = {
   getCatalog: async (): Promise<{
     device_templates: DeviceTemplate[];
     rack_templates: RackTemplate[];
+    rack_component_templates?: RackComponentTemplate[];
   }> => {
     return fetchWithCache('/api/catalog', 'catalog');
   },
