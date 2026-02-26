@@ -179,11 +179,9 @@ const RackCard = ({
   entry: RackEntry;
   rackId: string;
 }) => {
-  const cardHeight = entry.rack ? Math.max(200, entry.rack.u_height * 24) : 200;
-
-  if (entry.loading) return <RackSkeleton height={cardHeight} />;
+  if (entry.loading) return <RackSkeleton height={280} />;
   if (entry.error || !entry.rack)
-    return <RackError rackId={rackId} height={cardHeight} />;
+    return <RackError rackId={rackId} height={280} />;
 
   const { rack, health, catalog } = entry;
   const state = health?.state ?? 'UNKNOWN';
@@ -197,7 +195,7 @@ const RackCard = ({
 
   return (
     <div
-      className="group flex w-[280px] shrink-0 cursor-pointer flex-col rounded-xl border border-gray-200 bg-white transition-all hover:border-gray-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
+      className="group flex h-full w-[280px] shrink-0 cursor-pointer flex-col rounded-xl border border-gray-200 bg-white transition-all hover:border-gray-300 hover:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
       onClick={() => {
         window.location.href = `/cosmos/views/rack/${rack.id}`;
       }}
@@ -215,11 +213,8 @@ const RackCard = ({
         style={{ backgroundColor: stateColor }}
       />
 
-      {/* Rack elevation */}
-      <div
-        className="relative overflow-hidden bg-[#0f1117]"
-        style={{ height: `${cardHeight}px` }}
-      >
+      {/* Rack elevation — fills available height (flex-1) */}
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-[#0f1117]">
         <RackElevation
           rack={rack}
           catalog={catalog}
@@ -631,7 +626,7 @@ export const CosmosAisleDashboardPage = () => {
   const anyLoading = Object.values(rackEntries).some((e) => e.loading);
 
   return (
-    <div className="flex min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {/* ── Header ── */}
       <div className="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
         <PageBreadcrumb
@@ -758,12 +753,12 @@ export const CosmosAisleDashboardPage = () => {
       </div>
 
       {/* ── Main rack grid ── */}
-      <div className="flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
         {!selectedAisleId ? (
           <EmptyState />
         ) : (
-          <div className="min-h-full bg-[#0a0c10] p-6">
-            <div className="flex gap-5">
+          <div className="flex h-full bg-[#0a0c10] p-6">
+            <div className="flex h-full min-h-0 gap-5">
               {allRackIds.length === 0 ? (
                 <div className="flex w-full items-center justify-center py-20">
                   <div className="text-center">
