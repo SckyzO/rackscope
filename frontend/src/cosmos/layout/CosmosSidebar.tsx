@@ -228,7 +228,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
   const [expandedAisles, setExpandedAisles] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const location = useLocation();
-  const { features, plugins } = useAppConfigSafe();
+  const { features, plugins, config } = useAppConfigSafe();
   // plugins.slurm reads app.yaml plugins.slurm.enabled — source of truth
   // (Slurm plugin registers its menu section as id="workload", not "slurm")
   const slurmActive = plugins.slurm;
@@ -250,21 +250,28 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         collapsed ? 'w-[90px] hover:w-[290px]' : 'w-[290px]'
       }`}
     >
-      {/* Logo */}
+      {/* Logo — app.name + app.description from config */}
       <div className="flex h-[72px] shrink-0 items-center">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="bg-brand-500 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white">
             <Activity className="h-5 w-5" />
           </div>
-          <span
-            className={`overflow-hidden text-base font-bold tracking-tight whitespace-nowrap text-gray-900 transition-all duration-300 dark:text-white ${
+          <div
+            className={`overflow-hidden transition-all duration-300 ${
               collapsed
                 ? 'max-w-0 opacity-0 group-hover:max-w-[200px] group-hover:opacity-100'
                 : 'max-w-[200px] opacity-100'
             }`}
           >
-            Cosmos
-          </span>
+            <p className="truncate whitespace-nowrap text-base font-bold tracking-tight text-gray-900 dark:text-white">
+              {config?.app?.name ?? 'Cosmos'}
+            </p>
+            {config?.app?.description && (
+              <p className="truncate whitespace-nowrap text-xs text-gray-400 dark:text-gray-500">
+                {config.app.description}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
