@@ -79,7 +79,7 @@ import { CosmosSlurmWallboardPage } from './pages/slurm/CosmosSlurmWallboardPage
 // Editors
 import { CosmosSettingsPage } from './pages/editors/CosmosSettingsPage';
 import { CosmosChecksEditorPage } from './pages/editors/CosmosChecksEditorPage';
-import { CosmosTopologyEditorPage } from './pages/editors/CosmosTopologyEditorPage';
+// CosmosTopologyEditorPage replaced by DatacenterEditorPage
 import { CosmosTemplatesEditorPage } from './pages/editors/CosmosTemplatesEditorPage';
 import { CosmosRackEditorPage } from './pages/editors/CosmosRackEditorPage';
 import { EmptyPage, TemplatesShowcase, CenteredPage } from './pages/templates/EmptyPage';
@@ -210,7 +210,7 @@ const CosmosRoutes = () => (
       <Route path="editors/settings" element={<CosmosSettingsPage />} />
       <Route path="settings" element={<CosmosSettingsPage />} />
       <Route path="editors/checks" element={<CosmosChecksEditorPage />} />
-      <Route path="editors/topology" element={<CosmosTopologyEditorPage />} />
+      <Route path="editors/topology" element={<DatacenterEditorPage />} />
       <Route path="editors/templates" element={<CosmosTemplatesEditorPage />} />
       <Route path="editors/rack" element={<CosmosRackEditorPage />} />
       <Route path="editors/rack-templates" element={<CosmosRackTemplateEditorPage />} />

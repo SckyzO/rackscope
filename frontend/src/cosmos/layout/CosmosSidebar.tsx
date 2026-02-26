@@ -494,7 +494,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
 
         <SectionLabel label="Editors" collapsed={collapsed} />
         <NavItem
-          to="/cosmos/editors/topology"
+          to="/cosmos/editors/datacenter"
           icon={GitBranch}
           label="Datacenter"
           collapsed={collapsed}

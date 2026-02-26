@@ -98,11 +98,11 @@ const PAGES: SearchResult[] = [
     href: '/cosmos/slurm/partitions',
   },
   {
-    id: 'topology',
-    label: 'Topology Editor',
+    id: 'datacenter',
+    label: 'Datacenter Editor',
     sublabel: 'Editors',
     category: 'page',
-    href: '/cosmos/editors/topology',
+    href: '/cosmos/editors/datacenter',
   },
   {
     id: 'rack-editor',
