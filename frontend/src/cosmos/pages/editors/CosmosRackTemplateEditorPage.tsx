@@ -1205,7 +1205,7 @@ export const CosmosRackTemplateEditorPage = () => {
           </div>
 
           {/* ── FORM PANEL ─────────────────────────────────────────────── */}
-          <div className="flex w-[320px] shrink-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex w-[420px] shrink-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
             {selectedTemplate ? (
               <div className="flex-1 overflow-y-auto p-6">
                 <EditorPanel key={selectedTemplate.id} template={selectedTemplate} allChecks={checks} onSaved={() => { void loadData(); }} />
