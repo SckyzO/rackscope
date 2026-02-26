@@ -90,9 +90,11 @@ const RAIL_COLORS: Record<string, { bg: string; border: string; text: string; ab
 const RackPreview = ({
   template,
   view = 'front',
+  rackComponentCatalog = [],
 }: {
   template: RackTemplate;
   view?: 'front' | 'rear';
+  rackComponentCatalog?: RackComponentTemplate[];
 }) => {
   const uHeight = template.u_height ?? 42;
   const infra = template.infrastructure ?? {};
@@ -102,21 +104,58 @@ const RackPreview = ({
     ? [...(infra.rear_components ?? [])]
     : [...(infra.components ?? []), ...(infra.front_components ?? [])];
 
+  // Resolve rack_component refs from the catalog
+  const resolvedRackComponents = (infra.rack_components ?? []).flatMap((ref) => {
+    const tpl = rackComponentCatalog.find((c) => c.id === ref.template_id);
+    if (!tpl) return [];
+    return [{ ref, tpl }];
+  });
+
+  // Add rack_components to body (u-mount, front, rear) or rails (side)
+  // Filter by view: front/u-mount go in front, rear in rear
+  const rackCompBodyItems = resolvedRackComponents.filter(({ tpl }) =>
+    view === 'rear' ? tpl.location === 'rear' : tpl.location !== 'rear' && tpl.location !== 'side'
+  );
+
   const sideComponents: InfrastructureComponent[] = infra.side_components ?? [];
+  // Rack components with location='side' go on the rails
+  const rackCompLeft = resolvedRackComponents.filter(({ ref, tpl }) =>
+    tpl.location === 'side' && ref.side === 'left'
+  );
+  const rackCompRight = resolvedRackComponents.filter(({ ref, tpl }) =>
+    tpl.location === 'side' && (ref.side === 'right' || (!ref.side && tpl.location === 'side'))
+  );
 
   // Build u-mount occupancy map (start U → component)
-  const uMountMap = new Map<number, { comp: InfrastructureComponent; h: number }>();
+  type UMount = { name: string; type: string; h: number };
+  const uMountMap = new Map<number, UMount>();
   const occupiedU = new Set<number>();
+
   allInfraComponents.forEach((comp) => {
     if ((comp.location === 'u-mount' || !comp.location) && comp.u_position) {
       const h = comp.u_height ?? 1;
-      uMountMap.set(comp.u_position, { comp, h });
+      uMountMap.set(comp.u_position, { name: comp.name, type: comp.type, h });
       for (let u = comp.u_position; u < comp.u_position + h; u++) occupiedU.add(u);
     }
   });
 
-  const leftRail = sideComponents.filter((c) => c.location === 'side-left');
-  const rightRail = sideComponents.filter((c) => c.location === 'side-right');
+  // Add rack_component body items
+  rackCompBodyItems.forEach(({ ref, tpl }) => {
+    if (ref.u_position) {
+      const h = ref.u_height ?? tpl.u_height ?? 1;
+      uMountMap.set(ref.u_position, { name: tpl.name, type: tpl.type, h });
+      for (let u = ref.u_position; u < ref.u_position + h; u++) occupiedU.add(u);
+    }
+  });
+
+  const leftRail = [
+    ...sideComponents.filter((c) => c.location === 'side-left').map((c) => ({ name: c.name, type: c.type, h: c.u_height ?? 2 })),
+    ...rackCompLeft.map(({ tpl, ref }) => ({ name: tpl.name, type: tpl.type, h: ref.u_height ?? tpl.u_height ?? 2 })),
+  ];
+  const rightRail = [
+    ...sideComponents.filter((c) => c.location === 'side-right').map((c) => ({ name: c.name, type: c.type, h: c.u_height ?? 2 })),
+    ...rackCompRight.map(({ tpl, ref }) => ({ name: tpl.name, type: tpl.type, h: ref.u_height ?? tpl.u_height ?? 2 })),
+  ];
 
   const slots = Array.from({ length: uHeight }, (_, i) => i + 1);
 
@@ -136,16 +175,16 @@ const RackPreview = ({
         {/* Left rail */}
         {leftRail.length > 0 && (
           <div className="flex h-full flex-col gap-0.5">
-            {leftRail.map((comp, i) => {
-              const col = RAIL_COLORS[comp.type] ?? RAIL_COLORS.other;
+            {leftRail.map((item, i) => {
+              const col = RAIL_COLORS[item.type] ?? RAIL_COLORS.other;
               return (
                 <div
                   key={i}
-                  title={comp.name}
+                  title={item.name}
                   className="flex items-center justify-center rounded-sm"
                   style={{
                     width: 22,
-                    flex: comp.u_height ?? 2,
+                    flex: item.h,
                     backgroundColor: col.bg,
                     border: `1px solid ${col.border}`,
                     writingMode: 'vertical-lr',
@@ -177,7 +216,7 @@ const RackPreview = ({
             if (isOccupied) return null; // part of multi-U block
 
             if (mount) {
-              const col = RAIL_COLORS[mount.comp.type] ?? RAIL_COLORS.other;
+              const col = RAIL_COLORS[mount.type] ?? RAIL_COLORS.other;
               return (
                 <div
                   key={u}
@@ -191,7 +230,7 @@ const RackPreview = ({
                     {u}
                   </div>
                   <span className="truncate text-[10px] font-semibold" style={{ color: col.text }}>
-                    {mount.comp.name}
+                    {mount.name}
                   </span>
                 </div>
               );
@@ -218,16 +257,16 @@ const RackPreview = ({
         {/* Right rail */}
         {rightRail.length > 0 && (
           <div className="flex h-full flex-col gap-0.5">
-            {rightRail.map((comp, i) => {
-              const col = RAIL_COLORS[comp.type] ?? RAIL_COLORS.other;
+            {rightRail.map((item, i) => {
+              const col = RAIL_COLORS[item.type] ?? RAIL_COLORS.other;
               return (
                 <div
                   key={i}
-                  title={comp.name}
+                  title={item.name}
                   className="flex items-center justify-center rounded-sm"
                   style={{
                     width: 22,
-                    flex: comp.u_height ?? 2,
+                    flex: item.h,
                     backgroundColor: col.bg,
                     border: `1px solid ${col.border}`,
                     writingMode: 'vertical-lr',
@@ -1230,11 +1269,11 @@ export const CosmosRackTemplateEditorPage = () => {
               <>
                 {/* Front view */}
                 <div className="flex min-h-0 flex-1 flex-col border-r border-[var(--color-border)]/20">
-                  <RackPreview template={selectedTemplate} view="front" />
+                  <RackPreview template={selectedTemplate} view="front" rackComponentCatalog={rackComponents} />
                 </div>
                 {/* Rear view */}
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <RackPreview template={selectedTemplate} view="rear" />
+                  <RackPreview template={selectedTemplate} view="rear" rackComponentCatalog={rackComponents} />
                 </div>
               </>
             ) : (
