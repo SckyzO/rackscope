@@ -1,5 +1,6 @@
 import { AlertTriangle, Type, Lock, ShieldAlert } from 'lucide-react';
 import { FormSection } from '../common/FormSection';
+import { SettingTooltip } from '../../../cosmos/components/SettingTooltip';
 import type { ConfigDraft } from '../useSettingsConfig';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -11,19 +12,24 @@ type Props = {
 const Toggle = ({
   label,
   description,
+  tooltip,
   value,
   onChange,
   disabled,
 }: {
   label: string;
   description?: string;
+  tooltip?: string;
   value: boolean;
   onChange: (v: boolean) => void;
   disabled?: boolean;
 }) => (
   <div className="flex items-center justify-between rounded-xl border border-gray-200 p-4 dark:border-gray-700">
     <div>
-      <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</p>
+      <p className="flex items-center gap-1.5 text-sm font-medium text-gray-800 dark:text-gray-200">
+        {label}
+        {tooltip && <SettingTooltip text={tooltip} />}
+      </p>
       {description && <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>}
     </div>
     <button
@@ -73,14 +79,16 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
         <Toggle
           label="Require authentication"
           description="Protect the dashboard with a username and password"
+          tooltip="Protect the Cosmos UI with username+password. Requires a password to be set first in Change Password."
           value={auth.enabled}
           onChange={(v) => setAuth({ enabled: v })}
           disabled={!hasPassword}
         />
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
             Session duration
+            <SettingTooltip text="How long authentication tokens remain valid before requiring re-login." />
           </label>
           <div className="flex gap-2">
             {(['8h', '24h', 'unlimited'] as const).map((d) => (
@@ -115,6 +123,7 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
               <Type className="h-3.5 w-3.5" /> Min length
+              <SettingTooltip text="Minimum number of characters required for the password." />
             </label>
             <input
               type="number"
@@ -128,6 +137,7 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
               <Type className="h-3.5 w-3.5" /> Max length
+              <SettingTooltip text="Maximum password length allowed." />
             </label>
             <input
               type="number"
@@ -143,12 +153,14 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
         <Toggle
           label="Require digit"
           description="Password must contain at least one number (0–9)"
+          tooltip="Password must contain at least one number (0-9)."
           value={auth.policy_require_digit}
           onChange={(v) => setAuth({ policy_require_digit: v })}
         />
         <Toggle
           label="Require symbol"
           description="Password must contain at least one special character (!@#$…)"
+          tooltip="Password must contain at least one special character (!@#$...)."
           value={auth.policy_require_symbol}
           onChange={(v) => setAuth({ policy_require_symbol: v })}
         />

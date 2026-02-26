@@ -1,45 +1,61 @@
 import { useState, useRef } from 'react';
-import { User, Lock, Eye, EyeOff, Check, X, AlertCircle, Camera, Trash2 } from 'lucide-react';
+import {
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  Check,
+  X,
+  AlertCircle,
+  Camera,
+  Trash2,
+  Loader2,
+  Save,
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
 import type { PasswordPolicy } from '../../contexts/AuthContext';
 import { useAvatar, resizeAvatar } from '../../hooks/useAvatar';
+import { usePageTitle } from '../contexts/PageTitleContext';
+import { PageHeader, PageBreadcrumb, SectionCard } from './templates/EmptyPage';
+import { SettingField, SettingTooltip } from '../components/SettingTooltip';
+
+// ── Types ────────────────────────────────────────────────────────────────────
 
 type FormStatus = 'idle' | 'saving' | 'success' | 'error';
 
-const SectionCard = ({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-}) => (
-  <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-    <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-      <Icon className="text-brand-500 h-4 w-4" />
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{title}</h3>
-    </div>
-    <div className="p-5">{children}</div>
-  </div>
-);
+// ── Save button helper ────────────────────────────────────────────────────────
 
-const StatusBanner = ({ status, error }: { status: FormStatus; error?: string }) => {
+const saveBtnProps = (status: FormStatus, errorMsg?: string) => {
+  if (status === 'saving')
+    return {
+      icon: <Loader2 className="h-4 w-4 animate-spin" />,
+      label: 'Saving…',
+      cls: 'bg-brand-500 text-white opacity-70 cursor-not-allowed',
+    };
   if (status === 'success')
-    return (
-      <div className="mt-3 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400">
-        <Check className="h-4 w-4" /> Saved successfully
-      </div>
-    );
+    return {
+      icon: <Check className="h-4 w-4" />,
+      label: 'Saved',
+      cls: 'bg-green-500 text-white',
+    };
   if (status === 'error')
-    return (
-      <div className="mt-3 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-        <AlertCircle className="h-4 w-4" /> {error ?? 'An error occurred'}
-      </div>
-    );
-  return null;
+    return {
+      icon: <AlertCircle className="h-4 w-4" />,
+      label: errorMsg ?? 'Error',
+      cls: 'bg-red-500 text-white',
+    };
+  return {
+    icon: <Save className="h-4 w-4" />,
+    label: 'Save',
+    cls: 'bg-brand-500 hover:bg-brand-600 text-white',
+  };
 };
+
+// ── Input style ───────────────────────────────────────────────────────────────
+
+const INPUT_CLS =
+  'focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500';
 
 // ── Password strength rules ───────────────────────────────────────────────────
 
@@ -90,7 +106,7 @@ const PasswordRules = ({ rules }: { rules: Rule[] }) => {
   );
 };
 
-// ── PwInput helper ────────────────────────────────────────────────────────────
+// ── Password input helper ─────────────────────────────────────────────────────
 
 const PwInput = ({
   value,
@@ -99,6 +115,7 @@ const PwInput = ({
   onToggle,
   placeholder,
   label,
+  tooltip,
   autoComplete,
   required = true,
 }: {
@@ -108,13 +125,11 @@ const PwInput = ({
   onToggle: () => void;
   placeholder: string;
   label: string;
+  tooltip: string;
   autoComplete: string;
   required?: boolean;
 }) => (
-  <div>
-    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-      {label}
-    </label>
+  <SettingField label={label} tooltip={tooltip}>
     <div className="relative">
       <input
         type={show ? 'text' : 'password'}
@@ -123,178 +138,22 @@ const PwInput = ({
         placeholder={placeholder}
         autoComplete={autoComplete}
         required={required}
-        className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 pr-9 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+        className={INPUT_CLS + ' pr-10'}
       />
       <button
         type="button"
         onClick={onToggle}
-        className="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+        className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+        tabIndex={-1}
+        aria-label={show ? 'Hide password' : 'Show password'}
       >
         {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
       </button>
     </div>
-  </div>
+  </SettingField>
 );
 
-// ── Change Username ───────────────────────────────────────────────────────────
-
-const ChangeUsernameForm = () => {
-  const { user, authConfigured, refreshStatus } = useAuth();
-  const [newUsername, setNewUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [status, setStatus] = useState<FormStatus>('idle');
-  const [error, setError] = useState<string>();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus('saving');
-    setError(undefined);
-    try {
-      await api.changeUsername(password, newUsername);
-      setStatus('success');
-      setNewUsername('');
-      setPassword('');
-      await refreshStatus();
-      setTimeout(() => setStatus('idle'), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change username');
-      setStatus('error');
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
-        Current username:{' '}
-        <span className="font-mono font-semibold text-gray-800 dark:text-gray-200">
-          {user?.username ?? 'admin'}
-        </span>
-      </p>
-      <div>
-        <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-          New username
-        </label>
-        <input
-          type="text"
-          value={newUsername}
-          onChange={(e) => setNewUsername(e.target.value)}
-          placeholder="New username"
-          required
-          className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-        />
-      </div>
-      {authConfigured && (
-        <div>
-          <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-            Current password (for verification)
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-          />
-        </div>
-      )}
-      <button
-        type="submit"
-        disabled={status === 'saving'}
-        className="bg-brand-500 hover:bg-brand-600 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
-      >
-        {status === 'saving' ? 'Saving…' : 'Change username'}
-      </button>
-      <StatusBanner status={status} error={error} />
-    </form>
-  );
-};
-
-// ── Change Password ───────────────────────────────────────────────────────────
-
-const ChangePasswordForm = () => {
-  const { authConfigured, policy } = useAuth();
-  const [currentPw, setCurrentPw] = useState('');
-  const [newPw, setNewPw] = useState('');
-  const [confirmPw, setConfirmPw] = useState('');
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [status, setStatus] = useState<FormStatus>('idle');
-  const [error, setError] = useState<string>();
-
-  const rules = buildRules(newPw, confirmPw, policy);
-  const allRulesPass = rules.every((r) => r.ok);
-  const showRules = newPw.length > 0 || confirmPw.length > 0;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!allRulesPass) return;
-    setStatus('saving');
-    setError(undefined);
-    try {
-      await api.changePassword(currentPw, newPw);
-      setStatus('success');
-      setCurrentPw('');
-      setNewPw('');
-      setConfirmPw('');
-      setTimeout(() => setStatus('idle'), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change password');
-      setStatus('error');
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      {!authConfigured && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
-          Initial setup — no current password required.
-        </p>
-      )}
-      {authConfigured && (
-        <PwInput
-          value={currentPw}
-          onChange={setCurrentPw}
-          show={showCurrent}
-          onToggle={() => setShowCurrent((v) => !v)}
-          placeholder="••••••••"
-          label="Current password"
-          autoComplete="current-password"
-        />
-      )}
-      <PwInput
-        value={newPw}
-        onChange={setNewPw}
-        show={showNew}
-        onToggle={() => setShowNew((v) => !v)}
-        placeholder={`Min. ${policy.min_length} characters`}
-        label="New password"
-        autoComplete="new-password"
-      />
-      <PwInput
-        value={confirmPw}
-        onChange={setConfirmPw}
-        show={showConfirm}
-        onToggle={() => setShowConfirm((v) => !v)}
-        placeholder="Repeat new password"
-        label="Confirm new password"
-        autoComplete="new-password"
-      />
-      {showRules && <PasswordRules rules={rules} />}
-      <button
-        type="submit"
-        disabled={status === 'saving' || !allRulesPass}
-        className="bg-brand-500 hover:bg-brand-600 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-50"
-      >
-        {status === 'saving' ? 'Saving…' : authConfigured ? 'Change password' : 'Set password'}
-      </button>
-      <StatusBanner status={status} error={error} />
-    </form>
-  );
-};
-
-// ── Avatar upload section ─────────────────────────────────────────────────────
+// ── Avatar section ────────────────────────────────────────────────────────────
 
 const AvatarSection = ({ username }: { username: string }) => {
   const { avatar, updateAvatar } = useAvatar();
@@ -341,7 +200,7 @@ const AvatarSection = ({ username }: { username: string }) => {
         )}
         {uploading && (
           <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            <Loader2 className="h-5 w-5 animate-spin text-white" />
           </div>
         )}
       </div>
@@ -355,57 +214,318 @@ const AvatarSection = ({ username }: { username: string }) => {
           className="hidden"
           onChange={handleFile}
         />
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-        >
-          <Camera className="h-4 w-4" />
-          {avatar ? 'Change photo' : 'Upload photo'}
-        </button>
-        {avatar && (
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => updateAvatar(null)}
-            className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 dark:border-gray-700 dark:hover:bg-red-900/20"
+            onClick={() => inputRef.current?.click()}
+            className="flex items-center gap-2 rounded-xl border border-gray-200 px-3.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
           >
-            <Trash2 className="h-4 w-4" />
-            Remove photo
+            <Camera className="h-4 w-4" />
+            {avatar ? 'Change photo' : 'Upload photo'}
           </button>
-        )}
+          {avatar && (
+            <button
+              type="button"
+              onClick={() => updateAvatar(null)}
+              className="flex items-center gap-2 rounded-xl border border-gray-200 px-3.5 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 dark:border-gray-700 dark:hover:bg-red-900/20"
+            >
+              <Trash2 className="h-4 w-4" />
+              Remove
+            </button>
+          )}
+        </div>
         {error && <p className="text-xs text-red-500">{error}</p>}
-        <p className="text-xs text-gray-400">JPG, PNG, GIF — cropped to 128×128</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          JPG, PNG or GIF — cropped to 128×128 px
+        </p>
       </div>
     </div>
   );
 };
 
+// ── Change Username form ──────────────────────────────────────────────────────
+
+const ChangeUsernameForm = () => {
+  const { user, authConfigured, refreshStatus } = useAuth();
+  const [newUsername, setNewUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [status, setStatus] = useState<FormStatus>('idle');
+  const [error, setError] = useState<string | undefined>();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('saving');
+    setError(undefined);
+    try {
+      await api.changeUsername(password, newUsername);
+      setStatus('success');
+      setNewUsername('');
+      setPassword('');
+      await refreshStatus();
+      setTimeout(() => setStatus('idle'), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to change username');
+      setStatus('error');
+    }
+  };
+
+  const btn = saveBtnProps(status, error);
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Current username display */}
+      <div className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800/60">
+        <span className="text-sm text-gray-500 dark:text-gray-400">Current username</span>
+        <span className="ml-auto font-mono text-sm font-semibold text-gray-800 dark:text-gray-200">
+          {user?.username ?? 'admin'}
+        </span>
+      </div>
+
+      <SettingField
+        label="New username"
+        tooltip="Your display name shown in the header, audit logs, and activity feed. Must be unique."
+      >
+        <input
+          type="text"
+          value={newUsername}
+          onChange={(e) => setNewUsername(e.target.value)}
+          placeholder="Enter new username"
+          required
+          className={INPUT_CLS}
+        />
+      </SettingField>
+
+      {authConfigured && (
+        <SettingField
+          label="Current password"
+          tooltip="Required to verify your identity before changing your username."
+        >
+          <div className="relative">
+            <input
+              type={showPw ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="current-password"
+              required
+              className={INPUT_CLS + ' pr-10'}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPw((v) => !v)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+              tabIndex={-1}
+              aria-label={showPw ? 'Hide password' : 'Show password'}
+            >
+              {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </SettingField>
+      )}
+
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          type="submit"
+          disabled={status === 'saving'}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all disabled:cursor-not-allowed ${btn.cls}`}
+        >
+          {btn.icon}
+          {btn.label}
+        </button>
+        {status === 'error' && (
+          <span className="flex items-center gap-1.5 text-xs text-red-500 dark:text-red-400">
+            <AlertCircle className="h-3.5 w-3.5" />
+            {error ?? 'An error occurred'}
+          </span>
+        )}
+      </div>
+    </form>
+  );
+};
+
+// ── Change Password form ──────────────────────────────────────────────────────
+
+const ChangePasswordForm = () => {
+  const { authConfigured, policy } = useAuth();
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [status, setStatus] = useState<FormStatus>('idle');
+  const [error, setError] = useState<string | undefined>();
+
+  const rules = buildRules(newPw, confirmPw, policy);
+  const allRulesPass = rules.every((r) => r.ok);
+  const showRules = newPw.length > 0 || confirmPw.length > 0;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!allRulesPass) return;
+    setStatus('saving');
+    setError(undefined);
+    try {
+      await api.changePassword(currentPw, newPw);
+      setStatus('success');
+      setCurrentPw('');
+      setNewPw('');
+      setConfirmPw('');
+      setTimeout(() => setStatus('idle'), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to change password');
+      setStatus('error');
+    }
+  };
+
+  const btn = saveBtnProps(status, error);
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {!authConfigured && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          Initial setup — no current password required.
+        </div>
+      )}
+
+      {authConfigured && (
+        <PwInput
+          value={currentPw}
+          onChange={setCurrentPw}
+          show={showCurrent}
+          onToggle={() => setShowCurrent((v) => !v)}
+          placeholder="••••••••"
+          label="Current password"
+          tooltip="Required to verify your identity before changing password."
+          autoComplete="current-password"
+        />
+      )}
+
+      <PwInput
+        value={newPw}
+        onChange={setNewPw}
+        show={showNew}
+        onToggle={() => setShowNew((v) => !v)}
+        placeholder={`Min. ${policy.min_length} characters`}
+        label="New password"
+        tooltip={`Minimum ${policy.min_length} characters${policy.require_digit ? ', must include a digit' : ''}${policy.require_symbol ? ', must include a symbol' : ''}. Leave empty to keep your current password.`}
+        autoComplete="new-password"
+      />
+
+      <PwInput
+        value={confirmPw}
+        onChange={setConfirmPw}
+        show={showConfirm}
+        onToggle={() => setShowConfirm((v) => !v)}
+        placeholder="Repeat new password"
+        label="Confirm new password"
+        tooltip="Must match the new password exactly."
+        autoComplete="new-password"
+      />
+
+      {showRules && <PasswordRules rules={rules} />}
+
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          type="submit"
+          disabled={status === 'saving' || !allRulesPass}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all disabled:cursor-not-allowed ${btn.cls}`}
+        >
+          {btn.icon}
+          {btn.label === 'Save'
+            ? authConfigured
+              ? 'Change password'
+              : 'Set password'
+            : btn.label}
+        </button>
+        {status === 'error' && (
+          <span className="flex items-center gap-1.5 text-xs text-red-500 dark:text-red-400">
+            <AlertCircle className="h-3.5 w-3.5" />
+            {error ?? 'An error occurred'}
+          </span>
+        )}
+      </div>
+    </form>
+  );
+};
+
+// ── Account header row ────────────────────────────────────────────────────────
+
+const AccountSectionHeader = ({
+  username,
+  authEnabled,
+}: {
+  username: string;
+  authEnabled: boolean;
+}) => (
+  <div className="mb-5 flex items-center gap-4">
+    <AvatarSection username={username} />
+    {!authEnabled && (
+      <div className="ml-auto flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+        <SettingTooltip
+          text="Authentication is disabled in app.yaml. Username and password management are unavailable."
+          position="left"
+        />
+        Auth disabled
+      </div>
+    )}
+  </div>
+);
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export const ProfilePage = () => {
+  usePageTitle('Profile');
   const { user, authEnabled } = useAuth();
   const displayName = authEnabled && user ? user.username : 'Admin';
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-6">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Profile</h1>
-        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
-          Manage your account and credentials
-        </p>
+    <div className="space-y-6">
+      <PageHeader
+        title="Profile"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/cosmos' },
+              { label: 'Profile' },
+            ]}
+          />
+        }
+      />
+
+      <div className="mx-auto w-full max-w-[760px] space-y-4">
+        {/* Account — avatar + username */}
+        <SectionCard
+          title="Account"
+          desc="Your display name and profile picture."
+          icon={User}
+          iconColor="text-brand-500"
+          iconBg="bg-brand-50 dark:bg-brand-500/10"
+        >
+          <AccountSectionHeader username={displayName} authEnabled={authEnabled} />
+
+          {authEnabled ? (
+            <ChangeUsernameForm />
+          ) : (
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              Enable authentication in Settings to manage your username.
+            </p>
+          )}
+        </SectionCard>
+
+        {/* Change Password */}
+        <SectionCard
+          title="Change Password"
+          desc="Update your account password."
+          icon={Lock}
+          iconColor="text-red-500"
+          iconBg="bg-red-50 dark:bg-red-500/10"
+        >
+          <ChangePasswordForm />
+        </SectionCard>
       </div>
-
-      <SectionCard title="Profile Picture" icon={Camera}>
-        <AvatarSection username={displayName} />
-      </SectionCard>
-
-      <SectionCard title="Change Username" icon={User}>
-        <ChangeUsernameForm />
-      </SectionCard>
-
-      <SectionCard title="Change Password" icon={Lock}>
-        <ChangePasswordForm />
-      </SectionCard>
     </div>
   );
 };

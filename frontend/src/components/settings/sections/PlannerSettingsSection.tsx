@@ -34,18 +34,21 @@ export const PlannerSettingsSection: React.FC<PlannerSettingsSectionProps> = ({
       >
         <FormField
           label="Unknown State Value"
+          tooltip="Health state returned when no Prometheus data is available for a node. Options: OK, WARN, CRIT, UNKNOWN."
           value={draft.planner.unknown_state}
           onChange={(value) => update('unknown_state', value)}
           placeholder="UNKNOWN"
         />
         <FormField
           label="Cache TTL (seconds)"
+          tooltip="How long the query planner caches batched health check results. Default: 60."
           value={draft.planner.cache_ttl_seconds}
           onChange={(value) => update('cache_ttl_seconds', value)}
           type="number"
         />
         <FormField
           label="Max IDs per Query"
+          tooltip="Maximum number of node IDs to batch in a single Prometheus query. Increase for large clusters. Default: 200."
           value={draft.planner.max_ids_per_query}
           onChange={(value) => update('max_ids_per_query', value)}
           type="number"
@@ -56,7 +59,7 @@ export const PlannerSettingsSection: React.FC<PlannerSettingsSectionProps> = ({
         <h4 className="mb-2 font-mono text-xs font-bold tracking-wider text-blue-400 uppercase">
           Performance Tips
         </h4>
-        <ul className="space-y-2 text-xs text-[var(--color-text-base)]">
+        <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
           <li>
             • Increase <strong>Cache TTL</strong> to reduce Prometheus load
           </li>
