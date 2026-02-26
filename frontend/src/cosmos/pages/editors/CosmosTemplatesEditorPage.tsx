@@ -229,10 +229,13 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
           <p className="text-xs text-[var(--color-text-base)] opacity-30">No layout defined — simple component</p>
         </div>
       ) : (() => {
-        // When both views are active: flex split so no scroll needed.
-        // When only one view: fixed height = u_height × 120px.
+        // When both views active: halve U_PX so total fits the panel without scroll.
+        // 1U both: 2×60=120px · 5U both: 2×300=600px — always compact enough.
+        // Single view: full 120px/U for a comfortable preview.
         const hasBoth = hasFront && hasRear;
-        const fixedH = Math.max(120, template.u_height * 120);
+        const uPx = hasBoth ? 60 : 120;
+        const fixedH = Math.max(uPx, template.u_height * uPx);
+
         const rackEl = (isRear: boolean) => (
           <RackElevation
             rack={synthRack}
@@ -248,39 +251,28 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
             disableTooltip
           />
         );
+
         return (
-          <div className={hasBoth ? 'flex min-h-0 flex-1 flex-col' : 'flex flex-1 flex-col overflow-y-auto py-4'}>
+          <div className="flex flex-1 flex-col overflow-y-auto py-4">
             {/* Front */}
-            <div className={hasBoth ? 'flex min-h-0 flex-1 flex-col border-b border-[var(--color-border)]/20' : 'mb-4'}>
-              <div className="flex shrink-0 items-center justify-center py-2">
+            <div className={hasBoth ? 'mb-3' : ''}>
+              <div className="flex items-center justify-center pb-2">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">Front</span>
               </div>
-              {hasBoth ? (
-                <div className="mx-auto min-h-0 w-4/5 flex-1 [&_*]:!cursor-default">
-                  {rackEl(false)}
-                </div>
-              ) : (
-                <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: fixedH }}>
-                  {rackEl(false)}
-                </div>
-              )}
+              <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: fixedH }}>
+                {rackEl(false)}
+              </div>
             </div>
 
             {/* Rear */}
             {hasRear && (
-              <div className={hasBoth ? 'flex min-h-0 flex-1 flex-col' : ''}>
-                <div className="flex shrink-0 items-center justify-center py-2">
+              <div>
+                <div className="flex items-center justify-center pb-2">
                   <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
                 </div>
-                {hasBoth ? (
-                  <div className="mx-auto min-h-0 w-4/5 flex-1 [&_*]:!cursor-default">
-                    {rackEl(true)}
-                  </div>
-                ) : (
-                  <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: fixedH }}>
-                    {rackEl(true)}
-                  </div>
-                )}
+                <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: fixedH }}>
+                  {rackEl(true)}
+                </div>
               </div>
             )}
           </div>
