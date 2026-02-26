@@ -620,6 +620,7 @@ const EditorPanel = ({
   allChecks,
   rackComponentCatalog,
   onSaved,
+  onDraftChange,
 }: {
   template: RackTemplate;
   allChecks: CheckDefinition[];
