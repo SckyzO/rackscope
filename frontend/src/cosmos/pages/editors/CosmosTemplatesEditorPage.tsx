@@ -236,7 +236,7 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
               <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">Front</span>
             </div>
             {/* Fixed height = u_height × 48px for rackmount proportions */}
-            <div className="mx-auto w-4/5" style={{ height: Math.max(120, template.u_height * 120) }}>
+            <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: Math.max(120, template.u_height * 120) }}>
               <RackElevation
                 rack={synthRack}
                 catalog={synthCatalog}
@@ -259,7 +259,7 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
               <div className="flex items-center justify-center pb-2">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
               </div>
-              <div className="mx-auto w-4/5" style={{ height: Math.max(120, template.u_height * 120) }}>
+              <div className="mx-auto w-4/5 [&_*]:!cursor-default" style={{ height: Math.max(120, template.u_height * 120) }}>
                 <RackElevation
                   rack={synthRack}
                   catalog={synthCatalog}
