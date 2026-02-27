@@ -7,6 +7,8 @@ import type { AppConfig } from '../../types';
 interface AppFeatures {
   notifications: boolean;
   toast_duration_seconds: number;
+  toast_position: string;
+  toast_stack_threshold: number;
   worldmap: boolean;
   aisle_dashboard: boolean;
   dev_tools: boolean;
@@ -31,6 +33,8 @@ interface AppConfigContextType {
 const DEFAULT_FEATURES: AppFeatures = {
   notifications: true,
   toast_duration_seconds: 15,
+  toast_position: 'bottom-right',
+  toast_stack_threshold: 5,
   worldmap: true,
   aisle_dashboard: true,
   dev_tools: false,
@@ -67,6 +71,8 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
   const features: AppFeatures = {
     notifications: config?.features?.notifications !== false,
     toast_duration_seconds: Number(config?.features?.toast_duration_seconds ?? 15),
+    toast_position: (config?.features?.toast_position as string) || 'bottom-right',
+    toast_stack_threshold: Number(config?.features?.toast_stack_threshold ?? 5),
     worldmap: config?.features?.worldmap !== false,
     aisle_dashboard: config?.features?.aisle_dashboard !== false,
     dev_tools: config?.features?.dev_tools === true,

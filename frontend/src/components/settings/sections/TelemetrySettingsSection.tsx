@@ -1,5 +1,5 @@
-import React from 'react';
-import { Activity, Tag, KeyRound, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { Activity, Tag, KeyRound, ShieldCheck, Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
 import { FormToggle } from '../common/FormToggle';
@@ -71,6 +71,27 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
     }
   };
 
+  // ── Prometheus connection test ─────────────────────────────────────────────
+  const [testState, setTestState] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle');
+  const [testDetail, setTestDetail] = useState('');
+
+  const handleTestConnection = async () => {
+    setTestState('testing');
+    setTestDetail('');
+    try {
+      const res = await fetch('/api/stats/prometheus', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json() as { last_ms?: number; avg_ms?: number };
+      setTestState('ok');
+      setTestDetail(
+        `${data.last_ms != null ? `Latency: ${data.last_ms.toFixed(1)} ms` : ''}${data.avg_ms != null ? ` · avg ${data.avg_ms.toFixed(1)} ms` : ''}`
+      );
+    } catch (e) {
+      setTestState('error');
+      setTestDetail(e instanceof Error ? e.message : 'Connection failed');
+    }
+  };
+
   return (
     <div className="space-y-4">
       <FormSection title="Prometheus Connection" icon={Activity} iconColor="text-purple-500" iconBg="bg-purple-50 dark:bg-purple-500/10">
@@ -78,9 +99,33 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
           label="Prometheus URL"
           tooltip="URL of your Prometheus instance accessible from the backend container. Example: http://prometheus:9090"
           value={draft.telemetry.prometheus_url}
-          onChange={(value) => update('prometheus_url', value)}
+          onChange={(value) => { update('prometheus_url', value); setTestState('idle'); }}
           placeholder="http://localhost:9090"
         />
+        {/* Test Connection button */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleTestConnection}
+            disabled={testState === 'testing'}
+            className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            {testState === 'testing'
+              ? <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+              : testState === 'ok'
+                ? <Wifi className="h-4 w-4 text-green-500" />
+                : testState === 'error'
+                  ? <WifiOff className="h-4 w-4 text-red-500" />
+                  : <Wifi className="h-4 w-4 text-gray-400" />
+            }
+            {testState === 'testing' ? 'Testing…' : 'Test Connection'}
+          </button>
+          {testDetail && (
+            <span className={`text-xs font-medium ${testState === 'ok' ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+              {testState === 'ok' ? '✓' : '✗'} {testDetail}
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <FormField
             label="Heartbeat Interval (seconds)"

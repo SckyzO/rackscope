@@ -1,8 +1,50 @@
-import { Globe, LayoutDashboard, MonitorPlay, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { Globe, LayoutDashboard, MonitorPlay, ArrowRight, RotateCcw, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ConfigDraft } from '../useSettingsConfig';
 import { SettingField, SettingTooltip } from '../../../cosmos/components/SettingTooltip';
 import { SectionCard } from '../../../cosmos/pages/templates/EmptyPage';
+import { FormSelect } from '../common/FormSelect';
+
+// Dashboard localStorage keys (mirrors CosmosDashboard constants)
+const DASH_KEY     = 'cosmos-dashboards';
+const DASH_VER_KEY = 'cosmos-dashboards-v';
+
+const DashboardResetCard = () => {
+  const [done, setDone] = useState(false);
+  const handleReset = () => {
+    localStorage.removeItem(DASH_KEY);
+    localStorage.removeItem(DASH_VER_KEY);
+    setDone(true);
+    setTimeout(() => setDone(false), 3000);
+  };
+  return (
+    <SectionCard
+      title="Dashboard Layout"
+      desc="Restore the default widget layout if something goes wrong"
+      icon={RotateCcw}
+      iconColor="text-orange-500"
+      iconBg="bg-orange-50 dark:bg-orange-500/10"
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Resets all dashboards to the factory default. Your widget data is not affected.
+        </p>
+        <button
+          onClick={handleReset}
+          className={`ml-4 flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+            done
+              ? 'bg-green-500 text-white'
+              : 'border border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100 dark:border-orange-700/40 dark:bg-orange-500/10 dark:text-orange-400'
+          }`}
+        >
+          {done ? <Check className="h-4 w-4" /> : <RotateCcw className="h-4 w-4" />}
+          {done ? 'Reset done — reload page' : 'Reset layout'}
+        </button>
+      </div>
+    </SectionCard>
+  );
+};
 
 interface Props {
   draft: ConfigDraft;
@@ -112,7 +154,25 @@ return (
             />
           </SettingField>
         </div>
-        <div className="mt-4 flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 dark:border-gray-800">
+        <div className="mt-4">
+          <FormSelect
+            label="Map style"
+            tooltip="Visual style of the world map. 'Minimal' adapts to dark/light mode. 'NOC' uses glowing teal outlines ideal for wallboards."
+            value={m.style ?? 'minimal'}
+            onChange={(v) => {
+              setMap('style', v);
+              // Also persist immediately to localStorage so CosmosWorldMapPage picks it up
+              // without waiting for backend save + reload
+              localStorage.setItem('rackscope.map.style', v);
+            }}
+            options={[
+              { value: 'minimal', label: 'Minimal — adaptive dark/light (default)' },
+              { value: 'noc',     label: 'NOC — glowing teal for wallboards' },
+              { value: 'flat',    label: 'Flat — solid fills, crisp borders' },
+            ]}
+          />
+        </div>
+        <div className="mt-3 flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Zoom controls
@@ -121,52 +181,54 @@ return (
           </div>
           <Toggle
             checked={m.zoom_controls ?? true}
-            onChange={(v) => setMap('zoom_controls', String(v))}
+            onChange={(v) => setMap('zoom_controls', v)}
           />
         </div>
       </SectionCard>
 
       {/* ── Pages ── */}
       <SectionCard title="Pages & Navigation" desc="Enable or disable sections of the application" icon={LayoutDashboard} iconColor="text-brand-500" iconBg="bg-brand-50 dark:bg-brand-500/10">
-        {(
-          [
-            {
-              key: 'worldmap' as const,
-              label: 'World Map',
-              tooltip: 'Show the World Map page and its sidebar link.',
-            },
-            {
-              key: 'aisle_dashboard' as const,
-              label: 'Cluster Dashboard',
-              tooltip: 'Show the small cluster / aisle dashboard page in navigation.',
-            },
-            {
-              key: 'notifications' as const,
-              label: 'Notifications',
-              tooltip: 'Show the Notifications page and the badge in the header.',
-            },
-            {
-              key: 'dev_tools' as const,
-              label: 'Dev Tools (UI Library)',
-              tooltip:
-                'Show developer pages: UI Library, Showcase, Tables. Disable in production.',
-            },
-          ] as { key: keyof ConfigDraft['features']; label: string; tooltip: string }[]
-        ).map(({ key, label, tooltip }) => (
-          <div
-            key={key}
-            className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 dark:border-gray-800"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
-              <SettingTooltip text={tooltip} />
+        <div className="space-y-2">
+          {(
+            [
+              {
+                key: 'worldmap' as const,
+                label: 'World Map',
+                tooltip: 'Show the World Map page and its sidebar link.',
+              },
+              {
+                key: 'aisle_dashboard' as const,
+                label: 'Cluster Dashboard',
+                tooltip: 'Show the small cluster / aisle dashboard page in navigation.',
+              },
+              {
+                key: 'notifications' as const,
+                label: 'Notifications',
+                tooltip: 'Show the Notifications page and the badge in the header.',
+              },
+              {
+                key: 'dev_tools' as const,
+                label: 'Dev Tools (UI Library)',
+                tooltip:
+                  'Show developer pages: UI Library, Showcase, Tables. Disable in production.',
+              },
+            ] as { key: keyof ConfigDraft['features']; label: string; tooltip: string }[]
+          ).map(({ key, label, tooltip }) => (
+            <div
+              key={key}
+              className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 dark:border-gray-800"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+                <SettingTooltip text={tooltip} />
+              </div>
+              <Toggle
+                checked={f[key] as boolean}
+                onChange={(v) => setFeature(key, v as ConfigDraft['features'][typeof key])}
+              />
             </div>
-            <Toggle
-              checked={f[key] as boolean}
-              onChange={(v) => setFeature(key, v as ConfigDraft['features'][typeof key])}
-            />
-          </div>
-        ))}
+          ))}
+        </div>
       </SectionCard>
 
       {/* ── Playlist ── */}
@@ -198,6 +260,9 @@ return (
           </Link>
         )}
       </SectionCard>
+
+      {/* ── Dashboard Reset ── */}
+      <DashboardResetCard />
     </div>
   );
 };

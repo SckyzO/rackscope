@@ -15,6 +15,7 @@ export type ConfigDraft = {
     zoom_controls: boolean;
     center_lat: string;
     center_lon: string;
+    style: string;
   };
   paths: {
     topology: string;
@@ -56,6 +57,8 @@ export type ConfigDraft = {
     notifications: boolean;
     notifications_max_visible: string;
     toast_duration_seconds: string;
+    toast_position: string;
+    toast_stack_threshold: string;
     worldmap: boolean;
     aisle_dashboard: boolean;
     dev_tools: boolean;
@@ -139,6 +142,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     zoom_controls: config.map?.zoom_controls ?? true,
     center_lat: String(config.map?.center?.lat ?? 20),
     center_lon: String(config.map?.center?.lon ?? 0),
+    style: localStorage.getItem('rackscope.map.style') || config.map?.style || 'minimal',
   },
   paths: {
     topology: config.paths?.topology || '',
@@ -180,6 +184,8 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     notifications: config.features?.notifications ?? true,
     notifications_max_visible: String(config.features?.notifications_max_visible ?? 10),
     toast_duration_seconds: String(config.features?.toast_duration_seconds ?? 15),
+    toast_position: config.features?.toast_position || 'bottom-right',
+    toast_stack_threshold: String(config.features?.toast_stack_threshold ?? 5),
     worldmap: config.features?.worldmap ?? true,
     aisle_dashboard: config.features?.aisle_dashboard ?? true,
     dev_tools: config.features?.dev_tools ?? false,
@@ -290,6 +296,7 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
     min_zoom: parseInt(draft.map.min_zoom, 10) || 2,
     max_zoom: parseInt(draft.map.max_zoom, 10) || 7,
     zoom_controls: draft.map.zoom_controls,
+    style: draft.map.style,
     center: {
       lat: parseFloat(draft.map.center_lat) || 20,
       lon: parseFloat(draft.map.center_lon) || 0,
@@ -335,6 +342,8 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
     notifications: draft.features.notifications,
     notifications_max_visible: parseInt(draft.features.notifications_max_visible, 10) || 10,
     toast_duration_seconds: parseInt(draft.features.toast_duration_seconds, 10) || 15,
+    toast_position: draft.features.toast_position,
+    toast_stack_threshold: parseInt(draft.features.toast_stack_threshold, 10) || 5,
     worldmap: draft.features.worldmap,
     aisle_dashboard: draft.features.aisle_dashboard,
     dev_tools: draft.features.dev_tools,
@@ -410,12 +419,18 @@ export const useSettingsConfig = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Digest of the last saved/loaded config — used to detect unsaved changes
+  const [savedDigest, setSavedDigest] = useState<string>('');
+
+  const isDirty = draft !== null && savedDigest !== '' && JSON.stringify(draft) !== savedDigest;
 
   useEffect(() => {
     const loadConfig = async () => {
       try {
         const config = await api.getConfig();
-        setDraft(buildDraftFromConfig(config));
+        const built = buildDraftFromConfig(config);
+        setDraft(built);
+        setSavedDigest(JSON.stringify(built));
       } catch (err) {
         console.error('Failed to load config:', err);
       } finally {
@@ -435,6 +450,7 @@ export const useSettingsConfig = () => {
       const config = buildConfigFromDraft(draft);
       await api.updateConfig(config as AppConfig);
       setSaved(true);
+      setSavedDigest(JSON.stringify(draft));
 
       // Trigger backend restart to reload plugin configuration
       try {
@@ -460,6 +476,7 @@ export const useSettingsConfig = () => {
     loading,
     saving,
     saved,
+    isDirty,
     saveConfig,
   };
 };
