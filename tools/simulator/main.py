@@ -707,6 +707,23 @@ def simulate():
     tick = 0
 
     while True:
+        # Reload simulator config every tick — picks up scenario changes without container restart
+        _new_cfg = apply_scenario(load_simulator_config())
+        rates = _new_cfg.get("incident_rates", {})
+        durations = _new_cfg.get("incident_durations", {"rack": 3, "aisle": 5})
+        profiles = _new_cfg.get("profiles", {})
+        seed = _new_cfg.get("seed")
+        scale_factor = _new_cfg.get("scale_factor", 1.0)
+        slurm_random_statuses = (
+            _new_cfg.get("slurm_random_statuses", {}) if isinstance(_new_cfg, dict) else {}
+        )
+        slurm_random_match = (
+            _new_cfg.get("slurm_random_match", []) if isinstance(_new_cfg, dict) else []
+        )
+        update_interval = _new_cfg.get(
+            "update_interval_seconds", _new_cfg.get("update_interval", update_interval)
+        )
+
         # Reload topology every tick to support dynamic changes
         topo_data = load_topology_data(TOPOLOGY_PATH)
         targets = load_topology_nodes(topo_data, device_templates)
@@ -797,16 +814,15 @@ def simulate():
                     controller_status = (
                         0 if random.random() > 0.02 else (1 if random.random() > 0.5 else 2)
                     )
-                    set_metric_value(
-                        "eseries_storage_system_status",
-                        base_labels,
-                        controller_status,
-                        {
-                            "status": "optimal"
-                            if controller_status == 0
-                            else ("degraded" if controller_status == 1 else "failed")
-                        },
-                    )
+                    # Always emit ALL status labels (1 = current, 0 = not current)
+                    # This prevents stale Prometheus series from causing false-positive CRIT alerts
+                    for _ctl_label, _ctl_code in [("optimal", 0), ("degraded", 1), ("failed", 2)]:
+                        set_metric_value(
+                            "eseries_storage_system_status",
+                            base_labels,
+                            1 if controller_status == _ctl_code else 0,
+                            {"status": _ctl_label},
+                        )
 
                 if metric_enabled("eseries_drive_status", "node", node_id=target["node_id"]):
                     # Determine tray number from instance name (E-Series architecture)
@@ -833,22 +849,22 @@ def simulate():
                     for drive_slot in range(1, slot_count + 1):
                         # Random drive failures (1% chance)
                         drive_status_label = "optimal"
-                        drive_crit_value = 0
                         if random.random() < 0.01:
                             drive_status_label = "failed"
-                            drive_crit_value = 1
 
-                        set_metric_value(
-                            "eseries_drive_status",
-                            base_labels,
-                            drive_crit_value,
-                            {
-                                "status": drive_status_label,
-                                "drive_id": str(drive_slot),
-                                "slot": str(drive_slot),
-                                "tray": tray_num,
-                            },
-                        )
+                        # Always emit both statuses (1=current, 0=other) to prevent stale CRIT series
+                        for _drv_label in ["optimal", "failed"]:
+                            set_metric_value(
+                                "eseries_drive_status",
+                                base_labels,
+                                1 if _drv_label == drive_status_label else 0,
+                                {
+                                    "status": _drv_label,
+                                    "drive_id": str(drive_slot),
+                                    "slot": str(drive_slot),
+                                    "tray": tray_num,
+                                },
+                            )
 
                 # Skip the rest of compute-specific logic
                 continue
@@ -1210,12 +1226,14 @@ def simulate():
                     "eseries_exporter_collect_error", base_labels, warn_value, {"collector": "all"}
                 )
             if metric_enabled("eseries_storage_system_status", "node", node_id=target["node_id"]):
-                set_metric_value(
-                    "eseries_storage_system_status",
-                    base_labels,
-                    crit_value,
-                    {"status": status_label},
-                )
+                # Always emit both labels to prevent stale CRIT series in Prometheus
+                for _es_label in ["optimal", "failed"]:
+                    set_metric_value(
+                        "eseries_storage_system_status",
+                        base_labels,
+                        crit_value if _es_label == "failed" else 0,
+                        {"status": _es_label},
+                    )
 
         for rack_id, info in rack_info.items():
             if (
