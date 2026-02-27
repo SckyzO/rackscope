@@ -1,5 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import ReactGridLayout, { type Layout } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+import { OfflineWorldMap } from '../components/OfflineWorldMap';
+import type { SiteMarker, MapStyle } from '../components/OfflineWorldMap';
+import { useAppConfigSafe } from '../contexts/AppConfigContext';
 import { useNavigate } from 'react-router-dom';
 import {
   Server,
@@ -99,9 +104,14 @@ type WidgetType =
 type WidgetConfig = {
   id: string;
   type: WidgetType;
-  colSpan: 2 | 3 | 4 | 6 | 8 | 12;
-  rowSpan?: 1 | 2 | 3 | 4; // vertical height in grid rows (default 1)
-  statKey?: StatKey; // for stat-card widget
+  // 2D grid position — react-grid-layout coordinates
+  x: number;
+  y: number;
+  w: number;  // column span (1-12)
+  h: number;  // row span
+  minW?: number;
+  minH?: number;
+  statKey?: StatKey;
 };
 
 type Dashboard = {
@@ -113,13 +123,15 @@ type Dashboard = {
 const DASHBOARDS_STORAGE_KEY = 'cosmos-dashboards';
 const ACTIVE_DASHBOARD_STORAGE_KEY = 'cosmos-active-dashboard';
 const DASHBOARDS_STORAGE_VERSION_KEY = 'cosmos-dashboards-v';
-const DASHBOARDS_STORAGE_VERSION = '1';
+// Bumped to '2' — migrated from colSpan/rowSpan to x/y/w/h (react-grid-layout)
+const DASHBOARDS_STORAGE_VERSION = '2';
 
 type WidgetDefinition = {
   type: WidgetType;
   title: string;
   description: string;
-  defaultColSpan: 2 | 3 | 4 | 6 | 8 | 12;
+  defaultW: number;
+  defaultH: number;
   icon: React.ElementType;
   requiresSlurm?: boolean;
 };
@@ -188,80 +200,85 @@ const STATUS_COLOR: Record<string, string> = {
   unknown: '#6b7280',
 };
 
-const SPAN_CLASS: Record<number, string> = {
-  2: 'col-span-2',
-  3: 'col-span-3',
-  4: 'col-span-4',
-  6: 'col-span-6',
-  8: 'col-span-8',
-  12: 'col-span-12',
-};
-
-const ROW_SPAN_CLASS: Record<number, string> = {
-  1: 'row-span-1',
-  2: 'row-span-2',
-  3: 'row-span-3',
-  4: 'row-span-4',
-};
-
-// Minimum row height in pixels (grid-auto-rows: minmax(ROW_PX, auto))
+// Row height in pixels for react-grid-layout
 const ROW_PX = 140;
-// Increment whenever DEFAULT_WIDGETS structure changes to invalidate stale localStorage saves
+
+// 2D grid layout — x/y/w/h (12-column grid, rowHeight=ROW_PX)
 const DEFAULT_WIDGETS: WidgetConfig[] = [
-  // ── Row 1 — KPI strip ───────────────────────────────────────────────────────
-  { id: 'stat-sites', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'sites' },
-  { id: 'stat-rooms', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'rooms' },
-  { id: 'stat-racks', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'racks' },
-  { id: 'stat-devices', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'devices' },
-  { id: 'stat-crit', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'crit' },
-  { id: 'stat-warn', type: 'stat-card', colSpan: 2, rowSpan: 1, statKey: 'warn' },
-  // ── Rows 2-4 — Primary monitoring (alerts left, map right) ──────────────────
-  { id: 'alerts', type: 'active-alerts', colSpan: 6, rowSpan: 3 },
-  { id: 'worldmap', type: 'world-map', colSpan: 6, rowSpan: 3 },
-  // ── Rows 5-6 — Gauges (3 × 4-col) ──────────────────────────────────────────
-  { id: 'gauge', type: 'health-gauge', colSpan: 4, rowSpan: 2 },
-  { id: 'donut', type: 'severity-donut', colSpan: 4, rowSpan: 2 },
-  { id: 'prometheus', type: 'prometheus', colSpan: 4, rowSpan: 2 },
-  // ── Rows 7-8 — Operational details (3 × 4-col) ─────────────────────────────
-  { id: 'infra', type: 'infrastructure', colSpan: 4, rowSpan: 2 },
-  { id: 'heatmap', type: 'node-heatmap', colSpan: 4, rowSpan: 2 },
-  { id: 'catalog', type: 'catalog-checks', colSpan: 4, rowSpan: 2 },
+  // ── y=0, h=1 — KPI strip ─────────────────────────────────────────────────
+  { id: 'stat-sites',   type: 'stat-card', x: 0,  y: 0, w: 2, h: 1, minH: 1, statKey: 'sites' },
+  { id: 'stat-rooms',   type: 'stat-card', x: 2,  y: 0, w: 2, h: 1, minH: 1, statKey: 'rooms' },
+  { id: 'stat-racks',   type: 'stat-card', x: 4,  y: 0, w: 2, h: 1, minH: 1, statKey: 'racks' },
+  { id: 'stat-devices', type: 'stat-card', x: 6,  y: 0, w: 2, h: 1, minH: 1, statKey: 'devices' },
+  { id: 'stat-crit',    type: 'stat-card', x: 8,  y: 0, w: 2, h: 1, minH: 1, statKey: 'crit' },
+  { id: 'stat-warn',    type: 'stat-card', x: 10, y: 0, w: 2, h: 1, minH: 1, statKey: 'warn' },
+  // ── y=1, h=3 — Primary monitoring ────────────────────────────────────────
+  { id: 'alerts',       type: 'active-alerts', x: 0, y: 1, w: 6, h: 3, minW: 3, minH: 2 },
+  { id: 'worldmap',     type: 'world-map',      x: 6, y: 1, w: 6, h: 3, minW: 3, minH: 2 },
+  // ── y=4, h=2 — Gauges ────────────────────────────────────────────────────
+  { id: 'gauge',        type: 'health-gauge',   x: 0, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'donut',        type: 'severity-donut', x: 4, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'prometheus',   type: 'prometheus',     x: 8, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
+  // ── y=6, h=2 — Operational ───────────────────────────────────────────────
+  { id: 'infra',        type: 'infrastructure', x: 0, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'heatmap',      type: 'node-heatmap',   x: 4, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'catalog',      type: 'catalog-checks', x: 8, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
 ];
+
+// ── react-grid-layout helpers ─────────────────────────────────────────────────
+
+/** Convert WidgetConfig[] → Layout[] for react-grid-layout */
+const toRglLayout = (widgets: WidgetConfig[]): Layout[] =>
+  widgets.map(({ id, x, y, w, h, minW, minH }) => ({
+    i: id, x, y, w, h,
+    ...(minW !== undefined && { minW }),
+    ...(minH !== undefined && { minH }),
+  }));
+
+/** Merge new Layout[] positions back into WidgetConfig[] */
+const applyRglLayout = (widgets: WidgetConfig[], newLayout: Layout[]): WidgetConfig[] => {
+  const pos = Object.fromEntries(newLayout.map((l) => [l.i, l]));
+  return widgets.map((w) => {
+    const l = pos[w.id];
+    if (!l) return w;
+    return { ...w, x: l.x, y: l.y, w: l.w, h: l.h };
+  });
+};
 
 const WIDGET_CATALOG: WidgetDefinition[] = [
   {
     type: 'stats-row',
     title: 'Stats Overview',
     description: 'Sites, rooms, racks, devices, CRIT, WARN counts',
-    defaultColSpan: 12,
+    defaultW: 12, defaultH: 1,
     icon: BarChart2,
   },
   {
     type: 'health-gauge',
     title: 'Health Score',
     description: 'Overall infrastructure health as a gauge',
-    defaultColSpan: 4,
+    defaultW: 4, defaultH: 2,
     icon: Activity,
   },
   {
     type: 'severity-donut',
     title: 'Severity Distribution',
     description: 'CRIT / WARN / OK node distribution',
-    defaultColSpan: 4,
+    defaultW: 4, defaultH: 2,
     icon: Globe,
   },
   {
     type: 'active-alerts',
     title: 'Active Alerts',
     description: 'Live CRIT/WARN alerts with filters',
-    defaultColSpan: 8,
+    defaultW: 8, defaultH: 2,
     icon: XCircle,
   },
   {
     type: 'slurm-cluster',
     title: 'Slurm Cluster',
     description: 'HPC cluster status and node breakdown',
-    defaultColSpan: 8,
+    defaultW: 8, defaultH: 2,
     icon: Cpu,
     requiresSlurm: true,
   },
@@ -269,91 +286,91 @@ const WIDGET_CATALOG: WidgetDefinition[] = [
     type: 'infrastructure',
     title: 'Infrastructure',
     description: 'Rooms health overview',
-    defaultColSpan: 4,
+    defaultW: 4, defaultH: 2,
     icon: Server,
   },
   {
     type: 'prometheus',
     title: 'Prometheus',
     description: 'Monitoring connectivity and latency',
-    defaultColSpan: 4,
+    defaultW: 4, defaultH: 2,
     icon: Zap,
   },
   {
     type: 'catalog-checks',
     title: 'Catalog & Checks',
     description: 'Templates and checks library stats',
-    defaultColSpan: 4,
+    defaultW: 4, defaultH: 2,
     icon: ShieldCheck,
   },
   {
     type: 'stat-card',
     title: 'Stat Card',
     description: 'Single metric (sites, rooms, racks...)',
-    defaultColSpan: 2,
+    defaultW: 2, defaultH: 1,
     icon: BarChart2,
   },
   {
     type: 'alert-count',
     title: 'Alert Count',
     description: 'CRIT + WARN count prominent display',
-    defaultColSpan: 3,
+    defaultW: 3, defaultH: 2,
     icon: XCircle,
   },
   {
     type: 'rack-utilization',
     title: 'Rack Utilization',
     description: 'Fill % per room as bar chart',
-    defaultColSpan: 6,
+    defaultW: 6, defaultH: 3,
     icon: Server,
   },
   {
     type: 'node-heatmap',
     title: 'Node Health',
     description: 'Alert nodes grouped by room with CRIT/WARN/OK summary',
-    defaultColSpan: 6,
+    defaultW: 6, defaultH: 3,
     icon: Cpu,
   },
   {
     type: 'uptime',
     title: 'Scrape Latency',
     description: 'Last Prometheus scrape latency',
-    defaultColSpan: 3,
+    defaultW: 3, defaultH: 2,
     icon: Zap,
   },
   {
     type: 'recent-alerts',
     title: 'Recent CRIT',
     description: 'Last 3 critical alerts',
-    defaultColSpan: 4,
+    defaultW: 4, defaultH: 2,
     icon: AlertTriangle,
   },
   {
     type: 'site-map',
     title: 'Site Map',
     description: 'Sites with room counts',
-    defaultColSpan: 4,
+    defaultW: 4, defaultH: 2,
     icon: Globe,
   },
   {
     type: 'check-summary',
     title: 'Check Summary',
     description: 'Checks library stats',
-    defaultColSpan: 3,
+    defaultW: 3, defaultH: 2,
     icon: ShieldCheck,
   },
   {
     type: 'device-types',
     title: 'Device Types',
     description: 'Template types breakdown',
-    defaultColSpan: 4,
+    defaultW: 4, defaultH: 2,
     icon: Layers,
   },
   {
     type: 'slurm-nodes',
     title: 'Slurm Nodes',
     description: 'Total Slurm nodes count',
-    defaultColSpan: 3,
+    defaultW: 3, defaultH: 2,
     icon: Activity,
     requiresSlurm: true,
   },
@@ -361,7 +378,7 @@ const WIDGET_CATALOG: WidgetDefinition[] = [
     type: 'slurm-utilization',
     title: 'Slurm Utilization',
     description: 'Allocated % gauge',
-    defaultColSpan: 6,
+    defaultW: 6, defaultH: 3,
     icon: Activity,
     requiresSlurm: true,
   },
@@ -369,7 +386,7 @@ const WIDGET_CATALOG: WidgetDefinition[] = [
     type: 'world-map',
     title: 'World Map',
     description: 'Mini map with site markers and health states',
-    defaultColSpan: 6,
+    defaultW: 6, defaultH: 3,
     icon: Globe,
   },
 ];
@@ -1490,29 +1507,6 @@ const SlurmUtilizationWidget = ({ data }: { data: DashboardData }) => {
 
 // ── Widget: WorldMap ──────────────────────────────────────────────────────────
 
-// Must be rendered inside MapContainer (uses useMap hook)
-const MapZoomControls = () => {
-  const map = useMap();
-  return (
-    <div className="absolute right-3 bottom-3 z-[1000] flex flex-col gap-1">
-      <button
-        onClick={() => map.zoomIn()}
-        className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-lg font-bold text-gray-700 shadow-md transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-        title="Zoom in"
-      >
-        +
-      </button>
-      <button
-        onClick={() => map.zoomOut()}
-        className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-lg font-bold text-gray-700 shadow-md transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-        title="Zoom out"
-      >
-        −
-      </button>
-    </div>
-  );
-};
-
 const WorldMapWidget = ({
   data,
   navigate,
@@ -1521,6 +1515,7 @@ const WorldMapWidget = ({
   navigate: (path: string) => void;
 }) => {
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const { config } = useAppConfigSafe();
 
   useEffect(() => {
     const obs = new MutationObserver(() =>
@@ -1530,10 +1525,21 @@ const WorldMapWidget = ({
     return () => obs.disconnect();
   }, []);
 
+  // localStorage is the immediate source of truth (same as CosmosWorldMapPage)
+  const mapStyle = (
+    localStorage.getItem('rackscope.map.style') ||
+    config?.map?.style ||
+    'minimal'
+  ) as MapStyle;
   const geoSites = data.sites.filter((s) => s.location?.lat != null && s.location?.lon != null);
-  const tileUrl = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+  const markers: SiteMarker[] = geoSites.map((s) => ({
+    id: s.id,
+    name: s.name,
+    lat: (s.location as NonNullable<typeof s.location>).lat,
+    lon: (s.location as NonNullable<typeof s.location>).lon,
+    roomCount: s.rooms?.length ?? 0,
+  }));
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
@@ -1556,7 +1562,7 @@ const WorldMapWidget = ({
         </button>
       </div>
 
-      {/* Map */}
+      {/* Map — offline SVG, no external tiles */}
       <div className="min-h-0 flex-1">
         {geoSites.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-xs text-gray-400">
@@ -1564,41 +1570,15 @@ const WorldMapWidget = ({
             No sites with coordinates
           </div>
         ) : (
-          <MapContainer
-            key={String(isDark)}
-            center={[20, 10]}
-            zoom={2}
-            minZoom={1}
-            maxZoom={12}
-            scrollWheelZoom={false}
-            zoomControl={false}
-            attributionControl={false}
-            style={{ height: '100%', width: '100%' }}
-          >
-            <TileLayer url={tileUrl} />
-            <MapZoomControls />
-            {geoSites.map((site) => (
-              <CircleMarker
-                key={site.id}
-                center={[(site.location as NonNullable<typeof site.location>).lat, (site.location as NonNullable<typeof site.location>).lon]}
-                radius={9}
-                fillColor="#465fff"
-                color="#3641f5"
-                weight={2}
-                opacity={1}
-                fillOpacity={0.85}
-                eventHandlers={{ click: () => navigate('/cosmos/views/worldmap') }}
-              >
-                <Popup>
-                  <span className="font-semibold">{site.name}</span>
-                  <br />
-                  <span className="text-gray-500">
-                    {site.rooms?.length ?? 0} room{(site.rooms?.length ?? 0) !== 1 ? 's' : ''}
-                  </span>
-                </Popup>
-              </CircleMarker>
-            ))}
-          </MapContainer>
+          <OfflineWorldMap
+            sites={markers}
+            isDark={isDark}
+            mapStyle={mapStyle}
+            initialCenter={[10, 20]}
+            initialZoom={1}
+            zoomControl
+            onSiteClick={() => navigate('/cosmos/views/worldmap')}
+          />
         )}
       </div>
     </div>
@@ -1883,26 +1863,26 @@ export const CosmosDashboard = () => {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
-  // ── Drag & drop state ─────────────────────────────────────────────────────
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [dropBeforeId, setDropBeforeId] = useState<string | null>(null);
-  const [dropSide, setDropSide] = useState<'before' | 'after'>('before');
-  const dragIdRef = useRef<string | null>(null);
+  // ── Grid container width (for react-grid-layout) ─────────────────────────
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const [gridWidth, setGridWidth] = useState(1200);
 
-  // ── Resize state ──────────────────────────────────────────────────────────
-  type ResizeState = {
-    id: string;
-    startX: number;
-    startY: number;
-    startWidth: number;
-    startHeight: number;
-    colSpan: number;
-    rowSpan: number;
-    direction: 'h' | 'v' | 'both'; // horizontal, vertical, or corner
-  };
-  const [resizing, setResizing] = useState<ResizeState | null>(null);
-  const resizingRef = useRef<ResizeState | null>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = gridContainerRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(([entry]) => {
+      setGridWidth(entry.contentRect.width);
+    });
+    obs.observe(el);
+    setGridWidth(el.getBoundingClientRect().width);
+    return () => obs.disconnect();
+  }, []);
+
+  // ── Layout change handler (called by react-grid-layout) ───────────────────
+  const handleLayoutChange = useCallback((newLayout: Layout[]) => {
+    const updated = applyRglLayout(widgets, newLayout);
+    saveWidgets(updated);
+  }, [widgets]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Widget + dashboard operations ─────────────────────────────────────────
   const persistDashboards = (next: Dashboard[]) => {
@@ -1923,7 +1903,14 @@ export const CosmosDashboard = () => {
   const addWidget = (type: WidgetType) => {
     const def = WIDGET_CATALOG.find((d) => d.type === type);
     if (!def) return;
-    saveWidgets([...widgets, { id: `${type}-${Date.now()}`, type, colSpan: def.defaultColSpan }]);
+    const maxY = widgets.reduce((m, w) => Math.max(m, w.y + w.h), 0);
+    saveWidgets([...widgets, {
+      id: `${type}-${Date.now()}`,
+      type,
+      x: 0, y: maxY,
+      w: def.defaultW, h: def.defaultH,
+      minH: def.defaultH > 1 ? 2 : 1,
+    }]);
   };
 
   const resetLayout = () => saveWidgets(DEFAULT_WIDGETS);
@@ -1986,141 +1973,7 @@ export const CosmosDashboard = () => {
     setRenamingId(null);
   };
 
-  // ── Drag-and-drop handlers ────────────────────────────────────────────────
-  const handleDragStart = (e: React.DragEvent, id: string) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', id);
-    dragIdRef.current = id;
-    setDragId(id);
-  };
-
-  const handleDragOver = (e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    if (!dragIdRef.current || dragIdRef.current === targetId) return;
-    e.dataTransfer.dropEffect = 'move';
-    const rect = e.currentTarget.getBoundingClientRect();
-    setDropBeforeId(targetId);
-    setDropSide(e.clientX < rect.left + rect.width / 2 ? 'before' : 'after');
-  };
-
-  const handleDrop = (e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    const srcId = dragIdRef.current;
-    if (!srcId || srcId === targetId) {
-      handleDragEnd();
-      return;
-    }
-    const next = [...widgets];
-    const srcIdx = next.findIndex((w) => w.id === srcId);
-    const tgtIdx = next.findIndex((w) => w.id === targetId);
-    const [removed] = next.splice(srcIdx, 1);
-    const insertAt = dropSide === 'before' ? tgtIdx : tgtIdx + 1;
-    const adjustedInsert = insertAt > srcIdx ? insertAt - 1 : insertAt;
-    next.splice(adjustedInsert, 0, removed);
-    saveWidgets(next);
-    handleDragEnd();
-  };
-
-  const handleDragEnd = () => {
-    dragIdRef.current = null;
-    setDragId(null);
-    setDropBeforeId(null);
-  };
-
-  // ── Resize handlers ───────────────────────────────────────────────────────
-  const startResize = (
-    e: React.MouseEvent,
-    widget: WidgetConfig,
-    el: HTMLElement,
-    dir: 'h' | 'v' | 'both'
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = el.getBoundingClientRect();
-    const state: ResizeState = {
-      id: widget.id,
-      startX: e.clientX,
-      startY: e.clientY,
-      startWidth: rect.width,
-      startHeight: rect.height,
-      colSpan: widget.colSpan,
-      rowSpan: widget.rowSpan ?? 1,
-      direction: dir,
-    };
-    resizingRef.current = state;
-    setResizing(state);
-  };
-
-  useEffect(() => {
-    const validColSpans = [2, 3, 4, 6, 8, 12] as const;
-    const validRowSpans = [1, 2, 3, 4] as const;
-    const onMove = (e: MouseEvent) => {
-      const r = resizingRef.current;
-      if (!r || !gridRef.current) return;
-      const GAP = 20;
-      const gridWidth = gridRef.current.getBoundingClientRect().width;
-      const colPx = (gridWidth - GAP * 11) / 12;
-      const updated: Partial<ResizeState> = {};
-
-      if (r.direction === 'h' || r.direction === 'both') {
-        const delta = e.clientX - r.startX;
-        const raw = Math.round((r.startWidth + delta) / colPx);
-        const snapped = validColSpans.reduce((a, b) =>
-          Math.abs(b - raw) < Math.abs(a - raw) ? b : a
-        ) as WidgetConfig['colSpan'];
-        if (snapped !== r.colSpan) updated.colSpan = snapped;
-      }
-
-      if (r.direction === 'v' || r.direction === 'both') {
-        const deltaY = e.clientY - r.startY;
-        const raw = Math.round((r.startHeight + deltaY) / (ROW_PX + GAP));
-        const snapped = validRowSpans.reduce((a, b) =>
-          Math.abs(b - raw) < Math.abs(a - raw) ? b : a
-        ) as NonNullable<WidgetConfig['rowSpan']>;
-        if (snapped !== r.rowSpan) updated.rowSpan = snapped;
-      }
-
-      if (Object.keys(updated).length > 0) {
-        const next = { ...r, ...updated };
-        resizingRef.current = next;
-        setResizing(next);
-        setDashboards((prev) =>
-          prev.map((d) =>
-            d.id === activeDashboardIdRef.current
-              ? {
-                  ...d,
-                  widgets: d.widgets.map((w) =>
-                    w.id === r.id
-                      ? {
-                          ...w,
-                          ...(updated.colSpan !== undefined ? { colSpan: updated.colSpan } : {}),
-                          ...(updated.rowSpan !== undefined ? { rowSpan: updated.rowSpan } : {}),
-                        }
-                      : w
-                  ),
-                }
-              : d
-          )
-        );
-      }
-    };
-    const onUp = () => {
-      if (!resizingRef.current) return;
-      setDashboards((prev) => {
-        localStorage.setItem(DASHBOARDS_STORAGE_KEY, JSON.stringify(prev));
-        localStorage.setItem(DASHBOARDS_STORAGE_VERSION_KEY, DASHBOARDS_STORAGE_VERSION);
-        return prev;
-      });
-      resizingRef.current = null;
-      setResizing(null);
-    };
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-    return () => {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    };
-  }, []);
+  // drag/resize is now handled entirely by react-grid-layout — no custom handlers needed
 
   // ── Data loading ──────────────────────────────────────────────────────────
   const loadAll = async (quiet = false) => {
@@ -2450,181 +2303,64 @@ export const CosmosDashboard = () => {
         </div>
       </div>
 
-      {/* Loading skeleton */}
-      {loading ? (
-        <div
-          className="grid grid-cols-12 gap-5"
-          style={{ gridAutoRows: `minmax(${ROW_PX}px, auto)` }}
-        >
-          {[12, 4, 4, 4, 8, 4].map((span, i) => (
-            <div
-              key={i}
-              className={`${SPAN_CLASS[span] ?? 'col-span-4'} h-32 animate-pulse rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-800`}
-            />
-          ))}
-        </div>
-      ) : (
-        <div
-          ref={gridRef}
-          style={{ gridAutoRows: `minmax(${ROW_PX}px, auto)` }}
-          className={`relative grid grid-cols-12 gap-5 ${editMode && pickerOpen ? 'pr-[420px]' : ''}`}
-        >
-          {/* Column guide overlay — shown while resizing */}
-          {resizing && (
-            <div className="pointer-events-none absolute inset-0 z-50 grid grid-cols-12 gap-5">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="border-brand-500/20 bg-brand-500/5 h-full rounded border" />
-              ))}
-            </div>
-          )}
-          {widgets.map((widget) => {
-            const isDragging = dragId === widget.id;
-            const isDropTarget = dropBeforeId === widget.id;
-            const isResizing = resizing?.id === widget.id;
-
-            return (
+      {/* ── Grid — powered by react-grid-layout ─────────────────────────────── */}
+      <div ref={gridContainerRef} className={editMode && pickerOpen ? 'pr-[420px]' : ''}>
+        {loading ? (
+          /* Loading skeleton */
+          <div className="grid grid-cols-12 gap-5" style={{ gridAutoRows: `${ROW_PX}px` }}>
+            {[12, 4, 4, 4, 8, 4].map((_, i) => (
+              <div key={i} className="col-span-4 h-32 animate-pulse rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-800" />
+            ))}
+          </div>
+        ) : (
+          <ReactGridLayout
+            layout={toRglLayout(widgets)}
+            onLayoutChange={handleLayoutChange}
+            width={gridWidth}
+            cols={12}
+            rowHeight={ROW_PX}
+            margin={[20, 20]}
+            containerPadding={[0, 0]}
+            isDraggable={editMode}
+            isResizable={editMode}
+            draggableHandle=".rgl-drag-handle"
+            resizeHandles={['se', 's', 'e']}
+            useCSSTransforms
+          >
+            {widgets.map((widget) => (
               <div
                 key={widget.id}
-                onDragOver={editMode ? (e) => handleDragOver(e, widget.id) : undefined}
-                onDrop={editMode ? (e) => handleDrop(e, widget.id) : undefined}
-                className={[
-                  SPAN_CLASS[widget.colSpan] ?? 'col-span-4',
-                  ROW_SPAN_CLASS[widget.rowSpan ?? 1] ?? 'row-span-1',
-                  'group relative transition-opacity',
-                  editMode
-                    ? 'ring-brand-500/20 rounded-2xl ring-1 ring-offset-1 ring-offset-transparent'
-                    : '',
-                  isDragging ? 'cursor-grabbing opacity-40' : '',
-                  isDropTarget && dropSide === 'before'
-                    ? 'border-brand-500 border-l-4'
-                    : isDropTarget && dropSide === 'after'
-                      ? 'border-brand-500 border-r-4'
-                      : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
+                className={`group relative ${editMode ? 'ring-brand-500/20 rounded-2xl ring-1 ring-offset-1 ring-offset-transparent' : ''}`}
               >
-                {/* Edit mode overlay: grip + remove */}
+                {/* Edit mode top bar (drag handle + remove) */}
                 {editMode && (
-                  <>
-                    {/* Drag grip bar — draggable element */}
-                    <div
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, widget.id)}
-                      onDragEnd={handleDragEnd}
-                      className="bg-brand-500/15 border-brand-500/20 absolute inset-x-0 top-0 z-20 flex h-7 cursor-grab items-center justify-between rounded-t-2xl border-b px-3 active:cursor-grabbing"
-                    >
-                      <GripVertical className="text-brand-500 h-4 w-4" />
-                      <div className="flex items-center gap-1">
-                        {/* Size preset buttons */}
-                        <div className="mr-1 flex items-center gap-0.5">
-                          {([2, 3, 4, 6, 8, 12] as const).map((s) => (
-                            <button
-                              key={s}
-                              onClick={() =>
-                                saveWidgets(
-                                  widgets.map((w) =>
-                                    w.id === widget.id ? { ...w, colSpan: s } : w
-                                  )
-                                )
-                              }
-                              className={`rounded px-1.5 py-0.5 font-mono text-[9px] font-bold transition-colors ${
-                                widget.colSpan === s
-                                  ? 'bg-brand-500 text-white'
-                                  : 'text-brand-400/60 hover:bg-brand-500/20 hover:text-brand-400'
-                              }`}
-                            >
-                              {s}
-                            </button>
-                          ))}
-                        </div>
-                        <span className="bg-brand-500/20 text-brand-500 rounded px-1.5 py-0.5 font-mono text-[10px]">
-                          {widget.colSpan}/12
-                        </span>
-                        <button
-                          onClick={() => removeWidget(widget.id)}
-                          className="flex h-5 w-5 items-center justify-center rounded border border-red-300 bg-white text-[11px] text-red-500 hover:bg-red-50 dark:border-red-800 dark:bg-gray-900"
-                          title="Remove widget"
-                        >
-                          ×
-                        </button>
-                      </div>
+                  <div className="rgl-drag-handle bg-brand-500/15 border-brand-500/20 absolute inset-x-0 top-0 z-20 flex h-7 cursor-grab items-center justify-between rounded-t-2xl border-b px-3 active:cursor-grabbing">
+                    <GripVertical className="text-brand-500 h-4 w-4" />
+                    <div className="flex items-center gap-1">
+                      <span className="bg-brand-500/20 text-brand-500 rounded px-1.5 py-0.5 font-mono text-[10px]">
+                        {widget.w}/{widget.h}
+                      </span>
+                      <button
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => { e.stopPropagation(); removeWidget(widget.id); }}
+                        className="flex h-5 w-5 items-center justify-center rounded border border-red-300 bg-white text-[11px] text-red-500 hover:bg-red-50 dark:border-red-800 dark:bg-gray-900"
+                        title="Remove widget"
+                      >
+                        ×
+                      </button>
                     </div>
-
-                    {/* Bottom resize handle — vertical height */}
-                    <div
-                      className="bg-brand-500/30 hover:bg-brand-500/60 absolute bottom-0 left-1/2 z-20 h-2 w-16 -translate-x-1/2 cursor-s-resize rounded-full"
-                      title="Drag to resize height"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const el = e.currentTarget.parentElement as HTMLElement | null;
-                        if (el) startResize(e, widget, el, 'v');
-                      }}
-                    />
-
-                    {/* Bottom-right corner handle — resize both */}
-                    <div
-                      className="bg-brand-500/30 hover:bg-brand-500/60 absolute right-0 bottom-0 z-20 flex h-6 w-6 cursor-se-resize items-center justify-center rounded-tl-lg rounded-br-2xl"
-                      title="Drag to resize width + height"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const el = e.currentTarget.parentElement as HTMLElement | null;
-                        if (el) startResize(e, widget, el, 'both');
-                      }}
-                    >
-                      <svg width="10" height="10" viewBox="0 0 10 10" className="text-brand-500">
-                        <line
-                          x1="10"
-                          y1="3"
-                          x2="3"
-                          y2="10"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                        />
-                        <line
-                          x1="10"
-                          y1="7"
-                          x2="7"
-                          y2="10"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </div>
-
-                    {/* Right resize handle — horizontal width only */}
-                    <div
-                      className="bg-brand-500/30 hover:bg-brand-500/60 absolute top-1/2 right-0 z-20 h-12 w-1.5 -translate-y-1/2 cursor-e-resize rounded-full"
-                      title="Drag to resize width"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const el = e.currentTarget.parentElement as HTMLElement | null;
-                        if (el) startResize(e, widget, el, 'h');
-                      }}
-                    />
-
-                    {/* Resize tooltip */}
-                    {isResizing && (
-                      <div className="bg-brand-500 absolute top-2 left-1/2 z-30 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg">
-                        {resizing.colSpan}/12 · {resizing.rowSpan ?? 1}row
-                      </div>
-                    )}
-                  </>
+                  </div>
                 )}
 
-                <div data-widget-id={widget.id} className="h-full">
+                {/* Widget content — pointer-events-none in edit mode so RGL handles all mouse events */}
+                <div className={`h-full ${editMode ? 'pointer-events-none select-none' : ''}`}>
                   <WidgetContent widget={widget} data={dashboardData} navigate={navigate} />
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            ))}
+          </ReactGridLayout>
+        )}
+      </div>
 
       {/* Widget picker panel — independent from edit mode, toggled via "Widgets" button */}
       {editMode && (
