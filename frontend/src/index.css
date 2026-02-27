@@ -1,4 +1,11 @@
-@import 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap';
+/* Outfit font — self-hosted via @fontsource (no internet required) */
+@import '@fontsource/vt323/400.css';
+@import '@fontsource/outfit/300.css';
+@import '@fontsource/outfit/400.css';
+@import '@fontsource/outfit/500.css';
+@import '@fontsource/outfit/600.css';
+@import '@fontsource/outfit/700.css';
+@import '@fontsource/outfit/800.css';
 @import 'leaflet/dist/leaflet.css';
 @import 'tailwindcss';
 
@@ -124,4 +131,138 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-accent);
+}
+
+/* ── Matrix / TTY mode ────────────────────────────────────────────────────────
+   Applied via 'mode-matrix' class on <html> when darkTheme='matrix' + dark mode.
+   Inspired by authentic CRT terminal aesthetics.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+html.mode-matrix {
+  cursor: crosshair;
+}
+
+/* All elements: no rounded corners, VT323 font, no shadows */
+html.mode-matrix *,
+html.mode-matrix *::before,
+html.mode-matrix *::after {
+  border-radius: 0 !important;
+  font-family: 'VT323', 'Courier New', monospace !important;
+  box-shadow: none !important;
+  letter-spacing: 0.08em;
+}
+
+/* CRT scanlines overlay — horizontal lines + subtle RGB fringe */
+html.mode-matrix::before {
+  content: " ";
+  display: block;
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%),
+    linear-gradient(
+      90deg,
+      rgba(255, 0, 0, 0.04),
+      rgba(0, 255, 0, 0.02),
+      rgba(0, 0, 255, 0.04)
+    );
+  background-size: 100% 2px, 3px 100%;
+  z-index: 9998;
+  pointer-events: none;
+  animation: scanlines-flicker 8s infinite;
+}
+
+@keyframes scanlines-flicker {
+  0%,  97%  { opacity: 1; }
+  97.5%     { opacity: 0.85; }
+  98%       { opacity: 1; }
+  99%       { opacity: 0.9; }
+  100%      { opacity: 1; }
+}
+
+/* Matrix canvas background */
+#matrix-bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+html.mode-matrix #matrix-bg-canvas {
+  opacity: 0.35;
+}
+
+/* Dimmer over canvas, under content */
+#matrix-dimmer {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+html.mode-matrix #matrix-dimmer {
+  opacity: 1;
+}
+
+/* Make sure content sits above the canvas/dimmer */
+html.mode-matrix .cosmos-root {
+  position: relative;
+  z-index: 2;
+}
+
+/* ── react-grid-layout resize handles — themed to match Rackscope design ─── */
+.react-resizable-handle {
+  background-image: none;
+  width: 20px;
+  height: 20px;
+}
+.react-resizable-handle-se {
+  bottom: 4px;
+  right: 4px;
+  cursor: se-resize;
+  background: var(--color-brand-500);
+  opacity: 0.35;
+  border-radius: 4px 0 8px 0;
+  transition: opacity 0.15s;
+}
+.react-resizable-handle-s {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 6px;
+  background: var(--color-brand-500);
+  opacity: 0.3;
+  border-radius: 3px;
+  cursor: s-resize;
+  transition: opacity 0.15s;
+}
+.react-resizable-handle-e {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 40px;
+  background: var(--color-brand-500);
+  opacity: 0.3;
+  border-radius: 3px;
+  cursor: e-resize;
+  transition: opacity 0.15s;
+}
+.react-resizable-handle-se:hover,
+.react-resizable-handle-s:hover,
+.react-resizable-handle-e:hover {
+  opacity: 0.7;
+}
+.react-grid-item.react-draggable-dragging {
+  opacity: 0.75;
+  z-index: 100;
+}
+.react-grid-item > .react-resizable-handle::after {
+  display: none;
 }
