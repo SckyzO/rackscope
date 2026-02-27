@@ -889,7 +889,7 @@ export const DeviceChassis = ({
         <div className={`absolute inset-0 blur-[4px] ${statusColor} opacity-40`}></div>
       </div>
       <div
-        className="grid flex-1 gap-[1px] bg-[var(--color-border)]/5 p-[1px]"
+        className="grid min-w-0 flex-1 overflow-hidden gap-[1px] bg-[var(--color-border)]/5 p-[1px]"
         style={{
           gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
           gridTemplateColumns: isHighDensity ? '1fr' : `repeat(${layout.cols}, 1fr)`,
@@ -986,17 +986,17 @@ const RowSummaryUnit = ({
         : 'bg-status-ok';
   return (
     <div
-      className={`group relative flex h-full cursor-help items-center justify-between border-b border-[var(--color-border)]/10 bg-[var(--color-node-surface)] px-4 transition-colors last:border-0 hover:bg-[var(--color-accent-primary)]/10`}
+      className={`group relative flex h-full min-w-0 cursor-help items-center justify-between overflow-hidden border-b border-[var(--color-border)]/10 bg-[var(--color-node-surface)] px-2 transition-colors last:border-0 hover:bg-[var(--color-accent-primary)]/10`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-2">
         <div
-          className={`h-2.5 w-2.5 rounded-full ${statusColor} ${worstState === 'CRIT' ? 'animate-pulse shadow-[0_0_10px_var(--color-status-crit)]' : ''}`}
+          className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor} ${worstState === 'CRIT' ? 'animate-pulse shadow-[0_0_10px_var(--color-status-crit)]' : ''}`}
         ></div>
-        <span className="font-mono text-[11px] font-black tracking-widest text-[var(--color-text-base)] uppercase opacity-50 group-hover:opacity-100">
+        <span className="truncate font-mono text-[11px] font-black tracking-widest text-[var(--color-text-base)] uppercase opacity-50 group-hover:opacity-100">
           {label}
         </span>
       </div>
-      <div className="flex gap-3 opacity-30 group-hover:opacity-100">
+      <div className="flex shrink-0 gap-3 opacity-30 group-hover:opacity-100">
         <span className="font-mono text-[9px] font-bold text-gray-500 uppercase">
           {rowNodes.length} UNITS
         </span>
