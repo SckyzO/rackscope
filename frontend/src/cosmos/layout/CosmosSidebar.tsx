@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
 import { api } from '../../services/api';
@@ -215,6 +215,219 @@ const RackLink = ({
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+// ── Easter egg: Matrix rain ────────────────────────────────────────────────
+
+const MATRIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()アイウエオカキクケコサシスセソ';
+
+const MatrixRainOverlay = ({ onClose }: { onClose: () => void }) => {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resize = () => {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const fontSize = 14;
+    let cols = Math.floor(canvas.width / fontSize);
+    const drops: number[] = Array(cols).fill(1);
+
+    const draw = () => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#0f0';
+      ctx.font = `${fontSize}px monospace`;
+
+      cols = Math.floor(canvas.width / fontSize);
+      if (drops.length < cols) drops.push(...Array(cols - drops.length).fill(1));
+
+      for (let i = 0; i < cols; i++) {
+        const char = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
+        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    };
+
+    const interval = setInterval(draw, 33);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[99999] bg-black" onClick={onClose}>
+      <canvas ref={canvasRef} className="h-full w-full" />
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2">
+        <p className="font-mono text-2xl font-bold text-green-400 drop-shadow-[0_0_8px_#0f0]">
+          RACKSCOPE MATRIX
+        </p>
+        <p className="font-mono text-sm text-green-600">Click anywhere or press Esc to exit</p>
+      </div>
+    </div>
+  );
+};
+
+// ── Easter egg: ASCII boot ─────────────────────────────────────────────────
+
+const BOOT_LINES = [
+  'BIOS v2.6.1  © Rackscope Industries',
+  '─────────────────────────────────────────',
+  'CPU: Rack-Core i∞ @ 3.14GHz ... OK',
+  'MEM: Checking 1337 TB ECC RAM ... OK',
+  'NET: Detecting 10GbE interfaces ... FOUND [eth0, eth1, ib0]',
+  'PDU: Power distribution check ... OK [A: 9.8kW / B: 10.1kW]',
+  'HBA: Scanning storage adapters ... OK [HBA-0, HBA-1]',
+  'TEMP: Cooling system check ... 23.4°C NOMINAL',
+  'PROM: Prometheus heartbeat ... OK [http://prometheus:9090]',
+  '─────────────────────────────────────────',
+  'Loading Rackscope kernel modules...',
+  '  [topology_loader]  OK',
+  '  [check_engine]     OK',
+  '  [planner]          OK',
+  '  [slurm_plugin]     OK',
+  '─────────────────────────────────────────',
+  'All systems nominal. Welcome to Rackscope.',
+  'Have a great shift, operator o7',
+];
+
+const AsciiBootOverlay = ({ onClose }: { onClose: () => void }) => {
+  const [lines, setLines] = useState<string[]>([]);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    let i = 0;
+    const next = () => {
+      if (i >= BOOT_LINES.length) { setDone(true); return; }
+      setLines((prev) => [...prev, BOOT_LINES[i++]]);
+      setTimeout(next, 80 + Math.random() * 60);
+    };
+    const t = setTimeout(next, 200);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/95 p-8"
+      onClick={done ? onClose : undefined}
+    >
+      <div className="max-h-[80vh] w-full max-w-2xl overflow-auto rounded-xl border border-green-800 bg-black p-6 font-mono text-sm leading-relaxed text-green-400 shadow-[0_0_40px_rgba(0,255,0,0.1)]">
+        {lines.map((line, idx) => (
+          <div key={idx} className={line.startsWith('─') ? 'text-green-800' : ''}>
+            {line}
+          </div>
+        ))}
+        {!done && (
+          <span className="inline-block h-4 w-2 animate-pulse bg-green-400" />
+        )}
+        {done && (
+          <div className="mt-4 text-xs text-green-700">
+            Click anywhere or press Esc to close
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Easter egg: Hidden terminal ────────────────────────────────────────────
+
+const HELP_COMMANDS = [
+  { cmd: 'help',                              out: 'You\'re looking at it.' },
+  { cmd: 'ls /rack/r01-01/',                  out: 'compute001/  compute002/  compute003/  ...  [Permission: denied on r01-01-pdu01]' },
+  { cmd: 'df -h /dev/datacenter',             out: 'Filesystem: /dev/datacenter  Size: ∞  Used: 99%  Avail: ε  Use%: fine, probably.' },
+  { cmd: 'sudo rm -rf /incidents/*',          out: 'Permission denied. Nice try though.' },
+  { cmd: 'git blame --follow .',              out: 'Thomas Bourcey, 3 years ago: "TODO: refactor this someday"' },
+  { cmd: 'ssh compute001',                    out: 'ssh: connect to host compute001: Connection timed out. Classic.' },
+  { cmd: 'systemctl status everything',       out: '● everything.service — Active (running, mostly)  [some things may be lying]' },
+  { cmd: 'coffee --extra-shot --infinite',    out: 'Error: FEATURE_NOT_IMPLEMENTED. Filed as ticket #4096. ETA: never.' },
+  { cmd: 'prometheus --query "up"',           out: '1 (optimistic)' },
+  { cmd: 'reboot --datacenter --force',       out: 'lol. no.' },
+  { cmd: 'blame @management',                 out: 'Segfault. Core dumped.' },
+  { cmd: 'exit',                              out: 'exit: not found. There is no escape.' },
+];
+
+const HelpTerminalOverlay = ({ onClose }: { onClose: () => void }) => {
+  const [visible, setVisible] = useState<number>(0);
+
+  useEffect(() => {
+    let i = 0;
+    const next = () => {
+      if (i >= HELP_COMMANDS.length) return;
+      i++;
+      setVisible(i);
+      setTimeout(next, 120 + Math.random() * 80);
+    };
+    const t = setTimeout(next, 300);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => { clearTimeout(t); window.removeEventListener('keydown', onKey); };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 p-6 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-2xl overflow-hidden rounded-xl border border-gray-700 bg-gray-950 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Title bar */}
+        <div className="flex items-center gap-2 border-b border-gray-800 bg-gray-900 px-4 py-2.5">
+          <div className="flex gap-1.5">
+            <div className="h-3 w-3 rounded-full bg-red-500" />
+            <div className="h-3 w-3 rounded-full bg-amber-400" />
+            <div className="h-3 w-3 rounded-full bg-green-400" />
+          </div>
+          <span className="ml-2 font-mono text-xs text-gray-400">rackscope-terminal — bash — 80×24</span>
+        </div>
+        {/* Content */}
+        <div className="max-h-[60vh] overflow-auto p-5 font-mono text-sm">
+          <p className="mb-3 text-green-500">
+            Welcome to Rackscope Terminal v1.33.7 — type carefully.
+          </p>
+          <p className="mb-4 text-gray-500">$ help</p>
+          <p className="mb-4 font-bold text-yellow-400">AVAILABLE COMMANDS:</p>
+          {HELP_COMMANDS.slice(0, visible).map((c, i) => (
+            <div key={i} className="mb-2">
+              <p className="text-green-400">
+                <span className="text-gray-600">$ </span>{c.cmd}
+              </p>
+              <p className="ml-2 text-gray-400">{c.out}</p>
+            </div>
+          ))}
+          {visible < HELP_COMMANDS.length && (
+            <span className="inline-block h-4 w-2 animate-pulse bg-green-500" />
+          )}
+          {visible >= HELP_COMMANDS.length && (
+            <p className="mt-4 text-gray-600">
+              Press <span className="text-gray-400">Esc</span> or click outside to close.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Sidebar ────────────────────────────────────────────────────────────────
 
 interface CosmosSidebarProps {
@@ -227,6 +440,37 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
   const [expandedSites, setExpandedSites] = useState<Set<string>>(new Set());
   const [expandedRooms, setExpandedRooms] = useState<Set<string>>(new Set());
   const [expandedAisles, setExpandedAisles] = useState<Set<string>>(new Set());
+  // ── Easter egg state ────────────────────────────────────────────────────
+  const [logoClickCount, setLogoClickCount] = useState(0);
+  const [matrixActive, setMatrixActive] = useState(false);
+  const [bootActive, setBootActive] = useState(false);
+  const [helpActive, setHelpActive] = useState(false);
+  const logoClickTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const helpProgress   = React.useRef(0);
+  const helpTimer      = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // "help" typed in sequence → show terminal
+  useEffect(() => {
+    const HELP = ['h', 'e', 'l', 'p'];
+    const onKey = (e: KeyboardEvent) => {
+      if (matrixActive || bootActive || helpActive) return;
+      if (e.key.toLowerCase() === HELP[helpProgress.current]) {
+        helpProgress.current += 1;
+        if (helpProgress.current === HELP.length) {
+          helpProgress.current = 0;
+          if (helpTimer.current) clearTimeout(helpTimer.current);
+          setHelpActive(true);
+        } else {
+          if (helpTimer.current) clearTimeout(helpTimer.current);
+          helpTimer.current = setTimeout(() => { helpProgress.current = 0; }, 1500);
+        }
+      } else {
+        helpProgress.current = e.key.toLowerCase() === 'h' ? 1 : 0;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [matrixActive, bootActive, helpActive]);
   const navigate = useNavigate();
   const location = useLocation();
   const { features, plugins, config } = useAppConfigSafe();
@@ -251,10 +495,34 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         collapsed ? 'w-[90px] hover:w-[290px]' : 'w-[290px]'
       }`}
     >
+      {/* ── Easter egg overlays ───────────────────────────────────────── */}
+      {matrixActive && <MatrixRainOverlay    onClose={() => setMatrixActive(false)} />}
+      {bootActive   && <AsciiBootOverlay     onClose={() => setBootActive(false)} />}
+      {helpActive   && <HelpTerminalOverlay  onClose={() => setHelpActive(false)} />}
+
       {/* Logo — app.name + app.description from config */}
       <div className="flex h-[72px] shrink-0 items-center">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="bg-brand-500 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white">
+          <div
+            className="bg-brand-500 flex h-9 w-9 shrink-0 cursor-pointer select-none items-center justify-center rounded-lg text-white transition-transform active:scale-90"
+            onClick={(e) => {
+              if (e.shiftKey) {
+                setBootActive(true);
+                return;
+              }
+              // Clear previous timer
+              if (logoClickTimer.current) clearTimeout(logoClickTimer.current);
+              const next = logoClickCount + 1;
+              setLogoClickCount(next);
+              if (next >= 5) {
+                setLogoClickCount(0);
+                setMatrixActive(true);
+              } else {
+                logoClickTimer.current = setTimeout(() => setLogoClickCount(0), 1500);
+              }
+            }}
+            title="Rackscope"
+          >
             <Activity className="h-5 w-5" />
           </div>
           <div
@@ -303,9 +571,9 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         )}
         {features.aisle_dashboard && (
           <NavItem
-            to="/cosmos/views/aisle"
+            to="/cosmos/views/cluster"
             icon={LayoutGrid}
-            label="Cluster Dashboard"
+            label="Cluster Overview"
             collapsed={collapsed}
           />
         )}
@@ -541,6 +809,7 @@ export const CosmosSidebar = ({ collapsed }: CosmosSidebarProps) => {
         )}
         <NavItem to="/cosmos/profile" icon={User} label="Profile" collapsed={collapsed} />
         <NavItem to="/cosmos/settings" icon={Settings} label="Settings" collapsed={collapsed} />
+        <NavItem to="/cosmos/about" icon={GitBranch} label="About" collapsed={collapsed} />
       </div>
 
       {/* Footer */}

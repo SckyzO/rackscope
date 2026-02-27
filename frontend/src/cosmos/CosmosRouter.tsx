@@ -52,13 +52,14 @@ import { SignUpPage } from './pages/auth/SignUpPage';
 
 // Pages
 import { ProfilePage } from './pages/ProfilePage';
+import { CosmosAboutPage } from './pages/CosmosAboutPage';
 import { CalendarPage } from './pages/CalendarPage';
 import { NotificationsFullPage } from './pages/NotificationsFullPage';
 
 // Monitoring Views (connected to real API)
 import { CosmosWorldMapPage } from './pages/views/CosmosWorldMapPage';
 import { CosmosRoomPage } from './pages/views/CosmosRoomPage';
-import { CosmosAisleDashboardPage } from './pages/views/CosmosAisleDashboardPage';
+import { CosmosClusterPage } from './pages/views/CosmosClusterPage';
 
 import { CosmosDevicePage } from './pages/views/CosmosDevicePage';
 import { CosmosRackPage } from './pages/views/CosmosRackPage';
@@ -183,10 +184,11 @@ const CosmosRoutes = () => (
       <Route path="profile" element={<ProfilePage />} />
       <Route path="calendar" element={<CalendarPage />} />
       <Route path="notifications" element={<NotificationsFullPage />} />
+      <Route path="about" element={<CosmosAboutPage />} />
 
       {/* ── Monitoring Views (live data) ── */}
       <Route path="views/worldmap" element={<CosmosWorldMapPage />} />
-      <Route path="views/aisle" element={<CosmosAisleDashboardPage />} />
+      <Route path="views/cluster" element={<CosmosClusterPage />} />
       <Route path="views/room/:roomId" element={<CosmosRoomPage />} />
       <Route path="views/rack/:rackId" element={<CosmosRackPage />} />
       <Route path="views/device/:rackId/:deviceId" element={<CosmosDevicePage />} />

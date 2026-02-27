@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { CosmosSidebar } from './CosmosSidebar';
 import { CosmosHeader } from './CosmosHeader';
+import { useTheme } from '../../context/ThemeContext';
 import { PageTitleProvider } from '../contexts/PageTitleContext';
 import { AppConfigProvider } from '../contexts/AppConfigContext';
 import { PluginsMenuProvider } from '../../context/PluginsMenuContext';
@@ -10,7 +11,70 @@ import { PlaylistProvider } from '../contexts/PlaylistContext';
 import { usePlaylistSafe } from '../contexts/PlaylistContext';
 import { PlaylistCountdownBar } from '../components/PlaylistCountdown';
 import { AlertToastContainer } from '../components/AlertToastContainer';
+import { SetupWizard, LS_KEY as SETUP_LS_KEY } from '../components/SetupWizard';
 import '../cosmos.css';
+
+// ── MatrixBackground ──────────────────────────────────────────────────────────
+// Subtle canvas background shown when darkTheme='matrix'. z-index 0, opacity 0.35.
+// Positioned OUTSIDE cosmos-root so the CSS z-index stacking works correctly.
+
+const MATRIX_ALPHABET = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッンABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const MATRIX_FONT_SIZE = 16;
+
+const MatrixBackground = () => {
+  const { mode, darkTheme } = useTheme();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const active = mode === 'dark' && darkTheme === 'matrix';
+
+  const startRain = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return () => { /* noop — canvas not mounted */ };
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return () => { /* noop — context unavailable */ };
+
+    const resize = () => {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+      drops.length = 0;
+      drops.push(...Array(Math.floor(canvas.width / MATRIX_FONT_SIZE)).fill(1));
+    };
+    const drops: number[] = [];
+    resize();
+    window.addEventListener('resize', resize);
+
+    const interval = setInterval(() => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(15, 255, 0, 0.5)';
+      ctx.font = `${MATRIX_FONT_SIZE}px monospace`;
+      for (let i = 0; i < drops.length; i++) {
+        const char = MATRIX_ALPHABET[Math.floor(Math.random() * MATRIX_ALPHABET.length)];
+        ctx.fillText(char, i * MATRIX_FONT_SIZE, drops[i] * MATRIX_FONT_SIZE);
+        if (drops[i] * MATRIX_FONT_SIZE > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    }, 45);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', resize);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!active) return;
+    const stop = startRain();
+    return stop;
+  }, [active, startRain]);
+
+  return (
+    <>
+      <canvas id="matrix-bg-canvas" ref={canvasRef} aria-hidden="true" />
+      <div id="matrix-dimmer" aria-hidden="true" />
+    </>
+  );
+};
 
 // ── KioskExitButton ────────────────────────────────────────────────────────────
 // Floating exit button shown only in kiosk mode (fixed bottom-right)
@@ -60,6 +124,7 @@ const CosmosInnerLayout = () => {
     return saved === null ? true : saved === 'true';
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showWizard, setShowWizard] = useState(() => !localStorage.getItem(SETUP_LS_KEY));
 
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -68,8 +133,23 @@ const CosmosInnerLayout = () => {
     document.documentElement.classList.toggle('dark', next);
     rootRef.current?.classList.toggle('dark', next);
     localStorage.setItem('cosmos-dark-mode', String(next));
+    // Sync ThemeContext (localStorage + custom event to update modeState)
+    localStorage.setItem('theme-mode', next ? 'dark' : 'light');
+    window.dispatchEvent(new CustomEvent('rackscope-theme-mode', { detail: { dark: next } }));
     setIsDark(next);
   };
+
+  // Listen for mode changes triggered by ThemeContext (e.g. clicking a theme palette)
+  useEffect(() => {
+    const handler = (e: CustomEvent<{ dark: boolean }>) => {
+      const next = e.detail.dark;
+      document.documentElement.classList.toggle('dark', next);
+      rootRef.current?.classList.toggle('dark', next);
+      setIsDark(next);
+    };
+    window.addEventListener('rackscope-theme-mode', handler as EventListener);
+    return () => window.removeEventListener('rackscope-theme-mode', handler as EventListener);
+  }, []);
 
   const playlist = usePlaylistSafe();
   const isKiosk = playlist.mode === 'kiosk' && playlist.isPlaying;
@@ -112,6 +192,10 @@ const CosmosInnerLayout = () => {
       <PlaylistCountdownBar />
       {/* Kiosk exit float button */}
       <KioskExitButton />
+      {/* First-time setup wizard */}
+      {showWizard && <SetupWizard onDismiss={() => setShowWizard(false)} />}
+      {/* Matrix background canvas (active when darkTheme='matrix') */}
+      <MatrixBackground />
       {/* Alert toast notifications — bottom-right, polled from /api/alerts/active */}
       <AlertToastContainer />
     </>
