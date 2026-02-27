@@ -220,6 +220,7 @@ export const RackViewTemplate = () => {
                 allowInfraOverlap={false}
                 pduMetrics={undefined}
                 onDeviceClick={(d) => setSelected(d)}
+                maxUPx={48}
               />
             </div>
           </div>
@@ -241,6 +242,7 @@ export const RackViewTemplate = () => {
                 allowInfraOverlap={true}
                 pduMetrics={undefined}
                 onDeviceClick={(d) => setSelected(d)}
+                maxUPx={48}
               />
             </div>
           </div>

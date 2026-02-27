@@ -310,7 +310,7 @@ export const CosmosRackPage = () => {
               </span>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              <div className="mx-auto max-w-[600px]">
+              <div className="mx-auto h-full max-w-[600px]">
                 <RackElevation
                   rack={rack}
                   catalog={deviceCatalog}
@@ -336,7 +336,7 @@ export const CosmosRackPage = () => {
               </span>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              <div className="mx-auto max-w-[600px]">
+              <div className="mx-auto h-full max-w-[600px]">
                 <RackElevation
                   rack={rack}
                   catalog={deviceCatalog}

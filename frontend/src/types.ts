@@ -332,6 +332,7 @@ export interface AppConfig {
     min_zoom?: number | null;
     max_zoom?: number | null;
     zoom_controls?: boolean;
+    style?: string;
     center?: {
       lat: number;
       lon: number;
@@ -374,6 +375,9 @@ export interface AppConfig {
     notifications?: boolean;
     notifications_max_visible?: number;
     toast_duration_seconds?: number;
+    toast_position?: string;
+    toast_stack_threshold?: number;
+    aisle_dashboard?: boolean;
     playlist?: boolean;
     offline?: boolean;
     demo?: boolean;

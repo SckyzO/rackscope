@@ -18,7 +18,7 @@ import type { PasswordPolicy } from '../../contexts/AuthContext';
 import { useAvatar, resizeAvatar } from '../../hooks/useAvatar';
 import { usePageTitle } from '../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from './templates/EmptyPage';
-import { SettingField, SettingTooltip } from '../components/SettingTooltip';
+import { SettingField } from '../components/SettingTooltip';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -460,14 +460,14 @@ const AccountSectionHeader = ({
   username: string;
   authEnabled: boolean;
 }) => (
-  <div className="mb-5 flex items-center gap-4">
+  <div className="mb-5 flex items-start gap-4">
     <AvatarSection username={username} />
     {!authEnabled && (
-      <div className="ml-auto flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-        <SettingTooltip
-          text="Authentication is disabled in app.yaml. Username and password management are unavailable."
-          position="left"
-        />
+      <div
+        className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+        title="Authentication is disabled in app.yaml. Enable it in Settings → Security to manage usernames and passwords."
+      >
+        <Lock className="h-3 w-3 shrink-0" />
         Auth disabled
       </div>
     )}

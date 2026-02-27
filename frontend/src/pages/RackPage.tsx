@@ -255,16 +255,19 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
             Front Orientation
           </div>
           <div className="flex-1 p-6">
-            <RackElevation
-              rack={rack}
-              catalog={deviceCatalog}
-              health={healthData?.state}
-              nodesData={healthData?.nodes}
-              infraComponents={frontInfra}
-              sideComponents={sideInfra}
-              pduMetrics={healthData?.infra_metrics?.pdu}
-              onDeviceClick={(device) => navigate(`/rack/${rack.id}/device/${device.id}`)}
-            />
+            <div className="mx-auto h-full max-w-[600px]">
+              <RackElevation
+                rack={rack}
+                catalog={deviceCatalog}
+                health={healthData?.state}
+                nodesData={healthData?.nodes}
+                infraComponents={frontInfra}
+                sideComponents={sideInfra}
+                pduMetrics={healthData?.infra_metrics?.pdu}
+                onDeviceClick={(device) => navigate(`/rack/${rack.id}/device/${device.id}`)}
+                maxUPx={48}
+              />
+            </div>
           </div>
         </div>
 
@@ -274,18 +277,21 @@ export const RackPage = ({ reloadKey = 0 }: { reloadKey?: number }) => {
             Rear Orientation
           </div>
           <div className="flex-1 p-6 opacity-90">
-            <RackElevation
-              rack={rack}
-              catalog={deviceCatalog}
-              health={healthData?.state}
-              nodesData={healthData?.nodes}
-              isRearView={true}
-              infraComponents={rearInfra}
-              sideComponents={sideInfra}
-              allowInfraOverlap={true}
-              pduMetrics={healthData?.infra_metrics?.pdu}
-              onDeviceClick={(device) => navigate(`/rack/${rack.id}/device/${device.id}`)}
-            />
+            <div className="mx-auto h-full max-w-[600px]">
+              <RackElevation
+                rack={rack}
+                catalog={deviceCatalog}
+                health={healthData?.state}
+                nodesData={healthData?.nodes}
+                isRearView={true}
+                infraComponents={rearInfra}
+                sideComponents={sideInfra}
+                allowInfraOverlap={true}
+                pduMetrics={healthData?.infra_metrics?.pdu}
+                onDeviceClick={(device) => navigate(`/rack/${rack.id}/device/${device.id}`)}
+                maxUPx={48}
+              />
+            </div>
           </div>
         </div>
       </div>
