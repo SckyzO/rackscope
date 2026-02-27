@@ -269,6 +269,7 @@ const RackCard = ({
           pduMetrics={pduMetrics}
           fullWidth
           disableZoom
+          maxUPx={32}
         />
       </div>
 

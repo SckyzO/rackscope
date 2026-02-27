@@ -310,18 +310,21 @@ export const CosmosRackPage = () => {
               </span>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              <RackElevation
-                rack={rack}
-                catalog={deviceCatalog}
-                health={health?.state}
-                nodesData={health?.nodes}
-                isRearView={false}
-                infraComponents={frontInfra}
-                sideComponents={sideInfra}
-                allowInfraOverlap={false}
-                pduMetrics={health?.infra_metrics?.pdu}
-                onDeviceClick={handleDeviceClick}
-              />
+              <div className="mx-auto max-w-[600px]">
+                <RackElevation
+                  rack={rack}
+                  catalog={deviceCatalog}
+                  health={health?.state}
+                  nodesData={health?.nodes}
+                  isRearView={false}
+                  infraComponents={frontInfra}
+                  sideComponents={sideInfra}
+                  allowInfraOverlap={false}
+                  pduMetrics={health?.infra_metrics?.pdu}
+                  onDeviceClick={handleDeviceClick}
+                  maxUPx={48}
+                />
+              </div>
             </div>
           </div>
 
@@ -333,18 +336,21 @@ export const CosmosRackPage = () => {
               </span>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              <RackElevation
-                rack={rack}
-                catalog={deviceCatalog}
-                health={health?.state}
-                nodesData={health?.nodes}
-                isRearView={true}
-                infraComponents={rearInfra}
-                sideComponents={sideInfra}
-                allowInfraOverlap={true}
-                pduMetrics={health?.infra_metrics?.pdu}
-                onDeviceClick={handleDeviceClick}
-              />
+              <div className="mx-auto max-w-[600px]">
+                <RackElevation
+                  rack={rack}
+                  catalog={deviceCatalog}
+                  health={health?.state}
+                  nodesData={health?.nodes}
+                  isRearView={true}
+                  infraComponents={rearInfra}
+                  sideComponents={sideInfra}
+                  allowInfraOverlap={true}
+                  pduMetrics={health?.infra_metrics?.pdu}
+                  onDeviceClick={handleDeviceClick}
+                  maxUPx={48}
+                />
+              </div>
             </div>
           </div>
         </div>

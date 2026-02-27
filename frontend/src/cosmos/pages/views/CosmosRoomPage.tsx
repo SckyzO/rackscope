@@ -1113,6 +1113,7 @@ const RackDrawer = ({
                     allowInfraOverlap={isRearView}
                     pduMetrics={health?.infra_metrics?.pdu}
                     onDeviceClick={() => { /* noop */ }}
+                    maxUPx={28}
                   />
                 </div>
               )}

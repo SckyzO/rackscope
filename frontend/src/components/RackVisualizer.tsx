@@ -191,6 +191,7 @@ export const RackElevation = ({
   fullWidth = false,
   disableZoom = false,
   disableTooltip = false,
+  maxUPx,
 }: {
   rack: Rack;
   catalog: Record<string, DeviceTemplate>;
@@ -219,6 +220,14 @@ export const RackElevation = ({
   disableZoom?: boolean;
   /** Disable HUD tooltips (useful in preview/editor contexts with no real health data) */
   disableTooltip?: boolean;
+  /**
+   * Cap the maximum height of each rack unit in pixels.
+   * Prevents the rack from becoming disproportionately tall on large screens (4K).
+   * Minimum recommended: 14px (readability floor).
+   * Maximum recommended: 48px (comfort ceiling).
+   * When undefined, no cap is applied (existing behaviour).
+   */
+  maxUPx?: number;
 }) => {
   const [tooltip, setTooltip] = useState<HUDTooltipProps | null>(null);
   const uMap = new Map<number, Device>();
@@ -396,6 +405,7 @@ export const RackElevation = ({
       {overlay && <div className="absolute top-2 left-2 z-30">{overlay}</div>}
       <div
         className={`relative flex h-full w-full items-stretch ${fullWidth ? '' : 'max-w-[380px]'}`}
+        style={maxUPx !== undefined ? { maxHeight: `${rack.u_height * maxUPx}px` } : undefined}
       >
         {flipView
           ? renderRackFace(
