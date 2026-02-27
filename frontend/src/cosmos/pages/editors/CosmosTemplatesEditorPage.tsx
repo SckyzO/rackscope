@@ -63,9 +63,11 @@ type DeviceDraft = {
   frontEnabled: boolean;
   frontRows: string;
   frontCols: string;
+  frontMatrix: number[][];  // custom slot order — editable via MatrixEditor
   rearEnabled: boolean;
   rearRows: string;
   rearCols: string;
+  rearMatrix: number[][];
   rearComponents: DeviceRearComponent[];
   checks: string[];
 };
@@ -80,39 +82,47 @@ const buildMatrix = (rows: number, cols: number): number[][] =>
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
 
-const toDraft = (tpl: DeviceTemplate): DeviceDraft => ({
-  name: tpl.name,
-  id: tpl.id,
-  type: tpl.type,
-  storage_type: tpl.storage_type ?? '',
-  role: tpl.role ?? '',
-  u_height: String(tpl.u_height ?? 1),
-  frontEnabled: !!(tpl.layout ?? tpl.disk_layout),
-  frontRows: String((tpl.layout ?? tpl.disk_layout)?.rows ?? 1),
-  frontCols: String((tpl.layout ?? tpl.disk_layout)?.cols ?? 1),
-  rearEnabled: !!(tpl.rear_layout),
-  rearRows: String(tpl.rear_layout?.rows ?? 1),
-  rearCols: String(tpl.rear_layout?.cols ?? 1),
-  rearComponents: tpl.rear_components ?? [],
-  checks: tpl.checks ?? [],
-});
+const toDraft = (tpl: DeviceTemplate): DeviceDraft => {
+  const frontLayout = tpl.layout ?? tpl.disk_layout;
+  const fr = frontLayout?.rows ?? 1;
+  const fc = frontLayout?.cols ?? 1;
+  const rr = tpl.rear_layout?.rows ?? 1;
+  const rc = tpl.rear_layout?.cols ?? 1;
+  return {
+    name: tpl.name,
+    id: tpl.id,
+    type: tpl.type,
+    storage_type: tpl.storage_type ?? '',
+    role: tpl.role ?? '',
+    u_height: String(tpl.u_height ?? 1),
+    frontEnabled: !!frontLayout,
+    frontRows: String(fr),
+    frontCols: String(fc),
+    frontMatrix: frontLayout?.matrix ?? buildMatrix(fr, fc),
+    rearEnabled: !!(tpl.rear_layout),
+    rearRows: String(rr),
+    rearCols: String(rc),
+    rearMatrix: tpl.rear_layout?.matrix ?? buildMatrix(rr, rc),
+    rearComponents: tpl.rear_components ?? [],
+    checks: tpl.checks ?? [],
+  };
+};
 
-const draftToTemplate = (draft: DeviceDraft, base?: DeviceTemplate): Record<string, unknown> => {
+const draftToTemplate = (draft: DeviceDraft, _base?: DeviceTemplate): Record<string, unknown> => {
   const fr = parseInt(draft.frontRows) || 1;
   const fc = parseInt(draft.frontCols) || 1;
   const rr = parseInt(draft.rearRows) || 1;
   const rc = parseInt(draft.rearCols) || 1;
 
-  const prevFront = base?.layout ?? base?.disk_layout;
+  // Use the draft's custom matrix if dimensions match, otherwise rebuild
   const frontMatrix =
-    prevFront && prevFront.rows === fr && prevFront.cols === fc
-      ? prevFront.matrix
+    draft.frontMatrix.length === fr && (draft.frontMatrix[0]?.length ?? 0) === fc
+      ? draft.frontMatrix
       : buildMatrix(fr, fc);
 
-  const prevRear = base?.rear_layout;
   const rearMatrix =
-    prevRear && prevRear.rows === rr && prevRear.cols === rc
-      ? prevRear.matrix
+    draft.rearMatrix.length === rr && (draft.rearMatrix[0]?.length ?? 0) === rc
+      ? draft.rearMatrix
       : buildMatrix(rr, rc);
 
   return {
@@ -229,11 +239,15 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
           <p className="text-xs text-[var(--color-text-base)] opacity-30">No layout defined — simple component</p>
         </div>
       ) : (() => {
-        // aspect-ratio = 6 / u_height keeps rack-mount proportions as panel resizes.
-        // Width drives height — both dimensions scale together, like a real server face-on.
-        // 1U ≈ 6:1 (very flat), 4U ≈ 1.5:1, 8U ≈ 0.75:1
         const hasBoth = hasFront && hasRear;
-        const aspectRatio = 6 / template.u_height;
+        // For storage with many disk slots, use a taller aspect ratio so cells are visible
+        const layout = template.layout ?? template.disk_layout;
+        const slotCount = (layout?.rows ?? 1) * (layout?.cols ?? 1);
+        const isStorageHD = template.type === 'storage' && slotCount > 20;
+        // Standard: 6/uH keeps rack proportions. Storage HD: less aggressive ratio for taller cells
+        const aspectRatio = isStorageHD
+          ? Math.max(0.8, 3 / template.u_height)  // more square → disks more visible
+          : 6 / template.u_height;
 
         const rackEl = (isRear: boolean) => (
           <RackElevation
@@ -256,10 +270,15 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
             {/* Front */}
             <div className={hasBoth ? 'mb-3' : ''}>
               <div className="flex items-center justify-center pb-2">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">Front</span>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">
+                  Front {isStorageHD ? `— ${slotCount} disk slots` : ''}
+                </span>
               </div>
-              {/* max-width:720 = 6×120px caps height at 120px/U; panel narrower → both dimensions shrink */}
-              <div className="mx-auto w-full [&_*]:!cursor-default" style={{ aspectRatio, maxWidth: 720 }}>
+              {/* Storage HD: use full width without maxWidth cap so disk cells are large */}
+              <div
+                className="mx-auto w-full [&_*]:!cursor-default"
+                style={{ aspectRatio, maxWidth: isStorageHD ? '100%' : 720 }}
+              >
                 {rackEl(false)}
               </div>
             </div>
@@ -270,7 +289,7 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
                 <div className="flex items-center justify-center pb-2">
                   <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
                 </div>
-                <div className="mx-auto w-full [&_*]:!cursor-default" style={{ aspectRatio, maxWidth: 720 }}>
+                <div className="mx-auto w-full [&_*]:!cursor-default" style={{ aspectRatio, maxWidth: isStorageHD ? '100%' : 720 }}>
                   {rackEl(true)}
                 </div>
               </div>
@@ -282,27 +301,89 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
   );
 };
 
-// ── LayoutGridPreview ─────────────────────────────────────────────────────────
+// ── MatrixEditor — interactive slot grid with swap and larger cells ────────────
 
-const LayoutGridPreview = ({ rows, cols, type }: { rows: number; cols: number; type: string }) => {
+const MatrixEditor = ({
+  matrix,
+  type,
+  onChange,
+}: {
+  matrix: number[][];
+  type: string;
+  onChange: (m: number[][]) => void;
+}) => {
+  const [selected, setSelected] = useState<[number, number] | null>(null);
   const c = col(type);
-  const matrix = buildMatrix(rows, cols);
-  const cellSize = cols > 8 ? 12 : cols > 5 ? 16 : 20;
+  const rows = matrix.length;
+  const cols = matrix[0]?.length ?? 0;
+
+  // Cell size: larger than before, scales with column count
+  const cellSize = cols > 14 ? 28 : cols > 10 ? 32 : cols > 6 ? 38 : 46;
+  const fontSize = cellSize < 32 ? 9 : cellSize < 38 ? 10 : 11;
+
+  const handleClick = (r: number, c2: number) => {
+    if (!selected) {
+      setSelected([r, c2]);
+      return;
+    }
+    const [sr, sc] = selected;
+    if (sr === r && sc === c2) { setSelected(null); return; }
+    // Swap the two cells
+    const next = matrix.map((row) => [...row]);
+    const tmp = next[sr][sc];
+    next[sr][sc] = next[r][c2];
+    next[r][c2] = tmp;
+    onChange(next);
+    setSelected(null);
+  };
+
+  const reset = () => {
+    onChange(buildMatrix(rows, cols));
+    setSelected(null);
+  };
 
   return (
-    <div
-      className="mt-3 inline-grid gap-[2px] rounded-lg p-2"
-      style={{ gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`, backgroundColor: 'rgba(0,0,0,0.05)' }}
-    >
-      {matrix.flat().map((slot) => (
-        <div
-          key={slot}
-          className="flex items-center justify-center rounded-[2px] font-mono font-bold"
-          style={{ width: cellSize, height: cellSize, fontSize: cellSize < 16 ? 7 : 8, backgroundColor: c.bg, border: `1px solid ${c.border}`, color: c.text }}
+    <div className="mt-3">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[11px] text-gray-400 dark:text-gray-600">
+          Click a slot, then another to swap their order.
+        </p>
+        <button
+          onClick={reset}
+          className="text-[11px] text-brand-500 hover:underline dark:text-brand-400"
         >
-          {cellSize >= 14 ? slot : ''}
-        </div>
-      ))}
+          Reset order
+        </button>
+      </div>
+      <div
+        className="inline-grid gap-[3px] rounded-xl p-2"
+        style={{ gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`, backgroundColor: 'rgba(0,0,0,0.05)' }}
+      >
+        {matrix.map((row, r) =>
+          row.map((slot, c2) => {
+            const isSel = selected?.[0] === r && selected?.[1] === c2;
+            return (
+              <button
+                key={`${r}-${c2}`}
+                onClick={() => handleClick(r, c2)}
+                className="flex items-center justify-center rounded font-mono font-bold transition-all"
+                style={{
+                  width: cellSize,
+                  height: cellSize,
+                  fontSize,
+                  backgroundColor: isSel ? c.border : c.bg,
+                  border: `1.5px solid ${isSel ? c.text : c.border}`,
+                  color: isSel ? '#fff' : c.text,
+                  boxShadow: isSel ? `0 0 0 2px ${c.border}` : undefined,
+                }}
+                title={`Slot ${slot} — click to select, click another to swap`}
+              >
+                {slot}
+              </button>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 };
@@ -498,15 +579,33 @@ const EditorPanel = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Rows</label>
-                  <input type="number" min={1} max={32} value={draft.frontRows} onChange={(e) => update('frontRows', e.target.value)} className={inputCls} />
+                  <input type="number" min={1} max={32} value={draft.frontRows}
+                    onChange={(e) => {
+                      const r = parseInt(e.target.value) || 1;
+                      update('frontRows', e.target.value);
+                      update('frontMatrix', buildMatrix(r, parseInt(draft.frontCols) || 1));
+                    }} className={inputCls} />
                 </div>
                 <div>
                   <label className={labelCls}>Columns</label>
-                  <input type="number" min={1} max={32} value={draft.frontCols} onChange={(e) => update('frontCols', e.target.value)} className={inputCls} />
+                  <input type="number" min={1} max={32} value={draft.frontCols}
+                    onChange={(e) => {
+                      const c = parseInt(e.target.value) || 1;
+                      update('frontCols', e.target.value);
+                      update('frontMatrix', buildMatrix(parseInt(draft.frontRows) || 1, c));
+                    }} className={inputCls} />
                 </div>
               </div>
               <p className="mt-2 text-xs text-gray-400 dark:text-gray-600">{fr} × {fc} = {fr * fc} slots</p>
-              <LayoutGridPreview rows={fr} cols={fc} type={draft.type} />
+              <MatrixEditor
+                matrix={
+                  draft.frontMatrix.length === fr && (draft.frontMatrix[0]?.length ?? 0) === fc
+                    ? draft.frontMatrix
+                    : buildMatrix(fr, fc)
+                }
+                type={draft.type}
+                onChange={(m) => update('frontMatrix', m)}
+              />
             </div>
           )}
         </SectionCard>
@@ -528,15 +627,33 @@ const EditorPanel = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Rows</label>
-                  <input type="number" min={1} max={32} value={draft.rearRows} onChange={(e) => update('rearRows', e.target.value)} className={inputCls} />
+                  <input type="number" min={1} max={32} value={draft.rearRows}
+                    onChange={(e) => {
+                      const r = parseInt(e.target.value) || 1;
+                      update('rearRows', e.target.value);
+                      update('rearMatrix', buildMatrix(r, parseInt(draft.rearCols) || 1));
+                    }} className={inputCls} />
                 </div>
                 <div>
                   <label className={labelCls}>Columns</label>
-                  <input type="number" min={1} max={32} value={draft.rearCols} onChange={(e) => update('rearCols', e.target.value)} className={inputCls} />
+                  <input type="number" min={1} max={32} value={draft.rearCols}
+                    onChange={(e) => {
+                      const c = parseInt(e.target.value) || 1;
+                      update('rearCols', e.target.value);
+                      update('rearMatrix', buildMatrix(parseInt(draft.rearRows) || 1, c));
+                    }} className={inputCls} />
                 </div>
               </div>
               <p className="mt-2 text-xs text-gray-400 dark:text-gray-600">{rr} × {rc} = {rr * rc} slots</p>
-              <LayoutGridPreview rows={rr} cols={rc} type={draft.type} />
+              <MatrixEditor
+                matrix={
+                  draft.rearMatrix.length === rr && (draft.rearMatrix[0]?.length ?? 0) === rc
+                    ? draft.rearMatrix
+                    : buildMatrix(rr, rc)
+                }
+                type={draft.type}
+                onChange={(m) => update('rearMatrix', m)}
+              />
             </div>
           )}
         </SectionCard>
