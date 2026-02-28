@@ -1933,7 +1933,7 @@ export const DashboardPage = () => {
       setDashboards(next);
       persistDashboards(next);
     },
-    [dashboards, activeDashboardId],
+    [dashboards, activeDashboardId]
   );
 
   // ── Layout change handler (called by react-grid-layout) ───────────────────
