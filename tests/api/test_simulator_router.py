@@ -472,15 +472,23 @@ def test_delete_simulator_override_not_found(mock_app_config_with_simulator):
 
 
 def test_get_simulator_status_not_running():
-    """Test getting simulator status when not running."""
-    response = client.get("/api/simulator/status")
+    """Test getting simulator status when simulator is unreachable."""
+    from unittest.mock import AsyncMock, patch
+
+    import httpx
+
+    with patch(
+        "httpx.AsyncClient.get",
+        new=AsyncMock(side_effect=httpx.ConnectError("connection refused")),
+    ):
+        response = client.get("/api/simulator/status")
 
     assert response.status_code == 200
     data = response.json()
     assert "running" in data
     assert data["running"] is False
     assert "endpoint" in data
-    assert data["endpoint"] == "http://localhost:9000/metrics"
+    assert "simulator:9000" in data["endpoint"]
 
 
 # Test GET /api/simulator/metrics
