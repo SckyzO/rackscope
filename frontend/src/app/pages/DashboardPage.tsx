@@ -1919,6 +1919,23 @@ export const DashboardPage = () => {
     return () => obs.disconnect();
   }, []);
 
+  // ── Widget + dashboard operations ─────────────────────────────────────────
+  const persistDashboards = (next: Dashboard[]) => {
+    localStorage.setItem(DASHBOARDS_STORAGE_KEY, JSON.stringify(next));
+    localStorage.setItem(DASHBOARDS_STORAGE_VERSION_KEY, DASHBOARDS_STORAGE_VERSION);
+  };
+
+  const saveWidgets = useCallback(
+    (newWidgets: WidgetConfig[]) => {
+      const next = dashboards.map((d) =>
+        d.id === activeDashboardId ? { ...d, widgets: newWidgets } : d
+      );
+      setDashboards(next);
+      persistDashboards(next);
+    },
+    [dashboards, activeDashboardId],
+  );
+
   // ── Layout change handler (called by react-grid-layout) ───────────────────
   const handleLayoutChange = useCallback(
     (newLayout: Layout[]) => {
@@ -1927,20 +1944,6 @@ export const DashboardPage = () => {
     },
     [widgets, saveWidgets]
   );
-
-  // ── Widget + dashboard operations ─────────────────────────────────────────
-  const persistDashboards = (next: Dashboard[]) => {
-    localStorage.setItem(DASHBOARDS_STORAGE_KEY, JSON.stringify(next));
-    localStorage.setItem(DASHBOARDS_STORAGE_VERSION_KEY, DASHBOARDS_STORAGE_VERSION);
-  };
-
-  const saveWidgets = (newWidgets: WidgetConfig[]) => {
-    const next = dashboards.map((d) =>
-      d.id === activeDashboardId ? { ...d, widgets: newWidgets } : d
-    );
-    setDashboards(next);
-    persistDashboards(next);
-  };
 
   const removeWidget = (id: string) => saveWidgets(widgets.filter((w) => w.id !== id));
 
