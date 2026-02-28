@@ -1,16 +1,33 @@
+# CLAUDE.md (OLD VERSION — pre-v1.0 cleanup)
+
+> ⚠️ **ATTENTION**: This is the **OLD version** of CLAUDE.md, kept for reference only.
+> The current authoritative version is `CLAUDE.md`.
+>
+> **If you're using information from this file**, stop and ask the user:
+> _"I'm about to reference old_claude.md — is this information still valid?"_
+>
+> Key things that have changed since this version:
+> - Phase references: 6, 6.5, 7, 8, 9 are now all ✅ COMPLETE (not "next" or "planned")
+> - Frontend: `frontend/src/app/` (was `frontend/src/cosmos/`)
+> - Routes: at `/` (not `/cosmos`)
+> - localStorage keys: `rackscope.*` (not `cosmos-*`)
+> - CSS classes: `.rs-*` (not `.cosmos-*`)
+> - Chart library: ApexCharts (not Chart.js)
+> - Simulator hostname: `simulator:9000` in Docker (not `localhost:9000`)
+> - typecheck command uses `/home/appuser/.local/bin/mypy`
+> - New modules: model/metrics.py, services/metrics_service.py, plugins/slurm/config.py, plugins/simulator/config.py
+
+---
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-> **Old version available**: If you find information in `old_claude.md` that contradicts or complements this file,
-> **stop and ask the user**: _"I'm about to use information from old_claude.md — is this still valid?"_
-> `old_claude.md` reflects the state before Phase 7-9 (pre-migration), and is kept only for historical reference.
 
 ## Project Overview
 
 Rackscope is a **Prometheus-first physical infrastructure monitoring dashboard** for data centers and HPC environments. It provides visual monitoring of the physical hierarchy (Site → Room → Aisle → Rack → Device → Instance) **without owning a CMDB or collecting metrics itself**.
 
-**Current Development Phase**: Phase 9 complete — documentation & cleanup, preparing v1.0 public release.
+**Current Development Phase**: Phase 6 completed, Phase 6.5 (Metrics Library) next, Phase 7 (Frontend Rebuild) planned
 
 ### Core Philosophy (NON-NEGOTIABLE)
 
@@ -87,12 +104,12 @@ Start all services (backend, frontend, simulator, Prometheus):
 make up
 ```
 
-This runs: `docker compose -f docker-compose.dev.yml up -d`
+This runs: `docker compose up -d`
 
 Services started:
 - **backend**: FastAPI on `http://localhost:8000`
 - **frontend**: Vite dev server on `http://localhost:5173`
-- **simulator**: Metrics simulator on `http://simulator:9000` (Docker hostname; `http://localhost:9000` from host)
+- **simulator**: Metrics simulator on `http://localhost:9000`
 - **prometheus**: Prometheus on `http://localhost:9090`
 
 #### Stop the Stack
@@ -101,38 +118,53 @@ Services started:
 make down
 ```
 
+This runs: `docker compose down`
+
 #### Restart Services
 
 ```bash
 make restart
 ```
 
+This runs: `docker compose restart`
+
 Use this when you need to reload configuration files without rebuilding containers.
 
 #### View Logs
 
+Follow logs from all services:
 ```bash
 make logs
 ```
 
+This runs: `docker compose logs -f`
+
 **Tips:**
 - Press `Ctrl+C` to stop following logs
-- To view logs for a specific service: `docker compose -f docker-compose.dev.yml logs -f backend`
-- To view last N lines: `docker compose -f docker-compose.dev.yml logs --tail=100 backend`
+- To view logs for a specific service: `docker compose logs -f backend`
+- To view last N lines: `docker compose logs --tail=100 backend`
 
 #### Rebuild Containers
 
+Rebuild all containers (needed after Dockerfile changes or dependency updates):
 ```bash
 make build
 ```
+
+This runs: `docker compose build`
 
 After rebuilding, restart with `make up`.
 
 #### Clean Everything
 
+Remove containers, volumes, and local artifacts:
 ```bash
 make clean
 ```
+
+This runs:
+- `docker compose down -v` (removes containers and volumes)
+- `rm -rf __pycache__ .pytest_cache .venv frontend/node_modules`
 
 **Warning**: This deletes all data in volumes (Prometheus data, etc.).
 
@@ -145,12 +177,12 @@ make lint
 
 This executes **inside running containers**:
 1. **Backend**:
-   - `ruff check .`
-   - `ruff format --check .`
+   - `docker compose exec backend ruff check .`
+   - `docker compose exec backend ruff format --check .`
 2. **Frontend**:
-   - `npm run lint` (ESLint)
-   - `npm run lint:css` (Stylelint)
-   - `npm run lint:format` (Prettier check)
+   - `docker compose exec frontend npm run lint` (ESLint)
+   - `docker compose exec frontend npm run lint:css` (Stylelint)
+   - `docker compose exec frontend npm run lint:format` (Prettier check)
 
 **IMPORTANT**: The stack must be running (`make up`) before running `make lint`.
 
@@ -161,33 +193,28 @@ Run backend tests with pytest **inside containers**:
 make test
 ```
 
+This runs: `docker compose exec backend pytest`
+
 Tests are located in `tests/` and use the TestClient to test API endpoints.
 
 **IMPORTANT**: The stack must be running (`make up`) before running `make test`.
 
-### Type Checking
-
-```bash
-make typecheck
-```
-
-This runs: `docker compose -f docker-compose.dev.yml exec backend /home/appuser/.local/bin/mypy src/rackscope`
-
-**Target**: 0 type errors (currently achieved).
-
 ### Working Inside Containers
+
+If you need to run commands manually inside a container:
 
 **Backend shell:**
 ```bash
-docker compose -f docker-compose.dev.yml exec backend bash
+docker compose exec backend bash
 # Then run any Python command, e.g.:
+# python -m rackscope
 # pytest -v
 # ruff check src/
 ```
 
 **Frontend shell:**
 ```bash
-docker compose -f docker-compose.dev.yml exec frontend sh
+docker compose exec frontend sh
 # Then run any npm command, e.g.:
 # npm run build
 # npm run lint
@@ -198,7 +225,7 @@ docker compose -f docker-compose.dev.yml exec frontend sh
 Backend (Python):
 ```bash
 # Edit pyproject.toml first, then:
-docker compose -f docker-compose.dev.yml exec backend pip install -e .
+docker compose exec backend pip install -e .
 # Or rebuild if you want it persistent:
 make build
 ```
@@ -206,7 +233,7 @@ make build
 Frontend (npm):
 ```bash
 # Edit package.json first, then:
-docker compose -f docker-compose.dev.yml exec frontend npm install
+docker compose exec frontend npm install
 # Or rebuild if you want it persistent:
 make build
 ```
@@ -257,6 +284,14 @@ User: "Add CPU metrics from node_exporter"
 - Styling and theming
 - Responsive design
 
+**Example workflow:**
+```
+User: "Create a metrics dashboard page"
+→ Invoke /frontend-design skill
+→ Get distinctive, polished design with proper spacing, colors, accessibility
+→ Avoid generic AI aesthetics
+```
+
 **The /frontend-design skill:**
 - Produces production-grade, distinctive designs
 - Avoids generic AI aesthetics
@@ -293,16 +328,11 @@ Skill tool with skill="frontend-design"
 - `model/domain.py`: Pydantic models for physical topology (Site, Room, Aisle, Rack, Device)
 - `model/catalog.py`: Device and rack templates (the "hardware catalog")
 - `model/checks.py`: Health check definitions (PromQL + rules)
-- `model/metrics.py`: Metrics library definitions (MetricDefinition, MetricsLibrary)
-- `model/config.py`: Application configuration model (paths, telemetry, cache, planner, simulator)
-- `model/loader.py`: YAML loading and validation for topology, catalog, checks, metrics
+- `model/config.py`: Application configuration model (paths, telemetry, cache, planner, Slurm, simulator)
+- `model/loader.py`: YAML loading and validation for topology, catalog, checks
 - `telemetry/prometheus.py`: Async Prometheus client with caching and deduplication
 - `telemetry/planner.py`: **Query planner** that batches Prometheus queries to avoid explosion (critical for scaling)
 - `health/`: Health state calculation engine (OK/WARN/CRIT/UNKNOWN + aggregation)
-- `services/metrics_service.py`: Generic template-driven metrics collection service
-- `services/slurm_service.py`: Slurm node state resolution with SlurmConfigLike Protocol
-- `plugins/slurm/config.py`: SlurmPluginConfig model (separate from SlurmConfig in model/config.py)
-- `plugins/simulator/config.py`: SimulatorPluginConfig model
 
 **Backend runs on**: `http://localhost:8000`
 **API docs**: `http://localhost:8000/docs` (Swagger UI)
@@ -311,7 +341,7 @@ Skill tool with skill="frontend-design"
 
 **Location**: `src/rackscope/plugins/`
 
-The backend uses a **plugin architecture** to separate core functionality from optional features:
+The backend now uses a **plugin architecture** to separate core functionality from optional features:
 
 **Core System** (always active):
 - Physical topology visualization
@@ -341,47 +371,25 @@ The backend uses a **plugin architecture** to separate core functionality from o
 
 ### Frontend (React / TypeScript / Vite)
 
-**Location**: `frontend/src/app/`
+**Location**: `frontend/`
 
 **Stack:**
 - React 19 + TypeScript
 - Tailwind CSS v4
-- React Router (v6 API, browser router at `/`)
+- React Router for navigation
 - Leaflet for room floor plans (world map)
 - Monaco Editor for YAML editing
-- ApexCharts for metrics visualization
+- Chart.js for metrics visualization
 - Lucide React for icons
 
 **Key Components:**
-- `app/layout/AppLayout.tsx`: Main application shell with sidebar and header
-- `app/layout/AppSidebar.tsx`: Explorer-style navigation tree (Site → Room → Aisle → Rack) + plugin menu sections
-- `app/layout/AppHeader.tsx`: Top navigation bar with search, notifications, user menu
-- `app/AppRouter.tsx`: React Router configuration — all routes accessible at `/` (root)
-- `app/contexts/AppConfigContext.tsx`: App configuration and feature flags context
-- `app/pages/`: All views organized by domain (views/, editors/, slurm/, rackscope/, ui/, charts/, tables/)
-
-**CSS Classes:**
-- Root: `.rs-root`
-- Sidebar: `.rs-sidebar`, `.rs-sidebar-nav`
-- Scrollbar: `.rs-scrollbar`
-
-**localStorage Keys:**
-- Theme: `rackscope.theme`
-- Sidebar state: `rackscope.sidebar`
-- Other preferences: `rackscope.*` namespace
+- `RackVisualizer.tsx`: Renders front/rear rack views with device grids and chassis matrices
+- `Sidebar.tsx`: Explorer-style navigation tree (Site → Room → Aisle → Rack)
+- `ThemeContext.tsx`: Dark/light mode and accent color management
+- `Layout.tsx`: Main application layout with sidebar and header
+- `pages/`: All views (World Map, Room, Rack, Device, Slurm views, Editors)
 
 **Frontend runs on**: `http://localhost:5173` (Vite dev server with HMR)
-
-**Routes** (all at root `/`, no prefix):
-- `/` — Dashboard
-- `/views/worldmap` — World map
-- `/views/room/:roomId` — Room view
-- `/views/rack/:rackId` — Rack view
-- `/views/device/:rackId/:deviceId` — Device view
-- `/views/cluster` — Cluster overview
-- `/slurm/overview`, `/slurm/nodes`, `/slurm/alerts`, `/slurm/partitions`, `/slurm/wallboard/:roomId` — Slurm views
-- `/editors/topology`, `/editors/templates`, `/editors/checks`, `/editors/rack`, `/editors/settings` — Editors
-- `/auth/signin`, `/auth/signup` — Auth pages
 
 ### Configuration Files
 
@@ -389,7 +397,7 @@ The backend uses a **plugin architecture** to separate core functionality from o
 
 #### Application Config
 - `app.yaml`: **Central application configuration**
-  - Paths: topology, templates, checks, metrics
+  - Paths: topology, templates, checks
   - Telemetry: Prometheus URL, auth, TLS, identity label mapping
   - Refresh: room/rack state refresh intervals (default: 60s+)
   - Cache: TTL for Prometheus queries (default: 60s)
@@ -432,12 +440,6 @@ config/topology/
   - Each file is a family (ipmi.yaml, up.yaml, eseries.yaml, sequana3.yaml, pdu.yaml, switch.yaml)
   - Checks define: id, kind, scope (node/chassis/rack), PromQL expr, rules (thresholds → severity)
 
-#### Metrics Library
-- `metrics/library/*.yaml`: Metric definitions
-  - Each file defines a metric: id, name, description, expr, display (unit, chart_type, color, thresholds), category, tags
-  - Used by `/api/metrics/library` and `/api/metrics/data` endpoints
-  - Referenced by device/rack component templates via `metrics: [metric_id_list]`
-
 #### Other Files
 - `plugins/simulator/scenarios.yaml`: Simulator scenarios (demo-small, full-ok, etc.)
 - `plugins/simulator/overrides.yaml`: Runtime overrides for simulated metrics
@@ -451,8 +453,6 @@ config/topology/
 
 A Python service that generates **realistic Prometheus metrics** for testing without real hardware.
 
-**Simulator hostname**: `simulator:9000` (Docker internal). From host: `http://localhost:9000`.
-
 **Features:**
 - Reads topology to generate targets (instances, racks)
 - Configurable scenarios (demo-small, full-ok, random failures)
@@ -460,6 +460,9 @@ A Python service that generates **realistic Prometheus metrics** for testing wit
 - Deterministic seeding for repeatable demos
 - Failure injection controls (per metric + per scope)
 - Runtime overrides via API (force node down, rack failure, temperature spike)
+
+**Simulator runs on**: `http://localhost:9000`
+**Prometheus runs on**: `http://localhost:9090`
 
 Prometheus scrapes the simulator, and the backend queries Prometheus exactly like production.
 
@@ -501,7 +504,6 @@ Defines device dimensions (U height), type (Server/Switch/Storage/PDU), and phys
 - `rear_layout`: Rear view grid (optional)
 - `rear_components`: Rear components (PSUs, fans, IO modules)
 - `checks`: List of check IDs to run for this device type
-- `metrics`: List of metric IDs from the metrics library
 
 #### RackTemplate
 Defines rack dimensions and built-in infrastructure:
@@ -515,7 +517,6 @@ Defines rack-level components (PDUs, switches, cooling):
 - `location`: side, rear, front
 - `u_height`: Height in rack units
 - `checks`: List of check IDs to run for this component
-- `metrics`: List of metric IDs from the metrics library
 
 ### Health Checks
 
@@ -656,37 +657,27 @@ Target audience: NOC operators, N1/N2 sysadmins, MCO teams.
 
 ## Development Workflow
 
-### Current Status: v1.0 Release Preparation
+### Current Status: Between Phases
 
-**All phases complete** (1 through 9):
+**Phase 5 completed**: Test coverage improvements (36% → 66%, 251 tests)
 
-| Phase | Focus | Status |
-|-------|-------|--------|
-| 1 | Backend Router Split | ✅ COMPLETE |
-| 2 | Dependency Injection | ✅ COMPLETE |
-| 3 | Service Layer | ✅ COMPLETE |
-| 4 | Logging & Error Handling | ✅ COMPLETE |
-| 5 | Test Coverage (36% → 66%) | ✅ COMPLETE |
-| 6 | Backend Plugin Architecture | ✅ COMPLETE |
-| 6.5 | Metrics Library System | ✅ COMPLETE |
-| 7 | Frontend Rebuild (cosmos → app/) | ✅ COMPLETE |
-| 8 | Performance Optimizations | ✅ COMPLETE |
-| 9 | Documentation & Cleanup | ✅ COMPLETE |
+**Next phases planned**:
 
-**Current metrics** (post-Phase 9):
-- ✅ **362 tests passing**
-- ✅ **0 mypy type errors**
-- ✅ All linters passing (ruff, eslint, stylelint, prettier)
-- ✅ frontend/src/app/ (migration from cosmos/ complete)
+**Phase 6 - Backend Plugin Architecture Refactoring** (1 week):
+- Extract simulator as plugin
+- Extract Slurm as plugin
+- Create plugin base class and registry
+- Fix template system (remove hardcoded PDU/switch metrics)
+- Generic metrics collection based on RackComponentTemplate
+- See `ARCHITECTURE/phases/PHASE_6_BACKEND_PLAN.md` for details
 
-### Next Features (post v1.0)
-
-Planned improvements after v1.0 release:
-
-- **TanStack Query migration**: Replace manual fetch + state management with server-state caching (staleTime, refetchInterval, optimistic updates)
-- **Backend performance**: Dict-indexed topology lookup (O(1) vs O(n) scan), service-level cache layer, PromQL query deduplication
-- **Auth hardening**: RBAC roles, production-grade JWT, session management
-- **Import adapters**: NetBox, RacksDB, BlueBanquise importers
+**Phase 7 - Frontend Rebuild** (3 weeks):
+- Full frontend rebuild with React + Tailwind CSS + shadcn/ui
+- Pixel perfect design
+- Dynamic plugin menu system
+- Core views: Overview, Map, Room, Rack, Device
+- Editors: Topology, Templates, Checks, Settings
+- See `ARCHITECTURE/phases/PHASE_7_FRONTEND_PLAN.md` for details
 
 ### Standard Development Workflow
 
@@ -710,16 +701,16 @@ Run tests with:
 ```bash
 make test
 # or directly:
-docker compose -f docker-compose.dev.yml exec backend pytest
+docker compose exec backend pytest
 ```
 
 ## Common Tasks
 
 ### Adding a New API Endpoint
 
-1. Add the endpoint function to the relevant router in `src/rackscope/api/routers/`
+1. Add the endpoint function to `src/rackscope/api/app.py`
 2. Use Pydantic models for request/response validation
-3. Access global state via FastAPI dependencies: `get_topology()`, `get_catalog()`, etc.
+3. Access global state: `TOPOLOGY`, `CATALOG`, `CHECKS_LIBRARY`, `APP_CONFIG`, `PLANNER`
 4. For writes, reload global state after modifying YAML files
 5. Update the frontend API client in `frontend/src/services/api.ts`
 6. Add a UI component or page to consume the endpoint
@@ -743,7 +734,7 @@ docker compose -f docker-compose.dev.yml exec backend pytest
            severity: CRIT
    ```
 3. Reference the check in a device or rack template via the `checks: [my_check_id]` field
-4. Restart the backend to reload checks: `make restart` or `docker compose -f docker-compose.dev.yml restart backend`
+4. Restart the backend to reload checks: `make restart` or `docker compose restart backend`
 5. Verify the check appears in the Checks Library page
 
 ### Adding a New Device Template
@@ -764,9 +755,6 @@ docker compose -f docker-compose.dev.yml exec backend pytest
        checks:
          - node_up
          - ipmi_temp_warn
-       metrics:
-         - node_temperature
-         - node_power
    ```
 3. Use the template in rack definitions via `template_id: my-device-id`
 4. Restart the backend or use the Template Editor UI
@@ -775,11 +763,11 @@ docker compose -f docker-compose.dev.yml exec backend pytest
 
 **Option 1: Direct File Editing**
 1. Edit YAML files in `config/topology/`
-2. Restart the backend: `make restart` or `docker compose -f docker-compose.dev.yml restart backend`
+2. Restart the backend: `make restart` or `docker compose restart backend`
 
 **Option 2: Visual Editors (Recommended)**
-1. Use the **Topology Editor** at `http://localhost:5173/editors/topology`
-2. Use the **Rack Editor** at `http://localhost:5173/editors/rack`
+1. Use the **Topology Editor** at `http://localhost:5173/topology/editor`
+2. Use the **Rack Editor** at `http://localhost:5173/rack/{rack_id}/editor`
 3. Changes are saved via API and reloaded automatically
 
 ### Working with the Simulator
@@ -823,11 +811,11 @@ docker compose -f docker-compose.dev.yml exec backend pytest
 - **Slurm Wallboard**: HPC-specific cluster overview (compact aisle views)
 - **Slurm Dashboards**: Cluster Overview, Partitions, Node List, Alerts
 - **Visual Editors**:
-  - Topology Editor (`/editors/topology`)
-  - Rack Editor (`/editors/rack`)
-  - Template Editor (`/editors/templates`)
-  - Checks Library Editor (`/editors/checks`)
-- **Settings**: Application configuration UI (`/editors/settings` or `/settings`)
+  - Topology Editor (`/topology/editor`)
+  - Rack Editor (`/rack/{rack_id}/editor`)
+  - Template Editor (`/templates/editor`)
+  - Checks Library Editor (`/checks/editor`)
+- **Settings**: Application configuration UI (`/settings`)
 
 ## Important Files to Reference
 
@@ -849,27 +837,19 @@ docker compose -f docker-compose.dev.yml exec backend pytest
 - **ARCHITECTURE/README.md**: Index of all architecture documentation
 - **ARCHITECTURE/ARCHITECTURE.md**: High-level architecture overview
 - **ARCHITECTURE/NOTES.md**: Working notes
-- **ARCHITECTURE/plans/CONSOLIDATED_ROADMAP.md**: Development roadmap (all phases)
+- **ARCHITECTURE/plans/ROADMAP.md**: Development roadmap
 - **ARCHITECTURE/plans/PLUGIN_ARCHITECTURE.md**: Plugin system design
+- **ARCHITECTURE/phases/PHASE_6_BACKEND_PLAN.md**: Backend refactoring plan (next phase)
+- **ARCHITECTURE/phases/PHASE_7_FRONTEND_PLAN.md**: Frontend rebuild plan
 - **ARCHITECTURE/reference/CHECKS_LIBRARY.md**: Health check system
 - **ARCHITECTURE/reference/VIEW_MODEL.md**: View model specification
 - **ARCHITECTURE/reference/TESTING.md**: Testing strategy
-- **ARCHITECTURE/reference/PLUGIN_DEVELOPMENT.md**: Plugin development guide
-- **ARCHITECTURE/decisions/ADR-007-METRICS-LIBRARY.md**: Metrics library architecture decision
 
 ### User Documentation (docs/)
 - **docs/API_REFERENCE.md**: REST API documentation
 - **docs/ADMIN_GUIDE.md**: Configuration and deployment guide
 - **docs/USER_GUIDE.md**: End-user documentation
 - **docs/SIMULATOR.md**: Simulator configuration and usage
-
-### Docusaurus Documentation Site (website/)
-- **website/**: Full documentation site (Docusaurus 3)
-- `make docs` — starts the docs container (http://localhost:3001), hot-reload on content changes
-- `make docs-build` — builds the static site inside the container
-- `make docs-logs` — follow docs container logs
-- The `docs` service is part of `docker-compose.dev.yml` (port 3001)
-- For GitHub Pages deployment: `.github/workflows/deploy-docs.yml` (activate via repo Settings → Pages)
 
 ## Critical Implementation Notes
 
@@ -883,7 +863,6 @@ CATALOG: Optional[Catalog] = None
 CHECKS_LIBRARY: Optional[ChecksLibrary] = None
 APP_CONFIG: Optional[AppConfig] = None
 PLANNER: Optional[TelemetryPlanner] = None
-METRICS_LIBRARY: Optional[MetricsLibrary] = None
 ```
 
 **When modifying YAML files via API:**
@@ -922,6 +901,15 @@ The `/api/racks/{rack_id}/state` endpoint accepts an `include_metrics` parameter
   - Returns health + temperature, power, PDU metrics (20+ Prometheus queries)
   - Required for detail views with metric displays
 
+**Frontend Usage:**
+```typescript
+// Fast: Health states only (default)
+const state = await api.getRackState(rackId);
+
+// Slow: Health + metrics (use only on detail views)
+const stateWithMetrics = await api.getRackState(rackId, true);
+```
+
 **View-Level Guidelines:**
 - **RoomPage (rack grid)**: ❌ No metrics - displays health states only
 - **RoomPage (selected rack panel)**: ✅ With metrics - displays temp/power/PDU
@@ -930,9 +918,14 @@ The `/api/racks/{rack_id}/state` endpoint accepts an `include_metrics` parameter
 
 **Template-Driven Metrics:**
 Metrics are defined in templates, not hardcoded:
-- `DeviceTemplate.metrics`: List of metric IDs from the metrics library
-- `RackComponentTemplate.metrics`: List of metric IDs from the metrics library
+- `DeviceTemplate.metrics`: List of metric names (e.g., `["node_temperature", "node_power"]`)
+- `RackComponentTemplate.metrics`: List of component metrics (e.g., `["pdu_active_power", "pdu_current"]`)
 - Completely modular - add/remove metrics per template as needed
+
+**Cache Strategy:**
+- Cache TTL: 5 seconds (balance between freshness and performance)
+- Separate cache keys for requests with/without metrics
+- Room/rack state cached independently
 
 ### Frontend Proxy
 
@@ -954,6 +947,7 @@ export const api = {
   getRoomState: (roomId: string) => {
     return fetchWithCache(`/api/rooms/${roomId}/state`, `room.${roomId}.state`, 5000);
   },
+  // ...
 }
 ```
 
@@ -961,7 +955,7 @@ export const api = {
 
 **Always test UI changes in both light and dark themes.**
 
-The theme is managed by `AppConfigContext` and persisted to `localStorage` under the `rackscope.*` namespace:
+The theme is managed by `ThemeContext` and persisted to localStorage:
 - Dark mode is the **default** (for NOC environments)
 - Light mode is fully supported
 - Accent color is customizable
@@ -977,32 +971,34 @@ Rackscope follows a phased development plan:
 - **Phase 3**: ✅ Service Layer (business logic separation)
 - **Phase 4**: ✅ Logging & Error Handling (structured logging, error tracking)
 - **Phase 5**: ✅ Test Coverage (36% → 66%, 251 tests)
-- **Phase 6**: ✅ Backend Plugin Architecture (311 tests)
-  - Generic metrics collection (template-driven, removed 105 lines of hardcoded queries)
-  - Plugin foundation (RackscopePlugin, PluginRegistry, menu system)
-  - SimulatorPlugin (demo mode with overrides)
-  - SlurmPlugin (workload manager integration)
-- **Phase 6.5**: ✅ Metrics Library System (39 metrics, query_range time-series)
-  - MetricDefinition model + MetricsLibrary
-  - `/api/metrics/library` and `/api/metrics/data` endpoints
-  - Simulator refactored to use metrics library dynamically
-  - ADR-007-METRICS-LIBRARY.md
-- **Phase 7**: ✅ Frontend Rebuild (cosmos → app/ migration complete)
-  - `frontend/src/cosmos/` → `frontend/src/app/`
-  - React Router at `/` (no prefix)
-  - localStorage: `rackscope.*` keys
-  - CSS classes: `.rs-*` namespace
-  - ApexCharts replacing Chart.js
-  - Dynamic plugin menu via `/api/plugins/menu`
-- **Phase 8**: ✅ Performance Optimizations
-  - Backend dict indexes for O(1) topology lookups
-  - Frontend useMemo / useCallback optimizations
-  - Bundle size reduction
-- **Phase 9**: ✅ Documentation & Cleanup
-  - Docusaurus 3 website (`website/`)
-  - CLAUDE.md, README.md, CHANGELOG.md updated
-  - 0 mypy type errors
-  - 362 tests passing
+- **Phase 6**: ✅ Backend Plugin Architecture (7 days, 311 tests)
+  - ✅ Generic metrics collection (template-driven, removed 105 lines of hardcoded queries)
+  - ✅ Plugin foundation (RackscopePlugin, PluginRegistry, menu system)
+  - ✅ SimulatorPlugin (demo mode with overrides)
+  - ✅ SlurmPlugin (workload manager integration)
+  - See `ARCHITECTURE/plans/CONSOLIDATED_ROADMAP.md`
+
+### Current Phase
+- **Phase 6.5**: 🎯 Metrics Library System (2-3 days, before Phase 7)
+  - Define metrics in YAML library (like checks)
+  - API endpoints for metric discovery and data query
+  - Refactor simulator to use metrics dynamically
+  - Enable UI debugging with real metric data
+  - See `ARCHITECTURE/phases/PHASE_6.5_METRICS_LIBRARY.md`
+
+### Planned Phases
+
+- **Phase 7**: 📅 Frontend Rebuild (3 weeks)
+  - React + Tailwind CSS + shadcn/ui
+  - Dynamic plugin menu system
+  - Core views: Overview, Map, Room, Rack, Device
+  - Editors: Topology, Templates, Checks, Settings
+  - See `ARCHITECTURE/phases/PHASE_7_FRONTEND_PLAN.md`
+
+- **Phase 8+**: 📅 Future enhancements
+  - Additional views and importers
+  - Production hardening (auth, RBAC)
+  - Performance optimizations
 
 ## Code Quality Tools
 
@@ -1013,6 +1009,10 @@ Generate test coverage report:
 make coverage
 ```
 
+This runs: `docker compose exec backend pytest --cov=rackscope --cov-report=term --cov-report=html`
+
+The HTML report is generated in `htmlcov/index.html`.
+
 **Target**: 70%+ overall coverage
 
 ### Type Checking
@@ -1022,9 +1022,9 @@ Run mypy type checker:
 make typecheck
 ```
 
-**Configuration**: See `mypy.ini`
+This runs: `docker compose exec backend mypy src/rackscope`
 
-**Target**: 0 type errors (achieved).
+**Configuration**: See `mypy.ini`
 
 ### Complexity Analysis
 
@@ -1032,6 +1032,8 @@ Check code complexity:
 ```bash
 make complexity
 ```
+
+This runs: `docker compose exec backend radon cc src/rackscope -a -nc`
 
 **Target**: Average complexity < 10 per module
 
@@ -1046,38 +1048,133 @@ This runs: `lint`, `typecheck`, `complexity`, and `coverage`.
 
 ---
 
+## Refactoring Workflow
+
+### Active Refactoring Branch
+
+**Branch**: `refactoring/code-quality-improvements`
+**Roadmap**: See `REFACTORING_ROADMAP.md` for detailed plan
+
+### Refactoring Principles
+
+1. **Incremental Changes**: Each phase is a separate commit
+2. **Validation Gates**: After each phase/step:
+   - ✅ Run `make lint` (must pass)
+   - ✅ Run `make typecheck` (must pass)
+   - ✅ Run `make test` (must pass)
+   - ✅ Check `make logs` for errors
+   - ✅ Manual smoke test via UI
+3. **Commit Immediately**: Commit as soon as phase validation passes
+4. **Documentation First**: Update/create docs BEFORE merging
+5. **Rollback Ready**: Each commit must be revertable
+
+### Commit Message Format
+
+Use conventional commits:
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+Phase: <phase-number> - <phase-name>
+Status: <Complete|In Progress>
+Validated: <validation-commands>
+```
+
+**Example**:
+```
+refactor(api): split app.py into domain routers
+
+- Extract topology endpoints to routers/topology.py
+- Extract catalog endpoints to routers/catalog.py
+- Move models to api/models.py
+- Update imports
+
+Phase: 1 - Backend Router Split
+Status: Complete
+Validated: ✅ make lint, make typecheck, make test
+```
+
+### Working on Refactoring
+
+1. **Switch to refactoring branch**:
+   ```bash
+   git checkout refactoring/code-quality-improvements
+   ```
+
+2. **Make changes for current phase/step**
+
+3. **Validate**:
+   ```bash
+   make lint
+   make typecheck
+   make test
+   make logs  # Check for errors
+   # Manual UI testing
+   ```
+
+4. **Commit immediately after validation**:
+   ```bash
+   git add .
+   git commit -m "refactor(scope): description
+
+   Phase: X - Phase Name
+   Status: Complete
+   Validated: ✅ make lint, make test"
+   ```
+
+5. **Continue to next phase/step**
+
+### Rollback Procedures
+
+If issues arise:
+
+```bash
+# Revert last commit
+git revert HEAD
+make up && make test
+
+# Or reset to specific commit
+git reset --hard <commit-hash>
+make up && make test
+```
+
+---
+
 ## Notes
 
 ### Architecture & Documentation
 - **ARCHITECTURE/ directory**: Contains all architectural documentation (decisions, phases, plans, references)
 - **Architecture docs are organized**: See `ARCHITECTURE/README.md` for complete index
-- **Docusaurus site**: `website/` — run `make docs` to start, `make docs-build` to build
+- **Phase plans available**: Phase 6 (Backend) and Phase 7 (Frontend) plans are in `ARCHITECTURE/phases/`
+- **Plugin architecture**: See `ARCHITECTURE/plans/PLUGIN_ARCHITECTURE.md` for plugin system design
 
 ### Development
 - **English only**: Code, comments, and commit messages must be in English
 - **Small commits, single intent per commit**
 - **Run `make lint` after changes** to catch syntax/lint errors early
 - **Validate with Docker Compose stack** regularly (check logs, rebuild when needed)
+- **Refactoring roadmap**: See `ARCHITECTURE/plans/REFACTORING_ROADMAP.md` for progress tracking
 
 ### Backend & Telemetry
 - The backend uses **global state** which is reloaded when files are modified via API endpoints
 - The **telemetry planner** caches snapshots based on `planner.cache_ttl_seconds` to avoid excessive Prometheus queries
 - **Prometheus query optimization is critical**: The planner batches queries to avoid per-device explosion
-- **Conditional metrics loading**: Use `include_metrics=false` (default) for performance
+- **Conditional metrics loading**: Use `include_metrics=false` (default) for performance - only load metrics on detail views
   - Without metrics: ~30-40ms response time (health states only)
   - With metrics: ~743ms response time (health + temperature/power/PDU)
   - RoomPage grid, lists: ❌ No metrics
   - RackPage, DevicePage, Room panel: ✅ With metrics
-- **Template-driven metrics**: Metrics defined via metrics library YAML — no hardcoded queries
-- **Simulator hostname**: `simulator:9000` (Docker) — not `localhost:9000` in container configs
+- **Template-driven metrics**: Metrics defined in `DeviceTemplate.metrics` and `RackComponentTemplate.metrics` - no hardcoded queries
+- **Template-scoped checks**: Only checks referenced by templates are executed (if no checks → "no checks configured")
+- **UNKNOWN handling**: Configurable via `planner.unknown_state` (default: "UNKNOWN")
+- **Refresh intervals default to 60s+**: Lower values increase Prometheus load
+- **Cache strategy**: 5-second TTL for room/rack state (balance between freshness and performance)
 
 ### Frontend
 - The frontend **proxies API calls** through Vite dev server to avoid CORS issues
 - **Dark mode is first-class**: Always test UI changes in both light and dark themes
-- **Route prefix**: All routes at `/` (no `/cosmos` prefix)
-- **localStorage**: `rackscope.*` namespace (not `cosmos-*`)
-- **CSS classes**: `.rs-*` namespace (not `.cosmos-*`)
 
 ### Integrations
 - **Slurm integration is optional**: Only activated when `slurm` config section is present
-- **Simulator integration is optional**: Only activated when `features.demo: true`
