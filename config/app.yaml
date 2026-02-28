@@ -70,7 +70,7 @@ plugins:
     enabled: true
     update_interval_seconds: 20
     seed: null
-    scenario: demo-stable
+    scenario: random-1-critical
     scale_factor: 1
     incident_rates:
       node_micro_failure: 0.001

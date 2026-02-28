@@ -127,20 +127,22 @@ export const AlertToastContainer = () => {
   // When expanded, show all toasts individually even if stacked threshold exceeded
   if (isStacked && expanded) {
     return (
-      <div className={`fixed z-[9999] ${positionClass} flex flex-col gap-2`}>
-        {/* Collapse button */}
+      <div className={`fixed z-[9999] ${positionClass} flex w-80 flex-col`} style={{ maxHeight: 'calc(100vh - 32px)' }}>
+        {/* Sticky collapse button */}
         <button
           onClick={() => setExpanded(false)}
-          className={`flex w-80 items-center justify-between rounded-lg border border-gray-200 bg-white/90 px-3 py-1.5 text-xs font-medium text-gray-500 backdrop-blur-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/90 dark:text-gray-400 dark:hover:bg-gray-800`}
+          className="flex shrink-0 items-center justify-between rounded-lg border border-gray-200 bg-white/95 px-3 py-1.5 text-xs font-medium text-gray-500 backdrop-blur-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/95 dark:text-gray-400 dark:hover:bg-gray-800"
         >
-          <span>{toasts.length} alerts</span>
+          <span>{toasts.length} alert{toasts.length !== 1 ? 's' : ''}</span>
           <span className="text-[10px] opacity-60">▲ Collapse</span>
         </button>
+        {/* Scrollable toasts — capped to screen height */}
+        <div className="cosmos-scrollbar mt-2 flex flex-col gap-2 overflow-y-auto">
         {toasts.map((toast) => {
           const cfg = toastConfig[toast.severity as 'WARN' | 'CRIT'] ?? toastConfig.WARN;
           const { Icon } = cfg;
           return (
-            <div key={toast.id} className={`shadow-theme-lg flex w-80 items-start gap-3 rounded-xl border p-4 ${cfg.bg} ${cfg.border}`}>
+            <div key={toast.id} className={`shadow-theme-lg flex shrink-0 items-start gap-3 rounded-xl border p-4 ${cfg.bg} ${cfg.border}`}>
               <Icon className={`h-5 w-5 shrink-0 ${cfg.icon_c}`} />
               <div className="min-w-0 flex-1">
                 <p className={`text-sm font-semibold ${cfg.title_c}`}>{toast.title}</p>
@@ -152,6 +154,7 @@ export const AlertToastContainer = () => {
             </div>
           );
         })}
+        </div>
       </div>
     );
   }
@@ -237,9 +240,12 @@ export const AlertToastContainer = () => {
     );
   }
 
-  // ── Normal mode — show all toasts individually ─────────────────────────────
+  // ── Normal mode — show all toasts individually (scrollable if overflow) ─────
   return (
-    <div className={`fixed z-[9999] ${positionClass} flex flex-col gap-2`}>
+    <div
+      className={`cosmos-scrollbar fixed z-[9999] ${positionClass} flex w-80 flex-col gap-2 overflow-y-auto`}
+      style={{ maxHeight: 'calc(100vh - 32px)' }}
+    >
       {toasts.map((toast) => {
         const cfg = toastConfig[toast.severity as 'WARN' | 'CRIT'] ?? toastConfig.WARN;
         const { Icon } = cfg;

@@ -43,3 +43,4 @@ dist/
 backup/
 # Local tooling artifacts
 tmp/
+node_modules/

@@ -241,6 +241,15 @@ export const api = {
     markSuccess();
     return data;
   },
+  deleteDeviceTemplate: async (templateId: string) => {
+    const res = await apiFetch(`/api/catalog/templates/device/${encodeURIComponent(templateId)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+    writeCache('catalog', null);
+    return res.json();
+  },
+
   validateTemplate: async (payload: {
     kind: 'device' | 'rack' | 'rack_component';
     template: Record<string, unknown>;

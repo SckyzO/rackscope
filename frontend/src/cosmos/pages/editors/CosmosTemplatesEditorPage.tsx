@@ -240,13 +240,17 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
         </div>
       ) : (() => {
         const hasBoth = hasFront && hasRear;
-        // For storage with many disk slots, use a taller aspect ratio so cells are visible
-        const layout = template.layout ?? template.disk_layout;
-        const slotCount = (layout?.rows ?? 1) * (layout?.cols ?? 1);
+
+        // aspect-ratio = 6/uH keeps rack-mount proportions as panel resizes.
+        // For storage with many slots (HD), use a slightly taller ratio
+        // so the drawer rows are visible (same classic RackElevation look as before).
+        const frontLayout = template.layout ?? template.disk_layout;
+        const diskRows = frontLayout?.rows ?? 1;
+        const slotCount = diskRows * (frontLayout?.cols ?? 1);
         const isStorageHD = template.type === 'storage' && slotCount > 20;
-        // Standard: 6/uH keeps rack proportions. Storage HD: less aggressive ratio for taller cells
+        // Storage HD: use rows/1.2 as aspect to give more vertical space to each drawer row
         const aspectRatio = isStorageHD
-          ? Math.max(0.8, 3 / template.u_height)  // more square → disks more visible
+          ? Math.max(1, diskRows / 1.2)   // e.g. 5 rows → ~4.2:1 → taller preview
           : 6 / template.u_height;
 
         const rackEl = (isRear: boolean) => (
@@ -271,14 +275,10 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
             <div className={hasBoth ? 'mb-3' : ''}>
               <div className="flex items-center justify-center pb-2">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-brand-400/80">
-                  Front {isStorageHD ? `— ${slotCount} disk slots` : ''}
+                  Front{isStorageHD ? ` — ${slotCount} slots` : ''}
                 </span>
               </div>
-              {/* Storage HD: use full width without maxWidth cap so disk cells are large */}
-              <div
-                className="mx-auto w-full [&_*]:!cursor-default"
-                style={{ aspectRatio, maxWidth: isStorageHD ? '100%' : 720 }}
-              >
+              <div className="mx-auto w-full [&_*]:!cursor-default" style={{ aspectRatio, maxWidth: 720 }}>
                 {rackEl(false)}
               </div>
             </div>
@@ -289,7 +289,7 @@ const DevicePreview = ({ template }: { template: DeviceTemplate }) => {
                 <div className="flex items-center justify-center pb-2">
                   <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Rear</span>
                 </div>
-                <div className="mx-auto w-full [&_*]:!cursor-default" style={{ aspectRatio, maxWidth: isStorageHD ? '100%' : 720 }}>
+                <div className="mx-auto w-full [&_*]:!cursor-default" style={{ aspectRatio, maxWidth: 720 }}>
                   {rackEl(true)}
                 </div>
               </div>
@@ -841,7 +841,8 @@ export const CosmosTemplatesEditorPage = () => {
   const [previewDraft, setPreviewDraft] = useState<DeviceDraft | null>(null);
 
   const openYamlDrawer = (title: string, entity: unknown, onSave: (yaml: string) => Promise<void>) => {
-    setDrawerTitle(title); setDrawerYaml(jsYaml.dump(entity, { lineWidth: 120 }));
+    // flowLevel: 3 → matrix rows serialized as inline arrays: "- [1, 2, 3]" (compact, readable)
+    setDrawerTitle(title); setDrawerYaml(jsYaml.dump(entity, { lineWidth: 120, flowLevel: 3 }));
     drawerOnSaveRef.current = onSave; setDrawerOpen(true);
   };
 
@@ -962,7 +963,24 @@ export const CosmosTemplatesEditorPage = () => {
           <div className="flex w-[560px] shrink-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
             {selectedTemplate ? (
               <>
-                <div className="shrink-0 flex items-center justify-end border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
+                <div className="shrink-0 flex items-center justify-between border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
+                  {/* Delete */}
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Delete template "${selectedTemplate.name}"? This cannot be undone.`)) return;
+                      try {
+                        await api.deleteDeviceTemplate(selectedTemplate.id);
+                        setSelectedId(null);
+                        await loadData();
+                      } catch (e) {
+                        alert(e instanceof Error ? e.message : 'Delete failed');
+                      }
+                    }}
+                    className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 dark:border-red-700/40 dark:text-red-400 dark:hover:bg-red-500/10"
+                  >
+                    <X className="h-3.5 w-3.5" /> Delete
+                  </button>
+                  {/* Edit YAML */}
                   <button
                     onClick={() => openYamlDrawer(
                       `Device Template — ${selectedTemplate.name}`, selectedTemplate,

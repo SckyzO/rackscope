@@ -187,6 +187,23 @@ def update_template(
     return template
 
 
+@router.delete("/templates/device/{template_id}")
+def delete_device_template(
+    template_id: str,
+    app_config: Annotated[AppConfig, Depends(get_app_config)],
+):
+    """Delete a device template by ID. Removes the YAML file from disk."""
+    templates_dir = Path(app_config.paths.templates)
+    path = _find_device_template_path(templates_dir, template_id)
+    if not path:
+        raise HTTPException(status_code=404, detail=f"Device template '{template_id}' not found")
+    path.unlink(missing_ok=True)
+    # Reload catalog to keep in-memory state aligned
+    from rackscope.api import app as app_module
+    app_module.CATALOG = load_catalog(templates_dir)
+    return {"status": "ok", "deleted": template_id}
+
+
 @router.post("/templates/validate")
 def validate_template(payload: TemplateWriteRequest):
     """Validate a hardware template without saving."""
