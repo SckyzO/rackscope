@@ -16,7 +16,7 @@ import '../app.css';
 
 // ── MatrixBackground ──────────────────────────────────────────────────────────
 // Subtle canvas background shown when darkTheme='matrix'. z-index 0, opacity 0.35.
-// Positioned OUTSIDE cosmos-root so the CSS z-index stacking works correctly.
+// Positioned OUTSIDE rs-root so the CSS z-index stacking works correctly.
 
 const MATRIX_ALPHABET = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッンABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const MATRIX_FONT_SIZE = 16;
@@ -171,7 +171,7 @@ const AppInnerLayout = () => {
           <div className="border-brand-500 h-16 w-16 animate-spin rounded-full border-4 border-t-transparent" />
         </div>
       )}
-      <div ref={rootRef} className={isDark ? 'cosmos-root dark' : 'cosmos-root'}>
+      <div ref={rootRef} className={isDark ? 'rs-root dark' : 'rs-root'}>
         <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
           {/* Sidebar — hidden in kiosk mode */}
           {!isKiosk && <AppSidebar collapsed={effectiveCollapsed} />}
@@ -186,7 +186,7 @@ const AppInnerLayout = () => {
                 onToggleSidebar={() => setSidebarCollapsed((p) => !p)}
               />
             )}
-            <main className="cosmos-scrollbar flex flex-1 flex-col overflow-y-auto p-6">
+            <main className="rs-scrollbar flex flex-1 flex-col overflow-y-auto p-6">
               <Outlet />
             </main>
           </div>

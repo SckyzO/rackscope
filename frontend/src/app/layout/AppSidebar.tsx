@@ -491,7 +491,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
 
   return (
     <aside
-      className={`cosmos-sidebar cosmos-scrollbar group dark:bg-gray-dark flex shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white px-5 transition-[width] duration-300 ease-linear dark:border-gray-800 ${
+      className={`rs-sidebar rs-scrollbar group dark:bg-gray-dark flex shrink-0 flex-col overflow-hidden border-r border-gray-200 bg-white px-5 transition-[width] duration-300 ease-linear dark:border-gray-800 ${
         collapsed ? 'w-[90px] hover:w-[290px]' : 'w-[290px]'
       }`}
     >

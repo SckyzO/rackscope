@@ -210,7 +210,7 @@ html.mode-matrix #matrix-dimmer {
 }
 
 /* Make sure content sits above the canvas/dimmer */
-html.mode-matrix .cosmos-root {
+html.mode-matrix .rs-root {
   position: relative;
   z-index: 2;
 }

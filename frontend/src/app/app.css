@@ -1,17 +1,17 @@
-/* Cosmos theme — design tokens + Rackscope CSS variables for monitoring views.
+/* Rackscope app — design tokens + CSS variables for monitoring views.
    All Tailwind design tokens (brand, success, error, warning, shadows, dark variant)
    are defined in index.css so Tailwind generates utility classes globally. */
 
 /* Smooth theme transition — applied to structural containers.
    Covers both the sidebar width animation AND color transitions. */
-.cosmos-theme-bg {
+.rs-bg-transition {
   transition-property: color, background-color, border-color;
   transition-duration: 500ms;
   transition-timing-function: ease;
 }
 
 /* Sidebar: width animates at 300ms (collapse/expand), colors at 500ms (theme) */
-.cosmos-sidebar {
+.rs-sidebar {
   transition:
     width 300ms ease,
     background-color 500ms ease,
@@ -19,7 +19,7 @@
     color 500ms ease;
 }
 
-.cosmos-root {
+.rs-root {
   font-family: Outfit, system-ui, sans-serif;
   background: white;
   color: #101828;
@@ -44,7 +44,7 @@
   --color-accent-primary: #465fff;
 }
 
-.cosmos-root.dark {
+.rs-root.dark {
   color-scheme: dark;
   background: var(--color-gray-dark);
   color: #e4e7ec;
@@ -68,28 +68,28 @@
   --color-accent-primary: #465fff;
 }
 
-.cosmos-scrollbar::-webkit-scrollbar {
+.rs-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-.cosmos-scrollbar::-webkit-scrollbar-track {
+.rs-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.cosmos-scrollbar::-webkit-scrollbar-thumb {
+.rs-scrollbar::-webkit-scrollbar-thumb {
   background: #e4e7ec;
   border-radius: 3px;
 }
 
-.dark .cosmos-scrollbar::-webkit-scrollbar-thumb {
+.dark .rs-scrollbar::-webkit-scrollbar-thumb {
   background: #344054;
 }
 
-.cosmos-scrollbar::-webkit-scrollbar-thumb:hover {
+.rs-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #d0d5dd;
 }
 
-.dark .cosmos-scrollbar::-webkit-scrollbar-thumb:hover {
+.dark .rs-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #475467;
 }

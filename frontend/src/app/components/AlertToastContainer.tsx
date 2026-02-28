@@ -137,7 +137,7 @@ export const AlertToastContainer = () => {
           <span className="text-[10px] opacity-60">▲ Collapse</span>
         </button>
         {/* Scrollable toasts — capped to screen height */}
-        <div className="cosmos-scrollbar mt-2 flex flex-col gap-2 overflow-y-auto">
+        <div className="rs-scrollbar mt-2 flex flex-col gap-2 overflow-y-auto">
         {toasts.map((toast) => {
           const cfg = toastConfig[toast.severity as 'WARN' | 'CRIT'] ?? toastConfig.WARN;
           const { Icon } = cfg;
@@ -243,7 +243,7 @@ export const AlertToastContainer = () => {
   // ── Normal mode — show all toasts individually (scrollable if overflow) ─────
   return (
     <div
-      className={`cosmos-scrollbar fixed z-[9999] ${positionClass} flex w-80 flex-col gap-2 overflow-y-auto`}
+      className={`rs-scrollbar fixed z-[9999] ${positionClass} flex w-80 flex-col gap-2 overflow-y-auto`}
       style={{ maxHeight: 'calc(100vh - 32px)' }}
     >
       {toasts.map((toast) => {
