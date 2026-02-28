@@ -17,12 +17,7 @@ import {
 import { api } from '../../../services/api';
 import type { Site, Room, RackTemplate } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-import {
-  PageHeader,
-  PageBreadcrumb,
-  LoadingState,
-  EmptyState,
-} from '../templates/EmptyPage';
+import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from '../templates/EmptyPage';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type ViewLevel = 'sites' | 'rooms' | 'room-editor';
@@ -221,7 +216,10 @@ const ContextMenu = ({ open, onEditYaml, onDelete, onClose }: ContextMenuProps) 
       className="absolute top-8 right-0 z-30 w-44 overflow-hidden rounded-xl border border-gray-700 bg-gray-900 shadow-xl"
     >
       <button
-        onClick={(e) => { e.stopPropagation(); onEditYaml(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEditYaml();
+        }}
         className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-gray-300 transition-colors hover:bg-white/5"
       >
         <FileCode2 className="h-3.5 w-3.5 text-gray-500" />
@@ -229,7 +227,10 @@ const ContextMenu = ({ open, onEditYaml, onDelete, onClose }: ContextMenuProps) 
       </button>
       <div className="mx-2 border-t border-gray-800" />
       <button
-        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
         className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-red-400 transition-colors hover:bg-red-500/10"
       >
         <Trash2 className="h-3.5 w-3.5" />
@@ -274,8 +275,9 @@ const DeleteConfirmDialog = ({
           Delete {entityType}?
         </h3>
         <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-          You are about to permanently delete <span className="font-semibold text-gray-700 dark:text-gray-300">{entityName}</span>.
-          This action cannot be undone and all associated data will be removed.
+          You are about to permanently delete{' '}
+          <span className="font-semibold text-gray-700 dark:text-gray-300">{entityName}</span>. This
+          action cannot be undone and all associated data will be removed.
         </p>
         <div className="mt-6 flex justify-end gap-3">
           <button
@@ -306,7 +308,13 @@ type AddInlineFormProps = {
   label?: string;
 };
 
-const AddInlineForm = ({ placeholder, idPlaceholder, onSave, onCancel, label }: AddInlineFormProps) => {
+const AddInlineForm = ({
+  placeholder,
+  idPlaceholder,
+  onSave,
+  onCancel,
+  label,
+}: AddInlineFormProps) => {
   const [name, setName] = useState('');
   const [customId, setCustomId] = useState('');
   const [showId, setShowId] = useState(false);
@@ -320,7 +328,10 @@ const AddInlineForm = ({ placeholder, idPlaceholder, onSave, onCancel, label }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) { setError('Name is required'); return; }
+    if (!name.trim()) {
+      setError('Name is required');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -332,7 +343,7 @@ const AddInlineForm = ({ placeholder, idPlaceholder, onSave, onCancel, label }: 
   };
 
   return (
-    <div className="rounded-2xl border border-brand-500/40 bg-white p-4 dark:border-brand-500/30 dark:bg-gray-900">
+    <div className="border-brand-500/40 dark:border-brand-500/30 rounded-2xl border bg-white p-4 dark:bg-gray-900">
       {label && (
         <p className="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-500">
           {label}
@@ -384,7 +395,11 @@ const AddInlineForm = ({ placeholder, idPlaceholder, onSave, onCancel, label }: 
               disabled={saving}
               className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-semibold text-white transition-colors disabled:opacity-60"
             >
-              {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+              {saving ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
               Save
             </button>
           </div>
@@ -417,45 +432,50 @@ const SiteCard = ({ site, onDrillDown, onEditYaml, onDelete }: SiteCardProps) =>
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const totalRooms = site.rooms?.length ?? 0;
-  const totalRacks = (site.rooms ?? []).reduce(
-    (acc, room) => {
-      const aisleRacks = (room.aisles ?? []).reduce((a, aisle) => a + (aisle.racks?.length ?? 0), 0);
-      const standaloneRacks = room.standalone_racks?.length ?? 0;
-      return acc + aisleRacks + standaloneRacks;
-    },
-    0
-  );
+  const totalRacks = (site.rooms ?? []).reduce((acc, room) => {
+    const aisleRacks = (room.aisles ?? []).reduce((a, aisle) => a + (aisle.racks?.length ?? 0), 0);
+    const standaloneRacks = room.standalone_racks?.length ?? 0;
+    return acc + aisleRacks + standaloneRacks;
+  }, 0);
 
   return (
     <>
-      <div className="group relative rounded-2xl border border-gray-200 bg-white p-5 transition-colors hover:border-brand-300 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-700/50">
+      <div className="group hover:border-brand-300 dark:hover:border-brand-700/50 relative rounded-2xl border border-gray-200 bg-white p-5 transition-colors dark:border-gray-800 dark:bg-gray-900">
         {/* Menu trigger */}
         <div className="absolute top-3 right-3">
           <button
-            onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen(!menuOpen);
+            }}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 opacity-0 transition-all group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-white/10"
           >
             <MoreHorizontal className="h-4 w-4" />
           </button>
           <ContextMenu
             open={menuOpen}
-            onEditYaml={() => { setMenuOpen(false); onEditYaml(); }}
-            onDelete={() => { setMenuOpen(false); setDeleteOpen(true); }}
+            onEditYaml={() => {
+              setMenuOpen(false);
+              onEditYaml();
+            }}
+            onDelete={() => {
+              setMenuOpen(false);
+              setDeleteOpen(true);
+            }}
             onClose={() => setMenuOpen(false)}
           />
         </div>
 
         {/* Card body — clickable */}
-        <button
-          onClick={onDrillDown}
-          className="block w-full text-left"
-        >
+        <button onClick={onDrillDown} className="block w-full text-left">
           <div className="mb-3 flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/10">
-              <Building2 className="h-4.5 w-4.5 text-brand-500" />
+            <div className="bg-brand-50 dark:bg-brand-500/10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
+              <Building2 className="text-brand-500 h-4.5 w-4.5" />
             </div>
             <div className="min-w-0 flex-1 pr-8">
-              <p className="truncate text-sm font-bold text-gray-900 dark:text-white">{site.name}</p>
+              <p className="truncate text-sm font-bold text-gray-900 dark:text-white">
+                {site.name}
+              </p>
               {site.description && (
                 <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-500">
                   {site.description}
@@ -476,7 +496,7 @@ const SiteCard = ({ site, onDrillDown, onEditYaml, onDelete }: SiteCardProps) =>
 
           <div className="mt-3 flex items-center gap-1 text-xs text-gray-400 dark:text-gray-600">
             <span className="font-mono">{site.id}</span>
-            <ChevronRight className="h-3.5 w-3.5 ml-auto text-gray-300 dark:text-gray-700" />
+            <ChevronRight className="ml-auto h-3.5 w-3.5 text-gray-300 dark:text-gray-700" />
           </div>
         </button>
       </div>
@@ -485,7 +505,10 @@ const SiteCard = ({ site, onDrillDown, onEditYaml, onDelete }: SiteCardProps) =>
         open={deleteOpen}
         entityType="site"
         entityName={site.name}
-        onConfirm={() => { setDeleteOpen(false); onDelete(); }}
+        onConfirm={() => {
+          setDeleteOpen(false);
+          onDelete();
+        }}
         onCancel={() => setDeleteOpen(false)}
       />
     </>
@@ -512,34 +535,42 @@ const RoomCard = ({ room, onDrillDown, onEditYaml, onDelete }: RoomCardProps) =>
 
   return (
     <>
-      <div className="group relative rounded-2xl border border-gray-200 bg-white p-5 transition-colors hover:border-brand-300 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-700/50">
+      <div className="group hover:border-brand-300 dark:hover:border-brand-700/50 relative rounded-2xl border border-gray-200 bg-white p-5 transition-colors dark:border-gray-800 dark:bg-gray-900">
         {/* Menu trigger */}
         <div className="absolute top-3 right-3">
           <button
-            onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen(!menuOpen);
+            }}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 opacity-0 transition-all group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-white/10"
           >
             <MoreHorizontal className="h-4 w-4" />
           </button>
           <ContextMenu
             open={menuOpen}
-            onEditYaml={() => { setMenuOpen(false); onEditYaml(); }}
-            onDelete={() => { setMenuOpen(false); setDeleteOpen(true); }}
+            onEditYaml={() => {
+              setMenuOpen(false);
+              onEditYaml();
+            }}
+            onDelete={() => {
+              setMenuOpen(false);
+              setDeleteOpen(true);
+            }}
             onClose={() => setMenuOpen(false)}
           />
         </div>
 
         {/* Card body — clickable */}
-        <button
-          onClick={onDrillDown}
-          className="block w-full text-left"
-        >
+        <button onClick={onDrillDown} className="block w-full text-left">
           <div className="mb-3 flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
               <DoorOpen className="h-4.5 w-4.5 text-gray-500 dark:text-gray-400" />
             </div>
             <div className="min-w-0 flex-1 pr-8">
-              <p className="truncate text-sm font-bold text-gray-900 dark:text-white">{room.name}</p>
+              <p className="truncate text-sm font-bold text-gray-900 dark:text-white">
+                {room.name}
+              </p>
               {room.description && (
                 <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-500">
                   {room.description}
@@ -555,7 +586,7 @@ const RoomCard = ({ room, onDrillDown, onEditYaml, onDelete }: RoomCardProps) =>
 
           <div className="mt-3 flex items-center gap-1 text-xs text-gray-400 dark:text-gray-600">
             <span className="font-mono">{room.id}</span>
-            <ChevronRight className="h-3.5 w-3.5 ml-auto text-gray-300 dark:text-gray-700" />
+            <ChevronRight className="ml-auto h-3.5 w-3.5 text-gray-300 dark:text-gray-700" />
           </div>
         </button>
       </div>
@@ -564,7 +595,10 @@ const RoomCard = ({ room, onDrillDown, onEditYaml, onDelete }: RoomCardProps) =>
         open={deleteOpen}
         entityType="room"
         entityName={room.name}
-        onConfirm={() => { setDeleteOpen(false); onDelete(); }}
+        onConfirm={() => {
+          setDeleteOpen(false);
+          onDelete();
+        }}
         onCancel={() => setDeleteOpen(false)}
       />
     </>
@@ -576,7 +610,7 @@ const RoomCard = ({ room, onDrillDown, onEditYaml, onDelete }: RoomCardProps) =>
 const AddCard = ({ label, onClick }: { label: string; onClick: () => void }) => (
   <button
     onClick={onClick}
-    className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-transparent p-5 text-gray-400 transition-colors hover:border-brand-400 hover:text-brand-500 dark:border-gray-700 dark:text-gray-600 dark:hover:border-brand-600 dark:hover:text-brand-400"
+    className="hover:border-brand-400 hover:text-brand-500 dark:hover:border-brand-600 dark:hover:text-brand-400 flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-gray-300 bg-transparent p-5 text-gray-400 transition-colors dark:border-gray-700 dark:text-gray-600"
   >
     <Plus className="h-5 w-5" />
     <span className="text-xs font-medium">{label}</span>
@@ -594,8 +628,8 @@ export const DatacenterEditorPage = () => {
     level === 'room-editor' && currentRoom
       ? `${currentRoom.name} — Editor`
       : level === 'rooms' && currentSite
-      ? `${currentSite.name} — Rooms`
-      : 'Datacenter Editor'
+        ? `${currentSite.name} — Rooms`
+        : 'Datacenter Editor'
   );
 
   const [sites, setSites] = useState<Site[]>([]);
@@ -641,10 +675,7 @@ export const DatacenterEditorPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const [sitesData, catalogData] = await Promise.all([
-          api.getSites(),
-          api.getCatalog(),
-        ]);
+        const [sitesData, catalogData] = await Promise.all([api.getSites(), api.getCatalog()]);
         if (!active) return;
         setSites(sitesData);
         setRackTemplates(catalogData.rack_templates ?? []);
@@ -658,7 +689,9 @@ export const DatacenterEditorPage = () => {
       }
     };
     void load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   const reloadSites = async () => {
@@ -729,7 +762,11 @@ export const DatacenterEditorPage = () => {
 
   // ── YAML drawer helpers ─────────────────────────────────────────────────────
 
-  const openYamlDrawer = (title: string, entity: unknown, onSave: (yaml: string) => Promise<void>) => {
+  const openYamlDrawer = (
+    title: string,
+    entity: unknown,
+    onSave: (yaml: string) => Promise<void>
+  ) => {
     setDrawerTitle(title);
     setDrawerYaml(JSON.stringify(entity, null, 2));
     setDrawerOnSave(() => onSave);
@@ -767,14 +804,26 @@ export const DatacenterEditorPage = () => {
       { label: 'Editors' },
       {
         label: 'Datacenter',
-        onClick: () => { setLevel('sites'); setCurrentSite(null); setCurrentRoom(null); setCanvasIsDirty(false); },
+        onClick: () => {
+          setLevel('sites');
+          setCurrentSite(null);
+          setCurrentRoom(null);
+          setCanvasIsDirty(false);
+        },
       },
     ];
     if (level === 'rooms' && currentSite) {
       items.push({ label: currentSite.name });
     }
     if (level === 'room-editor' && currentSite) {
-      items.push({ label: currentSite.name, onClick: () => { setLevel('rooms'); setCurrentRoom(null); setCanvasIsDirty(false); } });
+      items.push({
+        label: currentSite.name,
+        onClick: () => {
+          setLevel('rooms');
+          setCurrentRoom(null);
+          setCanvasIsDirty(false);
+        },
+      });
     }
     if (level === 'room-editor' && currentRoom) {
       items.push({ label: currentRoom.name });
@@ -788,8 +837,8 @@ export const DatacenterEditorPage = () => {
     level === 'room-editor' && currentRoom
       ? currentRoom.name
       : level === 'rooms' && currentSite
-      ? currentSite.name
-      : 'Datacenter Editor';
+        ? currentSite.name
+        : 'Datacenter Editor';
 
   return (
     <div className="space-y-5">
@@ -803,7 +852,12 @@ export const DatacenterEditorPage = () => {
             {level === 'rooms' && (
               <button
                 title="Back to sites"
-                onClick={() => { setLevel('sites'); setCurrentSite(null); setCurrentRoom(null); setCanvasIsDirty(false); }}
+                onClick={() => {
+                  setLevel('sites');
+                  setCurrentSite(null);
+                  setCurrentRoom(null);
+                  setCanvasIsDirty(false);
+                }}
                 className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -813,7 +867,11 @@ export const DatacenterEditorPage = () => {
             {level === 'room-editor' && (
               <button
                 title={`Back to rooms in ${currentSite?.name ?? ''}`}
-                onClick={() => { setLevel('rooms'); setCurrentRoom(null); setCanvasIsDirty(false); }}
+                onClick={() => {
+                  setLevel('rooms');
+                  setCurrentRoom(null);
+                  setCanvasIsDirty(false);
+                }}
                 className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -875,7 +933,6 @@ export const DatacenterEditorPage = () => {
         }
       />
 
-
       {/* ── Level 0: Sites grid ─────────────────────────────────────────────── */}
       {level === 'sites' && (
         <section>
@@ -929,11 +986,7 @@ export const DatacenterEditorPage = () => {
                   site={site}
                   onDrillDown={() => handleDrillDownSite(site)}
                   onEditYaml={() =>
-                    openYamlDrawer(
-                      `Site — ${site.name}`,
-                      site,
-                      async () => Promise.resolve()
-                    )
+                    openYamlDrawer(`Site — ${site.name}`, site, async () => Promise.resolve())
                   }
                   onDelete={() => {
                     void api.deleteSite(site.id).then(() => reloadSites());
@@ -955,7 +1008,7 @@ export const DatacenterEditorPage = () => {
                   <button
                     onClick={() => setWizardOpen(true)}
                     title="Guided setup wizard — recommended for new datacenters"
-                    className="flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-brand-300 bg-brand-50/50 p-4 text-brand-500 transition-colors hover:border-brand-400 hover:bg-brand-50 dark:border-brand-700/50 dark:bg-brand-500/5 dark:text-brand-400 dark:hover:bg-brand-500/10"
+                    className="border-brand-300 bg-brand-50/50 text-brand-500 hover:border-brand-400 hover:bg-brand-50 dark:border-brand-700/50 dark:bg-brand-500/5 dark:text-brand-400 dark:hover:bg-brand-500/10 flex min-h-[72px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed p-4 transition-colors"
                   >
                     <Plus className="h-5 w-5" />
                     <span className="text-xs font-semibold">New Datacenter (Wizard)</span>
@@ -1000,11 +1053,7 @@ export const DatacenterEditorPage = () => {
                   room={room}
                   onDrillDown={() => void handleDrillDownRoom(room)}
                   onEditYaml={() =>
-                    openYamlDrawer(
-                      `Room — ${room.name}`,
-                      room,
-                      async () => Promise.resolve()
-                    )
+                    openYamlDrawer(`Room — ${room.name}`, room, async () => Promise.resolve())
                   }
                   onDelete={() => {
                     void api.deleteRoom(room.id).then(() => reloadSites());
@@ -1038,20 +1087,26 @@ export const DatacenterEditorPage = () => {
                 <DoorOpen className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               </div>
               <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">{currentRoom.name}</p>
-                <p className="font-mono text-[10px] text-gray-500 dark:text-gray-600">{currentRoom.id}</p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">
+                  {currentRoom.name}
+                </p>
+                <p className="font-mono text-[10px] text-gray-500 dark:text-gray-600">
+                  {currentRoom.id}
+                </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 ml-2">
+            <div className="ml-2 flex flex-wrap items-center gap-1.5">
               <StatChip
                 value={(currentRoom.aisles ?? []).length}
                 label={(currentRoom.aisles ?? []).length === 1 ? 'aisle' : 'aisles'}
               />
               <StatChip
                 value={
-                  (currentRoom.aisles ?? []).reduce((a, aisle) => a + (aisle.racks?.length ?? 0), 0) +
-                  (currentRoom.standalone_racks?.length ?? 0)
+                  (currentRoom.aisles ?? []).reduce(
+                    (a, aisle) => a + (aisle.racks?.length ?? 0),
+                    0
+                  ) + (currentRoom.standalone_racks?.length ?? 0)
                 }
                 label="racks"
               />
@@ -1059,10 +1114,8 @@ export const DatacenterEditorPage = () => {
 
             <button
               onClick={() =>
-                openYamlDrawer(
-                  `Room YAML — ${currentRoom.name}`,
-                  currentRoom,
-                  async () => Promise.resolve()
+                openYamlDrawer(`Room YAML — ${currentRoom.name}`, currentRoom, async () =>
+                  Promise.resolve()
                 )
               }
               className="ml-auto flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
@@ -1079,7 +1132,10 @@ export const DatacenterEditorPage = () => {
               placeholder="Aisle name (e.g. Aisle A1)"
               idPlaceholder="aisle-id (e.g. aisle-a1)"
               onSave={handleCreateAisle}
-              onCancel={() => { setAddingAisle(false); setAddAisleError(null); }}
+              onCancel={() => {
+                setAddingAisle(false);
+                setAddAisleError(null);
+              }}
             />
           )}
           {addAisleError && !addingAisle && (
@@ -1097,7 +1153,6 @@ export const DatacenterEditorPage = () => {
             onDirtyChange={setCanvasIsDirty}
             saveRef={canvasSaveRef}
           />
-
         </section>
       )}
 

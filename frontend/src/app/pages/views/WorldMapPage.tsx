@@ -35,16 +35,14 @@ export const WorldMapPage = () => {
   }, []);
 
   // Map settings from config
-  const mapCenterLat   = Number(config?.map?.center?.lat ?? 20);
-  const mapCenterLon   = Number(config?.map?.center?.lon ?? 0);
+  const mapCenterLat = Number(config?.map?.center?.lat ?? 20);
+  const mapCenterLon = Number(config?.map?.center?.lon ?? 0);
   const mapDefaultZoom = Number(config?.map?.default_zoom ?? 1);
   const mapZoomControl = config?.map?.zoom_controls ?? true;
   // localStorage is the immediate source of truth; backend config is the initial value
-  const mapStyle = (
-    localStorage.getItem('rackscope.map.style') ||
+  const mapStyle = (localStorage.getItem('rackscope.map.style') ||
     config?.map?.style ||
-    'minimal'
-  ) as 'minimal' | 'noc' | 'flat';
+    'minimal') as 'minimal' | 'noc' | 'flat';
 
   useEffect(() => {
     api
@@ -136,7 +134,7 @@ export const WorldMapPage = () => {
 
       {/* Selected site popup (replaces Leaflet Popup) */}
       {selectedSite && (
-        <div className="rounded-2xl border border-brand-200 bg-brand-50 p-4 dark:border-brand-700/40 dark:bg-brand-500/10">
+        <div className="border-brand-200 bg-brand-50 dark:border-brand-700/40 dark:bg-brand-500/10 rounded-2xl border p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-gray-900 dark:text-white">{selectedSite.name}</p>
@@ -157,7 +155,7 @@ export const WorldMapPage = () => {
                     <button
                       key={room.id}
                       onClick={() => navigate(`/views/room/${room.id}`)}
-                      className="rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-medium text-brand-600 transition-colors hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400"
+                      className="border-brand-200 text-brand-600 hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 rounded-lg border bg-white px-3 py-1.5 text-xs font-medium transition-colors"
                     >
                       {room.name}
                     </button>

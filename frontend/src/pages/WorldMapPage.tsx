@@ -27,7 +27,10 @@ const MapCentering = ({
     const points = sites
       .map((site) => site.location)
       .filter(Boolean)
-      .map((loc) => [(loc as NonNullable<typeof loc>).lat, (loc as NonNullable<typeof loc>).lon]) as [number, number][];
+      .map((loc) => [
+        (loc as NonNullable<typeof loc>).lat,
+        (loc as NonNullable<typeof loc>).lon,
+      ]) as [number, number][];
 
     if (points.length === 0) {
       map.setView([defaultCenter.lat, defaultCenter.lon], defaultZoom);
@@ -130,7 +133,10 @@ export const WorldMapPage = () => {
             {sitesWithLocation.map((site) => (
               <CircleMarker
                 key={site.id}
-                center={[(site.location as NonNullable<typeof site.location>).lat, (site.location as NonNullable<typeof site.location>).lon]}
+                center={[
+                  (site.location as NonNullable<typeof site.location>).lat,
+                  (site.location as NonNullable<typeof site.location>).lon,
+                ]}
                 radius={8}
                 pathOptions={{
                   color: 'rgba(56,189,248,0.9)',

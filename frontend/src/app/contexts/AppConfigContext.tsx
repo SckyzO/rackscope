@@ -91,7 +91,9 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AppConfigContext.Provider value={{ config, loading, features, plugins, playlist, refresh: load }}>
+    <AppConfigContext.Provider
+      value={{ config, loading, features, plugins, playlist, refresh: load }}
+    >
       {children}
     </AppConfigContext.Provider>
   );
@@ -106,12 +108,16 @@ export const useAppConfig = (): AppConfigContextType => {
 // Safe hook that returns defaults when outside provider (for edge cases)
 export const useAppConfigSafe = (): AppConfigContextType => {
   const context = useContext(AppConfigContext);
-  return context ?? {
-    config: null,
-    loading: false,
-    features: DEFAULT_FEATURES,
-    plugins: DEFAULT_PLUGINS,
-    playlist: { interval_seconds: 30, views: [] },
-    refresh: async () => { /* noop */ },
-  };
+  return (
+    context ?? {
+      config: null,
+      loading: false,
+      features: DEFAULT_FEATURES,
+      plugins: DEFAULT_PLUGINS,
+      playlist: { interval_seconds: 30, views: [] },
+      refresh: async () => {
+        /* noop */
+      },
+    }
+  );
 };

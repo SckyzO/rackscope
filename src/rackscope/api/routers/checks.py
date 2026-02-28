@@ -25,6 +25,7 @@ class CheckTestRequest(BaseModel):
     expr: str
     variables: Dict[str, str] = {}
 
+
 router = APIRouter(prefix="/api/checks", tags=["checks"])
 
 

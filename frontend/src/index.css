@@ -154,30 +154,42 @@ html.mode-matrix *::after {
 
 /* CRT scanlines overlay — horizontal lines + subtle RGB fringe */
 html.mode-matrix::before {
-  content: " ";
+  content: ' ';
   display: block;
   position: fixed;
   inset: 0;
   background:
-    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%),
-    linear-gradient(
-      90deg,
-      rgba(255, 0, 0, 0.04),
-      rgba(0, 255, 0, 0.02),
-      rgba(0, 0, 255, 0.04)
-    );
-  background-size: 100% 2px, 3px 100%;
+    linear-gradient(rgb(18 16 16 / 0%) 50%, rgb(0 0 0 / 30%) 50%),
+    linear-gradient(90deg, rgb(255 0 0 / 4%), rgb(0 255 0 / 2%), rgb(0 0 255 / 4%));
+  background-size:
+    100% 2px,
+    3px 100%;
   z-index: 9998;
   pointer-events: none;
   animation: scanlines-flicker 8s infinite;
 }
 
 @keyframes scanlines-flicker {
-  0%,  97%  { opacity: 1; }
-  97.5%     { opacity: 0.85; }
-  98%       { opacity: 1; }
-  99%       { opacity: 0.9; }
-  100%      { opacity: 1; }
+  0%,
+  97% {
+    opacity: 1;
+  }
+
+  97.5% {
+    opacity: 0.85;
+  }
+
+  98% {
+    opacity: 1;
+  }
+
+  99% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 /* Matrix canvas background */
@@ -198,7 +210,7 @@ html.mode-matrix #matrix-bg-canvas {
 #matrix-dimmer {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgb(0 0 0 / 45%);
   z-index: 1;
   opacity: 0;
   transition: opacity 0.6s ease;
@@ -221,15 +233,17 @@ html.mode-matrix .rs-root {
   width: 20px;
   height: 20px;
 }
+
 .react-resizable-handle-se {
   bottom: 4px;
   right: 4px;
   cursor: se-resize;
   background: var(--color-brand-500);
   opacity: 0.35;
-  border-radius: 4px 0 8px 0;
+  border-radius: 4px 0 8px;
   transition: opacity 0.15s;
 }
+
 .react-resizable-handle-s {
   bottom: 0;
   left: 50%;
@@ -242,6 +256,7 @@ html.mode-matrix .rs-root {
   cursor: s-resize;
   transition: opacity 0.15s;
 }
+
 .react-resizable-handle-e {
   top: 50%;
   right: 0;
@@ -254,15 +269,18 @@ html.mode-matrix .rs-root {
   cursor: e-resize;
   transition: opacity 0.15s;
 }
+
 .react-resizable-handle-se:hover,
 .react-resizable-handle-s:hover,
 .react-resizable-handle-e:hover {
   opacity: 0.7;
 }
+
 .react-grid-item.react-draggable-dragging {
   opacity: 0.75;
   z-index: 100;
 }
+
 .react-grid-item > .react-resizable-handle::after {
   display: none;
 }

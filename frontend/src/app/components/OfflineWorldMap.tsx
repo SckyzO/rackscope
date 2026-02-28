@@ -161,10 +161,7 @@ export const OfflineWorldMap = ({
 
   return (
     <div className={`relative h-full w-full overflow-hidden ${className}`}>
-      <ComposableMap
-        projection="geoMercator"
-        style={{ width: '100%', height: '100%' }}
-      >
+      <ComposableMap projection="geoMercator" style={{ width: '100%', height: '100%' }}>
         <ZoomableGroup
           center={center}
           zoom={zoom}

@@ -41,8 +41,8 @@ import {
 type RackCompRefDraft = {
   template_id: string;
   u_position: string;
-  u_height: string;   // '' = use template default
-  side: string;       // '' = use template default
+  u_height: string; // '' = use template default
+  side: string; // '' = use template default
 };
 
 type RackDraft = {
@@ -122,13 +122,16 @@ const UPositionStepper = ({
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    if (raw === '') { onChange(''); return; }
+    if (raw === '') {
+      onChange('');
+      return;
+    }
     const n = parseInt(raw);
     if (!isNaN(n)) onChange(String(Math.min(max, Math.max(min, n))));
   };
 
   return (
-    <div className="flex items-center overflow-hidden rounded-lg border border-gray-200 focus-within:border-brand-500 dark:border-gray-700">
+    <div className="focus-within:border-brand-500 flex items-center overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
       <button
         type="button"
         onClick={dec}
@@ -142,7 +145,9 @@ const UPositionStepper = ({
         inputMode="numeric"
         value={value}
         onChange={handleInput}
-        onBlur={() => { if (!value || isNaN(parseInt(value))) onChange(String(min)); }}
+        onBlur={() => {
+          if (!value || isNaN(parseInt(value))) onChange(String(min));
+        }}
         className="w-8 bg-transparent text-center font-mono text-xs font-semibold text-gray-700 focus:outline-none dark:text-gray-200"
       />
       <button
@@ -158,11 +163,11 @@ const UPositionStepper = ({
 };
 
 const RAIL_COLORS: Record<string, { bg: string; border: string; text: string; abbr: string }> = {
-  power:      { bg: 'rgba(202,138,4,0.15)',   border: '#ca8a04', text: '#facc15', abbr: 'PWR' },
-  cooling:    { bg: 'rgba(8,145,178,0.15)',   border: '#0891b2', text: '#38bdf8', abbr: 'CLG' },
+  power: { bg: 'rgba(202,138,4,0.15)', border: '#ca8a04', text: '#facc15', abbr: 'PWR' },
+  cooling: { bg: 'rgba(8,145,178,0.15)', border: '#0891b2', text: '#38bdf8', abbr: 'CLG' },
   management: { bg: 'rgba(124,58,237,0.15)', border: '#7c3aed', text: '#a78bfa', abbr: 'MGT' },
-  network:    { bg: 'rgba(5,150,105,0.15)',  border: '#059669', text: '#34d399', abbr: 'NET' },
-  other:      { bg: 'rgba(75,85,99,0.15)',   border: '#4b5563', text: '#9ca3af', abbr: 'OTH' },
+  network: { bg: 'rgba(5,150,105,0.15)', border: '#059669', text: '#34d399', abbr: 'NET' },
+  other: { bg: 'rgba(75,85,99,0.15)', border: '#4b5563', text: '#9ca3af', abbr: 'OTH' },
 };
 
 const RackPreview = ({
@@ -178,9 +183,10 @@ const RackPreview = ({
   const infra = template.infrastructure ?? {};
 
   // Front = components + front_components; Rear = rear_components
-  const allInfraComponents: InfrastructureComponent[] = view === 'rear'
-    ? [...(infra.rear_components ?? [])]
-    : [...(infra.components ?? []), ...(infra.front_components ?? [])];
+  const allInfraComponents: InfrastructureComponent[] =
+    view === 'rear'
+      ? [...(infra.rear_components ?? [])]
+      : [...(infra.components ?? []), ...(infra.front_components ?? [])];
 
   // Resolve rack_component refs from the catalog
   const resolvedRackComponents = (infra.rack_components ?? []).flatMap((ref) => {
@@ -197,11 +203,14 @@ const RackPreview = ({
 
   const sideComponents: InfrastructureComponent[] = infra.side_components ?? [];
   // Rack components with location='side' go on the rails
-  const rackCompLeft = resolvedRackComponents.filter(({ ref, tpl }) =>
-    tpl.location === 'side' && (ref.side === 'left' || (!ref.side && tpl.side === 'left'))
+  const rackCompLeft = resolvedRackComponents.filter(
+    ({ ref, tpl }) =>
+      tpl.location === 'side' && (ref.side === 'left' || (!ref.side && tpl.side === 'left'))
   );
-  const rackCompRight = resolvedRackComponents.filter(({ ref, tpl }) =>
-    tpl.location === 'side' && (ref.side === 'right' || (!ref.side && tpl.side === 'right') || (!ref.side && !tpl.side))
+  const rackCompRight = resolvedRackComponents.filter(
+    ({ ref, tpl }) =>
+      tpl.location === 'side' &&
+      (ref.side === 'right' || (!ref.side && tpl.side === 'right') || (!ref.side && !tpl.side))
   );
 
   // Build u-mount occupancy map (start U → component)
@@ -227,12 +236,24 @@ const RackPreview = ({
   });
 
   const leftRail = [
-    ...sideComponents.filter((c) => c.location === 'side-left').map((c) => ({ name: c.name, type: c.type, h: c.u_height ?? 2 })),
-    ...rackCompLeft.map(({ tpl, ref }) => ({ name: tpl.name, type: tpl.type, h: ref.u_height ?? tpl.u_height ?? 2 })),
+    ...sideComponents
+      .filter((c) => c.location === 'side-left')
+      .map((c) => ({ name: c.name, type: c.type, h: c.u_height ?? 2 })),
+    ...rackCompLeft.map(({ tpl, ref }) => ({
+      name: tpl.name,
+      type: tpl.type,
+      h: ref.u_height ?? tpl.u_height ?? 2,
+    })),
   ];
   const rightRail = [
-    ...sideComponents.filter((c) => c.location === 'side-right').map((c) => ({ name: c.name, type: c.type, h: c.u_height ?? 2 })),
-    ...rackCompRight.map(({ tpl, ref }) => ({ name: tpl.name, type: tpl.type, h: ref.u_height ?? tpl.u_height ?? 2 })),
+    ...sideComponents
+      .filter((c) => c.location === 'side-right')
+      .map((c) => ({ name: c.name, type: c.type, h: c.u_height ?? 2 })),
+    ...rackCompRight.map(({ tpl, ref }) => ({
+      name: tpl.name,
+      type: tpl.type,
+      h: ref.u_height ?? tpl.u_height ?? 2,
+    })),
   ];
 
   const slots = Array.from({ length: uHeight }, (_, i) => i + 1);
@@ -240,16 +261,18 @@ const RackPreview = ({
   return (
     <div className="flex h-full flex-col">
       {/* View label — centered */}
-      <div className="shrink-0 flex items-center justify-center border-b border-[var(--color-border)]/20 py-2.5">
-        <span className={`text-[11px] font-bold uppercase tracking-widest ${
-          view === 'rear' ? 'text-amber-400/80' : 'text-brand-400/80'
-        }`}>
+      <div className="flex shrink-0 items-center justify-center border-b border-[var(--color-border)]/20 py-2.5">
+        <span
+          className={`text-[11px] font-bold tracking-widest uppercase ${
+            view === 'rear' ? 'text-amber-400/80' : 'text-brand-400/80'
+          }`}
+        >
           {view === 'rear' ? 'Rear' : 'Front'}
         </span>
       </div>
 
       {/* Rack */}
-      <div className="flex flex-1 items-start justify-center gap-2 overflow-hidden py-5 px-4">
+      <div className="flex flex-1 items-start justify-center gap-2 overflow-hidden px-4 py-5">
         {/* Left rail */}
         {leftRail.length > 0 && (
           <div className="flex h-full flex-col gap-0.5">
@@ -298,7 +321,11 @@ const RackPreview = ({
               return (
                 <div
                   key={u}
-                  style={{ flex: mount.h, backgroundColor: col.bg, borderLeft: `3px solid ${col.border}` }}
+                  style={{
+                    flex: mount.h,
+                    backgroundColor: col.bg,
+                    borderLeft: `3px solid ${col.border}`,
+                  }}
                   className="relative flex items-center px-2.5 transition-all"
                 >
                   <div className="pointer-events-none absolute -left-[18px] flex h-full w-[18px] items-center justify-center font-mono text-[8px] font-black text-[var(--color-text-base)] opacity-40 select-none">
@@ -547,8 +574,7 @@ const NewTemplateForm = ({
         </div>
         <div>
           <label className={labelCls}>
-            ID{' '}
-            <span className="text-gray-400 dark:text-gray-600">(auto-generated if empty)</span>
+            ID <span className="text-gray-400 dark:text-gray-600">(auto-generated if empty)</span>
           </label>
           <input
             type="text"
@@ -642,15 +668,18 @@ const EditorPanel = ({
     setSaveError(null);
   }, [template]);
 
-  const updateDraft = useCallback(<K extends keyof RackDraft>(key: K, value: RackDraft[K]) => {
-    setDraft((d) => {
-      const next = { ...d, [key]: value };
-      onDraftChange?.(next);
-      return next;
-    });
-    setDirty(true);
-    setSaveStatus('idle');
-  }, [onDraftChange]);
+  const updateDraft = useCallback(
+    <K extends keyof RackDraft>(key: K, value: RackDraft[K]) => {
+      setDraft((d) => {
+        const next = { ...d, [key]: value };
+        onDraftChange?.(next);
+        return next;
+      });
+      setDirty(true);
+      setSaveStatus('idle');
+    },
+    [onDraftChange]
+  );
 
   const validationErrors = useMemo(() => {
     const errs: string[] = [];
@@ -823,9 +852,7 @@ const EditorPanel = ({
               </div>
               <div className="flex items-end pb-0.5">
                 <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-2.5 dark:border-gray-800 dark:bg-gray-800/50">
-                  <p className="text-[10px] font-medium text-gray-400 dark:text-gray-600">
-                    Height
-                  </p>
+                  <p className="text-[10px] font-medium text-gray-400 dark:text-gray-600">Height</p>
                   <p className="font-mono text-lg font-bold text-gray-800 dark:text-gray-100">
                     {parseInt(draft.u_height) || 42}
                     <span className="ml-1 text-sm font-normal text-gray-400">U</span>
@@ -886,8 +913,7 @@ const EditorPanel = ({
                       >
                         <Tag className="h-3 w-3 shrink-0 opacity-50" />
                         {ref.template_id}
-                        <span className="text-gray-300 dark:text-gray-700">·</span>
-                        U{ref.u_position}
+                        <span className="text-gray-300 dark:text-gray-700">·</span>U{ref.u_position}
                       </span>
                     ))}
                   </div>
@@ -956,7 +982,7 @@ const EditorPanel = ({
                       <span className="flex-1 truncate text-gray-700 dark:text-gray-300">
                         {check.name ?? check.id}
                       </span>
-                      <span className="shrink-0 font-mono text-[9px] uppercase text-gray-400 dark:text-gray-600">
+                      <span className="shrink-0 font-mono text-[9px] text-gray-400 uppercase dark:text-gray-600">
                         {check.scope}
                       </span>
                     </label>
@@ -968,29 +994,49 @@ const EditorPanel = ({
         </SectionCard>
 
         {/* Rack Components */}
-        <SectionCard title="Rack Components" icon={Layers} desc="Components mounted in this rack (PDUs, switches, cooling…)">
+        <SectionCard
+          title="Rack Components"
+          icon={Layers}
+          desc="Components mounted in this rack (PDUs, switches, cooling…)"
+        >
           {draft.rackCompRefs.length > 0 && (
             <div className="mb-4 space-y-2">
               {draft.rackCompRefs.map((ref, idx) => {
                 const tpl = rackComponentCatalog.find((c) => c.id === ref.template_id);
                 const col = RAIL_COLORS[tpl?.type ?? 'other'] ?? RAIL_COLORS.other;
                 return (
-                  <div key={idx} className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 p-2.5 dark:border-gray-800 dark:bg-gray-800/40">
-                    <div className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: col.border }} />
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 p-2.5 dark:border-gray-800 dark:bg-gray-800/40"
+                  >
+                    <div
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: col.border }}
+                    />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold text-gray-800 dark:text-gray-200">{tpl?.name ?? ref.template_id}</p>
+                      <p className="truncate text-xs font-semibold text-gray-800 dark:text-gray-200">
+                        {tpl?.name ?? ref.template_id}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex shrink-0 items-center gap-1">
                       <span className="text-[10px] text-gray-400">U</span>
                       <UPositionStepper
                         value={ref.u_position}
-                        onChange={(v) => { const next = [...draft.rackCompRefs]; next[idx] = { ...next[idx], u_position: v }; updateDraft('rackCompRefs', next); }}
+                        onChange={(v) => {
+                          const next = [...draft.rackCompRefs];
+                          next[idx] = { ...next[idx], u_position: v };
+                          updateDraft('rackCompRefs', next);
+                        }}
                       />
                     </div>
                     {(tpl?.location === 'side' || ref.side) && (
                       <select
                         value={ref.side}
-                        onChange={(e) => { const next = [...draft.rackCompRefs]; next[idx] = { ...next[idx], side: e.target.value }; updateDraft('rackCompRefs', next); }}
+                        onChange={(e) => {
+                          const next = [...draft.rackCompRefs];
+                          next[idx] = { ...next[idx], side: e.target.value };
+                          updateDraft('rackCompRefs', next);
+                        }}
                         className="focus:border-brand-500 w-20 rounded-lg border border-gray-200 px-2 py-1 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                       >
                         <option value="">default</option>
@@ -999,16 +1045,26 @@ const EditorPanel = ({
                       </select>
                     )}
                     <button
-                      onClick={() => updateDraft('rackCompRefs', draft.rackCompRefs.filter((_, i) => i !== idx))}
+                      onClick={() =>
+                        updateDraft(
+                          'rackCompRefs',
+                          draft.rackCompRefs.filter((_, i) => i !== idx)
+                        )
+                      }
                       className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
                       title="Remove"
-                    ><X className="h-3.5 w-3.5" /></button>
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 );
               })}
             </div>
           )}
-          <AddRackCompRefForm rackComponentCatalog={rackComponentCatalog} onAdd={(ref) => updateDraft('rackCompRefs', [...draft.rackCompRefs, ref])} />
+          <AddRackCompRefForm
+            rackComponentCatalog={rackComponentCatalog}
+            onAdd={(ref) => updateDraft('rackCompRefs', [...draft.rackCompRefs, ref])}
+          />
         </SectionCard>
       </div>
     </div>
@@ -1031,34 +1087,67 @@ const AddRackCompRefForm = ({
   const isSide = selectedTpl?.location === 'side';
   const handleAdd = () => {
     if (!templateId || !uPosition) return;
-    onAdd({ template_id: templateId, u_position: uPosition, u_height: '', side: isSide ? side : '' });
-    setTemplateId(''); setUPosition(''); setSide('');
+    onAdd({
+      template_id: templateId,
+      u_position: uPosition,
+      u_height: '',
+      side: isSide ? side : '',
+    });
+    setTemplateId('');
+    setUPosition('');
+    setSide('');
   };
-  const inputCls = 'focus:border-brand-500 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200';
+  const inputCls =
+    'focus:border-brand-500 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200';
   return (
     <div className="flex flex-wrap items-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
       <div className="flex-1" style={{ minWidth: 160 }}>
-        <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">Component</label>
-        <select value={templateId} onChange={(e) => { setTemplateId(e.target.value); setSide(''); }} className={`w-full ${inputCls}`}>
+        <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">
+          Component
+        </label>
+        <select
+          value={templateId}
+          onChange={(e) => {
+            setTemplateId(e.target.value);
+            setSide('');
+          }}
+          className={`w-full ${inputCls}`}
+        >
           <option value="">— Select —</option>
-          {rackComponentCatalog.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.type}, {c.u_height}U)</option>)}
+          {rackComponentCatalog.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name} ({c.type}, {c.u_height}U)
+            </option>
+          ))}
         </select>
       </div>
       <div>
-        <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">U Position</label>
+        <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">
+          U Position
+        </label>
         <UPositionStepper value={uPosition || '1'} onChange={setUPosition} />
       </div>
       {isSide && (
         <div style={{ width: 80 }}>
-          <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">Side</label>
-          <select value={side} onChange={(e) => setSide(e.target.value)} className={`w-full ${inputCls}`}>
+          <label className="mb-1 block text-[10px] font-medium text-gray-500 dark:text-gray-400">
+            Side
+          </label>
+          <select
+            value={side}
+            onChange={(e) => setSide(e.target.value)}
+            className={`w-full ${inputCls}`}
+          >
             <option value="">default</option>
             <option value="left">Left</option>
             <option value="right">Right</option>
           </select>
         </div>
       )}
-      <button onClick={handleAdd} disabled={!templateId || !uPosition} className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">
+      <button
+        onClick={handleAdd}
+        disabled={!templateId || !uPosition}
+        className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"
+      >
         <Plus className="h-3.5 w-3.5" /> Add
       </button>
     </div>
@@ -1068,7 +1157,6 @@ const AddRackCompRefForm = ({
 // ---------------------------------------------------------------------------
 // RackComponentDetailPanel
 // ---------------------------------------------------------------------------
-
 
 type CompDraft = {
   name: string;
@@ -1125,7 +1213,8 @@ const RackComponentDetailPanel = ({
   };
 
   const handleSave = async () => {
-    setSaving(true); setSaveError(null);
+    setSaving(true);
+    setSaveError(null);
     try {
       await api.updateTemplate({
         kind: 'rack_component',
@@ -1150,10 +1239,13 @@ const RackComponentDetailPanel = ({
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Save failed');
       setSaveStatus('error');
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-600';
+  const inputCls =
+    'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-600';
   const labelCls = 'block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5';
   const col = RAIL_COLORS[draft.type] ?? RAIL_COLORS.other;
 
@@ -1162,21 +1254,43 @@ const RackComponentDetailPanel = ({
       {/* Header with save actions */}
       <div className="shrink-0 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: col.bg, border: `1px solid ${col.border}` }}>
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+            style={{ backgroundColor: col.bg, border: `1px solid ${col.border}` }}
+          >
             <Layers className="h-4 w-4" style={{ color: col.text }} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-gray-900 dark:text-white">{component.name}</p>
+            <p className="truncate text-sm font-bold text-gray-900 dark:text-white">
+              {component.name}
+            </p>
             <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">{component.id}</p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {dirty && <button onClick={() => { setDraft(toDraftComp(component)); setDirty(false); }} className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"><X className="h-3 w-3"/>Discard</button>}
+          <div className="flex shrink-0 items-center gap-2">
+            {dirty && (
+              <button
+                onClick={() => {
+                  setDraft(toDraftComp(component));
+                  setDirty(false);
+                }}
+                className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+              >
+                <X className="h-3 w-3" />
+                Discard
+              </button>
+            )}
             <button
               onClick={() => void handleSave()}
               disabled={!dirty || saving}
-              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${saveStatus === 'saved' ? 'bg-green-500 text-white' : dirty ? 'bg-brand-500 text-white hover:bg-brand-600' : 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600'}`}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${saveStatus === 'saved' ? 'bg-green-500 text-white' : dirty ? 'bg-brand-500 hover:bg-brand-600 text-white' : 'cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600'}`}
             >
-              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin"/> : saveStatus === 'saved' ? <CheckCircle2 className="h-3.5 w-3.5"/> : <Save className="h-3.5 w-3.5"/>}
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : saveStatus === 'saved' ? (
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
               {saving ? 'Saving…' : saveStatus === 'saved' ? 'Saved' : 'Save'}
             </button>
           </div>
@@ -1188,24 +1302,65 @@ const RackComponentDetailPanel = ({
         {/* Identity */}
         <SectionCard title="Identity" desc="Component properties">
           <div className="space-y-4">
-            <div><label className={labelCls}>Name *</label><input value={draft.name} onChange={(e) => update('name', e.target.value)} className={inputCls} /></div>
+            <div>
+              <label className={labelCls}>Name *</label>
+              <input
+                value={draft.name}
+                onChange={(e) => update('name', e.target.value)}
+                className={inputCls}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Type</label>
-                <select value={draft.type} onChange={(e) => update('type', e.target.value)} className={inputCls}>
-                  {['pdu','cooling','power','network','management','other'].map((t) => <option key={t} value={t}>{t}</option>)}
+                <select
+                  value={draft.type}
+                  onChange={(e) => update('type', e.target.value)}
+                  className={inputCls}
+                >
+                  {['pdu', 'cooling', 'power', 'network', 'management', 'other'].map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
                 <label className={labelCls}>Location</label>
-                <select value={draft.location} onChange={(e) => update('location', e.target.value)} className={inputCls}>
-                  {['side','u-mount','front','rear'].map((l) => <option key={l} value={l}>{l}</option>)}
+                <select
+                  value={draft.location}
+                  onChange={(e) => update('location', e.target.value)}
+                  className={inputCls}
+                >
+                  {['side', 'u-mount', 'front', 'rear'].map((l) => (
+                    <option key={l} value={l}>
+                      {l}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label className={labelCls}>U Height</label><input type="number" min={1} max={52} value={draft.u_height} onChange={(e) => update('u_height', e.target.value)} className={inputCls}/></div>
-              <div><label className={labelCls}>Model</label><input value={draft.model} onChange={(e) => update('model', e.target.value)} placeholder="optional" className={inputCls}/></div>
+              <div>
+                <label className={labelCls}>U Height</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={52}
+                  value={draft.u_height}
+                  onChange={(e) => update('u_height', e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Model</label>
+                <input
+                  value={draft.model}
+                  onChange={(e) => update('model', e.target.value)}
+                  placeholder="optional"
+                  className={inputCls}
+                />
+              </div>
             </div>
           </div>
         </SectionCard>
@@ -1214,29 +1369,81 @@ const RackComponentDetailPanel = ({
         <SectionCard title="Checks" icon={CheckSquare}>
           <div className="mb-3 flex flex-wrap gap-1.5">
             {draft.checks.map((id) => (
-              <span key={id} className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-400">
+              <span
+                key={id}
+                className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-400"
+              >
                 {id}
-                <button onClick={() => { update('checks', draft.checks.filter((c) => c !== id)); }} className="rounded p-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-500/20"><X className="h-3 w-3"/></button>
+                <button
+                  onClick={() => {
+                    update(
+                      'checks',
+                      draft.checks.filter((c) => c !== id)
+                    );
+                  }}
+                  className="rounded p-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-500/20"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </span>
             ))}
           </div>
           <div className="flex gap-2">
-            <input value={newCheck} onChange={(e) => setNewCheck(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newCheck.trim()) { update('checks', [...draft.checks, newCheck.trim()]); setNewCheck(''); }}} placeholder="check_id (Enter to add)" className={`${inputCls} text-xs`}/>
+            <input
+              value={newCheck}
+              onChange={(e) => setNewCheck(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newCheck.trim()) {
+                  update('checks', [...draft.checks, newCheck.trim()]);
+                  setNewCheck('');
+                }
+              }}
+              placeholder="check_id (Enter to add)"
+              className={`${inputCls} text-xs`}
+            />
           </div>
         </SectionCard>
 
         {/* Metrics */}
-        <SectionCard title="Metrics" icon={BarChart2} desc="Prometheus metrics collected for this component">
+        <SectionCard
+          title="Metrics"
+          icon={BarChart2}
+          desc="Prometheus metrics collected for this component"
+        >
           <div className="mb-3 flex flex-wrap gap-1.5">
             {draft.metrics.map((m) => (
-              <span key={m} className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 font-mono text-[11px] text-brand-600 dark:border-brand-700/30 dark:bg-brand-500/10 dark:text-brand-400">
+              <span
+                key={m}
+                className="border-brand-200 bg-brand-50 text-brand-600 dark:border-brand-700/30 dark:bg-brand-500/10 dark:text-brand-400 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 font-mono text-[11px]"
+              >
                 {m}
-                <button onClick={() => { update('metrics', draft.metrics.filter((x) => x !== m)); }} className="rounded p-0.5 hover:bg-brand-100 dark:hover:bg-brand-500/20"><X className="h-3 w-3"/></button>
+                <button
+                  onClick={() => {
+                    update(
+                      'metrics',
+                      draft.metrics.filter((x) => x !== m)
+                    );
+                  }}
+                  className="hover:bg-brand-100 dark:hover:bg-brand-500/20 rounded p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </span>
             ))}
           </div>
           <div className="flex gap-2">
-            <input value={newMetric} onChange={(e) => setNewMetric(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newMetric.trim()) { update('metrics', [...draft.metrics, newMetric.trim()]); setNewMetric(''); }}} placeholder="metric_name (Enter to add)" className={`${inputCls} font-mono text-xs`}/>
+            <input
+              value={newMetric}
+              onChange={(e) => setNewMetric(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newMetric.trim()) {
+                  update('metrics', [...draft.metrics, newMetric.trim()]);
+                  setNewMetric('');
+                }
+              }}
+              placeholder="metric_name (Enter to add)"
+              className={`${inputCls} font-mono text-xs`}
+            />
           </div>
         </SectionCard>
       </div>
@@ -1273,26 +1480,37 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
   const handleChange = (val: string | undefined) => {
     const v = val ?? '';
     setValue(v);
-    try { jsYaml.load(v); setParseError(null); }
-    catch (e) { setParseError(e instanceof Error ? e.message : 'Invalid YAML'); }
+    try {
+      jsYaml.load(v);
+      setParseError(null);
+    } catch (e) {
+      setParseError(e instanceof Error ? e.message : 'Invalid YAML');
+    }
   };
 
   const handleSave = async () => {
     if (parseError) return;
-    setSaving(true); setSaveError(null);
+    setSaving(true);
+    setSaveError(null);
     try {
       await onSave(value);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Save failed');
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />}
-      <div className={`fixed top-0 right-0 z-50 flex h-full w-[680px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+      {open && (
+        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      )}
+      <div
+        className={`fixed top-0 right-0 z-50 flex h-full w-[680px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}
+      >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-5 py-4">
           <div className="flex items-center gap-2.5">
@@ -1304,14 +1522,30 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
               </span>
             )}
           </div>
-          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-white/10 hover:text-gray-300">
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-white/10 hover:text-gray-300"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
         {/* Monaco */}
         <div className="min-h-0 flex-1">
-          <MonacoEditor height="100%" defaultLanguage="yaml" theme="vs-dark" value={value} onChange={handleChange}
-            options={{ fontSize: 13, minimap: { enabled: false }, lineNumbers: 'on', scrollBeyondLastLine: false, wordWrap: 'on', tabSize: 2, padding: { top: 12, bottom: 12 } }}
+          <MonacoEditor
+            height="100%"
+            defaultLanguage="yaml"
+            theme="vs-dark"
+            value={value}
+            onChange={handleChange}
+            options={{
+              fontSize: 13,
+              minimap: { enabled: false },
+              lineNumbers: 'on',
+              scrollBeyondLastLine: false,
+              wordWrap: 'on',
+              tabSize: 2,
+              padding: { top: 12, bottom: 12 },
+            }}
           />
         </div>
         {/* Validation error */}
@@ -1333,7 +1567,10 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
               {parseError ? '⚠ Fix YAML errors before saving' : '✓ Valid YAML'}
             </span>
             <div className="flex items-center gap-2">
-              <button onClick={onClose} className="rounded-xl border border-gray-700 px-4 py-2 text-sm text-gray-400 hover:bg-white/5">
+              <button
+                onClick={onClose}
+                className="rounded-xl border border-gray-700 px-4 py-2 text-sm text-gray-400 hover:bg-white/5"
+              >
                 Cancel
               </button>
               <button
@@ -1341,7 +1578,11 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
                 disabled={saving || !!parseError}
                 className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
+                {saving ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : saved ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : null}
                 {saved ? 'Saved' : 'Save YAML'}
               </button>
             </div>
@@ -1365,22 +1606,29 @@ const NewTemplateChoiceModal = ({
 }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
     <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
-      <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+      >
         <X className="h-5 w-5" />
       </button>
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">New Template</h3>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">What type of template do you want to create?</p>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        What type of template do you want to create?
+      </p>
       <div className="mt-5 space-y-3">
         <button
           onClick={() => onChoose('rack')}
-          className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-brand-300 hover:bg-brand-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-brand-600/50 dark:hover:bg-brand-500/10"
+          className="hover:border-brand-300 hover:bg-brand-50 dark:hover:border-brand-600/50 dark:hover:bg-brand-500/10 flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left transition-all dark:border-gray-700 dark:bg-gray-800"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/15">
-            <Server className="h-5 w-5 text-brand-500" />
+          <div className="bg-brand-50 dark:bg-brand-500/15 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+            <Server className="text-brand-500 h-5 w-5" />
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Rack Template</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Define a rack model (u_height, infrastructure, checks)</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Define a rack model (u_height, infrastructure, checks)
+            </p>
           </div>
         </button>
         <button
@@ -1392,7 +1640,9 @@ const NewTemplateChoiceModal = ({
           </div>
           <div>
             <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Rack Component</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Define a PDU, cooling unit, switch or other component</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Define a PDU, cooling unit, switch or other component
+            </p>
           </div>
         </button>
       </div>
@@ -1414,16 +1664,32 @@ const NewRackComponentForm = ({
   onCancel: () => void;
   onCreated: (id: string) => void;
 }) => {
-  const [form, setForm] = useState({ name: '', id: '', type: 'pdu', location: 'side', uHeight: '2', model: '', uPosition: '', side: 'left' });
+  const [form, setForm] = useState({
+    name: '',
+    id: '',
+    type: 'pdu',
+    location: 'side',
+    uHeight: '2',
+    model: '',
+    uPosition: '',
+    side: 'left',
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const autoId = form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const autoId = form.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
   const effectiveId = form.id.trim() || autoId;
 
   const handleCreate = async () => {
-    if (!form.name.trim()) { setError('Name is required'); return; }
-    setSaving(true); setError(null);
+    if (!form.name.trim()) {
+      setError('Name is required');
+      return;
+    }
+    setSaving(true);
+    setError(null);
     try {
       await api.createTemplate({
         kind: 'rack',
@@ -1447,42 +1713,110 @@ const NewRackComponentForm = ({
     }
   };
 
-  const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200';
+  const inputCls =
+    'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200';
   const labelCls = 'block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1';
 
   return (
-    <div className="rounded-2xl border border-brand-500/30 bg-white p-5 shadow-sm dark:border-brand-500/20 dark:bg-gray-900">
+    <div className="border-brand-500/30 dark:border-brand-500/20 rounded-2xl border bg-white p-5 shadow-sm dark:bg-gray-900">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">New Rack Component</h3>
-        <button onClick={onCancel} className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"><X className="h-4 w-4" /></button>
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+          New Rack Component
+        </h3>
+        <button
+          onClick={onCancel}
+          className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
       <div className="space-y-3">
-        <div><label className={labelCls}>Name *</label><input autoFocus value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="PDU Raritan 16U" className={inputCls} /></div>
+        <div>
+          <label className={labelCls}>Name *</label>
+          <input
+            autoFocus
+            value={form.name}
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            placeholder="PDU Raritan 16U"
+            className={inputCls}
+          />
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelCls}>Type</label>
-            <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} className={inputCls}>
-              {COMPONENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            <select
+              value={form.type}
+              onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+              className={inputCls}
+            >
+              {COMPONENT_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
             </select>
           </div>
           <div>
             <label className={labelCls}>Location</label>
-            <select value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} className={inputCls}>
-              {COMPONENT_LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
+            <select
+              value={form.location}
+              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              className={inputCls}
+            >
+              {COMPONENT_LOCATIONS.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
             </select>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div><label className={labelCls}>U Height</label><input type="number" min={1} max={52} value={form.uHeight} onChange={(e) => setForm((f) => ({ ...f, uHeight: e.target.value }))} className={inputCls} /></div>
-          <div><label className={labelCls}>Model</label><input value={form.model} onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))} placeholder="optional" className={inputCls} /></div>
+          <div>
+            <label className={labelCls}>U Height</label>
+            <input
+              type="number"
+              min={1}
+              max={52}
+              value={form.uHeight}
+              onChange={(e) => setForm((f) => ({ ...f, uHeight: e.target.value }))}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Model</label>
+            <input
+              value={form.model}
+              onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
+              placeholder="optional"
+              className={inputCls}
+            />
+          </div>
         </div>
         {/* Position in rack */}
         <div className="grid grid-cols-2 gap-3">
-          <div><label className={labelCls}>U Position <span className="text-gray-400">(optional)</span></label><input type="number" min={1} max={52} value={form.uPosition} onChange={(e) => setForm((f) => ({ ...f, uPosition: e.target.value }))} placeholder="e.g. 1" className={inputCls} /></div>
+          <div>
+            <label className={labelCls}>
+              U Position <span className="text-gray-400">(optional)</span>
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={52}
+              value={form.uPosition}
+              onChange={(e) => setForm((f) => ({ ...f, uPosition: e.target.value }))}
+              placeholder="e.g. 1"
+              className={inputCls}
+            />
+          </div>
           {form.location === 'side' && (
             <div>
               <label className={labelCls}>Rail side</label>
-              <select value={form.side} onChange={(e) => setForm((f) => ({ ...f, side: e.target.value }))} className={inputCls}>
+              <select
+                value={form.side}
+                onChange={(e) => setForm((f) => ({ ...f, side: e.target.value }))}
+                className={inputCls}
+              >
                 <option value="left">Left</option>
                 <option value="right">Right</option>
               </select>
@@ -1491,9 +1825,19 @@ const NewRackComponentForm = ({
         </div>
         {error && <p className="text-xs text-red-500">{error}</p>}
         <div className="flex justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
-          <button onClick={onCancel} className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 dark:border-gray-700">Cancel</button>
-          <button onClick={() => void handleCreate()} disabled={saving} className="flex items-center gap-1.5 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Create
+          <button
+            onClick={onCancel}
+            className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-500 dark:border-gray-700"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => void handleCreate()}
+            disabled={saving}
+            className="bg-brand-500 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}{' '}
+            Create
           </button>
         </div>
       </div>
@@ -1531,7 +1875,11 @@ export const RackTemplateEditorPage = () => {
   const [drawerYaml, setDrawerYaml] = useState('');
   const drawerOnSaveRef = useRef<(yaml: string) => Promise<void>>(() => Promise.resolve());
 
-  const openYamlDrawer = (title: string, entity: unknown, onSave: (yaml: string) => Promise<void>) => {
+  const openYamlDrawer = (
+    title: string,
+    entity: unknown,
+    onSave: (yaml: string) => Promise<void>
+  ) => {
     setDrawerTitle(title);
     setDrawerYaml(jsYaml.dump(entity, { lineWidth: 120 }));
     drawerOnSaveRef.current = onSave;
@@ -1592,7 +1940,9 @@ export const RackTemplateEditorPage = () => {
   const [previewDraft, setPreviewDraft] = useState<RackDraft | null>(null);
 
   // Reset preview when template selection changes
-  useEffect(() => { setPreviewDraft(null); }, [selectedId]);
+  useEffect(() => {
+    setPreviewDraft(null);
+  }, [selectedId]);
 
   // Build the preview template from draft + saved template (for RackPreview)
   const previewTemplate = useMemo((): RackTemplate | null => {
@@ -1664,7 +2014,6 @@ export const RackTemplateEditorPage = () => {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 gap-5">
-
           {/* ── LEFT PANEL: Racks + Components tabs ────────────────────── */}
           <div className="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
             {/* Tabs */}
@@ -1676,7 +2025,7 @@ export const RackTemplateEditorPage = () => {
                   className={[
                     'flex-1 py-3 text-xs font-semibold capitalize transition-colors',
                     leftTab === tab
-                      ? 'border-b-2 border-brand-500 text-brand-600 dark:text-brand-400'
+                      ? 'border-brand-500 text-brand-600 dark:text-brand-400 border-b-2'
                       : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300',
                   ].join(' ')}
                 >
@@ -1690,15 +2039,28 @@ export const RackTemplateEditorPage = () => {
               <>
                 {(showNewForm || showNewCompForm) && (
                   <div className="shrink-0 p-3">
-                    {showNewForm && <NewTemplateForm
-                      onCancel={() => setShowNewForm(false)}
-                      onCreated={(id) => { void handleCreated(id); }}
-                      existingIds={existingIds}
-                    />}
-                    {showNewCompForm && <NewRackComponentForm
-                      onCancel={() => setShowNewCompForm(false)}
-                      onCreated={(id) => { setShowNewCompForm(false); void loadData().then(() => { setLeftTab('components'); setSelectedComponentId(id); setSelectedId(null); }); }}
-                    />}
+                    {showNewForm && (
+                      <NewTemplateForm
+                        onCancel={() => setShowNewForm(false)}
+                        onCreated={(id) => {
+                          void handleCreated(id);
+                        }}
+                        existingIds={existingIds}
+                      />
+                    )}
+                    {showNewCompForm && (
+                      <NewRackComponentForm
+                        onCancel={() => setShowNewCompForm(false)}
+                        onCreated={(id) => {
+                          setShowNewCompForm(false);
+                          void loadData().then(() => {
+                            setLeftTab('components');
+                            setSelectedComponentId(id);
+                            setSelectedId(null);
+                          });
+                        }}
+                      />
+                    )}
                   </div>
                 )}
                 <div className="shrink-0 p-3">
@@ -1708,10 +2070,13 @@ export const RackTemplateEditorPage = () => {
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Search templates…"
-                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 pr-8 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-600"
+                      className="focus:border-brand-500 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 pr-8 text-sm placeholder-gray-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-600"
                     />
                     {search && (
-                      <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <button
+                        onClick={() => setSearch('')}
+                        className="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}
@@ -1724,11 +2089,20 @@ export const RackTemplateEditorPage = () => {
                     <div className="space-y-4">
                       {grouped.map(([uHeight, items]) => (
                         <div key={uHeight}>
-                          <p className="mb-2 px-1 text-[10px] font-bold tracking-widest text-gray-400 uppercase dark:text-gray-600">{uHeight}U Racks</p>
+                          <p className="mb-2 px-1 text-[10px] font-bold tracking-widest text-gray-400 uppercase dark:text-gray-600">
+                            {uHeight}U Racks
+                          </p>
                           <div className="space-y-1.5">
                             {items.map((tpl) => (
-                              <TemplateItem key={tpl.id} template={tpl} selected={selectedId === tpl.id}
-                                onClick={() => { setSelectedId(tpl.id); setSelectedComponentId(null); }} />
+                              <TemplateItem
+                                key={tpl.id}
+                                template={tpl}
+                                selected={selectedId === tpl.id}
+                                onClick={() => {
+                                  setSelectedId(tpl.id);
+                                  setSelectedComponentId(null);
+                                }}
+                              />
                             ))}
                           </div>
                         </div>
@@ -1740,137 +2114,197 @@ export const RackTemplateEditorPage = () => {
             )}
 
             {/* Components tab — rack_component_templates (Flush accordion by type) */}
-            {leftTab === 'components' && (() => {
-              const filtered = rackComponents.filter(
-                (c) => !componentSearch || c.name.toLowerCase().includes(componentSearch.toLowerCase()) || c.id.toLowerCase().includes(componentSearch.toLowerCase())
-              );
-              const byType = new Map<string, RackComponentTemplate[]>();
-              filtered.forEach((c) => {
-                const g = byType.get(c.type) ?? [];
-                g.push(c);
-                byType.set(c.type, g);
-              });
-              return (
-                <>
-                  <div className="shrink-0 p-3">
-                    <input
-                      type="text"
-                      value={componentSearch}
-                      onChange={(e) => setComponentSearch(e.target.value)}
-                      placeholder="Search components…"
-                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-600"
-                    />
-                  </div>
-                  <div className="flex-1 overflow-y-auto">
-                    {byType.size === 0 ? (
-                      <p className="px-4 py-6 text-center text-xs text-gray-400">No rack components</p>
-                    ) : (
-                      <div className="space-y-1 p-2">
-                        {Array.from(byType.entries()).map(([type, comps]) => {
-                          const isOpen = openComponentGroups.has(type);
-                          const col = RAIL_COLORS[type] ?? RAIL_COLORS.other;
-                          return (
-                            <div key={type} className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
-                              {/* Accordion header */}
-                              <button
-                                onClick={() => setOpenComponentGroups((prev) => {
-                                  const next = new Set(prev);
-                                  if (isOpen) { next.delete(type); } else { next.add(type); }
-                                  return next;
-                                })}
-                                className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+            {leftTab === 'components' &&
+              (() => {
+                const filtered = rackComponents.filter(
+                  (c) =>
+                    !componentSearch ||
+                    c.name.toLowerCase().includes(componentSearch.toLowerCase()) ||
+                    c.id.toLowerCase().includes(componentSearch.toLowerCase())
+                );
+                const byType = new Map<string, RackComponentTemplate[]>();
+                filtered.forEach((c) => {
+                  const g = byType.get(c.type) ?? [];
+                  g.push(c);
+                  byType.set(c.type, g);
+                });
+                return (
+                  <>
+                    <div className="shrink-0 p-3">
+                      <input
+                        type="text"
+                        value={componentSearch}
+                        onChange={(e) => setComponentSearch(e.target.value)}
+                        placeholder="Search components…"
+                        className="focus:border-brand-500 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-600"
+                      />
+                    </div>
+                    <div className="flex-1 overflow-y-auto">
+                      {byType.size === 0 ? (
+                        <p className="px-4 py-6 text-center text-xs text-gray-400">
+                          No rack components
+                        </p>
+                      ) : (
+                        <div className="space-y-1 p-2">
+                          {Array.from(byType.entries()).map(([type, comps]) => {
+                            const isOpen = openComponentGroups.has(type);
+                            const col = RAIL_COLORS[type] ?? RAIL_COLORS.other;
+                            return (
+                              <div
+                                key={type}
+                                className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800"
                               >
-                                {/* Color dot */}
-                                <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: col.border }} />
-                                <span className="flex-1 text-xs font-semibold capitalize text-gray-700 dark:text-gray-300">{type}</span>
-                                <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">{comps.length}</span>
-                                <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-                              </button>
+                                {/* Accordion header */}
+                                <button
+                                  onClick={() =>
+                                    setOpenComponentGroups((prev) => {
+                                      const next = new Set(prev);
+                                      if (isOpen) {
+                                        next.delete(type);
+                                      } else {
+                                        next.add(type);
+                                      }
+                                      return next;
+                                    })
+                                  }
+                                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                                >
+                                  {/* Color dot */}
+                                  <div
+                                    className="h-2 w-2 shrink-0 rounded-full"
+                                    style={{ backgroundColor: col.border }}
+                                  />
+                                  <span className="flex-1 text-xs font-semibold text-gray-700 capitalize dark:text-gray-300">
+                                    {type}
+                                  </span>
+                                  <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                                    {comps.length}
+                                  </span>
+                                  <ChevronDown
+                                    className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                                  />
+                                </button>
 
-                              {/* Accordion body */}
-                              {isOpen && (
-                                <div className="border-t border-gray-100 dark:border-gray-800">
-                                  {comps.map((comp) => {
-                                    const selected = selectedComponentId === comp.id;
-                                    return (
-                                      <button
-                                        key={comp.id}
-                                        onClick={() => { setSelectedComponentId(comp.id); setSelectedId(null); }}
-                                        className={[
-                                          'flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors',
-                                          selected
-                                            ? 'bg-brand-50 dark:bg-brand-500/10'
-                                            : 'hover:bg-gray-50 dark:hover:bg-white/5',
-                                        ].join(' ')}
-                                      >
-                                        <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: col.border, opacity: selected ? 1 : 0.4 }} />
-                                        <div className="min-w-0 flex-1">
-                                          <p className={`truncate text-xs font-medium ${selected ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}>{comp.name}</p>
-                                          <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">{comp.u_height}U · {comp.location}{comp.side ? ` · ${comp.side}` : ''}</p>
-                                        </div>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                  <div className="shrink-0 border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
-                    <p className="text-[10px] text-gray-400 dark:text-gray-600">{rackComponents.length} component{rackComponents.length !== 1 ? 's' : ''}</p>
-                  </div>
-                </>
-              );
-            })()}
+                                {/* Accordion body */}
+                                {isOpen && (
+                                  <div className="border-t border-gray-100 dark:border-gray-800">
+                                    {comps.map((comp) => {
+                                      const selected = selectedComponentId === comp.id;
+                                      return (
+                                        <button
+                                          key={comp.id}
+                                          onClick={() => {
+                                            setSelectedComponentId(comp.id);
+                                            setSelectedId(null);
+                                          }}
+                                          className={[
+                                            'flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors',
+                                            selected
+                                              ? 'bg-brand-50 dark:bg-brand-500/10'
+                                              : 'hover:bg-gray-50 dark:hover:bg-white/5',
+                                          ].join(' ')}
+                                        >
+                                          <div
+                                            className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                            style={{
+                                              backgroundColor: col.border,
+                                              opacity: selected ? 1 : 0.4,
+                                            }}
+                                          />
+                                          <div className="min-w-0 flex-1">
+                                            <p
+                                              className={`truncate text-xs font-medium ${selected ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
+                                            >
+                                              {comp.name}
+                                            </p>
+                                            <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">
+                                              {comp.u_height}U · {comp.location}
+                                              {comp.side ? ` · ${comp.side}` : ''}
+                                            </p>
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    <div className="shrink-0 border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
+                      <p className="text-[10px] text-gray-400 dark:text-gray-600">
+                        {rackComponents.length} component{rackComponents.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
           </div>
 
           {/* ── FORM PANEL ─────────────────────────────────────────────── */}
-          <div className="flex w-[560px] shrink-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex min-h-0 w-[560px] shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
             {selectedTemplate ? (
               <>
                 {/* YAML button strip */}
-                <div className="shrink-0 flex items-center justify-end border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
+                <div className="flex shrink-0 items-center justify-end border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
                   <button
-                    onClick={() => openYamlDrawer(
-                      `Rack Template — ${selectedTemplate.name}`,
-                      selectedTemplate,
-                      async (yaml) => {
-                        const parsed = jsYaml.load(yaml) as Record<string, unknown>;
-                        await api.updateTemplate({ kind: 'rack', template: parsed });
-                        await loadData();
-                      }
-                    )}
+                    onClick={() =>
+                      openYamlDrawer(
+                        `Rack Template — ${selectedTemplate.name}`,
+                        selectedTemplate,
+                        async (yaml) => {
+                          const parsed = jsYaml.load(yaml) as Record<string, unknown>;
+                          await api.updateTemplate({ kind: 'rack', template: parsed });
+                          await loadData();
+                        }
+                      )
+                    }
                     className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
                   >
                     <FileCode2 className="h-3.5 w-3.5" /> Edit YAML
                   </button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-6">
-                  <EditorPanel key={selectedTemplate.id} template={selectedTemplate} allChecks={checks} rackComponentCatalog={rackComponents} onDraftChange={setPreviewDraft} onSaved={() => { void loadData(); }} />
+                  <EditorPanel
+                    key={selectedTemplate.id}
+                    template={selectedTemplate}
+                    allChecks={checks}
+                    rackComponentCatalog={rackComponents}
+                    onDraftChange={setPreviewDraft}
+                    onSaved={() => {
+                      void loadData();
+                    }}
+                  />
                 </div>
               </>
             ) : selectedComponent ? (
               <>
-                <div className="shrink-0 flex items-center justify-end border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
+                <div className="flex shrink-0 items-center justify-end border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
                   <button
-                    onClick={() => openYamlDrawer(
-                      `Component — ${selectedComponent.name}`,
-                      selectedComponent,
-                      async (yaml) => {
-                        const parsed = jsYaml.load(yaml) as Record<string, unknown>;
-                        await api.updateTemplate({ kind: 'rack', template: parsed });
-                        await loadData();
-                      }
-                    )}
+                    onClick={() =>
+                      openYamlDrawer(
+                        `Component — ${selectedComponent.name}`,
+                        selectedComponent,
+                        async (yaml) => {
+                          const parsed = jsYaml.load(yaml) as Record<string, unknown>;
+                          await api.updateTemplate({ kind: 'rack', template: parsed });
+                          await loadData();
+                        }
+                      )
+                    }
                     className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
                   >
                     <FileCode2 className="h-3.5 w-3.5" /> Edit YAML
                   </button>
                 </div>
-                <RackComponentDetailPanel component={selectedComponent} onSaved={() => { void loadData(); }} />
+                <RackComponentDetailPanel
+                  component={selectedComponent}
+                  onSaved={() => {
+                    void loadData();
+                  }}
+                />
               </>
             ) : (
               <div className="flex h-full items-center justify-center p-6 text-center">
@@ -1878,7 +2312,9 @@ export const RackTemplateEditorPage = () => {
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-800">
                     <Server className="h-7 w-7 text-gray-300 dark:text-gray-600" />
                   </div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Select a template or component</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Select a template or component
+                  </p>
                 </div>
               </div>
             )}
@@ -1890,11 +2326,19 @@ export const RackTemplateEditorPage = () => {
               <>
                 {/* Front view — live preview (no save needed) */}
                 <div className="flex min-h-0 flex-1 flex-col border-r border-[var(--color-border)]/20">
-                  <RackPreview template={previewTemplate ?? selectedTemplate} view="front" rackComponentCatalog={rackComponents} />
+                  <RackPreview
+                    template={previewTemplate ?? selectedTemplate}
+                    view="front"
+                    rackComponentCatalog={rackComponents}
+                  />
                 </div>
                 {/* Rear view — live preview */}
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <RackPreview template={previewTemplate ?? selectedTemplate} view="rear" rackComponentCatalog={rackComponents} />
+                  <RackPreview
+                    template={previewTemplate ?? selectedTemplate}
+                    view="rear"
+                    rackComponentCatalog={rackComponents}
+                  />
                 </div>
               </>
             ) : (
@@ -1902,7 +2346,9 @@ export const RackTemplateEditorPage = () => {
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--color-border)]/20">
                   <Server className="h-6 w-6 text-[var(--color-text-base)] opacity-30" />
                 </div>
-                <p className="text-sm text-[var(--color-text-base)] opacity-40">Select a rack template to preview</p>
+                <p className="text-sm text-[var(--color-text-base)] opacity-40">
+                  Select a rack template to preview
+                </p>
               </div>
             )}
           </div>
@@ -1914,8 +2360,13 @@ export const RackTemplateEditorPage = () => {
         <NewTemplateChoiceModal
           onChoose={(kind) => {
             setShowChoiceModal(false);
-            if (kind === 'rack') { setShowNewForm(true); setLeftTab('racks'); }
-            else { setShowNewCompForm(true); setLeftTab('components'); }
+            if (kind === 'rack') {
+              setShowNewForm(true);
+              setLeftTab('racks');
+            } else {
+              setShowNewCompForm(true);
+              setLeftTab('components');
+            }
           }}
           onClose={() => setShowChoiceModal(false)}
         />

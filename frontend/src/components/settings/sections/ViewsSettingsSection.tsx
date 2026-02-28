@@ -7,7 +7,7 @@ import { SectionCard } from '../../../app/pages/templates/EmptyPage';
 import { FormSelect } from '../common/FormSelect';
 
 // Dashboard localStorage keys (mirrors CosmosDashboard constants)
-const DASH_KEY     = 'rackscope.dashboards';
+const DASH_KEY = 'rackscope.dashboards';
 const DASH_VER_KEY = 'rackscope.dashboards.version';
 
 const DashboardResetCard = () => {
@@ -51,13 +51,7 @@ interface Props {
   setDraft: (d: ConfigDraft) => void;
 }
 
-const Toggle = ({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) => (
+const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
   <button
     type="button"
     onClick={() => onChange(!checked)}
@@ -81,15 +75,19 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
     val: ConfigDraft['features'][K]
   ) => setDraft({ ...draft, features: { ...f, [key]: val } });
 
-  const setMap = <K extends keyof ConfigDraft['map']>(
-    key: K,
-    val: ConfigDraft['map'][K]
-  ) => setDraft({ ...draft, map: { ...m, [key]: val } });
+  const setMap = <K extends keyof ConfigDraft['map']>(key: K, val: ConfigDraft['map'][K]) =>
+    setDraft({ ...draft, map: { ...m, [key]: val } });
 
-return (
+  return (
     <div className="space-y-6">
       {/* ── Map ── */}
-      <SectionCard title="World Map" desc="Configure the default view of the world map" icon={Globe} iconColor="text-sky-500" iconBg="bg-sky-50 dark:bg-sky-500/10">
+      <SectionCard
+        title="World Map"
+        desc="Configure the default view of the world map"
+        icon={Globe}
+        iconColor="text-sky-500"
+        iconBg="bg-sky-50 dark:bg-sky-500/10"
+      >
         <div className="grid grid-cols-2 gap-4">
           <SettingField
             label="Default zoom"
@@ -104,10 +102,7 @@ return (
               className={inputCls}
             />
           </SettingField>
-          <SettingField
-            label="Min / Max zoom"
-            tooltip="Users cannot zoom below min or above max."
-          >
+          <SettingField label="Min / Max zoom" tooltip="Users cannot zoom below min or above max.">
             <div className="flex gap-2">
               <input
                 type="number"
@@ -167,8 +162,8 @@ return (
             }}
             options={[
               { value: 'minimal', label: 'Minimal — adaptive dark/light (default)' },
-              { value: 'noc',     label: 'NOC — glowing teal for wallboards' },
-              { value: 'flat',    label: 'Flat — solid fills, crisp borders' },
+              { value: 'noc', label: 'NOC — glowing teal for wallboards' },
+              { value: 'flat', label: 'Flat — solid fills, crisp borders' },
             ]}
           />
         </div>
@@ -179,15 +174,18 @@ return (
             </span>
             <SettingTooltip text="Show +/− zoom buttons on the map. Disable for kiosk/display mode." />
           </div>
-          <Toggle
-            checked={m.zoom_controls ?? true}
-            onChange={(v) => setMap('zoom_controls', v)}
-          />
+          <Toggle checked={m.zoom_controls ?? true} onChange={(v) => setMap('zoom_controls', v)} />
         </div>
       </SectionCard>
 
       {/* ── Pages ── */}
-      <SectionCard title="Pages & Navigation" desc="Enable or disable sections of the application" icon={LayoutDashboard} iconColor="text-brand-500" iconBg="bg-brand-50 dark:bg-brand-500/10">
+      <SectionCard
+        title="Pages & Navigation"
+        desc="Enable or disable sections of the application"
+        icon={LayoutDashboard}
+        iconColor="text-brand-500"
+        iconBg="bg-brand-50 dark:bg-brand-500/10"
+      >
         <div className="space-y-2">
           {(
             [
@@ -219,7 +217,9 @@ return (
               className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 dark:border-gray-800"
             >
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {label}
+                </span>
                 <SettingTooltip text={tooltip} />
               </div>
               <Toggle
@@ -252,7 +252,7 @@ return (
         {f.playlist && (
           <Link
             to="/cosmos/playlist"
-            className="mt-3 flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/15"
+            className="border-brand-200 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/15 mt-3 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-colors"
           >
             <MonitorPlay className="h-4 w-4 shrink-0" />
             Configure views, intervals and display mode

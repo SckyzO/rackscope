@@ -1,4 +1,4 @@
-import type { ReactNode} from 'react';
+import type { ReactNode } from 'react';
 import { useState, useMemo, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -820,9 +820,7 @@ export const DeviceChassis = ({
   // Auto-hide text when per-column width is too narrow (< 65px) for legible display.
   // Rack interior = rackWidth - 2×16(p-4) - 2×24(border-x) = rackWidth - 80px.
   const compactHideText =
-    rackWidth !== undefined && layout.cols > 1
-      ? (rackWidth - 80) / layout.cols < 65
-      : false;
+    rackWidth !== undefined && layout.cols > 1 ? (rackWidth - 80) / layout.cols < 65 : false;
 
   let borderColor = 'border-[var(--color-border)]/30';
   let bgColor = 'bg-[var(--color-device-surface)]';
@@ -918,7 +916,7 @@ export const DeviceChassis = ({
         <div className={`absolute inset-0 blur-[4px] ${statusColor} opacity-40`}></div>
       </div>
       <div
-        className="grid min-w-0 flex-1 overflow-hidden gap-[1px] bg-[var(--color-border)]/5 p-[1px]"
+        className="grid min-w-0 flex-1 gap-[1px] overflow-hidden bg-[var(--color-border)]/5 p-[1px]"
         style={{
           gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
           gridTemplateColumns: isHighDensity ? '1fr' : `repeat(${layout.cols}, 1fr)`,

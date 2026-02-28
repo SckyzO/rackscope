@@ -30,22 +30,22 @@ const statusColor = (s: string) => STATUS_COLOR[s.toLowerCase()] ?? '#6b7280';
 const SeverityBadge = ({ sev }: { sev: string }) => {
   if (sev === 'CRIT')
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-error-50 px-2.5 py-0.5 text-xs font-medium text-error-500 dark:bg-error-500/15">
-        <span className="h-1.5 w-1.5 rounded-full bg-error-500" />
+      <span className="bg-error-50 text-error-500 dark:bg-error-500/15 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium">
+        <span className="bg-error-500 h-1.5 w-1.5 rounded-full" />
         CRIT
       </span>
     );
   if (sev === 'WARN')
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-50 px-2.5 py-0.5 text-xs font-medium text-warning-500 dark:bg-warning-500/15">
-        <span className="h-1.5 w-1.5 rounded-full bg-warning-500" />
+      <span className="bg-warning-50 text-warning-500 dark:bg-warning-500/15 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium">
+        <span className="bg-warning-500 h-1.5 w-1.5 rounded-full" />
         WARN
       </span>
     );
   if (sev === 'OK')
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-medium text-success-500 dark:bg-success-500/15">
-        <span className="h-1.5 w-1.5 rounded-full bg-success-500" />
+      <span className="bg-success-50 text-success-500 dark:bg-success-500/15 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium">
+        <span className="bg-success-500 h-1.5 w-1.5 rounded-full" />
         OK
       </span>
     );
@@ -86,7 +86,14 @@ export const SlurmNodesPage = () => {
   const [perPage, setPerPage] = useState(10);
   const tableAreaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { api.getRooms().then(setRooms).catch(() => { /* noop */ }); }, []);
+  useEffect(() => {
+    api
+      .getRooms()
+      .then(setRooms)
+      .catch(() => {
+        /* noop */
+      });
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -94,37 +101,48 @@ export const SlurmNodesPage = () => {
       setLoading(true);
       try {
         const data = await api.getSlurmNodes(roomId || undefined);
-        if (active) { setNodes(data?.nodes ?? []); setLoading(false); }
-      } catch { if (active) setLoading(false); }
+        if (active) {
+          setNodes(data?.nodes ?? []);
+          setLoading(false);
+        }
+      } catch {
+        if (active) setLoading(false);
+      }
     };
     void load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [roomId]);
 
   // Reset page on filter change (queueMicrotask avoids synchronous setState in effect)
-  useEffect(() => { queueMicrotask(() => setPage(0)); }, [search, sevFilter, statusFilter, roomId]);
+  useEffect(() => {
+    queueMicrotask(() => setPage(0));
+  }, [search, sevFilter, statusFilter, roomId]);
 
   // Dynamic statuses and severities present in data
   const availableStatuses = useMemo(
     () => [...new Set(nodes.map((n) => n.status.toLowerCase()))].sort(),
     [nodes]
   );
-  const availableSevs = useMemo(
-    () => {
-      const order = ['CRIT', 'WARN', 'OK', 'UNKNOWN'];
-      const present = new Set(nodes.map((n) => n.severity));
-      return order.filter((s) => present.has(s));
-    },
-    [nodes]
-  );
+  const availableSevs = useMemo(() => {
+    const order = ['CRIT', 'WARN', 'OK', 'UNKNOWN'];
+    const present = new Set(nodes.map((n) => n.severity));
+    return order.filter((s) => present.has(s));
+  }, [nodes]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return nodes.filter((n) => {
-      if (q && !n.node.toLowerCase().includes(q) && !n.status.toLowerCase().includes(q) &&
-          !(n.room_name ?? '').toLowerCase().includes(q) &&
-          !(n.rack_name ?? '').toLowerCase().includes(q) &&
-          !n.partitions.some((p) => p.toLowerCase().includes(q))) return false;
+      if (
+        q &&
+        !n.node.toLowerCase().includes(q) &&
+        !n.status.toLowerCase().includes(q) &&
+        !(n.room_name ?? '').toLowerCase().includes(q) &&
+        !(n.rack_name ?? '').toLowerCase().includes(q) &&
+        !n.partitions.some((p) => p.toLowerCase().includes(q))
+      )
+        return false;
       if (sevFilter && n.severity !== sevFilter) return false;
       if (statusFilter && n.status.toLowerCase() !== statusFilter) return false;
       return true;
@@ -171,16 +189,18 @@ export const SlurmNodesPage = () => {
   const lastEntry = Math.min((safePage + 1) * perPage, filtered.length);
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col gap-5 overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
       <div className="shrink-0">
         <PageHeader
           title="Node List"
           breadcrumb={
-            <PageBreadcrumb items={[
-              { label: 'Home', href: '/cosmos' },
-              { label: 'Slurm', href: '/slurm/overview' },
-              { label: 'Nodes' },
-            ]} />
+            <PageBreadcrumb
+              items={[
+                { label: 'Home', href: '/cosmos' },
+                { label: 'Slurm', href: '/slurm/overview' },
+                { label: 'Nodes' },
+              ]}
+            />
           }
           actions={
             <select
@@ -189,7 +209,11 @@ export const SlurmNodesPage = () => {
               className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
             >
               <option value="">All rooms</option>
-              {rooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
             </select>
           }
         />
@@ -197,7 +221,6 @@ export const SlurmNodesPage = () => {
 
       {/* Table card */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-
         {/* Toolbar */}
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
           <div className="relative min-w-[200px] flex-1">
@@ -269,7 +292,9 @@ export const SlurmNodesPage = () => {
             <div className="flex h-full items-center justify-center">
               <EmptyState
                 title="No nodes found"
-                description={search ? `No results for "${search}"` : 'No nodes match the selected filters'}
+                description={
+                  search ? `No results for "${search}"` : 'No nodes match the selected filters'
+                }
               />
             </div>
           ) : (
@@ -285,7 +310,10 @@ export const SlurmNodesPage = () => {
               <thead className="sticky top-0 z-10">
                 <tr className="border-b border-gray-100 dark:border-gray-800">
                   {['Node', 'Status', 'Severity', 'Partitions', 'Rack', 'Room'].map((h) => (
-                    <th key={h} className="bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                    <th
+                      key={h}
+                      className="bg-gray-50 px-4 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:bg-gray-800 dark:text-gray-400"
+                    >
                       {h}
                     </th>
                   ))}
@@ -299,7 +327,7 @@ export const SlurmNodesPage = () => {
                     </td>
                     <td className="px-4 py-2.5">
                       <span
-                        className="inline-block rounded-full px-2.5 py-0.5 font-mono text-xs font-medium capitalize text-white"
+                        className="inline-block rounded-full px-2.5 py-0.5 font-mono text-xs font-medium text-white capitalize"
                         style={{ backgroundColor: statusColor(n.status) }}
                       >
                         {n.status}
@@ -329,9 +357,10 @@ export const SlurmNodesPage = () => {
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3 dark:border-gray-800">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Showing{' '}
-              <b className="text-gray-700 dark:text-gray-200">{firstEntry}–{lastEntry}</b>
-              {' '}of{' '}
-              <b className="text-gray-700 dark:text-gray-200">{filtered.length}</b> nodes
+              <b className="text-gray-700 dark:text-gray-200">
+                {firstEntry}–{lastEntry}
+              </b>{' '}
+              of <b className="text-gray-700 dark:text-gray-200">{filtered.length}</b> nodes
             </p>
             <div className="flex items-center gap-1">
               <button
@@ -344,7 +373,12 @@ export const SlurmNodesPage = () => {
               <div className="flex items-center gap-1">
                 {pageNums.map((p, i) =>
                   p === '...' ? (
-                    <span key={`e-${i}`} className="flex h-9 w-9 items-center justify-center text-sm text-gray-400">…</span>
+                    <span
+                      key={`e-${i}`}
+                      className="flex h-9 w-9 items-center justify-center text-sm text-gray-400"
+                    >
+                      …
+                    </span>
                   ) : (
                     <button
                       key={p}

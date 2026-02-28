@@ -639,7 +639,12 @@ export const TemplatesShowcase = () => {
             />
           </SectionCard>
           <SectionCard title="Error">
-            <ErrorState message="Failed to load data." onRetry={() => { /* noop */ }} />
+            <ErrorState
+              message="Failed to load data."
+              onRetry={() => {
+                /* noop */
+              }}
+            />
           </SectionCard>
         </div>
       </div>

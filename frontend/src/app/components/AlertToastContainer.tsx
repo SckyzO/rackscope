@@ -30,7 +30,10 @@ const toastConfig = {
 };
 
 const buildAlertId = (alert: ActiveAlert): string =>
-  `${alert.node_id}:${alert.checks.map((c) => c.id).sort().join(',')}`;
+  `${alert.node_id}:${alert.checks
+    .map((c) => c.id)
+    .sort()
+    .join(',')}`;
 
 const getAlertSeverity = (alert: ActiveAlert): 'WARN' | 'CRIT' | null => {
   const hasCrit = alert.checks.some((c) => c.severity === 'CRIT');
@@ -127,33 +130,44 @@ export const AlertToastContainer = () => {
   // When expanded, show all toasts individually even if stacked threshold exceeded
   if (isStacked && expanded) {
     return (
-      <div className={`fixed z-[9999] ${positionClass} flex w-80 flex-col`} style={{ maxHeight: 'calc(100vh - 32px)' }}>
+      <div
+        className={`fixed z-[9999] ${positionClass} flex w-80 flex-col`}
+        style={{ maxHeight: 'calc(100vh - 32px)' }}
+      >
         {/* Sticky collapse button */}
         <button
           onClick={() => setExpanded(false)}
           className="flex shrink-0 items-center justify-between rounded-lg border border-gray-200 bg-white/95 px-3 py-1.5 text-xs font-medium text-gray-500 backdrop-blur-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/95 dark:text-gray-400 dark:hover:bg-gray-800"
         >
-          <span>{toasts.length} alert{toasts.length !== 1 ? 's' : ''}</span>
+          <span>
+            {toasts.length} alert{toasts.length !== 1 ? 's' : ''}
+          </span>
           <span className="text-[10px] opacity-60">▲ Collapse</span>
         </button>
         {/* Scrollable toasts — capped to screen height */}
         <div className="rs-scrollbar mt-2 flex flex-col gap-2 overflow-y-auto">
-        {toasts.map((toast) => {
-          const cfg = toastConfig[toast.severity as 'WARN' | 'CRIT'] ?? toastConfig.WARN;
-          const { Icon } = cfg;
-          return (
-            <div key={toast.id} className={`shadow-theme-lg flex shrink-0 items-start gap-3 rounded-xl border p-4 ${cfg.bg} ${cfg.border}`}>
-              <Icon className={`h-5 w-5 shrink-0 ${cfg.icon_c}`} />
-              <div className="min-w-0 flex-1">
-                <p className={`text-sm font-semibold ${cfg.title_c}`}>{toast.title}</p>
-                <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{toast.message}</p>
+          {toasts.map((toast) => {
+            const cfg = toastConfig[toast.severity as 'WARN' | 'CRIT'] ?? toastConfig.WARN;
+            const { Icon } = cfg;
+            return (
+              <div
+                key={toast.id}
+                className={`shadow-theme-lg flex shrink-0 items-start gap-3 rounded-xl border p-4 ${cfg.bg} ${cfg.border}`}
+              >
+                <Icon className={`h-5 w-5 shrink-0 ${cfg.icon_c}`} />
+                <div className="min-w-0 flex-1">
+                  <p className={`text-sm font-semibold ${cfg.title_c}`}>{toast.title}</p>
+                  <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{toast.message}</p>
+                </div>
+                <button
+                  onClick={() => dismiss(toast.id)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <button onClick={() => dismiss(toast.id)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          );
-        })}
+            );
+          })}
         </div>
       </div>
     );
@@ -191,9 +205,7 @@ export const AlertToastContainer = () => {
             <div
               className={`absolute inset-0 rounded-xl border ${cfg.bg} ${cfg.border} opacity-55`}
               style={{
-                transform: isTop
-                  ? 'translateY(5px) scaleX(0.94)'
-                  : 'translateY(-5px) scaleX(0.94)',
+                transform: isTop ? 'translateY(5px) scaleX(0.94)' : 'translateY(-5px) scaleX(0.94)',
                 transformOrigin: 'center',
                 zIndex: 2,
               }}
@@ -207,9 +219,7 @@ export const AlertToastContainer = () => {
             <Icon className={`h-5 w-5 shrink-0 ${cfg.icon_c}`} />
             <div className="min-w-0 flex-1">
               <p className={`text-sm font-semibold ${cfg.title_c}`}>{mainToast.title}</p>
-              <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
-                {mainToast.message}
-              </p>
+              <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{mainToast.message}</p>
             </div>
             <button
               onClick={() => dismiss(mainToast.id)}
@@ -226,7 +236,9 @@ export const AlertToastContainer = () => {
             onClick={() => setExpanded(true)}
             className="flex items-center gap-1 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
           >
-            <span>{toasts.length} alert{toasts.length !== 1 ? 's' : ''}</span>
+            <span>
+              {toasts.length} alert{toasts.length !== 1 ? 's' : ''}
+            </span>
             <span className="opacity-50">▼ Expand</span>
           </button>
           <button
@@ -259,10 +271,7 @@ export const AlertToastContainer = () => {
               <p className={`text-sm font-semibold ${cfg.title_c}`}>{toast.title}</p>
               <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{toast.message}</p>
             </div>
-            <button
-              onClick={() => dismiss(toast.id)}
-              className="text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={() => dismiss(toast.id)} className="text-gray-400 hover:text-gray-600">
               <X className="h-4 w-4" />
             </button>
           </div>

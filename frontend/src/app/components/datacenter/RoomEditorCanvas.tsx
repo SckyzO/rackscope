@@ -34,7 +34,7 @@ const Tooltip = ({ text, children }: { text: string; children: ReactNode }) => (
     {children}
     <div
       aria-hidden
-      className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-2 py-1 text-[10px] text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:bg-gray-700"
+      className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 -translate-x-1/2 rounded-lg bg-gray-900 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 dark:bg-gray-700"
     >
       {text}
       <div className="absolute top-full left-1/2 h-0 w-0 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
@@ -77,8 +77,8 @@ const DeleteConfirmModal = ({
         </h3>
         <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
           You are about to permanently delete{' '}
-          <span className="font-semibold text-gray-700 dark:text-gray-300">{entityName}</span>.
-          This will remove all racks within this aisle. This action cannot be undone.
+          <span className="font-semibold text-gray-700 dark:text-gray-300">{entityName}</span>. This
+          will remove all racks within this aisle. This action cannot be undone.
         </p>
         <div className="mt-6 flex justify-end gap-3">
           <button
@@ -218,18 +218,21 @@ const RackCard = ({
     >
       {/* Drop indicator line (before this card) */}
       {isDragTarget && (
-        <div className="absolute -left-[3px] top-0 z-10 h-full w-[3px] rounded-full bg-blue-500" />
+        <div className="absolute top-0 -left-[3px] z-10 h-full w-[3px] rounded-full bg-blue-500" />
       )}
 
       <div
         draggable
-        onDragStart={(e) => { e.stopPropagation(); onDragStart(rack.id, aisleId); }}
+        onDragStart={(e) => {
+          e.stopPropagation();
+          onDragStart(rack.id, aisleId);
+        }}
         onDragEnd={onDragEnd}
         className={[
-          'group w-[148px] cursor-grab select-none rounded-xl border bg-white p-3 transition-all duration-150 active:cursor-grabbing dark:bg-gray-800',
+          'group w-[148px] cursor-grab rounded-xl border bg-white p-3 transition-all duration-150 select-none active:cursor-grabbing dark:bg-gray-800',
           isDragging
-            ? 'scale-[1.04] rotate-[0.8deg] shadow-2xl ring-2 ring-brand-500/60 border-brand-400/50 dark:border-brand-500/50 opacity-90'
-            : 'border-gray-200 hover:border-brand-400/70 hover:shadow-lg hover:ring-2 hover:ring-brand-500/20 hover:ring-offset-1 dark:border-gray-700 dark:hover:border-brand-500/60 dark:hover:ring-brand-500/25 dark:hover:ring-offset-gray-800',
+            ? 'ring-brand-500/60 border-brand-400/50 dark:border-brand-500/50 scale-[1.04] rotate-[0.8deg] opacity-90 shadow-2xl ring-2'
+            : 'hover:border-brand-400/70 hover:ring-brand-500/20 dark:hover:border-brand-500/60 dark:hover:ring-brand-500/25 border-gray-200 hover:shadow-lg hover:ring-2 hover:ring-offset-1 dark:border-gray-700 dark:hover:ring-offset-gray-800',
         ].join(' ')}
       >
         {/* Header: grip + icon + U-height badge */}
@@ -242,7 +245,7 @@ const RackCard = ({
         </div>
 
         {/* Rack ID */}
-        <p className="font-mono text-[11px] font-bold leading-tight text-gray-800 dark:text-gray-200 break-all">
+        <p className="font-mono text-[11px] leading-tight font-bold break-all text-gray-800 dark:text-gray-200">
           {rack.id}
         </p>
 
@@ -261,7 +264,7 @@ const RackCard = ({
             </span>
           )}
           {rack.template_id && (
-            <span className="max-w-full truncate text-[10px] text-brand-500/70 dark:text-brand-400/60">
+            <span className="text-brand-500/70 dark:text-brand-400/60 max-w-full truncate text-[10px]">
               {rack.template_id}
             </span>
           )}
@@ -271,7 +274,10 @@ const RackCard = ({
         <div className="mt-2 flex items-center gap-0.5 border-t border-gray-100 pt-2 dark:border-gray-700/80">
           <Tooltip text="View YAML definition">
             <button
-              onClick={(e) => { e.stopPropagation(); onEditYaml(rack); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditYaml(rack);
+              }}
               className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
             >
               <FileCode className="h-3.5 w-3.5" />
@@ -279,7 +285,10 @@ const RackCard = ({
           </Tooltip>
           <Tooltip text="Open in Rack Editor">
             <button
-              onClick={(e) => { e.stopPropagation(); navigate(`/editors/rack?rackId=${rack.id}`); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/editors/rack?rackId=${rack.id}`);
+              }}
               className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
             >
               <ExternalLink className="h-3.5 w-3.5" />
@@ -287,7 +296,10 @@ const RackCard = ({
           </Tooltip>
           <Tooltip text="Remove rack from aisle">
             <button
-              onClick={(e) => { e.stopPropagation(); onDeleteRack(aisleId, rack.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteRack(aisleId, rack.id);
+              }}
               className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/15 dark:hover:text-red-400"
             >
               <X className="h-3.5 w-3.5" />
@@ -348,7 +360,7 @@ const AddRackForm = ({
 
   return (
     <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-      <p className="mb-3 text-xs font-semibold text-gray-500 uppercase tracking-wider dark:text-gray-400">
+      <p className="mb-3 text-xs font-semibold tracking-wider text-gray-500 uppercase dark:text-gray-400">
         Add Rack to {aisleId}
       </p>
       <div className="flex flex-wrap items-end gap-3">
@@ -420,14 +432,14 @@ const AddRackForm = ({
           <button
             onClick={handleAdd}
             disabled={!form.id.trim()}
-            className="bg-brand-500 hover:bg-brand-600 disabled:opacity-40 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors"
+            className="bg-brand-500 hover:bg-brand-600 rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors disabled:opacity-40"
           >
             Add Rack
           </button>
           <button
             onClick={handleAddAndEdit}
             disabled={!form.id.trim()}
-            className="disabled:opacity-40 flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
           >
             Add &amp; Edit
             <ChevronRight className="h-3 w-3" />
@@ -505,7 +517,7 @@ const AisleBand = ({
       className={[
         'rounded-2xl border p-4 transition-all',
         isDragOverAisle
-          ? 'border-brand-500 border-dashed bg-brand-500/5 dark:bg-brand-500/5'
+          ? 'border-brand-500 bg-brand-500/5 dark:bg-brand-500/5 border-dashed'
           : 'border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900',
       ].join(' ')}
     >
@@ -561,41 +573,44 @@ const AisleBand = ({
       {/* Rack row — wraps to multiple rows when aisle has many racks */}
       <div className="flex flex-wrap items-start gap-2.5">
         {aisle.racks.length === 0 ? (
-            /* Empty aisle drop zone */
-            <div
-              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-              onDrop={(e) => onRackDropEmpty(e, aisle.id)}
-              className={[
-                'flex h-24 w-full items-center justify-center rounded-xl border-2 border-dashed text-sm transition-all',
-                dragOverAisleEmpty === aisle.id
-                  ? 'border-brand-500 bg-brand-500/10 text-brand-500 dark:border-brand-500/70 dark:bg-brand-500/10 dark:text-brand-400'
-                  : 'border-gray-200 text-gray-400 dark:border-gray-700 dark:text-gray-600',
-              ].join(' ')}
-            >
-              Drop rack here
-            </div>
-          ) : (
-            <>
-              {aisle.racks.map((rack) => (
-                <RackCard
-                  key={rack.id}
-                  rack={rack}
-                  aisleId={aisle.id}
-                  isDragTarget={
-                    dragOverRack?.aisleId === aisle.id && dragOverRack?.rackId === rack.id
-                  }
-                  isDragging={draggingRackId === rack.id}
-                  onDragStart={onRackDragStart}
-                  onDragEnd={onRackDragEnd}
-                  onDragOver={onRackDragOver}
-                  onDragLeave={onRackDragLeave}
-                  onDrop={onRackDrop}
-                  onDeleteRack={onDeleteRack}
-                  onEditYaml={onEditYamlRack}
-                />
-              ))}
-            </>
-          )}
+          /* Empty aisle drop zone */
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onDrop={(e) => onRackDropEmpty(e, aisle.id)}
+            className={[
+              'flex h-24 w-full items-center justify-center rounded-xl border-2 border-dashed text-sm transition-all',
+              dragOverAisleEmpty === aisle.id
+                ? 'border-brand-500 bg-brand-500/10 text-brand-500 dark:border-brand-500/70 dark:bg-brand-500/10 dark:text-brand-400'
+                : 'border-gray-200 text-gray-400 dark:border-gray-700 dark:text-gray-600',
+            ].join(' ')}
+          >
+            Drop rack here
+          </div>
+        ) : (
+          <>
+            {aisle.racks.map((rack) => (
+              <RackCard
+                key={rack.id}
+                rack={rack}
+                aisleId={aisle.id}
+                isDragTarget={
+                  dragOverRack?.aisleId === aisle.id && dragOverRack?.rackId === rack.id
+                }
+                isDragging={draggingRackId === rack.id}
+                onDragStart={onRackDragStart}
+                onDragEnd={onRackDragEnd}
+                onDragOver={onRackDragOver}
+                onDragLeave={onRackDragLeave}
+                onDrop={onRackDrop}
+                onDeleteRack={onDeleteRack}
+                onEditYaml={onEditYamlRack}
+              />
+            ))}
+          </>
+        )}
       </div>
 
       {/* Add rack form */}
@@ -629,7 +644,9 @@ export const RoomEditorCanvas = ({
 
   // ── Rack DnD refs / state ─────────────────────────────────────────────────
   const dragRackRef = useRef<{ rackId: string; fromAisleId: string } | null>(null);
-  const [dragOverRack, setDragOverRack] = useState<{ aisleId: string; rackId: string } | null>(null);
+  const [dragOverRack, setDragOverRack] = useState<{ aisleId: string; rackId: string } | null>(
+    null
+  );
   const [dragOverAisleEmpty, setDragOverAisleEmpty] = useState<string | null>(null);
   const [draggingRackId, setDraggingRackId] = useState<string | null>(null);
 
@@ -648,10 +665,16 @@ export const RoomEditorCanvas = ({
     setSaving(true);
     try {
       for (const aisle of room.aisles) {
-        await api.updateAisleRacks(aisle.id, room.id, aisle.racks.map((r) => r.id));
+        await api.updateAisleRacks(
+          aisle.id,
+          room.id,
+          aisle.racks.map((r) => r.id)
+        );
       }
       const aislesRecord: Record<string, string[]> = {};
-      room.aisles.forEach((a) => { aislesRecord[a.id] = a.racks.map((r) => r.id); });
+      room.aisles.forEach((a) => {
+        aislesRecord[a.id] = a.racks.map((r) => r.id);
+      });
       await api.updateRoomAisles(room.id, aislesRecord);
       setIsDirty(false);
     } finally {
@@ -687,7 +710,9 @@ export const RoomEditorCanvas = ({
     if (dragAisleRef.current !== aisleId) setDragOverAisle(aisleId);
   };
 
-  const handleAisleDragLeave = () => { setDragOverAisle(null); };
+  const handleAisleDragLeave = () => {
+    setDragOverAisle(null);
+  };
 
   const handleAisleDrop = async (e: React.DragEvent, targetAisleId: string) => {
     e.preventDefault();
@@ -700,7 +725,10 @@ export const RoomEditorCanvas = ({
     const newAisles = [...room.aisles];
     const fromIdx = newAisles.findIndex((a) => a.id === dragAisleRef.current);
     const toIdx = newAisles.findIndex((a) => a.id === targetAisleId);
-    if (fromIdx === -1 || toIdx === -1) { dragAisleRef.current = null; return; }
+    if (fromIdx === -1 || toIdx === -1) {
+      dragAisleRef.current = null;
+      return;
+    }
     const [moved] = newAisles.splice(fromIdx, 1);
     newAisles.splice(toIdx, 0, moved);
     dragAisleRef.current = null;
@@ -728,7 +756,9 @@ export const RoomEditorCanvas = ({
     setDragOverRack({ aisleId, rackId });
   };
 
-  const handleRackDragLeave = () => { setDragOverRack(null); };
+  const handleRackDragLeave = () => {
+    setDragOverRack(null);
+  };
 
   const handleRackDrop = async (
     e: React.DragEvent,
@@ -745,7 +775,8 @@ export const RoomEditorCanvas = ({
     if (fromAisleId === targetAisleId && afterRackId === rackId) return;
 
     const withRemoved = room.aisles.map((aisle) => {
-      if (aisle.id === fromAisleId) return { ...aisle, racks: aisle.racks.filter((r) => r.id !== rackId) };
+      if (aisle.id === fromAisleId)
+        return { ...aisle, racks: aisle.racks.filter((r) => r.id !== rackId) };
       return aisle;
     });
 
@@ -786,14 +817,22 @@ export const RoomEditorCanvas = ({
     updateRoom({ ...room, aisles: newAisles });
     const targetAisle = newAisles.find((a) => a.id === aisleId);
     if (targetAisle) {
-      await api.updateAisleRacks(aisleId, room.id, targetAisle.racks.map((r) => r.id))
-        .catch((_err) => { /* optimistic update already applied */ });
+      await api
+        .updateAisleRacks(
+          aisleId,
+          room.id,
+          targetAisle.racks.map((r) => r.id)
+        )
+        .catch((_err) => {
+          /* optimistic update already applied */
+        });
     }
   };
 
   const handleDeleteRack = (aisleId: string, rackId: string) => {
     const newAisles = room.aisles.map((aisle) => {
-      if (aisle.id === aisleId) return { ...aisle, racks: aisle.racks.filter((r) => r.id !== rackId) };
+      if (aisle.id === aisleId)
+        return { ...aisle, racks: aisle.racks.filter((r) => r.id !== rackId) };
       return aisle;
     });
     updateRoom({ ...room, aisles: newAisles });
@@ -812,7 +851,9 @@ export const RoomEditorCanvas = ({
     const newAisles = room.aisles.filter((a) => a.id !== aisleId);
     updateRoom({ ...room, aisles: newAisles });
     // Immediate API call — deletion is destructive
-    await api.deleteAisle(aisleId).catch((_err) => { /* optimistic update already applied */ });
+    await api.deleteAisle(aisleId).catch((_err) => {
+      /* optimistic update already applied */
+    });
     setIsDirty(false);
   };
 
@@ -890,7 +931,10 @@ export const RoomEditorCanvas = ({
       {yamlDrawerOpen && yamlTarget && (
         <YamlDrawer
           target={yamlTarget}
-          onClose={() => { setYamlDrawerOpen(false); setYamlTarget(null); }}
+          onClose={() => {
+            setYamlDrawerOpen(false);
+            setYamlTarget(null);
+          }}
         />
       )}
 
@@ -899,7 +943,9 @@ export const RoomEditorCanvas = ({
         <DeleteConfirmModal
           open
           entityType="aisle"
-          entityName={room.aisles.find((a) => a.id === pendingDeleteAisleId)?.name ?? pendingDeleteAisleId}
+          entityName={
+            room.aisles.find((a) => a.id === pendingDeleteAisleId)?.name ?? pendingDeleteAisleId
+          }
           onConfirm={() => void confirmDeleteAisle()}
           onCancel={() => setPendingDeleteAisleId(null)}
         />

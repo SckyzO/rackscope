@@ -81,7 +81,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
     try {
       const res = await fetch('/api/stats/prometheus', { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json() as { last_ms?: number; avg_ms?: number };
+      const data = (await res.json()) as { last_ms?: number; avg_ms?: number };
       setTestState('ok');
       setTestDetail(
         `${data.last_ms != null ? `Latency: ${data.last_ms.toFixed(1)} ms` : ''}${data.avg_ms != null ? ` · avg ${data.avg_ms.toFixed(1)} ms` : ''}`
@@ -94,12 +94,20 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
 
   return (
     <div className="space-y-4">
-      <FormSection title="Prometheus Connection" icon={Activity} iconColor="text-purple-500" iconBg="bg-purple-50 dark:bg-purple-500/10">
+      <FormSection
+        title="Prometheus Connection"
+        icon={Activity}
+        iconColor="text-purple-500"
+        iconBg="bg-purple-50 dark:bg-purple-500/10"
+      >
         <FormField
           label="Prometheus URL"
           tooltip="URL of your Prometheus instance accessible from the backend container. Example: http://prometheus:9090"
           value={draft.telemetry.prometheus_url}
-          onChange={(value) => { update('prometheus_url', value); setTestState('idle'); }}
+          onChange={(value) => {
+            update('prometheus_url', value);
+            setTestState('idle');
+          }}
           placeholder="http://localhost:9090"
         />
         {/* Test Connection button */}
@@ -110,18 +118,21 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
             disabled={testState === 'testing'}
             className="flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
           >
-            {testState === 'testing'
-              ? <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-              : testState === 'ok'
-                ? <Wifi className="h-4 w-4 text-green-500" />
-                : testState === 'error'
-                  ? <WifiOff className="h-4 w-4 text-red-500" />
-                  : <Wifi className="h-4 w-4 text-gray-400" />
-            }
+            {testState === 'testing' ? (
+              <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+            ) : testState === 'ok' ? (
+              <Wifi className="h-4 w-4 text-green-500" />
+            ) : testState === 'error' ? (
+              <WifiOff className="h-4 w-4 text-red-500" />
+            ) : (
+              <Wifi className="h-4 w-4 text-gray-400" />
+            )}
             {testState === 'testing' ? 'Testing…' : 'Test Connection'}
           </button>
           {testDetail && (
-            <span className={`text-xs font-medium ${testState === 'ok' ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+            <span
+              className={`text-xs font-medium ${testState === 'ok' ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}
+            >
               {testState === 'ok' ? '✓' : '✗'} {testDetail}
             </span>
           )}
@@ -150,7 +161,12 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
         />
       </FormSection>
 
-      <FormSection title="Label Mapping" icon={Tag} iconColor="text-blue-500" iconBg="bg-blue-50 dark:bg-blue-500/10">
+      <FormSection
+        title="Label Mapping"
+        icon={Tag}
+        iconColor="text-blue-500"
+        iconBg="bg-blue-50 dark:bg-blue-500/10"
+      >
         <FormField
           label="Identity Label"
           tooltip="Prometheus label used to identify node instances. Usually 'instance'."
@@ -181,7 +197,12 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
         />
       </FormSection>
 
-      <FormSection title="Authentication (Optional)" icon={KeyRound} iconColor="text-amber-500" iconBg="bg-amber-50 dark:bg-amber-500/10">
+      <FormSection
+        title="Authentication (Optional)"
+        icon={KeyRound}
+        iconColor="text-amber-500"
+        iconBg="bg-amber-50 dark:bg-amber-500/10"
+      >
         <FormToggle
           label="Enable Authentication"
           description="Enable basic authentication for Prometheus"
@@ -209,7 +230,12 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
         )}
       </FormSection>
 
-      <FormSection title="TLS Configuration (Optional)" icon={ShieldCheck} iconColor="text-green-500" iconBg="bg-green-50 dark:bg-green-500/10">
+      <FormSection
+        title="TLS Configuration (Optional)"
+        icon={ShieldCheck}
+        iconColor="text-green-500"
+        iconBg="bg-green-50 dark:bg-green-500/10"
+      >
         <FormToggle
           label="TLS Verify"
           description="Verify server TLS certificates"

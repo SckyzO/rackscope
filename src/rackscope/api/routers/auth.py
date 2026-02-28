@@ -3,6 +3,7 @@ Auth Router
 
 Endpoints for authentication: login, session info, credential management.
 """
+
 from __future__ import annotations
 
 import os
@@ -31,7 +32,7 @@ def _verify_password(password: str, hashed: str) -> bool:
         return False
 
 
-_SYMBOLS = set('!@#$%^&*()_+-=[]{}|;:\'",.<>?/\\`~')
+_SYMBOLS = set("!@#$%^&*()_+-=[]{}|;:'\",.<>?/\\`~")
 
 
 def _validate_policy(password: str, policy: PasswordPolicyConfig) -> Optional[str]:
@@ -46,16 +47,20 @@ def _validate_policy(password: str, policy: PasswordPolicyConfig) -> Optional[st
         return "Password must contain at least one symbol (!@#$…)"
     return None
 
+
 # ── Dependency helpers ────────────────────────────────────────────────────────
+
 
 def get_app_config() -> Optional[AppConfig]:
     from rackscope.api.app import APP_CONFIG
+
     return APP_CONFIG
 
 
 def _secret_key(app_config: AppConfig) -> str:
     """Return secret key from config, falling back to the process-level runtime key."""
     from rackscope.api.app import AUTH_RUNTIME_SECRET
+
     if app_config.auth.secret_key:
         return app_config.auth.secret_key
     return AUTH_RUNTIME_SECRET
@@ -96,6 +101,7 @@ def _current_user(request: Request) -> str:
 
 # ── Request / Response models ─────────────────────────────────────────────────
 
+
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -126,6 +132,7 @@ class ChangeUsernameRequest(BaseModel):
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
 
 @router.get("/status", response_model=AuthStatusResponse)
 def auth_status(app_config: Annotated[Optional[AppConfig], Depends(get_app_config)]):
@@ -236,6 +243,7 @@ def change_username(
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
+
 def _update_auth_config(app_config: AppConfig, updates: dict) -> None:
     """Patch auth section in app.yaml and reload global config."""
     import asyncio
@@ -255,9 +263,7 @@ def _update_auth_config(app_config: AppConfig, updates: dict) -> None:
         yaml.safe_dump(raw, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
     # Reload config in background
-    updated = app_config.model_copy(
-        update={"auth": app_config.auth.model_copy(update=updates)}
-    )
+    updated = app_config.model_copy(update={"auth": app_config.auth.model_copy(update=updates)})
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():

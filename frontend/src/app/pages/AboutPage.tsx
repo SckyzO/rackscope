@@ -1,25 +1,40 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Github, BookOpen, ExternalLink, Activity, Code2, RefreshCw, X, Heart, Coffee, Bot } from 'lucide-react';
+import {
+  Github,
+  BookOpen,
+  ExternalLink,
+  Activity,
+  Code2,
+  RefreshCw,
+  X,
+  Heart,
+  Coffee,
+  Bot,
+} from 'lucide-react';
 import { usePageTitle } from '../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from './templates/EmptyPage';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface Quote { text: string; character: string; source: string }
+interface Quote {
+  text: string;
+  character: string;
+  source: string;
+}
 
 // ── "Why I built Rackscope" content ──────────────────────────────────────────
 
 const STORY = {
   fr: {
-    title: 'Pourquoi j\'ai développé Rackscope',
+    title: "Pourquoi j'ai développé Rackscope",
     paragraphs: [
-      'Rackscope est né d\'un besoin réel.',
-      'Au départ, ce n\'était qu\'un simple script destiné à répondre à une problématique très concrète. Puis le script a grandi. Il est devenu une application. J\'y ai ajouté une interface utilisateur pour la rendre exploitable au quotidien.',
-      'Avec le temps, les fonctionnalités se sont accumulées, jusqu\'à former un bloc monolithique difficile à maintenir et à faire évoluer. J\'ai alors décidé de tout refactoriser, en adoptant des technologies modernes et une architecture plus modulaire, plus claire, et durable.',
-      'Mais Rackscope est aussi né d\'un double constat.',
-      'Le premier : je n\'ai trouvé aucun équivalent open source réellement satisfaisant. La majorité des solutions existantes sont payantes, fermées, ou imposent leur propre modèle de données. Or je crois profondément au logiciel libre et à l\'indépendance technique.',
-      'Le second constat est plus direct. Sur le terrain, les besoins sont clairs. Les utilisateurs savent ce qu\'ils attendent. Les problèmes sont identifiés. Les demandes sont formulées.',
-      'Il arrive parfois que l\'innovation suive des chemins mystérieux, loin des réalités opérationnelles. Pendant que certains imaginent des solutions élégantes à des problèmes théoriques, d\'autres attendent simplement un outil qui fonctionne.',
+      "Rackscope est né d'un besoin réel.",
+      "Au départ, ce n'était qu'un simple script destiné à répondre à une problématique très concrète. Puis le script a grandi. Il est devenu une application. J'y ai ajouté une interface utilisateur pour la rendre exploitable au quotidien.",
+      "Avec le temps, les fonctionnalités se sont accumulées, jusqu'à former un bloc monolithique difficile à maintenir et à faire évoluer. J'ai alors décidé de tout refactoriser, en adoptant des technologies modernes et une architecture plus modulaire, plus claire, et durable.",
+      "Mais Rackscope est aussi né d'un double constat.",
+      "Le premier : je n'ai trouvé aucun équivalent open source réellement satisfaisant. La majorité des solutions existantes sont payantes, fermées, ou imposent leur propre modèle de données. Or je crois profondément au logiciel libre et à l'indépendance technique.",
+      "Le second constat est plus direct. Sur le terrain, les besoins sont clairs. Les utilisateurs savent ce qu'ils attendent. Les problèmes sont identifiés. Les demandes sont formulées.",
+      "Il arrive parfois que l'innovation suive des chemins mystérieux, loin des réalités opérationnelles. Pendant que certains imaginent des solutions élégantes à des problèmes théoriques, d'autres attendent simplement un outil qui fonctionne.",
       'Rackscope est né de cette attente.',
     ],
   },
@@ -48,16 +63,14 @@ const useRandomQuote = () => {
   const [fading, setFading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const pickNext = useCallback(
-    (prev: Quote | null, list: Quote[]) => {
-      if (list.length < 2) return list[0] ?? null;
-      let next: Quote;
-      do { next = list[Math.floor(Math.random() * list.length)]; }
-      while (next.text === prev?.text);
-      return next;
-    },
-    []
-  );
+  const pickNext = useCallback((prev: Quote | null, list: Quote[]) => {
+    if (list.length < 2) return list[0] ?? null;
+    let next: Quote;
+    do {
+      next = list[Math.floor(Math.random() * list.length)];
+    } while (next.text === prev?.text);
+    return next;
+  }, []);
 
   const animatedSwitch = useCallback(
     (list: Quote[]) => {
@@ -78,7 +91,11 @@ const useRandomQuote = () => {
         setCurrent(data[Math.floor(Math.random() * data.length)]);
       })
       .catch(() => {
-        const fb: Quote = { text: 'Do. Or do not. There is no try.', character: 'Yoda', source: 'Star Wars: The Empire Strikes Back' };
+        const fb: Quote = {
+          text: 'Do. Or do not. There is no try.',
+          character: 'Yoda',
+          source: 'Star Wars: The Empire Strikes Back',
+        };
         setQuotes([fb]);
         setCurrent(fb);
       });
@@ -88,13 +105,18 @@ const useRandomQuote = () => {
   useEffect(() => {
     if (quotes.length === 0) return;
     timerRef.current = setInterval(() => animatedSwitch(quotes), AUTO_SHUFFLE_MS);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [quotes, animatedSwitch]);
 
   const shuffle = useCallback(() => {
     if (quotes.length < 2) return;
     // Reset the auto-rotate timer on manual shuffle
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = setInterval(() => animatedSwitch(quotes), AUTO_SHUFFLE_MS); }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => animatedSwitch(quotes), AUTO_SHUFFLE_MS);
+    }
     animatedSwitch(quotes);
   }, [quotes, animatedSwitch]);
 
@@ -104,20 +126,28 @@ const useRandomQuote = () => {
 // ── Components ────────────────────────────────────────────────────────────────
 
 const TECH_STACK = [
-  { name: 'React 19',    color: '#61dafb', desc: 'Frontend' },
-  { name: 'TypeScript',  color: '#3178c6', desc: 'Type safety' },
+  { name: 'React 19', color: '#61dafb', desc: 'Frontend' },
+  { name: 'TypeScript', color: '#3178c6', desc: 'Type safety' },
   { name: 'Tailwind v4', color: '#06b6d4', desc: 'Styling' },
-  { name: 'FastAPI',     color: '#009688', desc: 'Backend' },
-  { name: 'Prometheus',  color: '#e6522c', desc: 'Telemetry' },
+  { name: 'FastAPI', color: '#009688', desc: 'Backend' },
+  { name: 'Prometheus', color: '#e6522c', desc: 'Telemetry' },
   { name: 'Python 3.12', color: '#ffd43b', desc: 'Runtime' },
 ];
 
-const ExtLink = ({ href, children, icon: Icon }: { href: string; children: React.ReactNode; icon?: React.ElementType }) => (
+const ExtLink = ({
+  href,
+  children,
+  icon: Icon,
+}: {
+  href: string;
+  children: React.ReactNode;
+  icon?: React.ElementType;
+}) => (
   <a
     href={href}
     target="_blank"
     rel="noopener noreferrer"
-    className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition-all hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-brand-700/40 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+    className="hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:hover:border-brand-700/40 dark:hover:bg-brand-500/10 dark:hover:text-brand-400 flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition-all dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
   >
     {Icon && <Icon className="h-4 w-4 shrink-0" />}
     <span>{children}</span>
@@ -127,15 +157,29 @@ const ExtLink = ({ href, children, icon: Icon }: { href: string; children: React
 
 // ── Quote block ───────────────────────────────────────────────────────────────
 
-const QuoteBlock = ({ quote, onShuffle, fading }: { quote: Quote | null; onShuffle: () => void; fading: boolean }) => (
+const QuoteBlock = ({
+  quote,
+  onShuffle,
+  fading,
+}: {
+  quote: Quote | null;
+  onShuffle: () => void;
+  fading: boolean;
+}) => (
   <div className="flex h-full flex-col justify-between rounded-xl border border-gray-100 bg-gray-50/60 p-5 dark:border-gray-700/50 dark:bg-gray-800/40">
     <div style={{ transition: 'opacity 0.2s ease', opacity: fading ? 0 : 1 }} className="flex-1">
-      <div className="mb-2 select-none font-serif text-5xl leading-none text-brand-200 dark:text-brand-900">&ldquo;</div>
+      <div className="text-brand-200 dark:text-brand-900 mb-2 font-serif text-5xl leading-none select-none">
+        &ldquo;
+      </div>
       {quote ? (
         <>
-          <p className="text-sm italic leading-relaxed text-gray-600 dark:text-gray-300">{quote.text}</p>
+          <p className="text-sm leading-relaxed text-gray-600 italic dark:text-gray-300">
+            {quote.text}
+          </p>
           <div className="mt-3">
-            <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">— {quote.character}</p>
+            <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+              — {quote.character}
+            </p>
             <p className="text-[11px] text-gray-400 dark:text-gray-500">{quote.source}</p>
           </div>
         </>
@@ -164,13 +208,18 @@ const StoryModal = ({ onClose }: { onClose: () => void }) => {
   const story = STORY[lang];
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div
         className="relative max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}
@@ -195,7 +244,10 @@ const StoryModal = ({ onClose }: { onClose: () => void }) => {
                 </button>
               ))}
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            >
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -205,7 +257,12 @@ const StoryModal = ({ onClose }: { onClose: () => void }) => {
         <div className="overflow-y-auto px-6 py-5" style={{ maxHeight: 'calc(85vh - 80px)' }}>
           <div className="space-y-4 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
             {story.paragraphs.map((p, i) => (
-              <p key={i} className={i === 0 || i === 3 ? 'font-semibold text-gray-800 dark:text-white/90' : ''}>
+              <p
+                key={i}
+                className={
+                  i === 0 || i === 3 ? 'font-semibold text-gray-800 dark:text-white/90' : ''
+                }
+              >
                 {p}
               </p>
             ))}
@@ -221,16 +278,29 @@ const StoryModal = ({ onClose }: { onClose: () => void }) => {
 
 // ── Konami challenge modal (interactive OTP — green/red live feedback) ─────────
 
-const KONAMI_SEQ = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
-const KONAMI_DISPLAY = ['↑','↑','↓','↓','←','→','←','→','B','A'];
+const KONAMI_SEQ = [
+  'ArrowUp',
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowLeft',
+  'ArrowRight',
+  'b',
+  'a',
+];
+const KONAMI_DISPLAY = ['↑', '↑', '↓', '↓', '←', '→', '←', '→', 'B', 'A'];
 
 const useKonamiProgress = (onSuccess: () => void) => {
   const [progress, setProgress] = useState(0);
-  const [error, setError]       = useState(false);
+  const [error, setError] = useState(false);
   const progressRef = useRef(0);
   const onSuccessRef = useRef(onSuccess);
   // Keep ref up-to-date without triggering effect re-run
-  useEffect(() => { onSuccessRef.current = onSuccess; });
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+  });
 
   useEffect(() => {
     let errTimer: ReturnType<typeof setTimeout> | null = null;
@@ -255,17 +325,31 @@ const useKonamiProgress = (onSuccess: () => void) => {
       }
     };
     window.addEventListener('keydown', handler);
-    return () => { window.removeEventListener('keydown', handler); if (errTimer) clearTimeout(errTimer); };
+    return () => {
+      window.removeEventListener('keydown', handler);
+      if (errTimer) clearTimeout(errTimer);
+    };
   }, []);
 
   return { progress, error };
 };
 
-const KonamiChallengeModal = ({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) => {
-  const { progress, error } = useKonamiProgress(() => { onSuccess(); onClose(); });
+const KonamiChallengeModal = ({
+  onClose,
+  onSuccess,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+}) => {
+  const { progress, error } = useKonamiProgress(() => {
+    onSuccess();
+    onClose();
+  });
 
   useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, [onClose]);
@@ -300,13 +384,19 @@ const KonamiChallengeModal = ({ onClose, onSuccess }: { onClose: () => void; onS
           style={error ? { animation: 'shake 0.4s ease' } : undefined}
         >
           {KONAMI_DISPLAY.map((char, i) => {
-            let cls = 'border-gray-200 bg-gray-50 text-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-600';
+            let cls =
+              'border-gray-200 bg-gray-50 text-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-600';
             if (i < progress)
-              cls = 'border-green-400 bg-green-50 text-green-600 scale-105 dark:border-green-500/60 dark:bg-green-500/10 dark:text-green-400';
+              cls =
+                'border-green-400 bg-green-50 text-green-600 scale-105 dark:border-green-500/60 dark:bg-green-500/10 dark:text-green-400';
             if (error && i >= progress && i < progress + 1)
-              cls = 'border-red-400 bg-red-50 text-red-500 dark:border-red-500/60 dark:bg-red-500/10 dark:text-red-400';
+              cls =
+                'border-red-400 bg-red-50 text-red-500 dark:border-red-500/60 dark:bg-red-500/10 dark:text-red-400';
             return (
-              <div key={i} className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 font-mono text-sm font-bold transition-all duration-150 ${cls}`}>
+              <div
+                key={i}
+                className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 font-mono text-sm font-bold transition-all duration-150 ${cls}`}
+              >
                 {i < progress ? char : '?'}
               </div>
             );
@@ -315,8 +405,14 @@ const KonamiChallengeModal = ({ onClose, onSuccess }: { onClose: () => void; onS
 
         {/* Status */}
         <div className="mt-3 min-h-[20px] text-center">
-          {error && <p className="text-xs text-red-500 dark:text-red-400">Mauvaise touche — réessaie !</p>}
-          {progress > 0 && !error && <p className="text-xs text-green-600 dark:text-green-400">{progress} / {KONAMI_SEQ.length} correct{progress > 1 ? 's' : ''}</p>}
+          {error && (
+            <p className="text-xs text-red-500 dark:text-red-400">Mauvaise touche — réessaie !</p>
+          )}
+          {progress > 0 && !error && (
+            <p className="text-xs text-green-600 dark:text-green-400">
+              {progress} / {KONAMI_SEQ.length} correct{progress > 1 ? 's' : ''}
+            </p>
+          )}
         </div>
 
         <p className="mt-3 text-center text-[11px] text-gray-400 dark:text-gray-600">
@@ -376,7 +472,9 @@ const EGGS = [
 
 const EasterEggsModal = ({ onClose }: { onClose: () => void }) => {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
@@ -395,11 +493,14 @@ const EasterEggsModal = ({ onClose }: { onClose: () => void }) => {
           <div className="flex items-center gap-2">
             <span className="text-xl">🥚</span>
             <h2 className="font-bold text-gray-900 dark:text-white">Secret Easter Eggs</h2>
-            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+            <span className="bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 rounded-full px-2 py-0.5 text-[11px] font-semibold">
               {EGGS.length} found
             </span>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -412,12 +513,14 @@ const EasterEggsModal = ({ onClose }: { onClose: () => void }) => {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-semibold text-gray-900 dark:text-white">{egg.title}</p>
-                  <code className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-mono text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                  <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[11px] text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                     {egg.combo}
                   </code>
                 </div>
                 <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{egg.desc}</p>
-                <p className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-600">📍 {egg.where}</p>
+                <p className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-600">
+                  📍 {egg.where}
+                </p>
               </div>
             </div>
           ))}
@@ -426,7 +529,11 @@ const EasterEggsModal = ({ onClose }: { onClose: () => void }) => {
         {/* Footer */}
         <div className="border-t border-gray-100 px-6 py-3 dark:border-gray-800">
           <p className="text-center text-[11px] text-gray-400 dark:text-gray-600">
-            Press <kbd className="rounded border border-gray-200 px-1 py-0.5 font-mono text-[10px] dark:border-gray-700">Esc</kbd> or click outside to close
+            Press{' '}
+            <kbd className="rounded border border-gray-200 px-1 py-0.5 font-mono text-[10px] dark:border-gray-700">
+              Esc
+            </kbd>{' '}
+            or click outside to close
           </p>
         </div>
       </div>
@@ -437,8 +544,11 @@ const EasterEggsModal = ({ onClose }: { onClose: () => void }) => {
 // ── Developer card modal ──────────────────────────────────────────────────────
 
 const DEV_QUOTES = [
-  { text: 'Roads? Where we\'re going, we don\'t need roads.', from: 'Doc Brown — Back to the Future' },
-  { text: 'I\'ll be back.', from: 'T-800 — The Terminator' },
+  {
+    text: "Roads? Where we're going, we don't need roads.",
+    from: 'Doc Brown — Back to the Future',
+  },
+  { text: "I'll be back.", from: 'T-800 — The Terminator' },
   { text: 'Do. Or do not. There is no try.', from: 'Yoda — The Empire Strikes Back' },
   { text: 'There is no spoon.', from: 'Spoon Boy — The Matrix' },
   { text: 'Hack the planet!', from: 'Cereal Killer — Hackers' },
@@ -449,7 +559,9 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
   const devQuote = DEV_QUOTES[Math.floor(Math.random() * DEV_QUOTES.length)];
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
@@ -460,7 +572,7 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-brand-200 bg-white shadow-2xl dark:border-brand-700/40 dark:bg-gray-900"
+        className="border-brand-200 dark:border-brand-700/40 relative w-full max-w-sm overflow-hidden rounded-2xl border bg-white shadow-2xl dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}
         style={{ animation: 'dev-card-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both' }}
       >
@@ -472,21 +584,33 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
         `}</style>
 
         {/* Banner */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-brand-500 to-brand-700 px-6 py-8 text-center">
+        <div className="from-brand-500 to-brand-700 relative overflow-hidden bg-gradient-to-br px-6 py-8 text-center">
           {/* Background pattern */}
           <div className="pointer-events-none absolute inset-0 opacity-10">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="absolute rounded-full border-2 border-white"
-                style={{ width: `${60 + i * 50}px`, height: `${60 + i * 50}px`, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
+              <div
+                key={i}
+                className="absolute rounded-full border-2 border-white"
+                style={{
+                  width: `${60 + i * 50}px`,
+                  height: `${60 + i * 50}px`,
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%,-50%)',
+                }}
+              />
             ))}
           </div>
           {/* Detected badge */}
-          <div className="relative mb-4 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
+          <div className="relative mb-4 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold tracking-wider text-white uppercase">
             <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-green-300" />
             Developer Spotted
           </div>
           {/* Surprise image */}
-          <div className="relative mx-auto mb-3 overflow-hidden rounded-2xl" style={{ width: 180, height: 180 }}>
+          <div
+            className="relative mx-auto mb-3 overflow-hidden rounded-2xl"
+            style={{ width: 180, height: 180 }}
+          >
             <img
               src="/assets/peepoodo_small.png"
               alt="peepoodo"
@@ -494,14 +618,14 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
             />
           </div>
           <p className="text-xl font-black text-white">Thomas Bourcey</p>
-          <p className="mt-0.5 text-sm text-brand-200">aka SckyzO — creator & maintainer</p>
+          <p className="text-brand-200 mt-0.5 text-sm">aka SckyzO — creator & maintainer</p>
         </div>
 
         {/* Body */}
         <div className="px-6 py-5">
           {/* Quote */}
           <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
-            <p className="text-sm italic leading-relaxed text-gray-600 dark:text-gray-300">
+            <p className="text-sm leading-relaxed text-gray-600 italic dark:text-gray-300">
               &ldquo;{devQuote.text}&rdquo;
             </p>
             <p className="mt-1.5 text-[11px] font-medium text-gray-400 dark:text-gray-500">
@@ -511,13 +635,19 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
 
           {/* Links */}
           <div className="mt-4 flex items-center justify-between">
-            <a href="https://github.com/SckyzO" target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-brand-500 hover:underline">
+            <a
+              href="https://github.com/SckyzO"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-500 flex items-center gap-1.5 text-sm hover:underline"
+            >
               <Github className="h-4 w-4" />
               github.com/SckyzO
             </a>
-            <button onClick={onClose}
-              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800">
+            <button
+              onClick={onClose}
+              className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+            >
               Close
             </button>
           </div>
@@ -532,13 +662,13 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
 export const AboutPage = () => {
   usePageTitle('About');
   const { quote, shuffle, fading } = useRandomQuote();
-  const [showStory,    setShowStory]    = useState(false);
-  const [showEggs,     setShowEggs]     = useState(false);
-  const [showDev,      setShowDev]      = useState(false);
-  const [showKonami,   setShowKonami]   = useState(false);
-  const [konamiBtn,    setKonamiBtn]    = useState(false);
+  const [showStory, setShowStory] = useState(false);
+  const [showEggs, setShowEggs] = useState(false);
+  const [showDev, setShowDev] = useState(false);
+  const [showKonami, setShowKonami] = useState(false);
+  const [konamiBtn, setKonamiBtn] = useState(false);
   const [avatarClicks, setAvatarClicks] = useState(0);
-  const avatarTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const avatarTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasShownHint = useRef(false);
 
   // First keypress → open Konami challenge modal
@@ -546,7 +676,27 @@ export const AboutPage = () => {
     const handler = (e: KeyboardEvent) => {
       if (hasShownHint.current) return;
       if (e.ctrlKey || e.altKey || e.metaKey) return;
-      if (['Escape','Tab','Shift','CapsLock','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12'].includes(e.key)) return;
+      if (
+        [
+          'Escape',
+          'Tab',
+          'Shift',
+          'CapsLock',
+          'F1',
+          'F2',
+          'F3',
+          'F4',
+          'F5',
+          'F6',
+          'F7',
+          'F8',
+          'F9',
+          'F10',
+          'F11',
+          'F12',
+        ].includes(e.key)
+      )
+        return;
       hasShownHint.current = true;
       setShowKonami(true);
     };
@@ -568,20 +718,30 @@ export const AboutPage = () => {
 
   return (
     <>
-      {showStory  && <StoryModal        onClose={() => setShowStory(false)} />}
-      {showEggs   && <EasterEggsModal   onClose={() => setShowEggs(false)} />}
-      {showDev    && <DeveloperCardModal onClose={() => setShowDev(false)} />}
+      {showStory && <StoryModal onClose={() => setShowStory(false)} />}
+      {showEggs && <EasterEggsModal onClose={() => setShowEggs(false)} />}
+      {showDev && <DeveloperCardModal onClose={() => setShowDev(false)} />}
       {showKonami && (
         <KonamiChallengeModal
-          onClose={() => { setShowKonami(false); setKonamiBtn(true); }}
-          onSuccess={() => { setShowKonami(false); setKonamiBtn(false); setShowEggs(true); }}
+          onClose={() => {
+            setShowKonami(false);
+            setKonamiBtn(true);
+          }}
+          onSuccess={() => {
+            setShowKonami(false);
+            setKonamiBtn(false);
+            setShowEggs(true);
+          }}
         />
       )}
       {/* "Enter Konami Code" button — bottom-right, same zone as toasts */}
       {konamiBtn && !showKonami && !showEggs && (
         <button
-          onClick={() => { setShowKonami(true); setKonamiBtn(false); }}
-          className="fixed bottom-16 right-4 z-[9990] flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-lg transition-all hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-brand-700/40 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+          onClick={() => {
+            setShowKonami(true);
+            setKonamiBtn(false);
+          }}
+          className="hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:hover:border-brand-700/40 dark:hover:bg-brand-500/10 dark:hover:text-brand-400 fixed right-4 bottom-16 z-[9990] flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-lg transition-all dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
           style={{ animation: 'konami-btn-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }}
         >
           <style>{`@keyframes konami-btn-in { from{transform:translateX(50px);opacity:0} to{transform:translateX(0);opacity:1} }`}</style>
@@ -603,54 +763,73 @@ export const AboutPage = () => {
             {/* Decorative rings */}
             <div className="pointer-events-none absolute inset-0 opacity-5">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="absolute rounded-full border-2 border-brand-500"
-                  style={{ width: `${80 + i * 60}px`, height: `${80 + i * 60}px`, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
+                <div
+                  key={i}
+                  className="border-brand-500 absolute rounded-full border-2"
+                  style={{
+                    width: `${80 + i * 60}px`,
+                    height: `${80 + i * 60}px`,
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                  }}
                 />
               ))}
             </div>
 
             {/* 2/3 | 1/3 split */}
             <div className="relative flex flex-col gap-8 md:flex-row md:items-stretch">
-
               {/* Left — 2/3 */}
-              <div className="flex min-w-0 flex-1 items-start gap-6 md:w-0" style={{ flexBasis: '66.666%' }}>
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-500 shadow-lg">
+              <div
+                className="flex min-w-0 flex-1 items-start gap-6 md:w-0"
+                style={{ flexBasis: '66.666%' }}
+              >
+                <div className="bg-brand-500 flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl shadow-lg">
                   <Activity className="h-8 w-8 text-white" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">Rackscope</h1>
+                  <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">
+                    Rackscope
+                  </h1>
                   <p className="mt-1 text-base text-gray-500 dark:text-gray-400">
                     Prometheus-first physical infrastructure monitoring dashboard
                   </p>
                   <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                     A visualization layer for data centers and HPC environments —
-                    <strong className="text-gray-700 dark:text-gray-300"> Site → Room → Aisle → Rack → Device → Instance</strong>.
-                    Powered entirely by Prometheus : live PromQL queries, no internal time-series database,
-                    no CMDB ownership, no vendor lock-in.
-                    Template-driven, file-based YAML config, GitOps-friendly.
-                    Built for NOC operators, sysadmins, and HPC teams who need
-                    a physical view of their infrastructure — not another Grafana plugin.
+                    <strong className="text-gray-700 dark:text-gray-300">
+                      {' '}
+                      Site → Room → Aisle → Rack → Device → Instance
+                    </strong>
+                    . Powered entirely by Prometheus : live PromQL queries, no internal time-series
+                    database, no CMDB ownership, no vendor lock-in. Template-driven, file-based YAML
+                    config, GitOps-friendly. Built for NOC operators, sysadmins, and HPC teams who
+                    need a physical view of their infrastructure — not another Grafana plugin.
                   </p>
                   {/* Story link — animated to stand out */}
                   <button
                     onClick={() => setShowStory(true)}
-                    className="group mt-5 flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-600 transition-all hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/15"
+                    className="group border-brand-200 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/15 mt-5 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all"
                     style={{ animation: 'story-pulse 3s ease-in-out infinite' }}
                   >
                     <style>{`@keyframes story-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(70,95,255,0)} 50%{box-shadow:0 0 0 4px rgba(70,95,255,0.15)} }`}</style>
                     ✨ Why I built Rackscope
                     <span className="transition-transform group-hover:translate-x-0.5">→</span>
-                    <span className="ml-1 rounded-full bg-brand-100 px-1.5 py-0.5 text-[10px] font-bold text-brand-500 dark:bg-brand-500/20">fun to read</span>
+                    <span className="bg-brand-100 text-brand-500 dark:bg-brand-500/20 ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold">
+                      fun to read
+                    </span>
                   </button>
                 </div>
               </div>
 
               {/* Divider */}
-              <div className="hidden w-px self-stretch bg-gray-100 dark:bg-gray-800 md:block" />
-              <div className="h-px w-full bg-gray-100 dark:bg-gray-800 md:hidden" />
+              <div className="hidden w-px self-stretch bg-gray-100 md:block dark:bg-gray-800" />
+              <div className="h-px w-full bg-gray-100 md:hidden dark:bg-gray-800" />
 
               {/* Right — 1/3 */}
-              <div className="w-full md:shrink-0" style={{ flexBasis: '33.333%', maxWidth: '33.333%' }}>
+              <div
+                className="w-full md:shrink-0"
+                style={{ flexBasis: '33.333%', maxWidth: '33.333%' }}
+              >
                 <QuoteBlock quote={quote} onShuffle={shuffle} fading={fading} />
               </div>
             </div>
@@ -660,13 +839,33 @@ export const AboutPage = () => {
           <div className="border-t border-gray-100 px-8 py-4 dark:border-gray-800">
             <div className="flex flex-wrap gap-3">
               {[
-                { label: 'Prometheus-first', cls: 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400' },
-                { label: 'File-based config', cls: 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400' },
-                { label: 'Template-driven',  cls: 'bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400' },
-                { label: 'Plugin system',    cls: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400' },
-                { label: 'HPC-native',       cls: 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400' },
+                {
+                  label: 'Prometheus-first',
+                  cls: 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400',
+                },
+                {
+                  label: 'File-based config',
+                  cls: 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400',
+                },
+                {
+                  label: 'Template-driven',
+                  cls: 'bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-400',
+                },
+                {
+                  label: 'Plugin system',
+                  cls: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
+                },
+                {
+                  label: 'HPC-native',
+                  cls: 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400',
+                },
               ].map((b) => (
-                <span key={b.label} className={`rounded-full px-3 py-1 text-xs font-medium ${b.cls}`}>{b.label}</span>
+                <span
+                  key={b.label}
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${b.cls}`}
+                >
+                  {b.label}
+                </span>
               ))}
             </div>
           </div>
@@ -693,8 +892,12 @@ export const AboutPage = () => {
               {/* overflow-visible so the badge is NOT clipped by the rounded-full */}
               <button
                 onClick={handleAvatarClick}
-                className="relative shrink-0 cursor-pointer select-none transition-transform active:scale-90"
-                title={avatarClicks > 0 ? `${3 - avatarClicks} more click${3 - avatarClicks !== 1 ? 's' : ''}…` : 'Click 3×'}
+                className="relative shrink-0 cursor-pointer transition-transform select-none active:scale-90"
+                title={
+                  avatarClicks > 0
+                    ? `${3 - avatarClicks} more click${3 - avatarClicks !== 1 ? 's' : ''}…`
+                    : 'Click 3×'
+                }
               >
                 <img
                   src="/assets/tom_avatar.webp"
@@ -709,15 +912,20 @@ export const AboutPage = () => {
               </button>
               <div>
                 <p className="font-semibold text-gray-900 dark:text-white">Thomas Bourcey</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">aka SckyzO — creator &amp; maintainer</p>
-                <a href="https://github.com/SckyzO" target="_blank" rel="noopener noreferrer"
-                  className="mt-1 flex items-center gap-1 text-xs text-brand-500 hover:underline">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  aka SckyzO — creator &amp; maintainer
+                </p>
+                <a
+                  href="https://github.com/SckyzO"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-500 mt-1 flex items-center gap-1 text-xs hover:underline"
+                >
                   <Github className="h-3 w-3" />
                   github.com/SckyzO
                 </a>
               </div>
             </div>
-
 
             {/* Made with ... */}
             <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-gray-400 dark:text-gray-600">
@@ -733,12 +941,21 @@ export const AboutPage = () => {
         </div>
 
         {/* ── Tech stack ─────────────────────────────────────────────── */}
-        <SectionCard title="Built with" icon={Code2} desc="Open-source technologies powering Rackscope">
+        <SectionCard
+          title="Built with"
+          icon={Code2}
+          desc="Open-source technologies powering Rackscope"
+        >
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
             {TECH_STACK.map((tech) => (
-              <div key={tech.name} className="flex flex-col items-center gap-1.5 rounded-xl border border-gray-100 p-3 dark:border-gray-800">
+              <div
+                key={tech.name}
+                className="flex flex-col items-center gap-1.5 rounded-xl border border-gray-100 p-3 dark:border-gray-800"
+              >
                 <div className="h-3 w-3 rounded-full" style={{ backgroundColor: tech.color }} />
-                <p className="text-center text-xs font-semibold text-gray-700 dark:text-gray-300">{tech.name}</p>
+                <p className="text-center text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  {tech.name}
+                </p>
                 <p className="text-center text-[10px] text-gray-400">{tech.desc}</p>
               </div>
             ))}
@@ -748,8 +965,8 @@ export const AboutPage = () => {
         {/* ── License ────────────────────────────────────────────────── */}
         <div className="rounded-2xl border border-gray-100 px-6 py-4 dark:border-gray-800">
           <p className="text-center text-xs text-gray-400 dark:text-gray-600">
-            Rackscope is open-source software — MIT License.
-            All trademarks are property of their respective owners.
+            Rackscope is open-source software — MIT License. All trademarks are property of their
+            respective owners.
           </p>
         </div>
       </div>

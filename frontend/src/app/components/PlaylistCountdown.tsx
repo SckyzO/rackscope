@@ -47,14 +47,20 @@ export const PlaylistCountdownCircle = () => {
       <svg width={size} height={size} className="absolute" style={{ transform: 'rotate(-90deg)' }}>
         {/* Track — same gray as spinner background */}
         <circle
-          cx={size / 2} cy={size / 2} r={r}
-          fill="none" strokeWidth={strokeW}
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          strokeWidth={strokeW}
           className="stroke-gray-200 dark:stroke-gray-700"
         />
         {/* Progress arc — brand color like spinner active part */}
         <circle
-          cx={size / 2} cy={size / 2} r={r}
-          fill="none" strokeWidth={strokeW}
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          strokeWidth={strokeW}
           className="stroke-brand-500"
           strokeDasharray={circ}
           strokeDashoffset={offset}
@@ -94,7 +100,7 @@ export const PlaylistCountdownBar = () => {
   return (
     <div className="fixed right-0 bottom-0 left-0 z-[9998] h-1 bg-gray-800/50" aria-hidden>
       <div
-        className="h-full bg-brand-500"
+        className="bg-brand-500 h-full"
         style={{ width: `${progress * 100}%`, transition: 'width 100ms linear' }}
       />
     </div>

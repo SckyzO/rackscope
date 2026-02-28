@@ -202,7 +202,9 @@ async def list_metrics_files(
     for search_dir in search_dirs:
         if not search_dir.exists() or not search_dir.is_dir():
             continue
-        for f in sorted(search_dir.glob("metrics_*.yaml")) + sorted(search_dir.glob("metrics_*.yml")):
+        for f in sorted(search_dir.glob("metrics_*.yaml")) + sorted(
+            search_dir.glob("metrics_*.yml")
+        ):
             if f.name not in seen:
                 seen.add(f.name)
                 files.append({"name": f.name, "path": str(f)})

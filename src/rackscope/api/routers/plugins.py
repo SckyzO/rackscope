@@ -158,11 +158,14 @@ async def update_plugin_config(plugin_id: str, body: PluginConfigUpdate) -> Dict
         with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(body.config, f, default_flow_style=False, allow_unicode=True)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to write plugin config: {exc}") from exc
+        raise HTTPException(
+            status_code=500, detail=f"Failed to write plugin config: {exc}"
+        ) from exc
 
     # Hot-reload the plugin with the new config
     try:
         from rackscope.api.app import APP_CONFIG
+
         if APP_CONFIG:
             await plugin.on_config_reload(APP_CONFIG)
     except Exception:

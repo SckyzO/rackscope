@@ -106,7 +106,6 @@ export const RoomPage = ({
 
   useEffect(() => {
     if (!selectedRack) {
-       
       setSelectedRackHealth(null);
       return;
     }

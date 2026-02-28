@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Play, Trash2, Plus, RefreshCw, FlaskConical, Cpu } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  Play,
+  Trash2,
+  Plus,
+  RefreshCw,
+  FlaskConical,
+  Cpu,
+} from 'lucide-react';
 import { api } from '../../../services/api';
 import type { SimulatorScenario, SimulatorOverride } from '../../../types';
 import { FormField } from '../common/FormField';
@@ -25,7 +34,8 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
   useEffect(() => {
     setMetricsFilesLoading(true);
-    api.getMetricsFiles()
+    api
+      .getMetricsFiles()
       .then((data) => setMetricsFiles(data.files ?? []))
       .catch(() => undefined)
       .finally(() => setMetricsFilesLoading(false));
@@ -70,7 +80,9 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           simulator: { ...config.plugins.simulator, scenario: draft.plugins.simulator.scenario },
         },
       });
-      await api.restartBackend().catch(() => { /* noop */ });
+      await api.restartBackend().catch(() => {
+        /* noop */
+      });
       setActiveScenario(draft.plugins.simulator.scenario);
       setTimeout(() => window.location.reload(), 2000);
     } catch {
@@ -196,7 +208,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
         </h4>
         <p className="text-xs text-gray-600 dark:text-gray-300">
           Enabling or disabling plugins requires a backend restart to take effect. Run{' '}
-          <code className="rounded bg-gray-800 px-2 py-1 font-mono text-xs text-gray-200">make restart</code> or{' '}
+          <code className="rounded bg-gray-800 px-2 py-1 font-mono text-xs text-gray-200">
+            make restart
+          </code>{' '}
+          or{' '}
           <code className="rounded bg-gray-800 px-2 py-1 font-mono text-xs text-gray-200">
             docker compose restart backend
           </code>{' '}
@@ -227,7 +242,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               docker-compose-dev.yaml
             </code>
             . Make sure to start the stack with{' '}
-            <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">make up</code> or{' '}
+            <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">
+              make up
+            </code>{' '}
+            or{' '}
             <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">
               docker compose up -d
             </code>
@@ -249,7 +267,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           className={`mt-4 flex items-center gap-2 text-sm font-medium transition ${
             draft.plugins.simulator.enabled
               ? 'cursor-pointer text-gray-500 dark:text-gray-400'
-              : 'cursor-not-allowed opacity-50 text-gray-400 dark:text-gray-500'
+              : 'cursor-not-allowed text-gray-400 opacity-50 dark:text-gray-500'
           }`}
         >
           {simulatorSettingsOpen ? (
@@ -276,10 +294,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             />
             {/* Scenario — dropdown */}
             <div className="space-y-1">
-              <label className="block text-xs font-bold tracking-wider uppercase text-gray-500 dark:text-gray-400">
+              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Scenario
                 {activeScenario && (
-                  <span className="ml-2 font-mono normal-case text-brand-500">
+                  <span className="text-brand-500 ml-2 font-mono normal-case">
                     (active: {activeScenario})
                   </span>
                 )}
@@ -304,7 +322,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 <button
                   onClick={handleApplyScenario}
                   disabled={draft.plugins.simulator.scenario === activeScenario || applying}
-                  className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-3 py-2 text-xs font-bold uppercase text-white transition hover:bg-brand-600 disabled:opacity-40"
+                  className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white uppercase transition disabled:opacity-40"
                 >
                   {applying ? (
                     <RefreshCw className="h-3 w-3 animate-spin" />
@@ -328,7 +346,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* Incident Rates */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold tracking-wider uppercase text-gray-500 dark:text-gray-400">
+              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Incident Rates (0.0 - 1.0)
               </label>
               <FormField
@@ -368,7 +386,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* Incident Durations */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold tracking-wider uppercase text-gray-500 dark:text-gray-400">
+              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Incident Durations (seconds)
               </label>
               <div className="grid grid-cols-2 gap-4">
@@ -421,7 +439,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* Metrics Catalogs */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold tracking-wider uppercase text-gray-500 dark:text-gray-400">
+              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Metrics Catalogs (Multi-file support)
               </label>
               <div className="space-y-2">
@@ -490,7 +508,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             {/* ── Metric Overrides ── */}
             <div className="space-y-3 border-t border-gray-200 pt-4 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <h4 className="font-mono text-xs font-bold tracking-wider uppercase text-gray-500 dark:text-gray-400">
+                <h4 className="font-mono text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                   Metric Overrides
                 </h4>
                 <div className="flex gap-2">
@@ -506,7 +524,9 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                         api
                           .clearSimulatorOverrides()
                           .then(loadSimulatorData)
-                          .catch(() => { /* noop */ })
+                          .catch(() => {
+                            /* noop */
+                          })
                       }
                       className="flex items-center gap-1.5 rounded-lg border border-red-500/50 px-2.5 py-1 text-xs text-red-400 transition hover:bg-red-500/10"
                     >
@@ -515,7 +535,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                   )}
                   <button
                     onClick={() => setShowAddOverride((p) => !p)}
-                    className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-brand-600"
+                    className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold text-white transition"
                   >
                     <Plus className="h-3 w-3" /> Add
                   </button>
@@ -550,13 +570,13 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                   <div className="flex gap-2">
                     <button
                       onClick={handleAddOverride}
-                      className="flex-1 rounded-lg bg-green-500 py-1.5 text-xs font-bold uppercase text-white hover:bg-green-600"
+                      className="flex-1 rounded-lg bg-green-500 py-1.5 text-xs font-bold text-white uppercase hover:bg-green-600"
                     >
                       Add Override
                     </button>
                     <button
                       onClick={() => setShowAddOverride(false)}
-                      className="flex-1 rounded-lg border border-gray-200 py-1.5 text-xs font-bold uppercase text-gray-500 dark:border-gray-700 dark:text-gray-400"
+                      className="flex-1 rounded-lg border border-gray-200 py-1.5 text-xs font-bold text-gray-500 uppercase dark:border-gray-700 dark:text-gray-400"
                     >
                       Cancel
                     </button>
@@ -576,16 +596,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                       className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/50"
                     >
                       <span className="font-mono text-xs">
-                        <span className="text-brand-500">
-                          {ov.instance ?? ov.rack_id}
-                        </span>
-                        <span className="mx-1.5 text-gray-400 dark:text-gray-500">
-                          →
-                        </span>
+                        <span className="text-brand-500">{ov.instance ?? ov.rack_id}</span>
+                        <span className="mx-1.5 text-gray-400 dark:text-gray-500">→</span>
                         <span className="text-amber-500">{ov.metric}</span>
-                        <span className="mx-1.5 text-gray-400 dark:text-gray-500">
-                          =
-                        </span>
+                        <span className="mx-1.5 text-gray-400 dark:text-gray-500">=</span>
                         <span className="text-gray-800 dark:text-white/90">{ov.value}</span>
                       </span>
                       <button
@@ -593,7 +607,9 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                           api
                             .deleteSimulatorOverride(ov.id)
                             .then(loadSimulatorData)
-                            .catch(() => { /* noop */ })
+                            .catch(() => {
+                              /* noop */
+                            })
                         }
                         className="text-red-500 hover:text-red-400"
                       >
@@ -615,9 +631,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             <Cpu className="h-4 w-4 text-blue-500" />
           </div>
           <div className="pt-0.5">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
-              Slurm Plugin
-            </h3>
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Slurm Plugin</h3>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
               Workload manager integration for HPC clusters
             </p>
@@ -638,7 +652,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           className={`mt-4 flex items-center gap-2 text-sm font-medium transition ${
             draft.plugins.slurm.enabled
               ? 'cursor-pointer text-gray-500 dark:text-gray-400'
-              : 'cursor-not-allowed opacity-50 text-gray-400 dark:text-gray-500'
+              : 'cursor-not-allowed text-gray-400 opacity-50 dark:text-gray-500'
           }`}
         >
           {slurmSettingsOpen ? (
@@ -686,7 +700,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* Roles */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold tracking-wider uppercase text-gray-500 dark:text-gray-400">
+              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Roles (filter by device role)
               </label>
               <div className="space-y-2">
@@ -736,7 +750,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* Severity Colors */}
             <div className="space-y-3">
-              <label className="block text-xs font-bold tracking-wider uppercase text-gray-500 dark:text-gray-400">
+              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Severity Colors
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -813,7 +827,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* Status Mapping */}
             <div className="space-y-3">
-              <label className="block text-xs font-bold tracking-wider uppercase text-gray-500 dark:text-gray-400">
+              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
                 Status Mapping (Drag &amp; Drop to Reorganize)
               </label>
               <div className="grid grid-cols-4 gap-3">

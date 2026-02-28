@@ -19,13 +19,7 @@ import {
   Rows3,
 } from 'lucide-react';
 import { api } from '../../../services/api';
-import type {
-  Room,
-  Rack,
-  DeviceTemplate,
-  RackState,
-  RackNodeState,
-} from '../../../types';
+import type { Room, Rack, DeviceTemplate, RackState, RackNodeState } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageBreadcrumb } from '../templates/EmptyPage';
 import { RackElevation } from '../../../components/RackVisualizer';
@@ -108,9 +102,15 @@ function computeStats(entries: RackEntry[], hiddenRacks: string[], allRackIds: s
     else unknown++;
 
     const temp = e.health?.metrics?.temperature;
-    if (temp != null && temp > 0) { tempSum += temp; tempCount++; }
+    if (temp != null && temp > 0) {
+      tempSum += temp;
+      tempCount++;
+    }
     const power = e.health?.metrics?.power;
-    if (power != null && power > 0) { powerSum += power; powerCount++; }
+    if (power != null && power > 0) {
+      powerSum += power;
+      powerCount++;
+    }
   }
 
   return {
@@ -204,8 +204,7 @@ const RackCard = ({
   onDrop?: (e: React.DragEvent) => void;
 }) => {
   if (entry.loading) return <RackSkeleton height={280} />;
-  if (entry.error || !entry.rack)
-    return <RackError rackId={rackId} height={280} />;
+  if (entry.error || !entry.rack) return <RackError rackId={rackId} height={280} />;
 
   const { rack, health, catalog } = entry;
   const state = health?.state ?? 'UNKNOWN';
@@ -229,14 +228,31 @@ const RackCard = ({
         `w-[${RACK_W}px]`,
         customMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
         isDragging ? 'opacity-40' : '',
-        isDragOver ? 'border-brand-400 ring-2 ring-brand-400/40' : 'border-gray-200 dark:border-gray-800',
-        !isDragOver && !isDragging ? 'hover:border-gray-300 hover:shadow-md dark:hover:border-gray-700' : '',
+        isDragOver
+          ? 'border-brand-400 ring-brand-400/40 ring-2'
+          : 'border-gray-200 dark:border-gray-800',
+        !isDragOver && !isDragging
+          ? 'hover:border-gray-300 hover:shadow-md dark:hover:border-gray-700'
+          : '',
       ].join(' ')}
       style={{ width: RACK_W }}
-      onClick={customMode ? undefined : () => { window.location.href = `/views/rack/${rack.id}`; }}
+      onClick={
+        customMode
+          ? undefined
+          : () => {
+              window.location.href = `/views/rack/${rack.id}`;
+            }
+      }
       role={customMode ? undefined : 'button'}
       tabIndex={customMode ? undefined : 0}
-      onKeyDown={customMode ? undefined : (e) => { if (e.key === 'Enter' || e.key === ' ') window.location.href = `/views/rack/${rack.id}`; }}
+      onKeyDown={
+        customMode
+          ? undefined
+          : (e) => {
+              if (e.key === 'Enter' || e.key === ' ')
+                window.location.href = `/views/rack/${rack.id}`;
+            }
+      }
     >
       {/* Health strip */}
       <div className="h-0.5 w-full rounded-t-xl" style={{ backgroundColor: stateColor }} />
@@ -251,7 +267,10 @@ const RackCard = ({
             </div>
             {onRemove && (
               <button
-                onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove();
+                }}
                 className="flex h-6 w-6 items-center justify-center rounded bg-red-500/80 text-white transition-colors hover:bg-red-600"
               >
                 <X className="h-3.5 w-3.5" />
@@ -356,10 +375,7 @@ const ConfigPanel = ({
     <>
       {/* Backdrop */}
       {open && (
-        <div
-          className="fixed inset-0 z-30 bg-black/20 backdrop-blur-[1px]"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 z-30 bg-black/20 backdrop-blur-[1px]" onClick={onClose} />
       )}
 
       {/* Panel */}
@@ -481,7 +497,7 @@ const AisleSelector = ({
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750 dark:text-gray-200"
+        className="dark:hover:bg-gray-750 flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
       >
         <LayoutGrid className="h-4 w-4 shrink-0 text-gray-400" />
         {selected ? (
@@ -549,7 +565,7 @@ const EmptyState = () => (
 
 const RackPickerPanel = ({
   aisleList,
-  allRacks,  // all rooms with their aisle/rack hierarchy
+  allRacks, // all rooms with their aisle/rack hierarchy
   selectedIds,
   onToggle,
   onClose,
@@ -562,16 +578,21 @@ const RackPickerPanel = ({
 }) => {
   const [search, setSearch] = useState('');
 
-  const grouped = aisleList.map((aisle) => ({
-    label: `${aisle.roomName} › ${aisle.aisleName}`,
-    racks: aisle.rackIds
-      .filter((id) => {
-        if (!search.trim()) return true;
-        const r = allRacks[id];
-        return (r?.name ?? id).toLowerCase().includes(search.toLowerCase()) || id.toLowerCase().includes(search.toLowerCase());
-      })
-      .map((id) => ({ id, name: allRacks[id]?.name ?? id })),
-  })).filter((g) => g.racks.length > 0);
+  const grouped = aisleList
+    .map((aisle) => ({
+      label: `${aisle.roomName} › ${aisle.aisleName}`,
+      racks: aisle.rackIds
+        .filter((id) => {
+          if (!search.trim()) return true;
+          const r = allRacks[id];
+          return (
+            (r?.name ?? id).toLowerCase().includes(search.toLowerCase()) ||
+            id.toLowerCase().includes(search.toLowerCase())
+          );
+        })
+        .map((id) => ({ id, name: allRacks[id]?.name ?? id })),
+    }))
+    .filter((g) => g.racks.length > 0);
 
   return (
     <>
@@ -581,9 +602,14 @@ const RackPickerPanel = ({
         <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
           <div>
             <p className="text-sm font-bold text-gray-900 dark:text-white">Select racks</p>
-            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-600">{selectedIds.length} selected</p>
+            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-600">
+              {selectedIds.length} selected
+            </p>
           </div>
-          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -607,7 +633,7 @@ const RackPickerPanel = ({
             <div className="space-y-3">
               {grouped.map((group) => (
                 <div key={group.label}>
-                  <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600">
+                  <p className="mb-1.5 px-1 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
                     {group.label}
                   </p>
                   <div className="space-y-1">
@@ -624,19 +650,25 @@ const RackPickerPanel = ({
                               : 'hover:bg-gray-50 dark:hover:bg-white/5',
                           ].join(' ')}
                         >
-                          <div className={[
-                            'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors',
-                            isSelected
-                              ? 'border-brand-500 bg-brand-500'
-                              : 'border-gray-300 dark:border-gray-600',
-                          ].join(' ')}>
+                          <div
+                            className={[
+                              'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors',
+                              isSelected
+                                ? 'border-brand-500 bg-brand-500'
+                                : 'border-gray-300 dark:border-gray-600',
+                            ].join(' ')}
+                          >
                             {isSelected && <Check className="h-3 w-3 text-white" />}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className={`truncate text-sm font-medium ${isSelected ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                            <p
+                              className={`truncate text-sm font-medium ${isSelected ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
+                            >
                               {name}
                             </p>
-                            <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">{id}</p>
+                            <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">
+                              {id}
+                            </p>
                           </div>
                         </button>
                       );
@@ -672,8 +704,12 @@ export const AisleDashboardPage = () => {
   // ── Custom view mode ────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<'aisle' | 'custom'>('aisle');
   const [customRackIds, setCustomRackIds] = useState<string[]>(() => {
-    try { const s = localStorage.getItem(CUSTOM_KEY); return s ? (JSON.parse(s) as string[]) : []; }
-    catch { return []; }
+    try {
+      const s = localStorage.getItem(CUSTOM_KEY);
+      return s ? (JSON.parse(s) as string[]) : [];
+    } catch {
+      return [];
+    }
   });
   const [rackPickerOpen, setRackPickerOpen] = useState(false);
   // DnD for custom reordering
@@ -681,16 +717,30 @@ export const AisleDashboardPage = () => {
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   // All rack meta (id → name/room/aisle) for picker
-  const [allRackMeta, setAllRackMeta] = useState<Record<string, { name: string; roomName: string; aisleName: string }>>({});
+  const [allRackMeta, setAllRackMeta] = useState<
+    Record<string, { name: string; roomName: string; aisleName: string }>
+  >({});
 
   const saveCustomRacks = (ids: string[]) => {
     setCustomRackIds(ids);
-    try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(ids)); } catch { /* noop */ }
+    try {
+      localStorage.setItem(CUSTOM_KEY, JSON.stringify(ids));
+    } catch {
+      /* noop */
+    }
   };
 
-  const handleCustomDragStart = (idx: number) => { dragSrcIdx.current = idx; };
-  const handleCustomDragOver = (e: React.DragEvent, idx: number) => { e.preventDefault(); setDragOverIdx(idx); };
-  const handleCustomDragEnd = () => { dragSrcIdx.current = null; setDragOverIdx(null); };
+  const handleCustomDragStart = (idx: number) => {
+    dragSrcIdx.current = idx;
+  };
+  const handleCustomDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    setDragOverIdx(idx);
+  };
+  const handleCustomDragEnd = () => {
+    dragSrcIdx.current = null;
+    setDragOverIdx(null);
+  };
   const handleCustomDrop = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
     if (dragSrcIdx.current === null || dragSrcIdx.current === idx) return;
@@ -726,14 +776,20 @@ export const AisleDashboardPage = () => {
               rackIds: aisle.racks.map((r) => r.id),
             });
             for (const rack of aisle.racks ?? []) {
-              meta[rack.id] = { name: rack.name || rack.id, roomName: room.name, aisleName: aisle.name };
+              meta[rack.id] = {
+                name: rack.name || rack.id,
+                roomName: room.name,
+                aisleName: aisle.name,
+              };
             }
           }
         }
         setAisleList(list);
         setAllRackMeta(meta);
       })
-      .catch(() => { /* ignore */ })
+      .catch(() => {
+        /* ignore */
+      })
       .finally(() => setLoadingRooms(false));
   }, []);
 
@@ -816,34 +872,49 @@ export const AisleDashboardPage = () => {
   };
 
   // Load custom rack data when custom mode rack ids change
-  const loadCustomRacks = useCallback(async (ids: string[]) => {
-    const missing = ids.filter((id) => !rackEntries[id] || rackEntries[id].error);
-    if (missing.length === 0) return;
-    setRackEntries((prev) => {
-      const next = { ...prev };
-      missing.forEach((id) => { next[id] = { rack: null, health: null, catalog: {}, loading: true, error: false }; });
-      return next;
-    });
-    try {
-      const [catalogData, ...results] = await Promise.all([
-        api.getCatalog(),
-        ...missing.map((id) =>
-          Promise.all([api.getRack(id), api.getRackState(id, true)])
-            .then(([rack, health]) => ({ id, rack, health, error: false }))
-            .catch(() => ({ id, rack: null, health: null, error: true }))
-        ),
-      ]);
-      const devCat: Record<string, DeviceTemplate> = {};
-      (catalogData?.device_templates ?? []).forEach((t: DeviceTemplate) => { devCat[t.id] = t; });
+  const loadCustomRacks = useCallback(
+    async (ids: string[]) => {
+      const missing = ids.filter((id) => !rackEntries[id] || rackEntries[id].error);
+      if (missing.length === 0) return;
       setRackEntries((prev) => {
         const next = { ...prev };
-        results.forEach((r) => {
-          next[r.id] = { rack: r.rack as Rack | null, health: r.health as RackState | null, catalog: devCat, loading: false, error: r.error };
+        missing.forEach((id) => {
+          next[id] = { rack: null, health: null, catalog: {}, loading: true, error: false };
         });
         return next;
       });
-    } catch { /* noop */ }
-  }, [rackEntries]); // eslint-disable-line react-hooks/exhaustive-deps
+      try {
+        const [catalogData, ...results] = await Promise.all([
+          api.getCatalog(),
+          ...missing.map((id) =>
+            Promise.all([api.getRack(id), api.getRackState(id, true)])
+              .then(([rack, health]) => ({ id, rack, health, error: false }))
+              .catch(() => ({ id, rack: null, health: null, error: true }))
+          ),
+        ]);
+        const devCat: Record<string, DeviceTemplate> = {};
+        (catalogData?.device_templates ?? []).forEach((t: DeviceTemplate) => {
+          devCat[t.id] = t;
+        });
+        setRackEntries((prev) => {
+          const next = { ...prev };
+          results.forEach((r) => {
+            next[r.id] = {
+              rack: r.rack as Rack | null,
+              health: r.health as RackState | null,
+              catalog: devCat,
+              loading: false,
+              error: r.error,
+            };
+          });
+          return next;
+        });
+      } catch {
+        /* noop */
+      }
+    },
+    [rackEntries]
+  );
 
   useEffect(() => {
     if (viewMode === 'custom' && customRackIds.length > 0) {
@@ -854,7 +925,11 @@ export const AisleDashboardPage = () => {
   const selectedAisle = aisleList.find((a) => a.aisleId === selectedAisleId);
   const visibleRackIds = allRackIds.filter((id) => !cfg.hiddenRacks.includes(id));
   // Stats work for both modes
-  const stats = computeStats(Object.values(rackEntries), viewMode === 'custom' ? [] : cfg.hiddenRacks, viewMode === 'custom' ? customRackIds : allRackIds);
+  const stats = computeStats(
+    Object.values(rackEntries),
+    viewMode === 'custom' ? [] : cfg.hiddenRacks,
+    viewMode === 'custom' ? customRackIds : allRackIds
+  );
 
   const anyLoading = Object.values(rackEntries).some((e) => e.loading);
 
@@ -887,7 +962,9 @@ export const AisleDashboardPage = () => {
               <button
                 onClick={() => setViewMode('aisle')}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  viewMode === 'aisle' ? 'bg-brand-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  viewMode === 'aisle'
+                    ? 'bg-brand-500 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                 }`}
               >
                 <Rows3 className="h-3.5 w-3.5" /> Aisle
@@ -895,7 +972,9 @@ export const AisleDashboardPage = () => {
               <button
                 onClick={() => setViewMode('custom')}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  viewMode === 'custom' ? 'bg-brand-500 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  viewMode === 'custom'
+                    ? 'bg-brand-500 text-white shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                 }`}
               >
                 <LayoutGrid className="h-3.5 w-3.5" /> Custom
@@ -903,20 +982,26 @@ export const AisleDashboardPage = () => {
             </div>
 
             {viewMode === 'aisle' && !loadingRooms && (
-              <AisleSelector aisleList={aisleList} selectedId={selectedAisleId} onSelect={handleAisleSelect} />
+              <AisleSelector
+                aisleList={aisleList}
+                selectedId={selectedAisleId}
+                onSelect={handleAisleSelect}
+              />
             )}
 
             {viewMode === 'custom' && (
               <button
                 onClick={() => setRackPickerOpen(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20"
+                className="border-brand-200 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20 flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors"
               >
                 <Plus className="h-4 w-4" /> Add racks
               </button>
             )}
 
             <button
-              onClick={() => { void handleRefresh(); }}
+              onClick={() => {
+                void handleRefresh();
+              }}
               disabled={refreshing || (viewMode === 'aisle' && !selectedAisleId)}
               className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
             >
@@ -936,7 +1021,9 @@ export const AisleDashboardPage = () => {
         </div>
 
         {/* Stats bar */}
-        {(viewMode === 'custom' ? customRackIds.length > 0 : (selectedAisleId && (allRackIds.length > 0 || anyLoading))) && (
+        {(viewMode === 'custom'
+          ? customRackIds.length > 0
+          : selectedAisleId && (allRackIds.length > 0 || anyLoading)) && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <StatChip
               icon={Server}
@@ -951,12 +1038,7 @@ export const AisleDashboardPage = () => {
               color="text-gray-500"
             />
             {stats.ok > 0 && (
-              <StatChip
-                icon={CheckCircle}
-                value={stats.ok}
-                label="OK"
-                color="text-green-500"
-              />
+              <StatChip icon={CheckCircle} value={stats.ok} label="OK" color="text-green-500" />
             )}
             {stats.warn > 0 && (
               <StatChip
@@ -967,12 +1049,7 @@ export const AisleDashboardPage = () => {
               />
             )}
             {stats.crit > 0 && (
-              <StatChip
-                icon={XCircle}
-                value={stats.crit}
-                label="CRIT"
-                color="text-red-500"
-              />
+              <StatChip icon={XCircle} value={stats.crit} label="CRIT" color="text-red-500" />
             )}
             {stats.unknown > 0 && (
               <StatChip
@@ -1015,11 +1092,13 @@ export const AisleDashboardPage = () => {
               <LayoutGrid className="h-10 w-10 text-gray-700" />
               <div className="text-center">
                 <p className="font-semibold text-gray-400">No racks selected</p>
-                <p className="mt-1 text-sm text-gray-600">Click "Add racks" to pick racks from anywhere in your topology</p>
+                <p className="mt-1 text-sm text-gray-600">
+                  Click "Add racks" to pick racks from anywhere in your topology
+                </p>
               </div>
               <button
                 onClick={() => setRackPickerOpen(true)}
-                className="mt-2 flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+                className="bg-brand-500 hover:bg-brand-600 mt-2 flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
               >
                 <Plus className="h-4 w-4" /> Add racks
               </button>
@@ -1028,7 +1107,13 @@ export const AisleDashboardPage = () => {
             <div className="flex h-full bg-[#0a0c10] p-6">
               <div className="flex h-full min-h-0 gap-5">
                 {customRackIds.map((rackId, idx) => {
-                  const entry = rackEntries[rackId] ?? { rack: null, health: null, catalog: {}, loading: true, error: false };
+                  const entry = rackEntries[rackId] ?? {
+                    rack: null,
+                    health: null,
+                    catalog: {},
+                    loading: true,
+                    error: false,
+                  };
                   return (
                     <RackCard
                       key={rackId}
@@ -1048,32 +1133,32 @@ export const AisleDashboardPage = () => {
               </div>
             </div>
           )
+        ) : /* ── Aisle mode ── */
+        !selectedAisleId ? (
+          <EmptyState />
         ) : (
-          /* ── Aisle mode ── */
-          !selectedAisleId ? (
-            <EmptyState />
-          ) : (
-            <div className="flex h-full bg-[#0a0c10] p-6">
-              <div className="flex h-full min-h-0 gap-5">
-                {allRackIds.length === 0 ? (
-                  <div className="flex w-full items-center justify-center">
-                    <p className="text-sm text-gray-600">This aisle has no racks configured.</p>
-                  </div>
-                ) : (
-                  visibleRackIds.map((rackId) => {
-                    const entry = rackEntries[rackId];
-                    if (!entry) return null;
-                    return <RackCard key={rackId} entry={entry} rackId={rackId} />;
-                  })
-                )}
-                {visibleRackIds.length === 0 && allRackIds.length > 0 && (
-                  <div className="flex w-full items-center justify-center">
-                    <p className="text-sm text-gray-600">All racks are hidden. Use Configure to show them.</p>
-                  </div>
-                )}
-              </div>
+          <div className="flex h-full bg-[#0a0c10] p-6">
+            <div className="flex h-full min-h-0 gap-5">
+              {allRackIds.length === 0 ? (
+                <div className="flex w-full items-center justify-center">
+                  <p className="text-sm text-gray-600">This aisle has no racks configured.</p>
+                </div>
+              ) : (
+                visibleRackIds.map((rackId) => {
+                  const entry = rackEntries[rackId];
+                  if (!entry) return null;
+                  return <RackCard key={rackId} entry={entry} rackId={rackId} />;
+                })
+              )}
+              {visibleRackIds.length === 0 && allRackIds.length > 0 && (
+                <div className="flex w-full items-center justify-center">
+                  <p className="text-sm text-gray-600">
+                    All racks are hidden. Use Configure to show them.
+                  </p>
+                </div>
+              )}
             </div>
-          )
+          </div>
         )}
       </div>
 

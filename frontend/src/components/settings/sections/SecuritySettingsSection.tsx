@@ -60,110 +60,120 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
   return (
     <div className="space-y-4">
       {/* ── Authentication ── */}
-      <FormSection title="Authentication" description="Protect the Cosmos UI with a username and password." icon={Lock} iconColor="text-red-500" iconBg="bg-red-50 dark:bg-red-500/10">
+      <FormSection
+        title="Authentication"
+        description="Protect the Cosmos UI with a username and password."
+        icon={Lock}
+        iconColor="text-red-500"
+        iconBg="bg-red-50 dark:bg-red-500/10"
+      >
         <div className="space-y-4">
+          {!hasPassword && (
+            <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-700/40 dark:bg-blue-500/10">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+              <p className="text-sm text-blue-700 dark:text-blue-400">
+                No password set yet. Set one in{' '}
+                <a href="/cosmos/profile" className="font-semibold underline">
+                  Profile → Change Password
+                </a>{' '}
+                then come back here to enable authentication.
+              </p>
+            </div>
+          )}
 
-        {!hasPassword && (
-          <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-700/40 dark:bg-blue-500/10">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-            <p className="text-sm text-blue-700 dark:text-blue-400">
-              No password set yet. Set one in{' '}
-              <a href="/cosmos/profile" className="font-semibold underline">
-                Profile → Change Password
-              </a>{' '}
-              then come back here to enable authentication.
+          <Toggle
+            label="Require authentication"
+            description="Protect the dashboard with a username and password"
+            tooltip="Protect the Cosmos UI with username+password. Requires a password to be set first in Change Password."
+            value={auth.enabled}
+            onChange={(v) => setAuth({ enabled: v })}
+            disabled={!hasPassword}
+          />
+
+          <div>
+            <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+              Session duration
+              <SettingTooltip text="How long authentication tokens remain valid before requiring re-login." />
+            </label>
+            <div className="flex gap-2">
+              {(['8h', '24h', 'unlimited'] as const).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setAuth({ session_duration: d })}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition-colors ${
+                    auth.session_duration === d
+                      ? 'border-brand-500 bg-brand-500 text-white'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  {d === 'unlimited' ? 'Unlimited' : d}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-xs text-gray-400">
+              {auth.session_duration === 'unlimited'
+                ? 'Tokens never expire.'
+                : `Session expires after ${auth.session_duration}.`}
             </p>
           </div>
-        )}
-
-        <Toggle
-          label="Require authentication"
-          description="Protect the dashboard with a username and password"
-          tooltip="Protect the Cosmos UI with username+password. Requires a password to be set first in Change Password."
-          value={auth.enabled}
-          onChange={(v) => setAuth({ enabled: v })}
-          disabled={!hasPassword}
-        />
-
-        <div>
-          <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-            Session duration
-            <SettingTooltip text="How long authentication tokens remain valid before requiring re-login." />
-          </label>
-          <div className="flex gap-2">
-            {(['8h', '24h', 'unlimited'] as const).map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setAuth({ session_duration: d })}
-                className={`rounded-xl border px-4 py-2 text-sm font-medium transition-colors ${
-                  auth.session_duration === d
-                    ? 'border-brand-500 bg-brand-500 text-white'
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-700 dark:text-gray-300'
-                }`}
-              >
-                {d === 'unlimited' ? 'Unlimited' : d}
-              </button>
-            ))}
-          </div>
-          <p className="mt-1.5 text-xs text-gray-400">
-            {auth.session_duration === 'unlimited'
-              ? 'Tokens never expire.'
-              : `Session expires after ${auth.session_duration}.`}
-          </p>
-        </div>
         </div>
       </FormSection>
 
       {/* ── Password Policy ── */}
-      <FormSection title="Password Policy" description="Rules enforced when setting or changing the password." icon={ShieldAlert} iconColor="text-orange-500" iconBg="bg-orange-50 dark:bg-orange-500/10">
+      <FormSection
+        title="Password Policy"
+        description="Rules enforced when setting or changing the password."
+        icon={ShieldAlert}
+        iconColor="text-orange-500"
+        iconBg="bg-orange-50 dark:bg-orange-500/10"
+      >
         <div className="space-y-4">
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
-              <Type className="h-3.5 w-3.5" /> Min length
-              <SettingTooltip text="Minimum number of characters required for the password." />
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={64}
-              value={auth.policy_min_length}
-              onChange={(e) => setAuth({ policy_min_length: e.target.value })}
-              className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                <Type className="h-3.5 w-3.5" /> Min length
+                <SettingTooltip text="Minimum number of characters required for the password." />
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={64}
+                value={auth.policy_min_length}
+                onChange={(e) => setAuth({ policy_min_length: e.target.value })}
+                className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                <Type className="h-3.5 w-3.5" /> Max length
+                <SettingTooltip text="Maximum password length allowed." />
+              </label>
+              <input
+                type="number"
+                min={6}
+                max={512}
+                value={auth.policy_max_length}
+                onChange={(e) => setAuth({ policy_max_length: e.target.value })}
+                className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
           </div>
-          <div>
-            <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
-              <Type className="h-3.5 w-3.5" /> Max length
-              <SettingTooltip text="Maximum password length allowed." />
-            </label>
-            <input
-              type="number"
-              min={6}
-              max={512}
-              value={auth.policy_max_length}
-              onChange={(e) => setAuth({ policy_max_length: e.target.value })}
-              className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-            />
-          </div>
-        </div>
 
-        <Toggle
-          label="Require digit"
-          description="Password must contain at least one number (0–9)"
-          tooltip="Password must contain at least one number (0-9)."
-          value={auth.policy_require_digit}
-          onChange={(v) => setAuth({ policy_require_digit: v })}
-        />
-        <Toggle
-          label="Require symbol"
-          description="Password must contain at least one special character (!@#$…)"
-          tooltip="Password must contain at least one special character (!@#$...)."
-          value={auth.policy_require_symbol}
-          onChange={(v) => setAuth({ policy_require_symbol: v })}
-        />
+          <Toggle
+            label="Require digit"
+            description="Password must contain at least one number (0–9)"
+            tooltip="Password must contain at least one number (0-9)."
+            value={auth.policy_require_digit}
+            onChange={(v) => setAuth({ policy_require_digit: v })}
+          />
+          <Toggle
+            label="Require symbol"
+            description="Password must contain at least one special character (!@#$…)"
+            tooltip="Password must contain at least one special character (!@#$...)."
+            value={auth.policy_require_symbol}
+            onChange={(v) => setAuth({ policy_require_symbol: v })}
+          />
         </div>
       </FormSection>
     </div>

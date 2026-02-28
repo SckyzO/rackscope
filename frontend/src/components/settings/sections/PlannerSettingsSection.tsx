@@ -28,7 +28,10 @@ export const PlannerSettingsSection: React.FC<PlannerSettingsSectionProps> = ({
 
   return (
     <div className="space-y-4">
-      <FormSection icon={Cpu} iconColor="text-indigo-500" iconBg="bg-indigo-50 dark:bg-indigo-500/10"
+      <FormSection
+        icon={Cpu}
+        iconColor="text-indigo-500"
+        iconBg="bg-indigo-50 dark:bg-indigo-500/10"
         title="Query Planner"
         description="Configures how health checks are batched and cached"
       >

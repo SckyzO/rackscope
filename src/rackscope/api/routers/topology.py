@@ -506,14 +506,28 @@ async def create_rack(
         for room in site.rooms:
             for aisle in room.aisles:
                 if any(r.id == rack_id for r in aisle.racks):
-                    raise HTTPException(status_code=400, detail=f"Rack id {rack_id!r} already exists")
+                    raise HTTPException(
+                        status_code=400, detail=f"Rack id {rack_id!r} already exists"
+                    )
 
     # Write rack YAML file
     rack_dir = (
-        base_dir / "datacenters" / target_site_id / "rooms" / target_room_id / "aisles" / aisle_id / "racks"
+        base_dir
+        / "datacenters"
+        / target_site_id
+        / "rooms"
+        / target_room_id
+        / "aisles"
+        / aisle_id
+        / "racks"
     )
     rack_dir.mkdir(parents=True, exist_ok=True)
-    rack_payload: Dict[str, Any] = {"id": rack_id, "name": name, "u_height": payload.u_height, "devices": []}
+    rack_payload: Dict[str, Any] = {
+        "id": rack_id,
+        "name": name,
+        "u_height": payload.u_height,
+        "devices": [],
+    }
     if payload.template_id:
         rack_payload["template_id"] = payload.template_id
     (rack_dir / f"{rack_id}.yaml").write_text(dump_yaml(rack_payload))

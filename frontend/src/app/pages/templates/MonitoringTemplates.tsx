@@ -557,7 +557,9 @@ export const RoomViewTemplate = () => {
                   sideComponents={MOCK_SIDE_COMPS}
                   allowInfraOverlap={false}
                   pduMetrics={undefined}
-                  onDeviceClick={() => { /* noop */ }}
+                  onDeviceClick={() => {
+                    /* noop */
+                  }}
                 />
               </div>
             </>

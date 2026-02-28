@@ -36,9 +36,9 @@ import {
 // ── Duration presets ──────────────────────────────────────────────────────────
 const DURATION_PRESETS = [
   { label: '30s', value: 30 },
-  { label: '1m',  value: 60 },
-  { label: '2m',  value: 120 },
-  { label: '5m',  value: 300 },
+  { label: '1m', value: 60 },
+  { label: '2m', value: 120 },
+  { label: '5m', value: 300 },
   { label: '10m', value: 600 },
   { label: '15m', value: 900 },
   { label: '30m', value: 1800 },
@@ -51,7 +51,8 @@ const snapToPreset = (v: number): number => {
   return exact ? exact.value : v;
 };
 
-const selectCls = 'focus:border-brand-400 h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer';
+const selectCls =
+  'focus:border-brand-400 h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer';
 import { api } from '../../services/api';
 import type { RoomSummary } from '../../types';
 
@@ -118,41 +119,43 @@ const QueueItemRow = ({
       >
         <option value={0}>Global</option>
         {DURATION_PRESETS.map((p) => (
-          <option key={p.value} value={p.value}>{p.label}</option>
+          <option key={p.value} value={p.value}>
+            {p.label}
+          </option>
         ))}
       </select>
     </div>
 
-      {/* Reorder buttons */}
-      <div className="flex flex-col gap-0.5">
-        <button
-          onClick={onMoveUp}
-          disabled={index === 0}
-          title="Move up"
-          className="flex h-5 w-5 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:opacity-25 dark:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-        >
-          <ChevronUp className="h-3 w-3" />
-        </button>
-        <button
-          onClick={onMoveDown}
-          disabled={index === total - 1}
-          title="Move down"
-          className="flex h-5 w-5 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:opacity-25 dark:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-        >
-          <ChevronDown className="h-3 w-3" />
-        </button>
-      </div>
-
-      {/* Remove */}
+    {/* Reorder buttons */}
+    <div className="flex flex-col gap-0.5">
       <button
-        onClick={onRemove}
-        title="Remove from queue"
-        className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:text-gray-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+        onClick={onMoveUp}
+        disabled={index === 0}
+        title="Move up"
+        className="flex h-5 w-5 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:opacity-25 dark:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
       >
-        <Trash2 className="h-3.5 w-3.5" />
+        <ChevronUp className="h-3 w-3" />
+      </button>
+      <button
+        onClick={onMoveDown}
+        disabled={index === total - 1}
+        title="Move down"
+        className="flex h-5 w-5 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:opacity-25 dark:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+      >
+        <ChevronDown className="h-3 w-3" />
       </button>
     </div>
-  );
+
+    {/* Remove */}
+    <button
+      onClick={onRemove}
+      title="Remove from queue"
+      className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:text-gray-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
+    >
+      <Trash2 className="h-3.5 w-3.5" />
+    </button>
+  </div>
+);
 
 // ── Page ────────────────────────────────────────────────────────────────────
 
@@ -165,9 +168,7 @@ export const PlaylistCenterPage = () => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [localQueue, setLocalQueue] = useState<PlaylistQueueItem[]>(playlist.queue);
-  const [localInterval, setLocalInterval] = useState(
-    snapToPreset(playlist.globalInterval) || 30
-  );
+  const [localInterval, setLocalInterval] = useState(snapToPreset(playlist.globalInterval) || 30);
 
   useEffect(() => {
     api
@@ -212,7 +213,6 @@ export const PlaylistCenterPage = () => {
       prev.map((item, i) => (i === index ? { ...item, duration: seconds } : item))
     );
   }, []);
-
 
   const startPlaylist = (mode: PlaylistMode) => {
     if (localQueue.length === 0) return;
@@ -382,7 +382,9 @@ export const PlaylistCenterPage = () => {
                 className={`${selectCls} w-20 text-sm font-medium`}
               >
                 {DURATION_PRESETS.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
                 ))}
               </select>
             </div>

@@ -30,13 +30,13 @@ import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 type TabId = 'general' | 'telemetry' | 'planner' | 'views' | 'security' | 'plugins' | 'appearance';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
-  { id: 'general',    label: 'General',    icon: Settings2  },
-  { id: 'appearance', label: 'Appearance', icon: Palette    },
-  { id: 'telemetry',  label: 'Telemetry',  icon: Activity   },
-  { id: 'planner',    label: 'Planner',    icon: Cpu        },
-  { id: 'views',      label: 'Views',      icon: MonitorPlay },
-  { id: 'security',   label: 'Security',   icon: Shield     },
-  { id: 'plugins',    label: 'Plugins',    icon: Layers     },
+  { id: 'general', label: 'General', icon: Settings2 },
+  { id: 'appearance', label: 'Appearance', icon: Palette },
+  { id: 'telemetry', label: 'Telemetry', icon: Activity },
+  { id: 'planner', label: 'Planner', icon: Cpu },
+  { id: 'views', label: 'Views', icon: MonitorPlay },
+  { id: 'security', label: 'Security', icon: Shield },
+  { id: 'plugins', label: 'Plugins', icon: Layers },
 ];
 
 const TAB_IDS = TABS.map((t) => t.id);
@@ -68,19 +68,36 @@ const UnsavedModal = ({
             {message ?? 'You have unsaved changes. What would you like to do?'}
           </p>
         </div>
-        <button onClick={onStay} className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+        <button
+          onClick={onStay}
+          className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+        >
           <X className="h-5 w-5" />
         </button>
       </div>
       <div className="flex flex-nowrap items-center justify-end gap-2 border-t border-gray-100 px-6 py-4 dark:border-gray-800">
-        <button onClick={onStay} className="shrink-0 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
+        <button
+          onClick={onStay}
+          className="shrink-0 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+        >
           Stay
         </button>
-        <button onClick={onDiscard} className="shrink-0 rounded-xl border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700/40 dark:text-red-400 dark:hover:bg-red-500/10">
+        <button
+          onClick={onDiscard}
+          className="shrink-0 rounded-xl border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700/40 dark:text-red-400 dark:hover:bg-red-500/10"
+        >
           Discard
         </button>
-        <button onClick={onSave} disabled={saving} className="flex shrink-0 items-center gap-1.5 rounded-xl bg-brand-500 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-70">
-          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+        <button
+          onClick={onSave}
+          disabled={saving}
+          className="bg-brand-500 hover:bg-brand-600 flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white disabled:opacity-70"
+        >
+          {saving ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Save className="h-3.5 w-3.5" />
+          )}
           Save &amp; go
         </button>
       </div>
@@ -147,7 +164,10 @@ export const SettingsPage = () => {
   // ── Browser-level guard (close tab / reload) ──────────────────────────────
   useEffect(() => {
     if (!isDirty) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty]);
@@ -220,20 +240,38 @@ export const SettingsPage = () => {
 
   // Save button state
   const saveBtn = saving
-    ? { icon: <Loader2 className="h-4 w-4 animate-spin" />, label: 'Saving…', cls: 'bg-brand-500 text-white opacity-70' }
+    ? {
+        icon: <Loader2 className="h-4 w-4 animate-spin" />,
+        label: 'Saving…',
+        cls: 'bg-brand-500 text-white opacity-70',
+      }
     : saved
       ? { icon: <Check className="h-4 w-4" />, label: 'Saved', cls: 'bg-green-500 text-white' }
       : saveError
-        ? { icon: <AlertCircle className="h-4 w-4" />, label: 'Error', cls: 'bg-red-500 text-white' }
+        ? {
+            icon: <AlertCircle className="h-4 w-4" />,
+            label: 'Error',
+            cls: 'bg-red-500 text-white',
+          }
         : isDirty
-          ? { icon: <Save className="h-4 w-4" />, label: 'Save Changes', cls: 'bg-brand-500 hover:bg-brand-600 text-white animate-pulse' }
-          : { icon: <Save className="h-4 w-4" />, label: 'Save Changes', cls: 'bg-brand-500 hover:bg-brand-600 text-white' };
+          ? {
+              icon: <Save className="h-4 w-4" />,
+              label: 'Save Changes',
+              cls: 'bg-brand-500 hover:bg-brand-600 text-white animate-pulse',
+            }
+          : {
+              icon: <Save className="h-4 w-4" />,
+              label: 'Save Changes',
+              cls: 'bg-brand-500 hover:bg-brand-600 text-white',
+            };
 
   if (loading || !draft) {
     return (
       <div className="flex h-64 items-center justify-center">
         <Loader2 className="text-brand-500 h-5 w-5 animate-spin" />
-        <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">Loading configuration…</span>
+        <span className="ml-3 text-sm text-gray-500 dark:text-gray-400">
+          Loading configuration…
+        </span>
       </div>
     );
   }
@@ -266,19 +304,12 @@ export const SettingsPage = () => {
         <PageHeader
           title="Settings"
           breadcrumb={
-            <PageBreadcrumb
-              items={[
-                { label: 'Home', href: '/cosmos' },
-                { label: 'Settings' },
-              ]}
-            />
+            <PageBreadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'Settings' }]} />
           }
           actions={
             <div className="flex items-center gap-3">
               {isDirty && !saving && !saved && (
-                <span className="text-xs text-amber-500 dark:text-amber-400">
-                  Unsaved changes
-                </span>
+                <span className="text-xs text-amber-500 dark:text-amber-400">Unsaved changes</span>
               )}
               <button
                 onClick={handleSave}
@@ -294,7 +325,6 @@ export const SettingsPage = () => {
 
         {/* Card with tabs */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-
           {/* Tabs — scrollable on narrow screens */}
           <div className="border-b border-gray-200 dark:border-gray-800">
             <div className="flex w-full">
@@ -317,13 +347,21 @@ export const SettingsPage = () => {
 
           {/* Tab content */}
           <div className="p-6">
-            {activeTab === 'general'    && <AppSettingsSection    draft={draft} setDraft={setDraft} />}
+            {activeTab === 'general' && <AppSettingsSection draft={draft} setDraft={setDraft} />}
             {activeTab === 'appearance' && <AppearanceSettingsSection />}
-            {activeTab === 'telemetry'  && <TelemetrySettingsSection draft={draft} setDraft={setDraft} />}
-            {activeTab === 'planner'    && <PlannerSettingsSection  draft={draft} setDraft={setDraft} />}
-            {activeTab === 'views'      && <ViewsSettingsSection    draft={draft} setDraft={setDraft} />}
-            {activeTab === 'security'   && <SecuritySettingsSection  draft={draft} setDraft={setDraft} />}
-            {activeTab === 'plugins'    && <PluginsSettingsSection   draft={draft} setDraft={setDraft} />}
+            {activeTab === 'telemetry' && (
+              <TelemetrySettingsSection draft={draft} setDraft={setDraft} />
+            )}
+            {activeTab === 'planner' && (
+              <PlannerSettingsSection draft={draft} setDraft={setDraft} />
+            )}
+            {activeTab === 'views' && <ViewsSettingsSection draft={draft} setDraft={setDraft} />}
+            {activeTab === 'security' && (
+              <SecuritySettingsSection draft={draft} setDraft={setDraft} />
+            )}
+            {activeTab === 'plugins' && (
+              <PluginsSettingsSection draft={draft} setDraft={setDraft} />
+            )}
           </div>
         </div>
 

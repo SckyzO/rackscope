@@ -135,13 +135,13 @@ const StepSite = ({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-3 rounded-2xl border border-brand-100 bg-brand-50 px-4 py-3 dark:border-brand-700/30 dark:bg-brand-500/10">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-500/20">
-          <Building2 className="h-4.5 w-4.5 text-brand-600 dark:text-brand-400" />
+      <div className="border-brand-100 bg-brand-50 dark:border-brand-700/30 dark:bg-brand-500/10 flex items-center gap-3 rounded-2xl border px-4 py-3">
+        <div className="bg-brand-100 dark:bg-brand-500/20 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
+          <Building2 className="text-brand-600 dark:text-brand-400 h-4.5 w-4.5" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-brand-700 dark:text-brand-300">Create a site</p>
-          <p className="text-xs text-brand-600/70 dark:text-brand-400/70">
+          <p className="text-brand-700 dark:text-brand-300 text-sm font-semibold">Create a site</p>
+          <p className="text-brand-600/70 dark:text-brand-400/70 text-xs">
             A site represents a physical datacenter location
           </p>
         </div>
@@ -329,13 +329,7 @@ const StepAisle = ({
 
 // ── Step 4 — Summary ──────────────────────────────────────────────────────────
 
-const StepSummary = ({
-  data,
-  error,
-}: {
-  data: WizardData;
-  error: string | null;
-}) => (
+const StepSummary = ({ data, error }: { data: WizardData; error: string | null }) => (
   <div className="space-y-5">
     <p className="text-sm text-gray-500 dark:text-gray-400">
       The following will be created in your topology:
@@ -344,20 +338,20 @@ const StepSummary = ({
     <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-800/50">
       {/* Site */}
       <div className="flex items-start gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-500/10">
-          <Building2 className="h-4 w-4 text-brand-500" />
+        <div className="bg-brand-50 dark:bg-brand-500/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+          <Building2 className="text-brand-500 h-4 w-4" />
         </div>
         <div className="flex-1">
           <p className="text-sm font-bold text-gray-900 dark:text-white">{data.site.name}</p>
           <p className="font-mono text-[11px] text-gray-400 dark:text-gray-500">{data.site.id}</p>
         </div>
-        <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+        <span className="bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 rounded-full px-2 py-0.5 text-[10px] font-semibold">
           site
         </span>
       </div>
 
       {/* Room */}
-      <div className="ml-4 mt-3 flex items-start gap-3 border-l-2 border-gray-200 pl-4 dark:border-gray-700">
+      <div className="mt-3 ml-4 flex items-start gap-3 border-l-2 border-gray-200 pl-4 dark:border-gray-700">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700">
           <DoorOpen className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         </div>
@@ -365,7 +359,9 @@ const StepSummary = ({
           <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{data.room.name}</p>
           <p className="font-mono text-[11px] text-gray-400 dark:text-gray-500">{data.room.id}</p>
           {data.room.description && (
-            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{data.room.description}</p>
+            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+              {data.room.description}
+            </p>
           )}
         </div>
         <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-gray-700 dark:text-gray-400">
@@ -375,13 +371,17 @@ const StepSummary = ({
 
       {/* Aisle (if enabled) */}
       {data.aisle.enabled && data.aisle.name && (
-        <div className="ml-8 mt-3 flex items-start gap-3 border-l-2 border-gray-200 pl-4 dark:border-gray-700">
+        <div className="mt-3 ml-8 flex items-start gap-3 border-l-2 border-gray-200 pl-4 dark:border-gray-700">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700">
             <AlignJustify className="h-4 w-4 text-gray-500 dark:text-gray-400" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{data.aisle.name}</p>
-            <p className="font-mono text-[11px] text-gray-400 dark:text-gray-500">{data.aisle.id}</p>
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              {data.aisle.name}
+            </p>
+            <p className="font-mono text-[11px] text-gray-400 dark:text-gray-500">
+              {data.aisle.id}
+            </p>
           </div>
           <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-gray-700 dark:text-gray-400">
             aisle
@@ -390,7 +390,7 @@ const StepSummary = ({
       )}
 
       {data.aisle.enabled && !data.aisle.name && (
-        <p className="ml-12 mt-2 text-xs text-amber-500 dark:text-amber-400">
+        <p className="mt-2 ml-12 text-xs text-amber-500 dark:text-amber-400">
           ⚠ Aisle name is empty — will be skipped
         </p>
       )}
@@ -474,7 +474,6 @@ export const DatacenterWizard = ({ onComplete, onDismiss }: DatacenterWizardProp
   return (
     <div className="mx-auto max-w-2xl">
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900">
-
         {/* Top band */}
         <div className="border-b border-gray-100 bg-gray-50 px-8 pt-7 pb-6 dark:border-gray-800 dark:bg-gray-800/50">
           <div className="mb-5 flex items-center justify-between">
@@ -511,8 +510,8 @@ export const DatacenterWizard = ({ onComplete, onDismiss }: DatacenterWizardProp
                           state === 'current'
                             ? 'text-brand-500'
                             : state === 'completed'
-                            ? 'text-success-500'
-                            : 'text-gray-400'
+                              ? 'text-success-500'
+                              : 'text-gray-400'
                         }`}
                       >
                         {s.label}
@@ -532,22 +531,13 @@ export const DatacenterWizard = ({ onComplete, onDismiss }: DatacenterWizardProp
         {/* Step content */}
         <div className="px-8 py-7">
           {step === 0 && (
-            <StepSite
-              data={data.site}
-              onChange={(site) => setData((d) => ({ ...d, site }))}
-            />
+            <StepSite data={data.site} onChange={(site) => setData((d) => ({ ...d, site }))} />
           )}
           {step === 1 && (
-            <StepRoom
-              data={data.room}
-              onChange={(room) => setData((d) => ({ ...d, room }))}
-            />
+            <StepRoom data={data.room} onChange={(room) => setData((d) => ({ ...d, room }))} />
           )}
           {step === 2 && (
-            <StepAisle
-              data={data.aisle}
-              onChange={(aisle) => setData((d) => ({ ...d, aisle }))}
-            />
+            <StepAisle data={data.aisle} onChange={(aisle) => setData((d) => ({ ...d, aisle }))} />
           )}
           {step === 3 && <StepSummary data={data} error={error} />}
         </div>
@@ -564,16 +554,16 @@ export const DatacenterWizard = ({ onComplete, onDismiss }: DatacenterWizardProp
 
           <div className="flex items-center gap-2">
             {/* Step dots */}
-            <div className="flex items-center gap-1.5 mr-2">
+            <div className="mr-2 flex items-center gap-1.5">
               {STEPS.map((_, idx) => (
                 <div
                   key={idx}
                   className={`h-1.5 rounded-full transition-all ${
                     idx === step
-                      ? 'w-4 bg-brand-500'
+                      ? 'bg-brand-500 w-4'
                       : idx < step
-                      ? 'w-1.5 bg-success-500'
-                      : 'w-1.5 bg-gray-200 dark:bg-gray-700'
+                        ? 'bg-success-500 w-1.5'
+                        : 'w-1.5 bg-gray-200 dark:bg-gray-700'
                   }`}
                 />
               ))}

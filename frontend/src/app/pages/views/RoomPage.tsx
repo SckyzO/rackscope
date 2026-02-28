@@ -356,7 +356,7 @@ const RackCell = ({
               WebkitLineClamp: 3,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-                }}
+            }}
           >
             {rack.name}
           </p>
@@ -768,7 +768,7 @@ const RackCell = ({
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
             wordBreak: 'break-word',
-            }}
+          }}
         >
           {rack.name}
         </p>
@@ -1112,7 +1112,9 @@ const RackDrawer = ({
                     sideComponents={[]}
                     allowInfraOverlap={isRearView}
                     pduMetrics={health?.infra_metrics?.pdu}
-                    onDeviceClick={() => { /* noop */ }}
+                    onDeviceClick={() => {
+                      /* noop */
+                    }}
                     maxUPx={28}
                   />
                 </div>
@@ -1632,9 +1634,7 @@ export const RoomPage = () => {
     if (!contentRef.current) return;
     const { h } = canvasSizeRef.current;
     const rawY =
-      settings.aisleAlign === 'bottom'
-        ? Math.max(0, h - contentRef.current.scrollHeight)
-        : PADDING;
+      settings.aisleAlign === 'bottom' ? Math.max(0, h - contentRef.current.scrollHeight) : PADDING;
     const { panY: clampedY } = clampPan(PADDING, rawY, 1);
     setViewport({ zoom: 1, panX: PADDING, panY: clampedY });
   }, [settings.aisleAlign, clampPan]);
@@ -1918,7 +1918,9 @@ export const RoomPage = () => {
           {/* Cadenas — verrouille pan + zoom */}
           <button
             onClick={() => setViewLocked((v) => !v)}
-            title={viewLocked ? 'Vue verrouillée — cliquer pour déverrouiller' : 'Verrouiller la vue'}
+            title={
+              viewLocked ? 'Vue verrouillée — cliquer pour déverrouiller' : 'Verrouiller la vue'
+            }
             className={`flex items-center rounded-xl border px-2.5 py-2 transition-colors ${
               viewLocked
                 ? 'border-amber-300 bg-amber-50 text-amber-600 dark:border-amber-700/50 dark:bg-amber-500/10 dark:text-amber-400'
@@ -2115,7 +2117,9 @@ export const RoomPage = () => {
           <div
             ref={contentRef}
             className="relative flex flex-col gap-3 p-8"
-            style={canvasSize.w > 0 ? { width: (canvasSize.w - 2 * PADDING) / zoom } : { width: '100%' }}
+            style={
+              canvasSize.w > 0 ? { width: (canvasSize.w - 2 * PADDING) / zoom } : { width: '100%' }
+            }
           >
             {sortedAisles.map((aisle) => (
               <AisleBand

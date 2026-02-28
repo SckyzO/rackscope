@@ -1216,7 +1216,6 @@ def simulate():
             if metric_enabled("ipmi_up", "node", node_id=target["node_id"]):
                 set_metric_value("ipmi_up", base_labels, up_val, {})
 
-            status_label = "optimal" if status == 0 else "failed"
             warn_value = 1 if status in (1, 2) else 0
             crit_value = 1 if status == 2 else 0
 

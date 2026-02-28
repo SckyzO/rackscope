@@ -217,7 +217,8 @@ const RackLink = ({
 
 // ── Easter egg: Matrix rain ────────────────────────────────────────────────
 
-const MATRIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()アイウエオカキクケコサシスセソ';
+const MATRIX_CHARS =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()アイウエオカキクケコサシスセソ';
 
 const MatrixRainOverlay = ({ onClose }: { onClose: () => void }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -229,7 +230,7 @@ const MatrixRainOverlay = ({ onClose }: { onClose: () => void }) => {
     if (!ctx) return;
 
     const resize = () => {
-      canvas.width  = window.innerWidth;
+      canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
     resize();
@@ -257,7 +258,9 @@ const MatrixRainOverlay = ({ onClose }: { onClose: () => void }) => {
     };
 
     const interval = setInterval(draw, 33);
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', onKey);
 
     return () => {
@@ -310,12 +313,17 @@ const AsciiBootOverlay = ({ onClose }: { onClose: () => void }) => {
   useEffect(() => {
     let i = 0;
     const next = () => {
-      if (i >= BOOT_LINES.length) { setDone(true); return; }
+      if (i >= BOOT_LINES.length) {
+        setDone(true);
+        return;
+      }
       setLines((prev) => [...prev, BOOT_LINES[i++]]);
       setTimeout(next, 80 + Math.random() * 60);
     };
     const t = setTimeout(next, 200);
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', onKey);
     return () => {
       clearTimeout(t);
@@ -334,13 +342,9 @@ const AsciiBootOverlay = ({ onClose }: { onClose: () => void }) => {
             {line}
           </div>
         ))}
-        {!done && (
-          <span className="inline-block h-4 w-2 animate-pulse bg-green-400" />
-        )}
+        {!done && <span className="inline-block h-4 w-2 animate-pulse bg-green-400" />}
         {done && (
-          <div className="mt-4 text-xs text-green-700">
-            Click anywhere or press Esc to close
-          </div>
+          <div className="mt-4 text-xs text-green-700">Click anywhere or press Esc to close</div>
         )}
       </div>
     </div>
@@ -350,18 +354,33 @@ const AsciiBootOverlay = ({ onClose }: { onClose: () => void }) => {
 // ── Easter egg: Hidden terminal ────────────────────────────────────────────
 
 const HELP_COMMANDS = [
-  { cmd: 'help',                              out: 'You\'re looking at it.' },
-  { cmd: 'ls /rack/r01-01/',                  out: 'compute001/  compute002/  compute003/  ...  [Permission: denied on r01-01-pdu01]' },
-  { cmd: 'df -h /dev/datacenter',             out: 'Filesystem: /dev/datacenter  Size: ∞  Used: 99%  Avail: ε  Use%: fine, probably.' },
-  { cmd: 'sudo rm -rf /incidents/*',          out: 'Permission denied. Nice try though.' },
-  { cmd: 'git blame --follow .',              out: 'Thomas Bourcey, 3 years ago: "TODO: refactor this someday"' },
-  { cmd: 'ssh compute001',                    out: 'ssh: connect to host compute001: Connection timed out. Classic.' },
-  { cmd: 'systemctl status everything',       out: '● everything.service — Active (running, mostly)  [some things may be lying]' },
-  { cmd: 'coffee --extra-shot --infinite',    out: 'Error: FEATURE_NOT_IMPLEMENTED. Filed as ticket #4096. ETA: never.' },
-  { cmd: 'prometheus --query "up"',           out: '1 (optimistic)' },
-  { cmd: 'reboot --datacenter --force',       out: 'lol. no.' },
-  { cmd: 'blame @management',                 out: 'Segfault. Core dumped.' },
-  { cmd: 'exit',                              out: 'exit: not found. There is no escape.' },
+  { cmd: 'help', out: "You're looking at it." },
+  {
+    cmd: 'ls /rack/r01-01/',
+    out: 'compute001/  compute002/  compute003/  ...  [Permission: denied on r01-01-pdu01]',
+  },
+  {
+    cmd: 'df -h /dev/datacenter',
+    out: 'Filesystem: /dev/datacenter  Size: ∞  Used: 99%  Avail: ε  Use%: fine, probably.',
+  },
+  { cmd: 'sudo rm -rf /incidents/*', out: 'Permission denied. Nice try though.' },
+  {
+    cmd: 'git blame --follow .',
+    out: 'Thomas Bourcey, 3 years ago: "TODO: refactor this someday"',
+  },
+  { cmd: 'ssh compute001', out: 'ssh: connect to host compute001: Connection timed out. Classic.' },
+  {
+    cmd: 'systemctl status everything',
+    out: '● everything.service — Active (running, mostly)  [some things may be lying]',
+  },
+  {
+    cmd: 'coffee --extra-shot --infinite',
+    out: 'Error: FEATURE_NOT_IMPLEMENTED. Filed as ticket #4096. ETA: never.',
+  },
+  { cmd: 'prometheus --query "up"', out: '1 (optimistic)' },
+  { cmd: 'reboot --datacenter --force', out: 'lol. no.' },
+  { cmd: 'blame @management', out: 'Segfault. Core dumped.' },
+  { cmd: 'exit', out: 'exit: not found. There is no escape.' },
 ];
 
 const HelpTerminalOverlay = ({ onClose }: { onClose: () => void }) => {
@@ -376,9 +395,14 @@ const HelpTerminalOverlay = ({ onClose }: { onClose: () => void }) => {
       setTimeout(next, 120 + Math.random() * 80);
     };
     const t = setTimeout(next, 300);
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', onKey);
-    return () => { clearTimeout(t); window.removeEventListener('keydown', onKey); };
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('keydown', onKey);
+    };
   }, [onClose]);
 
   return (
@@ -397,7 +421,9 @@ const HelpTerminalOverlay = ({ onClose }: { onClose: () => void }) => {
             <div className="h-3 w-3 rounded-full bg-amber-400" />
             <div className="h-3 w-3 rounded-full bg-green-400" />
           </div>
-          <span className="ml-2 font-mono text-xs text-gray-400">rackscope-terminal — bash — 80×24</span>
+          <span className="ml-2 font-mono text-xs text-gray-400">
+            rackscope-terminal — bash — 80×24
+          </span>
         </div>
         {/* Content */}
         <div className="max-h-[60vh] overflow-auto p-5 font-mono text-sm">
@@ -409,7 +435,8 @@ const HelpTerminalOverlay = ({ onClose }: { onClose: () => void }) => {
           {HELP_COMMANDS.slice(0, visible).map((c, i) => (
             <div key={i} className="mb-2">
               <p className="text-green-400">
-                <span className="text-gray-600">$ </span>{c.cmd}
+                <span className="text-gray-600">$ </span>
+                {c.cmd}
               </p>
               <p className="ml-2 text-gray-400">{c.out}</p>
             </div>
@@ -446,8 +473,8 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
   const [bootActive, setBootActive] = useState(false);
   const [helpActive, setHelpActive] = useState(false);
   const logoClickTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const helpProgress   = React.useRef(0);
-  const helpTimer      = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const helpProgress = React.useRef(0);
+  const helpTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // "help" typed in sequence → show terminal
   useEffect(() => {
@@ -462,7 +489,9 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
           setHelpActive(true);
         } else {
           if (helpTimer.current) clearTimeout(helpTimer.current);
-          helpTimer.current = setTimeout(() => { helpProgress.current = 0; }, 1500);
+          helpTimer.current = setTimeout(() => {
+            helpProgress.current = 0;
+          }, 1500);
         }
       } else {
         helpProgress.current = e.key.toLowerCase() === 'h' ? 1 : 0;
@@ -496,15 +525,15 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
       }`}
     >
       {/* ── Easter egg overlays ───────────────────────────────────────── */}
-      {matrixActive && <MatrixRainOverlay    onClose={() => setMatrixActive(false)} />}
-      {bootActive   && <AsciiBootOverlay     onClose={() => setBootActive(false)} />}
-      {helpActive   && <HelpTerminalOverlay  onClose={() => setHelpActive(false)} />}
+      {matrixActive && <MatrixRainOverlay onClose={() => setMatrixActive(false)} />}
+      {bootActive && <AsciiBootOverlay onClose={() => setBootActive(false)} />}
+      {helpActive && <HelpTerminalOverlay onClose={() => setHelpActive(false)} />}
 
       {/* Logo — app.name + app.description from config */}
       <div className="flex h-[72px] shrink-0 items-center">
         <div className="flex min-w-0 items-center gap-3">
           <div
-            className="bg-brand-500 flex h-9 w-9 shrink-0 cursor-pointer select-none items-center justify-center rounded-lg text-white transition-transform active:scale-90"
+            className="bg-brand-500 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white transition-transform select-none active:scale-90"
             onClick={(e) => {
               if (e.shiftKey) {
                 setBootActive(true);
@@ -532,11 +561,11 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
                 : 'max-w-[200px] opacity-100'
             }`}
           >
-            <p className="truncate whitespace-nowrap text-base font-bold tracking-tight text-gray-900 dark:text-white">
+            <p className="truncate text-base font-bold tracking-tight whitespace-nowrap text-gray-900 dark:text-white">
               {config?.app?.name ?? 'Rackscope'}
             </p>
             {config?.app?.description && (
-              <p className="truncate whitespace-nowrap text-xs text-gray-400 dark:text-gray-500">
+              <p className="truncate text-xs whitespace-nowrap text-gray-400 dark:text-gray-500">
                 {config.app.description}
               </p>
             )}
@@ -554,20 +583,10 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
 
         <SectionLabel label="Monitoring" collapsed={collapsed} />
         {features.worldmap && (
-          <NavItem
-            to="/views/worldmap"
-            icon={Globe}
-            label="World Map"
-            collapsed={collapsed}
-          />
+          <NavItem to="/views/worldmap" icon={Globe} label="World Map" collapsed={collapsed} />
         )}
         {features.notifications && (
-          <NavItem
-            to="/notifications"
-            icon={Bell}
-            label="Notifications"
-            collapsed={collapsed}
-          />
+          <NavItem to="/notifications" icon={Bell} label="Notifications" collapsed={collapsed} />
         )}
         {features.aisle_dashboard && (
           <NavItem
@@ -754,12 +773,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
               collapsed={collapsed}
             />
             <NavItem to="/slurm/nodes" icon={List} label="Nodes" collapsed={collapsed} />
-            <NavItem
-              to="/slurm/alerts"
-              icon={AlertTriangle}
-              label="Alerts"
-              collapsed={collapsed}
-            />
+            <NavItem to="/slurm/alerts" icon={AlertTriangle} label="Alerts" collapsed={collapsed} />
             <NavItem
               to="/slurm/wallboard/room-a"
               icon={MapPin}
@@ -776,12 +790,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
           label="Datacenter"
           collapsed={collapsed}
         />
-        <NavItem
-          to="/editors/rack"
-          icon={Server}
-          label="Rack Editor"
-          collapsed={collapsed}
-        />
+        <NavItem to="/editors/rack" icon={Server} label="Rack Editor" collapsed={collapsed} />
         <NavItem
           to="/editors/rack-templates"
           icon={Layers}
@@ -811,7 +820,6 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
         <NavItem to="/settings" icon={Settings} label="Settings" collapsed={collapsed} />
         <NavItem to="/about" icon={GitBranch} label="About" collapsed={collapsed} />
       </div>
-
     </aside>
   );
 };

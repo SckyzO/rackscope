@@ -30,13 +30,7 @@ import {
   Pencil,
 } from 'lucide-react';
 import { api } from '../../../services/api';
-import type {
-  Room,
-  Rack,
-  DeviceTemplate,
-  RackState,
-  RackNodeState,
-} from '../../../types';
+import type { Room, Rack, DeviceTemplate, RackState, RackNodeState } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 import { RackElevation } from '../../../components/RackVisualizer';
@@ -107,30 +101,46 @@ function loadRacks(): string[] {
   try {
     const raw = localStorage.getItem(LS_RACKS);
     if (raw) return JSON.parse(raw) as string[];
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return [];
 }
 
 function saveRacks(ids: string[]) {
-  try { localStorage.setItem(LS_RACKS, JSON.stringify(ids)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(LS_RACKS, JSON.stringify(ids));
+  } catch {
+    /* ignore */
+  }
 }
 
 function loadDisplay(): DisplayConfig {
   try {
     const raw = localStorage.getItem(LS_DISPLAY);
     if (raw) return { ...DEFAULT_DISPLAY, ...(JSON.parse(raw) as Partial<DisplayConfig>) };
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return { ...DEFAULT_DISPLAY };
 }
 
 function saveDisplay(cfg: DisplayConfig) {
-  try { localStorage.setItem(LS_DISPLAY, JSON.stringify(cfg)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(LS_DISPLAY, JSON.stringify(cfg));
+  } catch {
+    /* ignore */
+  }
 }
 
 // ── Stats ──────────────────────────────────────────────────────────────────────
 
 function computeStats(rackIds: string[], entries: Record<string, RackEntry>) {
-  let ok = 0, warn = 0, crit = 0, unknown = 0, deviceCount = 0;
+  let ok = 0,
+    warn = 0,
+    crit = 0,
+    unknown = 0,
+    deviceCount = 0;
 
   for (const id of rackIds) {
     const e = entries[id];
@@ -148,18 +158,38 @@ function computeStats(rackIds: string[], entries: Record<string, RackEntry>) {
 
 // ── Shared UI atoms ────────────────────────────────────────────────────────────
 
-const StatChip = ({ icon: Icon, value, label, color }: {
-  icon: React.ElementType; value: string | number; label: string; color?: string;
+const StatChip = ({
+  icon: Icon,
+  value,
+  label,
+  color,
+}: {
+  icon: React.ElementType;
+  value: string | number;
+  label: string;
+  color?: string;
 }) => (
   <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm dark:border-gray-800 dark:bg-gray-900">
     <Icon className={`h-3.5 w-3.5 shrink-0 ${color ?? 'text-gray-400'}`} />
-    <span className={`font-semibold tabular-nums ${color ?? 'text-gray-700 dark:text-gray-200'}`}>{value}</span>
+    <span className={`font-semibold tabular-nums ${color ?? 'text-gray-700 dark:text-gray-200'}`}>
+      {value}
+    </span>
     <span className="text-xs text-gray-400 dark:text-gray-600">{label}</span>
   </div>
 );
 
-const Toggle = ({ checked, onChange, label, disabled, note }: {
-  checked: boolean; onChange: () => void; label: string; disabled?: boolean; note?: string;
+const Toggle = ({
+  checked,
+  onChange,
+  label,
+  disabled,
+  note,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  disabled?: boolean;
+  note?: string;
 }) => (
   <div className={`flex items-center justify-between gap-3 py-2 ${disabled ? 'opacity-40' : ''}`}>
     <div>
@@ -174,19 +204,23 @@ const Toggle = ({ checked, onChange, label, disabled, note }: {
         disabled ? 'cursor-not-allowed' : ''
       } ${checked && !disabled ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'}`}
     >
-      <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked && !disabled ? 'left-0.5 translate-x-4' : 'left-0.5'}`} />
+      <span
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked && !disabled ? 'left-0.5 translate-x-4' : 'left-0.5'}`}
+      />
     </button>
   </div>
 );
 
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="mb-2 mt-5 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600 first:mt-0">
+  <p className="mt-5 mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase first:mt-0 dark:text-gray-600">
     {children}
   </p>
 );
 
 function SegmentBtns<T>({
-  options, current, onChange,
+  options,
+  current,
+  onChange,
 }: {
   options: { label: string; value: T }[];
   current: T;
@@ -214,9 +248,18 @@ function SegmentBtns<T>({
 // ── Rack card ──────────────────────────────────────────────────────────────────
 
 const RackCard = ({
-  entry, rackId, displayConfig, wrapHeight, editMode,
-  isDragging, isDragOver,
-  onRemove, onDragStart, onDragEnd, onDragOver: onDragOverCard, onDrop,
+  entry,
+  rackId,
+  displayConfig,
+  wrapHeight,
+  editMode,
+  isDragging,
+  isDragOver,
+  onRemove,
+  onDragStart,
+  onDragEnd,
+  onDragOver: onDragOverCard,
+  onDrop,
 }: {
   entry: RackEntry;
   rackId: string;
@@ -282,18 +325,38 @@ const RackCard = ({
       className={[
         'group flex shrink-0 flex-col overflow-hidden rounded-2xl border bg-white transition-all dark:bg-gray-900',
         editMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
-        isDragging ? 'opacity-40 scale-[0.97]' : '',
-        isDragOver ? 'border-brand-400 ring-2 ring-brand-400/40' : 'border-gray-200 dark:border-gray-800',
-        !isDragOver && !isDragging ? 'hover:border-gray-300 hover:shadow-md dark:hover:border-gray-700' : '',
+        isDragging ? 'scale-[0.97] opacity-40' : '',
+        isDragOver
+          ? 'border-brand-400 ring-brand-400/40 ring-2'
+          : 'border-gray-200 dark:border-gray-800',
+        !isDragOver && !isDragging
+          ? 'hover:border-gray-300 hover:shadow-md dark:hover:border-gray-700'
+          : '',
       ].join(' ')}
       style={cardStyle}
-      onClick={!editMode ? () => { window.location.href = `/views/rack/${rack.id}`; } : undefined}
+      onClick={
+        !editMode
+          ? () => {
+              window.location.href = `/views/rack/${rack.id}`;
+            }
+          : undefined
+      }
       role={!editMode ? 'button' : undefined}
       tabIndex={!editMode ? 0 : undefined}
-      onKeyDown={!editMode ? (e) => { if (e.key === 'Enter' || e.key === ' ') window.location.href = `/views/rack/${rack.id}`; } : undefined}
+      onKeyDown={
+        !editMode
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ')
+                window.location.href = `/views/rack/${rack.id}`;
+            }
+          : undefined
+      }
     >
       {/* Health strip — always at top */}
-      <div className="h-0.5 w-full shrink-0 rounded-t-2xl" style={{ backgroundColor: stateColor }} />
+      <div
+        className="h-0.5 w-full shrink-0 rounded-t-2xl"
+        style={{ backgroundColor: stateColor }}
+      />
 
       {/* Info bar (footer) — top position */}
       {displayConfig.footerPosition === 'top' && (
@@ -326,7 +389,9 @@ const RackCard = ({
       )}
 
       {/* Rack elevation */}
-      <div className={`relative min-h-0 flex-1 overflow-hidden bg-[#0f1117] ${displayConfig.footerPosition === 'bottom' ? '' : 'rounded-b-2xl'}`}>
+      <div
+        className={`relative min-h-0 flex-1 overflow-hidden bg-[#0f1117] ${displayConfig.footerPosition === 'bottom' ? '' : 'rounded-b-2xl'}`}
+      >
         {/* Edit mode overlay: drag handle + remove button */}
         {editMode && (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-between p-2 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
@@ -334,7 +399,11 @@ const RackCard = ({
               <GripVertical className="h-3.5 w-3.5" />
             </div>
             <button
-              onClick={(e) => { e.stopPropagation(); e.preventDefault(); onRemove(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onRemove();
+              }}
               className="flex h-6 w-6 items-center justify-center rounded-md border border-gray-600/60 bg-gray-900/80 text-gray-400 transition-all hover:border-red-500/60 hover:bg-red-950/60 hover:text-red-400"
             >
               <X className="h-3.5 w-3.5" />
@@ -392,7 +461,10 @@ const RackCard = ({
 // ── Configure panel ────────────────────────────────────────────────────────────
 
 const ConfigurePanel = ({
-  open, onClose, displayConfig, onChange,
+  open,
+  onClose,
+  displayConfig,
+  onChange,
 }: {
   open: boolean;
   onClose: () => void;
@@ -428,7 +500,11 @@ const ConfigurePanel = ({
         <div className="flex-1 overflow-y-auto p-5">
           <SectionLabel>Card width</SectionLabel>
           <SegmentBtns
-            options={[{ label: 'S', value: 280 }, { label: 'M', value: 360 }, { label: 'L', value: 440 }]}
+            options={[
+              { label: 'S', value: 280 },
+              { label: 'M', value: 360 },
+              { label: 'L', value: 440 },
+            ]}
             current={displayConfig.rackWidth}
             onChange={(v) => upd('rackWidth', v)}
           />
@@ -450,11 +526,21 @@ const ConfigurePanel = ({
 
           <SectionLabel>Layout</SectionLabel>
           <div className="space-y-2">
-            {([
-              { value: 'scroll', label: '→ Horizontal scroll', desc: 'Single row, fills full height' },
-              { value: 'wrap', label: '⊞ Wrap + scroll', desc: 'Multiple rows, vertical scroll' },
-              { value: 'wrap-auto', label: '⊡ Wrap + autosize', desc: 'Fits all racks in viewport, no scroll' },
-            ] as const).map(({ value, label, desc }) => (
+            {(
+              [
+                {
+                  value: 'scroll',
+                  label: '→ Horizontal scroll',
+                  desc: 'Single row, fills full height',
+                },
+                { value: 'wrap', label: '⊞ Wrap + scroll', desc: 'Multiple rows, vertical scroll' },
+                {
+                  value: 'wrap-auto',
+                  label: '⊡ Wrap + autosize',
+                  desc: 'Fits all racks in viewport, no scroll',
+                },
+              ] as const
+            ).map(({ value, label, desc }) => (
               <button
                 key={value}
                 onClick={() => upd('layout', value)}
@@ -464,7 +550,9 @@ const ConfigurePanel = ({
                     : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5'
                 }`}
               >
-                <span className={`text-sm font-semibold ${displayConfig.layout === value ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                <span
+                  className={`text-sm font-semibold ${displayConfig.layout === value ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
+                >
                   {label}
                 </span>
                 <span className="text-[11px] text-gray-400 dark:text-gray-600">{desc}</span>
@@ -482,13 +570,17 @@ const ConfigurePanel = ({
           <Toggle
             label="Temperature"
             checked={false}
-            onChange={() => { /* noop */ }}
+            onChange={() => {
+              /* noop */
+            }}
             disabled
           />
           <Toggle
             label="Power"
             checked={false}
-            onChange={() => { /* noop */ }}
+            onChange={() => {
+              /* noop */
+            }}
             disabled
           />
 
@@ -527,7 +619,10 @@ const ConfigurePanel = ({
 // ── Rack picker panel ──────────────────────────────────────────────────────────
 
 const RackPickerPanel = ({
-  aisleGroups, selectedIds, onToggle, onClose,
+  aisleGroups,
+  selectedIds,
+  onToggle,
+  onClose,
 }: {
   aisleGroups: AisleGroup[];
   selectedIds: string[];
@@ -558,7 +653,10 @@ const RackPickerPanel = ({
               {selectedIds.length} rack{selectedIds.length !== 1 ? 's' : ''} selected
             </p>
           </div>
-          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -580,7 +678,7 @@ const RackPickerPanel = ({
             <div className="space-y-4">
               {filtered.map((group) => (
                 <div key={group.label}>
-                  <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-600">
+                  <p className="mb-1.5 px-1 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
                     {group.label}
                   </p>
                   <div className="space-y-1">
@@ -592,20 +690,30 @@ const RackPickerPanel = ({
                           onClick={() => onToggle(id)}
                           className={[
                             'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all',
-                            isSelected ? 'bg-brand-50 dark:bg-brand-500/10' : 'hover:bg-gray-50 dark:hover:bg-white/5',
+                            isSelected
+                              ? 'bg-brand-50 dark:bg-brand-500/10'
+                              : 'hover:bg-gray-50 dark:hover:bg-white/5',
                           ].join(' ')}
                         >
-                          <div className={[
-                            'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors',
-                            isSelected ? 'border-brand-500 bg-brand-500' : 'border-gray-300 dark:border-gray-600',
-                          ].join(' ')}>
+                          <div
+                            className={[
+                              'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors',
+                              isSelected
+                                ? 'border-brand-500 bg-brand-500'
+                                : 'border-gray-300 dark:border-gray-600',
+                            ].join(' ')}
+                          >
                             {isSelected && <Check className="h-3 w-3 text-white" />}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className={`truncate text-sm font-medium ${isSelected ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                            <p
+                              className={`truncate text-sm font-medium ${isSelected ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
+                            >
                               {name}
                             </p>
-                            <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">{id}</p>
+                            <p className="font-mono text-[10px] text-gray-400 dark:text-gray-600">
+                              {id}
+                            </p>
                           </div>
                         </button>
                       );
@@ -624,7 +732,10 @@ const RackPickerPanel = ({
 // ── Refresh split button ───────────────────────────────────────────────────────
 
 const RefreshButton = ({
-  refreshing, autoRefreshMs, onRefresh, onIntervalChange,
+  refreshing,
+  autoRefreshMs,
+  onRefresh,
+  onIntervalChange,
 }: {
   refreshing: boolean;
   autoRefreshMs: number;
@@ -668,14 +779,17 @@ const RefreshButton = ({
         {dropOpen && (
           <>
             <div className="fixed inset-0 z-20" onClick={() => setDropOpen(false)} />
-            <div className="absolute right-0 top-full z-30 mt-1 w-28 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
+            <div className="absolute top-full right-0 z-30 mt-1 w-28 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
               {REFRESH_OPTIONS.map((opt) => (
                 <button
                   key={opt.ms}
-                  onClick={() => { onIntervalChange(opt.ms); setDropOpen(false); }}
+                  onClick={() => {
+                    onIntervalChange(opt.ms);
+                    setDropOpen(false);
+                  }}
                   className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${
                     autoRefreshMs === opt.ms
-                      ? 'font-semibold text-brand-600 dark:text-brand-400'
+                      ? 'text-brand-600 dark:text-brand-400 font-semibold'
                       : 'text-gray-700 dark:text-gray-300'
                   }`}
                 >
@@ -740,18 +854,23 @@ export const ClusterPage = () => {
   // ── Load topology for picker ──────────────────────────────────────────────
 
   useEffect(() => {
-    api.getRooms().then((rooms: Room[]) => {
-      const groups: AisleGroup[] = [];
-      for (const room of rooms) {
-        for (const aisle of room.aisles ?? []) {
-          groups.push({
-            label: `${room.name} › ${aisle.name}`,
-            racks: aisle.racks.map((r) => ({ id: r.id, name: r.name || r.id })),
-          });
+    api
+      .getRooms()
+      .then((rooms: Room[]) => {
+        const groups: AisleGroup[] = [];
+        for (const room of rooms) {
+          for (const aisle of room.aisles ?? []) {
+            groups.push({
+              label: `${room.name} › ${aisle.name}`,
+              racks: aisle.racks.map((r) => ({ id: r.id, name: r.name || r.id })),
+            });
+          }
         }
-      }
-      setAisleGroups(groups);
-    }).catch(() => { /* ignore */ });
+        setAisleGroups(groups);
+      })
+      .catch(() => {
+        /* ignore */
+      });
   }, []);
 
   // ── Load rack data ────────────────────────────────────────────────────────
@@ -780,7 +899,9 @@ export const ClusterPage = () => {
       ]);
 
       const devCat: Record<string, DeviceTemplate> = {};
-      (catalogData?.device_templates ?? []).forEach((t: DeviceTemplate) => { devCat[t.id] = t; });
+      (catalogData?.device_templates ?? []).forEach((t: DeviceTemplate) => {
+        devCat[t.id] = t;
+      });
 
       setRackEntries((prev) => {
         const next = { ...prev };
@@ -816,14 +937,19 @@ export const ClusterPage = () => {
   const refresh = useCallback(async () => {
     if (refreshing || rackIds.length === 0) return;
     setRefreshing(true);
-    try { await loadRackData(rackIds); }
-    finally { setRefreshing(false); }
+    try {
+      await loadRackData(rackIds);
+    } finally {
+      setRefreshing(false);
+    }
   }, [refreshing, rackIds, loadRackData]);
 
   useEffect(() => {
     const ms = displayConfig.autoRefreshMs;
     if (ms === 0 || rackIds.length === 0) return;
-    const timer = setInterval(() => { void refresh(); }, ms);
+    const timer = setInterval(() => {
+      void refresh();
+    }, ms);
     return () => clearInterval(timer);
   }, [displayConfig.autoRefreshMs, rackIds.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -861,9 +987,17 @@ export const ClusterPage = () => {
 
   // ── DnD reorder ──────────────────────────────────────────────────────────
 
-  const handleDragStart = (idx: number) => { dragSrcIdx.current = idx; };
-  const handleDragEnd = () => { dragSrcIdx.current = null; setDragOverIdx(null); };
-  const handleDragOver = (e: React.DragEvent, idx: number) => { e.preventDefault(); setDragOverIdx(idx); };
+  const handleDragStart = (idx: number) => {
+    dragSrcIdx.current = idx;
+  };
+  const handleDragEnd = () => {
+    dragSrcIdx.current = null;
+    setDragOverIdx(null);
+  };
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    setDragOverIdx(idx);
+  };
   const handleDrop = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
     if (dragSrcIdx.current === null || dragSrcIdx.current === idx) return;
@@ -882,10 +1016,12 @@ export const ClusterPage = () => {
   // ── Wrap card heights ──────────────────────────────────────────────────────
 
   // scroll: cap at 900px max to avoid oversized racks at 2K+ resolutions
-  const scrollCardHeight = containerDims.h > 0 ? Math.min(Math.max(200, containerDims.h - 40), 900) : 700;
+  const scrollCardHeight =
+    containerDims.h > 0 ? Math.min(Math.max(200, containerDims.h - 40), 900) : 700;
 
   // wrap + scroll: each row fills the container height (same visual height as scroll mode)
-  const wrapScrollCardHeight = containerDims.h > 0 ? Math.min(Math.max(200, containerDims.h - 40), 900) : 480;
+  const wrapScrollCardHeight =
+    containerDims.h > 0 ? Math.min(Math.max(200, containerDims.h - 40), 900) : 480;
 
   // wrap-auto: all cards sized to fit the container with no scrolling
   const autoCardHeight = useMemo(() => {
@@ -906,7 +1042,13 @@ export const ClusterPage = () => {
 
   const renderRacks = (wrapHeight?: (entry: RackEntry) => number) =>
     rackIds.map((rackId, idx) => {
-      const entry = rackEntries[rackId] ?? { rack: null, health: null, catalog: {}, loading: true, error: false };
+      const entry = rackEntries[rackId] ?? {
+        rack: null,
+        health: null,
+        catalog: {},
+        loading: true,
+        error: false,
+      };
       return (
         <RackCard
           key={rackId}
@@ -944,7 +1086,7 @@ export const ClusterPage = () => {
 
       <button
         onClick={handleAddRack}
-        className="flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20"
+        className="border-brand-200 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20 flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors"
       >
         <Plus className="h-4 w-4" />
         Add rack
@@ -956,7 +1098,7 @@ export const ClusterPage = () => {
           onClick={handleSave}
           className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
             isDirty
-              ? 'border-brand-500 bg-brand-500 text-white hover:bg-brand-600'
+              ? 'border-brand-500 bg-brand-500 hover:bg-brand-600 text-white'
               : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300'
           }`}
         >
@@ -976,7 +1118,9 @@ export const ClusterPage = () => {
       <RefreshButton
         refreshing={refreshing}
         autoRefreshMs={displayConfig.autoRefreshMs}
-        onRefresh={() => { void refresh(); }}
+        onRefresh={() => {
+          void refresh();
+        }}
         onIntervalChange={(ms) => handleDisplayChange({ ...displayConfig, autoRefreshMs: ms })}
       />
     </div>
@@ -1010,11 +1154,29 @@ export const ClusterPage = () => {
       {rackIds.length > 0 && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <StatChip icon={Server} value={stats.total} label="racks" color="text-gray-500" />
-          <StatChip icon={LayoutGrid} value={stats.deviceCount} label="devices" color="text-gray-500" />
-          {stats.ok > 0 && <StatChip icon={CheckCircle} value={stats.ok} label="OK" color="text-green-500" />}
-          {stats.warn > 0 && <StatChip icon={AlertTriangle} value={stats.warn} label="WARN" color="text-amber-500" />}
-          {stats.crit > 0 && <StatChip icon={XCircle} value={stats.crit} label="CRIT" color="text-red-500" />}
-          {stats.unknown > 0 && <StatChip icon={HelpCircle} value={stats.unknown} label="UNKNOWN" color="text-gray-400" />}
+          <StatChip
+            icon={LayoutGrid}
+            value={stats.deviceCount}
+            label="devices"
+            color="text-gray-500"
+          />
+          {stats.ok > 0 && (
+            <StatChip icon={CheckCircle} value={stats.ok} label="OK" color="text-green-500" />
+          )}
+          {stats.warn > 0 && (
+            <StatChip icon={AlertTriangle} value={stats.warn} label="WARN" color="text-amber-500" />
+          )}
+          {stats.crit > 0 && (
+            <StatChip icon={XCircle} value={stats.crit} label="CRIT" color="text-red-500" />
+          )}
+          {stats.unknown > 0 && (
+            <StatChip
+              icon={HelpCircle}
+              value={stats.unknown}
+              label="UNKNOWN"
+              color="text-gray-400"
+            />
+          )}
         </div>
       )}
 
@@ -1031,11 +1193,13 @@ export const ClusterPage = () => {
             </div>
             <div className="text-center">
               <p className="font-semibold text-gray-400">No racks configured</p>
-              <p className="mt-1 text-sm text-gray-600">Add racks to visualize your cluster side-by-side.</p>
+              <p className="mt-1 text-sm text-gray-600">
+                Add racks to visualize your cluster side-by-side.
+              </p>
             </div>
             <button
               onClick={handleAddRack}
-              className="mt-2 flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-600"
+              className="bg-brand-500 hover:bg-brand-600 mt-2 flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors"
             >
               <Plus className="h-4 w-4" />
               Add rack
@@ -1044,9 +1208,7 @@ export const ClusterPage = () => {
         ) : displayConfig.layout === 'scroll' ? (
           /* Scroll — single horizontal row, capped height to avoid distortion at 2K+ */
           <div className="flex h-full items-center overflow-x-auto overflow-y-hidden">
-            <div className="flex min-h-0 gap-5 p-5">
-              {renderRacks(() => scrollCardHeight)}
-            </div>
+            <div className="flex min-h-0 gap-5 p-5">{renderRacks(() => scrollCardHeight)}</div>
           </div>
         ) : displayConfig.layout === 'wrap' ? (
           /* Wrap + scroll — multi-row, vertical scroll, capped card height */

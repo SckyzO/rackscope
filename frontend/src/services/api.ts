@@ -380,7 +380,16 @@ export const api = {
   testCheckQuery: async (
     expr: string,
     variables: Record<string, string>
-  ): Promise<{ expr: string; prometheus: { status: string; data: { resultType: string; result: Array<{ metric: Record<string, string>; value: [number, string] }> } } }> => {
+  ): Promise<{
+    expr: string;
+    prometheus: {
+      status: string;
+      data: {
+        resultType: string;
+        result: Array<{ metric: Record<string, string>; value: [number, string] }>;
+      };
+    };
+  }> => {
     const res = await apiFetch('/api/checks/test', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -388,7 +397,12 @@ export const api = {
     });
     if (!res.ok) {
       let message = `Query failed: ${res.status}`;
-      try { const body = await res.json(); message = body?.detail ?? message; } catch { /* noop */ }
+      try {
+        const body = await res.json();
+        message = body?.detail ?? message;
+      } catch {
+        /* noop */
+      }
       throw new Error(typeof message === 'string' ? message : JSON.stringify(message));
     }
     return res.json();

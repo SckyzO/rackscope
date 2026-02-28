@@ -23,15 +23,15 @@ import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from './template
 const SeverityBadge = ({ sev }: { sev: string }) => {
   if (sev === 'CRIT')
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-error-50 px-3 py-1 text-xs font-medium text-error-500 dark:bg-error-500/15">
-        <span className="h-1.5 w-1.5 rounded-full bg-error-500" />
+      <span className="bg-error-50 text-error-500 dark:bg-error-500/15 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
+        <span className="bg-error-500 h-1.5 w-1.5 rounded-full" />
         Critical
       </span>
     );
   if (sev === 'WARN')
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-50 px-3 py-1 text-xs font-medium text-warning-500 dark:bg-warning-500/15">
-        <span className="h-1.5 w-1.5 rounded-full bg-warning-500" />
+      <span className="bg-warning-50 text-warning-500 dark:bg-warning-500/15 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
+        <span className="bg-warning-500 h-1.5 w-1.5 rounded-full" />
         Warning
       </span>
     );
@@ -50,9 +50,9 @@ type UnifiedRow =
   | { kind: 'slurm'; sev: string; data: SlurmNodeEntry };
 
 // Fallback heights — the ResizeObserver measures real values from the DOM
-const FALLBACK_ROW_H = 72;   // measured: badge (py-1+text-xs) in td py-3.5
+const FALLBACK_ROW_H = 72; // measured: badge (py-1+text-xs) in td py-3.5
 const FALLBACK_THEAD_H = 41; // measured: th py-3 + text-xs
-const SAFETY = 8;             // sub-pixel safety buffer
+const SAFETY = 8; // sub-pixel safety buffer
 
 const REFRESH_OPTIONS = [
   { label: 'Off', value: 0 },
@@ -117,7 +117,9 @@ export const NotificationsFullPage = () => {
   };
 
   // Initial load
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   // ResizeObserver — mesure les vraies hauteurs depuis le DOM, recalcule perPage
   useEffect(() => {
@@ -141,7 +143,10 @@ export const NotificationsFullPage = () => {
 
   // Auto-refresh countdown
   useEffect(() => {
-    if (refreshInterval === 0) { setCountdown(0); return; }
+    if (refreshInterval === 0) {
+      setCountdown(0);
+      return;
+    }
     countdownRef.current = refreshInterval;
     setCountdown(refreshInterval);
     const tick = setInterval(() => {
@@ -157,7 +162,9 @@ export const NotificationsFullPage = () => {
   }, [refreshInterval]);
 
   // Reset page when filters change
-  useEffect(() => { setPage(0); }, [filter, search]);
+  useEffect(() => {
+    setPage(0);
+  }, [filter, search]);
 
   // Recalcule perPage une fois que les vraies lignes sont rendues (données chargées)
   useEffect(() => {
@@ -182,10 +189,13 @@ export const NotificationsFullPage = () => {
   const affectedRacks = new Set(infraAlerts.map((a) => a.rack_id).filter(Boolean)).size;
 
   // Unified rows
-  const allRows = useMemo<UnifiedRow[]>(() => [
-    ...infraAlerts.map((d): UnifiedRow => ({ kind: 'infra', sev: d.state, data: d })),
-    ...slurmAlerts.map((d): UnifiedRow => ({ kind: 'slurm', sev: d.severity, data: d })),
-  ], [infraAlerts, slurmAlerts]);
+  const allRows = useMemo<UnifiedRow[]>(
+    () => [
+      ...infraAlerts.map((d): UnifiedRow => ({ kind: 'infra', sev: d.state, data: d })),
+      ...slurmAlerts.map((d): UnifiedRow => ({ kind: 'slurm', sev: d.severity, data: d })),
+    ],
+    [infraAlerts, slurmAlerts]
+  );
 
   // Filter + search
   const filteredRows = useMemo<UnifiedRow[]>(() => {
@@ -222,7 +232,9 @@ export const NotificationsFullPage = () => {
 
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / perPage));
   const safePage = Math.min(page, totalPages - 1);
-  const pageRows = showAll ? filteredRows : filteredRows.slice(safePage * perPage, (safePage + 1) * perPage);
+  const pageRows = showAll
+    ? filteredRows
+    : filteredRows.slice(safePage * perPage, (safePage + 1) * perPage);
   const pageNums = buildPages(safePage, totalPages);
   const firstEntry = filteredRows.length === 0 ? 0 : safePage * perPage + 1;
   const lastEntry = Math.min((safePage + 1) * perPage, filteredRows.length);
@@ -232,18 +244,24 @@ export const NotificationsFullPage = () => {
     { id: 'crit' as FilterType, label: 'Critical', count: totalCrit },
     { id: 'warn' as FilterType, label: 'Warning', count: totalWarn },
     { id: 'infra' as FilterType, label: 'Infrastructure', count: infraAlerts.length },
-    ...(slurmEnabled ? [{ id: 'slurm' as FilterType, label: 'Slurm', count: slurmAlerts.length }] : []),
+    ...(slurmEnabled
+      ? [{ id: 'slurm' as FilterType, label: 'Slurm', count: slurmAlerts.length }]
+      : []),
   ];
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col gap-5 overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden">
       {/* Header */}
       <div className="shrink-0">
         <PageHeader
           title="Notifications"
           breadcrumb={
             <PageBreadcrumb
-              items={[{ label: 'Home', href: '/cosmos' }, { label: 'Monitoring' }, { label: 'Notifications' }]}
+              items={[
+                { label: 'Home', href: '/cosmos' },
+                { label: 'Monitoring' },
+                { label: 'Notifications' },
+              ]}
             />
           }
           actions={
@@ -257,24 +275,31 @@ export const NotificationsFullPage = () => {
                   ? 'Auto-refresh : Off'
                   : `Auto-refresh : ${REFRESH_OPTIONS.find((o) => o.value === refreshInterval)?.label}`}
                 {refreshInterval > 0 && !refreshing && (
-                  <span className="font-mono text-xs tabular-nums text-gray-400">· {countdown}s</span>
+                  <span className="font-mono text-xs text-gray-400 tabular-nums">
+                    · {countdown}s
+                  </span>
                 )}
               </button>
               {refreshMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setRefreshMenuOpen(false)} />
-                  <div className="absolute right-0 top-full z-20 mt-1 min-w-[140px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                  <div className="absolute top-full right-0 z-20 mt-1 min-w-[140px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
                     {REFRESH_OPTIONS.map((o) => (
                       <button
                         key={o.value}
-                        onClick={() => { setRefreshInterval(o.value); setRefreshMenuOpen(false); }}
+                        onClick={() => {
+                          setRefreshInterval(o.value);
+                          setRefreshMenuOpen(false);
+                        }}
                         className={`flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${
                           refreshInterval === o.value
-                            ? 'font-semibold text-brand-500'
+                            ? 'text-brand-500 font-semibold'
                             : 'text-gray-600 dark:text-gray-300'
                         }`}
                       >
-                        <span className={`h-1.5 w-1.5 rounded-full ${refreshInterval === o.value ? 'bg-brand-500' : ''}`} />
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${refreshInterval === o.value ? 'bg-brand-500' : ''}`}
+                        />
                         {o.label}
                       </button>
                     ))}
@@ -290,17 +315,43 @@ export const NotificationsFullPage = () => {
       <div className="grid shrink-0 grid-cols-2 gap-4 sm:grid-cols-4">
         {(
           [
-            { label: 'Total alerts', value: total, icon: Bell, bg: 'bg-gray-100 dark:bg-gray-800', color: 'text-gray-600 dark:text-gray-400' },
-            { label: 'Critical', value: totalCrit, icon: XCircle, bg: 'bg-red-50 dark:bg-red-500/10', color: 'text-red-500' },
-            { label: 'Warning', value: totalWarn, icon: AlertTriangle, bg: 'bg-amber-50 dark:bg-amber-500/10', color: 'text-amber-500' },
-            { label: 'Affected racks', value: affectedRacks, icon: Server, bg: 'bg-brand-50 dark:bg-brand-500/10', color: 'text-brand-500' },
+            {
+              label: 'Total alerts',
+              value: total,
+              icon: Bell,
+              bg: 'bg-gray-100 dark:bg-gray-800',
+              color: 'text-gray-600 dark:text-gray-400',
+            },
+            {
+              label: 'Critical',
+              value: totalCrit,
+              icon: XCircle,
+              bg: 'bg-red-50 dark:bg-red-500/10',
+              color: 'text-red-500',
+            },
+            {
+              label: 'Warning',
+              value: totalWarn,
+              icon: AlertTriangle,
+              bg: 'bg-amber-50 dark:bg-amber-500/10',
+              color: 'text-amber-500',
+            },
+            {
+              label: 'Affected racks',
+              value: affectedRacks,
+              icon: Server,
+              bg: 'bg-brand-50 dark:bg-brand-500/10',
+              color: 'text-brand-500',
+            },
           ] as const
         ).map((s) => (
           <div
             key={s.label}
             className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900"
           >
-            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${s.bg}`}>
+            <div
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${s.bg}`}
+            >
               <s.icon className={`h-6 w-6 ${s.color}`} />
             </div>
             <div>
@@ -313,7 +364,6 @@ export const NotificationsFullPage = () => {
 
       {/* Table card — fills remaining height */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-
         {/* Toolbar — all elements h-9 (36px) */}
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
           {/* Search — h-9 */}
@@ -343,7 +393,7 @@ export const NotificationsFullPage = () => {
                 {f.label}
                 {f.count > 0 && (
                   <span
-                    className={`rounded-full px-1.5 py-px text-[10px] font-bold leading-none ${
+                    className={`rounded-full px-1.5 py-px text-[10px] leading-none font-bold ${
                       filter === f.id
                         ? 'bg-white/25 text-white'
                         : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300'
@@ -365,8 +415,12 @@ export const NotificationsFullPage = () => {
                 : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
             }`}
           >
-            <div className={`relative h-4 w-7 rounded-full transition-colors ${showAll ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-600'}`}>
-              <span className={`absolute top-0.5 left-0 h-3 w-3 rounded-full bg-white shadow transition-transform ${showAll ? 'translate-x-[14px]' : 'translate-x-0.5'}`} />
+            <div
+              className={`relative h-4 w-7 rounded-full transition-colors ${showAll ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-600'}`}
+            >
+              <span
+                className={`absolute top-0.5 left-0 h-3 w-3 rounded-full bg-white shadow transition-transform ${showAll ? 'translate-x-[14px]' : 'translate-x-0.5'}`}
+              />
             </div>
             Show all notifications
           </button>
@@ -402,23 +456,25 @@ export const NotificationsFullPage = () => {
                 <col style={{ width: '13%' }} /> {/* Rack      */}
                 <col style={{ width: '11%' }} /> {/* Room      */}
                 <col style={{ width: '16%' }} /> {/* Checks    */}
-                <col style={{ width: '8%'  }} /> {/* Action    */}
+                <col style={{ width: '8%' }} /> {/* Action    */}
               </colgroup>
               <thead className="sticky top-0 z-10">
                 <tr className="border-b border-gray-100 dark:border-gray-800">
                   {['Severity', 'Name', 'Type', 'Location', 'Rack', 'Room', 'Checks'].map((h) => (
-                    <th key={h} className="bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                    <th
+                      key={h}
+                      className="bg-gray-50 px-4 py-3 text-left text-xs font-semibold tracking-wider text-gray-500 uppercase dark:bg-gray-800 dark:text-gray-400"
+                    >
                       {h}
                     </th>
                   ))}
-                  <th className="bg-gray-50 px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                  <th className="bg-gray-50 px-4 py-3 text-right text-xs font-semibold tracking-wider text-gray-500 uppercase dark:bg-gray-800 dark:text-gray-400">
                     Action
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {pageRows.map((row, i) => {
-
                   if (row.kind === 'infra') {
                     const a = row.data;
                     return (
@@ -431,7 +487,7 @@ export const NotificationsFullPage = () => {
                         </td>
                         <td className="px-4 py-3.5">
                           <span className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
-                            <Server className="h-3.5 w-3.5 shrink-0 text-brand-500" />
+                            <Server className="text-brand-500 h-3.5 w-3.5 shrink-0" />
                             Infrastructure
                           </span>
                         </td>
@@ -448,20 +504,27 @@ export const NotificationsFullPage = () => {
                           {a.checks.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {a.checks.slice(0, 2).map((c, j) => (
-                                <span key={j} className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                                <span
+                                  key={j}
+                                  className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                                >
                                   {c.id}
                                 </span>
                               ))}
                               {a.checks.length > 2 && (
-                                <span className="text-[10px] text-gray-400">+{a.checks.length - 2}</span>
+                                <span className="text-[10px] text-gray-400">
+                                  +{a.checks.length - 2}
+                                </span>
                               )}
                             </div>
-                          ) : <span className="text-[10px] text-gray-300 dark:text-gray-700">—</span>}
+                          ) : (
+                            <span className="text-[10px] text-gray-300 dark:text-gray-700">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5 text-right">
                           <button
                             onClick={() => navigate(`/views/rack/${a.rack_id}`)}
-                            className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-brand-700/50 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+                            className="hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:hover:border-brand-700/50 dark:hover:bg-brand-500/10 dark:hover:text-brand-400 inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors dark:border-gray-700 dark:text-gray-400"
                           >
                             View rack <ChevronRight className="h-3.5 w-3.5" />
                           </button>
@@ -480,11 +543,11 @@ export const NotificationsFullPage = () => {
                         </td>
                         <td className="px-4 py-3.5">
                           <span className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
-                            <Cpu className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                            <Cpu className="h-3.5 w-3.5 shrink-0 text-purple-500" />
                             Slurm
                           </span>
                         </td>
-                        <td className="truncate px-4 py-3.5 text-sm capitalize text-gray-600 dark:text-gray-300">
+                        <td className="truncate px-4 py-3.5 text-sm text-gray-600 capitalize dark:text-gray-300">
                           {n.status}
                           {n.partitions.length > 0 && ` · ${n.partitions.join(', ')}`}
                         </td>
@@ -504,7 +567,7 @@ export const NotificationsFullPage = () => {
                                 ? navigate(`/views/rack/${n.rack_id}`)
                                 : navigate('/slurm/alerts')
                             }
-                            className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-brand-700/50 dark:hover:bg-brand-500/10 dark:hover:text-brand-400"
+                            className="hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 dark:hover:border-brand-700/50 dark:hover:bg-brand-500/10 dark:hover:text-brand-400 inline-flex cursor-pointer items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors dark:border-gray-700 dark:text-gray-400"
                           >
                             View <ChevronRight className="h-3.5 w-3.5" />
                           </button>
@@ -523,13 +586,18 @@ export const NotificationsFullPage = () => {
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3 dark:border-gray-800">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {showAll ? (
-                <>Showing all <b className="text-gray-700 dark:text-gray-200">{filteredRows.length}</b> results</>
+                <>
+                  Showing all{' '}
+                  <b className="text-gray-700 dark:text-gray-200">{filteredRows.length}</b> results
+                </>
               ) : (
                 <>
                   Showing{' '}
-                  <b className="text-gray-700 dark:text-gray-200">{firstEntry}–{lastEntry}</b>
-                  {' '}of{' '}
-                  <b className="text-gray-700 dark:text-gray-200">{filteredRows.length}</b> results
+                  <b className="text-gray-700 dark:text-gray-200">
+                    {firstEntry}–{lastEntry}
+                  </b>{' '}
+                  of <b className="text-gray-700 dark:text-gray-200">{filteredRows.length}</b>{' '}
+                  results
                 </>
               )}
             </p>
@@ -546,7 +614,12 @@ export const NotificationsFullPage = () => {
                 <div className="flex items-center gap-1">
                   {pageNums.map((p, i) =>
                     p === '...' ? (
-                      <span key={`e-${i}`} className="flex h-9 w-9 items-center justify-center text-sm text-gray-400">…</span>
+                      <span
+                        key={`e-${i}`}
+                        className="flex h-9 w-9 items-center justify-center text-sm text-gray-400"
+                      >
+                        …
+                      </span>
                     ) : (
                       <button
                         key={p}

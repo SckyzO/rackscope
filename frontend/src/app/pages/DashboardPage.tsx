@@ -107,8 +107,8 @@ type WidgetConfig = {
   // 2D grid position — react-grid-layout coordinates
   x: number;
   y: number;
-  w: number;  // column span (1-12)
-  h: number;  // row span
+  w: number; // column span (1-12)
+  h: number; // row span
   minW?: number;
   minH?: number;
   statKey?: StatKey;
@@ -206,23 +206,23 @@ const ROW_PX = 140;
 // 2D grid layout — x/y/w/h (12-column grid, rowHeight=ROW_PX)
 const DEFAULT_WIDGETS: WidgetConfig[] = [
   // ── y=0, h=1 — KPI strip ─────────────────────────────────────────────────
-  { id: 'stat-sites',   type: 'stat-card', x: 0,  y: 0, w: 2, h: 1, minH: 1, statKey: 'sites' },
-  { id: 'stat-rooms',   type: 'stat-card', x: 2,  y: 0, w: 2, h: 1, minH: 1, statKey: 'rooms' },
-  { id: 'stat-racks',   type: 'stat-card', x: 4,  y: 0, w: 2, h: 1, minH: 1, statKey: 'racks' },
-  { id: 'stat-devices', type: 'stat-card', x: 6,  y: 0, w: 2, h: 1, minH: 1, statKey: 'devices' },
-  { id: 'stat-crit',    type: 'stat-card', x: 8,  y: 0, w: 2, h: 1, minH: 1, statKey: 'crit' },
-  { id: 'stat-warn',    type: 'stat-card', x: 10, y: 0, w: 2, h: 1, minH: 1, statKey: 'warn' },
+  { id: 'stat-sites', type: 'stat-card', x: 0, y: 0, w: 2, h: 1, minH: 1, statKey: 'sites' },
+  { id: 'stat-rooms', type: 'stat-card', x: 2, y: 0, w: 2, h: 1, minH: 1, statKey: 'rooms' },
+  { id: 'stat-racks', type: 'stat-card', x: 4, y: 0, w: 2, h: 1, minH: 1, statKey: 'racks' },
+  { id: 'stat-devices', type: 'stat-card', x: 6, y: 0, w: 2, h: 1, minH: 1, statKey: 'devices' },
+  { id: 'stat-crit', type: 'stat-card', x: 8, y: 0, w: 2, h: 1, minH: 1, statKey: 'crit' },
+  { id: 'stat-warn', type: 'stat-card', x: 10, y: 0, w: 2, h: 1, minH: 1, statKey: 'warn' },
   // ── y=1, h=3 — Primary monitoring ────────────────────────────────────────
-  { id: 'alerts',       type: 'active-alerts', x: 0, y: 1, w: 6, h: 3, minW: 3, minH: 2 },
-  { id: 'worldmap',     type: 'world-map',      x: 6, y: 1, w: 6, h: 3, minW: 3, minH: 2 },
+  { id: 'alerts', type: 'active-alerts', x: 0, y: 1, w: 6, h: 3, minW: 3, minH: 2 },
+  { id: 'worldmap', type: 'world-map', x: 6, y: 1, w: 6, h: 3, minW: 3, minH: 2 },
   // ── y=4, h=2 — Gauges ────────────────────────────────────────────────────
-  { id: 'gauge',        type: 'health-gauge',   x: 0, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
-  { id: 'donut',        type: 'severity-donut', x: 4, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
-  { id: 'prometheus',   type: 'prometheus',     x: 8, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'gauge', type: 'health-gauge', x: 0, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'donut', type: 'severity-donut', x: 4, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'prometheus', type: 'prometheus', x: 8, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
   // ── y=6, h=2 — Operational ───────────────────────────────────────────────
-  { id: 'infra',        type: 'infrastructure', x: 0, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
-  { id: 'heatmap',      type: 'node-heatmap',   x: 4, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
-  { id: 'catalog',      type: 'catalog-checks', x: 8, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'infra', type: 'infrastructure', x: 0, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'heatmap', type: 'node-heatmap', x: 4, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'catalog', type: 'catalog-checks', x: 8, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
 ];
 
 // ── react-grid-layout helpers ─────────────────────────────────────────────────
@@ -230,7 +230,11 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
 /** Convert WidgetConfig[] → Layout[] for react-grid-layout */
 const toRglLayout = (widgets: WidgetConfig[]): Layout[] =>
   widgets.map(({ id, x, y, w, h, minW, minH }) => ({
-    i: id, x, y, w, h,
+    i: id,
+    x,
+    y,
+    w,
+    h,
     ...(minW !== undefined && { minW }),
     ...(minH !== undefined && { minH }),
   }));
@@ -250,35 +254,40 @@ const WIDGET_CATALOG: WidgetDefinition[] = [
     type: 'stats-row',
     title: 'Stats Overview',
     description: 'Sites, rooms, racks, devices, CRIT, WARN counts',
-    defaultW: 12, defaultH: 1,
+    defaultW: 12,
+    defaultH: 1,
     icon: BarChart2,
   },
   {
     type: 'health-gauge',
     title: 'Health Score',
     description: 'Overall infrastructure health as a gauge',
-    defaultW: 4, defaultH: 2,
+    defaultW: 4,
+    defaultH: 2,
     icon: Activity,
   },
   {
     type: 'severity-donut',
     title: 'Severity Distribution',
     description: 'CRIT / WARN / OK node distribution',
-    defaultW: 4, defaultH: 2,
+    defaultW: 4,
+    defaultH: 2,
     icon: Globe,
   },
   {
     type: 'active-alerts',
     title: 'Active Alerts',
     description: 'Live CRIT/WARN alerts with filters',
-    defaultW: 8, defaultH: 2,
+    defaultW: 8,
+    defaultH: 2,
     icon: XCircle,
   },
   {
     type: 'slurm-cluster',
     title: 'Slurm Cluster',
     description: 'HPC cluster status and node breakdown',
-    defaultW: 8, defaultH: 2,
+    defaultW: 8,
+    defaultH: 2,
     icon: Cpu,
     requiresSlurm: true,
   },
@@ -286,91 +295,104 @@ const WIDGET_CATALOG: WidgetDefinition[] = [
     type: 'infrastructure',
     title: 'Infrastructure',
     description: 'Rooms health overview',
-    defaultW: 4, defaultH: 2,
+    defaultW: 4,
+    defaultH: 2,
     icon: Server,
   },
   {
     type: 'prometheus',
     title: 'Prometheus',
     description: 'Monitoring connectivity and latency',
-    defaultW: 4, defaultH: 2,
+    defaultW: 4,
+    defaultH: 2,
     icon: Zap,
   },
   {
     type: 'catalog-checks',
     title: 'Catalog & Checks',
     description: 'Templates and checks library stats',
-    defaultW: 4, defaultH: 2,
+    defaultW: 4,
+    defaultH: 2,
     icon: ShieldCheck,
   },
   {
     type: 'stat-card',
     title: 'Stat Card',
     description: 'Single metric (sites, rooms, racks...)',
-    defaultW: 2, defaultH: 1,
+    defaultW: 2,
+    defaultH: 1,
     icon: BarChart2,
   },
   {
     type: 'alert-count',
     title: 'Alert Count',
     description: 'CRIT + WARN count prominent display',
-    defaultW: 3, defaultH: 2,
+    defaultW: 3,
+    defaultH: 2,
     icon: XCircle,
   },
   {
     type: 'rack-utilization',
     title: 'Rack Utilization',
     description: 'Fill % per room as bar chart',
-    defaultW: 6, defaultH: 3,
+    defaultW: 6,
+    defaultH: 3,
     icon: Server,
   },
   {
     type: 'node-heatmap',
     title: 'Node Health',
     description: 'Alert nodes grouped by room with CRIT/WARN/OK summary',
-    defaultW: 6, defaultH: 3,
+    defaultW: 6,
+    defaultH: 3,
     icon: Cpu,
   },
   {
     type: 'uptime',
     title: 'Scrape Latency',
     description: 'Last Prometheus scrape latency',
-    defaultW: 3, defaultH: 2,
+    defaultW: 3,
+    defaultH: 2,
     icon: Zap,
   },
   {
     type: 'recent-alerts',
     title: 'Recent CRIT',
     description: 'Last 3 critical alerts',
-    defaultW: 4, defaultH: 2,
+    defaultW: 4,
+    defaultH: 2,
     icon: AlertTriangle,
   },
   {
     type: 'site-map',
     title: 'Site Map',
     description: 'Sites with room counts',
-    defaultW: 4, defaultH: 2,
+    defaultW: 4,
+    defaultH: 2,
     icon: Globe,
   },
   {
     type: 'check-summary',
     title: 'Check Summary',
     description: 'Checks library stats',
-    defaultW: 3, defaultH: 2,
+    defaultW: 3,
+    defaultH: 2,
     icon: ShieldCheck,
   },
   {
     type: 'device-types',
     title: 'Device Types',
     description: 'Template types breakdown',
-    defaultW: 4, defaultH: 2,
+    defaultW: 4,
+    defaultH: 2,
     icon: Layers,
   },
   {
     type: 'slurm-nodes',
     title: 'Slurm Nodes',
     description: 'Total Slurm nodes count',
-    defaultW: 3, defaultH: 2,
+    defaultW: 3,
+    defaultH: 2,
     icon: Activity,
     requiresSlurm: true,
   },
@@ -378,7 +400,8 @@ const WIDGET_CATALOG: WidgetDefinition[] = [
     type: 'slurm-utilization',
     title: 'Slurm Utilization',
     description: 'Allocated % gauge',
-    defaultW: 6, defaultH: 3,
+    defaultW: 6,
+    defaultH: 3,
     icon: Activity,
     requiresSlurm: true,
   },
@@ -386,7 +409,8 @@ const WIDGET_CATALOG: WidgetDefinition[] = [
     type: 'world-map',
     title: 'World Map',
     description: 'Mini map with site markers and health states',
-    defaultW: 6, defaultH: 3,
+    defaultW: 6,
+    defaultH: 3,
     icon: Globe,
   },
 ];
@@ -421,14 +445,14 @@ const StatCard = ({ icon: Icon, label, value, color, sub }: StatCardProps) => (
 const AlertSevBadge = ({ state }: { state: string }) => {
   if (state === 'CRIT')
     return (
-      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-error-50 px-2.5 py-0.5 text-xs font-medium text-error-500 dark:bg-error-500/15">
-        <span className="h-1.5 w-1.5 rounded-full bg-error-500" />
+      <span className="bg-error-50 text-error-500 dark:bg-error-500/15 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium">
+        <span className="bg-error-500 h-1.5 w-1.5 rounded-full" />
         Critical
       </span>
     );
   return (
-    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-warning-50 px-2.5 py-0.5 text-xs font-medium text-warning-500 dark:bg-warning-500/15">
-      <span className="h-1.5 w-1.5 rounded-full bg-warning-500" />
+    <span className="bg-warning-50 text-warning-500 dark:bg-warning-500/15 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium">
+      <span className="bg-warning-500 h-1.5 w-1.5 rounded-full" />
       Warning
     </span>
   );
@@ -443,19 +467,18 @@ const AlertRow = ({ alert, onClick }: AlertRowProps) => (
   >
     <AlertSevBadge state={alert.state} />
     <div className="min-w-0 flex-1">
-      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
-        {alert.node_id}
-      </p>
+      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{alert.node_id}</p>
       <p className="truncate text-xs text-gray-500 dark:text-gray-400">
         {[alert.device_name, alert.rack_name, alert.room_name].filter(Boolean).join(' · ')}
       </p>
     </div>
     {alert.checks.length > 0 && (
       <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-        {alert.checks[0].id}{alert.checks.length > 1 ? ` +${alert.checks.length - 1}` : ''}
+        {alert.checks[0].id}
+        {alert.checks.length > 1 ? ` +${alert.checks.length - 1}` : ''}
       </span>
     )}
-    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-300 transition-colors group-hover:text-brand-500 dark:text-gray-700" />
+    <ChevronRight className="group-hover:text-brand-500 h-3.5 w-3.5 shrink-0 text-gray-300 transition-colors dark:text-gray-700" />
   </button>
 );
 
@@ -771,26 +794,27 @@ const ActiveAlertsWidget = ({
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
         <div className="flex items-center gap-2.5">
           <Bell className="h-4 w-4 text-gray-400" />
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Active Alerts</h2>
           {critCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-error-50 px-2 py-0.5 text-[11px] font-bold text-error-500 dark:bg-error-500/15">
-              <span className="h-1.5 w-1.5 rounded-full bg-error-500" />{critCount} CRIT
+            <span className="bg-error-50 text-error-500 dark:bg-error-500/15 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold">
+              <span className="bg-error-500 h-1.5 w-1.5 rounded-full" />
+              {critCount} CRIT
             </span>
           )}
           {warnCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-0.5 text-[11px] font-bold text-warning-500 dark:bg-warning-500/15">
-              <span className="h-1.5 w-1.5 rounded-full bg-warning-500" />{warnCount} WARN
+            <span className="bg-warning-50 text-warning-500 dark:bg-warning-500/15 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold">
+              <span className="bg-warning-500 h-1.5 w-1.5 rounded-full" />
+              {warnCount} WARN
             </span>
           )}
         </div>
         <button
           onClick={() => navigate('/notifications')}
-          className="text-brand-500 text-xs font-medium transition-colors hover:text-brand-600"
+          className="text-brand-500 hover:text-brand-600 text-xs font-medium transition-colors"
         >
           View all →
         </button>
@@ -806,7 +830,10 @@ const ActiveAlertsWidget = ({
           ].map((f) => (
             <button
               key={f.id}
-              onClick={() => { data.setAlertStateFilter(f.id); data.setAlertPage(0); }}
+              onClick={() => {
+                data.setAlertStateFilter(f.id);
+                data.setAlertPage(0);
+              }}
               className={`flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors ${
                 data.alertStateFilter === f.id
                   ? 'bg-brand-500 text-white'
@@ -815,11 +842,13 @@ const ActiveAlertsWidget = ({
             >
               {f.label}
               {f.count > 0 && (
-                <span className={`rounded-full px-1 text-[10px] font-bold ${
-                  data.alertStateFilter === f.id
-                    ? 'bg-white/20 text-white'
-                    : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                }`}>
+                <span
+                  className={`rounded-full px-1 text-[10px] font-bold ${
+                    data.alertStateFilter === f.id
+                      ? 'bg-white/20 text-white'
+                      : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                  }`}
+                >
                   {f.count}
                 </span>
               )}
@@ -830,23 +859,33 @@ const ActiveAlertsWidget = ({
         {data.allRooms.length > 1 && (
           <select
             value={data.alertRoomFilter}
-            onChange={(e) => { data.setAlertRoomFilter(e.target.value); data.setAlertPage(0); }}
+            onChange={(e) => {
+              data.setAlertRoomFilter(e.target.value);
+              data.setAlertPage(0);
+            }}
             className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
           >
             <option value="all">All rooms</option>
             {data.allRooms.map((r) => (
-              <option key={r.id} value={r.id}>{r.name}</option>
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
             ))}
           </select>
         )}
 
         <select
           value={data.alertLimit}
-          onChange={(e) => { data.setAlertLimit(Number(e.target.value)); data.setAlertPage(0); }}
+          onChange={(e) => {
+            data.setAlertLimit(Number(e.target.value));
+            data.setAlertPage(0);
+          }}
           className="ml-auto h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
         >
           {[5, 10, 20, 50].map((n) => (
-            <option key={n} value={n}>{n} rows</option>
+            <option key={n} value={n}>
+              {n} rows
+            </option>
           ))}
         </select>
       </div>
@@ -855,7 +894,9 @@ const ActiveAlertsWidget = ({
       {data.alerts.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2">
           <CheckCircle className="h-8 w-8 text-green-400" />
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">All systems healthy</p>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            All systems healthy
+          </p>
           <p className="text-xs text-gray-400 dark:text-gray-600">No active alerts</p>
         </div>
       ) : (
@@ -893,7 +934,9 @@ const ActiveAlertsWidget = ({
                 <b className="text-gray-700 dark:text-gray-200">{data.totalAlertPages}</b>
               </span>
               <button
-                onClick={() => data.setAlertPage(Math.min(data.totalAlertPages - 1, data.safeAlertPage + 1))}
+                onClick={() =>
+                  data.setAlertPage(Math.min(data.totalAlertPages - 1, data.safeAlertPage + 1))
+                }
                 disabled={data.safeAlertPage >= data.totalAlertPages - 1}
                 className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
               >
@@ -1526,11 +1569,9 @@ const WorldMapWidget = ({
   }, []);
 
   // localStorage is the immediate source of truth (same as CosmosWorldMapPage)
-  const mapStyle = (
-    localStorage.getItem('rackscope.map.style') ||
+  const mapStyle = (localStorage.getItem('rackscope.map.style') ||
     config?.map?.style ||
-    'minimal'
-  ) as MapStyle;
+    'minimal') as MapStyle;
   const geoSites = data.sites.filter((s) => s.location?.lat != null && s.location?.lon != null);
 
   const markers: SiteMarker[] = geoSites.map((s) => ({
@@ -1879,10 +1920,13 @@ export const DashboardPage = () => {
   }, []);
 
   // ── Layout change handler (called by react-grid-layout) ───────────────────
-  const handleLayoutChange = useCallback((newLayout: Layout[]) => {
-    const updated = applyRglLayout(widgets, newLayout);
-    saveWidgets(updated);
-  }, [widgets]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleLayoutChange = useCallback(
+    (newLayout: Layout[]) => {
+      const updated = applyRglLayout(widgets, newLayout);
+      saveWidgets(updated);
+    },
+    [widgets, saveWidgets]
+  );
 
   // ── Widget + dashboard operations ─────────────────────────────────────────
   const persistDashboards = (next: Dashboard[]) => {
@@ -1904,13 +1948,18 @@ export const DashboardPage = () => {
     const def = WIDGET_CATALOG.find((d) => d.type === type);
     if (!def) return;
     const maxY = widgets.reduce((m, w) => Math.max(m, w.y + w.h), 0);
-    saveWidgets([...widgets, {
-      id: `${type}-${Date.now()}`,
-      type,
-      x: 0, y: maxY,
-      w: def.defaultW, h: def.defaultH,
-      minH: def.defaultH > 1 ? 2 : 1,
-    }]);
+    saveWidgets([
+      ...widgets,
+      {
+        id: `${type}-${Date.now()}`,
+        type,
+        x: 0,
+        y: maxY,
+        w: def.defaultW,
+        h: def.defaultH,
+        minH: def.defaultH > 1 ? 2 : 1,
+      },
+    ]);
   };
 
   const resetLayout = () => saveWidgets(DEFAULT_WIDGETS);
@@ -2309,7 +2358,10 @@ export const DashboardPage = () => {
           /* Loading skeleton */
           <div className="grid grid-cols-12 gap-5" style={{ gridAutoRows: `${ROW_PX}px` }}>
             {[12, 4, 4, 4, 8, 4].map((_, i) => (
-              <div key={i} className="col-span-4 h-32 animate-pulse rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-800" />
+              <div
+                key={i}
+                className="col-span-4 h-32 animate-pulse rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-800"
+              />
             ))}
           </div>
         ) : (
@@ -2342,7 +2394,10 @@ export const DashboardPage = () => {
                       </span>
                       <button
                         onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => { e.stopPropagation(); removeWidget(widget.id); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeWidget(widget.id);
+                        }}
                         className="flex h-5 w-5 items-center justify-center rounded border border-red-300 bg-white text-[11px] text-red-500 hover:bg-red-50 dark:border-red-800 dark:bg-gray-900"
                         title="Remove widget"
                       >

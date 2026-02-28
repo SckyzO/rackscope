@@ -32,7 +32,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
 }) => {
   return (
     <div className={`space-y-2 ${className}`}>
-      <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase text-gray-500 dark:text-gray-400">
+      <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
         {label}
         {tooltip && <SettingTooltip text={tooltip} />}
       </label>
@@ -41,7 +41,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled || loading}
-          className="w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2 pr-10 text-sm text-gray-700 focus:border-brand-500 focus:outline-none disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:border-brand-400"
+          className="focus:border-brand-500 dark:focus:border-brand-400 w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2 pr-10 text-sm text-gray-700 focus:outline-none disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
         >
           {placeholder && (
             <option value="" disabled>
@@ -55,9 +55,9 @@ export const FormSelect: React.FC<FormSelectProps> = ({
           ))}
         </select>
         {/* Custom arrow — replaces native browser arrow */}
-        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+        <div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2">
           {loading ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-brand-500" />
+            <div className="border-t-brand-500 h-4 w-4 animate-spin rounded-full border-2 border-gray-300" />
           ) : (
             <ChevronDown className="h-4 w-4 text-gray-400" />
           )}

@@ -57,6 +57,7 @@ class SimulatorPlugin(RackscopePlugin):
           4. Pydantic defaults
         """
         import os
+
         raw_config: dict = {}
 
         # 1. Try dedicated config file first (new architecture)
@@ -75,7 +76,11 @@ class SimulatorPlugin(RackscopePlugin):
         if not raw_config and app_config:
             if hasattr(app_config, "plugins") and "simulator" in app_config.plugins:
                 cfg = app_config.plugins["simulator"]
-                raw_config = {k: v for k, v in cfg.items() if k != "enabled"} if isinstance(cfg, dict) else {}
+                raw_config = (
+                    {k: v for k, v in cfg.items() if k != "enabled"}
+                    if isinstance(cfg, dict)
+                    else {}
+                )
                 logger.info("Simulator: loaded config from app.yaml plugins.simulator")
             # 3. Fallback: legacy top-level
             elif hasattr(app_config, "simulator") and app_config.simulator:

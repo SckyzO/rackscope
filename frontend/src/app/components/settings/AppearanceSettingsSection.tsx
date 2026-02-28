@@ -40,24 +40,30 @@ const PaletteCard = ({
       style={{ backgroundColor: meta.preview.bg }}
     >
       {/* Simulated sidebar strip */}
-      <div
-        className="h-2 w-8 rounded-sm"
-        style={{ backgroundColor: meta.preview.border }}
-      />
+      <div className="h-2 w-8 rounded-sm" style={{ backgroundColor: meta.preview.border }} />
       {/* Simulated card */}
       <div
         className="mt-1 flex-1 rounded-sm"
-        style={{ backgroundColor: meta.preview.surface, border: `1px solid ${meta.preview.border}` }}
+        style={{
+          backgroundColor: meta.preview.surface,
+          border: `1px solid ${meta.preview.border}`,
+        }}
       />
     </div>
 
     {/* Label */}
     <div
       className="flex items-center justify-between px-2.5 py-1.5"
-      style={{ backgroundColor: meta.preview.surface, borderTop: `1px solid ${meta.preview.border}` }}
+      style={{
+        backgroundColor: meta.preview.surface,
+        borderTop: `1px solid ${meta.preview.border}`,
+      }}
     >
       <div>
-        <p className="text-left text-xs font-semibold" style={{ color: active ? undefined : '#6b7280' }}>
+        <p
+          className="text-left text-xs font-semibold"
+          style={{ color: active ? undefined : '#6b7280' }}
+        >
           {meta.label}
         </p>
         <p className="text-left text-[10px]" style={{ color: '#9ca3af' }}>
@@ -65,7 +71,7 @@ const PaletteCard = ({
         </p>
       </div>
       {active && (
-        <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-brand-500">
+        <div className="bg-brand-500 flex h-4 w-4 shrink-0 items-center justify-center rounded-full">
           <Check className="h-2.5 w-2.5 text-white" />
         </div>
       )}
@@ -90,7 +96,9 @@ const AccentSwatch = ({
     onClick={onClick}
     title={label}
     className={`relative flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all ${
-      active ? 'border-gray-400 dark:border-gray-200 scale-110' : 'border-transparent hover:scale-105'
+      active
+        ? 'scale-110 border-gray-400 dark:border-gray-200'
+        : 'border-transparent hover:scale-105'
     }`}
     style={{ backgroundColor: hex }}
   >
@@ -101,7 +109,7 @@ const AccentSwatch = ({
 // ── Section header (inline, no card wrapper) ───────────────────────────────────
 
 const SubLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+  <p className="mb-2 text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
     {children}
   </p>
 );
@@ -117,16 +125,31 @@ export const AppearanceSettingsSection = () => {
     setTimeout(() => setAutoSaved(false), 2500);
   }, []);
 
-  const handleAccent     = (a: AccentColor) => { setAccent(a);      flash(); };
-  const handleLightTheme = (t: LightTheme)  => { setLightTheme(t);  flash(); };
-  const handleDarkTheme  = (t: DarkTheme)   => { setDarkTheme(t);   flash(); };
+  const handleAccent = (a: AccentColor) => {
+    setAccent(a);
+    flash();
+  };
+  const handleLightTheme = (t: LightTheme) => {
+    setLightTheme(t);
+    flash();
+  };
+  const handleDarkTheme = (t: DarkTheme) => {
+    setDarkTheme(t);
+    flash();
+  };
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
       {/* Header */}
       <div className="mb-5 flex items-start gap-3">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-500/10">
-          <svg className="h-4 w-4 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+        <div className="bg-brand-50 dark:bg-brand-500/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+          <svg
+            className="text-brand-500 h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
             <circle cx="12" cy="12" r="10" />
             <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
           </svg>
@@ -194,7 +217,8 @@ export const AppearanceSettingsSection = () => {
         </div>
 
         <p className="text-[11px] text-gray-400 dark:text-gray-600">
-          These preferences are stored in your browser. They don't affect other users or require a server save.
+          These preferences are stored in your browser. They don't affect other users or require a
+          server save.
         </p>
       </div>
     </div>

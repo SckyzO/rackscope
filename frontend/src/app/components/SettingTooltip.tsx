@@ -50,7 +50,7 @@ export const SettingField = ({
 }: {
   label: string;
   tooltip?: string;
-  hint?: string;           // Small helper text below the input
+  hint?: string; // Small helper text below the input
   required?: boolean;
   children: ReactNode;
 }) => (
@@ -61,8 +61,6 @@ export const SettingField = ({
       {tooltip && <SettingTooltip text={tooltip} />}
     </label>
     {children}
-    {hint && (
-      <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{hint}</p>
-    )}
+    {hint && <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{hint}</p>}
   </div>
 );

@@ -27,7 +27,12 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
 
   return (
     <div className="space-y-4">
-      <FormSection title="Application Info" icon={Info} iconColor="text-brand-500" iconBg="bg-brand-50 dark:bg-brand-500/10">
+      <FormSection
+        title="Application Info"
+        icon={Info}
+        iconColor="text-brand-500"
+        iconBg="bg-brand-50 dark:bg-brand-500/10"
+      >
         <FormField
           label="Application Name"
           tooltip="Display name shown in the browser tab and dashboard header."
@@ -42,7 +47,12 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         />
       </FormSection>
 
-      <FormSection title="Paths" icon={FolderOpen} iconColor="text-amber-500" iconBg="bg-amber-50 dark:bg-amber-500/10">
+      <FormSection
+        title="Paths"
+        icon={FolderOpen}
+        iconColor="text-amber-500"
+        iconBg="bg-amber-50 dark:bg-amber-500/10"
+      >
         <FormField
           label="Topology Path"
           tooltip="Path to the topology YAML files (sites, rooms, racks). Relative to the project root."
@@ -73,7 +83,13 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         />
       </FormSection>
 
-      <FormSection title="Refresh Intervals" description="UI refresh intervals in seconds" icon={RefreshCw} iconColor="text-green-500" iconBg="bg-green-50 dark:bg-green-500/10">
+      <FormSection
+        title="Refresh Intervals"
+        description="UI refresh intervals in seconds"
+        icon={RefreshCw}
+        iconColor="text-green-500"
+        iconBg="bg-green-50 dark:bg-green-500/10"
+      >
         <FormField
           label="Room State Refresh (seconds)"
           tooltip="How often the backend refreshes room health states. Lower = more responsive but more Prometheus load. Default: 60."
@@ -90,7 +106,13 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         />
       </FormSection>
 
-      <FormSection title="Cache" description="Prometheus query cache TTL (two-level caching)" icon={Database} iconColor="text-purple-500" iconBg="bg-purple-50 dark:bg-purple-500/10">
+      <FormSection
+        title="Cache"
+        description="Prometheus query cache TTL (two-level caching)"
+        icon={Database}
+        iconColor="text-purple-500"
+        iconBg="bg-purple-50 dark:bg-purple-500/10"
+      >
         <FormField
           label="Legacy TTL (seconds)"
           tooltip="Deprecated cache TTL kept for backward compatibility."
@@ -114,7 +136,13 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         />
       </FormSection>
 
-      <FormSection title="Notifications" icon={Bell} iconColor="text-sky-500" iconBg="bg-sky-50 dark:bg-sky-500/10" description="Configure alert toast popups (WARN/CRIT)">
+      <FormSection
+        title="Notifications"
+        icon={Bell}
+        iconColor="text-sky-500"
+        iconBg="bg-sky-50 dark:bg-sky-500/10"
+        description="Configure alert toast popups (WARN/CRIT)"
+      >
         <FormSelect
           label="Toast position"
           tooltip="Where alert toast popups appear on screen."
@@ -142,7 +170,12 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
       </FormSection>
 
       {/* Features — at the bottom of General */}
-      <FormSection title="Features" icon={Zap} iconColor="text-brand-500" iconBg="bg-brand-50 dark:bg-brand-500/10">
+      <FormSection
+        title="Features"
+        icon={Zap}
+        iconColor="text-brand-500"
+        iconBg="bg-brand-50 dark:bg-brand-500/10"
+      >
         <FormToggle
           label="Demo Mode"
           description="Enables demo/test data from the Simulator plugin. The Simulator must also be enabled and configured in the Plugins tab — this toggle alone is not sufficient."
@@ -150,7 +183,8 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
           onChange={(value) => update('features', 'demo', value)}
         />
         <p className="text-[11px] text-gray-400 dark:text-gray-600">
-          Page visibility and playlist are in the <strong>Views</strong> tab. Plugin configuration is in <strong>Plugins</strong>.
+          Page visibility and playlist are in the <strong>Views</strong> tab. Plugin configuration
+          is in <strong>Plugins</strong>.
         </p>
       </FormSection>
     </div>

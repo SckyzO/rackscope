@@ -312,7 +312,7 @@ const RackWallCard = ({
       </p>
       <p className="mb-1.5 truncate text-[10px] text-gray-500 dark:text-gray-400">{rack.name}</p>
       {nodeList.length === 0 ? (
-        <div className="text-[9px] italic text-gray-400">no Slurm nodes</div>
+        <div className="text-[9px] text-gray-400 italic">no Slurm nodes</div>
       ) : (
         <div className="flex flex-wrap gap-0.5">
           {nodeList.map((n, i) => (
@@ -454,11 +454,13 @@ export const SlurmWallboardPage = () => {
         <PageHeader
           title={room?.name ?? 'Slurm Wallboard'}
           breadcrumb={
-            <PageBreadcrumb items={[
-              { label: 'Home', href: '/cosmos' },
-              { label: 'Slurm', href: '/slurm/overview' },
-              { label: room?.name ?? 'Wallboard' },
-            ]} />
+            <PageBreadcrumb
+              items={[
+                { label: 'Home', href: '/cosmos' },
+                { label: 'Slurm', href: '/slurm/overview' },
+                { label: room?.name ?? 'Wallboard' },
+              ]}
+            />
           }
           actions={
             <div className="flex items-center gap-2">
@@ -482,19 +484,29 @@ export const SlurmWallboardPage = () => {
                 className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
               >
                 {rooms.map((r) => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
                 ))}
               </select>
 
               {/* View toggle */}
               <div className="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-                {([
-                  { value: 'compact', icon: LayoutGrid, title: 'Vue compacte' },
-                  { value: 'detailed', icon: Columns, title: 'Vue détaillée' },
-                ] as { value: WallboardView; icon: React.ElementType; title: string }[]).map(({ value, icon: Icon, title }) => (
-                  <button key={value} title={title}
-                    onClick={() => { setWallView(value); localStorage.setItem('slurm-wallboard-view', value); }}
-                    className={`p-1.5 transition-colors ${wallView === value ? 'bg-brand-500 text-white' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}>
+                {(
+                  [
+                    { value: 'compact', icon: LayoutGrid, title: 'Vue compacte' },
+                    { value: 'detailed', icon: Columns, title: 'Vue détaillée' },
+                  ] as { value: WallboardView; icon: React.ElementType; title: string }[]
+                ).map(({ value, icon: Icon, title }) => (
+                  <button
+                    key={value}
+                    title={title}
+                    onClick={() => {
+                      setWallView(value);
+                      localStorage.setItem('slurm-wallboard-view', value);
+                    }}
+                    className={`p-1.5 transition-colors ${wallView === value ? 'bg-brand-500 text-white' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+                  >
                     <Icon className="h-4 w-4" />
                   </button>
                 ))}
@@ -502,7 +514,15 @@ export const SlurmWallboardPage = () => {
 
               {/* Refresh */}
               <button
-                onClick={() => { if (roomId) api.getSlurmRoomNodes(roomId).then(setSlurmNodes).catch(() => { /* noop */ }); }}
+                onClick={() => {
+                  if (roomId)
+                    api
+                      .getSlurmRoomNodes(roomId)
+                      .then(setSlurmNodes)
+                      .catch(() => {
+                        /* noop */
+                      });
+                }}
                 className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:text-gray-600 dark:border-gray-700"
               >
                 <RotateCcw className="h-4 w-4" />
@@ -545,7 +565,7 @@ export const SlurmWallboardPage = () => {
               <div key={aisle.id}>
                 <div className="mb-3 flex items-center gap-2">
                   <span className="bg-brand-500 h-2 w-2 rounded-full opacity-60" />
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  <h3 className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
                     {aisle.name}
                   </h3>
                   <span className="text-[10px] text-gray-400">({aisle.racks.length} racks)</span>

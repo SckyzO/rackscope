@@ -434,11 +434,7 @@ const ChangePasswordForm = () => {
           className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all disabled:cursor-not-allowed ${btn.cls}`}
         >
           {btn.icon}
-          {btn.label === 'Save'
-            ? authConfigured
-              ? 'Change password'
-              : 'Set password'
-            : btn.label}
+          {btn.label === 'Save' ? (authConfigured ? 'Change password' : 'Set password') : btn.label}
         </button>
         {status === 'error' && (
           <span className="flex items-center gap-1.5 text-xs text-red-500 dark:text-red-400">
@@ -486,12 +482,7 @@ export const ProfilePage = () => {
       <PageHeader
         title="Profile"
         breadcrumb={
-          <PageBreadcrumb
-            items={[
-              { label: 'Home', href: '/cosmos' },
-              { label: 'Profile' },
-            ]}
-          />
+          <PageBreadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'Profile' }]} />
         }
       />
 

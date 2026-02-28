@@ -29,10 +29,7 @@ const FallingRack = () => {
       {(phase === 'idle' || phase === 'falling') && (
         <div
           style={{
-            transition:
-              phase === 'falling'
-                ? 'transform 1.4s cubic-bezier(0.36,0,1,1)'
-                : 'none',
+            transition: phase === 'falling' ? 'transform 1.4s cubic-bezier(0.36,0,1,1)' : 'none',
             transform:
               phase === 'falling'
                 ? 'translateY(180px) rotate(14deg)'
@@ -41,12 +38,35 @@ const FallingRack = () => {
           }}
         >
           <svg viewBox="0 0 60 120" width="56" height="112">
-            <rect x="4" y="2" width="52" height="116" rx="3" fill="#374151" stroke="#4B5563" strokeWidth="1" />
+            <rect
+              x="4"
+              y="2"
+              width="52"
+              height="116"
+              rx="3"
+              fill="#374151"
+              stroke="#4B5563"
+              strokeWidth="1"
+            />
             <rect x="8" y="6" width="44" height="108" rx="1" fill="#1F2937" />
-            {[0,1,2,3,4,5,6,7,8].map((i) => (
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <g key={i}>
-                <rect x="10" y={10 + i * 11} width="40" height="9" rx="1" fill="#374151" stroke="#4B5563" strokeWidth="0.5" />
-                <circle cx="45" cy={14.5 + i * 11} r="2" fill={i % 3 === 0 ? '#10b981' : '#6B7280'} />
+                <rect
+                  x="10"
+                  y={10 + i * 11}
+                  width="40"
+                  height="9"
+                  rx="1"
+                  fill="#374151"
+                  stroke="#4B5563"
+                  strokeWidth="0.5"
+                />
+                <circle
+                  cx="45"
+                  cy={14.5 + i * 11}
+                  r="2"
+                  fill={i % 3 === 0 ? '#10b981' : '#6B7280'}
+                />
                 <rect x="12" y={12 + i * 11} width="22" height="5" rx="0.5" fill="#111827" />
               </g>
             ))}
@@ -70,9 +90,9 @@ const FallingRack = () => {
           `}</style>
           {[
             { w: 32, h: 10, r: '-20deg', left: '-40px' },
-            { w: 44, h: 44, r:  '50deg', left: '-8px'  },
-            { w: 24, h: 10, r:  '28deg', left: '18px'  },
-            { w: 20, h:  8, r: '-35deg', left: '32px'  },
+            { w: 44, h: 44, r: '50deg', left: '-8px' },
+            { w: 24, h: 10, r: '28deg', left: '18px' },
+            { w: 20, h: 8, r: '-35deg', left: '32px' },
           ].map((d, i) => (
             <div
               key={i}

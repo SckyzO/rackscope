@@ -115,11 +115,17 @@ async def update_app_config(
         # Preserve credentials that the Settings UI never edits
         if not payload.auth.password_hash and current.auth.password_hash:
             payload = payload.model_copy(
-                update={"auth": payload.auth.model_copy(update={"password_hash": current.auth.password_hash})}
+                update={
+                    "auth": payload.auth.model_copy(
+                        update={"password_hash": current.auth.password_hash}
+                    )
+                }
             )
         if not payload.auth.secret_key and current.auth.secret_key:
             payload = payload.model_copy(
-                update={"auth": payload.auth.model_copy(update={"secret_key": current.auth.secret_key})}
+                update={
+                    "auth": payload.auth.model_copy(update={"secret_key": current.auth.secret_key})
+                }
             )
 
     config_path = Path(os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml"))

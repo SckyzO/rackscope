@@ -38,6 +38,7 @@ def _find_rack_component_path(templates_dir: Path, template_id: str) -> Optional
         return None
     for yaml_file in comp_dir.rglob("*.yaml"):
         import yaml as _yaml
+
         try:
             data = _yaml.safe_load(yaml_file.read_text()) or {}
             for t in data.get("rack_component_templates", []):
@@ -93,10 +94,13 @@ def write_template(
         target_dir.mkdir(parents=True, exist_ok=True)
         target_path = target_dir / filename
         if target_path.exists():
-            raise HTTPException(status_code=400, detail=f"Component template already exists: {template.id}")
+            raise HTTPException(
+                status_code=400, detail=f"Component template already exists: {template.id}"
+            )
         data = {key: [template.model_dump()]}
         target_path.write_text(dump_yaml(data))
         from rackscope.api import app as app_module
+
         app_module.CATALOG = load_catalog(templates_dir)
         return template
     else:
@@ -153,6 +157,7 @@ def update_template(
         if existing_path and existing_path != target_path:
             # Update in-place to avoid duplicates
             import yaml as _yaml
+
             data = _yaml.safe_load(existing_path.read_text()) or {}
             comps = data.get("rack_component_templates", [])
             data["rack_component_templates"] = [
@@ -160,12 +165,14 @@ def update_template(
             ]
             existing_path.write_text(dump_yaml(data))
             from rackscope.api import app as app_module
+
             app_module.CATALOG = load_catalog(templates_dir)
             return template
         target_dir.mkdir(parents=True, exist_ok=True)
         data = {key: [template.model_dump()]}
         target_path.write_text(dump_yaml(data))
         from rackscope.api import app as app_module
+
         app_module.CATALOG = load_catalog(templates_dir)
         return template
     else:
@@ -200,6 +207,7 @@ def delete_device_template(
     path.unlink(missing_ok=True)
     # Reload catalog to keep in-memory state aligned
     from rackscope.api import app as app_module
+
     app_module.CATALOG = load_catalog(templates_dir)
     return {"status": "ok", "deleted": template_id}
 

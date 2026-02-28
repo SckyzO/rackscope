@@ -34,15 +34,13 @@ import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-
-
 const TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  server:  { bg: '#0d1f3c', border: '#2563eb', text: '#60a5fa' },
+  server: { bg: '#0d1f3c', border: '#2563eb', text: '#60a5fa' },
   storage: { bg: '#241a04', border: '#d97706', text: '#fbbf24' },
   network: { bg: '#071d27', border: '#0891b2', text: '#38bdf8' },
-  pdu:     { bg: '#241f03', border: '#ca8a04', text: '#facc15' },
+  pdu: { bg: '#241f03', border: '#ca8a04', text: '#facc15' },
   cooling: { bg: '#051d1d', border: '#0d9488', text: '#2dd4bf' },
-  other:   { bg: '#141a22', border: '#374151', text: '#9ca3af' },
+  other: { bg: '#141a22', border: '#374151', text: '#9ca3af' },
 };
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
@@ -102,16 +100,12 @@ const RackListItem = ({
     onClick={onClick}
     className={[
       'flex w-full flex-col gap-0.5 rounded-xl px-3 py-2.5 text-left transition-all',
-      selected
-        ? 'bg-brand-50 dark:bg-brand-500/10'
-        : 'hover:bg-gray-50 dark:hover:bg-white/5',
+      selected ? 'bg-brand-50 dark:bg-brand-500/10' : 'hover:bg-gray-50 dark:hover:bg-white/5',
     ].join(' ')}
   >
     <span
       className={`truncate text-xs font-semibold ${
-        selected
-          ? 'text-brand-600 dark:text-brand-400'
-          : 'text-gray-700 dark:text-gray-300'
+        selected ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'
       }`}
     >
       {rack.name}
@@ -143,10 +137,10 @@ const TemplateCard = ({
         <TypeIcon type={template.type} className="h-4 w-4" style={{ color: col.text }} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold leading-snug text-gray-800 dark:text-gray-200">
+        <p className="text-xs leading-snug font-semibold text-gray-800 dark:text-gray-200">
           {template.name}
         </p>
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 capitalize">
+        <p className="text-[10px] text-gray-400 capitalize dark:text-gray-500">
           {template.type} · {template.u_height}U
         </p>
       </div>
@@ -207,7 +201,13 @@ export const RackEditorPage = () => {
 
   // New Rack wizard
   const [wizardOpen, setWizardOpen] = useState(false);
-  const [wizardForm, setWizardForm] = useState({ name: '', id: '', uHeight: '42', templateId: '', aisleId: '' });
+  const [wizardForm, setWizardForm] = useState({
+    name: '',
+    id: '',
+    uHeight: '42',
+    templateId: '',
+    aisleId: '',
+  });
   const [wizardSaving, setWizardSaving] = useState(false);
   const [wizardError, setWizardError] = useState<string | null>(null);
 
@@ -255,27 +255,47 @@ export const RackEditorPage = () => {
           (room.aisles ?? []).forEach((aisle) => {
             aisles.push({ id: aisle.id, name: aisle.name, roomName: room.name });
             (aisle.racks ?? []).forEach((r) => {
-              racks.push({ id: r.id, name: r.name || r.id, roomId: room.id, roomName: room.name, aisleId: aisle.id, aisleName: aisle.name });
+              racks.push({
+                id: r.id,
+                name: r.name || r.id,
+                roomId: room.id,
+                roomName: room.name,
+                aisleId: aisle.id,
+                aisleName: aisle.name,
+              });
             });
           });
           (room.standalone_racks ?? []).forEach((r) => {
-            racks.push({ id: r.id, name: r.name || r.id, roomId: room.id, roomName: room.name, aisleId: '', aisleName: 'Standalone' });
+            racks.push({
+              id: r.id,
+              name: r.name || r.id,
+              roomId: room.id,
+              roomName: room.name,
+              aisleId: '',
+              aisleName: 'Standalone',
+            });
           });
         });
         setAllRacks(racks);
         setAllAisles(aisles);
 
         const dc: Record<string, DeviceTemplate> = {};
-        (catalog?.device_templates ?? []).forEach((t: DeviceTemplate) => { dc[t.id] = t; });
+        (catalog?.device_templates ?? []).forEach((t: DeviceTemplate) => {
+          dc[t.id] = t;
+        });
         setDeviceCatalog(dc);
         setRackTemplates(catalog?.rack_templates ?? []);
 
         // Auto-select: URL param → first rack
         if (!selectedRackId && racks.length > 0) setSelectedRackId(racks[0].id);
-      } catch { /* noop */ }
+      } catch {
+        /* noop */
+      }
     };
     void load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load selected rack ────────────────────────────────────────────────────
@@ -283,7 +303,8 @@ export const RackEditorPage = () => {
   useEffect(() => {
     if (!selectedRackId) return;
     let active = true;
-    api.getRack(selectedRackId)
+    api
+      .getRack(selectedRackId)
       .then((data) => {
         if (!active) return;
         setRack(data);
@@ -294,7 +315,9 @@ export const RackEditorPage = () => {
         setEditDirty(false);
       })
       .catch(() => undefined);
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [selectedRackId]);
 
   // ── Sync edit form when device selected ──────────────────────────────────
@@ -308,8 +331,8 @@ export const RackEditorPage = () => {
         typeof selectedDevice.instance === 'string'
           ? selectedDevice.instance
           : selectedDevice.instance
-          ? JSON.stringify(selectedDevice.instance)
-          : '',
+            ? JSON.stringify(selectedDevice.instance)
+            : '',
     });
     setEditDirty(false);
   }, [selectedDevice]);
@@ -318,12 +341,14 @@ export const RackEditorPage = () => {
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (dirty) { e.preventDefault(); e.returnValue = ''; }
+      if (dirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [dirty]);
-
 
   // ── Derived values ────────────────────────────────────────────────────────
 
@@ -337,7 +362,10 @@ export const RackEditorPage = () => {
   }, [draftDevices, deviceCatalog]);
 
   const totalU = rack?.u_height ?? 42;
-  const usedU = draftDevices.reduce((acc, d) => acc + (deviceCatalog[d.template_id]?.u_height ?? 1), 0);
+  const usedU = draftDevices.reduce(
+    (acc, d) => acc + (deviceCatalog[d.template_id]?.u_height ?? 1),
+    0
+  );
   const density = totalU > 0 ? usedU / totalU : 0;
 
   const filteredRacks = useMemo(() => {
@@ -362,9 +390,9 @@ export const RackEditorPage = () => {
     () =>
       Object.values(deviceCatalog).filter(
         (t) =>
-          (!templateSearch ||
-            t.name.toLowerCase().includes(templateSearch.toLowerCase()) ||
-            t.id.toLowerCase().includes(templateSearch.toLowerCase()))
+          !templateSearch ||
+          t.name.toLowerCase().includes(templateSearch.toLowerCase()) ||
+          t.id.toLowerCase().includes(templateSearch.toLowerCase())
       ),
     [deviceCatalog, templateSearch]
   );
@@ -408,7 +436,10 @@ export const RackEditorPage = () => {
 
   const handleSlotDrop = (e: React.DragEvent, u: number) => {
     e.preventDefault();
-    if (!rack) { setDragHoverU(null); return; }
+    if (!rack) {
+      setDragHoverU(null);
+      return;
+    }
 
     let activeDevice = dragDeviceRef.current;
     const activeTpl = dragTemplateRef.current;
@@ -427,9 +458,7 @@ export const RackEditorPage = () => {
         (slot) => slot >= 1 && slot <= rack.u_height && (!uMap.has(slot) || own.has(slot))
       );
       if (valid && u !== ad.u_position) {
-        setDraftDevices((prev) =>
-          prev.map((d) => (d.id === ad.id ? { ...d, u_position: u } : d))
-        );
+        setDraftDevices((prev) => prev.map((d) => (d.id === ad.id ? { ...d, u_position: u } : d)));
         setDirty(true);
         if (selectedDevice?.id === ad.id)
           setSelectedDevice((prev) => (prev ? { ...prev, u_position: u } : null));
@@ -440,13 +469,19 @@ export const RackEditorPage = () => {
       return;
     }
 
-    if (!activeTpl) { setDragHoverU(null); return; }
+    if (!activeTpl) {
+      setDragHoverU(null);
+      return;
+    }
 
     const h = activeTpl.u_height ?? 1;
     const valid = Array.from({ length: h }, (_, i) => u + i).every(
       (slot) => slot >= 1 && slot <= rack.u_height && !uMap.has(slot)
     );
-    if (!valid) { setDragHoverU(null); return; }
+    if (!valid) {
+      setDragHoverU(null);
+      return;
+    }
 
     deviceCounterRef.current += 1;
     setPlacing({ template: activeTpl, u });
@@ -503,7 +538,12 @@ export const RackEditorPage = () => {
   };
 
   // Cleanup undo timer on unmount
-  useEffect(() => () => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); }, []);
+  useEffect(
+    () => () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    },
+    []
+  );
 
   const applyDeviceEdit = () => {
     if (!selectedDevice) return;
@@ -538,11 +578,23 @@ export const RackEditorPage = () => {
   // ── New Rack wizard ───────────────────────────────────────────────────────
 
   const slugify = (s: string) =>
-    s.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    s
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
 
   const handleWizardCreate = async () => {
-    if (!wizardForm.name.trim()) { setWizardError('Rack name is required'); return; }
-    if (!wizardForm.aisleId) { setWizardError('Please select an aisle'); return; }
+    if (!wizardForm.name.trim()) {
+      setWizardError('Rack name is required');
+      return;
+    }
+    if (!wizardForm.aisleId) {
+      setWizardError('Please select an aisle');
+      return;
+    }
     setWizardSaving(true);
     setWizardError(null);
     try {
@@ -562,11 +614,25 @@ export const RackEditorPage = () => {
         (room.aisles ?? []).forEach((aisle) => {
           aisles.push({ id: aisle.id, name: aisle.name, roomName: room.name });
           (aisle.racks ?? []).forEach((r) => {
-            racks.push({ id: r.id, name: r.name || r.id, roomId: room.id, roomName: room.name, aisleId: aisle.id, aisleName: aisle.name });
+            racks.push({
+              id: r.id,
+              name: r.name || r.id,
+              roomId: room.id,
+              roomName: room.name,
+              aisleId: aisle.id,
+              aisleName: aisle.name,
+            });
           });
         });
         (room.standalone_racks ?? []).forEach((r) => {
-          racks.push({ id: r.id, name: r.name || r.id, roomId: room.id, roomName: room.name, aisleId: '', aisleName: 'Standalone' });
+          racks.push({
+            id: r.id,
+            name: r.name || r.id,
+            roomId: room.id,
+            roomName: room.name,
+            aisleId: '',
+            aisleName: 'Standalone',
+          });
         });
       });
       setAllRacks(racks);
@@ -590,7 +656,11 @@ export const RackEditorPage = () => {
         if (dirty) void handleSave();
         return;
       }
-      if (e.key === 'Escape') { setSelectedDevice(null); setPlacing(null); return; }
+      if (e.key === 'Escape') {
+        setSelectedDevice(null);
+        setPlacing(null);
+        return;
+      }
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedDevice && !isInput) {
         deleteDevice(selectedDevice.id);
       }
@@ -607,8 +677,8 @@ export const RackEditorPage = () => {
   const dragH = dragTemplate
     ? (dragTemplate.u_height ?? 1)
     : dragDevice
-    ? (deviceCatalog[dragDevice.template_id]?.u_height ?? 1)
-    : 0;
+      ? (deviceCatalog[dragDevice.template_id]?.u_height ?? 1)
+      : 0;
 
   const isSlotHovered = (u: number) =>
     (dragTemplate !== null || dragDevice !== null) &&
@@ -618,12 +688,11 @@ export const RackEditorPage = () => {
 
   const isHoverValid = (u: number) =>
     dragHoverU !== null &&
-    Array.from({ length: dragH }, (_, i) => dragHoverU + i).every((slot) =>
-      slot >= 1 &&
-      slot <= totalU &&
-      (dragDevice
-        ? !uMap.has(slot) || uMap.get(slot)?.id === dragDevice.id
-        : !uMap.has(slot))
+    Array.from({ length: dragH }, (_, i) => dragHoverU + i).every(
+      (slot) =>
+        slot >= 1 &&
+        slot <= totalU &&
+        (dragDevice ? !uMap.has(slot) || uMap.get(slot)?.id === dragDevice.id : !uMap.has(slot))
     ) &&
     isSlotHovered(u);
 
@@ -631,7 +700,6 @@ export const RackEditorPage = () => {
 
   return (
     <div className="flex h-full flex-col">
-
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="shrink-0">
         <PageHeader
@@ -645,7 +713,9 @@ export const RackEditorPage = () => {
                   ? [
                       {
                         label: selectedRackEntry.roomName,
-                        onClick: () => { /* Could navigate to datacenter editor */ },
+                        onClick: () => {
+                          /* Could navigate to datacenter editor */
+                        },
                       },
                       { label: rack?.name ?? selectedRackId ?? 'Rack' },
                     ]
@@ -693,11 +763,9 @@ export const RackEditorPage = () => {
 
       {/* ── 3-panel workspace ──────────────────────────────────────────────── */}
       <div className="mt-5 flex min-h-0 flex-1 gap-5">
-
         {/* ── LEFT PANEL: Racks + Templates ─────────────────────────────── */}
 
         <div className="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-
           {/* Tabs */}
           <div className="flex shrink-0 border-b border-gray-100 dark:border-gray-800">
             {(['racks', 'templates'] as const).map((tab) => (
@@ -707,7 +775,7 @@ export const RackEditorPage = () => {
                 className={[
                   'flex-1 py-3 text-xs font-semibold capitalize transition-colors',
                   leftTab === tab
-                    ? 'border-b-2 border-brand-500 text-brand-600 dark:text-brand-400'
+                    ? 'border-brand-500 text-brand-600 dark:text-brand-400 border-b-2'
                     : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300',
                 ].join(' ')}
               >
@@ -741,49 +809,76 @@ export const RackEditorPage = () => {
                     {Array.from(racksByRoom.entries()).map(([roomName, racks]) => {
                       const isOpen = openRooms.has(roomName);
                       return (
-                        <div key={roomName} className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
+                        <div
+                          key={roomName}
+                          className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800"
+                        >
                           <button
-                            onClick={() => setOpenRooms((prev) => {
-                              const next = new Set(prev);
-                              if (isOpen) { next.delete(roomName); } else { next.add(roomName); }
-                              return next;
-                            })}
+                            onClick={() =>
+                              setOpenRooms((prev) => {
+                                const next = new Set(prev);
+                                if (isOpen) {
+                                  next.delete(roomName);
+                                } else {
+                                  next.add(roomName);
+                                }
+                                return next;
+                              })
+                            }
                             className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
                           >
-                            <div className="h-2 w-2 shrink-0 rounded-full bg-brand-500/60" />
-                            <span className="flex-1 text-xs font-semibold text-gray-700 dark:text-gray-300">{roomName}</span>
-                            <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">{racks.length}</span>
-                            <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                            <div className="bg-brand-500/60 h-2 w-2 shrink-0 rounded-full" />
+                            <span className="flex-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                              {roomName}
+                            </span>
+                            <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                              {racks.length}
+                            </span>
+                            <ChevronDown
+                              className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                            />
                           </button>
 
                           {isOpen && (
                             <div className="border-t border-gray-100 dark:border-gray-800">
                               {(() => {
-                                const byAisle = new Map<string, { aisleName: string; racks: RackEntry[] }>();
+                                const byAisle = new Map<
+                                  string,
+                                  { aisleName: string; racks: RackEntry[] }
+                                >();
                                 racks.forEach((r) => {
                                   const key = r.aisleId || 'standalone';
-                                  const existing = byAisle.get(key) ?? { aisleName: r.aisleName, racks: [] };
+                                  const existing = byAisle.get(key) ?? {
+                                    aisleName: r.aisleName,
+                                    racks: [],
+                                  };
                                   existing.racks.push(r);
                                   byAisle.set(key, existing);
                                 });
-                                return Array.from(byAisle.entries()).map(([aisleKey, { aisleName, racks: aisleRacks }]) => (
-                                  <div key={aisleKey} className="pt-1 pb-2">
-                                    <p className="mb-0.5 px-3 text-[10px] font-medium tracking-wide text-gray-400 dark:text-gray-600">
-                                      {aisleName}
-                                    </p>
-                                    {aisleRacks.map((r) => (
-                                      <RackListItem
-                                        key={r.id}
-                                        rack={r}
-                                        selected={selectedRackId === r.id}
-                                        onClick={() => {
-                                          if (dirty && !confirm('Unsaved changes — switch racks anyway?')) return;
-                                          setSelectedRackId(r.id);
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-                                ));
+                                return Array.from(byAisle.entries()).map(
+                                  ([aisleKey, { aisleName, racks: aisleRacks }]) => (
+                                    <div key={aisleKey} className="pt-1 pb-2">
+                                      <p className="mb-0.5 px-3 text-[10px] font-medium tracking-wide text-gray-400 dark:text-gray-600">
+                                        {aisleName}
+                                      </p>
+                                      {aisleRacks.map((r) => (
+                                        <RackListItem
+                                          key={r.id}
+                                          rack={r}
+                                          selected={selectedRackId === r.id}
+                                          onClick={() => {
+                                            if (
+                                              dirty &&
+                                              !confirm('Unsaved changes — switch racks anyway?')
+                                            )
+                                              return;
+                                            setSelectedRackId(r.id);
+                                          }}
+                                        />
+                                      ))}
+                                    </div>
+                                  )
+                                );
                               })()}
                             </div>
                           )}
@@ -820,51 +915,71 @@ export const RackEditorPage = () => {
               <div className="flex-1 overflow-y-auto">
                 {filteredTemplates.length === 0 ? (
                   <p className="py-6 text-center text-xs text-gray-400">No templates found</p>
-                ) : (() => {
-                  // Group by type
-                  const byType = new Map<string, DeviceTemplate[]>();
-                  filteredTemplates.forEach((t) => {
-                    const g = byType.get(t.type) ?? [];
-                    g.push(t);
-                    byType.set(t.type, g);
-                  });
-                  return (
-                    <div className="space-y-1 p-2">
-                      {Array.from(byType.entries()).map(([type, templates]) => {
-                        const isOpen = openTemplateTypes.has(type);
-                        const col = TYPE_COLORS[type] ?? TYPE_COLORS.other;
-                        return (
-                          <div key={type} className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
-                            <button
-                              onClick={() => setOpenTemplateTypes((prev) => {
-                                const next = new Set(prev);
-                                if (isOpen) { next.delete(type); } else { next.add(type); }
-                                return next;
-                              })}
-                              className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                ) : (
+                  (() => {
+                    // Group by type
+                    const byType = new Map<string, DeviceTemplate[]>();
+                    filteredTemplates.forEach((t) => {
+                      const g = byType.get(t.type) ?? [];
+                      g.push(t);
+                      byType.set(t.type, g);
+                    });
+                    return (
+                      <div className="space-y-1 p-2">
+                        {Array.from(byType.entries()).map(([type, templates]) => {
+                          const isOpen = openTemplateTypes.has(type);
+                          const col = TYPE_COLORS[type] ?? TYPE_COLORS.other;
+                          return (
+                            <div
+                              key={type}
+                              className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800"
                             >
-                              <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: col.border }} />
-                              <span className="flex-1 text-xs font-semibold capitalize text-gray-700 dark:text-gray-300">{type}</span>
-                              <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">{templates.length}</span>
-                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                            {isOpen && (
-                              <div className="space-y-1.5 border-t border-gray-100 p-2 dark:border-gray-800">
-                                {templates.map((t) => (
-                                  <TemplateCard
-                                    key={t.id}
-                                    template={t}
-                                    onDragStart={(e) => handleTemplateDragStart(e, t)}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
+                              <button
+                                onClick={() =>
+                                  setOpenTemplateTypes((prev) => {
+                                    const next = new Set(prev);
+                                    if (isOpen) {
+                                      next.delete(type);
+                                    } else {
+                                      next.add(type);
+                                    }
+                                    return next;
+                                  })
+                                }
+                                className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+                              >
+                                <div
+                                  className="h-2 w-2 shrink-0 rounded-full"
+                                  style={{ backgroundColor: col.border }}
+                                />
+                                <span className="flex-1 text-xs font-semibold text-gray-700 capitalize dark:text-gray-300">
+                                  {type}
+                                </span>
+                                <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                                  {templates.length}
+                                </span>
+                                <ChevronDown
+                                  className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                                />
+                              </button>
+                              {isOpen && (
+                                <div className="space-y-1.5 border-t border-gray-100 p-2 dark:border-gray-800">
+                                  {templates.map((t) => (
+                                    <TemplateCard
+                                      key={t.id}
+                                      template={t}
+                                      onDragStart={(e) => handleTemplateDragStart(e, t)}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()
+                )}
               </div>
 
               <div className="shrink-0 border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
@@ -889,7 +1004,7 @@ export const RackEditorPage = () => {
                   </p>
                 </div>
               ) : (
-                <Loader2 className="h-8 w-8 animate-spin text-brand-500" />
+                <Loader2 className="text-brand-500 h-8 w-8 animate-spin" />
               )}
             </div>
           ) : (
@@ -901,17 +1016,21 @@ export const RackEditorPage = () => {
                   <span className="rounded-full bg-[var(--color-border)]/20 px-2 py-0.5 font-mono text-[10px] text-[var(--color-text-base)] opacity-50">
                     {rack.id}
                   </span>
-                  <span className="text-[11px] text-[var(--color-text-base)] opacity-40">{totalU}U</span>
+                  <span className="text-[11px] text-[var(--color-text-base)] opacity-40">
+                    {totalU}U
+                  </span>
                   <span className="text-[11px] text-[var(--color-text-base)] opacity-40">
                     {draftDevices.length} device{draftDevices.length !== 1 ? 's' : ''}
                   </span>
 
                   {/* Density bar */}
                   <div className="ml-auto flex items-center gap-2">
-                    <span className="text-[10px] text-[var(--color-text-base)] opacity-40">{usedU}/{totalU}U</span>
+                    <span className="text-[10px] text-[var(--color-text-base)] opacity-40">
+                      {usedU}/{totalU}U
+                    </span>
                     <div className="h-1.5 w-24 overflow-hidden rounded-full bg-[var(--color-border)]/30">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-500"
+                        className="from-brand-500 to-brand-400 h-full rounded-full bg-gradient-to-r transition-all duration-500"
                         style={{ width: `${Math.min(100, density * 100)}%` }}
                       />
                     </div>
@@ -945,7 +1064,7 @@ export const RackEditorPage = () => {
                       // U rail number — shown on both sides inside border-x
                       const UNum = ({ align }: { align: 'left' | 'right' }) => (
                         <div
-                          className={`pointer-events-none absolute top-0 flex h-full w-[20px] items-center justify-center font-mono text-[8px] font-black select-none text-[var(--color-text-base)] opacity-40 ${align === 'left' ? '-left-[20px]' : '-right-[20px]'}`}
+                          className={`pointer-events-none absolute top-0 flex h-full w-[20px] items-center justify-center font-mono text-[8px] font-black text-[var(--color-text-base)] opacity-40 select-none ${align === 'left' ? '-left-[20px]' : '-right-[20px]'}`}
                         >
                           {u}
                         </div>
@@ -972,11 +1091,11 @@ export const RackEditorPage = () => {
                                   setSelectedDevice(dev.id === selectedDevice?.id ? null : dev)
                                 }
                                 style={{ opacity: dragDevice?.id === dev.id ? 0.25 : 1 }}
-                                className="group/dev relative flex h-full w-full cursor-grab items-center bg-[var(--color-device-surface)] transition-all hover:brightness-110 active:cursor-grabbing rounded-[2px]"
+                                className="group/dev relative flex h-full w-full cursor-grab items-center rounded-[2px] bg-[var(--color-device-surface)] transition-all hover:brightness-110 active:cursor-grabbing"
                               >
                                 {/* Left status bar — same pattern as rack view */}
                                 <div
-                                  className="absolute left-0 top-0 h-full w-1.5 shrink-0 rounded-l-[2px] opacity-90"
+                                  className="absolute top-0 left-0 h-full w-1.5 shrink-0 rounded-l-[2px] opacity-90"
                                   style={{ backgroundColor: col.border }}
                                 >
                                   <div
@@ -989,12 +1108,15 @@ export const RackEditorPage = () => {
                                 {selectedDevice?.id === dev.id && (
                                   <div
                                     className="pointer-events-none absolute inset-0 rounded-[2px]"
-                                    style={{ outline: `2px solid ${col.border}`, outlineOffset: '1px' }}
+                                    style={{
+                                      outline: `2px solid ${col.border}`,
+                                      outlineOffset: '1px',
+                                    }}
                                   />
                                 )}
 
                                 {/* Content */}
-                                <div className="min-w-0 flex-1 pl-4 pr-2">
+                                <div className="min-w-0 flex-1 pr-2 pl-4">
                                   <p
                                     className="truncate text-xs font-semibold"
                                     style={{ color: col.text }}
@@ -1014,7 +1136,7 @@ export const RackEditorPage = () => {
                                     deleteDevice(dev.id);
                                   }}
                                   title="Remove device (Del)"
-                                  className="mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-500/20 text-red-400 opacity-0 transition-all hover:bg-red-500 hover:text-white group-hover/dev:opacity-100"
+                                  className="mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-500/20 text-red-400 opacity-0 transition-all group-hover/dev:opacity-100 hover:bg-red-500 hover:text-white"
                                 >
                                   <X className="h-3 w-3" />
                                 </button>
@@ -1031,11 +1153,7 @@ export const RackEditorPage = () => {
                           style={{ flex: 1 }}
                           className={[
                             'relative flex min-h-0 w-full items-center border-b border-[var(--color-border)]/10 transition-colors',
-                            hovered
-                              ? valid
-                                ? 'bg-brand-500/20'
-                                : 'bg-red-500/15'
-                              : '',
+                            hovered ? (valid ? 'bg-brand-500/20' : 'bg-red-500/15') : '',
                           ].join(' ')}
                           onDragEnter={() => handleSlotDragEnter(u)}
                           onDragOver={handleSlotDragOver}
@@ -1072,12 +1190,14 @@ export const RackEditorPage = () => {
                 {undoItem && (
                   <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-xl border border-gray-700 bg-gray-900 px-4 py-2.5 shadow-2xl">
                     <span className="text-xs text-gray-400">
-                      <span className="font-semibold text-white">{undoItem.name || undoItem.id}</span>{' '}
+                      <span className="font-semibold text-white">
+                        {undoItem.name || undoItem.id}
+                      </span>{' '}
                       removed
                     </span>
                     <button
                       onClick={handleUndo}
-                      className="rounded-lg bg-brand-500 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-brand-600"
+                      className="bg-brand-500 hover:bg-brand-600 rounded-lg px-3 py-1 text-xs font-semibold text-white transition-colors"
                     >
                       Undo
                     </button>
@@ -1090,7 +1210,6 @@ export const RackEditorPage = () => {
 
         {/* ── RIGHT PANEL: Context ───────────────────────────────────────── */}
         <div className="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-
           {/* ── Placement form ─────────────────────────────────────────── */}
           {placing ? (
             <div className="flex flex-1 flex-col">
@@ -1115,7 +1234,10 @@ export const RackEditorPage = () => {
                     className="h-4 w-4 shrink-0"
                     style={{ color: c(placing.template.type).text }}
                   />
-                  <span className="min-w-0 flex-1 truncate text-xs font-semibold" style={{ color: c(placing.template.type).text }}>
+                  <span
+                    className="min-w-0 flex-1 truncate text-xs font-semibold"
+                    style={{ color: c(placing.template.type).text }}
+                  >
                     {placing.template.name}
                   </span>
                   <span className="text-[10px] text-gray-600">{placing.template.u_height}U</span>
@@ -1153,7 +1275,7 @@ export const RackEditorPage = () => {
                 </FormField>
               </div>
 
-              <div className="shrink-0 flex items-center gap-2 border-t border-gray-100 p-4 dark:border-gray-800">
+              <div className="flex shrink-0 items-center gap-2 border-t border-gray-100 p-4 dark:border-gray-800">
                 <button
                   onClick={() => setPlacing(null)}
                   className="flex-1 rounded-xl border border-gray-200 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -1168,9 +1290,8 @@ export const RackEditorPage = () => {
                 </button>
               </div>
             </div>
-
-          /* ── Device edit panel ────────────────────────────────────────── */
-          ) : selectedDevice ? (
+          ) : /* ── Device edit panel ────────────────────────────────────────── */
+          selectedDevice ? (
             (() => {
               const tpl = deviceCatalog[selectedDevice.template_id];
               const type = tpl?.type ?? 'other';
@@ -1179,7 +1300,7 @@ export const RackEditorPage = () => {
                 <div className="flex flex-1 flex-col">
                   {/* Device header */}
                   <div
-                    className="shrink-0 flex items-center gap-2.5 px-5 py-4"
+                    className="flex shrink-0 items-center gap-2.5 px-5 py-4"
                     style={{ borderBottom: `2px solid ${col.border}` }}
                   >
                     <div
@@ -1192,7 +1313,7 @@ export const RackEditorPage = () => {
                       <p className="truncate text-xs font-bold text-gray-900 dark:text-white">
                         {selectedDevice.name || selectedDevice.id}
                       </p>
-                      <p className="text-[10px] capitalize text-gray-400">
+                      <p className="text-[10px] text-gray-400 capitalize">
                         {type} · U{selectedDevice.u_position} · {tpl?.u_height ?? 1}U
                       </p>
                     </div>
@@ -1209,7 +1330,10 @@ export const RackEditorPage = () => {
                     <FormField label="Device name">
                       <input
                         value={editForm.name}
-                        onChange={(e) => { setEditForm((f) => ({ ...f, name: e.target.value })); setEditDirty(true); }}
+                        onChange={(e) => {
+                          setEditForm((f) => ({ ...f, name: e.target.value }));
+                          setEditDirty(true);
+                        }}
                         placeholder={selectedDevice.id}
                         className={inputCls}
                       />
@@ -1218,7 +1342,10 @@ export const RackEditorPage = () => {
                     <FormField label="Device ID">
                       <input
                         value={editForm.id}
-                        onChange={(e) => { setEditForm((f) => ({ ...f, id: e.target.value })); setEditDirty(true); }}
+                        onChange={(e) => {
+                          setEditForm((f) => ({ ...f, id: e.target.value }));
+                          setEditDirty(true);
+                        }}
                         placeholder="dev-001"
                         className={`${inputCls} font-mono text-xs`}
                       />
@@ -1230,7 +1357,10 @@ export const RackEditorPage = () => {
                     >
                       <input
                         value={editForm.instance}
-                        onChange={(e) => { setEditForm((f) => ({ ...f, instance: e.target.value })); setEditDirty(true); }}
+                        onChange={(e) => {
+                          setEditForm((f) => ({ ...f, instance: e.target.value }));
+                          setEditDirty(true);
+                        }}
                         placeholder="compute001"
                         className={`${inputCls} font-mono text-xs`}
                       />
@@ -1245,7 +1375,9 @@ export const RackEditorPage = () => {
                       ].map(({ label, value }) => (
                         <div key={label} className="flex items-center justify-between py-1 text-xs">
                           <span className="text-gray-400">{label}</span>
-                          <span className="font-mono text-gray-600 dark:text-gray-400">{value}</span>
+                          <span className="font-mono text-gray-600 dark:text-gray-400">
+                            {value}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -1278,9 +1410,8 @@ export const RackEditorPage = () => {
                 </div>
               );
             })()
-
-          /* ── Empty state ──────────────────────────────────────────────── */
           ) : (
+            /* ── Empty state ──────────────────────────────────────────────── */
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800">
                 <Server className="h-6 w-6 text-gray-300 dark:text-gray-600" />
@@ -1294,8 +1425,10 @@ export const RackEditorPage = () => {
                 </p>
               </div>
               {rack && (
-                <div className="mt-2 space-y-1 text-left w-full rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800/50">
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider dark:text-gray-600">Shortcuts</p>
+                <div className="mt-2 w-full space-y-1 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-left dark:border-gray-800 dark:bg-gray-800/50">
+                  <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                    Shortcuts
+                  </p>
                   {[
                     ['Del', 'Remove selected device'],
                     ['Esc', 'Deselect / cancel'],
@@ -1303,7 +1436,9 @@ export const RackEditorPage = () => {
                   ].map(([key, desc]) => (
                     <div key={key} className="flex items-center justify-between text-xs">
                       <span className="text-gray-400 dark:text-gray-500">{desc}</span>
-                      <kbd className="rounded bg-gray-200 px-1.5 py-0.5 font-mono text-[10px] text-gray-500 dark:bg-gray-700 dark:text-gray-400">{key}</kbd>
+                      <kbd className="rounded bg-gray-200 px-1.5 py-0.5 font-mono text-[10px] text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                        {key}
+                      </kbd>
                     </div>
                   ))}
                 </div>
@@ -1326,7 +1461,10 @@ export const RackEditorPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-900">
             <button
-              onClick={() => { setWizardOpen(false); setWizardError(null); }}
+              onClick={() => {
+                setWizardOpen(false);
+                setWizardError(null);
+              }}
               className="absolute top-4 right-4 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
             >
               <X className="h-5 w-5" />
@@ -1386,7 +1524,9 @@ export const RackEditorPage = () => {
                   >
                     <option value="">— None —</option>
                     {rackTemplates.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
                     ))}
                   </select>
                 </FormField>
@@ -1401,7 +1541,9 @@ export const RackEditorPage = () => {
                 >
                   <option value="">— Select an aisle —</option>
                   {allAisles.map((a) => (
-                    <option key={a.id} value={a.id}>{a.roomName} › {a.name}</option>
+                    <option key={a.id} value={a.id}>
+                      {a.roomName} › {a.name}
+                    </option>
                   ))}
                 </select>
               </FormField>
@@ -1416,7 +1558,10 @@ export const RackEditorPage = () => {
 
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
-                onClick={() => { setWizardOpen(false); setWizardError(null); }}
+                onClick={() => {
+                  setWizardOpen(false);
+                  setWizardError(null);
+                }}
                 className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Cancel
@@ -1426,7 +1571,11 @@ export const RackEditorPage = () => {
                 disabled={wizardSaving}
                 className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-60"
               >
-                {wizardSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                {wizardSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
                 {wizardSaving ? 'Creating…' : 'Create Rack'}
               </button>
             </div>

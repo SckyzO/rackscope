@@ -18,7 +18,8 @@ import '../app.css';
 // Subtle canvas background shown when darkTheme='matrix'. z-index 0, opacity 0.35.
 // Positioned OUTSIDE rs-root so the CSS z-index stacking works correctly.
 
-const MATRIX_ALPHABET = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッンABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const MATRIX_ALPHABET =
+  'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッンABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const MATRIX_FONT_SIZE = 16;
 
 const MatrixBackground = () => {
@@ -28,12 +29,18 @@ const MatrixBackground = () => {
 
   const startRain = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return () => { /* noop — canvas not mounted */ };
+    if (!canvas)
+      return () => {
+        /* noop — canvas not mounted */
+      };
     const ctx = canvas.getContext('2d');
-    if (!ctx) return () => { /* noop — context unavailable */ };
+    if (!ctx)
+      return () => {
+        /* noop — context unavailable */
+      };
 
     const resize = () => {
-      canvas.width  = window.innerWidth;
+      canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       drops.length = 0;
       drops.push(...Array(Math.floor(canvas.width / MATRIX_FONT_SIZE)).fill(1));

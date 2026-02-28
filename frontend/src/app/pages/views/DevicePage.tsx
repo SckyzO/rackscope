@@ -283,7 +283,9 @@ export const DevicePage = () => {
                   uPosition={device.u_position}
                   detailView={true}
                   disableZoom={true}
-                  onClick={() => { /* noop */ }}
+                  onClick={() => {
+                    /* noop */
+                  }}
                   onTooltipChange={(payload) => setTooltip(payload as TooltipPayload | null)}
                 />
               </div>

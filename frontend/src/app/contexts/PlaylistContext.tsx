@@ -87,7 +87,13 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
     // Default queue: Dashboard + Notifications
     return [
       { id: 'dashboard', title: 'Dashboard', route: '/cosmos', iconName: 'BarChart2', duration: 0 },
-      { id: 'notifications', title: 'Notifications', route: '/notifications', iconName: 'Bell', duration: 0 },
+      {
+        id: 'notifications',
+        title: 'Notifications',
+        route: '/notifications',
+        iconName: 'Bell',
+        duration: 0,
+      },
     ];
   });
   const [globalInterval, setGlobalIntervalState] = useState<number>(() =>

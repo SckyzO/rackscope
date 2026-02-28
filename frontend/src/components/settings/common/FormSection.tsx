@@ -8,7 +8,7 @@ interface FormSectionProps {
   iconBg?: string;
   children: ReactNode;
   className?: string;
-  divider?: boolean;  // kept for backward compat, no longer used (card handles separation)
+  divider?: boolean; // kept for backward compat, no longer used (card handles separation)
 }
 
 /**
@@ -31,9 +31,7 @@ export const FormSection = ({
       {/* Header with optional icon */}
       <div className="mb-5 flex items-start gap-3">
         {Icon && (
-          <div
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconBg}`}
-          >
+          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
             <Icon className={`h-4 w-4 ${iconColor}`} />
           </div>
         )}
