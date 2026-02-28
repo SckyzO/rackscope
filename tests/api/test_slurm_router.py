@@ -14,6 +14,7 @@ from rackscope.model.config import AppConfig, PathsConfig, SlurmConfig
 from rackscope.model.domain import Aisle, Device, Rack, Room, Site, Topology
 from rackscope.plugins.registry import registry
 from rackscope.plugins.slurm import SlurmPlugin
+from rackscope.plugins.slurm.config import SlurmPluginConfig
 
 # Register Slurm plugin for tests
 if not registry.get_plugin("slurm"):
@@ -58,6 +59,23 @@ def mock_app_config():
 
 
 @pytest.fixture
+def mock_slurm_plugin_config():
+    """Patch SlurmPlugin._get_config to return a predictable test config.
+
+    The real config.yml uses label_node='node_id', but mock Prometheus
+    results use label 'node'. This fixture ensures the plugin uses the
+    same label names as the mock data.
+    """
+    test_cfg = SlurmPluginConfig(
+        label_node="node",
+        label_status="status",
+        label_partition="partition",
+    )
+    with patch.object(SlurmPlugin, "_get_config", return_value=test_cfg):
+        yield test_cfg
+
+
+@pytest.fixture
 def mock_slurm_results():
     """Create mock Slurm results."""
     return [
@@ -75,7 +93,7 @@ def mock_slurm_results():
 # Test GET /api/slurm/rooms/{room_id}/nodes
 
 
-def test_get_slurm_room_nodes_success(mock_topology, mock_app_config, mock_slurm_results):
+def test_get_slurm_room_nodes_success(mock_topology, mock_app_config, mock_slurm_results, mock_slurm_plugin_config):
     """Test getting Slurm node states for a room."""
     import rackscope.api.app as app_module
 
@@ -234,7 +252,7 @@ def test_get_slurm_summary_no_topology():
 # Test GET /api/slurm/partitions
 
 
-def test_get_slurm_partitions_success(mock_topology, mock_app_config, mock_slurm_results):
+def test_get_slurm_partitions_success(mock_topology, mock_app_config, mock_slurm_results, mock_slurm_plugin_config):
     """Test getting Slurm partition statistics."""
     import rackscope.api.app as app_module
 
