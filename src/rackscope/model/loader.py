@@ -1,3 +1,14 @@
+"""
+YAML configuration loaders for topology, catalog, checks, metrics, and app config.
+
+Supports two topology layouts:
+- Monolithic: single topology.yaml with all sites/rooms/racks
+- Segmented: config/topology/sites.yaml → per-datacenter/room/aisle/rack files
+
+All load_* functions return empty/default objects rather than raising on missing
+paths — callers can check the returned object for emptiness.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path

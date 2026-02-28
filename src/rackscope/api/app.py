@@ -1,3 +1,13 @@
+"""
+FastAPI application entry point.
+
+Manages global state (TOPOLOGY, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY,
+APP_CONFIG, PLANNER), registers plugins via PluginRegistry, and wires up
+all API routers.
+
+Global state is reloaded on every PUT /api/config call — see apply_config().
+"""
+
 from __future__ import annotations
 
 import os
@@ -62,10 +72,15 @@ PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
 AUTH_RUNTIME_SECRET: str = secrets.token_hex(32)
 
 
-# Telemetry helper functions now in telemetry_service
-
-
 async def apply_config(app_config: AppConfig) -> None:
+    """Reload all global state from a new AppConfig.
+
+    Reconfigures the Prometheus client (URL, auth, TLS, cache TTLs),
+    rebuilds the TelemetryPlanner, reloads topology/catalog/checks/metrics,
+    and triggers on_config_reload() on all registered plugins.
+
+    Called on startup and on every PUT /api/config request.
+    """
     global TOPOLOGY, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY, APP_CONFIG, PLANNER
     APP_CONFIG = app_config
     TOPOLOGY = load_topology(app_config.paths.topology)
@@ -243,6 +258,12 @@ def healthz() -> dict[str, str]:
 
 @app.get("/api/alerts/active")
 async def get_active_alerts():
+    """Return all active WARN/CRIT alerts with full topology context.
+
+    Combines node-level alerts (from PlannerSnapshot.node_alerts) and
+    rack-level alerts (from PlannerSnapshot.rack_alerts), enriched with
+    site/room/rack/device context for display in the alert feed.
+    """
     if not TOPOLOGY or not CATALOG or not CHECKS_LIBRARY or not PLANNER:
         return {"alerts": []}
     targets_by_check = telemetry_service.collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)

@@ -1,3 +1,15 @@
+"""
+Async Prometheus HTTP client with TTL caching and query deduplication.
+
+Uses three independent caches with different TTLs:
+- health cache (health_checks_ttl_seconds): for health check PromQL queries
+- metrics cache (metrics_ttl_seconds): for detailed metric queries (heavier, less frequent)
+- generic cache (cache_ttl_seconds): backward compatibility
+
+In-flight deduplication: concurrent requests for the same query share a single
+HTTP call, preventing thundering herd on cache expiry.
+"""
+
 from __future__ import annotations
 
 import os
@@ -51,6 +63,12 @@ class PrometheusClient:
         health_checks_ttl: Optional[float] = None,
         metrics_ttl: Optional[float] = None,
     ) -> None:
+        """Reconfigure the client with new settings.
+
+        Replaces the underlying httpx.AsyncClient to apply new auth/TLS settings.
+        The old client is closed asynchronously to avoid connection leaks.
+        Preserves accumulated latency samples up to the new window size.
+        """
         self.base_url = base_url.rstrip("/")
         self.cache_ttl = cache_ttl  # Backward compatibility
         self.health_checks_ttl = health_checks_ttl if health_checks_ttl is not None else cache_ttl
@@ -177,6 +195,7 @@ class PrometheusClient:
         await self._fetch_query("vector(1)")
 
     def get_latency_stats(self) -> Dict[str, Any]:
+        """Return rolling latency statistics for the last N queries."""
         if not self._latency_samples:
             return {"last_ms": None, "avg_ms": None, "last_ts": None}
         avg_ms = sum(self._latency_samples) / len(self._latency_samples)
@@ -189,6 +208,7 @@ class PrometheusClient:
     def record_planner_batch(
         self, total_ids: int, query_count: int, max_ids_per_query: int
     ) -> None:
+        """Record metrics about the last TelemetryPlanner batch for /api/stats/telemetry."""
         self._last_batch = {
             "total_ids": total_ids,
             "query_count": query_count,
@@ -204,6 +224,7 @@ class PrometheusClient:
             )
 
     def get_telemetry_stats(self) -> Dict[str, Any]:
+        """Return full telemetry stats: query counts, cache hit rate, latency, last batch."""
         return {
             "query_count": self._query_count,
             "cache_hits": self._cache_hits,

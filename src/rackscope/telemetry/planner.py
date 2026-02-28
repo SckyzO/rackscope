@@ -1,3 +1,21 @@
+"""
+Telemetry planner: batches Prometheus queries to avoid per-device explosion.
+
+Without batching, a 1000-node cluster would fire 1000 individual PromQL queries
+on every refresh cycle. The planner groups all topology IDs into a small number
+of regex-based vector queries (e.g. up{instance=~"node001|node002|..."}).
+
+Key design decisions:
+- Trie-based regex builder: generates compact regexes from node ID lists
+  (e.g. compute[0-9][0-9][0-9] instead of compute001|compute002|...).
+- Virtual nodes: checks with `expand_by_label` produce one state per
+  (instance, label_value) pair — e.g. one state per drive slot for storage arrays.
+- Discovery pre-pass: for virtual-node checks, a discovery query runs first to
+  pre-populate absent slots with `expand_absent_state` before the main query.
+- Snapshot caching: results are reused for `cache_ttl_seconds` to avoid
+  hammering Prometheus on every frontend request.
+"""
+
 from __future__ import annotations
 
 import re
@@ -15,6 +33,8 @@ SEVERITY_ORDER = {"OK": 0, "UNKNOWN": 1, "WARN": 2, "CRIT": 3}
 
 @dataclass
 class PlannerConfig:
+    """Configuration for TelemetryPlanner batching and caching behaviour."""
+
     identity_label: str = "instance"
     rack_label: str = "rack_id"
     chassis_label: str = "chassis_id"
@@ -26,6 +46,8 @@ class PlannerConfig:
 
 @dataclass
 class PlannerSnapshot:
+    """Immutable snapshot of all health states produced by one planning cycle."""
+
     generated_at: float
     node_states: Dict[str, str] = field(default_factory=dict)
     chassis_states: Dict[str, str] = field(default_factory=dict)
@@ -40,11 +62,14 @@ class PlannerSnapshot:
 
 
 class TelemetryPlanner:
+    """Executes batched Prometheus queries and caches the resulting health snapshot."""
+
     def __init__(self, config: Optional[PlannerConfig] = None) -> None:
         self.config = config or PlannerConfig()
         self._snapshot: Optional[PlannerSnapshot] = None
 
     def update_config(self, config: PlannerConfig) -> None:
+        """Replace configuration and invalidate the current snapshot."""
         self.config = config
         self._snapshot = None
 
@@ -54,6 +79,18 @@ class TelemetryPlanner:
         checks: ChecksLibrary,
         targets_by_check: Optional[Dict[str, Dict[str, List[str]]]] = None,
     ) -> PlannerSnapshot:
+        """Return a health snapshot, using the cached one if still fresh.
+
+        Args:
+            topology: Current infrastructure topology.
+            checks: Health check library (PromQL expressions + rules).
+            targets_by_check: Optional scoped targets keyed by check ID.
+                When provided, only IDs relevant to each check are queried
+                (template-scoped mode). When None, all topology IDs are used.
+
+        Returns:
+            PlannerSnapshot with node/chassis/rack states and alert maps.
+        """
         now = time.monotonic()
         if self._snapshot and (now - self._snapshot.generated_at) < self.config.cache_ttl_seconds:
             return self._snapshot
@@ -268,6 +305,12 @@ def _build_queries(
     job_regex: str,
     targets_by_check: Optional[Dict[str, Dict[str, List[str]]]] = None,
 ) -> List[Tuple[CheckDefinition, str]]:
+    """Expand check expressions into concrete PromQL queries.
+
+    For each check, replaces $instances/$chassis/$racks/$jobs placeholders with
+    trie-compressed regexes. When the ID list exceeds max_ids_per_query, it is
+    split into multiple queries (one per chunk) to avoid oversized label matchers.
+    """
     queries: List[Tuple[CheckDefinition, str]] = []
 
     for check in checks:
@@ -360,6 +403,12 @@ def _compare(value: float, rule: CheckRule) -> bool:
 
 
 def _regex_for_ids(ids: Iterable[str]) -> str:
+    """Build a compact PromQL-safe regex from a list of IDs using a trie.
+
+    Uses a trie instead of a simple join to produce compressed patterns like
+    compute00[1-9] instead of compute001|compute002|...|compute009, keeping
+    label matcher sizes manageable for large topologies.
+    """
     filtered = [item for item in ids if item]
     if not filtered:
         return ".*"
@@ -461,6 +510,12 @@ def _expand_placeholder(
     ids: List[str],
     max_ids_per_query: int,
 ) -> List[str]:
+    """Replace a placeholder token with regex-encoded IDs, splitting into chunks.
+
+    Each chunk of up to max_ids_per_query IDs produces one expression, so a
+    list of 250 IDs with max=100 yields 3 separate PromQL expressions.
+    If ids is empty, the token is replaced with ".*" (match all).
+    """
     if token not in "".join(expressions):
         return expressions
     if not ids:

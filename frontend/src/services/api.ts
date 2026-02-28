@@ -1,3 +1,22 @@
+/**
+ * Rackscope API client.
+ *
+ * ## Caching strategy
+ * All GET requests go through `fetchWithCache`, which:
+ * - Tries the network first
+ * - On success: stores the response in localStorage under `rackscope.cache.*`
+ * - On failure: returns the last cached value (stale-on-error)
+ * - Tracks errors in `rackscope.client.errors` for the status panel
+ *
+ * ## Performance-sensitive endpoints
+ * `/api/racks/{id}/state` defaults to health-only (~30ms). Pass
+ * `includeMetrics=true` only on detail views (~743ms — 20+ Prometheus queries).
+ *
+ * ## Auth
+ * Bearer token is read from `localStorage["rackscope.auth.token"]` and
+ * injected into every request via `apiFetch`.
+ */
+
 import type {
   Site,
   Room,
@@ -83,6 +102,12 @@ const apiFetch = (url: string, options?: RequestInit): Promise<Response> => {
   return fetch(url, { ...options, headers: base });
 };
 
+/**
+ * Fetch a URL with stale-on-error caching via localStorage.
+ *
+ * On network/HTTP failure, returns the previously cached value if available,
+ * so the UI degrades gracefully rather than showing empty states.
+ */
 const fetchWithCache = async <T>(url: string, cacheKey: string): Promise<T> => {
   try {
     const res = await apiFetch(url);
@@ -408,15 +433,25 @@ export const api = {
     return res.json();
   },
   getRoomState: async (roomId: string): Promise<RoomState> => {
-    // Cache with very short TTL (5s) for performance while keeping data fresh
+    // Short TTL (5s): room state is polled by RoomPage on a tight loop.
     return fetchWithCache(`/api/rooms/${roomId}/state`, `room.${roomId}.state`, 5000);
   },
+  /**
+   * Fetch rack health state, optionally including detailed metrics.
+   *
+   * @param includeMetrics - When true, backend fetches 20+ Prometheus queries
+   *   for temperature/power/PDU (~743ms). Use only on detail views (RackPage,
+   *   DevicePage). Default false returns health-only in ~30ms.
+   */
   getRackState: async (rackId: string, includeMetrics: boolean = false): Promise<RackState> => {
-    // Cache with very short TTL (5s) for performance while keeping data fresh
     const url = `/api/racks/${rackId}/state${includeMetrics ? '?include_metrics=true' : ''}`;
     const cacheKey = `rack.${rackId}.state${includeMetrics ? '.metrics' : ''}`;
     return fetchWithCache(url, cacheKey, 5000);
   },
+  /**
+   * Fetch detailed per-instance metrics for a device (lazy-loaded on DevicePage).
+   * Cached for 60s — metrics are heavier and less time-sensitive than health states.
+   */
   getDeviceMetrics: async (
     rackId: string,
     deviceId: string
@@ -425,10 +460,9 @@ export const api = {
     rack_id: string;
     metrics: Record<string, Record<string, number>>;
   }> => {
-    // Fetch detailed metrics for a specific device (lazy-loaded)
     const url = `/api/devices/${rackId}/${deviceId}/metrics`;
     const cacheKey = `device.${rackId}.${deviceId}.metrics`;
-    return fetchWithCache(url, cacheKey, 60000); // 60s cache for metrics
+    return fetchWithCache(url, cacheKey, 60000);
   },
   updateAisleRacks: async (aisleId: string, roomId: string, racks: string[]) => {
     const res = await apiFetch(`/api/topology/aisles/${encodeURIComponent(aisleId)}/racks`, {
@@ -647,7 +681,7 @@ export const api = {
     return data;
   },
   getPluginsMenu: async (): Promise<PluginsMenuResponse> => {
-    // Don't cache plugins menu - needs to be fresh for enabled/disabled state changes
+    // Not cached: plugin enabled/disabled state must reflect live backend config.
     try {
       const res = await apiFetch('/api/plugins/menu');
       if (!res.ok) {

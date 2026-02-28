@@ -1,45 +1,64 @@
+# ── Application identity ──────────────────────────────────────────────────────
 app:
   name: Rackscope
   description: Datacenter Monitoring
+
+# ── Config file paths ─────────────────────────────────────────────────────────
 paths:
   topology: config/topology
   templates: config/templates
   checks: config/checks/library
   metrics: config/metrics/library
+
+# ── State refresh intervals (seconds) ─────────────────────────────────────────
 refresh:
   room_state_seconds: 60
   rack_state_seconds: 60
+
+# ── Prometheus query cache TTLs ───────────────────────────────────────────────
 cache:
-  ttl_seconds: 60
-  health_checks_ttl_seconds: 30
-  metrics_ttl_seconds: 120
+  ttl_seconds: 60               # Generic cache (backward compat)
+  health_checks_ttl_seconds: 30 # Health check queries — short for responsiveness
+  metrics_ttl_seconds: 120      # Detailed metrics — longer, heavier queries
+
+# ── Prometheus connection ─────────────────────────────────────────────────────
 telemetry:
   prometheus_url: http://prometheus:9090
-  identity_label: instance
+  identity_label: instance    # Prometheus label that maps to topology instance names
   rack_label: rack_id
   chassis_label: chassis_id
   job_regex: node|rackscope-simulator
-  prometheus_heartbeat_seconds: 30
-  prometheus_latency_window: 20
+  prometheus_heartbeat_seconds: 30  # Interval for Prometheus reachability probe
+  prometheus_latency_window: 20     # Number of samples for rolling latency average
   debug_stats: false
+  # Basic auth (optional)
   basic_auth_user: null
   basic_auth_password: null
+  # TLS (optional)
   tls_verify: false
   tls_ca_file: null
   tls_cert_file: null
   tls_key_file: null
+
+# ── Telemetry planner ─────────────────────────────────────────────────────────
+# The planner batches all topology IDs into a small number of PromQL queries
+# to avoid per-device query explosion (e.g. 1000 nodes → 10 batched queries).
 planner:
   unknown_state: UNKNOWN
-  cache_ttl_seconds: 60
-  max_ids_per_query: 300
+  cache_ttl_seconds: 60    # How long to reuse the last PlannerSnapshot
+  max_ids_per_query: 300   # Maximum IDs in a single PromQL regex match
+
+# ── Feature flags ─────────────────────────────────────────────────────────────
 features:
   notifications: true
   notifications_max_visible: 10
   playlist: true
   offline: true
-  demo: true
+  demo: true     # Enable simulator/demo mode (SimulatorPlugin active)
   worldmap: true
   dev_tools: true
+
+# ── Authentication ────────────────────────────────────────────────────────────
 auth:
   enabled: false
   username: admin
@@ -51,6 +70,8 @@ auth:
     max_length: 128
     require_digit: false
     require_symbol: false
+
+# ── World map defaults ────────────────────────────────────────────────────────
 map:
   default_view: world
   default_zoom: 3
@@ -60,11 +81,15 @@ map:
   center:
     lat: 20.0
     lon: 0.0
+
+# ── Playlist (NOC wallboard rotation) ─────────────────────────────────────────
 playlist:
   interval_seconds: 30
   views:
-  - /cosmos/views/worldmap
-  - /cosmos/slurm/overview
+  - /views/worldmap
+  - /slurm/overview
+
+# ── Plugins ───────────────────────────────────────────────────────────────────
 plugins:
   simulator:
     enabled: true
@@ -139,5 +164,7 @@ plugins:
       warn: '#f59e0b'
       crit: '#ef4444'
       info: '#3b82f6'
+
+# ── Legacy top-level keys (deprecated, kept for backward compatibility) ────────
 simulator: null
 slurm: null
