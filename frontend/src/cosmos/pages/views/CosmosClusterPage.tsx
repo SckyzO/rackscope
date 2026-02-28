@@ -351,6 +351,7 @@ const RackCard = ({
           pduMetrics={pduMetrics}
           fullWidth
           disableZoom
+          rackWidth={displayConfig.rackWidth}
           maxUPx={maxUPx}
         />
       </div>

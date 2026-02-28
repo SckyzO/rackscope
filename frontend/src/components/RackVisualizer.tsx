@@ -191,6 +191,7 @@ export const RackElevation = ({
   fullWidth = false,
   disableZoom = false,
   disableTooltip = false,
+  rackWidth,
   maxUPx,
 }: {
   rack: Rack;
@@ -220,6 +221,11 @@ export const RackElevation = ({
   disableZoom?: boolean;
   /** Disable HUD tooltips (useful in preview/editor contexts with no real health data) */
   disableTooltip?: boolean;
+  /**
+   * Card width in pixels (from cluster view). Used to auto-hide node labels
+   * when per-column width is too narrow to display text.
+   */
+  rackWidth?: number;
   /**
    * Cap the maximum height of each rack unit in pixels.
    * Prevents the rack from becoming disproportionately tall on large screens (4K).
@@ -360,6 +366,7 @@ export const RackElevation = ({
                         onClick={onDeviceClick ? () => onDeviceClick(device) : undefined}
                         onTooltipChange={disableTooltip ? undefined : setTooltip}
                         disableZoom={disableZoom}
+                        rackWidth={rackWidth}
                       />
                     </div>
                   )}
@@ -692,6 +699,7 @@ export const DeviceChassis = ({
   onTooltipChange,
   detailView = false,
   disableZoom = false,
+  rackWidth,
 }: {
   device: Device;
   template: DeviceTemplate;
@@ -703,6 +711,11 @@ export const DeviceChassis = ({
   onTooltipChange?: (payload: HUDTooltipProps | null) => void;
   detailView?: boolean;
   disableZoom?: boolean;
+  /**
+   * Card width in pixels (from cluster view). When provided, node labels are
+   * hidden if the per-column width is too narrow to display text legibly.
+   */
+  rackWidth?: number;
 }) => {
   const [suppressTooltip, setSuppressTooltip] = useState(false);
   const nodeMap = useMemo(() => {
@@ -804,6 +817,12 @@ export const DeviceChassis = ({
   // For storage in detail view, force full grid display (not high density mode)
   const forceFullGrid = detailView && template.type === 'storage';
   const isHighDensity = !forceFullGrid && layout.cols > 8 && template.type !== 'network';
+  // Auto-hide text when per-column width is too narrow (< 65px) for legible display.
+  // Rack interior = rackWidth - 2×16(p-4) - 2×24(border-x) = rackWidth - 80px.
+  const compactHideText =
+    rackWidth !== undefined && layout.cols > 1
+      ? (rackWidth - 80) / layout.cols < 65
+      : false;
 
   let borderColor = 'border-[var(--color-border)]/30';
   let bgColor = 'bg-[var(--color-device-surface)]';
@@ -946,7 +965,7 @@ export const DeviceChassis = ({
                   chassisName={template.name}
                   onHoverChange={setSuppressTooltip}
                   onTooltipChange={onTooltipChange}
-                  hideText={forceFullGrid}
+                  hideText={forceFullGrid || compactHideText}
                 />
               );
             })
@@ -1002,7 +1021,7 @@ const RowSummaryUnit = ({
         <div
           className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor} ${worstState === 'CRIT' ? 'animate-pulse shadow-[0_0_10px_var(--color-status-crit)]' : ''}`}
         ></div>
-        <span className="truncate font-mono text-[11px] font-black tracking-widest text-[var(--color-text-base)] uppercase opacity-50 group-hover:opacity-100">
+        <span className="min-w-0 truncate font-mono text-[11px] font-black tracking-widest text-[var(--color-text-base)] uppercase opacity-50 group-hover:opacity-100">
           {label}
         </span>
       </div>
@@ -1093,7 +1112,7 @@ export const NodeUnit = ({
         onHoverChange?.(false);
         onTooltipChange?.(null);
       }}
-      className={`group relative flex h-full cursor-help items-center justify-center border border-[var(--color-border)]/20 bg-[var(--color-node-surface)] transition-all hover:bg-[var(--color-accent-primary)]/20`}
+      className={`group relative flex h-full min-w-0 cursor-help items-center justify-center border border-[var(--color-border)]/20 bg-[var(--color-node-surface)] transition-all hover:bg-[var(--color-accent-primary)]/20`}
     >
       {nodeName ? (
         <div className="flex h-full w-full items-center justify-center overflow-hidden px-1">
@@ -1118,7 +1137,7 @@ export const NodeUnit = ({
                       : 'text-[var(--color-status-warn)]'
                 }`}
               />
-              <span className="truncate font-mono text-[10px] font-black tracking-tight text-[var(--color-text-base)] uppercase opacity-50 group-hover:opacity-100">
+              <span className="min-w-0 truncate font-mono text-[10px] font-black tracking-tight text-[var(--color-text-base)] uppercase opacity-50 group-hover:opacity-100">
                 {nodeName}
               </span>
             </div>
