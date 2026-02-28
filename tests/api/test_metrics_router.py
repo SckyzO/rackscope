@@ -1,6 +1,7 @@
 """Tests for metrics API router."""
 
 import pytest
+from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 
 from rackscope.api.app import app
@@ -117,7 +118,7 @@ def test_list_tags(client):
 
 
 def test_query_metric_data_basic(client):
-    """Test basic metric data query."""
+    """Test basic metric data query returns range query structure."""
     response = client.get(
         "/api/metrics/data",
         params={
@@ -133,10 +134,13 @@ def test_query_metric_data_basic(client):
 
     if response.status_code == 200:
         data = response.json()
-        assert "metric_id" in data
         assert data["metric_id"] == "node_temperature"
         assert data["target_id"] == "compute001"
         assert data["unit"] == "°C"
+        assert data["time_range"] == "1h"
+        assert "step" in data
+        assert "series" in data
+        assert isinstance(data["series"], list)
 
 
 def test_query_metric_data_nonexistent_metric(client):
@@ -229,3 +233,112 @@ def test_rack_power_metric_query(client):
         assert data["target_id"] == "r01-01"
         # Check that PromQL sum() is in the query
         assert "sum(" in data["query"]
+
+
+# ── Range query and step selection tests ────────────────────────────────────────
+
+_RANGE_MOCK_RESULT = {
+    "status": "success",
+    "data": {
+        "resultType": "matrix",
+        "result": [
+            {
+                "metric": {"instance": "compute001"},
+                "values": [[1700000000, "42.5"], [1700000060, "43.1"]],
+            }
+        ],
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "time_range,expected_step",
+    [
+        ("1h", "1m"),
+        ("6h", "5m"),
+        ("24h", "15m"),
+        ("7d", "1h"),
+        ("30d", "6h"),
+    ],
+)
+def test_query_metric_data_step_auto_selection(client, time_range, expected_step):
+    """Test that step is auto-selected based on time_range when not specified."""
+    with patch(
+        "rackscope.telemetry.prometheus.client.query_range",
+        new=AsyncMock(return_value=_RANGE_MOCK_RESULT),
+    ):
+        response = client.get(
+            "/api/metrics/data",
+            params={
+                "metric_id": "node_temperature",
+                "target_id": "compute001",
+                "time_range": time_range,
+            },
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["step"] == expected_step
+    assert data["time_range"] == time_range
+
+
+def test_query_metric_data_returns_series(client):
+    """Test that /api/metrics/data returns series (range query), not a single value."""
+    with patch(
+        "rackscope.telemetry.prometheus.client.query_range",
+        new=AsyncMock(return_value=_RANGE_MOCK_RESULT),
+    ):
+        response = client.get(
+            "/api/metrics/data",
+            params={
+                "metric_id": "node_temperature",
+                "target_id": "compute001",
+                "time_range": "1h",
+            },
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "series" in data
+    assert len(data["series"]) == 1
+    assert data["series"][0]["metric"]["instance"] == "compute001"
+    assert len(data["series"][0]["values"]) == 2
+
+
+def test_query_metric_data_step_explicit_override(client):
+    """Test that an explicit step parameter is respected."""
+    with patch(
+        "rackscope.telemetry.prometheus.client.query_range",
+        new=AsyncMock(return_value=_RANGE_MOCK_RESULT),
+    ):
+        response = client.get(
+            "/api/metrics/data",
+            params={
+                "metric_id": "node_temperature",
+                "target_id": "compute001",
+                "time_range": "24h",
+                "step": "30m",
+            },
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["step"] == "30m"
+
+
+def test_query_metric_data_prometheus_error_returns_500(client):
+    """Test that a Prometheus error surfaces as HTTP 500."""
+    with patch(
+        "rackscope.telemetry.prometheus.client.query_range",
+        new=AsyncMock(side_effect=RuntimeError("connection refused")),
+    ):
+        response = client.get(
+            "/api/metrics/data",
+            params={
+                "metric_id": "node_temperature",
+                "target_id": "compute001",
+                "time_range": "1h",
+            },
+        )
+
+    assert response.status_code == 500

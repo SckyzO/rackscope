@@ -4,6 +4,7 @@ Metrics Router
 Endpoints for metrics library management and data querying.
 """
 
+import time
 from pathlib import Path
 from typing import Optional, Annotated
 
@@ -117,37 +118,55 @@ async def query_metric_data(
     # Use specified or default aggregation
     agg = aggregation or metric.display.aggregation
 
-    # Parse time range to seconds for Prometheus
-    time_multipliers = {
-        "m": 60,
-        "h": 3600,
-        "d": 86400,
-        "w": 604800,
-    }
-    # Validate time range format
+    # Parse time range to duration in seconds
+    _time_multipliers = {"m": 60, "h": 3600, "d": 86400, "w": 604800}
     try:
-        if time_range[-1] in time_multipliers:
-            _ = int(time_range[:-1]) * time_multipliers[time_range[-1]]
+        if time_range[-1] in _time_multipliers:
+            duration_seconds = int(time_range[:-1]) * _time_multipliers[time_range[-1]]
         else:
-            _ = int(time_range)
+            duration_seconds = int(time_range)
     except (ValueError, IndexError):
         raise HTTPException(status_code=400, detail=f"Invalid time_range: {time_range}")
 
-    # Query Prometheus range
+    # Choose a sensible default step when the caller hasn't specified one
+    if step == "1m":
+        if duration_seconds <= 3600:  # ≤ 1h → 1m  (60 points)
+            step = "1m"
+        elif duration_seconds <= 21600:  # ≤ 6h → 5m  (72 points)
+            step = "5m"
+        elif duration_seconds <= 86400:  # ≤ 24h → 15m (96 points)
+            step = "15m"
+        elif duration_seconds <= 604800:  # ≤ 7d → 1h  (168 points)
+            step = "1h"
+        else:  # > 7d → 6h  (~120 points)
+            step = "6h"
+
+    now = time.time()
+    start_ts = now - duration_seconds
+    end_ts = now
+
     try:
-        # Note: This is a simplified implementation using instant query
-        # TODO: Implement query_range with proper time range support
-        # duration_seconds would be used here: query_range(query, duration_seconds, step)
-        results = await prom_client.query(query)
+        result = await prom_client.query_range(
+            query=query,
+            start=start_ts,
+            end=end_ts,
+            step=step,
+        )
+
+        # Extract matrix series from Prometheus response
+        series: list = []
+        if result.get("status") == "success":
+            series = result.get("data", {}).get("result", [])
 
         return {
             "metric_id": metric_id,
             "target_id": target_id,
             "time_range": time_range,
+            "step": step,
             "unit": metric.display.unit,
             "aggregation": agg,
             "query": query,
-            "data": results,
+            "series": series,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query failed: {e}")

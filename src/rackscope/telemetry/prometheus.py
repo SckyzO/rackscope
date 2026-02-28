@@ -136,6 +136,42 @@ class PrometheusClient:
             self._last_query_ts = time.time() * 1000.0
             self._latency_samples.append(duration_ms)
 
+    async def query_range(
+        self,
+        query: str,
+        start: float,
+        end: float,
+        step: str = "1m",
+    ) -> Dict[str, Any]:
+        """Execute a PromQL range query (time series).
+
+        Args:
+            query: PromQL query string
+            start: Start time as Unix timestamp
+            end: End time as Unix timestamp
+            step: Resolution step (e.g. "1m", "5m", "1h")
+
+        Returns:
+            Query result dictionary with resultType "matrix"
+        """
+        try:
+            self._query_count += 1
+            start_perf = time.perf_counter()
+            response = await self.client.get(
+                f"{self.base_url}/api/v1/query_range",
+                params={"query": query, "start": start, "end": end, "step": step},
+            )
+            response.raise_for_status()
+            result = response.json()
+            duration_ms = (time.perf_counter() - start_perf) * 1000.0
+            self._last_latency_ms = duration_ms
+            self._last_query_ts = time.time() * 1000.0
+            self._latency_samples.append(duration_ms)
+            return result
+        except Exception as e:
+            logger.error("Prometheus range query error: %s", e)
+            return {"status": "error", "error": str(e)}
+
     async def ping(self) -> None:
         """Force a Prometheus call to refresh latency stats."""
         await self._fetch_query("vector(1)")
