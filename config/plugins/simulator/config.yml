@@ -1,21 +1,17 @@
 # Simulator Plugin Configuration
-# See PLUGINS.md for documentation
 # app.yaml only controls: plugins.simulator.enabled (true/false)
 
 update_interval_seconds: 20
 seed: null
 scenario: demo-stable
 scale_factor: 1
-
 incident_rates:
   node_micro_failure: 0.001
   rack_macro_failure: 0.01
   aisle_cooling_failure: 0.005
-
 incident_durations:
   rack: 3
   aisle: 5
-
 overrides_path: config/plugins/simulator/overrides.yaml
 default_ttl_seconds: 120
 metrics_catalog_path: config/plugins/simulator/metrics_full.yaml

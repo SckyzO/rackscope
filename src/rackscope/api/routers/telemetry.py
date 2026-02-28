@@ -37,7 +37,7 @@ async def get_global_stats(
 ):
     """Get global system statistics."""
     rack_healths: Dict[str, str] = {}
-    if topology and checks_library and planner:
+    if topology and catalog and checks_library and planner:
         targets_by_check = telemetry_service.collect_check_targets(
             topology, catalog, checks_library
         )
@@ -116,7 +116,7 @@ async def get_room_state(
     """Get room health state and rack states."""
     # Lazy import to avoid circular dependency
 
-    if not topology or not checks_library or not planner:
+    if not topology or not catalog or not checks_library or not planner:
         return {"room_id": room_id, "state": "UNKNOWN", "racks": {}}
     targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
     snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
@@ -191,7 +191,7 @@ async def get_rack_state(
     from rackscope.services import metrics_service
     from rackscope.telemetry.prometheus import client as prom_client
 
-    if not topology or not checks_library or not planner:
+    if not topology or not catalog or not checks_library or not planner:
         return {"rack_id": rack_id, "state": "UNKNOWN", "metrics": {}, "nodes": {}}
 
     # Find the rack in topology

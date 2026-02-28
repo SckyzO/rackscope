@@ -145,11 +145,11 @@ async def lifespan(app: FastAPI):
         logger.info(
             "Configuration loaded successfully",
             extra={
-                "sites": len(TOPOLOGY.sites),
-                "device_templates": len(CATALOG.device_templates),
-                "rack_templates": len(CATALOG.rack_templates),
-                "checks": len(CHECKS_LIBRARY.checks),
-                "metrics": len(METRICS_LIBRARY.metrics),
+                "sites": len(TOPOLOGY.sites) if TOPOLOGY else 0,
+                "device_templates": len(CATALOG.device_templates) if CATALOG else 0,
+                "rack_templates": len(CATALOG.rack_templates) if CATALOG else 0,
+                "checks": len(CHECKS_LIBRARY.checks) if CHECKS_LIBRARY else 0,
+                "metrics": len(METRICS_LIBRARY.metrics) if METRICS_LIBRARY else 0,
             },
         )
     except Exception as e:
@@ -218,8 +218,8 @@ app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(AuthMiddleware)
 
 # Register exception handlers
-app.add_exception_handler(RequestValidationError, exceptions.validation_error_handler)
-app.add_exception_handler(ValidationError, exceptions.pydantic_validation_error_handler)
+app.add_exception_handler(RequestValidationError, exceptions.validation_error_handler)  # type: ignore[arg-type]
+app.add_exception_handler(ValidationError, exceptions.pydantic_validation_error_handler)  # type: ignore[arg-type]
 app.add_exception_handler(Exception, exceptions.generic_exception_handler)
 
 # Register routers
@@ -243,7 +243,7 @@ def healthz() -> dict[str, str]:
 
 @app.get("/api/alerts/active")
 async def get_active_alerts():
-    if not TOPOLOGY or not CHECKS_LIBRARY or not PLANNER:
+    if not TOPOLOGY or not CATALOG or not CHECKS_LIBRARY or not PLANNER:
         return {"alerts": []}
     targets_by_check = telemetry_service.collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
     snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)

@@ -73,8 +73,10 @@ async def collect_component_metrics(
 
     # Parse responses
     for metric_name, response in zip(queries.keys(), responses):
-        if isinstance(response, Exception):
+        if isinstance(response, Exception) or isinstance(response, BaseException):
             logger.error(f"Error fetching metric {metric_name} for rack {rack.id}: {response}")
+            continue
+        if not isinstance(response, dict):
             continue
 
         value = parse_prometheus_result(response)

@@ -124,7 +124,7 @@ async def create_room(
     room_dir.mkdir(parents=True, exist_ok=True)
     (room_dir / "aisles").mkdir(parents=True, exist_ok=True)
     (room_dir / "standalone_racks").mkdir(parents=True, exist_ok=True)
-    room_payload = {
+    room_payload: dict = {
         "id": room_id,
         "name": name,
         "description": payload.description,
@@ -309,7 +309,7 @@ async def create_room_aisles(
     if not aisles_in:
         raise HTTPException(status_code=400, detail="aisles list is required")
 
-    new_aisles = []
+    new_aisles: list[dict[str, str]] = []
     for aisle in aisles_in:
         name = (aisle.get("name") or "").strip()
         raw_id = aisle.get("id") or name
@@ -320,11 +320,11 @@ async def create_room_aisles(
             raise HTTPException(status_code=400, detail=f"Aisle id already exists: {aisle_id}")
         new_aisles.append({"id": aisle_id, "name": name})
 
-    room_data["aisles"] = existing + new_aisles
+    room_data["aisles"] = [*existing, *new_aisles]
     room_path.write_text(dump_yaml(room_data))
 
-    for aisle in new_aisles:
-        aisle_dir = room_dir / "aisles" / aisle["id"]
+    for aisle in new_aisles:  # type: ignore[assignment]
+        aisle_dir = room_dir / "aisles" / aisle["id"]  # type: ignore[operator]
         (aisle_dir / "racks").mkdir(parents=True, exist_ok=True)
         (aisle_dir / "aisle.yaml").write_text(
             dump_yaml({"id": aisle["id"], "name": aisle["name"], "racks": []})
@@ -448,6 +448,7 @@ async def delete_aisle(
             break
     if not target_room_id:
         raise HTTPException(status_code=404, detail=f"Aisle {aisle_id!r} not found")
+    assert target_site_id is not None
 
     base_dir = Path(app_config.paths.topology)
     room_path = base_dir / "datacenters" / target_site_id / "rooms" / target_room_id / "room.yaml"
@@ -497,6 +498,7 @@ async def create_rack(
             break
     if not target_room_id:
         raise HTTPException(status_code=404, detail=f"Aisle {aisle_id!r} not found")
+    assert target_site_id is not None
 
     base_dir = Path(app_config.paths.topology)
     rack_id = safe_segment(payload.id or name, "rack")

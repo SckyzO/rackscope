@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union
+from typing import Any, List, cast, Union
 import logging
 
 import yaml
@@ -75,11 +75,14 @@ def dump_yaml(data: dict) -> str:
 
     CompactMatrixDumper.add_representer(list, represent_list)
 
-    return yaml.dump(
-        data,
-        Dumper=CompactMatrixDumper,
-        sort_keys=False,
-        default_flow_style=False,
+    return cast(
+        str,
+        yaml.dump(
+            data,
+            Dumper=CompactMatrixDumper,
+            sort_keys=False,
+            default_flow_style=False,
+        ),
     )
 
 
@@ -144,7 +147,7 @@ def load_segmented_topology(base_dir: Path) -> Topology:
                 continue
             room_data = yaml.safe_load(room_path.read_text()) or {}
 
-            room_out = {
+            room_out: dict[str, Any] = {
                 "id": room_data.get("id", room_id),
                 "name": room_data.get("name", room_id),
                 "description": room_data.get("description"),
@@ -181,12 +184,14 @@ def load_segmented_topology(base_dir: Path) -> Topology:
                     rack_data = _load_rack_ref(base_dir, site_id, room_id, aisle_id, rack_ref)
                     if rack_data:
                         aisle_out["racks"].append(rack_data)
+                assert isinstance(room_out["aisles"], list)
                 room_out["aisles"].append(aisle_out)
 
             for rack_ref in room_data.get("standalone_racks", []):
                 rack_data = _load_rack_ref(base_dir, site_id, room_id, None, rack_ref)
                 if rack_data:
-                    room_out["standalone_racks"].append(rack_data)
+                    assert isinstance(room_out["standalone_racks"], list)
+                room_out["standalone_racks"].append(rack_data)
 
             rooms_out.append(room_out)
 
@@ -201,7 +206,7 @@ def load_segmented_topology(base_dir: Path) -> Topology:
         )
 
     try:
-        return Topology(**{"sites": sites_out})
+        return Topology.model_validate({"sites": sites_out})
     except ValidationError as e:
         raise InvalidFormatError(f"Validation failed for segmented topology {base_dir}:\n{e}")
 
@@ -257,7 +262,7 @@ def _load_checks_file(path: Path, library: ChecksLibrary) -> None:
     if not data:
         return
 
-    checks = []
+    checks: List[Any] = []
     if isinstance(data, dict) and "checks" in data:
         checks.extend(data.get("checks") or [])
 
@@ -331,7 +336,7 @@ def _load_metrics_file(path: Path, library: MetricsLibrary) -> None:
         return
 
     # Support single metric or list of metrics
-    metrics = []
+    metrics: List[Any] = []
     if isinstance(data, dict):
         if "metrics" in data:
             # Multiple metrics in one file

@@ -14,7 +14,7 @@ import bcrypt as _bcrypt
 import yaml
 from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, Field
-from jose import jwt, JWTError
+from jose import jwt, JWTError  # type: ignore[import-untyped]
 
 from rackscope.model.config import AppConfig, PasswordPolicyConfig
 
@@ -79,7 +79,7 @@ def _make_token(username: str, secret: str, expires: Optional[datetime]) -> str:
     payload: dict = {"sub": username}
     if expires:
         payload["exp"] = expires
-    return jwt.encode(payload, secret, algorithm="HS256")
+    return jwt.encode(payload, secret, algorithm="HS256")  # type: ignore[no-any-return]
 
 
 def _decode_token(token: str, secret: str) -> str:

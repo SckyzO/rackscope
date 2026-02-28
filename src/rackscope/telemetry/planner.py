@@ -149,9 +149,10 @@ class TelemetryPlanner:
                     virtual_node_info[key] = (instance, check.id)
                     effective_scope = "node"
                 else:
-                    key = _extract_key(check, labels, self.config)
-                    if not key:
+                    extracted_key = _extract_key(check, labels, self.config)
+                    if not extracted_key:
                         continue
+                    key = extracted_key
                     effective_scope = check.scope
 
                 severity = _evaluate_rules(check, item.get("value"))

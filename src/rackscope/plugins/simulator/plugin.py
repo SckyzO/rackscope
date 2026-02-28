@@ -335,6 +335,8 @@ class SimulatorPlugin(RackscopePlugin):
                 raise HTTPException(status_code=400, detail="rack overrides only support rack_down")
             if instance and metric == "rack_down":
                 raise HTTPException(status_code=400, detail="rack_down requires rack_id")
+            if value is None:
+                raise HTTPException(status_code=400, detail="value is required")
             try:
                 value = float(value)
             except (TypeError, ValueError):
@@ -392,8 +394,9 @@ class SimulatorPlugin(RackscopePlugin):
 
     def _overrides_path(self, app_config: Optional[AppConfig]) -> Path:
         """Get path to simulator overrides file."""
-        if app_config and getattr(app_config, "simulator", None):
-            return Path(app_config.simulator.overrides_path)
+        sim_cfg = getattr(app_config, "simulator", None) if app_config else None
+        if sim_cfg and getattr(sim_cfg, "overrides_path", None):
+            return Path(sim_cfg.overrides_path)
         return Path("config/simulator_overrides.yaml")
 
     def _load_overrides(self, app_config: Optional[AppConfig]) -> list[dict[str, Any]]:

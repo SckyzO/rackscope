@@ -10,7 +10,7 @@ import logging
 from typing import Callable
 
 from fastapi import Request, Response
-from jose import jwt as _jwt, JWTError as _JWTError
+from jose import jwt as _jwt, JWTError as _JWTError  # type: ignore[import-untyped]
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
@@ -73,7 +73,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         # Add request ID to response headers
         response.headers["X-Request-ID"] = request_id
 
-        return response
+        return response  # type: ignore[no-any-return]
 
 
 # Public paths that never require authentication
@@ -92,11 +92,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         # Skip if auth not configured or disabled
         if not APP_CONFIG or not APP_CONFIG.auth.enabled:
-            return await call_next(request)
+            return await call_next(request)  # type: ignore[no-any-return]
 
         # Always allow public auth endpoints
         if request.url.path in _AUTH_PUBLIC_PATHS:
-            return await call_next(request)
+            return await call_next(request)  # type: ignore[no-any-return]
 
         # Extract Bearer token
         auth_header = request.headers.get("Authorization", "")
@@ -112,4 +112,4 @@ class AuthMiddleware(BaseHTTPMiddleware):
         except _JWTError:
             return JSONResponse({"detail": "Invalid or expired token"}, status_code=401)
 
-        return await call_next(request)
+        return await call_next(request)  # type: ignore[no-any-return]

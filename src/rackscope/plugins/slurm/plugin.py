@@ -239,10 +239,10 @@ class SlurmPlugin(RackscopePlugin):
             by_severity: Dict[str, int] = {"OK": 0, "WARN": 0, "CRIT": 0, "UNKNOWN": 0}
 
             for state in node_states.values():
-                status = state.get("status_all") or state.get("status")
-                severity = state.get("severity_all") or state.get("severity", "UNKNOWN")
-                by_status[status] = by_status.get(status, 0) + 1
-                by_severity[severity] = by_severity.get(severity, 0) + 1
+                status = state.get("status_all") or state.get("status") or "unknown"
+                severity = state.get("severity_all") or state.get("severity") or "UNKNOWN"
+                by_status[str(status)] = by_status.get(str(status), 0) + 1
+                by_severity[str(severity)] = by_severity.get(str(severity), 0) + 1
 
             return {
                 "room_id": room_id,

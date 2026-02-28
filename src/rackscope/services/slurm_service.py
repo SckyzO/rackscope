@@ -5,15 +5,27 @@ Business logic for Slurm data processing.
 """
 
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Set
+from typing import Dict, List, Optional, Any, Set, Protocol, runtime_checkable, cast
 import logging
 
 import yaml
 
-from rackscope.model.config import SlurmConfig
 from rackscope.model.domain import Room, Rack, Device, Topology
 from rackscope.utils.aggregation import severity_rank as _severity_rank
 from rackscope.services.instance_service import expand_device_instances as _expand_device_instances
+
+
+@runtime_checkable
+class SlurmConfigLike(Protocol):
+    """Protocol satisfied by both SlurmConfig and SlurmPluginConfig."""
+
+    metric: str
+    label_node: str
+    label_status: str
+    label_partition: str
+    mapping_path: Optional[str]
+    status_map: Any
+
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +173,7 @@ def build_node_context(topology: Topology) -> Dict[str, Dict[str, str]]:
     return context
 
 
-def load_slurm_mapping(slurm_cfg: SlurmConfig) -> Dict[str, str]:
+def load_slurm_mapping(slurm_cfg: SlurmConfigLike) -> Dict[str, str]:
     """Load Slurm node name mapping.
 
     Args:
@@ -192,7 +204,7 @@ def load_slurm_mapping(slurm_cfg: SlurmConfig) -> Dict[str, str]:
     return mapping
 
 
-async def fetch_slurm_results(slurm_cfg: SlurmConfig) -> List[Dict[str, Any]]:
+async def fetch_slurm_results(slurm_cfg: SlurmConfigLike) -> List[Dict[str, Any]]:
     """Fetch Slurm metrics from Prometheus.
 
     Args:
@@ -210,11 +222,11 @@ async def fetch_slurm_results(slurm_cfg: SlurmConfig) -> List[Dict[str, Any]]:
     result = await prom_client.query(query, cache_type="health")
     if result.get("status") != "success":
         return []
-    return result.get("data", {}).get("result", [])
+    return cast(List[Dict[str, Any]], result.get("data", {}).get("result", []))
 
 
 async def build_slurm_states(
-    slurm_cfg: SlurmConfig,
+    slurm_cfg: SlurmConfigLike,
     allowed_nodes: Optional[Set[str]] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """Build Slurm state map for all nodes.

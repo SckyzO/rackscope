@@ -74,6 +74,7 @@ def write_template(
     """Create a new hardware template."""
     templates_dir = Path(app_config.paths.templates)
     templates_dir.mkdir(parents=True, exist_ok=True)
+    template: DeviceTemplate | RackComponentTemplate | RackTemplate
 
     if payload.kind == "device":
         template = DeviceTemplate(**payload.template)
@@ -135,6 +136,7 @@ def update_template(
     """Update an existing hardware template."""
     templates_dir = Path(app_config.paths.templates)
     templates_dir.mkdir(parents=True, exist_ok=True)
+    template: DeviceTemplate | RackComponentTemplate | RackTemplate
 
     if payload.kind == "device":
         template = DeviceTemplate(**payload.template)

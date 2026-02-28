@@ -104,7 +104,7 @@ def write_checks_file(
     except yaml.YAMLError as e:
         raise HTTPException(status_code=400, detail=f"Invalid YAML: {e}")
 
-    checks = []
+    checks: list[dict] = []
     if isinstance(parsed, dict) and "checks" in parsed:
         checks.extend(parsed.get("checks") or [])
 

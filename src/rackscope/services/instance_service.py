@@ -25,16 +25,16 @@ def expand_device_instances(device: Device) -> List[str]:
     Returns:
         List of node names
     """
+    expanded: List[str] = []
     if isinstance(device.instance, str):
         return _expand_nodes_pattern(device.instance)
     if isinstance(device.instance, dict):
-        expanded: List[str] = []
         for value in device.instance.values():
             if isinstance(value, str):
                 expanded.extend(_expand_nodes_pattern(value))
         return expanded
     if isinstance(device.instance, list):
-        expanded: List[str] = []
+        expanded = []
         for value in device.instance:
             if isinstance(value, str):
                 expanded.extend(_expand_nodes_pattern(value))
@@ -42,13 +42,13 @@ def expand_device_instances(device: Device) -> List[str]:
     if isinstance(device.nodes, str):
         return _expand_nodes_pattern(device.nodes)
     if isinstance(device.nodes, dict):
-        expanded: List[str] = []
+        expanded = []
         for value in device.nodes.values():
             if isinstance(value, str):
                 expanded.extend(_expand_nodes_pattern(value))
         return expanded
     if isinstance(device.nodes, list):
-        expanded: List[str] = []
+        expanded = []
         for value in device.nodes:
             if isinstance(value, str):
                 expanded.extend(_expand_nodes_pattern(value))

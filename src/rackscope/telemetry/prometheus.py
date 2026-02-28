@@ -6,7 +6,7 @@ import asyncio
 import logging
 import httpx
 from collections import deque
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Any, Tuple, Optional, cast
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ class PrometheusClient:
                     self._in_flight.pop(query, None)
                 if result.get("status") == "success":
                     cache[query] = (time.monotonic(), result)
-            return result
+            return cast(Dict[str, Any], result)
 
         return {"status": "error", "error": "query scheduling failed"}
 
@@ -126,7 +126,7 @@ class PrometheusClient:
                 f"{self.base_url}/api/v1/query", params={"query": query}
             )
             response.raise_for_status()
-            return response.json()
+            return cast(Dict[str, Any], response.json())
         except Exception as e:
             logger.error(f"Prometheus query error: {e}")
             return {"status": "error", "error": str(e)}
@@ -162,7 +162,7 @@ class PrometheusClient:
                 params={"query": query, "start": start, "end": end, "step": step},
             )
             response.raise_for_status()
-            result = response.json()
+            result = cast(Dict[str, Any], response.json())
             duration_ms = (time.perf_counter() - start_perf) * 1000.0
             self._last_latency_ms = duration_ms
             self._last_query_ts = time.time() * 1000.0
