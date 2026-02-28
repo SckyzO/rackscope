@@ -6,6 +6,7 @@ COMPOSE_PROD := docker-compose.prod.yml
 
 .PHONY: up down restart logs build lint test clean coverage typecheck complexity quality shell-backend shell-frontend watch-logs
 .PHONY: up-prod down-prod logs-prod build-prod
+.PHONY: docs docs-build docs-logs
 
 # Development Stack Management (default)
 up:
@@ -69,6 +70,17 @@ shell-frontend:
 
 watch-logs:
 	docker compose -f $(COMPOSE_DEV) logs -f backend frontend
+
+# Documentation site (Docusaurus — runs in Docker)
+docs:
+	docker compose -f $(COMPOSE_DEV) up docs -d
+	@echo "📚 Docs available at http://localhost:3001"
+
+docs-build:
+	docker compose -f $(COMPOSE_DEV) run --rm docs npm run build
+
+docs-logs:
+	docker compose -f $(COMPOSE_DEV) logs -f docs
 
 # Cleanup
 clean:

@@ -39,8 +39,13 @@ dist/
 *~
 
 # Project specific
-
 backup/
+
 # Local tooling artifacts
 tmp/
 node_modules/
+
+# Docusaurus documentation site
+website/node_modules/
+website/build/
+website/.docusaurus/

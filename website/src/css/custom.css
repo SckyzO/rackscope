@@ -1,0 +1,76 @@
+/**
+ * Rackscope documentation theme
+ * Accent color: #465fff (electric blue — matches the app)
+ */
+
+:root {
+  --ifm-color-primary: #465fff;
+  --ifm-color-primary-dark: #2f4fff;
+  --ifm-color-primary-darker: #2244ff;
+  --ifm-color-primary-darkest: #0025e8;
+  --ifm-color-primary-light: #5d6fff;
+  --ifm-color-primary-lighter: #6a7aff;
+  --ifm-color-primary-lightest: #8a96ff;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(70, 95, 255, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #6a7aff;
+  --ifm-color-primary-dark: #5d6fff;
+  --ifm-color-primary-darker: #5065ff;
+  --ifm-color-primary-darkest: #2f4fff;
+  --ifm-color-primary-light: #7888ff;
+  --ifm-color-primary-lighter: #8592ff;
+  --ifm-color-primary-lightest: #a5aeff;
+  --docusaurus-highlighted-code-line-bg: rgba(106, 122, 255, 0.15);
+  --ifm-background-color: #0f1117;
+  --ifm-background-surface-color: #1a1d27;
+  --ifm-navbar-background-color: #0f1117;
+  --ifm-footer-background-color: #0a0c12;
+}
+
+/* Navbar brand styling */
+.navbar__brand {
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: -0.5px;
+}
+
+/* Code blocks */
+.prism-code {
+  border-radius: 8px;
+}
+
+/* Admonition customization */
+.alert--info {
+  border-left-color: var(--ifm-color-primary);
+}
+
+/* Badge styling for status indicators */
+.badge--success {
+  background-color: #22c55e;
+  color: white;
+}
+
+.badge--warning {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.badge--danger {
+  background-color: #ef4444;
+  color: white;
+}
+
+/* API endpoint badges */
+.method-get { color: #22c55e; font-weight: 700; font-family: monospace; }
+.method-post { color: #3b82f6; font-weight: 700; font-family: monospace; }
+.method-put { color: #f59e0b; font-weight: 700; font-family: monospace; }
+.method-delete { color: #ef4444; font-weight: 700; font-family: monospace; }
+
+/* Health state colors */
+.state-ok { color: #22c55e; font-weight: 600; }
+.state-warn { color: #f59e0b; font-weight: 600; }
+.state-crit { color: #ef4444; font-weight: 600; }
+.state-unknown { color: #6b7280; font-weight: 600; }
