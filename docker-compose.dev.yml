@@ -34,6 +34,7 @@ services:
 
   playwright:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    user: "${UID:-1000}:${GID:-1000}"
     working_dir: /workspace
     volumes:
       - ./:/workspace
