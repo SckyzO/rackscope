@@ -304,7 +304,7 @@ export const SettingsPage = () => {
         <PageHeader
           title="Settings"
           breadcrumb={
-            <PageBreadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'Settings' }]} />
+            <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Settings' }]} />
           }
           actions={
             <div className="flex items-center gap-3">

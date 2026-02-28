@@ -1,5 +1,5 @@
 /**
- * CosmosChecksEditorPage — Checks Library Editor
+ * ChecksEditorPage — Checks Library Editor
  *
  * Layout: list (w-80, accordion by kind) | form (w-560) | context panel (flex)
  *
@@ -1449,7 +1449,7 @@ export const ChecksEditorPage = () => {
         breadcrumb={
           <PageBreadcrumb
             items={[
-              { label: 'Home', href: '/cosmos' },
+              { label: 'Home', href: '/' },
               { label: 'Editors' },
               { label: 'Checks Library' },
             ]}

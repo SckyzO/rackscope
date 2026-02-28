@@ -1,5 +1,5 @@
 /**
- * CosmosTemplatesEditorPage — Device Template Editor
+ * TemplatesEditorPage — Device Template Editor
  *
  * Layout: list (w-80, accordion by type) | form (w-[560px]) | preview (flex, dark)
  * Preview: RackElevation with synthetic rack — front on top, rear below
@@ -1194,7 +1194,7 @@ export const TemplatesEditorPage = () => {
         breadcrumb={
           <PageBreadcrumb
             items={[
-              { label: 'Home', href: '/cosmos' },
+              { label: 'Home', href: '/' },
               { label: 'Editors' },
               { label: 'Device Templates' },
             ]}

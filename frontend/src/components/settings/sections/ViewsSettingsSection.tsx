@@ -6,7 +6,7 @@ import { SettingField, SettingTooltip } from '../../../app/components/SettingToo
 import { SectionCard } from '../../../app/pages/templates/EmptyPage';
 import { FormSelect } from '../common/FormSelect';
 
-// Dashboard localStorage keys (mirrors CosmosDashboard constants)
+// Dashboard localStorage keys (mirrors DashboardPage constants)
 const DASH_KEY = 'rackscope.dashboards';
 const DASH_VER_KEY = 'rackscope.dashboards.version';
 
@@ -156,7 +156,7 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
             value={m.style ?? 'minimal'}
             onChange={(v) => {
               setMap('style', v);
-              // Also persist immediately to localStorage so CosmosWorldMapPage picks it up
+              // Also persist immediately to localStorage so WorldMapPage picks it up
               // without waiting for backend save + reload
               localStorage.setItem('rackscope.map.style', v);
             }}
@@ -251,7 +251,7 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
 
         {f.playlist && (
           <Link
-            to="/cosmos/playlist"
+            to="/playlist"
             className="border-brand-200 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/15 mt-3 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-colors"
           >
             <MonitorPlay className="h-4 w-4 shrink-0" />

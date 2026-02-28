@@ -80,7 +80,7 @@ export const StatsCardsPage = () => {
         breadcrumb={
           <PageBreadcrumb
             items={[
-              { label: 'Home', href: '/cosmos' },
+              { label: 'Home', href: '/' },
               { label: 'UI Library', href: '/ui' },
               { label: 'Stats Cards' },
             ]}

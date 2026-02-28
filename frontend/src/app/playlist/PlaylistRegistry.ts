@@ -67,7 +67,7 @@ export const PLAYLIST_REGISTRY: RegistryCategory[] = [
     id: 'dashboard',
     label: 'Dashboard',
     iconName: 'BarChart2',
-    pages: [{ id: 'dashboard', title: 'Dashboard', iconName: 'BarChart2', route: '/cosmos' }],
+    pages: [{ id: 'dashboard', title: 'Dashboard', iconName: 'BarChart2', route: '/' }],
   },
   {
     id: 'infrastructure',

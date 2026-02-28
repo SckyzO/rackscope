@@ -720,7 +720,7 @@ const TopologyWizard = ({ topology, onClose, onDone }: TopologyWizardProps) => {
   );
 };
 
-// ─── CosmosTopologyEditorPage ─────────────────────────────────────────────────
+// ─── TopologyEditorPage ───────────────────────────────────────────────────────
 
 export const TopologyEditorPage = () => {
   const navigate = useNavigate();
@@ -932,7 +932,7 @@ export const TopologyEditorPage = () => {
           breadcrumb={
             <PageBreadcrumb
               items={[
-                { label: 'Home', href: '/cosmos' },
+                { label: 'Home', href: '/' },
                 { label: 'Editors' },
                 { label: 'Datacenter Editor' },
               ]}

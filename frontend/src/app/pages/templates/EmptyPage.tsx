@@ -1,5 +1,5 @@
 /**
- * EmptyPage — Cosmos page template
+ * EmptyPage — Rackscope page template
  *
  * Building blocks:
  *   PageHeader   — title + description + optional action buttons (top-right)
@@ -43,7 +43,7 @@ import { usePageTitle } from '../../contexts/PageTitleContext';
 //
 // Usage:
 //   <PageBreadcrumb items={[
-//     { label: 'Home', href: '/cosmos' },          // first item gets Home icon
+//     { label: 'Home', href: '/' },          // first item gets Home icon
 //     { label: 'Section', href: '/section' },
 //     { label: 'Current Page' },                    // last item = current, no href
 //   ]} />
@@ -503,7 +503,7 @@ export const EmptyPage = () => {
         breadcrumb={
           <PageBreadcrumb
             items={[
-              { label: 'Home', href: '/cosmos' },
+              { label: 'Home', href: '/' },
               { label: 'Section', href: '#' },
               { label: 'Page Title' },
             ]}
@@ -533,7 +533,7 @@ export const TemplatesShowcase = () => {
       {/* ── Header ── */}
       <PageHeader
         title="Design System"
-        description="All Cosmos building blocks — reference for new pages."
+        description="All Rackscope building blocks — reference for new pages."
         actions={
           <>
             <button
@@ -876,12 +876,12 @@ export const TemplatesShowcase = () => {
   );
 };
 
-// ── CenteredPage — mirrors TailAdmin blank.html with Cosmos colors ────────────
+// ── CenteredPage — mirrors TailAdmin blank.html with Rackscope colors ──────────
 //
 // Structure (identical to blank.html):
 //   mx-auto max-w-[1536px] p-4 md:p-6   ← outer wrapper with padding
 //     Breadcrumb
-//     min-h-screen rounded-2xl card      ← bg-white dark:bg-gray-900 (Cosmos theme)
+//     min-h-screen rounded-2xl card      ← bg-white dark:bg-gray-900 (Rackscope theme)
 //       mx-auto max-w-[630px] text-center ← centered content
 
 export const CenteredPage = () => {
@@ -891,10 +891,10 @@ export const CenteredPage = () => {
     <div className="mx-auto w-full max-w-[1536px] p-1 md:p-6">
       {/* Breadcrumb */}
       <div className="mb-5">
-        <Breadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'Page Title' }]} />
+        <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Page Title' }]} />
       </div>
 
-      {/* Full-height card — bg-white light / bg-gray-900 dark (Cosmos theme) */}
+      {/* Full-height card — bg-white light / bg-gray-900 dark (Rackscope theme) */}
       <div className="min-h-screen rounded-2xl border border-gray-200 bg-white px-5 py-7 xl:px-10 xl:py-12 dark:border-gray-800 dark:bg-gray-900">
         <ContentNarrow maxWidth={630}>
           <div className="text-center">

@@ -30,7 +30,7 @@ type SearchResult = {
   keywords?: string[]; // instance names, IDs, etc.
 };
 
-// ── Instance expansion (same as CosmosDevicePage) ─────────────────────────────
+// ── Instance expansion (same as DevicePage) ────────────────────────────────────
 
 function expandInstances(instance: unknown): string[] {
   if (!instance) return [];

@@ -24,7 +24,7 @@ import { usePlaylistSafe } from '../contexts/PlaylistContext';
 import { PlaylistCountdownCircle } from '../components/PlaylistCountdown';
 
 const ROUTE_LABELS: Record<string, string> = {
-  '/cosmos': 'Analytics Dashboard',
+  '/': 'Analytics Dashboard',
   '/views/worldmap': 'World Map',
   '/ui/buttons-group': 'Buttons Group',
   '/ui/badges': 'Badges',

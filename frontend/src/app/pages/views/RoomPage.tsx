@@ -1852,7 +1852,7 @@ export const RoomPage = () => {
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">{room.name}</h2>
           <PageBreadcrumb
             items={[
-              { label: 'Home', href: '/cosmos' },
+              { label: 'Home', href: '/' },
               { label: 'Infrastructure' },
               { label: room.name },
             ]}

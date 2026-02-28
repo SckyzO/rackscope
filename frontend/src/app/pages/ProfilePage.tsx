@@ -482,7 +482,7 @@ export const ProfilePage = () => {
       <PageHeader
         title="Profile"
         breadcrumb={
-          <PageBreadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'Profile' }]} />
+          <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Profile' }]} />
         }
       />
 

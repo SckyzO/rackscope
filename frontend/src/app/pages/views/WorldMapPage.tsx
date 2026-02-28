@@ -77,7 +77,7 @@ export const WorldMapPage = () => {
         breadcrumb={
           <PageBreadcrumb
             items={[
-              { label: 'Home', href: '/cosmos' },
+              { label: 'Home', href: '/' },
               { label: 'Monitoring', href: '/views/worldmap' },
               { label: 'World Map' },
             ]}

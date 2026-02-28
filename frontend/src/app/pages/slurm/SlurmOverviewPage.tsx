@@ -85,7 +85,7 @@ export const SlurmOverviewPage = () => {
         breadcrumb={
           <PageBreadcrumb
             items={[
-              { label: 'Home', href: '/cosmos' },
+              { label: 'Home', href: '/' },
               { label: 'Slurm', href: '/slurm/overview' },
               { label: 'Overview' },
             ]}

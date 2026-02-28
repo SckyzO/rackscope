@@ -61,7 +61,7 @@ export const SetupWizard = ({ onDismiss }: { onDismiss: () => void }) => {
 
   const goDashboard = () => {
     dismiss();
-    navigate('/cosmos');
+    navigate('/');
   };
 
   // ── Progress dots ───────────────────────────────────────────────────────────

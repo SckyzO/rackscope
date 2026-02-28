@@ -62,7 +62,7 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
       {/* ── Authentication ── */}
       <FormSection
         title="Authentication"
-        description="Protect the Cosmos UI with a username and password."
+        description="Protect the Rackscope UI with a username and password."
         icon={Lock}
         iconColor="text-red-500"
         iconBg="bg-red-50 dark:bg-red-500/10"
@@ -73,7 +73,7 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
               <p className="text-sm text-blue-700 dark:text-blue-400">
                 No password set yet. Set one in{' '}
-                <a href="/cosmos/profile" className="font-semibold underline">
+                <a href="/profile" className="font-semibold underline">
                   Profile → Change Password
                 </a>{' '}
                 then come back here to enable authentication.
@@ -84,7 +84,7 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
           <Toggle
             label="Require authentication"
             description="Protect the dashboard with a username and password"
-            tooltip="Protect the Cosmos UI with username+password. Requires a password to be set first in Change Password."
+            tooltip="Protect the Rackscope UI with username+password. Requires a password to be set first in Change Password."
             value={auth.enabled}
             onChange={(v) => setAuth({ enabled: v })}
             disabled={!hasPassword}

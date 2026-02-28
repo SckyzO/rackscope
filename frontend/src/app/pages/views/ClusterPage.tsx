@@ -1,5 +1,5 @@
 /**
- * CosmosClusterPage — Small Cluster Overview
+ * ClusterPage — Small Cluster Overview
  *
  * Wallboard-style view for small clusters of a few racks.
  * No aisle notion — freely pick any racks from the topology,
@@ -1136,7 +1136,7 @@ export const ClusterPage = () => {
         breadcrumb={
           <PageBreadcrumb
             items={[
-              { label: 'Home', href: '/cosmos' },
+              { label: 'Home', href: '/' },
               { label: 'Monitoring', href: '/views/worldmap' },
               { label: 'Cluster Overview' },
             ]}

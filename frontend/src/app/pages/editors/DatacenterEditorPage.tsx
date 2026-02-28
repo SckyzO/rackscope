@@ -800,7 +800,7 @@ export const DatacenterEditorPage = () => {
 
   const breadcrumbItems = (() => {
     const items: { label: string; href?: string; onClick?: () => void }[] = [
-      { label: 'Home', href: '/cosmos' },
+      { label: 'Home', href: '/' },
       { label: 'Editors' },
       {
         label: 'Datacenter',

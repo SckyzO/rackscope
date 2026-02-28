@@ -10,7 +10,7 @@
 @import 'tailwindcss';
 
 /* Class-based dark mode — MUST be after @import 'tailwindcss' to override
-   the default media-query dark mode. Used by Rackscope ThemeContext and Cosmos. */
+   the default media-query dark mode. Used by Rackscope ThemeContext. */
 @custom-variant dark (&:is(.dark, .dark *));
 
 @theme {
@@ -33,7 +33,7 @@
   --color-rack-border: var(--color-border);
   --color-accent-primary: var(--color-accent);
 
-  /* ── Cosmos / TailAdmin Design Tokens ──────────────────────────────── */
+  /* ── Rackscope / TailAdmin Design Tokens ───────────────────────────── */
 
   /* Brand (TailAdmin blue) */
   --color-brand-25: #f2f7ff;

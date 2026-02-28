@@ -1568,7 +1568,7 @@ const WorldMapWidget = ({
     return () => obs.disconnect();
   }, []);
 
-  // localStorage is the immediate source of truth (same as CosmosWorldMapPage)
+  // localStorage is the immediate source of truth (same as WorldMapPage)
   const mapStyle = (localStorage.getItem('rackscope.map.style') ||
     config?.map?.style ||
     'minimal') as MapStyle;

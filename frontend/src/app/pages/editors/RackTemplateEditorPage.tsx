@@ -1979,7 +1979,7 @@ export const RackTemplateEditorPage = () => {
         breadcrumb={
           <PageBreadcrumb
             items={[
-              { label: 'Home', href: '/cosmos' },
+              { label: 'Home', href: '/' },
               { label: 'Editors', href: '#' },
               { label: 'Rack Templates' },
             ]}

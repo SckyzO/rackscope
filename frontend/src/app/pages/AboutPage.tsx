@@ -753,7 +753,7 @@ export const AboutPage = () => {
         <PageHeader
           title="About"
           breadcrumb={
-            <PageBreadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'About' }]} />
+            <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'About' }]} />
           }
         />
 

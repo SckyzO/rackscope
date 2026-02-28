@@ -86,7 +86,7 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
     if (stored.length > 0) return stored;
     // Default queue: Dashboard + Notifications
     return [
-      { id: 'dashboard', title: 'Dashboard', route: '/cosmos', iconName: 'BarChart2', duration: 0 },
+      { id: 'dashboard', title: 'Dashboard', route: '/', iconName: 'BarChart2', duration: 0 },
       {
         id: 'notifications',
         title: 'Notifications',

@@ -258,7 +258,7 @@ export const NotificationsFullPage = () => {
           breadcrumb={
             <PageBreadcrumb
               items={[
-                { label: 'Home', href: '/cosmos' },
+                { label: 'Home', href: '/' },
                 { label: 'Monitoring' },
                 { label: 'Notifications' },
               ]}

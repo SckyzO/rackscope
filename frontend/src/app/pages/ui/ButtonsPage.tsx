@@ -38,7 +38,7 @@ export const ButtonsPage = () => {
         breadcrumb={
           <PageBreadcrumb
             items={[
-              { label: 'Home', href: '/cosmos' },
+              { label: 'Home', href: '/' },
               { label: 'UI Library', href: '/ui' },
               { label: 'Buttons' },
             ]}

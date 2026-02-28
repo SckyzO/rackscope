@@ -18,7 +18,7 @@ export const SignInPage = () => {
     setLoading(true);
     try {
       await login(username, password);
-      navigate('/cosmos', { replace: true });
+      navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

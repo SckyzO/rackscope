@@ -128,7 +128,7 @@ const AppInnerLayout = () => {
 
   const [isDark, setIsDark] = useState(() => {
     // `theme-mode` is the single source of truth (shared with ThemeContext).
-    // Fall back to the legacy `cosmos-dark-mode` key so existing sessions keep
+    // Fall back to the legacy `cosmos-dark-mode` key (pre-migration) so existing sessions keep
     // their preference, then default to dark.
     const primary = localStorage.getItem('theme-mode');
     if (primary !== null) return primary !== 'light';

@@ -284,7 +284,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     return saved && VALID_DARK.has(saved) ? saved : 'void';
   });
 
-  // Sync from CosmosLayout's header toggle (bidirectional)
+  // Sync from AppLayout's header toggle (bidirectional)
   useEffect(() => {
     const handler = (e: CustomEvent<{ dark: boolean }>) => {
       setModeState(e.detail.dark ? 'dark' : 'light');
@@ -362,7 +362,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('theme-dark', darkTheme);
   }, [mode, accent, lightTheme, darkTheme]);
 
-  // setMode: syncs CosmosLayout's separate dark/light state via custom event
+  // setMode: syncs AppLayout's separate dark/light state via custom event
   const setMode = (m: 'dark' | 'light') => {
     setModeState(m);
 

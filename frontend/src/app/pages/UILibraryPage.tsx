@@ -361,7 +361,7 @@ export const UILibraryPage = () => {
               : `${totalCount} components across ${CATEGORIES.length} categories`
           }
           breadcrumb={
-            <PageBreadcrumb items={[{ label: 'Home', href: '/cosmos' }, { label: 'UI Library' }]} />
+            <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'UI Library' }]} />
           }
         />
 

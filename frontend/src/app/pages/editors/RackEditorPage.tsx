@@ -1,5 +1,5 @@
 /**
- * CosmosRackEditorPage — rebuilt from scratch
+ * RackEditorPage
  *
  * Layout: PageHeader (EmptyPage template) + 3-panel workspace
  *   Left  (~260px) : Tabs [Racks | Templates]
@@ -707,7 +707,7 @@ export const RackEditorPage = () => {
           breadcrumb={
             <PageBreadcrumb
               items={[
-                { label: 'Home', href: '/cosmos' },
+                { label: 'Home', href: '/' },
                 { label: 'Editors' },
                 ...(selectedRackEntry
                   ? [

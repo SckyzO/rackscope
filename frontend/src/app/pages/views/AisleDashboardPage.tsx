@@ -939,7 +939,7 @@ export const AisleDashboardPage = () => {
       <div className="border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-950">
         <PageBreadcrumb
           items={[
-            { label: 'Home', href: '/cosmos' },
+            { label: 'Home', href: '/' },
             { label: 'Infrastructure', href: '/views/worldmap' },
             { label: 'Cluster Dashboard' },
           ]}

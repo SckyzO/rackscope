@@ -81,7 +81,7 @@ import { SlurmWallboardPage } from './pages/slurm/SlurmWallboardPage';
 // Editors
 import { SettingsPage } from './pages/editors/SettingsPage';
 import { ChecksEditorPage } from './pages/editors/ChecksEditorPage';
-// CosmosTopologyEditorPage replaced by DatacenterEditorPage
+// TopologyEditorPage is DatacenterEditorPage
 import { TemplatesEditorPage } from './pages/editors/TemplatesEditorPage';
 import { RackEditorPage } from './pages/editors/RackEditorPage';
 import { EmptyPage, TemplatesShowcase, CenteredPage } from './pages/templates/EmptyPage';

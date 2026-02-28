@@ -25,7 +25,7 @@ export const usePageTitleValue = () => useContext(PageTitleValueContext);
 
 // ── Setter hook (used in page components) ─────────────────────────────────────
 //
-// Usage in any Cosmos page:
+// Usage in any page:
 //   import { usePageTitle } from '../../contexts/PageTitleContext';
 //   usePageTitle('My Page Title');
 //
