@@ -210,8 +210,6 @@ const RackColumn = ({
   includeUnlabeled,
   onHover,
 }: RackColumnProps) => {
-  const rackHeight = rack.u_height ?? 42;
-
   const visibleDevices = rack.devices
     .slice()
     .sort((a, b) => a.u_position - b.u_position)
@@ -225,6 +223,15 @@ const RackColumn = ({
     });
 
   if (visibleDevices.length === 0) return null;
+
+  // Cap rack height to the highest occupied U slot to remove empty space at top.
+  const deviceMaxU = Math.max(
+    ...visibleDevices.map((d) => {
+      const tpl = templatesById.get(d.template_id);
+      return d.u_position + (tpl?.u_height ?? 1) - 1;
+    })
+  );
+  const rackHeight = Math.min(rack.u_height ?? 42, deviceMaxU);
 
   return (
     <div className="flex flex-col items-center gap-1.5">

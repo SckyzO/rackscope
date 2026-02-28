@@ -120,8 +120,13 @@ const CosmosInnerLayout = () => {
   }, []);
 
   const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('cosmos-dark-mode');
-    return saved === null ? true : saved === 'true';
+    // `theme-mode` is the single source of truth (shared with ThemeContext).
+    // Fall back to the legacy `cosmos-dark-mode` key so existing sessions keep
+    // their preference, then default to dark.
+    const primary = localStorage.getItem('theme-mode');
+    if (primary !== null) return primary !== 'light';
+    const legacy = localStorage.getItem('cosmos-dark-mode');
+    return legacy === null ? true : legacy === 'true';
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showWizard, setShowWizard] = useState(() => !localStorage.getItem(SETUP_LS_KEY));
