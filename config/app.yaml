@@ -53,7 +53,7 @@ auth:
     require_symbol: false
 map:
   default_view: world
-  default_zoom: 4
+  default_zoom: 3
   min_zoom: 2
   max_zoom: 7
   zoom_controls: true
@@ -70,7 +70,7 @@ plugins:
     enabled: true
     update_interval_seconds: 20
     seed: null
-    scenario: random-1-critical
+    scenario: demo-stable
     scale_factor: 1
     incident_rates:
       node_micro_failure: 0.001

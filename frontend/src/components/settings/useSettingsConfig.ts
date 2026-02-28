@@ -195,7 +195,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
   },
   playlist: {
     interval_seconds: String(config.playlist?.interval_seconds ?? 30),
-    views: config.playlist?.views ?? ['/cosmos/views/worldmap', '/cosmos/slurm/overview'],
+    views: config.playlist?.views ?? ['/views/worldmap', '/slurm/overview'],
   },
   auth: {
     enabled: config.auth?.enabled ?? false,

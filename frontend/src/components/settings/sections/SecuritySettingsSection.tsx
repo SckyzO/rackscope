@@ -1,6 +1,6 @@
 import { AlertTriangle, Type, Lock, ShieldAlert } from 'lucide-react';
 import { FormSection } from '../common/FormSection';
-import { SettingTooltip } from '../../../cosmos/components/SettingTooltip';
+import { SettingTooltip } from '../../../app/components/SettingTooltip';
 import type { ConfigDraft } from '../useSettingsConfig';
 import { useAuth } from '../../../contexts/AuthContext';
 

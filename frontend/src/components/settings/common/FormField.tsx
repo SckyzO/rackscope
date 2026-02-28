@@ -1,5 +1,5 @@
 import React from 'react';
-import { SettingTooltip } from '../../../cosmos/components/SettingTooltip';
+import { SettingTooltip } from '../../../app/components/SettingTooltip';
 
 interface FormFieldProps {
   label: string;

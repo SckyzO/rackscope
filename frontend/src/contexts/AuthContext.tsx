@@ -141,7 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     setToken(null);
     setUser(null);
-    navigate('/cosmos/auth/signin');
+    navigate('/auth/signin');
   }, [navigate]);
 
   const refreshStatus = useCallback(async () => {

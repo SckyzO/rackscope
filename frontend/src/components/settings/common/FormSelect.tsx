@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
-import { SettingTooltip } from '../../../cosmos/components/SettingTooltip';
+import { SettingTooltip } from '../../../app/components/SettingTooltip';
 
 interface FormSelectOption {
   value: string;

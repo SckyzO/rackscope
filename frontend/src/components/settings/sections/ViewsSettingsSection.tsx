@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Globe, LayoutDashboard, MonitorPlay, ArrowRight, RotateCcw, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ConfigDraft } from '../useSettingsConfig';
-import { SettingField, SettingTooltip } from '../../../cosmos/components/SettingTooltip';
-import { SectionCard } from '../../../cosmos/pages/templates/EmptyPage';
+import { SettingField, SettingTooltip } from '../../../app/components/SettingTooltip';
+import { SectionCard } from '../../../app/pages/templates/EmptyPage';
 import { FormSelect } from '../common/FormSelect';
 
 // Dashboard localStorage keys (mirrors CosmosDashboard constants)

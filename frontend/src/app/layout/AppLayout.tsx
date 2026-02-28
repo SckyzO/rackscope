@@ -1,0 +1,222 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Outlet } from 'react-router-dom';
+import { X } from 'lucide-react';
+import { AppSidebar } from './AppSidebar';
+import { AppHeader } from './AppHeader';
+import { useTheme } from '../../context/ThemeContext';
+import { PageTitleProvider } from '../contexts/PageTitleContext';
+import { AppConfigProvider } from '../contexts/AppConfigContext';
+import { PluginsMenuProvider } from '../../context/PluginsMenuContext';
+import { PlaylistProvider } from '../contexts/PlaylistContext';
+import { usePlaylistSafe } from '../contexts/PlaylistContext';
+import { PlaylistCountdownBar } from '../components/PlaylistCountdown';
+import { AlertToastContainer } from '../components/AlertToastContainer';
+import { SetupWizard, LS_KEY as SETUP_LS_KEY } from '../components/SetupWizard';
+import '../app.css';
+
+// ── MatrixBackground ──────────────────────────────────────────────────────────
+// Subtle canvas background shown when darkTheme='matrix'. z-index 0, opacity 0.35.
+// Positioned OUTSIDE cosmos-root so the CSS z-index stacking works correctly.
+
+const MATRIX_ALPHABET = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッンABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const MATRIX_FONT_SIZE = 16;
+
+const MatrixBackground = () => {
+  const { mode, darkTheme } = useTheme();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const active = mode === 'dark' && darkTheme === 'matrix';
+
+  const startRain = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return () => { /* noop — canvas not mounted */ };
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return () => { /* noop — context unavailable */ };
+
+    const resize = () => {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+      drops.length = 0;
+      drops.push(...Array(Math.floor(canvas.width / MATRIX_FONT_SIZE)).fill(1));
+    };
+    const drops: number[] = [];
+    resize();
+    window.addEventListener('resize', resize);
+
+    const interval = setInterval(() => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(15, 255, 0, 0.5)';
+      ctx.font = `${MATRIX_FONT_SIZE}px monospace`;
+      for (let i = 0; i < drops.length; i++) {
+        const char = MATRIX_ALPHABET[Math.floor(Math.random() * MATRIX_ALPHABET.length)];
+        ctx.fillText(char, i * MATRIX_FONT_SIZE, drops[i] * MATRIX_FONT_SIZE);
+        if (drops[i] * MATRIX_FONT_SIZE > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+    }, 45);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', resize);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!active) return;
+    const stop = startRain();
+    return stop;
+  }, [active, startRain]);
+
+  return (
+    <>
+      <canvas id="matrix-bg-canvas" ref={canvasRef} aria-hidden="true" />
+      <div id="matrix-dimmer" aria-hidden="true" />
+    </>
+  );
+};
+
+// ── KioskExitButton ────────────────────────────────────────────────────────────
+// Floating exit button shown only in kiosk mode (fixed bottom-right)
+
+const KioskExitButton = () => {
+  const playlist = usePlaylistSafe();
+
+  if (!(playlist.mode === 'kiosk' && playlist.isPlaying)) return null;
+
+  const handleExit = () => {
+    playlist.pause();
+    try {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {
+          /* ignore */
+        });
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  return (
+    <button
+      onClick={handleExit}
+      title="Exit kiosk mode"
+      className="fixed right-6 bottom-6 z-[9999] flex items-center gap-2 rounded-xl bg-black/60 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-black/80"
+    >
+      <X className="h-4 w-4" />
+      Exit Playlist
+    </button>
+  );
+};
+
+// ── Inner layout — needs access to PlaylistContext ─────────────────────────────
+
+const AppInnerLayout = () => {
+  const [pageLoading, setPageLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPageLoading(false), 500);
+    return () => clearTimeout(t);
+  }, []);
+
+  const [isDark, setIsDark] = useState(() => {
+    // `theme-mode` is the single source of truth (shared with ThemeContext).
+    // Fall back to the legacy `cosmos-dark-mode` key so existing sessions keep
+    // their preference, then default to dark.
+    const primary = localStorage.getItem('theme-mode');
+    if (primary !== null) return primary !== 'light';
+    const legacy = localStorage.getItem('cosmos-dark-mode');
+    return legacy === null ? true : legacy === 'true';
+  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showWizard, setShowWizard] = useState(() => !localStorage.getItem(SETUP_LS_KEY));
+
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const handleToggleDark = () => {
+    const next = !isDark;
+    document.documentElement.classList.toggle('dark', next);
+    rootRef.current?.classList.toggle('dark', next);
+    localStorage.setItem('cosmos-dark-mode', String(next));
+    // Sync ThemeContext (localStorage + custom event to update modeState)
+    localStorage.setItem('theme-mode', next ? 'dark' : 'light');
+    window.dispatchEvent(new CustomEvent('rackscope-theme-mode', { detail: { dark: next } }));
+    setIsDark(next);
+  };
+
+  // Listen for mode changes triggered by ThemeContext (e.g. clicking a theme palette)
+  useEffect(() => {
+    const handler = (e: CustomEvent<{ dark: boolean }>) => {
+      const next = e.detail.dark;
+      document.documentElement.classList.toggle('dark', next);
+      rootRef.current?.classList.toggle('dark', next);
+      setIsDark(next);
+    };
+    window.addEventListener('rackscope-theme-mode', handler as EventListener);
+    return () => window.removeEventListener('rackscope-theme-mode', handler as EventListener);
+  }, []);
+
+  const playlist = usePlaylistSafe();
+  const isKiosk = playlist.mode === 'kiosk' && playlist.isPlaying;
+  const isFocused = playlist.mode === 'focused' && playlist.isPlaying;
+
+  // In focused mode: force sidebar collapsed
+  const effectiveCollapsed = isFocused ? true : sidebarCollapsed;
+
+  return (
+    <>
+      {/* Page load preloader */}
+      {pageLoading && (
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-white dark:bg-gray-950">
+          <div className="border-brand-500 h-16 w-16 animate-spin rounded-full border-4 border-t-transparent" />
+        </div>
+      )}
+      <div ref={rootRef} className={isDark ? 'cosmos-root dark' : 'cosmos-root'}>
+        <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
+          {/* Sidebar — hidden in kiosk mode */}
+          {!isKiosk && <AppSidebar collapsed={effectiveCollapsed} />}
+
+          <div className="flex flex-1 flex-col overflow-hidden">
+            {/* Header — hidden in kiosk mode */}
+            {!isKiosk && (
+              <AppHeader
+                isDark={isDark}
+                toggleDark={handleToggleDark}
+                sidebarCollapsed={effectiveCollapsed}
+                onToggleSidebar={() => setSidebarCollapsed((p) => !p)}
+              />
+            )}
+            <main className="cosmos-scrollbar flex flex-1 flex-col overflow-y-auto p-6">
+              <Outlet />
+            </main>
+          </div>
+        </div>
+      </div>
+
+      {/* Kiosk countdown bar — thin brand bar at bottom of screen */}
+      <PlaylistCountdownBar />
+      {/* Kiosk exit float button */}
+      <KioskExitButton />
+      {/* First-time setup wizard */}
+      {showWizard && <SetupWizard onDismiss={() => setShowWizard(false)} />}
+      {/* Matrix background canvas (active when darkTheme='matrix') */}
+      <MatrixBackground />
+      {/* Alert toast notifications — bottom-right, polled from /api/alerts/active */}
+      <AlertToastContainer />
+    </>
+  );
+};
+
+// ── AppLayout — providers wrapping the inner layout ────────────────────────
+
+export const AppLayout = () => (
+  <AppConfigProvider>
+    <PluginsMenuProvider>
+      <PlaylistProvider>
+        <PageTitleProvider>
+          <AppInnerLayout />
+        </PageTitleProvider>
+      </PlaylistProvider>
+    </PluginsMenuProvider>
+  </AppConfigProvider>
+);

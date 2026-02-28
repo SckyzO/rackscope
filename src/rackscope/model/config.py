@@ -92,8 +92,8 @@ class PlaylistConfig(BaseModel):
     interval_seconds: int = Field(default=30, ge=5, description="Seconds per view")
     views: List[str] = Field(
         default_factory=lambda: [
-            "/cosmos/views/worldmap",
-            "/cosmos/slurm/overview",
+            "/views/worldmap",
+            "/slurm/overview",
         ],
         description="Ordered list of routes to cycle through",
     )
