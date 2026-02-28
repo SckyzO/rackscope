@@ -1,3 +1,14 @@
+/**
+ * AuthContext — JWT authentication state for the application.
+ *
+ * Auth flow:
+ *   1. On mount, fetch /api/auth/status to check if auth is enabled.
+ *   2. If enabled and a token exists in localStorage, validate it via /api/auth/me.
+ *   3. login() calls /api/auth/login, stores the returned JWT, and sets user state.
+ *   4. logout() removes the token and redirects to /auth/signin.
+ *   5. apiFetch (in api.ts) reads the token from localStorage and attaches it as
+ *      Authorization: Bearer <token> on every request.
+ */
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -54,6 +65,8 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
+  // localStorage (not sessionStorage) so the token persists across tabs —
+  // NOC operators typically run multiple browser windows on separate monitors.
   const [token, setToken] = useState<string | null>(() => {
     try {
       return localStorage.getItem(TOKEN_KEY);
@@ -119,6 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     void init();
   }, [fetchStatus]);
 
+  /** POST /api/auth/login — stores the returned JWT and sets user state. Throws on failure. */
   const login = async (username: string, password: string): Promise<void> => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
@@ -139,6 +153,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser({ username: data.username });
   };
 
+  /** Clears the stored JWT and redirects to the sign-in page. */
   const logout = useCallback(() => {
     try {
       localStorage.removeItem(TOKEN_KEY);

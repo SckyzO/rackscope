@@ -12,9 +12,6 @@ from rackscope.model.domain import Aisle, Device, Rack, Room, Site, Topology
 from rackscope.services.telemetry_service import collect_check_targets, extract_device_instances
 
 
-# Test extract_device_instances
-
-
 def test_extract_device_instances_with_instance():
     """Test extracting instances when instance field is populated."""
     device = Device(
@@ -53,9 +50,6 @@ def test_extract_device_instances_empty_string_fallback():
     # Empty string expands to [""] which is truthy, so it returns [""]
     result = extract_device_instances(device)
     assert result == [""]
-
-
-# Test collect_check_targets
 
 
 @pytest.fixture

@@ -228,9 +228,7 @@ export const PlaylistCenterPage = () => {
         title="Playlist Center"
         description="Configure views for kiosk and NOC display rotation."
         breadcrumb={
-          <PageBreadcrumb
-            items={[{ label: 'Home', href: '/' }, { label: 'Playlist Center' }]}
-          />
+          <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Playlist Center' }]} />
         }
       />
 

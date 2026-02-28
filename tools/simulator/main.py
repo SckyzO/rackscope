@@ -1,3 +1,17 @@
+"""
+Standalone Prometheus metrics simulator for development and demo environments.
+
+Reads topology and template YAML files to discover all instances (nodes,
+racks, PDUs, etc.) and then continuously generates realistic gauge values
+for each of them.  Prometheus scrapes this process directly; no real
+hardware is required.
+
+Scenarios (defined in scenarios.yaml) control failure injection: which
+nodes are down, which checks are degraded, and at what rates.  Overrides
+loaded from overrides.yaml allow the backend API to force specific metric
+values at runtime for interactive demos.
+"""
+
 import time
 import random
 import yaml
@@ -8,7 +22,6 @@ import fnmatch
 from pathlib import Path
 from prometheus_client import start_http_server, Gauge
 
-# Configuration Paths
 TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology")
 TEMPLATES_PATH = os.getenv("TEMPLATES_PATH", "/app/config/templates")
 SIMULATOR_CONFIG_PATH = os.getenv(
@@ -42,21 +55,19 @@ def extract_base_metric_name(metric_query):
     if not metric_query:
         return None
 
-    # Simple metric name (no functions/aggregations)
     if not any(c in metric_query for c in ["(", "{", "["]):
         return metric_query.strip()
 
-    # Extract metric from PromQL query
-    # Match pattern: function_name(metric_name{labels}) or just metric_name{labels}
     import re
 
-    # Try to find metric name pattern: word characters, numbers, underscores, colons
+    # Match metric_name{labels} or metric_name[range]; the name precedes the
+    # first brace or bracket.
     pattern = r"\b([a-zA-Z_:][a-zA-Z0-9_:]*)\s*[{\[]"
     match = re.search(pattern, metric_query)
     if match:
         return match.group(1)
 
-    # If no match, try to extract first valid identifier
+    # Fallback: grab the first valid Prometheus identifier in the expression.
     pattern = r"\b([a-zA-Z_:][a-zA-Z0-9_:]+)"
     match = re.search(pattern, metric_query)
     if match:
@@ -88,13 +99,12 @@ def load_metrics_library(path):
             if not data:
                 continue
 
-            # Handle single metric definition
             if isinstance(data, dict) and "metric" in data:
                 metric_query = data.get("metric")
                 metric_name = extract_base_metric_name(metric_query)
                 tags = data.get("tags", [])
 
-                # Infer scope from tags or category
+                # "infrastructure" tag signals rack-level metrics (PDU, HMC, etc.).
                 if "infrastructure" in tags or data.get("category") == "rack":
                     scope = "rack"
                 else:
@@ -103,7 +113,6 @@ def load_metrics_library(path):
                 if metric_name:
                     supported[metric_name] = scope
 
-            # Handle multiple metrics in one file
             elif isinstance(data, dict) and "metrics" in data:
                 for metric in data.get("metrics", []):
                     if not isinstance(metric, dict):

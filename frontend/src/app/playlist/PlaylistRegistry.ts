@@ -141,9 +141,6 @@ export const PLAYLIST_REGISTRY: RegistryCategory[] = [
 ];
 
 // ── expandRegistry ─────────────────────────────────────────────────────────────
-//
-// Expands dynamic 'rooms' entries into one item per room,
-// and filters by requiresPlugin / requiresFeature.
 
 interface ExpandOptions {
   rooms: RoomSummary[];
@@ -171,14 +168,11 @@ export const expandRegistry = (
       const expanded: PlaylistQueueItem[] = [];
 
       for (const page of cat.pages) {
-        // Filter by feature requirements
         if (page.requiresFeature === 'worldmap' && !features.worldmap) continue;
         if (page.requiresFeature === 'notifications' && !features.notifications) continue;
-        // Filter by plugin requirements
         if (page.requiresPlugin === 'slurm' && !pluginSlurm) continue;
 
         if (page.dynamic === 'rooms') {
-          // Expand into one item per room
           for (const room of rooms) {
             expanded.push({
               id: page.id.replace('{id}', room.id),

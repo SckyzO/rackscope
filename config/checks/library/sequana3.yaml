@@ -1,3 +1,6 @@
+# Sequana3 liquid cooling checks — scope: rack.
+# selectors: ["sequana_rack_id"] tells the planner to use rack_id as the label selector
+# instead of the default instance label.
 checks:
   - id: sequana3_pressure
     name: Sequana3 pressure

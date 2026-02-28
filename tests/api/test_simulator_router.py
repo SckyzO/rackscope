@@ -25,9 +25,6 @@ if not registry.get_plugin("simulator"):
 client = TestClient(app)
 
 
-# Fixtures
-
-
 @pytest.fixture
 def mock_app_config_with_simulator(tmp_path):
     """Create test app config with simulator settings."""
@@ -54,9 +51,6 @@ def override_app_config(config):
         return config
 
     return _get_app_config_optional
-
-
-# Test GET /api/simulator/scenarios
 
 
 def test_get_simulator_scenarios_success(tmp_path):
@@ -111,9 +105,6 @@ def test_get_simulator_scenarios_invalid_yaml(tmp_path):
     assert data["scenarios"] == []
 
 
-# Test GET /api/simulator/overrides
-
-
 def test_get_simulator_overrides_success(mock_app_config_with_simulator):
     """Test getting simulator overrides."""
     app.dependency_overrides[get_app_config_optional] = override_app_config(
@@ -156,9 +147,6 @@ def test_get_simulator_overrides_no_file(mock_app_config_with_simulator):
     assert data["overrides"] == []
 
     app.dependency_overrides.clear()
-
-
-# Test POST /api/simulator/overrides
 
 
 def test_add_simulator_override_success(mock_app_config_with_simulator):
@@ -378,9 +366,6 @@ def test_add_simulator_override_zero_ttl_no_expiry(mock_app_config_with_simulato
     app.dependency_overrides.clear()
 
 
-# Test DELETE /api/simulator/overrides
-
-
 def test_clear_simulator_overrides(mock_app_config_with_simulator):
     """Test clearing all overrides."""
     app.dependency_overrides[get_app_config_optional] = override_app_config(
@@ -411,9 +396,6 @@ def test_clear_simulator_overrides(mock_app_config_with_simulator):
     assert file_data["overrides"] == []
 
     app.dependency_overrides.clear()
-
-
-# Test DELETE /api/simulator/overrides/{override_id}
 
 
 def test_delete_simulator_override_by_id(mock_app_config_with_simulator):
@@ -468,9 +450,6 @@ def test_delete_simulator_override_not_found(mock_app_config_with_simulator):
     app.dependency_overrides.clear()
 
 
-# Test GET /api/simulator/status
-
-
 def test_get_simulator_status_not_running():
     """Test getting simulator status when simulator is unreachable."""
     from unittest.mock import AsyncMock, patch
@@ -489,9 +468,6 @@ def test_get_simulator_status_not_running():
     assert data["running"] is False
     assert "endpoint" in data
     assert "simulator:9000" in data["endpoint"]
-
-
-# Test GET /api/simulator/metrics
 
 
 def test_get_available_metrics_from_library(mock_app_config_with_simulator):
@@ -535,9 +511,6 @@ def test_get_available_metrics_fallback():
 
     # Restore
     app_module.METRICS_LIBRARY = original
-
-
-# Test POST /api/simulator/incidents
 
 
 def test_trigger_incident_rack_down(mock_app_config_with_simulator):

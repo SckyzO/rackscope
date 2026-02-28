@@ -30,7 +30,7 @@ interface PlaylistContextType {
   setMode: (mode: PlaylistMode) => void;
   setQueue: (queue: PlaylistQueueItem[]) => void;
   setGlobalInterval: (seconds: number) => void;
-  // Legacy compat — views list derived from queue
+  // Derived from queue for backward compatibility with consumers that still read `views`
   views: string[];
   intervalSeconds: number;
 }
@@ -84,7 +84,7 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
   const [queue, setQueueState] = useState<PlaylistQueueItem[]>(() => {
     const stored = loadQueue();
     if (stored.length > 0) return stored;
-    // Default queue: Dashboard + Notifications
+    // Sensible default when no stored queue exists — gives new users something to play immediately
     return [
       { id: 'dashboard', title: 'Dashboard', route: '/', iconName: 'BarChart2', duration: 0 },
       {
@@ -115,7 +115,7 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
     setModeState(m);
   }, []);
 
-  // Navigate to a specific index (wraps around)
+  // Double modulo handles negative indices (prev wrapping past 0)
   const goTo = useCallback(
     (idx: number, q: PlaylistQueueItem[]) => {
       if (q.length === 0) return;
@@ -183,7 +183,8 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isPlaying, play, pause]);
 
-  // Auto-advance timer
+  // Refs let the interval closure always see the latest queue/navigate without being
+  // listed in the setInterval dependency array (which would recreate the timer on every change)
   const queueRef = useRef(queue);
   const navigateRef = useRef(navigate);
   const globalIntervalRef = useRef(globalInterval);
@@ -208,7 +209,6 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
       });
     };
 
-    // Use per-item duration if set, otherwise fall back to globalInterval
     const currentItem = queue[currentIndex];
     const itemDuration =
       currentItem?.duration && currentItem.duration > 0
@@ -220,7 +220,6 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
     return () => clearInterval(t);
   }, [isPlaying, features.playlist, queue.length, currentIndex, globalInterval]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Derived legacy compat
   const views = queue.map((q) => q.route);
 
   return (
@@ -255,7 +254,7 @@ export const usePlaylist = (): PlaylistContextType => {
   return ctx;
 };
 
-// Safe hook — returns disabled defaults when outside provider
+// Used by components that render before PlaylistProvider (e.g. PlaylistCountdown inside AppHeader)
 export const usePlaylistSafe = (): PlaylistContextType => {
   const ctx = useContext(PlaylistContext);
   return (

@@ -55,12 +55,19 @@ class SimulatorPlugin(RackscopePlugin):
           2. app.yaml plugins.simulator           (legacy embedded format)
           3. app.yaml simulator                   (legacy top-level format)
           4. Pydantic defaults
+
+        The priority chain exists for two reasons:
+        - Hot-reload: the dedicated config file can be edited at runtime and
+          reloaded without touching the central app.yaml, which minimises the
+          blast radius of a config change.
+        - Backward compatibility: deployments that predate the plugin
+          architecture stored simulator settings in app.yaml; those keep
+          working until operators migrate to the dedicated file.
         """
         import os
 
         raw_config: dict = {}
 
-        # 1. Try dedicated config file first (new architecture)
         config_file = self.config_file_path()
         if os.path.exists(config_file):
             try:
@@ -72,7 +79,6 @@ class SimulatorPlugin(RackscopePlugin):
             except Exception as exc:
                 logger.warning("Simulator: failed to read %s: %s", config_file, exc)
 
-        # 2. Fallback: app.yaml plugins.simulator
         if not raw_config and app_config:
             if hasattr(app_config, "plugins") and "simulator" in app_config.plugins:
                 cfg = app_config.plugins["simulator"]
@@ -82,16 +88,14 @@ class SimulatorPlugin(RackscopePlugin):
                     else {}
                 )
                 logger.info("Simulator: loaded config from app.yaml plugins.simulator")
-            # 3. Fallback: legacy top-level
             elif hasattr(app_config, "simulator") and app_config.simulator:
                 raw_config = app_config.simulator.model_dump()
                 logger.warning("Simulator: legacy config format — migrate to %s", config_file)
 
-        # Validate and create config with defaults
         return SimulatorPluginConfig(**raw_config)
 
     async def on_startup(self) -> None:
-        """Initialize simulator plugin and load configuration."""
+        """Load configuration on startup."""
         from rackscope.api.app import APP_CONFIG
 
         self.config = self._load_config(APP_CONFIG)
@@ -101,7 +105,7 @@ class SimulatorPlugin(RackscopePlugin):
         )
 
     async def on_config_reload(self, app_config: AppConfig) -> None:
-        """Reload simulator configuration when app config changes."""
+        """Reload configuration after a config file change."""
         self.config = self._load_config(app_config)
         logger.info(
             f"Simulator plugin configuration reloaded (scenario={self.config.scenario}, "
@@ -109,14 +113,15 @@ class SimulatorPlugin(RackscopePlugin):
         )
 
     def _setup_routes(self) -> None:
-        """Setup all simulator routes."""
+        """Register all simulator API routes on the router."""
 
         @self._router.get("/status")
         async def get_simulator_status():
             """Get simulator status and configuration."""
             import os
 
-            # Simulator endpoint — use SIMULATOR_URL env var or Docker service name
+            # SIMULATOR_URL defaults to the Docker Compose service name so that
+            # the backend can reach the simulator container without host networking.
             sim_base = os.getenv("SIMULATOR_URL", "http://simulator:9000")
             sim_metrics_url = f"{sim_base}/metrics"
 
@@ -148,7 +153,8 @@ class SimulatorPlugin(RackscopePlugin):
 
             metrics_library = app_module.METRICS_LIBRARY
             if not metrics_library:
-                # Fallback to hardcoded metrics if library not loaded
+                # Metrics library may not be loaded during startup or in tests;
+                # return a minimal hardcoded set so the UI remains functional.
                 return {
                     "metrics": [
                         {"id": "up", "name": "Node Up", "unit": "bool", "category": "health"},
@@ -179,7 +185,6 @@ class SimulatorPlugin(RackscopePlugin):
                     ]
                 }
 
-            # Return metrics from library
             return {
                 "metrics": [
                     {
@@ -226,7 +231,6 @@ class SimulatorPlugin(RackscopePlugin):
             if duration < 0:
                 raise HTTPException(status_code=400, detail="duration must be non-negative")
 
-            # Create override for rack_down
             if incident_type == "rack_down":
                 override = {
                     "id": f"{target_id}-rack_down-{int(time.time())}",
@@ -235,8 +239,8 @@ class SimulatorPlugin(RackscopePlugin):
                     "value": 1,
                 }
             else:
-                # For aisle cooling, we can't directly trigger it via overrides
-                # This would need to be implemented in the simulator
+                # Aisle cooling incidents require the simulator to model
+                # temperature propagation across devices; not yet implemented.
                 return {
                     "status": "not_implemented",
                     "message": "Aisle cooling incidents not yet supported via API",
@@ -299,14 +303,13 @@ class SimulatorPlugin(RackscopePlugin):
             """Add a new simulator override."""
             from rackscope.api import app as app_module
 
-            # Get valid metrics from library if available
             valid_metrics = set()
             metrics_library = app_module.METRICS_LIBRARY
             if metrics_library:
-                # Use metric.metric field (Prometheus metric name) not metric.id
+                # m.metric is the raw Prometheus metric name (e.g. "up"),
+                # not the library-level ID (e.g. "node_up").
                 valid_metrics = {m.metric for m in metrics_library.metrics}
 
-            # Fallback to hardcoded metrics if library not loaded
             if not valid_metrics:
                 valid_metrics = {
                     "up",
@@ -422,17 +425,20 @@ class SimulatorPlugin(RackscopePlugin):
             yaml.safe_dump(payload, f, sort_keys=False)
 
     def register_routes(self, app: FastAPI) -> None:
-        """Register simulator routes."""
+        """Mount the simulator router onto the application."""
         app.include_router(self._router)
 
     def register_menu_sections(self):
-        """Register simulator menu section."""
-        # Reload config from APP_CONFIG to get latest enabled state
+        """Return menu sections only when the plugin is enabled.
+
+        Config is re-read from APP_CONFIG on each call so that toggling the
+        simulator on/off in the settings UI takes effect immediately without
+        requiring a restart.
+        """
         from rackscope.api.app import APP_CONFIG
 
         current_config = self._load_config(APP_CONFIG)
 
-        # Only return menu sections if plugin is enabled
         if not current_config.enabled:
             return []
 

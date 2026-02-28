@@ -263,6 +263,7 @@ const VALID_LIGHT = new Set<LightTheme>(['slate', 'warm', 'cool', 'solarized']);
 const VALID_DARK = new Set<DarkTheme>(['void', 'navy', 'forest', 'matrix']);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  // localStorage keys: 'theme-mode' | 'theme-accent' | 'theme-light' | 'theme-dark'
   const [mode, setModeState] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('theme-mode');
     return saved === 'light' ? 'light' : 'dark';
@@ -284,7 +285,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     return saved && VALID_DARK.has(saved) ? saved : 'void';
   });
 
-  // Sync from AppLayout's header toggle (bidirectional)
+  // Listen for mode changes fired by AppLayout's header toggle via the
+  // 'rackscope-theme-mode' custom event. This keeps ThemeContext in sync when
+  // the user clicks the dark/light button in the header (which lives outside
+  // the ThemeProvider subtree).
   useEffect(() => {
     const handler = (e: CustomEvent<{ dark: boolean }>) => {
       setModeState(e.detail.dark ? 'dark' : 'light');
@@ -296,7 +300,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const root = document.documentElement;
 
-    // ── Mode + legacy vars ─────────────────────────────────────────────────
     if (mode === 'dark') {
       root.classList.add('dark');
       root.style.setProperty('--color-bg-base', '#0a0a0a');
@@ -331,16 +334,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       root.style.setProperty('--color-empty-slot', 'rgba(0,0,0,0.02)');
     }
 
-    // ── Accent brand palette ───────────────────────────────────────────────
     Object.entries(ACCENT_PALETTES[accent]).forEach(([k, v]) => root.style.setProperty(k, v));
-
-    // ── Light surface palette (bg-white, bg-gray-50/100/200) ──────────────
     Object.entries(LIGHT_PALETTES[lightTheme]).forEach(([k, v]) => root.style.setProperty(k, v));
-
-    // ── Dark surface palette (dark:bg-gray-800/900/950, sidebar) ──────────
+    // Dark palette applied last; matrix overrides brand vars intentionally.
     Object.entries(DARK_PALETTES[darkTheme]).forEach(([k, v]) => root.style.setProperty(k, v));
 
-    // ── Matrix: text color overrides + CSS class ──────────────────────────
     const isMatrix = mode === 'dark' && darkTheme === 'matrix';
     if (isMatrix) {
       root.style.setProperty('--color-gray-300', '#33ff00');
@@ -355,28 +353,27 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       root.classList.remove('mode-matrix');
     }
 
-    // ── Persist ────────────────────────────────────────────────────────────
     localStorage.setItem('theme-mode', mode);
     localStorage.setItem('theme-accent', accent);
     localStorage.setItem('theme-light', lightTheme);
     localStorage.setItem('theme-dark', darkTheme);
   }, [mode, accent, lightTheme, darkTheme]);
 
-  // setMode: syncs AppLayout's separate dark/light state via custom event
+  // Dispatch 'rackscope-theme-mode' to keep AppLayout's isDark state in sync.
+  // setAccent does not dispatch because accent changes do not affect AppLayout's
+  // dark/light toggle — only mode switches need cross-tree coordination.
   const setMode = (m: 'dark' | 'light') => {
     setModeState(m);
-
     window.dispatchEvent(
       new CustomEvent('rackscope-theme-mode', { detail: { dark: m === 'dark' } })
     );
   };
 
-  // Clicking a light theme → auto-switch to light mode so user can see it
+  // Auto-switch mode when a palette is selected so the user immediately sees it.
   const setLightTheme = (t: LightTheme) => {
     setLightThemeState(t);
     setMode('light');
   };
-  // Clicking a dark theme → auto-switch to dark mode so user can see it
   const setDarkTheme = (t: DarkTheme) => {
     setDarkThemeState(t);
     setMode('dark');

@@ -25,9 +25,6 @@ if not registry.get_plugin("slurm"):
 client = TestClient(app)
 
 
-# Fixtures
-
-
 @pytest.fixture
 def mock_topology():
     """Create a test topology with nodes."""
@@ -88,9 +85,6 @@ def mock_slurm_results():
             "value": [1234567890, "1"],
         },
     ]
-
-
-# Test GET /api/slurm/rooms/{room_id}/nodes
 
 
 def test_get_slurm_room_nodes_success(
@@ -164,9 +158,6 @@ def test_get_slurm_room_nodes_no_results(mock_topology, mock_app_config):
     assert "node01" in data["nodes"]
     assert data["nodes"]["node01"]["status"] == "unknown"
     assert data["nodes"]["node01"]["severity"] == "UNKNOWN"
-
-
-# Test GET /api/slurm/summary
 
 
 def test_get_slurm_summary_success(mock_topology, mock_app_config):
@@ -251,9 +242,6 @@ def test_get_slurm_summary_no_topology():
     assert response.status_code == 503
 
 
-# Test GET /api/slurm/partitions
-
-
 def test_get_slurm_partitions_success(
     mock_topology, mock_app_config, mock_slurm_results, mock_slurm_plugin_config
 ):
@@ -327,9 +315,6 @@ def test_get_slurm_partitions_no_topology():
     response = client.get("/api/slurm/partitions")
 
     assert response.status_code == 503
-
-
-# Test GET /api/slurm/nodes
 
 
 def test_get_slurm_nodes_success(mock_topology, mock_app_config):

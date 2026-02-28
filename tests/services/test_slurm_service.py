@@ -27,9 +27,6 @@ from rackscope.services.slurm_service import (
 )
 
 
-# Test normalize_slurm_status
-
-
 def test_normalize_slurm_status_simple():
     """Test normalizing simple status."""
     status, has_star = normalize_slurm_status("idle")
@@ -114,9 +111,6 @@ def test_normalize_slurm_status_all_aliases():
         assert status == expected, f"Failed for alias: {alias}"
 
 
-# Test calculate_slurm_severity
-
-
 @pytest.fixture
 def default_status_map():
     """Create a default status map."""
@@ -156,9 +150,6 @@ def test_calculate_slurm_severity_unknown(default_status_map):
     assert severity == "UNKNOWN"
 
 
-# Test severity_rank
-
-
 def test_severity_rank_wrapper():
     """Test severity_rank is a wrapper."""
     # Should match aggregation.severity_rank
@@ -166,9 +157,6 @@ def test_severity_rank_wrapper():
     assert severity_rank("OK") == 1
     assert severity_rank("WARN") == 2
     assert severity_rank("CRIT") == 3
-
-
-# Test expand_device_instances
 
 
 def test_expand_device_instances_wrapper():
@@ -182,9 +170,6 @@ def test_expand_device_instances_wrapper():
     )
     result = expand_device_instances(device)
     assert result == ["node01", "node02", "node03"]
-
-
-# Test collect_room_nodes
 
 
 def test_collect_room_nodes_simple():
@@ -244,9 +229,6 @@ def test_collect_room_nodes_empty():
     assert nodes == set()
 
 
-# Test build_node_context
-
-
 def test_build_node_context():
     """Test building node context map."""
     device = Device(
@@ -295,9 +277,6 @@ def test_build_node_context_multiple_nodes():
     assert "node01" in context
     assert "node02" in context
     assert "node03" in context
-
-
-# Test load_slurm_mapping
 
 
 def test_load_slurm_mapping_success():
@@ -420,9 +399,6 @@ def test_load_slurm_mapping_skip_invalid_items():
         Path(mapping_path).unlink(missing_ok=True)
 
 
-# Test fetch_slurm_results
-
-
 @pytest.mark.asyncio
 async def test_fetch_slurm_results_success():
     """Test fetching Slurm results successfully."""
@@ -478,9 +454,6 @@ async def test_fetch_slurm_results_no_data():
         results = await fetch_slurm_results(slurm_cfg)
 
     assert results == []
-
-
-# Test build_slurm_states
 
 
 @pytest.mark.asyncio

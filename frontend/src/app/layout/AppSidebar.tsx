@@ -35,6 +35,10 @@ interface NavItemProps {
   depth?: boolean;
 }
 
+// NavItem uses CSS class toggling (not conditional rendering) for active/inactive state.
+// NavLink's className render prop receives isActive at runtime, so both active and
+// inactive elements exist in the DOM simultaneously during navigation — screen readers
+// always have a stable element to describe.
 const NavItem = ({
   to,
   icon: Icon,
@@ -63,8 +67,8 @@ const NavItem = ({
   </NavLink>
 );
 
-// Section label: BOTH SVG dots AND text always in the DOM.
-// CSS controls visibility so hover expand works correctly.
+// Dual-DOM pattern: both collapsed (dots) and expanded (text) are rendered,
+// visibility toggled via CSS. Avoids layout shift on transition.
 const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean }) => (
   <>
     {/* 3-dots: shown when collapsed, hidden on group-hover */}
@@ -138,7 +142,6 @@ const TreeNode = ({
   primary?: boolean;
 }) => (
   <div>
-    {/* Row: always in DOM — CSS controls visibility like NavItem */}
     <div className="flex items-center">
       <button
         onClick={hasLink ? onLinkClick : onToggle}
@@ -153,20 +156,17 @@ const TreeNode = ({
               : INACTIVE
         }`}
       >
-        {/* Icon — always visible (anchors the row in collapsed mode) */}
         {Icon && (
           <Icon
             className={`shrink-0 ${primary ? 'h-5 w-5' : 'h-3.5 w-3.5'} ${isActive ? 'text-brand-500' : 'opacity-60'}`}
           />
         )}
-        {/* Label — hidden when collapsed, visible on hover (same as NavItem) */}
         <span
           className={`min-w-0 flex-1 truncate whitespace-nowrap ${sidebarCollapsed ? 'hidden group-hover:inline' : ''}`}
         >
           {label}
         </span>
       </button>
-      {/* Chevron — hidden when collapsed, visible on hover */}
       <button
         onClick={onToggle}
         className={`shrink-0 rounded p-1 text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-400 ${
@@ -176,7 +176,6 @@ const TreeNode = ({
         {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
       </button>
     </div>
-    {/* Children: hidden when collapsed (even expanded), shown on hover or in full mode */}
     {expanded && children && (
       <div
         className={`ml-3 flex flex-col gap-0 border-l border-gray-200 pl-2 dark:border-gray-700 ${
@@ -201,7 +200,6 @@ const RackLink = ({
   navigate: (path: string) => void;
   isActive: boolean;
 }) => (
-  /* Always in DOM — hidden when collapsed, shown on hover (CSS group-hover) */
   <button
     onClick={() => navigate(`/views/rack/${rack.id}`)}
     title={collapsed ? rack.name : undefined}
@@ -476,7 +474,8 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
   const helpProgress = React.useRef(0);
   const helpTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // "help" typed in sequence → show terminal
+  // Easter egg: typing 'help' triggers a retro terminal overlay.
+  // Sequence is detected via keydown accumulation with 1.5s timeout.
   useEffect(() => {
     const HELP = ['h', 'e', 'l', 'p'];
     const onKey = (e: KeyboardEvent) => {
@@ -503,8 +502,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { features, plugins, config } = useAppConfigSafe();
-  // plugins.slurm reads app.yaml plugins.slurm.enabled — source of truth
-  // (Slurm plugin registers its menu section as id="workload", not "slurm")
+  // Slurm plugin registers its menu section as id="workload", not "slurm"
   const slurmActive = plugins.slurm;
 
   useEffect(() => {
@@ -529,7 +527,6 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
       {bootActive && <AsciiBootOverlay onClose={() => setBootActive(false)} />}
       {helpActive && <HelpTerminalOverlay onClose={() => setHelpActive(false)} />}
 
-      {/* Logo — app.name + app.description from config */}
       <div className="flex h-[72px] shrink-0 items-center">
         <div className="flex min-w-0 items-center gap-3">
           <div
@@ -539,7 +536,6 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
                 setBootActive(true);
                 return;
               }
-              // Clear previous timer
               if (logoClickTimer.current) clearTimeout(logoClickTimer.current);
               const next = logoClickCount + 1;
               setLogoClickCount(next);
@@ -597,7 +593,6 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
           />
         )}
 
-        {/* Infrastructure tree — own section, dynamic based on declared sites */}
         {(rooms.length > 0 || sites.length > 0) && (
           <>
             <SectionLabel label="Infrastructure" collapsed={collapsed} />

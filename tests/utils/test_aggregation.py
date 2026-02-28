@@ -7,9 +7,6 @@ Tests for state and severity aggregation functions.
 from rackscope.utils.aggregation import aggregate_states, severity_rank
 
 
-# Test aggregate_states
-
-
 def test_aggregate_states_all_ok():
     """Test aggregating all OK states."""
     result = aggregate_states(["OK", "OK", "OK"])
@@ -78,9 +75,6 @@ def test_aggregate_states_order_does_not_matter():
     result2 = aggregate_states(["CRIT", "WARN", "OK"])
     result3 = aggregate_states(["WARN", "OK", "CRIT"])
     assert result1 == result2 == result3 == "CRIT"
-
-
-# Test severity_rank
 
 
 def test_severity_rank_unknown():

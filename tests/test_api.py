@@ -1,3 +1,11 @@
+"""
+Integration smoke tests for core API endpoints.
+
+These tests hit the live FastAPI app without mocking the global state, so
+they depend on the topology loaded by the backend at startup.  For more
+targeted unit tests with controlled state, see tests/api/.
+"""
+
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -43,8 +51,6 @@ def test_healthz():
 
 
 def test_get_sites():
-    # Note: this depends on TOPOLOGY being loaded on startup
-    # For tests, we might want to inject a mock topology
     response = client.get("/api/sites")
     assert response.status_code == 200
     assert isinstance(response.json(), list)

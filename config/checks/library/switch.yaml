@@ -1,3 +1,5 @@
+# Network switch health checks — kind: network.
+# Temperature and power thresholds are hardware-agnostic; tune per environment.
 checks:
   - id: switch_up
     name: Switch up

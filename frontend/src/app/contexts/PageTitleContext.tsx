@@ -7,7 +7,7 @@ const PageTitleSetterContext = createContext<(title: string) => void>(() => {
   /* noop */
 });
 
-// ── Provider (used once in AppLayout) ──────────────────────────────────────
+// ── Provider ──────────────────────────────────────────────────────────────────
 
 export const PageTitleProvider = ({ children }: { children: ReactNode }) => {
   const [title, setTitle] = useState('');
@@ -18,19 +18,12 @@ export const PageTitleProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// ── Consumer hook (used in AppHeader) ──────────────────────────────────────
+// ── Hooks ─────────────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const usePageTitleValue = () => useContext(PageTitleValueContext);
 
-// ── Setter hook (used in page components) ─────────────────────────────────────
-//
-// Usage in any page:
-//   import { usePageTitle } from '../../contexts/PageTitleContext';
-//   usePageTitle('My Page Title');
-//
-// The title appears in the header immediately and is cleared when the page unmounts.
-
+// Clears the title on unmount so stale titles don't bleed into the next page
 // eslint-disable-next-line react-refresh/only-export-components
 export const usePageTitle = (title: string) => {
   const setTitle = useContext(PageTitleSetterContext);

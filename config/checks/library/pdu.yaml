@@ -1,3 +1,5 @@
+# PDU checks — scope: rack. Uses raritan_pdu_* metrics from the Raritan PDU exporter.
+# Adjust current thresholds to match your breaker ratings (16A/20A single-phase typical).
 checks:
   - id: pdu_power_present
     name: PDU power present

@@ -47,7 +47,8 @@ import type {
   CheckDefinition,
 } from '../../types';
 
-// ── Device type maps ──────────────────────────────────────────────────────────
+// Maps used by widgets to render device-type labels, colors, and icons.
+// Keyed by DeviceTemplate.type so the UI is template-driven, not hardcoded per vendor.
 
 const DEV_TYPE_COLOR: Record<string, string> = {
   server: '#3b82f6',
@@ -79,6 +80,8 @@ type DonutSlice = { label: string; count: number; color: string };
 
 type StatKey = 'sites' | 'rooms' | 'racks' | 'devices' | 'crit' | 'warn';
 
+// Each widget is independently resizable via react-grid-layout.
+// Widget config is persisted to localStorage under rackscope.dashboards.
 type WidgetType =
   | 'stat-card'
   | 'stats-row'
@@ -123,7 +126,8 @@ type Dashboard = {
 const DASHBOARDS_STORAGE_KEY = 'rackscope.dashboards';
 const ACTIVE_DASHBOARD_STORAGE_KEY = 'rackscope.dashboard.active';
 const DASHBOARDS_STORAGE_VERSION_KEY = 'rackscope.dashboards.version';
-// Bumped to '2' — migrated from colSpan/rowSpan to x/y/w/h (react-grid-layout)
+// Version '2' introduced x/y/w/h coordinates (react-grid-layout) replacing
+// the old colSpan/rowSpan model. Stale data is discarded on version mismatch.
 const DASHBOARDS_STORAGE_VERSION = '2';
 
 type WidgetDefinition = {
@@ -200,7 +204,8 @@ const STATUS_COLOR: Record<string, string> = {
   unknown: '#6b7280',
 };
 
-// Row height in pixels for react-grid-layout
+// Row height drives the vertical rhythm of the grid.
+// Increasing this makes shorter widgets feel less cramped.
 const ROW_PX = 140;
 
 // 2D grid layout — x/y/w/h (12-column grid, rowHeight=ROW_PX)
@@ -227,7 +232,10 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
 
 // ── react-grid-layout helpers ─────────────────────────────────────────────────
 
-/** Convert WidgetConfig[] → Layout[] for react-grid-layout */
+/**
+ * Convert WidgetConfig[] to the Layout[] shape expected by react-grid-layout.
+ * The `i` field is the widget id — RGL uses it as the React key and for position tracking.
+ */
 const toRglLayout = (widgets: WidgetConfig[]): Layout[] =>
   widgets.map(({ id, x, y, w, h, minW, minH }) => ({
     i: id,
@@ -239,7 +247,10 @@ const toRglLayout = (widgets: WidgetConfig[]): Layout[] =>
     ...(minH !== undefined && { minH }),
   }));
 
-/** Merge new Layout[] positions back into WidgetConfig[] */
+/**
+ * Merge position updates from react-grid-layout back into the WidgetConfig array.
+ * Called on every drag/resize; persists to localStorage via saveWidgets.
+ */
 const applyRglLayout = (widgets: WidgetConfig[], newLayout: Layout[]): WidgetConfig[] => {
   const pos = Object.fromEntries(newLayout.map((l) => [l.i, l]));
   return widgets.map((w) => {
@@ -441,7 +452,6 @@ const StatCard = ({ icon: Icon, label, value, color, sub }: StatCardProps) => (
   </div>
 );
 
-// Severity badge — hardcoded classes (Light with Left Icon, ref: /ui/badges)
 const AlertSevBadge = ({ state }: { state: string }) => {
   if (state === 'CRIT')
     return (
@@ -1267,7 +1277,6 @@ const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
   const warnAlerts = data.alerts.filter((a) => a.state === 'WARN');
   const okCount = Math.max(0, data.totalDevices - critAlerts.length - warnAlerts.length);
 
-  // Group alerts by room, CRIT rooms first
   const byRoom = new Map<string, { name: string; alerts: ActiveAlert[] }>();
   for (const a of data.alerts) {
     if (!byRoom.has(a.room_id)) byRoom.set(a.room_id, { name: a.room_name, alerts: [] });
@@ -1568,7 +1577,8 @@ const WorldMapWidget = ({
     return () => obs.disconnect();
   }, []);
 
-  // localStorage is the immediate source of truth (same as WorldMapPage)
+  // localStorage overrides the backend config so the user's map-style preference
+  // survives page reloads without a round-trip to the API (same as WorldMapPage).
   const mapStyle = (localStorage.getItem('rackscope.map.style') ||
     config?.map?.style ||
     'minimal') as MapStyle;
@@ -1603,7 +1613,6 @@ const WorldMapWidget = ({
         </button>
       </div>
 
-      {/* Map — offline SVG, no external tiles */}
       <div className="min-h-0 flex-1">
         {geoSites.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-xs text-gray-400">
@@ -1703,7 +1712,6 @@ const WidgetPicker = ({
   const available = WIDGET_CATALOG.filter((def) => !def.requiresSlurm || slurmEnabled);
   const addedTypes = new Set(widgets.map((w) => w.type));
 
-  // Group by category
   const groups: { label: string; defs: typeof WIDGET_CATALOG }[] = [
     {
       label: 'Stats',
@@ -1884,14 +1892,13 @@ export const DashboardPage = () => {
   const [activeDashboardId, setActiveDashboardId] = useState<string>(() => {
     return localStorage.getItem(ACTIVE_DASHBOARD_STORAGE_KEY) ?? 'default';
   });
-  // Ref kept in sync for use inside resize useEffect (avoids stale closure)
+  // Kept in sync so the ResizeObserver callback always reads the current dashboard
+  // id without capturing a stale closure over activeDashboardId.
   const activeDashboardIdRef = useRef(activeDashboardId);
 
-  // Derived: active dashboard + its widgets (shared catalog, per-dashboard layout)
   const activeDashboard = dashboards.find((d) => d.id === activeDashboardId) ?? dashboards[0];
   const widgets = activeDashboard?.widgets ?? DEFAULT_WIDGETS;
 
-  // Keep activeDashboardIdRef in sync
   useEffect(() => {
     activeDashboardIdRef.current = activeDashboardId;
   }, [activeDashboardId]);
@@ -1904,7 +1911,7 @@ export const DashboardPage = () => {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
-  // ── Grid container width (for react-grid-layout) ─────────────────────────
+  // react-grid-layout needs explicit pixel width; a ResizeObserver keeps it current.
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const [gridWidth, setGridWidth] = useState(1200);
 
@@ -1936,7 +1943,6 @@ export const DashboardPage = () => {
     [dashboards, activeDashboardId]
   );
 
-  // ── Layout change handler (called by react-grid-layout) ───────────────────
   const handleLayoutChange = useCallback(
     (newLayout: Layout[]) => {
       const updated = applyRglLayout(widgets, newLayout);
@@ -2024,8 +2030,6 @@ export const DashboardPage = () => {
     if (renamingId && renameValue.trim()) renameDashboard(renamingId, renameValue.trim());
     setRenamingId(null);
   };
-
-  // drag/resize is now handled entirely by react-grid-layout — no custom handlers needed
 
   // ── Data loading ──────────────────────────────────────────────────────────
   const loadAll = async (quiet = false) => {

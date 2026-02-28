@@ -91,7 +91,7 @@ export interface DeviceContext {
   aisle?: { id: string; name: string } | null;
 }
 
-// --- Catalog Types ---
+// ── Catalog ───────────────────────────────────────────────────────────────────
 
 export interface LayoutConfig {
   type: 'grid' | 'vertical';
@@ -104,11 +104,11 @@ export interface DeviceTemplate {
   id: string;
   name: string;
   type: string;
-  storage_type?: string | null; // For storage devices: eseries, netapp, ddn, ibm, etc.
+  storage_type?: string | null;
   role?: string | null;
   u_height: number;
-  layout?: LayoutConfig; // For compute/network devices
-  disk_layout?: LayoutConfig; // For storage devices (disk grid)
+  layout?: LayoutConfig;
+  disk_layout?: LayoutConfig;
   rear_layout?: LayoutConfig;
   rear_components?: DeviceRearComponent[];
   checks?: string[];
@@ -141,8 +141,8 @@ export interface RackComponentTemplate {
   model?: string;
   role?: string;
   location: 'side' | 'u-mount' | 'front' | 'rear';
-  side?: 'left' | 'right'; // default rail side when location='side'
-  u_position?: number; // default U position in rack
+  side?: 'left' | 'right';
+  u_position?: number;
   u_height: number;
   checks?: string[];
   metrics?: string[];

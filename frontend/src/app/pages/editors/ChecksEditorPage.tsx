@@ -212,7 +212,6 @@ const RuleVisualizer = ({ check }: { check: CheckDefinition }) => {
         )}
       </div>
 
-      {/* Bool state visualization */}
       {isBool && boolStates.length > 0 && (
         <div>
           <p className="mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
@@ -238,7 +237,6 @@ const RuleVisualizer = ({ check }: { check: CheckDefinition }) => {
         </div>
       )}
 
-      {/* Numeric: threshold visual */}
       {isNumeric && rules.some((r) => ['>', '>=', '<', '<='].includes(r.op)) && (
         <div>
           <p className="mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
@@ -415,7 +413,6 @@ const TestQueryPanel = ({ expr, rules }: { expr: string; rules: RuleDraft[] }) =
 
   return (
     <div className="border-brand-200 bg-brand-50/50 dark:border-brand-700/30 dark:bg-brand-500/5 mt-4 overflow-hidden rounded-xl border">
-      {/* Variable inputs */}
       {vars.length > 0 && (
         <div className="border-brand-200/60 dark:border-brand-700/20 border-b px-4 py-3">
           <p className="text-brand-600/70 dark:text-brand-400/70 mb-2.5 text-[10px] font-semibold tracking-wider uppercase">
@@ -439,7 +436,6 @@ const TestQueryPanel = ({ expr, rules }: { expr: string; rules: RuleDraft[] }) =
         </div>
       )}
 
-      {/* Substituted query preview + run button */}
       <div className="flex items-start gap-3 px-4 py-3">
         <div className="min-w-0 flex-1">
           <p className="text-brand-600/70 dark:text-brand-400/70 mb-1 text-[10px] font-semibold tracking-wider uppercase">
@@ -463,7 +459,6 @@ const TestQueryPanel = ({ expr, rules }: { expr: string; rules: RuleDraft[] }) =
         </button>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="mx-4 mb-3 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -471,10 +466,8 @@ const TestQueryPanel = ({ expr, rules }: { expr: string; rules: RuleDraft[] }) =
         </div>
       )}
 
-      {/* Results */}
       {result && (
         <div className="border-brand-200/60 dark:border-brand-700/20 border-t">
-          {/* Summary */}
           <div className="flex items-center gap-3 px-4 py-2.5">
             <span className="text-xs text-gray-500 dark:text-gray-400">
               {result.rows.length} series
@@ -492,7 +485,6 @@ const TestQueryPanel = ({ expr, rules }: { expr: string; rules: RuleDraft[] }) =
             })}
           </div>
 
-          {/* Rows */}
           {result.rows.length === 0 ? (
             <p className="px-4 pb-3 text-xs text-gray-400 dark:text-gray-600">No data returned</p>
           ) : (

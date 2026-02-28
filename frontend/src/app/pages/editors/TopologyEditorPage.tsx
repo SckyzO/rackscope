@@ -204,7 +204,6 @@ const AisleColumn = ({
       onDragLeave={onDragLeave}
       onDrop={(e) => onDrop(e, aisle.id)}
     >
-      {/* Column header */}
       <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3">
         <div className="flex items-center gap-2">
           <AlignJustify className="h-4 w-4 text-gray-500" />
@@ -215,7 +214,6 @@ const AisleColumn = ({
         </span>
       </div>
 
-      {/* Racks */}
       <div className="flex-1 space-y-2 p-3">
         {aisle.racks.map((rack) => (
           <RackCard
@@ -241,7 +239,6 @@ const AisleColumn = ({
         )}
       </div>
 
-      {/* Add rack area */}
       <div className="border-t border-gray-800 p-3">
         {isAddingHere ? (
           <div className="space-y-2">
@@ -468,7 +465,6 @@ const TopologyWizard = ({ topology, onClose, onDone }: TopologyWizardProps) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-gray-700 bg-gray-900 shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-800 px-6 py-4">
           <div className="flex items-center gap-3">
             <Wand2 className="text-brand-500 h-5 w-5" />
@@ -479,7 +475,6 @@ const TopologyWizard = ({ topology, onClose, onDone }: TopologyWizardProps) => {
           </button>
         </div>
 
-        {/* Step indicator */}
         <div className="flex border-b border-gray-800 px-6 py-3">
           {WIZARD_STEPS.map((s, i) => (
             <div key={s} className="flex items-center gap-2">
@@ -506,7 +501,6 @@ const TopologyWizard = ({ topology, onClose, onDone }: TopologyWizardProps) => {
           ))}
         </div>
 
-        {/* Step content */}
         <div className="space-y-4 p-6">
           {step === 'site' && (
             <>

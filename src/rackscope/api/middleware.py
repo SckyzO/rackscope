@@ -1,7 +1,9 @@
 """
-Middleware
+HTTP middleware for request tracing and JWT authentication.
 
-FastAPI middleware for request logging and tracing.
+Request IDs are attached to every request so that log lines from different
+async tasks (Prometheus queries, health computations) can be correlated
+without relying on thread-local storage, which does not exist in async code.
 """
 
 import time
@@ -30,18 +32,16 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         Returns:
             The response from the handler
         """
-        # Generate unique request ID
+        # UUID4 is random (not sequential) — avoids correlation attacks between
+        # requests and requires no global counter or shared state across workers.
         request_id = str(uuid.uuid4())
         request.state.request_id = request_id
 
-        # Record start time
         start_time = time.time()
 
-        # Process request
         try:
             response = await call_next(request)
         except Exception as exc:
-            # Log error and re-raise (will be caught by exception handler)
             duration_ms = (time.time() - start_time) * 1000
             logger.error(
                 f"{request.method} {request.url.path} - Exception",
@@ -55,10 +55,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             )
             raise
 
-        # Calculate duration
         duration_ms = (time.time() - start_time) * 1000
 
-        # Log request
         logger.info(
             f"{request.method} {request.url.path} - {response.status_code}",
             extra={
@@ -70,7 +68,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             },
         )
 
-        # Add request ID to response headers
         response.headers["X-Request-ID"] = request_id
 
         return response  # type: ignore[no-any-return]
@@ -90,15 +87,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         from rackscope.api.app import APP_CONFIG, AUTH_RUNTIME_SECRET
 
-        # Skip if auth not configured or disabled
         if not APP_CONFIG or not APP_CONFIG.auth.enabled:
             return await call_next(request)  # type: ignore[no-any-return]
 
-        # Always allow public auth endpoints
         if request.url.path in _AUTH_PUBLIC_PATHS:
             return await call_next(request)  # type: ignore[no-any-return]
 
-        # Extract Bearer token
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
             return JSONResponse({"detail": "Not authenticated"}, status_code=401)

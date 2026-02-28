@@ -120,13 +120,15 @@ export const SettingsPage = () => {
   const showTabModal = pendingTab !== null;
 
   // ── In-app navigation guard (history.pushState interception) ─────────────
+  // React Router's <Prompt> / useBlocker was removed in v6. Intercepting
+  // history.pushState directly is the only reliable way to catch programmatic
+  // navigation (sidebar clicks, NavLink) while the form has unsaved changes.
   const [showNavModal, setShowNavModal] = useState(false);
   const pendingNavUrl = useRef<string | null>(null);
   const origPushState = useRef<typeof window.history.pushState | null>(null);
 
   useEffect(() => {
     if (!isDirty) {
-      // Restore if we had previously intercepted
       if (origPushState.current) {
         window.history.pushState = origPushState.current;
         origPushState.current = null;
@@ -142,13 +144,12 @@ export const SettingsPage = () => {
       const currentPath = location.pathname;
       const newPath = newUrl.startsWith('/') ? newUrl.split('#')[0] : currentPath;
 
-      // Allow hash-only changes (tab switching within settings page)
+      // Hash-only changes are tab switches within this page — let them through.
       if (newPath === currentPath) {
         orig(state, unused, url);
         return;
       }
 
-      // Navigation to a different page — intercept
       pendingNavUrl.current = newUrl;
       setShowNavModal(true);
     };
@@ -172,7 +173,6 @@ export const SettingsPage = () => {
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty]);
 
-  // Derive active tab from URL hash
   const hashTab = location.hash.replace('#', '') as TabId;
   const activeTab: TabId = TAB_IDS.includes(hashTab) ? hashTab : 'general';
 
@@ -191,6 +191,9 @@ export const SettingsPage = () => {
   const handleSave = async () => {
     setSaveError(false);
     try {
+      // saveConfig() PUTs the draft to the backend (writes app.yaml and triggers backend reload).
+      // refreshAppConfig() then re-fetches /api/config so the rest of the UI picks up the new
+      // values without requiring a page reload. Order matters: refresh must follow the save.
       await saveConfig();
       void refreshAppConfig();
     } catch {
@@ -215,7 +218,6 @@ export const SettingsPage = () => {
     const url = pendingNavUrl.current;
     pendingNavUrl.current = null;
     setShowNavModal(false);
-    // Restore original pushState before navigating
     if (origPushState.current) {
       window.history.pushState = origPushState.current;
       origPushState.current = null;
@@ -238,7 +240,6 @@ export const SettingsPage = () => {
     setShowNavModal(false);
   };
 
-  // Save button state
   const saveBtn = saving
     ? {
         icon: <Loader2 className="h-4 w-4 animate-spin" />,
@@ -300,7 +301,6 @@ export const SettingsPage = () => {
       )}
 
       <div className="mx-auto w-full max-w-[800px] space-y-6">
-        {/* Header */}
         <PageHeader
           title="Settings"
           breadcrumb={
@@ -323,9 +323,7 @@ export const SettingsPage = () => {
           }
         />
 
-        {/* Card with tabs */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-          {/* Tabs — scrollable on narrow screens */}
           <div className="border-b border-gray-200 dark:border-gray-800">
             <div className="flex w-full">
               {TABS.map(({ id, label, icon: Icon }) => (
@@ -345,7 +343,6 @@ export const SettingsPage = () => {
             </div>
           </div>
 
-          {/* Tab content */}
           <div className="p-6">
             {activeTab === 'general' && <AppSettingsSection draft={draft} setDraft={setDraft} />}
             {activeTab === 'appearance' && <AppearanceSettingsSection />}
@@ -365,7 +362,6 @@ export const SettingsPage = () => {
           </div>
         </div>
 
-        {/* Status banners */}
         {saved && (
           <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-5 py-3.5 dark:border-green-500/20 dark:bg-green-500/10">
             <Check className="h-4 w-4 shrink-0 text-green-500" />

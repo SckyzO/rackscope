@@ -1,3 +1,10 @@
+"""
+Tests for Pydantic domain models.
+
+Validates that the core topology models enforce their constraints and that
+the YAML loader round-trips correctly.
+"""
+
 from rackscope.model.domain import Topology, Site, Aisle, Rack
 from rackscope.model.loader import load_topology
 import pytest
@@ -18,7 +25,6 @@ def test_aisle_model():
 
 
 def test_topology_validation():
-    # Duplicate site IDs should fail
     with pytest.raises(Exception):
         Topology(sites=[Site(id="s1", name="S1"), Site(id="s1", name="S1 duplicated")])
 

@@ -136,6 +136,9 @@ export function useRackData(rackId: string | undefined): RackData {
     ? resolveRackComponents(rackTemplate.infrastructure?.rack_components, rackComponentTemplates)
     : { front: [], rear: [], side: [], main: [] };
 
+  // Older rack templates use a flat `components` array for both faces.
+  // Newer ones use dedicated `front_components`/`rear_components`. The explicit
+  // arrays take priority; `baseInfra` is the fallback for legacy templates.
   const baseInfra = rackTemplate?.infrastructure?.components ?? [];
   const frontInfra: InfrastructureComponent[] = [
     ...(rackTemplate?.infrastructure?.front_components?.length

@@ -428,9 +428,6 @@ class TestCollectRackComponentMetrics:
         mock_prom_client.query.assert_not_called()
 
 
-# --- Device Metrics Tests ---
-
-
 @pytest.fixture
 def server_template():
     """Sample server template with metrics."""

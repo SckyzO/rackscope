@@ -100,6 +100,8 @@ export const RackPage = () => {
     );
 
   const handleDeviceClick = (device: Device) => {
+    // Virtual nodes use the key format "instance:labelValue" (e.g. "compute01:slot3").
+    // Split on ':' to extract the base instance for tooltip and navigation.
     const matchKey = Object.keys(nodes).find((k) => k.startsWith(device.id.split(':')[0]));
     const ns = matchKey ? (nodes[matchKey] as RackNodeState) : undefined;
     setSelected({
@@ -110,12 +112,13 @@ export const RackPage = () => {
     });
   };
 
+  // Merge front and rear infra lists into a single deduplicated list for the sidebar.
+  // Some components (e.g. HMC units) appear in both views; dedup prevents double-counting.
   const allInfra = [
     ...frontInfra.filter((c, i, a) => a.findIndex((x) => x.id === c.id) === i),
     ...rearInfra.filter((c) => !frontInfra.find((x) => x.id === c.id)),
   ];
 
-  // Count devices by template name for the stats box
   const deviceStats = Object.entries(
     rack.devices.reduce<Record<string, number>>((acc, d) => {
       const name = deviceCatalog[d.template_id]?.name ?? d.template_id ?? 'Unknown';
@@ -126,9 +129,7 @@ export const RackPage = () => {
 
   return (
     <div className="flex h-full gap-4">
-      {/* Left sidebar */}
       <aside className="flex w-64 shrink-0 flex-col gap-4 overflow-y-auto">
-        {/* Rack identity */}
         <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
           <div className="mb-3 flex items-start justify-between">
             <div>
@@ -142,7 +143,6 @@ export const RackPage = () => {
             </span>
           </div>
 
-          {/* Breadcrumb */}
           <nav className="mb-3 flex flex-wrap items-center gap-1 text-[11px]">
             <Link to="/views/worldmap" className="text-brand-500 hover:underline">
               Map
@@ -174,7 +174,6 @@ export const RackPage = () => {
           </div>
         </div>
 
-        {/* Metrics */}
         {health && (
           <div className="grid grid-cols-2 gap-2">
             {[
@@ -231,7 +230,6 @@ export const RackPage = () => {
           </div>
         )}
 
-        {/* Infrastructure */}
         {allInfra.length > 0 && (
           <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
             <p className="mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
@@ -245,7 +243,6 @@ export const RackPage = () => {
           </div>
         )}
 
-        {/* Device stats */}
         {deviceStats.length > 0 && (
           <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
             <p className="mb-3 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
@@ -267,9 +264,7 @@ export const RackPage = () => {
         )}
       </aside>
 
-      {/* Main rack area — front + rear side by side */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <Building2 className="text-brand-500 h-4 w-4" />
@@ -300,9 +295,7 @@ export const RackPage = () => {
           </div>
         </div>
 
-        {/* Dual front / rear views */}
         <div className="flex min-h-0 flex-1 overflow-hidden">
-          {/* Front */}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col border-r border-gray-100 dark:border-gray-800">
             <div className="shrink-0 border-b border-gray-100 py-1.5 text-center dark:border-gray-800">
               <span className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
@@ -328,7 +321,6 @@ export const RackPage = () => {
             </div>
           </div>
 
-          {/* Rear */}
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div className="shrink-0 border-b border-gray-100 py-1.5 text-center dark:border-gray-800">
               <span className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
@@ -356,7 +348,6 @@ export const RackPage = () => {
         </div>
       </div>
 
-      {/* Right device detail drawer */}
       {selected && (
         <aside className="flex w-56 shrink-0 flex-col gap-3 overflow-y-auto">
           <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">

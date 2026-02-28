@@ -58,7 +58,9 @@ const SeverityBadge = ({ sev }: { sev: string }) => {
 };
 
 // ── Dynamic rows constants ─────────────────────────────────────────────────────
-
+// Fallback values used before the ResizeObserver measures the actual DOM elements.
+// ROW_H / THEAD_H are typical pixel heights; SAFETY is a small buffer to avoid
+// showing a partial last row.
 const ROW_H = 46;
 const THEAD_H = 41;
 const SAFETY = 8;
@@ -120,7 +122,6 @@ export const SlurmNodesPage = () => {
     queueMicrotask(() => setPage(0));
   }, [search, sevFilter, statusFilter, roomId]);
 
-  // Dynamic statuses and severities present in data
   const availableStatuses = useMemo(
     () => [...new Set(nodes.map((n) => n.status.toLowerCase()))].sort(),
     [nodes]
@@ -170,7 +171,6 @@ export const SlurmNodesPage = () => {
   useEffect(() => {
     if (!tableAreaRef.current || loading) return;
     const container = tableAreaRef.current;
-    // Use queueMicrotask to avoid synchronous setState in effect
     queueMicrotask(() => {
       const available = container.getBoundingClientRect().height;
       const firstRow = container.querySelector('tbody tr');
@@ -219,9 +219,7 @@ export const SlurmNodesPage = () => {
         />
       </div>
 
-      {/* Table card */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-        {/* Toolbar */}
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
           <div className="relative min-w-[200px] flex-1">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -233,7 +231,6 @@ export const SlurmNodesPage = () => {
             />
           </div>
 
-          {/* Severity filter — dynamic */}
           {availableSevs.length > 0 && (
             <div className="flex h-9 items-center gap-0.5 rounded-lg border border-gray-200 px-1.5 dark:border-gray-700">
               <Filter className="mr-1 h-3.5 w-3.5 shrink-0 text-gray-400" />
@@ -255,7 +252,6 @@ export const SlurmNodesPage = () => {
             </div>
           )}
 
-          {/* Status filter — dynamic, only present statuses */}
           {availableStatuses.length > 0 && (
             <div className="flex h-9 items-center gap-0.5 rounded-lg border border-gray-200 px-1.5 dark:border-gray-700">
               <button
@@ -282,7 +278,6 @@ export const SlurmNodesPage = () => {
           )}
         </div>
 
-        {/* Table */}
         <div ref={tableAreaRef} className="min-h-0 flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex h-full items-center justify-center">
@@ -352,7 +347,6 @@ export const SlurmNodesPage = () => {
           )}
         </div>
 
-        {/* Pagination */}
         {!loading && filtered.length > 0 && (
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-gray-100 px-4 py-3 dark:border-gray-800">
             <p className="text-sm text-gray-500 dark:text-gray-400">

@@ -1,4 +1,4 @@
-/* Outfit font — self-hosted via @fontsource (no internet required) */
+/* Self-hosted via @fontsource — no internet required at runtime */
 @import '@fontsource/vt323/400.css';
 @import '@fontsource/outfit/300.css';
 @import '@fontsource/outfit/400.css';
@@ -9,33 +9,31 @@
 @import 'leaflet/dist/leaflet.css';
 @import 'tailwindcss';
 
-/* Class-based dark mode — MUST be after @import 'tailwindcss' to override
-   the default media-query dark mode. Used by Rackscope ThemeContext. */
+/* Must come after @import 'tailwindcss' — overrides the default prefers-color-scheme
+   dark variant so Tailwind responds to the .dark class set by ThemeContext. */
 @custom-variant dark (&:is(.dark, .dark *));
 
 @theme {
   --font-sans: 'Outfit', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Rackscope Status Colors */
+  /* ── Rackscope status colors — shared across health indicators and rack visualizer */
   --color-status-ok: #10b981;
   --color-status-warn: #f59e0b;
   --color-status-crit: #ef4444;
   --color-status-unknown: #6b7280;
 
-  /* Rackscope Shadow Tokens */
+  /* ── Card shadows — heavier than TailAdmin defaults to work on dark backgrounds */
   --shadow-card: 0 1px 3px rgb(0 0 0 / 40%), 0 1px 2px rgb(0 0 0 / 30%);
   --shadow-card-hover: 0 10px 25px rgb(0 0 0 / 50%), 0 4px 6px rgb(0 0 0 / 20%);
 
-  /* Rackscope Theme Variables */
+  /* ── Aliases that bridge app.css design tokens into Tailwind utilities */
   --color-rack-dark: var(--color-bg-base);
   --color-rack-panel: var(--color-bg-panel);
   --color-rack-border: var(--color-border);
   --color-accent-primary: var(--color-accent);
 
-  /* ── Rackscope / TailAdmin Design Tokens ───────────────────────────── */
-
-  /* Brand (TailAdmin blue) */
+  /* ── Brand palette (TailAdmin blue) */
   --color-brand-25: #f2f7ff;
   --color-brand-50: #ecf3ff;
   --color-brand-100: #dde9ff;
@@ -49,31 +47,27 @@
   --color-brand-900: #262e89;
   --color-brand-950: #161950;
 
-  /* Gray Dark — aligned with Tailwind gray-900 to match SectionCard dark bg */
+  /* Aligned with Tailwind gray-900 so SectionCard dark bg matches body bg */
   --color-gray-dark: #111827;
 
-  /* Success */
+  /* ── Semantic colors */
   --color-success-25: #f6fef9;
   --color-success-50: #ecfdf3;
   --color-success-100: #d1fadf;
   --color-success-500: #12b76a;
   --color-success-600: #039855;
-
-  /* Error */
   --color-error-25: #fffbfa;
   --color-error-50: #fef3f2;
   --color-error-100: #fee4e2;
   --color-error-500: #f04438;
   --color-error-600: #d92d20;
-
-  /* Warning */
   --color-warning-25: #fffcf5;
   --color-warning-50: #fffaeb;
   --color-warning-100: #fef0c7;
   --color-warning-500: #f79009;
   --color-warning-600: #dc6803;
 
-  /* TailAdmin Shadows */
+  /* ── TailAdmin elevation shadows */
   --shadow-theme-xs: 0px 1px 2px 0px rgb(16 24 40 / 5%);
   --shadow-theme-sm: 0px 1px 3px 0px rgb(16 24 40 / 10%), 0px 1px 2px 0px rgb(16 24 40 / 6%);
   --shadow-theme-md: 0px 4px 8px -2px rgb(16 24 40 / 10%), 0px 2px 4px -2px rgb(16 24 40 / 6%);
@@ -92,7 +86,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Leaflet dark popup styling */
+/* Leaflet's default map background is gray — transparent lets our dark bg show through */
 .leaflet-container {
   background: transparent;
   font-family: var(--font-sans);
@@ -114,7 +108,7 @@ body {
   color: #9ca3af;
 }
 
-/* Custom Thin Scrollbar */
+/* Global thin scrollbar — 4px keeps it unobtrusive on monitoring views */
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -135,14 +129,15 @@ body {
 
 /* ── Matrix / TTY mode ────────────────────────────────────────────────────────
    Applied via 'mode-matrix' class on <html> when darkTheme='matrix' + dark mode.
-   Inspired by authentic CRT terminal aesthetics.
+   Crosshair cursor signals to NOC operators that the interface is in a special state.
    ─────────────────────────────────────────────────────────────────────────── */
 
 html.mode-matrix {
   cursor: crosshair;
 }
 
-/* All elements: no rounded corners, VT323 font, no shadows */
+/* !important overrides Tailwind utilities and component-level styles to enforce
+   the CRT aesthetic globally — there is no other way to reach every element */
 html.mode-matrix *,
 html.mode-matrix *::before,
 html.mode-matrix *::after {
@@ -152,7 +147,9 @@ html.mode-matrix *::after {
   letter-spacing: 0.08em;
 }
 
-/* CRT scanlines overlay — horizontal lines + subtle RGB fringe */
+/* Scanlines: alternating transparent/black horizontal lines simulate a CRT display.
+   The 90deg gradient adds a faint RGB fringe (phosphor chromatic aberration).
+   z-index 9998 sits below toasts (9999) but above all page content. */
 html.mode-matrix::before {
   content: ' ';
   display: block;
@@ -192,7 +189,8 @@ html.mode-matrix::before {
   }
 }
 
-/* Matrix canvas background */
+/* Canvas starts invisible and fades in when matrix mode activates.
+   opacity: 0 on the default state avoids a flash when first mounted. */
 #matrix-bg-canvas {
   position: fixed;
   inset: 0;
@@ -206,7 +204,7 @@ html.mode-matrix #matrix-bg-canvas {
   opacity: 0.35;
 }
 
-/* Dimmer over canvas, under content */
+/* Semi-transparent dimmer sits between canvas and content to ensure text readability */
 #matrix-dimmer {
   position: fixed;
   inset: 0;
@@ -221,13 +219,19 @@ html.mode-matrix #matrix-dimmer {
   opacity: 1;
 }
 
-/* Make sure content sits above the canvas/dimmer */
+/* z-index stacking in matrix mode:
+   0 = canvas (green rain)
+   1 = dimmer (readability layer)
+   2 = rs-root (app content)
+   9998 = scanlines overlay
+   9999 = toasts */
 html.mode-matrix .rs-root {
   position: relative;
   z-index: 2;
 }
 
-/* ── react-grid-layout resize handles — themed to match Rackscope design ─── */
+/* react-grid-layout ships its own background-image handle sprite — remove it
+   so we can render brand-colored handles instead */
 .react-resizable-handle {
   background-image: none;
   width: 20px;
@@ -281,6 +285,8 @@ html.mode-matrix .rs-root {
   z-index: 100;
 }
 
+/* react-grid-layout injects a ::after pseudo-element arrow; hide it since our
+   own handle appearance replaces it */
 .react-grid-item > .react-resizable-handle::after {
   display: none;
 }

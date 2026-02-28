@@ -16,9 +16,6 @@ from rackscope.model.config import AppConfig, PathsConfig
 client = TestClient(app)
 
 
-# Fixtures
-
-
 @pytest.fixture
 def temp_templates_dir(tmp_path):
     """Create temporary templates directory."""
@@ -77,9 +74,6 @@ def override_catalog(catalog):
     return _get_catalog_optional
 
 
-# Test GET /api/catalog
-
-
 def test_get_catalog_success(mock_catalog):
     """Test getting catalog."""
     app.dependency_overrides[get_catalog_optional] = override_catalog(mock_catalog)
@@ -110,9 +104,6 @@ def test_get_catalog_empty():
     assert data["rack_templates"] == []
 
     app.dependency_overrides.clear()
-
-
-# Test POST /api/catalog/templates (create)
 
 
 def test_create_device_template_success(mock_app_config, temp_templates_dir):
@@ -304,9 +295,6 @@ def test_create_device_template_sanitizes_type(mock_app_config, temp_templates_d
     app.dependency_overrides.clear()
 
 
-# Test PUT /api/catalog/templates (update)
-
-
 def test_update_device_template_success(mock_app_config, temp_templates_dir):
     """Test updating an existing device template."""
     import rackscope.api.app as app_module
@@ -453,9 +441,6 @@ def test_update_device_template_moves_file(mock_app_config, temp_templates_dir):
     assert new_file.exists()
 
     app.dependency_overrides.clear()
-
-
-# Test POST /api/catalog/templates/validate
 
 
 def test_validate_device_template_success():

@@ -1,8 +1,11 @@
 """
 Generic metrics collection service for rack components and devices.
 
-This service replaces hardcoded metric collection (like get_pdu_metrics, get_node_metrics)
-with a template-driven approach where metrics are defined in templates.
+Metrics are defined in YAML templates (DeviceTemplate.metrics,
+RackComponentTemplate.metrics) rather than in Python code.  This keeps the
+core codebase vendor-agnostic: adding support for a new PDU brand or storage
+array requires only a new template, not a code change.  The service reads
+the metric list from the template and issues PromQL queries at runtime.
 """
 
 import asyncio
@@ -36,7 +39,6 @@ async def collect_component_metrics(
         Dictionary mapping metric names to their values
         Example: {"activepower_watt": 1234.5, "current_amp": 5.2}
     """
-    # Get the component template
     template = catalog.get_rack_component_template(component_ref.template_id)
     if not template:
         logger.warning(
@@ -44,11 +46,10 @@ async def collect_component_metrics(
         )
         return {}
 
-    # If template has no metrics defined, return empty dict
     if not template.metrics:
         return {}
 
-    # Build queries for all metrics
+    # Build all queries up front so they can be fired in parallel below.
     queries = {}
     for metric_name in template.metrics:
         query = build_metric_query(
@@ -60,7 +61,6 @@ async def collect_component_metrics(
         if query:
             queries[metric_name] = query
 
-    # Execute all queries in parallel
     metrics: Dict[str, float] = {}
     try:
         responses = await asyncio.gather(
@@ -71,7 +71,6 @@ async def collect_component_metrics(
         logger.error(f"Error fetching component metrics for rack {rack.id}: {e}")
         return metrics
 
-    # Parse responses
     for metric_name, response in zip(queries.keys(), responses):
         if isinstance(response, Exception) or isinstance(response, BaseException):
             logger.error(f"Error fetching metric {metric_name} for rack {rack.id}: {response}")
@@ -107,21 +106,13 @@ def build_metric_query(
     Returns:
         PromQL query string or None if metric cannot be queried
     """
-    # Basic query template with rack_id filter
-    # This is a generic approach - can be extended with more sophisticated patterns
     query = f'{metric_name}{{rack_id="{rack_id}"}}'
 
-    # For PDU-type components, add inlet filter to get inlet-level metrics
     if template.type == "pdu":
+        # PDUs expose one time series per inlet; filtering on inletid!="" selects
+        # only inlet-level rows and excludes any rack-level aggregation rows that
+        # some exporters emit alongside.
         query = f'{metric_name}{{rack_id="{rack_id}", inletid!=""}}'
-
-    # For switch-type components, might want port-level metrics
-    elif template.type == "switch":
-        # Example: Get all port metrics for the switch
-        query = f'{metric_name}{{rack_id="{rack_id}"}}'
-
-    # For side-mounted components, could add position filter if needed
-    # This would require additional metadata in the component template
 
     return query
 
@@ -146,8 +137,8 @@ def parse_prometheus_result(response: dict) -> Optional[float]:
     if not result_data:
         return None
 
-    # If multiple time series, sum them up
-    # (e.g., PDU with multiple inlets - total power is sum of all inlets)
+    # Sum across all time series: components like PDUs expose one series per
+    # inlet, so the total power/current is the sum over all inlets.
     total = 0.0
     count = 0
 
@@ -189,22 +180,19 @@ async def collect_rack_component_metrics(
     if not rack.template_id:
         return {}
 
-    # Get rack template
     rack_template = catalog.get_rack_template(rack.template_id)
     if not rack_template:
         return {}
 
-    # Get all rack components from infrastructure
     rack_components = rack_template.infrastructure.rack_components
     if not rack_components:
         return {}
 
-    # Collect metrics for each component
     all_metrics: Dict[str, Dict[str, float]] = {}
 
     for component_ref in rack_components:
-        # Use template_id as component identifier
-        # (could also use a combination of template_id + position for uniqueness)
+        # template_id is used as the component key; this is unique per rack
+        # because a rack template cannot reference the same component template twice.
         component_id = component_ref.template_id
 
         metrics = await collect_component_metrics(
@@ -250,10 +238,8 @@ async def collect_device_metrics(
     if not template.metrics:
         return {}
 
-    # Get all instances for this device
     instances = expand_device_instances(device)
 
-    # Build queries for all metrics
     queries = {}
     for metric_name in template.metrics:
         query = build_device_metric_query(
@@ -264,7 +250,6 @@ async def collect_device_metrics(
         if query:
             queries[metric_name] = query
 
-    # Execute all queries in parallel
     all_instances_metrics: Dict[str, Dict[str, float]] = {}
     try:
         responses = await asyncio.gather(
@@ -275,19 +260,18 @@ async def collect_device_metrics(
         logger.error(f"Error fetching device metrics for {device.id}: {e}")
         return all_instances_metrics
 
-    # Parse responses - extract per-instance values
     for metric_name, response in zip(queries.keys(), responses):
         if isinstance(response, Exception):
             logger.error(f"Error fetching metric {metric_name} for {device.id}: {response}")
             continue
 
-        # Parse Prometheus response to get per-instance values
         if not isinstance(response, dict) or response.get("status") != "success":
             continue
 
         result_data = response.get("data", {}).get("result", [])
         for item in result_data:
             metric_labels = item.get("metric", {})
+            # Some exporters use "node_id" instead of "instance"; try both.
             instance_name = metric_labels.get("instance") or metric_labels.get("node_id")
 
             if not instance_name:
@@ -300,7 +284,6 @@ async def collect_device_metrics(
                 logger.debug(f"Failed to parse metric value: {e}")
                 continue
 
-            # Add metric to instance
             if instance_name not in all_instances_metrics:
                 all_instances_metrics[instance_name] = {}
             all_instances_metrics[instance_name][metric_name] = value
@@ -327,15 +310,13 @@ def build_device_metric_query(
     if not instances:
         return None
 
-    # Build instance filter (regex or list)
+    # Use a regex matcher for multiple instances to issue one query instead of N.
     if len(instances) == 1:
         instance_filter = f'instance="{instances[0]}"'
     else:
-        # Use regex for multiple instances
         instance_pattern = "|".join(instances)
         instance_filter = f'instance=~"{instance_pattern}"'
 
-    # Build query with rack_id and instance filters
     query = f'{metric_name}{{rack_id="{rack_id}", {instance_filter}}}'
 
     return query
@@ -366,12 +347,10 @@ async def collect_rack_devices_metrics(
     all_metrics: Dict[str, Dict[str, float]] = {}
 
     for device in rack.devices:
-        # Get device template
         template = catalog.get_device_template(device.template_id)
         if not template or not template.metrics:
             continue
 
-        # Collect metrics for this device (returns per-instance metrics)
         device_metrics = await collect_device_metrics(
             device=device,
             rack_id=rack.id,
@@ -379,7 +358,6 @@ async def collect_rack_devices_metrics(
             prom_client=prom_client,
         )
 
-        # Merge device metrics into all_metrics
         all_metrics.update(device_metrics)
 
     return all_metrics

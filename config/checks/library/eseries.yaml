@@ -1,3 +1,6 @@
+# NetApp E-Series storage array checks — uses eseries_exporter metrics.
+# scope: node — the 'node' here is the storage controller (management endpoint).
+# expand_by_label drives per-slot evaluation without hardcoding slot names in code.
 checks:
   - id: eseries_exporter_collect_error
     name: E-Series exporter collect error

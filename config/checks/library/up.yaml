@@ -1,3 +1,5 @@
+# Core availability checks — applies to all compute nodes via the 'core' kind.
+# Referenced by default in most device templates.
 checks:
   - id: node_up
     name: Node up

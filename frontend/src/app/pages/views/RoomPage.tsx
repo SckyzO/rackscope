@@ -42,7 +42,8 @@ import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageBreadcrumb } from '../templates/EmptyPage';
 import { RackElevation } from '../../../components/RackVisualizer';
 
-// ── Health ─────────────────────────────────────────────────────────────────
+// Maps health state to Tailwind CSS classes.
+// Two maps exist: pill styles for badges, hex colors for SVG/inline borders.
 
 const HC: Record<string, string> = {
   OK: '#10b981',
@@ -58,8 +59,6 @@ const HEALTH_PILL: Record<string, string> = {
   UNKNOWN: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
 };
 
-// ── Rack style ──────────────────────────────────────────────────────────────
-
 type RackStyle =
   | 'dot'
   | 'compact'
@@ -72,8 +71,6 @@ type RackStyle =
   | 'industrial'
   | 'node';
 
-// ── Door marker ─────────────────────────────────────────────────────────────
-
 interface DoorMarkerProps {
   side: string;
   position: number;
@@ -83,6 +80,8 @@ interface DoorMarkerProps {
   doorLabel?: string | null;
 }
 
+// Pixel inset between the outer canvas edge and the inner dashed room border.
+// All pan/zoom clamping and door/cardinal positioning use this as the wall boundary.
 const PADDING = 10;
 
 const DoorMarker = ({ side, position, w, h, showLabel, doorLabel }: DoorMarkerProps) => {
@@ -90,10 +89,12 @@ const DoorMarker = ({ side, position, w, h, showLabel, doorLabel }: DoorMarkerPr
   const iH = h - PADDING * 2;
   const label = doorLabel ?? 'Door';
 
-  // Strip: 6px thick, 72px long, 12px from the canvas edge (center of outer padding gap)
+  // The door strip is a narrow pill centred inside the outer padding gap.
+  // THICK and LEN size the pill so it remains visible but unobtrusive.
+  // MARGIN = PADDING/2 - THICK/2 ≈ 4px centres the strip in the 10px outer gap.
   const THICK = 6;
   const LEN = 72;
-  const MARGIN = 4; // center of the 12px outer gap (PADDING/2 - THICK/2 ≈ 4)
+  const MARGIN = 4;
 
   let stripStyle: React.CSSProperties = {};
   let labelClass = '';
@@ -133,8 +134,6 @@ const DoorMarker = ({ side, position, w, h, showLabel, doorLabel }: DoorMarkerPr
     </div>
   );
 };
-
-// ── Rack cell ─────────────────────────────────────────────────────────────────
 
 interface RackCellProps {
   rack: Rack;
@@ -179,6 +178,8 @@ const RackCell = ({
   };
 
   const deviceCount = rack.devices?.length ?? 0;
+  // Assumes average device height of 2U; rack is considered "full" at half
+  // the U-count worth of devices, giving a conservative occupancy estimate.
   const occupancy = Math.min(100, (deviceCount / (rack.u_height / 2)) * 100);
 
   const tooltip = showTooltip
@@ -977,7 +978,6 @@ const RackDrawer = ({
   const color = HC[state] ?? HC.UNKNOWN;
   const StateIcon = state === 'CRIT' ? XCircle : state === 'WARN' ? AlertTriangle : CheckCircle;
 
-  // Collect CRIT / WARN nodes
   const critNodes: string[] = [];
   const warnNodes: string[] = [];
   if (health?.nodes) {
@@ -1381,7 +1381,6 @@ const CustomizePanel = ({
                   onClick={() => toggle(key)}
                   className="flex w-full items-center justify-between rounded-xl border border-gray-100 px-3 py-2 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5"
                 >
-                  {/* Icon + label — indent shifts only this side, toggle stays right-aligned */}
                   <div className={`flex items-center gap-2.5 ${indent ? 'pl-4' : ''}`}>
                     <Icon
                       className={`h-3.5 w-3.5 ${indent ? 'text-gray-300 dark:text-gray-600' : 'text-gray-400'}`}
@@ -1558,16 +1557,14 @@ export const RoomPage = () => {
 
   const [settings, setSettings] = useState<Settings>(() => loadRoomSettings(roomId ?? ''));
 
-  // Persist settings to localStorage whenever they change
   useEffect(() => {
     if (roomId) saveRoomSettings(roomId, settings);
   }, [roomId, settings]);
 
-  // ── Auto-refresh countdown state (effect registered after `load` is declared) ──
+  // Countdown drives the auto-refresh UI indicator; effect is registered after `load`.
   const [countdown, setCountdown] = useState(0);
   const countdownRef = useRef(0);
 
-  // ── Zoom / pan ─────────────────────────────────────────────────────────────
   const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
   const { zoom, panX, panY } = viewport;
   const [isDragging, setIsDragging] = useState(false);
@@ -1575,7 +1572,8 @@ export const RoomPage = () => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [viewLocked, setViewLocked] = useState(false);
 
-  // Keep viewport, canvasSize and settings in refs so callbacks avoid stale closures
+  // Mirror state into refs so event-handler callbacks (wheel, mousemove) always
+  // read current values without being recreated on every render.
   const vpRef = useRef(viewport);
   vpRef.current = viewport;
   const canvasSizeRef = useRef(canvasSize);
@@ -1592,7 +1590,6 @@ export const RoomPage = () => {
     active: boolean;
   } | null>(null);
 
-  // Clamp pan so content never escapes the room walls (dashed border at PADDING)
   const clampPan = useCallback((px: number, py: number, z: number) => {
     if (!contentRef.current) return { panX: px, panY: py };
     const nW = contentRef.current.scrollWidth;
@@ -1617,7 +1614,8 @@ export const RoomPage = () => {
     const naturalH = contentRef.current.scrollHeight;
     const usableH = canvasSize.h - 2 * PADDING;
     const rawRatio = usableH / naturalH;
-    // Snap to 1.0 if content fits — 0.97 absorbs subpixel rounding
+    // Snap to 1.0 when content almost fits (0.97 tolerance absorbs subpixel rounding
+    // caused by scrollHeight being an integer while the canvas height is fractional).
     const fitZoom = rawRatio >= 0.97 ? 1.0 : Math.max(0.15, rawRatio);
     // panX always PADDING — aisles fixed to left room wall
     const panY =
@@ -1629,7 +1627,6 @@ export const RoomPage = () => {
     setViewport({ zoom: fitZoom, panX: PADDING, panY });
   }, [canvasSize, settings.aisleAlign]);
 
-  // Reset to 100% zoom — content snaps inside room walls, respects aisleAlign
   const resetToDefault = useCallback(() => {
     if (!contentRef.current) return;
     const { h } = canvasSizeRef.current;
@@ -1652,8 +1649,6 @@ export const RoomPage = () => {
     }
   }, [settings.aisleAlign]);
 
-  // No auto-fit on load — default is always 100%. User triggers fit manually via button.
-
   // Scroll wheel zoom (non-passive, centered on cursor)
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1667,16 +1662,16 @@ export const RoomPage = () => {
       const rect = canvas.getBoundingClientRect();
       const my = e.clientY - rect.top;
       const ratio = newZoom / z;
-      // panX always PADDING — aisles fixed to room walls horizontally
       const rawPanY = my - ratio * (my - py);
       const clamped = clampPan(PADDING, rawPanY, newZoom);
       setViewport({ zoom: newZoom, ...clamped });
     };
     canvas.addEventListener('wheel', handler, { passive: false });
     return () => canvas.removeEventListener('wheel', handler);
-  }, [room, clampPan]); // re-attach once canvas is mounted
+    // `room` in deps causes re-attachment when canvas mounts for the first time.
+  }, [room, clampPan]);
 
-  // Global mouse move/up for pan
+  // Attach global mouse handlers so pan continues even when cursor leaves the canvas.
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       if (!dragRef.current) return;
@@ -1687,7 +1682,6 @@ export const RoomPage = () => {
       setIsDragging(true);
       if (viewLockedRef.current) return;
       const { zoom: z } = vpRef.current;
-      // panX always PADDING — only vertical pan allowed
       const clamped = clampPan(PADDING, dragRef.current.spy + dy, z);
       setViewport({ ...vpRef.current, ...clamped });
     };
@@ -1736,7 +1730,6 @@ export const RoomPage = () => {
     void load();
   }, [load]);
 
-  // Auto-refresh — placed after `load` to avoid temporal dead zone
   useEffect(() => {
     if (settings.refreshInterval === 0) {
       setCountdown(0);
@@ -1756,7 +1749,6 @@ export const RoomPage = () => {
     return () => clearInterval(tick);
   }, [settings.refreshInterval, load]);
 
-  // Attach ResizeObserver once the canvas is in the DOM (after loading completes)
   useEffect(() => {
     if (!canvasRef.current) return;
     const obs = new ResizeObserver((entries) => {
@@ -1765,7 +1757,8 @@ export const RoomPage = () => {
     });
     obs.observe(canvasRef.current);
     return () => obs.disconnect();
-  }, [room]); // re-run when room data arrives (canvas rendered for first time)
+    // Re-run when room data arrives — the canvas element is first rendered after load.
+  }, [room]);
 
   usePageTitle(room?.name ?? 'Room');
 
@@ -1915,12 +1908,9 @@ export const RoomPage = () => {
             </button>
           </div>
 
-          {/* Cadenas — verrouille pan + zoom */}
           <button
             onClick={() => setViewLocked((v) => !v)}
-            title={
-              viewLocked ? 'Vue verrouillée — cliquer pour déverrouiller' : 'Verrouiller la vue'
-            }
+            title={viewLocked ? 'Locked — click to unlock pan & zoom' : 'Lock pan & zoom'}
             className={`flex items-center rounded-xl border px-2.5 py-2 transition-colors ${
               viewLocked
                 ? 'border-amber-300 bg-amber-50 text-amber-600 dark:border-amber-700/50 dark:bg-amber-500/10 dark:text-amber-400'
@@ -2107,9 +2097,9 @@ export const RoomPage = () => {
         <div
           className="absolute inset-0"
           style={{
-            // Aisles toujours collées aux murs (panX=PADDING fixe).
-            // contentRef a une largeur = (roomW/zoom) pour qu'après scale(zoom)
-            // les allées apparaissent toujours à la largeur exacte de la salle.
+            // Horizontal position is fixed to PADDING so aisles stay anchored to the
+            // left room wall. Width is scaled by 1/zoom so that after CSS scale(zoom)
+            // the content spans exactly the inner canvas width.
             transform: `translate(${PADDING}px, ${panY}px) scale(${zoom})`,
             transformOrigin: '0 0',
           }}

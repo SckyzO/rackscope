@@ -1,3 +1,13 @@
+"""
+Tests for TelemetryPlanner's expand_by_label feature.
+
+expand_by_label lets a single check cover multi-value label dimensions (e.g.
+disk slots in a storage array) by creating virtual sub-nodes per label value.
+These tests verify state propagation, discovery-driven absent-slot handling,
+and the CRIT threshold that downgrades parent severity to WARN when too few
+items fail.
+"""
+
 from unittest.mock import AsyncMock, patch
 
 import pytest

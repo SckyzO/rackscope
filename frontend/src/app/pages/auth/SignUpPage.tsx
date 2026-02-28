@@ -9,7 +9,9 @@ export const SignUpPage = () => (
             <Activity className="h-6 w-6" />
           </div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Create account</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Get started with Rackscope today</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Get started with Rackscope today
+          </p>
         </div>
         <form className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">

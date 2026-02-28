@@ -16,9 +16,6 @@ from rackscope.model.config import AppConfig, PathsConfig
 client = TestClient(app)
 
 
-# Fixtures
-
-
 @pytest.fixture
 def temp_checks_dir(tmp_path):
     """Create temporary checks directory."""
@@ -70,9 +67,6 @@ def override_checks_library(library):
     return _get_checks_library_optional
 
 
-# Test GET /api/checks
-
-
 def test_get_checks_library_success(mock_checks_library):
     """Test getting checks library."""
     app.dependency_overrides[get_checks_library_optional] = override_checks_library(
@@ -101,9 +95,6 @@ def test_get_checks_library_empty():
     assert data["checks"] == []
 
     app.dependency_overrides.clear()
-
-
-# Test GET /api/checks/files
 
 
 def test_get_checks_files_success(mock_app_config, temp_checks_dir):
@@ -184,9 +175,6 @@ def test_get_checks_files_single_file(tmp_path):
     app.dependency_overrides.clear()
 
 
-# Test GET /api/checks/files/{name}
-
-
 def test_read_checks_file_success(mock_app_config, temp_checks_dir):
     """Test reading a checks file."""
     content = yaml.safe_dump({"checks": [{"id": "test", "name": "Test"}]})
@@ -240,9 +228,6 @@ def test_read_checks_file_single_file_mode(tmp_path):
     assert data["content"] == content
 
     app.dependency_overrides.clear()
-
-
-# Test PUT /api/checks/files/{name}
 
 
 def test_write_checks_file_success(mock_app_config, temp_checks_dir):

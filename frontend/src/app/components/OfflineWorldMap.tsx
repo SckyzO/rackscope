@@ -194,9 +194,8 @@ export const OfflineWorldMap = ({
               coordinates={[site.lon, site.lat]}
               onClick={() => onSiteClick?.(site)}
             >
-              {/* Pulse ring */}
+              {/* Large semi-transparent ring creates the pulse halo effect */}
               <circle r={10} fill={theme.markerPulse} stroke="none" />
-              {/* Core dot */}
               <circle
                 r={5}
                 fill={theme.markerFill}
@@ -209,7 +208,6 @@ export const OfflineWorldMap = ({
         </ZoomableGroup>
       </ComposableMap>
 
-      {/* Zoom controls */}
       {zoomControl && (
         <div className="absolute right-3 bottom-3 z-10 flex flex-col gap-1">
           <button

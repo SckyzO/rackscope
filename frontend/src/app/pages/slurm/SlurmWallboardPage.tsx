@@ -159,7 +159,9 @@ const DeviceBlock = ({
     template.type === 'storage' && template.disk_layout ? template.disk_layout : template.layout;
   if (!layout) return null;
 
-  // CSS grid row: rack is top=U42 bottom=U1 (grid-row 1 = top)
+  // Map rack U position to CSS grid row. Racks are numbered bottom-up (U1 at bottom),
+  // but CSS grid rows are top-down (row 1 = top). The +2 accounts for 1-based grid
+  // indexing and the fact that u_position is the bottom edge of the device.
   const gridRowStart = rackHeight - (device.u_position + template.u_height) + 2;
   const gridRowSpan = template.u_height;
 
@@ -239,6 +241,8 @@ const RackColumn = ({
         {rack.id}
       </span>
       <div
+        // 160px: fixed column width keeps all racks uniform regardless of node count.
+        // 14px per U: compact enough to show a 42U rack within typical viewport height.
         className="relative grid w-[160px] overflow-hidden rounded-md border border-gray-300 bg-gray-100 dark:border-gray-700 dark:bg-gray-950"
         style={{
           gridTemplateRows: `repeat(${rackHeight}, minmax(0, 1fr))`,
@@ -269,7 +273,7 @@ const RackColumn = ({
 
 type WallboardView = 'compact' | 'detailed';
 
-// ── RackWallCard — vue compacte (dots colorés par nœud) ──────────────────────
+// ── RackWallCard — compact view: colored dot per Slurm node ──────────────────
 
 const RackWallCard = ({
   rack,
@@ -349,7 +353,6 @@ export const SlurmWallboardPage = () => {
     () => (localStorage.getItem('slurm-wallboard-view') as WallboardView) ?? 'detailed'
   );
 
-  // Load rooms + config once
   useEffect(() => {
     let active = true;
     const load = async () => {
@@ -376,13 +379,12 @@ export const SlurmWallboardPage = () => {
     };
   }, []);
 
-  // Auto-redirect to first room if none selected
+  // Redirect to first room when no roomId is in the URL
   useEffect(() => {
     if (roomId || rooms.length === 0) return;
     navigate(`/slurm/wallboard/${rooms[0].id}`, { replace: true });
   }, [roomId, rooms, navigate]);
 
-  // Load room data + poll Slurm
   useEffect(() => {
     if (!roomId) return;
     let active = true;
@@ -416,6 +418,9 @@ export const SlurmWallboardPage = () => {
     return map;
   }, [catalog]);
 
+  // Core wallboard logic: maps Slurm node states onto the physical rack/aisle layout.
+  // Only racks containing devices whose template.role matches slurmRoles are shown —
+  // this filters out PDUs, switches, and other non-compute hardware.
   const aisles = useMemo(() => {
     if (!room) return [];
     const filterRack = (rack: Room['aisles'][0]['racks'][0]) =>
@@ -441,7 +446,6 @@ export const SlurmWallboardPage = () => {
     return result;
   }, [room, templatesById, slurmRoles, includeUnlabeled]);
 
-  // Summary counts
   const nodes = slurmNodes?.nodes ?? {};
   const critCount = Object.values(nodes).filter((n) => n.severity === 'CRIT').length;
   const warnCount = Object.values(nodes).filter((n) => n.severity === 'WARN').length;
@@ -449,7 +453,6 @@ export const SlurmWallboardPage = () => {
 
   return (
     <div className="flex h-full flex-col gap-5">
-      {/* Header — template */}
       <div className="shrink-0">
         <PageHeader
           title={room?.name ?? 'Slurm Wallboard'}
@@ -464,7 +467,6 @@ export const SlurmWallboardPage = () => {
           }
           actions={
             <div className="flex items-center gap-2">
-              {/* Summary badges */}
               {critCount > 0 && (
                 <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-600 dark:bg-red-500/15 dark:text-red-400">
                   {critCount} CRIT
@@ -477,7 +479,6 @@ export const SlurmWallboardPage = () => {
               )}
               <span className="text-xs text-gray-400">{totalNodes} nodes</span>
 
-              {/* Room selector */}
               <select
                 value={roomId ?? ''}
                 onChange={(e) => navigate(`/slurm/wallboard/${e.target.value}`)}
@@ -490,7 +491,6 @@ export const SlurmWallboardPage = () => {
                 ))}
               </select>
 
-              {/* View toggle */}
               <div className="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
                 {(
                   [
@@ -512,7 +512,6 @@ export const SlurmWallboardPage = () => {
                 ))}
               </div>
 
-              {/* Refresh */}
               <button
                 onClick={() => {
                   if (roomId)
@@ -532,7 +531,6 @@ export const SlurmWallboardPage = () => {
         />
       </div>
 
-      {/* Legend */}
       <div className="flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-white px-4 py-2.5 dark:border-gray-800 dark:bg-gray-900">
         <span className="text-xs font-semibold text-gray-400 uppercase">Legend</span>
         {[
@@ -548,7 +546,6 @@ export const SlurmWallboardPage = () => {
         ))}
       </div>
 
-      {/* Aisles */}
       <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
         {loading ? (
           <div className="flex h-40 items-center justify-center">
@@ -559,7 +556,7 @@ export const SlurmWallboardPage = () => {
             No Slurm nodes found in this room
           </div>
         ) : wallView === 'compact' ? (
-          // ── Vue compacte — même filtrage slurmRoles que la vue détaillée ──
+          // Compact view: one colored dot per node, same slurmRoles filtering as detailed view.
           <div className="space-y-6">
             {aisles.map((aisle) => (
               <div key={aisle.id}>
@@ -584,7 +581,7 @@ export const SlurmWallboardPage = () => {
             ))}
           </div>
         ) : (
-          // ── Vue détaillée — colonnes physiques ──
+          // Detailed view: physical rack columns with per-slot node cells.
           <div className="space-y-8">
             {aisles.map((aisle) => (
               <div key={aisle.id}>
@@ -613,7 +610,6 @@ export const SlurmWallboardPage = () => {
         )}
       </div>
 
-      {/* HUD Tooltip */}
       {hover && (
         <HUDTooltip
           title={hover.node}

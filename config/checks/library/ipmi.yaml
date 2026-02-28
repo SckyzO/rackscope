@@ -1,3 +1,5 @@
+# IPMI hardware checks — uses the prometheus-ipmi-exporter metric conventions.
+# Severity values: 0=OK, 1=WARN, 2=CRIT (matches ipmi_exporter state encoding).
 checks:
   - id: ipmi_fan_speed_state
     name: IPMI fan speed state

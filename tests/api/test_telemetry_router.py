@@ -26,9 +26,6 @@ from rackscope.telemetry.planner import PlannerSnapshot
 client = TestClient(app)
 
 
-# Fixtures
-
-
 @pytest.fixture
 def mock_topology():
     """Create test topology."""
@@ -145,9 +142,6 @@ def override_planner(planner):
     return _get_planner_optional
 
 
-# Test GET /api/stats/global
-
-
 @pytest.mark.asyncio
 async def test_get_global_stats_with_planner(
     mock_topology, mock_catalog, mock_checks_library, mock_planner
@@ -249,9 +243,6 @@ async def test_get_global_stats_no_topology():
     app.dependency_overrides.clear()
 
 
-# Test GET /api/stats/prometheus
-
-
 def test_get_prometheus_stats_with_config(mock_app_config):
     """Test getting Prometheus client stats."""
     app.dependency_overrides[get_app_config_optional] = override_app_config(mock_app_config)
@@ -310,9 +301,6 @@ def test_get_prometheus_stats_no_last_ts():
     app.dependency_overrides.clear()
 
 
-# Test GET /api/stats/telemetry
-
-
 def test_get_telemetry_stats():
     """Test getting telemetry stats."""
     with patch("rackscope.telemetry.prometheus.client") as mock_client:
@@ -328,9 +316,6 @@ def test_get_telemetry_stats():
     data = response.json()
     assert "total_queries" in data
     assert data["total_queries"] == 100
-
-
-# Test GET /api/rooms/{room_id}/state
 
 
 @pytest.mark.asyncio
@@ -405,9 +390,6 @@ async def test_get_room_state_no_planner():
     assert data["racks"] == {}
 
     app.dependency_overrides.clear()
-
-
-# Test GET /api/racks/{rack_id}/state
 
 
 @pytest.mark.asyncio

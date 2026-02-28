@@ -32,9 +32,6 @@ from rackscope.model.domain import Aisle, Device, Rack, Room, Site, Topology
 client = TestClient(app)
 
 
-# Fixtures
-
-
 @pytest.fixture
 def mock_topology():
     """Create a minimal test topology."""
@@ -200,9 +197,6 @@ def mock_app_config(temp_topology_dir):
     )
 
 
-# Dependency overrides
-
-
 def override_topology(topology: Topology):
     """Override get_topology dependency."""
 
@@ -237,9 +231,6 @@ def override_app_config(config: AppConfig):
         return config
 
     return _get_app_config
-
-
-# Sites Tests
 
 
 def test_get_sites_with_topology(mock_topology):
@@ -329,9 +320,6 @@ def test_create_site_empty_name(mock_app_config):
     assert "required" in response.json()["detail"].lower()
 
     app.dependency_overrides.clear()
-
-
-# Rooms Tests
 
 
 def test_get_rooms(mock_topology):
@@ -453,9 +441,6 @@ def test_create_room_site_not_found(mock_app_config):
     app.dependency_overrides.clear()
 
 
-# Racks Tests
-
-
 def test_get_rack_details(mock_topology):
     """Test getting rack details."""
     app.dependency_overrides[get_topology] = override_topology(mock_topology)
@@ -557,9 +542,6 @@ def test_update_rack_template_remove(mock_topology, mock_app_config):
     assert "template_id" not in rack_data
 
     app.dependency_overrides.clear()
-
-
-# Devices Tests
 
 
 def test_get_device_details(mock_topology, mock_catalog):

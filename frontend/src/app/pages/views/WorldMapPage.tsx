@@ -25,7 +25,8 @@ export const WorldMapPage = () => {
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
 
-  // React to theme changes
+  // MutationObserver on <html> class is used instead of a context subscription because
+  // the map component needs a boolean prop, not a CSS variable, to swap tile sets.
   useEffect(() => {
     const obs = new MutationObserver(() => {
       setIsDark(document.documentElement.classList.contains('dark'));
@@ -34,12 +35,12 @@ export const WorldMapPage = () => {
     return () => obs.disconnect();
   }, []);
 
-  // Map settings from config
   const mapCenterLat = Number(config?.map?.center?.lat ?? 20);
   const mapCenterLon = Number(config?.map?.center?.lon ?? 0);
   const mapDefaultZoom = Number(config?.map?.default_zoom ?? 1);
   const mapZoomControl = config?.map?.zoom_controls ?? true;
-  // localStorage is the immediate source of truth; backend config is the initial value
+  // localStorage overrides the backend config so the map style preference survives
+  // page reloads without a round-trip to the API.
   const mapStyle = (localStorage.getItem('rackscope.map.style') ||
     config?.map?.style ||
     'minimal') as 'minimal' | 'noc' | 'flat';
@@ -91,7 +92,6 @@ export const WorldMapPage = () => {
         }
       />
 
-      {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Sites', value: sites.length },
@@ -108,7 +108,6 @@ export const WorldMapPage = () => {
         ))}
       </div>
 
-      {/* Map */}
       <div
         className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-900 dark:border-gray-800"
         style={{ height: 500 }}
@@ -118,6 +117,10 @@ export const WorldMapPage = () => {
             <LoadingState message="Loading map data…" />
           </div>
         ) : (
+          // OfflineWorldMap uses locally bundled SVG tiles — no CDN dependency.
+          // This is intentional: NOC environments are often air-gapped or firewall-restricted.
+          // The key forces a full remount when center, zoom, or style changes because
+          // the underlying Leaflet instance cannot be reconfigured once initialised.
           <OfflineWorldMap
             key={`${mapCenterLat}-${mapCenterLon}-${mapDefaultZoom}-${mapStyle}`}
             sites={markers}
@@ -132,7 +135,6 @@ export const WorldMapPage = () => {
         )}
       </div>
 
-      {/* Selected site popup (replaces Leaflet Popup) */}
       {selectedSite && (
         <div className="border-brand-200 bg-brand-50 dark:border-brand-700/40 dark:bg-brand-500/10 rounded-2xl border p-4">
           <div className="flex items-start justify-between gap-3">
@@ -173,7 +175,6 @@ export const WorldMapPage = () => {
         </div>
       )}
 
-      {/* Sites list */}
       <SectionCard
         title="All Sites"
         desc={`${sites.length} site${sites.length !== 1 ? 's' : ''} configured`}

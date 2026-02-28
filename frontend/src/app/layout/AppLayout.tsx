@@ -127,9 +127,8 @@ const AppInnerLayout = () => {
   }, []);
 
   const [isDark, setIsDark] = useState(() => {
-    // `theme-mode` is the single source of truth (shared with ThemeContext).
-    // Fall back to the legacy `cosmos-dark-mode` key (pre-migration) so existing sessions keep
-    // their preference, then default to dark.
+    // Theme resolution: check new key first (theme-mode, shared with ThemeContext),
+    // then legacy key (cosmos-dark-mode, pre-v1.0 migration), then default to dark.
     const primary = localStorage.getItem('theme-mode');
     if (primary !== null) return primary !== 'light';
     const legacy = localStorage.getItem('cosmos-dark-mode');
@@ -145,7 +144,8 @@ const AppInnerLayout = () => {
     document.documentElement.classList.toggle('dark', next);
     rootRef.current?.classList.toggle('dark', next);
 
-    // Sync ThemeContext (localStorage + custom event to update modeState)
+    // Custom event dispatched to sync ThemeContext (separate React tree).
+    // Context is not used here to avoid prop-drilling through AppLayout.
     localStorage.setItem('theme-mode', next ? 'dark' : 'light');
     window.dispatchEvent(new CustomEvent('rackscope-theme-mode', { detail: { dark: next } }));
     setIsDark(next);
@@ -167,12 +167,10 @@ const AppInnerLayout = () => {
   const isKiosk = playlist.mode === 'kiosk' && playlist.isPlaying;
   const isFocused = playlist.mode === 'focused' && playlist.isPlaying;
 
-  // In focused mode: force sidebar collapsed
   const effectiveCollapsed = isFocused ? true : sidebarCollapsed;
 
   return (
     <>
-      {/* Page load preloader */}
       {pageLoading && (
         <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-white dark:bg-gray-950">
           <div className="border-brand-500 h-16 w-16 animate-spin rounded-full border-4 border-t-transparent" />
@@ -180,11 +178,9 @@ const AppInnerLayout = () => {
       )}
       <div ref={rootRef} className={isDark ? 'rs-root dark' : 'rs-root'}>
         <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
-          {/* Sidebar — hidden in kiosk mode */}
           {!isKiosk && <AppSidebar collapsed={effectiveCollapsed} />}
 
           <div className="flex flex-1 flex-col overflow-hidden">
-            {/* Header — hidden in kiosk mode */}
             {!isKiosk && (
               <AppHeader
                 isDark={isDark}
@@ -200,15 +196,11 @@ const AppInnerLayout = () => {
         </div>
       </div>
 
-      {/* Kiosk countdown bar — thin brand bar at bottom of screen */}
       <PlaylistCountdownBar />
-      {/* Kiosk exit float button */}
       <KioskExitButton />
-      {/* First-time setup wizard */}
       {showWizard && <SetupWizard onDismiss={() => setShowWizard(false)} />}
-      {/* Matrix background canvas (active when darkTheme='matrix') */}
+      {/* Canvas rendered outside rs-root so CSS z-index stacking works correctly */}
       <MatrixBackground />
-      {/* Alert toast notifications — bottom-right, polled from /api/alerts/active */}
       <AlertToastContainer />
     </>
   );

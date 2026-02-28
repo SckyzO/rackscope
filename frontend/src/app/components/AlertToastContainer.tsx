@@ -127,14 +127,12 @@ export const AlertToastContainer = () => {
   // ── Stacked mode ──────────────────────────────────────────────────────────
   const isStacked = stackThreshold > 0 && toasts.length > stackThreshold;
 
-  // When expanded, show all toasts individually even if stacked threshold exceeded
   if (isStacked && expanded) {
     return (
       <div
         className={`fixed z-[9999] ${positionClass} flex w-80 flex-col`}
         style={{ maxHeight: 'calc(100vh - 32px)' }}
       >
-        {/* Sticky collapse button */}
         <button
           onClick={() => setExpanded(false)}
           className="flex shrink-0 items-center justify-between rounded-lg border border-gray-200 bg-white/95 px-3 py-1.5 text-xs font-medium text-gray-500 backdrop-blur-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/95 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -144,7 +142,6 @@ export const AlertToastContainer = () => {
           </span>
           <span className="text-[10px] opacity-60">▲ Collapse</span>
         </button>
-        {/* Scrollable toasts — capped to screen height */}
         <div className="rs-scrollbar mt-2 flex flex-col gap-2 overflow-y-auto">
           {toasts.map((toast) => {
             const cfg = toastConfig[toast.severity as 'WARN' | 'CRIT'] ?? toastConfig.WARN;
@@ -174,20 +171,18 @@ export const AlertToastContainer = () => {
   }
 
   if (isStacked) {
-    // Most recently added toast = last element
     const mainToast = toasts[toasts.length - 1];
     const cfg = toastConfig[mainToast.severity as 'WARN' | 'CRIT'] ?? toastConfig.WARN;
     const { Icon } = cfg;
-    // Show at most 2 ghost cards behind the main one
+    // Cap at 2 ghost layers — more than that gives diminishing visual returns
     const ghostLayers = Math.min(toasts.length - 1, 2);
-    // For top-right: ghosts peek downward; for bottom-right: ghosts peek upward
+    // Ghost direction flips so they peek away from the screen edge
     const isTop = features.toast_position === 'top-right';
 
     return (
       <div className={`fixed z-[9999] ${positionClass} flex flex-col items-end gap-2`}>
-        {/* Stack group — relative container to anchor ghost cards */}
+        {/* Relative container needed to position ghost cards with absolute offsets */}
         <div className="relative w-80">
-          {/* Ghost card 2 (furthest back) */}
           {ghostLayers >= 2 && (
             <div
               className={`absolute inset-0 rounded-xl border ${cfg.bg} ${cfg.border} opacity-30`}
@@ -200,7 +195,6 @@ export const AlertToastContainer = () => {
               }}
             />
           )}
-          {/* Ghost card 1 (slightly behind) */}
           {ghostLayers >= 1 && (
             <div
               className={`absolute inset-0 rounded-xl border ${cfg.bg} ${cfg.border} opacity-55`}
@@ -211,7 +205,6 @@ export const AlertToastContainer = () => {
               }}
             />
           )}
-          {/* Main toast — front */}
           <div
             className={`shadow-theme-lg relative flex items-start gap-3 rounded-xl border p-4 ${cfg.bg} ${cfg.border}`}
             style={{ zIndex: 10 }}
@@ -230,7 +223,6 @@ export const AlertToastContainer = () => {
           </div>
         </div>
 
-        {/* Footer: count + expand + dismiss all */}
         <div className="flex w-80 items-center justify-between px-1 text-xs">
           <button
             onClick={() => setExpanded(true)}
@@ -252,7 +244,6 @@ export const AlertToastContainer = () => {
     );
   }
 
-  // ── Normal mode — show all toasts individually (scrollable if overflow) ─────
   return (
     <div
       className={`rs-scrollbar fixed z-[9999] ${positionClass} flex w-80 flex-col gap-2 overflow-y-auto`}

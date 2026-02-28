@@ -8,9 +8,6 @@ from rackscope.model.domain import Device
 from rackscope.services.instance_service import expand_device_instances, expand_nodes_pattern
 
 
-# Test expand_nodes_pattern
-
-
 def test_expand_nodes_pattern_single_node():
     """Test expanding a single node (no pattern)."""
     result = expand_nodes_pattern("node001")
@@ -34,9 +31,6 @@ def test_expand_nodes_pattern_empty():
     result = expand_nodes_pattern("")
     # Empty pattern returns list with empty string (actual behavior)
     assert result == [""]
-
-
-# Test expand_device_instances with string instance
 
 
 def test_expand_device_instances_string():
@@ -63,9 +57,6 @@ def test_expand_device_instances_string_single():
     )
     result = expand_device_instances(device)
     assert result == ["node001"]
-
-
-# Test expand_device_instances with dict instance
 
 
 def test_expand_device_instances_dict_simple():
@@ -107,9 +98,6 @@ def test_expand_device_instances_dict_mixed():
     assert set(result) == {"node01", "node10", "node11", "node12"}
 
 
-# Test expand_device_instances with list instance
-
-
 def test_expand_device_instances_list_simple():
     """Test expanding device with list instance."""
     device = Device(
@@ -149,9 +137,6 @@ def test_expand_device_instances_list_mixed():
     assert result == ["node01", "node10", "node11", "server99"]
 
 
-# Test expand_device_instances with nodes fallback
-
-
 def test_expand_device_instances_nodes_fallback():
     """Test that instance field is preferred over nodes field."""
     # When both are present, instance takes precedence
@@ -165,9 +150,6 @@ def test_expand_device_instances_nodes_fallback():
     )
     result = expand_device_instances(device)
     assert result == ["node01", "node02", "node03"]
-
-
-# Test edge cases
 
 
 def test_expand_device_instances_no_instance():

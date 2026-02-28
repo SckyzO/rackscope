@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import { DeviceChassis, HUDTooltip } from '../../../components/RackVisualizer';
 
-// Local type matching HUDTooltip props (the interface isn't exported from RackVisualizer)
+// Mirrors HUDTooltip's internal prop shape — not exported from RackVisualizer,
+// so redeclared here to keep TypeScript strict without importing internals.
 type TooltipPayload = {
   title: string;
   subtitle: string;
@@ -23,8 +24,6 @@ type TooltipPayload = {
 };
 import { api } from '../../../services/api';
 import type { RackState, DeviceTemplate } from '../../../types';
-
-// ── Health helpers ─────────────────────────────────────────────────────────────
 
 const HC: Record<string, string> = {
   OK: '#10b981',
@@ -40,8 +39,6 @@ const STATE_PILL: Record<string, string> = {
   UNKNOWN: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
 };
 
-// ── Sub-components (module-level) ──────────────────────────────────────────────
-
 const StateIcon = ({ state, className }: { state: string; className?: string }) => {
   const p = { className: className ?? 'h-4 w-4' };
   switch (state) {
@@ -55,8 +52,6 @@ const StateIcon = ({ state, className }: { state: string; className?: string }) 
       return <HelpCircle {...p} style={{ color: HC.UNKNOWN }} />;
   }
 };
-
-// ── Types ──────────────────────────────────────────────────────────────────────
 
 type DeviceContext = {
   device: {
@@ -82,8 +77,13 @@ type NodeState = {
   checks?: { id: string; severity: string }[];
 };
 
-// ── expandInstances ────────────────────────────────────────────────────────────
-
+/**
+ * Normalise the `instance` field from any of its three storage formats
+ * (pattern string, explicit array, or slot-map object) into a flat string array.
+ *
+ * Pattern syntax: "prefix[start-end]" e.g. "compute[001-004]"
+ * Padding is preserved — "001" yields "001", "002", ... not "1", "2".
+ */
 function expandInstances(instance: unknown): string[] {
   if (!instance) return [];
   if (typeof instance === 'string') {
@@ -102,8 +102,6 @@ function expandInstances(instance: unknown): string[] {
   if (typeof instance === 'object' && instance !== null) return Object.values(instance) as string[];
   return [];
 }
-
-// ── Main page ──────────────────────────────────────────────────────────────────
 
 export const DevicePage = () => {
   const { rackId, deviceId } = useParams<{ rackId: string; deviceId: string }>();
@@ -131,6 +129,9 @@ export const DevicePage = () => {
     };
   }, [rackId, deviceId]);
 
+  // Metrics are loaded here with include_metrics=true — this is the only view that
+  // needs full temperature/power data per instance. Room/Rack list views use the
+  // cheaper health-only endpoint to keep response times under ~40ms.
   useEffect(() => {
     if (!rackId) return;
     let active = true;
@@ -165,6 +166,8 @@ export const DevicePage = () => {
   const instances = expandInstances(device.instance ?? device.nodes);
   const nodes = (rackState?.nodes ?? {}) as Record<string, NodeState>;
 
+  // Active instance is stored in the URL (?instance=...) so the selected tab
+  // survives page refresh and can be deep-linked from alerts or external tools.
   const selectedInstance = searchParams.get('instance') || instances[0] || '';
   const handleSelect = (inst: string) => setSearchParams({ instance: inst });
 
@@ -173,7 +176,6 @@ export const DevicePage = () => {
   const hasRear = Boolean(template?.rear_layout);
   const isStorage = template?.type === 'storage';
 
-  // Overall device state = worst instance
   const deviceState = instances.reduce((worst, inst) => {
     const s = nodes[inst]?.state ?? 'UNKNOWN';
     const rank: Record<string, number> = { CRIT: 4, WARN: 3, UNKNOWN: 2, OK: 1 };
@@ -193,7 +195,6 @@ export const DevicePage = () => {
   return (
     <>
       <div className="flex flex-col gap-4">
-        {/* ── Breadcrumb ── */}
         <nav className="flex flex-wrap items-center gap-1 text-sm">
           <Link to="/views/worldmap" className="text-brand-500 hover:underline">
             {site.name}
@@ -216,7 +217,6 @@ export const DevicePage = () => {
           <span className="font-semibold text-gray-900 dark:text-white">{device.name}</span>
         </nav>
 
-        {/* ── Device header ── */}
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">{device.name}</h1>
@@ -233,9 +233,7 @@ export const DevicePage = () => {
           </span>
         </div>
 
-        {/* ── CHASSIS — full width, tall ── */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-          {/* Chassis toolbar */}
           <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
             <div className="flex items-center gap-3">
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -270,7 +268,6 @@ export const DevicePage = () => {
             )}
           </div>
 
-          {/* Chassis — large render area */}
           <div className="flex items-stretch justify-center px-8 py-6" style={{ minHeight: 280 }}>
             {template ? (
               <div className="w-full">
@@ -296,7 +293,6 @@ export const DevicePage = () => {
             )}
           </div>
 
-          {/* Instance selector — buttons-group style, centered */}
           {instances.length > 0 && (
             <div className="flex justify-center border-t border-gray-100 px-5 py-4 dark:border-gray-800">
               <div className="inline-flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
@@ -329,9 +325,7 @@ export const DevicePage = () => {
           )}
         </div>
 
-        {/* ── Bottom row: Instance detail (left) + Device info (right) ── */}
         <div className="flex flex-col gap-4 lg:flex-row">
-          {/* LEFT — selected instance */}
           <div className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
               <div className="flex items-center gap-2">
@@ -352,7 +346,6 @@ export const DevicePage = () => {
             </div>
 
             <div className="p-5">
-              {/* Metrics */}
               {selNode && ((selNode.temperature ?? 0) > 0 || (selNode.power ?? 0) > 0) && (
                 <div className="mb-5 grid grid-cols-2 gap-3">
                   {(selNode.temperature ?? 0) > 0 && (
@@ -380,7 +373,6 @@ export const DevicePage = () => {
                 </div>
               )}
 
-              {/* Checks */}
               {selNode?.checks && selNode.checks.length > 0 ? (
                 <div className="space-y-1.5">
                   <p className="mb-2 text-xs font-semibold tracking-wider text-gray-400 uppercase">
@@ -419,9 +411,7 @@ export const DevicePage = () => {
             </div>
           </div>
 
-          {/* RIGHT — device info + location + checks */}
           <div className="w-full shrink-0 space-y-4 lg:w-80">
-            {/* Device info */}
             <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
               <p className="mb-3 text-xs font-semibold tracking-wider text-gray-400 uppercase">
                 Device
@@ -452,7 +442,6 @@ export const DevicePage = () => {
               </div>
             </div>
 
-            {/* Location */}
             <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
               <p className="mb-3 text-xs font-semibold tracking-wider text-gray-400 uppercase">
                 Location
@@ -483,7 +472,6 @@ export const DevicePage = () => {
               </div>
             </div>
 
-            {/* Configured checks */}
             {template?.checks && template.checks.length > 0 && (
               <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
                 <p className="mb-3 text-xs font-semibold tracking-wider text-gray-400 uppercase">
@@ -505,7 +493,6 @@ export const DevicePage = () => {
         </div>
       </div>
 
-      {/* HUDTooltip — shown when hovering nodes in the chassis */}
       {tooltip && <HUDTooltip {...tooltip} />}
     </>
   );

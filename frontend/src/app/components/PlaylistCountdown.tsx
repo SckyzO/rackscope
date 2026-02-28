@@ -44,8 +44,8 @@ export const PlaylistCountdownCircle = () => {
 
   return (
     <div className="relative flex h-7 w-7 shrink-0 items-center justify-center" aria-hidden>
+      {/* Rotated -90deg so the arc starts at 12 o'clock instead of 3 o'clock */}
       <svg width={size} height={size} className="absolute" style={{ transform: 'rotate(-90deg)' }}>
-        {/* Track — same gray as spinner background */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -54,7 +54,6 @@ export const PlaylistCountdownCircle = () => {
           strokeWidth={strokeW}
           className="stroke-gray-200 dark:stroke-gray-700"
         />
-        {/* Progress arc — brand color like spinner active part */}
         <circle
           cx={size / 2}
           cy={size / 2}

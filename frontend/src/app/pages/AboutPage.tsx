@@ -101,7 +101,6 @@ const useRandomQuote = () => {
       });
   }, []);
 
-  // Auto-rotate every 15s
   useEffect(() => {
     if (quotes.length === 0) return;
     timerRef.current = setInterval(() => animatedSwitch(quotes), AUTO_SHUFFLE_MS);
@@ -112,7 +111,7 @@ const useRandomQuote = () => {
 
   const shuffle = useCallback(() => {
     if (quotes.length < 2) return;
-    // Reset the auto-rotate timer on manual shuffle
+    // Restart the interval so a manual shuffle doesn't cause an immediate auto-skip
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = setInterval(() => animatedSwitch(quotes), AUTO_SHUFFLE_MS);
@@ -224,11 +223,9 @@ const StoryModal = ({ onClose }: { onClose: () => void }) => {
         className="relative max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-gray-800">
           <h2 className="font-bold text-gray-900 dark:text-white">{story.title}</h2>
           <div className="flex items-center gap-2">
-            {/* Language toggle */}
             <div className="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
               {(['fr', 'en'] as const).map((l) => (
                 <button
@@ -253,7 +250,6 @@ const StoryModal = ({ onClose }: { onClose: () => void }) => {
           </div>
         </div>
 
-        {/* Body */}
         <div className="overflow-y-auto px-6 py-5" style={{ maxHeight: 'calc(85vh - 80px)' }}>
           <div className="space-y-4 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
             {story.paragraphs.map((p, i) => (
@@ -297,7 +293,7 @@ const useKonamiProgress = (onSuccess: () => void) => {
   const [error, setError] = useState(false);
   const progressRef = useRef(0);
   const onSuccessRef = useRef(onSuccess);
-  // Keep ref up-to-date without triggering effect re-run
+  // Ref update avoids adding onSuccess to the keydown effect's deps (which would re-register the listener on every render)
   useEffect(() => {
     onSuccessRef.current = onSuccess;
   });
@@ -378,7 +374,6 @@ const KonamiChallengeModal = ({
           </p>
         </div>
 
-        {/* OTP boxes */}
         <div
           className="mt-5 flex items-center justify-center gap-1.5"
           style={error ? { animation: 'shake 0.4s ease' } : undefined}
@@ -403,7 +398,6 @@ const KonamiChallengeModal = ({
           })}
         </div>
 
-        {/* Status */}
         <div className="mt-3 min-h-[20px] text-center">
           {error && (
             <p className="text-xs text-red-500 dark:text-red-400">Mauvaise touche — réessaie !</p>
@@ -488,7 +482,6 @@ const EasterEggsModal = ({ onClose }: { onClose: () => void }) => {
         className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-gray-800">
           <div className="flex items-center gap-2">
             <span className="text-xl">🥚</span>
@@ -505,7 +498,6 @@ const EasterEggsModal = ({ onClose }: { onClose: () => void }) => {
           </button>
         </div>
 
-        {/* List */}
         <div className="divide-y divide-gray-100 px-2 py-2 dark:divide-gray-800">
           {EGGS.map((egg) => (
             <div key={egg.title} className="flex items-start gap-4 rounded-xl px-4 py-3">
@@ -526,7 +518,6 @@ const EasterEggsModal = ({ onClose }: { onClose: () => void }) => {
           ))}
         </div>
 
-        {/* Footer */}
         <div className="border-t border-gray-100 px-6 py-3 dark:border-gray-800">
           <p className="text-center text-[11px] text-gray-400 dark:text-gray-600">
             Press{' '}
@@ -583,9 +574,7 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
           }
         `}</style>
 
-        {/* Banner */}
         <div className="from-brand-500 to-brand-700 relative overflow-hidden bg-gradient-to-br px-6 py-8 text-center">
-          {/* Background pattern */}
           <div className="pointer-events-none absolute inset-0 opacity-10">
             {Array.from({ length: 5 }).map((_, i) => (
               <div
@@ -601,12 +590,10 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
               />
             ))}
           </div>
-          {/* Detected badge */}
           <div className="relative mb-4 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-bold tracking-wider text-white uppercase">
             <span className="inline-block h-1.5 w-1.5 animate-ping rounded-full bg-green-300" />
             Developer Spotted
           </div>
-          {/* Surprise image */}
           <div
             className="relative mx-auto mb-3 overflow-hidden rounded-2xl"
             style={{ width: 180, height: 180 }}
@@ -621,9 +608,7 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
           <p className="text-brand-200 mt-0.5 text-sm">aka SckyzO — creator & maintainer</p>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5">
-          {/* Quote */}
           <div className="rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
             <p className="text-sm leading-relaxed text-gray-600 italic dark:text-gray-300">
               &ldquo;{devQuote.text}&rdquo;
@@ -633,7 +618,6 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
             </p>
           </div>
 
-          {/* Links */}
           <div className="mt-4 flex items-center justify-between">
             <a
               href="https://github.com/SckyzO"
@@ -671,7 +655,7 @@ export const AboutPage = () => {
   const avatarTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasShownHint = useRef(false);
 
-  // First keypress → open Konami challenge modal
+  // Trigger the Konami challenge modal on the first meaningful keypress on this page
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (hasShownHint.current) return;
@@ -734,7 +718,8 @@ export const AboutPage = () => {
           }}
         />
       )}
-      {/* "Enter Konami Code" button — bottom-right, same zone as toasts */}
+      {/* Fixed button persists after the Konami modal closes — bottom-16 avoids
+          the toast container at bottom-4 */}
       {konamiBtn && !showKonami && !showEggs && (
         <button
           onClick={() => {
@@ -752,15 +737,12 @@ export const AboutPage = () => {
       <div className="space-y-5">
         <PageHeader
           title="About"
-          breadcrumb={
-            <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'About' }]} />
-          }
+          breadcrumb={<PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'About' }]} />}
         />
 
         {/* ── Hero card ───────────────────────────────────────────────── */}
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
           <div className="relative overflow-hidden px-8 py-10">
-            {/* Decorative rings */}
             <div className="pointer-events-none absolute inset-0 opacity-5">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
@@ -777,9 +759,9 @@ export const AboutPage = () => {
               ))}
             </div>
 
-            {/* 2/3 | 1/3 split */}
+            {/* flexBasis percentages below create a 2/3 + 1/3 split that collapses
+                to a single column on mobile — Tailwind alone can't express fractional flex-basis */}
             <div className="relative flex flex-col gap-8 md:flex-row md:items-stretch">
-              {/* Left — 2/3 */}
               <div
                 className="flex min-w-0 flex-1 items-start gap-6 md:w-0"
                 style={{ flexBasis: '66.666%' }}
@@ -805,7 +787,6 @@ export const AboutPage = () => {
                     config, GitOps-friendly. Built for NOC operators, sysadmins, and HPC teams who
                     need a physical view of their infrastructure — not another Grafana plugin.
                   </p>
-                  {/* Story link — animated to stand out */}
                   <button
                     onClick={() => setShowStory(true)}
                     className="group border-brand-200 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:border-brand-700/40 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/15 mt-5 flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all"
@@ -821,11 +802,8 @@ export const AboutPage = () => {
                 </div>
               </div>
 
-              {/* Divider */}
               <div className="hidden w-px self-stretch bg-gray-100 md:block dark:bg-gray-800" />
               <div className="h-px w-full bg-gray-100 md:hidden dark:bg-gray-800" />
-
-              {/* Right — 1/3 */}
               <div
                 className="w-full md:shrink-0"
                 style={{ flexBasis: '33.333%', maxWidth: '33.333%' }}
@@ -835,7 +813,6 @@ export const AboutPage = () => {
             </div>
           </div>
 
-          {/* Footer badges */}
           <div className="border-t border-gray-100 px-8 py-4 dark:border-gray-800">
             <div className="flex flex-wrap gap-3">
               {[
@@ -889,7 +866,7 @@ export const AboutPage = () => {
 
           <SectionCard title="Credits" desc="Behind the project">
             <div className="flex items-start gap-4 rounded-xl border border-gray-100 px-4 py-3 dark:border-gray-800">
-              {/* overflow-visible so the badge is NOT clipped by the rounded-full */}
+              {/* No overflow-hidden on parent — the avatar click-count badge must overflow the rounded boundary */}
               <button
                 onClick={handleAvatarClick}
                 className="relative shrink-0 cursor-pointer transition-transform select-none active:scale-90"
@@ -927,7 +904,6 @@ export const AboutPage = () => {
               </div>
             </div>
 
-            {/* Made with ... */}
             <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-gray-400 dark:text-gray-600">
               <span>Made with</span>
               <Heart className="h-3.5 w-3.5 text-red-400" />

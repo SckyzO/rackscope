@@ -481,9 +481,7 @@ export const ProfilePage = () => {
     <div className="mx-auto w-full max-w-[760px] space-y-6">
       <PageHeader
         title="Profile"
-        breadcrumb={
-          <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Profile' }]} />
-        }
+        breadcrumb={<PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Profile' }]} />}
       />
 
       <div className="space-y-4">
