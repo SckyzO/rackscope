@@ -232,7 +232,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   // setMode: syncs CosmosLayout's separate dark/light state via custom event
   const setMode = (m: 'dark' | 'light') => {
     setModeState(m);
-    localStorage.setItem('cosmos-dark-mode', String(m === 'dark'));
+
     window.dispatchEvent(
       new CustomEvent('rackscope-theme-mode', { detail: { dark: m === 'dark' } })
     );

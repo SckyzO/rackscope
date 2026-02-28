@@ -137,7 +137,7 @@ const AppInnerLayout = () => {
     const next = !isDark;
     document.documentElement.classList.toggle('dark', next);
     rootRef.current?.classList.toggle('dark', next);
-    localStorage.setItem('cosmos-dark-mode', String(next));
+
     // Sync ThemeContext (localStorage + custom event to update modeState)
     localStorage.setItem('theme-mode', next ? 'dark' : 'light');
     window.dispatchEvent(new CustomEvent('rackscope-theme-mode', { detail: { dark: next } }));

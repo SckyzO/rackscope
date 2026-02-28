@@ -120,9 +120,9 @@ type Dashboard = {
   widgets: WidgetConfig[];
 };
 
-const DASHBOARDS_STORAGE_KEY = 'cosmos-dashboards';
-const ACTIVE_DASHBOARD_STORAGE_KEY = 'cosmos-active-dashboard';
-const DASHBOARDS_STORAGE_VERSION_KEY = 'cosmos-dashboards-v';
+const DASHBOARDS_STORAGE_KEY = 'rackscope.dashboards';
+const ACTIVE_DASHBOARD_STORAGE_KEY = 'rackscope.dashboard.active';
+const DASHBOARDS_STORAGE_VERSION_KEY = 'rackscope.dashboards.version';
 // Bumped to '2' — migrated from colSpan/rowSpan to x/y/w/h (react-grid-layout)
 const DASHBOARDS_STORAGE_VERSION = '2';
 
@@ -1810,7 +1810,7 @@ export const DashboardPage = () => {
 
   // ── Alert filter state ────────────────────────────────────────────────────
   const [alertLimit, setAlertLimit] = useState<number>(() => {
-    const stored = localStorage.getItem('cosmos-dash-alert-limit');
+    const stored = localStorage.getItem('rackscope.dash.alert-limit');
     return stored ? Number(stored) : 5;
   });
   const [alertPage, setAlertPage] = useState(0);
@@ -1820,11 +1820,11 @@ export const DashboardPage = () => {
   // ── Settings panel state ──────────────────────────────────────────────────
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState<number>(() => {
-    const stored = localStorage.getItem('cosmos-dash-refresh');
+    const stored = localStorage.getItem('rackscope.dash.refresh');
     return stored ? Number(stored) : 30;
   });
   const [defaultAlertLimit, setDefaultAlertLimit] = useState<number>(() => {
-    const stored = localStorage.getItem('cosmos-dash-alert-limit');
+    const stored = localStorage.getItem('rackscope.dash.alert-limit');
     return stored ? Number(stored) : 5;
   });
 
@@ -2401,7 +2401,7 @@ export const DashboardPage = () => {
                       key={s}
                       onClick={() => {
                         setRefreshInterval(s);
-                        localStorage.setItem('cosmos-dash-refresh', String(s));
+                        localStorage.setItem('rackscope.dash.refresh', String(s));
                       }}
                       className={`rounded-xl py-2 text-xs font-medium transition-colors ${
                         refreshInterval === s
@@ -2425,7 +2425,7 @@ export const DashboardPage = () => {
                       onClick={() => {
                         setDefaultAlertLimit(n);
                         setAlertLimit(n);
-                        localStorage.setItem('cosmos-dash-alert-limit', String(n));
+                        localStorage.setItem('rackscope.dash.alert-limit', String(n));
                       }}
                       className={`rounded-xl py-2 text-xs font-medium transition-colors ${
                         defaultAlertLimit === n

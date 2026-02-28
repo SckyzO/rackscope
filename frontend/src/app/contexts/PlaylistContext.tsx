@@ -12,8 +12,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAppConfigSafe } from './AppConfigContext';
 import type { PlaylistMode, PlaylistQueueItem } from '../playlist/PlaylistRegistry';
 
-const QUEUE_STORAGE_KEY = 'cosmos-playlist-queue';
-const INTERVAL_STORAGE_KEY = 'cosmos-playlist-interval';
+const QUEUE_STORAGE_KEY = 'rackscope.playlist.queue';
+const INTERVAL_STORAGE_KEY = 'rackscope.playlist.interval';
 
 interface PlaylistContextType {
   enabled: boolean;

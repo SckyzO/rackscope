@@ -7,8 +7,8 @@ import { SectionCard } from '../../../app/pages/templates/EmptyPage';
 import { FormSelect } from '../common/FormSelect';
 
 // Dashboard localStorage keys (mirrors CosmosDashboard constants)
-const DASH_KEY     = 'cosmos-dashboards';
-const DASH_VER_KEY = 'cosmos-dashboards-v';
+const DASH_KEY     = 'rackscope.dashboards';
+const DASH_VER_KEY = 'rackscope.dashboards.version';
 
 const DashboardResetCard = () => {
   const [done, setDone] = useState(false);
