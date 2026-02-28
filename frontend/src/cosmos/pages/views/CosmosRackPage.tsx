@@ -283,7 +283,7 @@ export const CosmosRackPage = () => {
           </div>
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => navigate(`/cosmos/editors/rack`)}
+              onClick={() => navigate(`/cosmos/editors/rack?rackId=${rack.id}`)}
               title="Edit rack"
               className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
             >
