@@ -37,7 +37,7 @@ features:
   notifications_max_visible: 10
   playlist: true
   offline: true
-  demo: false
+  demo: true
   worldmap: true
   dev_tools: true
 auth:

@@ -93,7 +93,9 @@ def mock_slurm_results():
 # Test GET /api/slurm/rooms/{room_id}/nodes
 
 
-def test_get_slurm_room_nodes_success(mock_topology, mock_app_config, mock_slurm_results, mock_slurm_plugin_config):
+def test_get_slurm_room_nodes_success(
+    mock_topology, mock_app_config, mock_slurm_results, mock_slurm_plugin_config
+):
     """Test getting Slurm node states for a room."""
     import rackscope.api.app as app_module
 
@@ -252,7 +254,9 @@ def test_get_slurm_summary_no_topology():
 # Test GET /api/slurm/partitions
 
 
-def test_get_slurm_partitions_success(mock_topology, mock_app_config, mock_slurm_results, mock_slurm_plugin_config):
+def test_get_slurm_partitions_success(
+    mock_topology, mock_app_config, mock_slurm_results, mock_slurm_plugin_config
+):
     """Test getting Slurm partition statistics."""
     import rackscope.api.app as app_module
 

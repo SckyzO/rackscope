@@ -114,32 +114,30 @@ class SimulatorPlugin(RackscopePlugin):
         @self._router.get("/status")
         async def get_simulator_status():
             """Get simulator status and configuration."""
-            sim_path = Path("config/plugins/simulator/scenarios.yaml")
+            import os
 
-            # Check if simulator is running by trying to reach port 9000
+            # Simulator endpoint — use SIMULATOR_URL env var or Docker service name
+            sim_base = os.getenv("SIMULATOR_URL", "http://simulator:9000")
+            sim_metrics_url = f"{sim_base}/metrics"
+
+            # Check if simulator is running
             running = False
             try:
                 import httpx
 
-                async with httpx.AsyncClient() as client:
-                    response = await client.get("http://localhost:9000/metrics", timeout=1.0)
+                async with httpx.AsyncClient() as http_client:
+                    response = await http_client.get(sim_metrics_url, timeout=1.0)
                     running = response.status_code == 200
             except Exception:
                 running = False
 
-            # Load config
-            config = {}
-            if sim_path.exists():
-                try:
-                    config = yaml.safe_load(sim_path.read_text()) or {}
-                except yaml.YAMLError:
-                    pass
+            cfg = self.config or self._load_config(None)
 
             return {
                 "running": running,
-                "endpoint": "http://localhost:9000/metrics",
-                "update_interval": config.get("update_interval_seconds", 20),
-                "scenario": config.get("scenario"),
+                "endpoint": sim_metrics_url,
+                "update_interval": cfg.update_interval_seconds,
+                "scenario": cfg.scenario,
                 "overrides_count": len(self._load_overrides(None)),
             }
 

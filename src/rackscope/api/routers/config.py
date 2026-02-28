@@ -132,6 +132,26 @@ async def update_app_config(
     config_path.parent.mkdir(parents=True, exist_ok=True)
     with config_path.open("w") as f:
         yaml.safe_dump(payload.model_dump(), f, sort_keys=False)
+
+    # Sync simulator plugin config to its dedicated file so that
+    # SimulatorPlugin._load_config() picks up the new settings immediately.
+    # (config/plugins/simulator/config.yml has priority over app.yaml)
+    sim_plugin_cfg = payload.plugins.get("simulator") if payload.plugins else None
+    if sim_plugin_cfg:
+        sim_cfg_path = Path("config/plugins/simulator/config.yml")
+        sim_cfg_path.parent.mkdir(parents=True, exist_ok=True)
+        sim_data = (
+            sim_plugin_cfg.model_dump()
+            if hasattr(sim_plugin_cfg, "model_dump")
+            else dict(sim_plugin_cfg)
+        )
+        # Strip the 'enabled' flag — the dedicated file must not own it
+        sim_data.pop("enabled", None)
+        with sim_cfg_path.open("w") as f:
+            f.write("# Simulator Plugin Configuration\n")
+            f.write("# app.yaml only controls: plugins.simulator.enabled (true/false)\n\n")
+            yaml.safe_dump(sim_data, f, sort_keys=False)
+
     await apply_config(payload)
     return payload
 
