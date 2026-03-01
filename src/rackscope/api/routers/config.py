@@ -63,7 +63,6 @@ def get_app_config(
             "notifications": False,
             "playlist": False,
             "offline": False,
-            "demo": False,
         },
         "simulator": {
             "update_interval_seconds": 20,

@@ -5,7 +5,7 @@ import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { useTheme } from '../../context/ThemeContext';
 import { PageTitleProvider } from '../contexts/PageTitleContext';
-import { AppConfigProvider } from '../contexts/AppConfigContext';
+import { AppConfigProvider, useAppConfigSafe } from '../contexts/AppConfigContext';
 import { PluginsMenuProvider } from '../../context/PluginsMenuContext';
 import { PlaylistProvider } from '../contexts/PlaylistContext';
 import { usePlaylistSafe } from '../contexts/PlaylistContext';
@@ -169,8 +169,18 @@ const AppInnerLayout = () => {
 
   const effectiveCollapsed = isFocused ? true : sidebarCollapsed;
 
+  const { plugins } = useAppConfigSafe();
+
   return (
     <>
+      {/* Demo ribbon — diagonal corner badge when simulator is active */}
+      {plugins.simulator && (
+        <div className="pointer-events-none fixed top-0 left-0 z-[9998] h-20 w-20 overflow-hidden">
+          <div className="bg-brand-500/90 absolute top-[18px] -left-[26px] w-[108px] -rotate-45 py-1 text-center text-[9px] font-bold tracking-widest text-white uppercase shadow-sm">
+            demo
+          </div>
+        </div>
+      )}
       {pageLoading && (
         <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-white dark:bg-gray-950">
           <div className="border-brand-500 h-16 w-16 animate-spin rounded-full border-4 border-t-transparent" />

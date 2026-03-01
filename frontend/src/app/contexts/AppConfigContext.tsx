@@ -89,8 +89,7 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
 
   // Start polling as soon as config is loaded and demo mode is known
   useEffect(() => {
-    const demoEnabled =
-      config?.features?.demo === true || config?.plugins?.['simulator']?.enabled === true;
+    const demoEnabled = config?.plugins?.['simulator']?.enabled === true;
     void checkSimulator(demoEnabled);
     if (!demoEnabled) return;
     // Poll every 30s to detect simulator crashes

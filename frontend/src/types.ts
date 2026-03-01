@@ -380,7 +380,6 @@ export interface AppConfig {
     aisle_dashboard?: boolean;
     playlist?: boolean;
     offline?: boolean;
-    demo?: boolean;
     worldmap?: boolean;
     dev_tools?: boolean;
   };
