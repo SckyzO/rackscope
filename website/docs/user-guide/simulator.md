@@ -131,20 +131,21 @@ Every N seconds (update_interval_seconds, default: 20):
 
 ## Enabling Demo Mode
 
-Demo mode requires two settings: the feature flag in `config/app.yaml` and
-the plugin enabled flag in `config/plugins/simulator/config/plugin.yaml`.
+Enabling the simulator requires a single setting in `config/app.yaml`.
+The `features.demo` flag no longer exists — the simulator plugin is fully
+self-contained.
 
 **`config/app.yaml`**:
 
 ```yaml
-features:
-  demo: true
-
 plugins:
   simulator:
     enabled: true
     scenario: demo-stable
 ```
+
+When the simulator is active, a small **DEMO** ribbon appears in the top-left
+corner of the UI as a visual indicator.
 
 **`config/plugins/simulator/config/plugin.yaml`** (authoritative config,
 hot-reloaded every tick):

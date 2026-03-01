@@ -164,16 +164,17 @@ Otherwise, leave blank and configure it later via the Template Editor.
 
 ---
 
-## Step 6: Demo Mode
+## Step 6: Simulator (Demo Mode)
 
 If you do not have a real Prometheus instance yet, or want to explore Rackscope's features
-before connecting live hardware, **Demo Mode** lets you start with simulated metrics.
+before connecting live hardware, the **Simulator plugin** lets you start with simulated metrics.
 
-**What demo mode does:**
+**What the simulator does:**
 
-- Enables the **Simulator plugin** which generates realistic Prometheus metrics for your topology
+- Generates realistic Prometheus metrics for your topology
 - Prometheus scrapes the simulator on its normal schedule (transparent to the backend)
 - You can experiment with health states, thresholds, overrides, and all UI features
+- A **DEMO** ribbon is displayed in the top-left corner of the UI while the simulator is active
 
 **Demo scenario options:**
 
@@ -184,13 +185,13 @@ before connecting live hardware, **Demo Mode** lets you start with simulated met
 | `random-demo-small` | Random failures with a different seed each run |
 
 :::info
-Demo mode writes `features.demo: true` and a `simulator.scenario` entry to `config/app.yaml`.
-You can disable it at any time from **Settings > General**.
+The wizard writes `plugins.simulator.enabled: true` and a `scenario` entry to `config/app.yaml`.
+You can disable it at any time from **Settings > Plugins**.
 :::
 
-> _[Screenshot placeholder: Demo mode step with scenario picker]_
+> _[Screenshot placeholder: Simulator step with scenario picker]_
 
-**Actions:** Toggle demo mode on or off, select a scenario, then click **Finish**.
+**Actions:** Toggle the simulator on or off, select a scenario, then click **Finish**.
 
 ---
 

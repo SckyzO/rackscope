@@ -242,7 +242,6 @@ features:
   notifications_max_visible: 10
   playlist: true
   offline: true
-  demo: true
   worldmap: true
   dev_tools: true
 ```
@@ -371,7 +370,7 @@ playlist:
 ## `plugins.simulator`
 
 Configuration for the SimulatorPlugin, which generates realistic Prometheus metrics for
-testing and demos. Requires `features.demo: true` to be active.
+testing and demos. Enable by setting `plugins.simulator.enabled: true`.
 
 ```yaml
 plugins:
@@ -386,8 +385,8 @@ plugins:
       rack_macro_failure: 0.01
       aisle_cooling_failure: 0.005
     incident_durations:
-      rack: 3
-      aisle: 5
+      rack: 300    # seconds (5 min)
+      aisle: 600   # seconds (10 min)
     overrides_path: config/plugins/simulator/overrides.yaml
     default_ttl_seconds: 120
     metrics_catalog_path: config/plugins/simulator/metrics_full.yaml
@@ -398,7 +397,7 @@ plugins:
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `enabled` | boolean | `true` | Activate the SimulatorPlugin. Also requires `features.demo: true` |
+| `enabled` | boolean | `false` | Activate the SimulatorPlugin. When enabled, a "DEMO" ribbon appears in the UI corner |
 | `update_interval_seconds` | integer | `20` | How often (seconds) the simulator regenerates its metric dataset |
 | `seed` | integer \| null | `null` | Random seed for deterministic metric generation. Set to a fixed integer for reproducible demos |
 | `scenario` | string \| null | `null` | Named scenario to load from `config/plugins/simulator/scenarios.yaml`. Examples: `demo-stable`, `demo-small`, `random-failures` |
@@ -587,7 +586,6 @@ features:
   notifications_max_visible: 10
   playlist: true
   offline: true
-  demo: true
   worldmap: true
   dev_tools: true
 
@@ -635,8 +633,8 @@ plugins:
       rack_macro_failure: 0.01
       aisle_cooling_failure: 0.005
     incident_durations:
-      rack: 3
-      aisle: 5
+      rack: 300    # seconds (5 min)
+      aisle: 600   # seconds (10 min)
     overrides_path: config/plugins/simulator/overrides.yaml
     default_ttl_seconds: 120
     metrics_catalog_path: config/plugins/simulator/metrics_full.yaml

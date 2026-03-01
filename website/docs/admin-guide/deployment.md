@@ -26,7 +26,7 @@ docker compose -f docker-compose.prod.yml up -d
 
 Production differences:
 - Frontend served as static build (no HMR)
-- Simulator excluded (set `features.demo: false`)
+- Simulator excluded (set `plugins.simulator.enabled: false`)
 - Optimized container sizes
 
 ## Environment Variables
@@ -61,8 +61,9 @@ telemetry:
 
 Disable the simulator:
 ```yaml
-features:
-  demo: false
+plugins:
+  simulator:
+    enabled: false
 ```
 
 ## Connecting to Real Slurm

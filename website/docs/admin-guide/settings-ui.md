@@ -122,7 +122,6 @@ Toggle optional UI features on and off. All toggles map to the
 | **World Map** | `features.worldmap` | Show the World Map view. Disable if sites have no geolocation data |
 | **Playlist** | `features.playlist` | Enable NOC screen-rotation mode. See [Playlist](./app-yaml.md#playlist) |
 | **Offline mode** | `features.offline` | Display a banner instead of an error page when Prometheus is unreachable |
-| **Demo mode** | `features.demo` | Activate the SimulatorPlugin. Disabling this stops metric generation and hides the Simulator section |
 | **Dev tools** | `features.dev_tools` | Show developer and diagnostic pages. Disable in production |
 
 ---
@@ -130,7 +129,7 @@ Toggle optional UI features on and off. All toggles map to the
 ## Simulator
 
 Manage the SimulatorPlugin that generates realistic Prometheus metrics for testing and
-demos. This section is only visible when `features.demo` is enabled.
+demos. This section is only visible when `plugins.simulator.enabled` is set.
 
 ![Settings page](/img/screenshots/settings.png)
 

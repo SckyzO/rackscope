@@ -70,16 +70,16 @@ triggers a deprecation warning in the backend logs. Migrate to
 
 ## Enabling the Plugin
 
-Set both the feature flag and the plugin flag in `config/app.yaml`:
+Set the plugin flag in `config/app.yaml`:
 
 ```yaml
-features:
-  demo: true      # Required: enables demo mode in the frontend
-
 plugins:
   simulator:
     enabled: true
 ```
+
+When the simulator is active, a **DEMO** ribbon is displayed in the top-left
+corner of the UI as a visual indicator.
 
 The dedicated plugin config file takes precedence over `app.yaml` values:
 

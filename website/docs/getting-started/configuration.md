@@ -47,7 +47,6 @@ planner:
 
 # Feature flags
 features:
-  demo: true           # Enable simulator/demo mode
   notifications: true
   playlist: true
 
@@ -64,9 +63,11 @@ features:
 #     drain: WARN
 #   mapping_path: config/plugins/slurm/node_mapping.yaml
 
-# Simulator settings (only when features.demo: true)
-simulator:
-  scenario: demo-small   # demo-small, full-ok, random-demo-small
+# Simulator plugin (optional — generates fake metrics for demo/testing)
+# plugins:
+#   simulator:
+#     enabled: true
+#     scenario: demo-small   # demo-small, full-ok, random-demo-small
 ```
 
 ## Topology Configuration

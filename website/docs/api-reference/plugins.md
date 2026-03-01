@@ -87,7 +87,7 @@ GET /api/plugins/menu
 
 ## Simulator Plugin {#simulator}
 
-The Simulator plugin generates realistic Prometheus metrics for testing without real hardware. It is enabled when `features.demo: true` is set in `config/app.yaml`. Prometheus scrapes the simulator and the backend queries Prometheus normally, making the demo environment behaviorally identical to production.
+The Simulator plugin generates realistic Prometheus metrics for testing without real hardware. It is enabled by setting `plugins.simulator.enabled: true` in `config/app.yaml`. Prometheus scrapes the simulator and the backend queries Prometheus normally, making the demo environment behaviorally identical to production.
 
 ---
 
