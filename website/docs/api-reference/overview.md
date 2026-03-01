@@ -4,69 +4,144 @@ title: API Overview
 sidebar_position: 1
 ---
 
-# API Reference
+# Rackscope REST API
 
-Rackscope exposes a REST API at `http://localhost:8000`.
+Rackscope exposes a JSON REST API at `http://localhost:8000`.
 
-Interactive documentation (Swagger UI): **http://localhost:8000/docs**
+:::tip Interactive docs
+Browse and test every endpoint directly in **[Swagger UI](http://localhost:8000/docs)** — automatically generated from the FastAPI code.
+:::
+
+## Base URL
+
+```
+http://localhost:8000
+```
+
+All paths are relative to this base. In production, replace with your server hostname.
 
 ## Authentication
 
-Authentication is optional and disabled by default. When enabled:
+Authentication is **optional** and disabled by default. When disabled, all endpoints are publicly accessible with no credentials required.
 
-```bash
-POST /api/auth/login
-GET  /api/auth/status
-GET  /api/auth/me
-POST /api/auth/logout
+Enable it in `config/app.yaml`:
+
+```yaml
+auth:
+  enabled: true
+  username: admin
+  password_hash: $2b$12$...  # bcrypt hash
 ```
 
-## Endpoint Groups
+### Login
 
-| Group | Base Path | Description |
-|-------|-----------|-------------|
-| [Telemetry](/api-reference/telemetry) | `/api/` | Health states, alerts, room/rack states |
-| [Topology](/api-reference/topology) | `/api/topology/` | Sites, rooms, aisles, racks, devices |
-| [Catalog](/api-reference/topology) | `/api/catalog/` | Device and rack templates |
-| [Checks](/api-reference/topology) | `/api/checks/` | Health check library |
-| [Metrics](/api-reference/metrics) | `/api/metrics/` | Metrics library and live data |
-| [Plugins](/api-reference/plugins) | `/api/plugins/` | Plugin discovery and menu |
-| [Simulator](/api-reference/plugins) | `/api/simulator/` | Demo mode control |
-| [Slurm](/api-reference/plugins) | `/api/slurm/` | Workload manager data |
-| [Config](/api-reference/overview) | `/api/config` | Application configuration |
-| [System](/api-reference/overview) | `/api/stats/` | Backend statistics |
-
-## Common Patterns
-
-### Response Format
-
-All endpoints return JSON. Errors use standard HTTP status codes:
+```bash
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "yourpassword"}'
+```
 
 ```json
 {
-  "detail": "Error message here"
+  "access_token": "eyJhbGciOiJIUzI1NiJ9...",
+  "token_type": "bearer",
+  "expires_in": 28800,
+  "username": "admin"
 }
 ```
 
-### Health States
+### Using the token
 
-All health state fields use one of: `"OK"`, `"WARN"`, `"CRIT"`, `"UNKNOWN"`
-
-### Example Requests
+Pass the token in the `Authorization` header for all subsequent requests:
 
 ```bash
-# Get global stats
+curl http://localhost:8000/api/rooms \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..."
+```
+
+### Auth endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/auth/status` | Check whether auth is enabled and configured |
+| `POST` | `/api/auth/login` | Validate credentials and receive a JWT |
+| `GET` | `/api/auth/me` | Return the currently authenticated user |
+| `POST` | `/api/auth/change-password` | Update password (writes new bcrypt hash to `app.yaml`) |
+
+## Response Format
+
+All endpoints return JSON. Successful responses vary by endpoint — see each endpoint's section for the exact schema.
+
+All error responses share the same envelope:
+
+```json
+{
+  "detail": "Error message describing what went wrong"
+}
+```
+
+### HTTP Status Codes
+
+| Code | Meaning |
+|------|---------|
+| `200` | Success |
+| `400` | Bad request — validation error or conflict |
+| `401` | Unauthorized — invalid or missing token |
+| `404` | Resource not found |
+| `500` | Internal server error |
+| `502` | Bad gateway — Prometheus unreachable |
+| `503` | Service unavailable — configuration not loaded |
+| `504` | Timeout — Prometheus query timed out |
+
+## Health States
+
+Every entity (node, device, rack, room, site) carries one of four health states:
+
+| State | Meaning |
+|-------|---------|
+| `OK` | All checks passing |
+| `WARN` | At least one warning threshold exceeded |
+| `CRIT` | At least one critical threshold exceeded |
+| `UNKNOWN` | No data from Prometheus or check error |
+
+States propagate upward through the hierarchy: **Node → Device → Rack → Room → Site**. The worst state wins at each level (`CRIT` beats `WARN` beats `UNKNOWN` beats `OK`).
+
+## API Groups
+
+| Group | Base path | Description |
+|-------|-----------|-------------|
+| [Telemetry](./telemetry) | `/api/` | Health states, alerts, room/rack states, stats |
+| [Topology](./topology) | `/api/topology/` | Sites, rooms, aisles, racks, devices (CRUD) |
+| [Catalog](./topology#catalog) | `/api/catalog/` | Device and rack hardware templates |
+| [Checks](./topology#checks) | `/api/checks/` | Health check library |
+| [Metrics](./metrics) | `/api/metrics/` | Metrics library and live time-series queries |
+| [Plugins](./plugins) | `/api/plugins/` | Plugin discovery and dynamic menu |
+| [Simulator](./plugins#simulator) | `/api/simulator/` | Demo mode control and metric overrides |
+| [Slurm](./plugins#slurm) | `/api/slurm/` | HPC workload manager states |
+| Config | `/api/config` | Application configuration read/write |
+| System | `/api/system/` | Backend management (status, restart) |
+
+## Quick Start
+
+```bash
+# Liveness probe
+curl http://localhost:8000/healthz
+
+# Global infrastructure summary
 curl http://localhost:8000/api/stats/global
 
-# Get all rooms with health states
+# All rooms with rack counts
 curl http://localhost:8000/api/rooms
 
-# Get rack state (health only — fast)
+# Room health state with per-rack breakdown
+curl http://localhost:8000/api/rooms/dc1-r001/state
+
+# Rack health only — fast (~30ms)
 curl http://localhost:8000/api/racks/a01-r01/state
 
-# Get rack state with metrics (slower — for detail views)
-curl http://localhost:8000/api/racks/a01-r01/state?include_metrics=true
+# Rack health + metrics — slower (~743ms, 20+ Prometheus queries)
+curl "http://localhost:8000/api/racks/a01-r01/state?include_metrics=true"
 
-# Get active alerts
+# All active WARN/CRIT alerts with topology context
 curl http://localhost:8000/api/alerts/active
 ```
