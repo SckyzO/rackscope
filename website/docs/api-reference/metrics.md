@@ -20,10 +20,14 @@ Rackscope does **not** collect or store metrics. All data is queried live from P
 |--------|------|-------------|
 | `GET` | `/api/metrics/library` | List all metrics (with optional filtering) |
 | `GET` | `/api/metrics/library/{metric_id}` | Get a single metric definition |
+| `GET` | `/api/metrics/library/files` | List all YAML files in the metrics library directory |
+| `GET` | `` `/api/metrics/library/files/{name}` `` | Read raw YAML content of a specific metric file |
+| `PUT` | `` `/api/metrics/library/files/{name}` `` | Create or update a metric YAML file |
+| `DELETE` | `` `/api/metrics/library/files/{name}` `` | Delete a metric YAML file |
 | `GET` | `/api/metrics/data` | Query live time-series data from Prometheus |
 | `GET` | `/api/metrics/categories` | List all unique categories |
 | `GET` | `/api/metrics/tags` | List all unique tags |
-| `GET` | `/api/metrics/files` | List YAML files in the metrics library directory |
+| `GET` | `/api/metrics/files` | List YAML files in the metrics library directory (legacy) |
 
 ---
 
@@ -149,6 +153,165 @@ Returns a single metric object with the same structure as entries in the library
 
 ```bash
 curl "http://localhost:8000/api/metrics/library/node_temperature"
+```
+
+---
+
+## Metrics Library Files (CRUD)
+
+These endpoints allow you to list, read, create, update, and delete metric YAML files directly via the API. The metrics library is automatically reloaded after every write or delete operation.
+
+:::tip Visual editor
+The **Metrics Library Editor** at `/editors/metrics` provides a visual UI for managing metric definitions without editing raw YAML. Use these API endpoints for automation, importers, or CI/CD workflows.
+:::
+
+---
+
+### GET /api/metrics/library/files
+
+List all YAML files present in the metrics library directory.
+
+#### Response
+
+```json
+{
+  "files": [
+    {
+      "name": "node_temperature.yaml",
+      "path": "/app/config/metrics/library/node_temperature.yaml"
+    },
+    {
+      "name": "pdu_active_power.yaml",
+      "path": "/app/config/metrics/library/pdu_active_power.yaml"
+    }
+  ]
+}
+```
+
+#### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `files` | array | List of file entries found in the library directory |
+| `files[].name` | string | Filename (basename, e.g. `node_temperature.yaml`) |
+| `files[].path` | string | Absolute path inside the container |
+
+#### Example
+
+```bash
+curl "http://localhost:8000/api/metrics/library/files"
+```
+
+---
+
+### `GET /api/metrics/library/files/{name}`
+
+Read the raw YAML content of a specific metric file. The `{name}` parameter is the filename including the `.yaml` extension.
+
+#### Path Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `name` | Filename to read (e.g. `node_temperature.yaml`) |
+
+#### Response
+
+```json
+{
+  "name": "node_temperature.yaml",
+  "content": "id: node_temperature\nname: Node Temperature\n..."
+}
+```
+
+#### Error Responses
+
+| Status | Condition |
+|--------|-----------|
+| `404 Not Found` | No file with the given name exists in the library directory |
+| `503 Service Unavailable` | Metrics library configuration has not been loaded |
+
+#### Example
+
+```bash
+curl "http://localhost:8000/api/metrics/library/files/node_temperature.yaml"
+```
+
+---
+
+### `PUT /api/metrics/library/files/{name}`
+
+Create or update a metric YAML file. The metrics library is automatically reloaded after the file is saved.
+
+#### Path Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `name` | Filename to create or overwrite (e.g. `my_metric.yaml`) |
+
+#### Request Body
+
+```json
+{
+  "content": "id: my_metric\nname: My Metric\ndescription: A custom metric\nmetric: my_prometheus_metric\ndisplay:\n  unit: W\n  chart_type: line\n  aggregation: avg\ncategory: power\ntags: [infrastructure]"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `content` | string | Yes | Raw YAML content to write to the file |
+
+#### Response
+
+```json
+{ "status": "ok", "name": "my_metric.yaml" }
+```
+
+#### Error Responses
+
+| Status | Condition |
+|--------|-----------|
+| `400 Bad Request` | The provided YAML content is invalid and could not be parsed |
+| `503 Service Unavailable` | Metrics library configuration has not been loaded |
+
+#### Example
+
+```bash
+curl -X PUT "http://localhost:8000/api/metrics/library/files/my_metric.yaml" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "id: my_metric\nname: My Metric\nmetric: my_prometheus_metric\ncategory: power\ndisplay:\n  unit: W\n  chart_type: line\n  aggregation: avg"
+  }'
+```
+
+---
+
+### `DELETE /api/metrics/library/files/{name}`
+
+Delete a metric YAML file and reload the metrics library. This operation is irreversible.
+
+#### Path Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `name` | Filename to delete (e.g. `my_metric.yaml`) |
+
+#### Response
+
+```json
+{ "status": "deleted", "name": "my_metric.yaml" }
+```
+
+#### Error Responses
+
+| Status | Condition |
+|--------|-----------|
+| `404 Not Found` | No file with the given name exists in the library directory |
+| `503 Service Unavailable` | Metrics library configuration has not been loaded |
+
+#### Example
+
+```bash
+curl -X DELETE "http://localhost:8000/api/metrics/library/files/my_metric.yaml"
 ```
 
 ---
