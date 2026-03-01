@@ -15,6 +15,12 @@ const sidebars = {
     'user-guide/editors',
     'user-guide/slurm',
     'user-guide/simulator',
+    'user-guide/health-checks',
+    'user-guide/topology-editor',
+    'user-guide/dashboard',
+    'user-guide/login',
+    'user-guide/notifications',
+    'user-guide/ui-library',
   ],
 
   adminGuide: [
@@ -22,6 +28,8 @@ const sidebars = {
     'admin-guide/topology-yaml',
     'admin-guide/templates',
     'admin-guide/prometheus',
+    'admin-guide/app-yaml',
+    'admin-guide/settings-ui',
   ],
 
   apiReference: [
