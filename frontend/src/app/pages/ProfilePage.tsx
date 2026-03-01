@@ -11,6 +11,7 @@ import {
   Trash2,
   Loader2,
   Save,
+  DatabaseZap,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
@@ -472,6 +473,62 @@ const AccountSectionHeader = ({
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+// ── Clear local storage cache ────────────────────────────────────────────────
+
+const ClearCacheSection = () => {
+  const [cleared, setCleared] = useState(false);
+
+  const handleClear = () => {
+    // Remove all rackscope.cache.* keys (API response cache).
+    // Preserve auth token, theme preferences, dashboard layouts, and other settings.
+    const preserve = new Set(['rackscope.auth.token']);
+    const toRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('rackscope.cache.') && !preserve.has(key)) {
+        toRemove.push(key);
+      }
+    }
+    toRemove.forEach((k) => localStorage.removeItem(k));
+    setCleared(true);
+    setTimeout(() => setCleared(false), 3000);
+  };
+
+  return (
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          API response cache (<code className="font-mono text-xs">rackscope.cache.*</code>)
+        </p>
+        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+          Auth token, theme and dashboard layouts are preserved.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={handleClear}
+        className={`flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors ${
+          cleared
+            ? 'border-success-200 bg-success-50 text-success-600 dark:border-success-700/50 dark:bg-success-500/10 dark:text-success-400'
+            : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5'
+        }`}
+      >
+        {cleared ? (
+          <>
+            <Check className="h-4 w-4" />
+            Cleared
+          </>
+        ) : (
+          <>
+            <Trash2 className="h-4 w-4" />
+            Clear cache
+          </>
+        )}
+      </button>
+    </div>
+  );
+};
+
 export const ProfilePage = () => {
   usePageTitle('Profile');
   const { user, authEnabled } = useAuth();
@@ -513,6 +570,17 @@ export const ProfilePage = () => {
           iconBg="bg-red-50 dark:bg-red-500/10"
         >
           <ChangePasswordForm />
+        </SectionCard>
+
+        {/* Local storage cache */}
+        <SectionCard
+          title="Local Storage"
+          desc="Clear cached data stored in your browser (API responses, dashboard layouts, preferences)."
+          icon={DatabaseZap}
+          iconColor="text-warning-500"
+          iconBg="bg-warning-50 dark:bg-warning-500/10"
+        >
+          <ClearCacheSection />
         </SectionCard>
       </div>
     </div>

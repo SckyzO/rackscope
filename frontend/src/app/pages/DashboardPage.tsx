@@ -1907,6 +1907,10 @@ export const DashboardPage = () => {
   const [pickerOpen, setPickerOpen] = useState(false);
   // Snapshot taken when entering edit mode — used by Discard to roll back
   const widgetSnapshot = useRef<WidgetConfig[]>([]);
+  // In-progress layout changes during edit mode — NOT persisted until Save is clicked.
+  const [pendingLayout, setPendingLayout] = useState<WidgetConfig[] | null>(null);
+  // Effective widgets: pending (unsaved edits) > saved (from localStorage)
+  const displayWidgets = editMode && pendingLayout !== null ? pendingLayout : widgets;
   // Rename state for dashboard tabs
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -1945,33 +1949,51 @@ export const DashboardPage = () => {
 
   const handleLayoutChange = useCallback(
     (newLayout: Layout[]) => {
-      const updated = applyRglLayout(widgets, newLayout);
-      saveWidgets(updated);
+      // Only capture layout changes when in edit mode. Changes are NOT persisted
+      // to localStorage until the user explicitly clicks Save.
+      if (!editMode) return;
+      setPendingLayout(applyRglLayout(displayWidgets, newLayout));
     },
-    [widgets, saveWidgets]
+    [editMode, displayWidgets]
   );
 
-  const removeWidget = (id: string) => saveWidgets(widgets.filter((w) => w.id !== id));
+  const removeWidget = (id: string) => {
+    const current = displayWidgets;
+    if (editMode) {
+      setPendingLayout(current.filter((w) => w.id !== id));
+    } else {
+      saveWidgets(current.filter((w) => w.id !== id));
+    }
+  };
 
   const addWidget = (type: WidgetType) => {
     const def = WIDGET_CATALOG.find((d) => d.type === type);
     if (!def) return;
-    const maxY = widgets.reduce((m, w) => Math.max(m, w.y + w.h), 0);
-    saveWidgets([
-      ...widgets,
-      {
-        id: `${type}-${Date.now()}`,
-        type,
-        x: 0,
-        y: maxY,
-        w: def.defaultW,
-        h: def.defaultH,
-        minH: def.defaultH > 1 ? 2 : 1,
-      },
-    ]);
+    const current = displayWidgets;
+    const maxY = current.reduce((m, w) => Math.max(m, w.y + w.h), 0);
+    const newWidget: WidgetConfig = {
+      id: `${type}-${Date.now()}`,
+      type,
+      x: 0,
+      y: maxY,
+      w: def.defaultW,
+      h: def.defaultH,
+      minH: def.defaultH > 1 ? 2 : 1,
+    };
+    if (editMode) {
+      setPendingLayout([...current, newWidget]);
+    } else {
+      saveWidgets([...current, newWidget]);
+    }
   };
 
-  const resetLayout = () => saveWidgets(DEFAULT_WIDGETS);
+  const resetLayout = () => {
+    if (editMode) {
+      setPendingLayout(DEFAULT_WIDGETS);
+    } else {
+      saveWidgets(DEFAULT_WIDGETS);
+    }
+  };
 
   const switchDashboard = (id: string) => {
     setActiveDashboardId(id);
@@ -2309,7 +2331,8 @@ export const DashboardPage = () => {
               </button>
               <button
                 onClick={() => {
-                  saveWidgets(widgetSnapshot.current);
+                  // Discard: clear pending layout without persisting — reverts to saved state
+                  setPendingLayout(null);
                   setEditMode(false);
                   setPickerOpen(false);
                 }}
@@ -2320,7 +2343,9 @@ export const DashboardPage = () => {
               </button>
               <button
                 onClick={() => {
-                  saveWidgets(widgets);
+                  // Save: persist pending layout (or current if no changes) to localStorage
+                  saveWidgets(pendingLayout ?? widgets);
+                  setPendingLayout(null);
                   setEditMode(false);
                   setPickerOpen(false);
                 }}
@@ -2334,6 +2359,7 @@ export const DashboardPage = () => {
             <button
               onClick={() => {
                 widgetSnapshot.current = widgets;
+                setPendingLayout(null);  // start with no pending changes
                 setEditMode(true);
               }}
               className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
@@ -2373,7 +2399,7 @@ export const DashboardPage = () => {
           </div>
         ) : (
           <ReactGridLayout
-            layout={toRglLayout(widgets)}
+            layout={toRglLayout(displayWidgets)}
             onLayoutChange={handleLayoutChange}
             width={gridWidth}
             cols={12}
@@ -2386,7 +2412,7 @@ export const DashboardPage = () => {
             resizeHandles={['se', 's', 'e']}
             useCSSTransforms
           >
-            {widgets.map((widget) => (
+            {displayWidgets.map((widget) => (
               <div
                 key={widget.id}
                 className={`group relative ${editMode ? 'ring-brand-500/20 rounded-2xl ring-1 ring-offset-1 ring-offset-transparent' : ''}`}

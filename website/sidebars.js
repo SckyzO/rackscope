@@ -21,6 +21,8 @@ const sidebars = {
     'user-guide/login',
     'user-guide/notifications',
     'user-guide/ui-library',
+    'user-guide/wizard',
+    'user-guide/about',
   ],
 
   adminGuide: [
