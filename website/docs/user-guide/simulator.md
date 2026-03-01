@@ -282,24 +282,24 @@ A single randomly chosen node experiences a transient failure:
 ### Rack Macro-Failure
 
 **Rate**: `rack_macro_failure: 0.01` (1 in 100 ticks)
-**Duration**: `incident_durations.rack: 3` ticks (60 seconds at 20-second interval)
+**Duration**: `incident_durations.rack: 300` seconds (5 minutes — realistic PDU reset / power restore time)
 
 A whole rack loses power (simulates a PDU failure or breaker trip):
 
 - All nodes in the affected rack: `up=0`, `node_power_watts=50`
 - CPU load drops to 0
-- The rack recovers after `rack` ticks and all nodes come back online
+- The rack recovers after 300 seconds and all nodes come back online
 
 ### Aisle Cooling Failure
 
 **Rate**: `aisle_cooling_failure: 0.005` (1 in 200 ticks)
-**Duration**: `incident_durations.aisle: 5` ticks (100 seconds)
+**Duration**: `incident_durations.aisle: 600` seconds (10 minutes — cooling unit restart + temperature stabilization)
 
 All nodes in a randomly chosen aisle receive a +12 °C temperature boost:
 
 - Temperatures exceed WARN thresholds (typically 38 °C) on most nodes
 - High-draw nodes (GPU) may exceed CRIT threshold (45 °C)
-- After `aisle` ticks the cooling unit is considered restarted and
+- After 600 seconds the cooling unit is considered restarted and
   temperatures return to normal
 - `up` is NOT affected — nodes remain reachable
 
@@ -315,8 +315,8 @@ incident_rates:
   aisle_cooling_failure: 0.005
 
 incident_durations:
-  rack: 3    # ticks (rack_macro_failure recovery)
-  aisle: 5   # ticks (aisle_cooling_failure recovery)
+  rack: 300    # seconds — PDU reset / power restore (5 min)
+  aisle: 600   # seconds — cooling unit restart + stabilization (10 min)
 ```
 
 ---

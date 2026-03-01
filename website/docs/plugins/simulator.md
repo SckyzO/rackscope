@@ -135,13 +135,13 @@ incident_rates:
 
 ### `incident_durations`
 
-Controls how many ticks an incident persists before automatic recovery.
-Multiply by `update_interval_seconds` to convert to seconds.
+Controls how long an incident persists before automatic recovery.
+Values are in **seconds** (not ticks).
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `rack` | int (≥ 1) | `3` | Duration of a rack macro-failure (ticks). Default: 3 × 20s = 60 seconds. |
-| `aisle` | int (≥ 1) | `5` | Duration of an aisle cooling failure (ticks). Default: 5 × 20s = 100 seconds. |
+| `rack` | int (≥ 1) | `300` | Duration of a rack macro-failure in seconds. Default: 5 minutes — realistic PDU reset / power restore time. |
+| `aisle` | int (≥ 1) | `600` | Duration of an aisle cooling failure in seconds. Default: 10 minutes — cooling unit restart + temperature stabilization. |
 
 ### Paths
 
@@ -196,8 +196,8 @@ incident_rates:
   aisle_cooling_failure: 0.005
 
 incident_durations:
-  rack: 3
-  aisle: 5
+  rack: 300    # seconds — PDU reset / power restore (5 min)
+  aisle: 600   # seconds — cooling unit restart + stabilization (10 min)
 
 overrides_path: config/plugins/simulator/overrides/overrides.yaml
 default_ttl_seconds: 120
