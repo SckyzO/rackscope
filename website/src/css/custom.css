@@ -26,10 +26,13 @@
   /* Typography — TailAdmin uses Outfit */
   --ifm-font-family-base:      'Outfit', system-ui, -apple-system, sans-serif;
   --ifm-font-family-monospace: 'JetBrains Mono', 'Fira Code', monospace;
-  --ifm-font-size-base:        15px;
+  --ifm-font-size-base:        16.5px;
   --ifm-font-weight-bold:      600;
-  --ifm-line-height-base:      1.6;
+  --ifm-line-height-base:      1.7;
   --ifm-code-font-size:        93%;
+  --ifm-h1-font-size:          2.2rem;
+  --ifm-h2-font-size:          1.6rem;
+  --ifm-h3-font-size:          1.25rem;
 
   /* Background — TailAdmin gray-50 / white */
   --ifm-background-color:          #f9fafb;  /* gray-50 */
@@ -249,9 +252,9 @@ code {
   letter-spacing: -0.3px;
 }
 
-.markdown h1 { font-size: 2rem; }
+.markdown h1 { font-size: 2.2rem; }
 .markdown h2 {
-  font-size: 1.375rem;
+  font-size: 1.6rem;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--ifm-toc-border-color);
   margin-top: 2.5rem;
