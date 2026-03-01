@@ -233,8 +233,10 @@ async def list_metrics_files(
         return {"files": []}
 
     metrics_path = Path(app_config.paths.metrics)
-    # Look in parent directory of the library path (metrics files live alongside the library)
-    search_dirs = [metrics_path, metrics_path.parent]
+    # Search in: library path, its parent (config/metrics/), and the simulator
+    # plugin directory where the actual catalog files live (metrics_full.yaml, etc.)
+    sim_catalogs_dir = Path("config/plugins/simulator")
+    search_dirs = [metrics_path, metrics_path.parent, sim_catalogs_dir]
 
     files = []
     seen = set()
