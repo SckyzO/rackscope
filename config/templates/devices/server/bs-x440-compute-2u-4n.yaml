@@ -10,8 +10,10 @@ templates:
     rows: 2
     cols: 2
     matrix:
-    - [1, 2]
-    - [3, 4]
+    - - 1
+      - 2
+    - - 3
+      - 4
   disk_layout: null
   rear_layout: null
   rear_components: []
@@ -24,12 +26,4 @@ templates:
   - ipmi_sensor_state
   - ipmi_temperature_state
   - ipmi_voltage_state
-  metrics:
-  - node_up
-  - node_cpu_usage
-  - node_memory_used_percent
-  - node_memory_available_bytes
-  - node_disk_usage_percent
-  - node_disk_io_read_bytes
-  - node_disk_io_write_bytes
-  - node_network_receive_bytes
+  metrics: []

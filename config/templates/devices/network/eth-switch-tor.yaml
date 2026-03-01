@@ -9,13 +9,14 @@ templates:
     rows: 1
     cols: 1
     matrix:
-    - [1]
+    - - 1
   rear_layout:
     type: grid
     rows: 1
     cols: 2
     matrix:
-    - [901, 902]
+    - - 901
+      - 902
   checks:
   - node_up
   - switch_up
@@ -24,6 +25,5 @@ templates:
   - switch_power_warn
   - switch_power_crit
   metrics:
-  - node_up
   - node_temperature
   - node_power
