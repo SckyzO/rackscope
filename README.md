@@ -4,7 +4,7 @@
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](pyproject.toml)
 [![React](https://img.shields.io/badge/react-19-61DAFB.svg)](frontend/package.json)
 [![TypeScript](https://img.shields.io/badge/typescript-5.x-3178C6.svg)](frontend/tsconfig.json)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-active-brightgreen.svg)]()
 
 **Prometheus-first physical infrastructure monitoring for data centers and HPC environments.**
@@ -208,4 +208,6 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md) before
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+AGPL-3.0-or-later — see [LICENSE](LICENSE).
+
+For commercial use, proprietary deployments, or SaaS offerings, contact the maintainers for a commercial license.

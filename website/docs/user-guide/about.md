@@ -162,7 +162,7 @@ Rackscope is open source and welcomes contributions.
 - Small, focused PRs — one intent per commit
 - The core system must remain **vendor-agnostic**: no hardcoded vendor logic in Python or TypeScript
 
-**License:** MIT. Do what you want. Ship it. Tell us what you built.
+**License:** AGPL-3.0. Use it, self-host it, contribute back. For commercial or SaaS deployments, contact the maintainers for a commercial license.
 
 ---
 

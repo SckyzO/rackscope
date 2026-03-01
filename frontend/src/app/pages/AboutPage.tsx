@@ -941,8 +941,8 @@ export const AboutPage = () => {
         {/* ── License ────────────────────────────────────────────────── */}
         <div className="rounded-2xl border border-gray-100 px-6 py-4 dark:border-gray-800">
           <p className="text-center text-xs text-gray-400 dark:text-gray-600">
-            Rackscope is open-source software — MIT License. All trademarks are property of their
-            respective owners.
+            Rackscope is open-source software — AGPL-3.0 License. All trademarks are property of
+            their respective owners.
           </p>
         </div>
       </div>

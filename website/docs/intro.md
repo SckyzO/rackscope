@@ -61,4 +61,4 @@ YAML Config → Backend (FastAPI) → Prometheus ← Simulator (demo)
 - ✅ 0 mypy type errors
 - ✅ All linters passing (ruff, eslint, stylelint, prettier)
 - ✅ 39 metric definitions in library
-- MIT License
+- AGPL-3.0 License

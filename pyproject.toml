@@ -4,7 +4,7 @@ version = "0.0.0"
 description = "Rack & Server Monitoring Dashboard (Prometheus-first physical views)"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = {text = "AGPL-3.0-or-later"}
 authors = [{name = "rackscope contributors"}]
 dependencies = [
   "pydantic>=2.12.5",
