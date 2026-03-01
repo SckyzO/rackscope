@@ -632,6 +632,16 @@ export const api = {
   getEnv: async (): Promise<Record<string, string | null>> => {
     return fetchWithCache('/api/env', 'app.env');
   },
+  getSimulatorStatus: async (): Promise<{
+    running: boolean;
+    endpoint: string;
+    update_interval: number;
+    scenario: string | null;
+    overrides_count: number;
+  }> => {
+    // Not cached — used to detect live running state (e.g. to grey out settings).
+    return apiFetch('/api/simulator/status').then((r) => r.json());
+  },
   getSimulatorOverrides: async (): Promise<{ overrides: SimulatorOverride[] }> => {
     return fetchWithCache('/api/simulator/overrides', 'simulator.overrides');
   },

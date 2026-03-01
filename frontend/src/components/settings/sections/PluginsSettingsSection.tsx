@@ -49,16 +49,22 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   const [showAddOverride, setShowAddOverride] = useState(false);
   const [newOverride, setNewOverride] = useState({ instance: '', metric: 'up', value: '0' });
 
+  // Detect if the simulator container is currently responding.
+  // When running, the plugin settings are greyed with a restart warning.
+  const [simulatorRunning, setSimulatorRunning] = useState(false);
+
   const loadSimulatorData = useCallback(async () => {
     try {
-      const [scenariosData, overridesData, config] = await Promise.all([
+      const [scenariosData, overridesData, config, status] = await Promise.all([
         api.getSimulatorScenarios(),
         api.getSimulatorOverrides(),
         api.getConfig(),
+        api.getSimulatorStatus().catch(() => ({ running: false })),
       ]);
       setScenarios(scenariosData.scenarios ?? []);
       setOverrides(overridesData.overrides ?? []);
       setActiveScenario(config.plugins?.simulator?.scenario ?? '');
+      setSimulatorRunning(status?.running ?? false);
     } catch {
       /* ignore */
     }
@@ -235,24 +241,35 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           </div>
         </div>
 
-        <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
-          <p className="text-xs text-gray-600 dark:text-gray-300">
-            <strong>Note:</strong> The simulator only works when using{' '}
-            <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">
-              docker-compose-dev.yaml
-            </code>
-            . Make sure to start the stack with{' '}
-            <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">
-              make up
-            </code>{' '}
-            or{' '}
-            <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">
-              docker compose up -d
-            </code>
-            .
-          </p>
-        </div>
+        {simulatorRunning ? (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2.5">
+            <FlaskConical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+            <p className="text-[11px] text-amber-700 dark:text-amber-400">
+              <strong>Simulator is currently running.</strong> Configuration changes will take effect
+              on next container restart — they won't interrupt the running simulator.
+            </p>
+          </div>
+        ) : (
+          <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
+            <p className="text-xs text-gray-600 dark:text-gray-300">
+              <strong>Note:</strong> The simulator only works when using{' '}
+              <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">
+                docker-compose-dev.yaml
+              </code>
+              . Make sure to start the stack with{' '}
+              <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">
+                make up
+              </code>{' '}
+              or{' '}
+              <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">
+                docker compose up -d
+              </code>
+              .
+            </p>
+          </div>
+        )}
 
+        <div className={simulatorRunning ? 'pointer-events-none opacity-50' : ''}>
         <FormToggle
           label="Enable Simulator"
           description="Activate simulator plugin for demo mode"
@@ -622,6 +639,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* Slurm Plugin */}
