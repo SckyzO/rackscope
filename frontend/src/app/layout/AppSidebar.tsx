@@ -556,26 +556,26 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
               aria-hidden="true"
             >
               <rect
-                x="2"
+                x="1.5"
                 y="1.5"
-                width="16"
+                width="17"
                 height="17"
                 rx="2"
                 stroke="currentColor"
                 strokeWidth="1.5"
               />
-              <rect x="4.5" y="4" width="8" height="2.5" rx="0.75" fill="currentColor" />
-              <circle cx="14.5" cy="5.25" r="1" fill="currentColor" />
+              <rect x="3.5" y="3.5" width="10" height="3" rx="0.75" fill="currentColor" />
+              <circle cx="16" cy="5" r="1.25" fill="currentColor" />
               <path
-                d="M4.5 10.5h1.5L7.5 8.5l1.5 4 1-2h1.5"
+                d="M3.5 10.5h2L7 8.5l2 4 1.5-2h2.5"
                 stroke="currentColor"
                 strokeWidth="1.25"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              <circle cx="14.5" cy="10.5" r="1" fill="currentColor" />
-              <rect x="4.5" y="13.5" width="8" height="2.5" rx="0.75" fill="currentColor" />
-              <circle cx="14.5" cy="14.75" r="1" fill="currentColor" />
+              <circle cx="16" cy="10.5" r="1.25" fill="currentColor" />
+              <rect x="3.5" y="13.5" width="10" height="3" rx="0.75" fill="currentColor" />
+              <circle cx="16" cy="15" r="1.25" fill="currentColor" />
             </svg>
           </div>
           <div
