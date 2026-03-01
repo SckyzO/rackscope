@@ -343,10 +343,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     // Standard dark mode replaces text with neutral grays; Solarized Dark uses
     // its canonical palette (base0/base1/base00/base01) for readability.
     if (mode === 'dark' && lightTheme === 'solarized') {
-      root.style.setProperty('--color-text-base', '#839496');     // Solarized base0
-      root.style.setProperty('--color-text-primary', '#93a1a1');  // Solarized base1
+      root.style.setProperty('--color-text-base', '#839496'); // Solarized base0
+      root.style.setProperty('--color-text-primary', '#93a1a1'); // Solarized base1
       root.style.setProperty('--color-text-secondary', '#657b83'); // Solarized base00
-      root.style.setProperty('--color-text-muted', '#586e75');     // Solarized base01
+      root.style.setProperty('--color-text-muted', '#586e75'); // Solarized base01
     }
 
     const isMatrix = mode === 'dark' && darkTheme === 'matrix';

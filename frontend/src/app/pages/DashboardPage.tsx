@@ -2359,7 +2359,7 @@ export const DashboardPage = () => {
             <button
               onClick={() => {
                 widgetSnapshot.current = widgets;
-                setPendingLayout(null);  // start with no pending changes
+                setPendingLayout(null); // start with no pending changes
                 setEditMode(true);
               }}
               className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"

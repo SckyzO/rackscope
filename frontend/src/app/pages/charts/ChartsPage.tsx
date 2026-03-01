@@ -87,39 +87,6 @@ const LineAreaChart = () => {
   );
 };
 
-// ── 2. Bar chart ──────────────────────────────────────────────────────────────
-
-const BarChart = () => {
-  const dark = useDark();
-  const options: ApexOptions = {
-    chart: { ...baseChart(), type: 'bar' },
-    theme: baseTheme(dark),
-    colors: [BRAND, '#10b981'],
-    plotOptions: { bar: { columnWidth: '50%', borderRadius: 4 } },
-    dataLabels: { enabled: false },
-    grid: GRID(dark),
-    xaxis: {
-      categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      labels: AXIS_LABELS(dark),
-    },
-    yaxis: { labels: { ...AXIS_LABELS(dark) } },
-    legend: { position: 'top', labels: { colors: dark ? '#d1d5db' : '#374151' } },
-    tooltip: { theme: dark ? 'dark' : 'light' },
-  };
-  return (
-    <ReactApexChart
-      key={String(dark)}
-      options={options}
-      series={[
-        { name: 'Sales', data: [44, 55, 57, 56, 61, 58, 63] },
-        { name: 'Revenue', data: [76, 85, 101, 98, 87, 105, 91] },
-      ]}
-      type="bar"
-      height={280}
-    />
-  );
-};
-
 // ── 3. Donut chart ────────────────────────────────────────────────────────────
 
 const DonutChart = () => {
@@ -151,54 +118,6 @@ const DonutChart = () => {
       series={[44, 15, 8, 12, 21]}
       type="donut"
       height={280}
-    />
-  );
-};
-
-// ── 4. Heatmap ────────────────────────────────────────────────────────────────
-
-const HeatmapChart = () => {
-  const dark = useDark();
-  const gen = (n: number) =>
-    Array.from({ length: n }, (_, i) => ({
-      x: `N${String(i + 1).padStart(2, '0')}`,
-      y: Math.floor(Math.random() * 100),
-    }));
-  const options: ApexOptions = {
-    chart: { ...baseChart(), type: 'heatmap' },
-    theme: baseTheme(dark),
-    dataLabels: { enabled: false },
-    plotOptions: {
-      heatmap: {
-        shadeIntensity: 0.5,
-        colorScale: {
-          ranges: [
-            { from: 0, to: 30, color: '#10b981', name: 'OK' },
-            { from: 31, to: 65, color: '#f59e0b', name: 'WARN' },
-            { from: 66, to: 100, color: '#ef4444', name: 'CRIT' },
-          ],
-        },
-      },
-    },
-    grid: GRID(dark),
-    xaxis: {
-      labels: { ...AXIS_LABELS(dark), style: { ...AXIS_LABELS(dark).style, fontSize: '10px' } },
-    },
-    yaxis: { labels: { ...AXIS_LABELS(dark) } },
-    tooltip: { theme: dark ? 'dark' : 'light' },
-  };
-  return (
-    <ReactApexChart
-      key={String(dark)}
-      options={options}
-      series={[
-        { name: 'Aisle A', data: gen(12) },
-        { name: 'Aisle B', data: gen(12) },
-        { name: 'Aisle C', data: gen(12) },
-        { name: 'Aisle D', data: gen(12) },
-      ]}
-      type="heatmap"
-      height={220}
     />
   );
 };
@@ -287,53 +206,6 @@ const RealtimeChart = () => {
   );
 };
 
-// ── 6. Mixed: area + column ───────────────────────────────────────────────────
-
-const MixedChart = () => {
-  const dark = useDark();
-  const options: ApexOptions = {
-    chart: { ...baseChart(), type: 'line', stacked: false },
-    theme: baseTheme(dark),
-    colors: [BRAND, '#10b981', '#f59e0b'],
-    stroke: { width: [2, 2, 0], curve: 'smooth' },
-    dataLabels: { enabled: false },
-    fill: { opacity: [0.3, 0.3, 1] },
-    grid: GRID(dark),
-    xaxis: {
-      categories: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
-      labels: AXIS_LABELS(dark),
-    },
-    yaxis: [
-      {
-        seriesName: 'Temperature',
-        min: 0,
-        max: 100,
-        labels: { formatter: (v) => `${Math.round(v)}°C`, ...AXIS_LABELS(dark) },
-      },
-      {
-        seriesName: 'Power',
-        opposite: true,
-        labels: { formatter: (v) => `${v.toFixed(1)}kW`, ...AXIS_LABELS(dark) },
-      },
-    ],
-    legend: { position: 'top', labels: { colors: dark ? '#d1d5db' : '#374151' } },
-    tooltip: { theme: dark ? 'dark' : 'light', shared: true, intersect: false },
-  };
-  return (
-    <ReactApexChart
-      key={String(dark)}
-      options={options}
-      series={[
-        { name: 'Temperature', type: 'area', data: [38, 40, 45, 52, 48, 42, 40] },
-        { name: 'Power (kW)', type: 'area', data: [3.2, 3.8, 4.5, 5.1, 4.8, 4.0, 3.5] },
-        { name: 'Alerts', type: 'column', data: [0, 0, 2, 5, 1, 0, 0] },
-      ]}
-      type="line"
-      height={260}
-    />
-  );
-};
-
 // ── 7. Radial Bar ─────────────────────────────────────────────────────────────
 
 const RadialBarChart = () => {
@@ -377,138 +249,6 @@ const RadialBarChart = () => {
       series={[91, 85, 78, 62]}
       type="radialBar"
       height={260}
-    />
-  );
-};
-
-// ── 8. Pie chart variants ─────────────────────────────────────────────────────
-
-/** Simple Pie — standard colored slices */
-const SimplePie = () => {
-  const dark = useDark();
-  const options: ApexOptions = {
-    chart: { ...baseChart(), type: 'pie' },
-    theme: baseTheme(dark),
-    colors: COLORS,
-    labels: ['OK', 'WARN', 'CRIT', 'UNKNOWN', 'Maintenance'],
-    dataLabels: { style: { fontSize: '11px', fontWeight: '600' } },
-    legend: { position: 'bottom', labels: { colors: dark ? '#d1d5db' : '#374151' } },
-    tooltip: { theme: dark ? 'dark' : 'light' },
-    responsive: [{ breakpoint: 480, options: { legend: { position: 'bottom' } } }],
-  };
-  return (
-    <ReactApexChart
-      key={String(dark)}
-      options={options}
-      series={[44, 15, 8, 12, 21]}
-      type="pie"
-      height={280}
-    />
-  );
-};
-
-/** Monochrome Pie — single brand color with shades, label = name + % */
-const MonochromePie = () => {
-  const dark = useDark();
-  const options: ApexOptions = {
-    chart: { ...baseChart(), type: 'pie' },
-    theme: {
-      ...baseTheme(dark),
-      monochrome: {
-        enabled: true,
-        color: BRAND,
-        shadeTo: dark ? 'dark' : 'light',
-        shadeIntensity: 0.65,
-      },
-    },
-    labels: ['Servers', 'Switches', 'Storage', 'PDUs', 'Cooling', 'Other'],
-    plotOptions: { pie: { dataLabels: { offset: -5 } } },
-    dataLabels: {
-      formatter: (
-        val: number,
-        opts: { w: { globals: { labels: string[] } }; seriesIndex: number }
-      ) => [opts.w.globals.labels[opts.seriesIndex], `${val.toFixed(1)}%`],
-      style: { fontSize: '11px' },
-    },
-    grid: { padding: { top: 0, bottom: 0, left: 0, right: 0 } },
-    legend: { show: false },
-    tooltip: { theme: dark ? 'dark' : 'light' },
-  };
-  return (
-    <ReactApexChart
-      key={String(dark)}
-      options={options}
-      series={[25, 15, 44, 55, 41, 17]}
-      type="pie"
-      height={280}
-    />
-  );
-};
-
-/** Gradient Donut — startAngle:-90 endAngle:270, gradient fill, legend with values */
-const GradientDonut = () => {
-  const dark = useDark();
-  const options: ApexOptions = {
-    chart: { ...baseChart(), type: 'donut' },
-    theme: baseTheme(dark),
-    colors: COLORS,
-    series: [44, 55, 41, 17, 15],
-    labels: ['OK', 'WARN', 'CRIT', 'UNKNOWN', 'Other'],
-    plotOptions: { pie: { startAngle: -90, endAngle: 270 } },
-    dataLabels: { enabled: false },
-    fill: { type: 'gradient' },
-    legend: {
-      position: 'bottom',
-      formatter: (
-        val: string,
-        opts: { w: { globals: { series: number[] } }; seriesIndex: number }
-      ) => `${val} — ${opts.w.globals.series[opts.seriesIndex]}`,
-      labels: { colors: dark ? '#d1d5db' : '#374151' },
-    },
-    tooltip: { theme: dark ? 'dark' : 'light' },
-  };
-  return (
-    <ReactApexChart
-      key={String(dark)}
-      options={options}
-      series={[44, 55, 41, 17, 15]}
-      type="donut"
-      height={280}
-    />
-  );
-};
-
-/** Pattern Fill Donut — fill with patterns (verticalLines, squares, circles…) */
-const PatternDonut = () => {
-  const dark = useDark();
-  const options: ApexOptions = {
-    chart: { ...baseChart(), type: 'donut' },
-    theme: baseTheme(dark),
-    colors: COLORS,
-    labels: ['Servers', 'Network', 'Storage', 'PDUs'],
-    dataLabels: { enabled: false },
-    fill: {
-      type: 'pattern',
-      opacity: 1,
-      pattern: {
-        enabled: true,
-        style: ['verticalLines', 'squares', 'horizontalLines', 'circles'],
-        width: 6,
-        height: 6,
-        strokeWidth: 2,
-      },
-    },
-    legend: { position: 'bottom', labels: { colors: dark ? '#d1d5db' : '#374151' } },
-    stroke: { width: 0 },
-    tooltip: { theme: dark ? 'dark' : 'light' },
-  };
-  return (
-    <ReactApexChart
-      key={String(dark)}
-      options={options}
-      series={[44, 55, 41, 17]}
-      type="donut"
-      height={280}
     />
   );
 };
@@ -703,94 +443,249 @@ const StrokedGauge = () => {
   );
 };
 
+// ── Sparkline group ───────────────────────────────────────────────────────────
+// Row of mini inline charts — useful for a metrics overview at-a-glance panel.
+
+const SparklineGroup = () => {
+  const dark = useDark();
+  const sparkOpts = (color: string, _data: number[]): ApexOptions => ({
+    chart: { ...baseChart(), type: 'line', sparkline: { enabled: true } },
+    theme: baseTheme(dark),
+    colors: [color],
+    stroke: { curve: 'smooth', width: 2 },
+    tooltip: { theme: dark ? 'dark' : 'light', fixed: { enabled: false } },
+  });
+  const items = [
+    { label: 'CPU', value: '78%', color: BRAND, data: [32, 44, 55, 51, 49, 60, 71, 65, 78] },
+    { label: 'Memory', value: '61%', color: '#10b981', data: [52, 58, 60, 55, 59, 61, 64, 60, 61] },
+    { label: 'Temp', value: '68°C', color: '#ef4444', data: [60, 62, 65, 68, 71, 69, 66, 67, 68] },
+    {
+      label: 'Power',
+      value: '3.2 kW',
+      color: '#f59e0b',
+      data: [28, 32, 35, 31, 34, 38, 36, 33, 32],
+    },
+    {
+      label: 'Net in',
+      value: '1.4 Gb',
+      color: '#8b5cf6',
+      data: [10, 25, 30, 22, 35, 40, 38, 42, 45],
+    },
+    {
+      label: 'Disk IO',
+      value: '420 MB',
+      color: '#0891b2',
+      data: [80, 70, 90, 100, 85, 95, 88, 92, 85],
+    },
+  ];
+  return (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      {items.map(({ label, value, color, data }) => (
+        <div
+          key={label}
+          className="rounded-xl border border-gray-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+        >
+          <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">{label}</p>
+          <p className="mt-1 text-xl font-bold" style={{ color }}>
+            {value}
+          </p>
+          <div className="mt-2">
+            <ReactApexChart
+              key={String(dark)}
+              options={sparkOpts(color, data)}
+              series={[{ data }]}
+              type="line"
+              height={40}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ── Treemap — rack space ───────────────────────────────────────────────────────
+// Inspired by Context7 treemap docs — useful for visualizing rack device space.
+
+const TreemapChart = () => {
+  const dark = useDark();
+  const options: ApexOptions = {
+    chart: { ...baseChart(), type: 'treemap' },
+    theme: baseTheme(dark),
+    colors: [BRAND, '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#0891b2'],
+    plotOptions: { treemap: { distributed: true, enableShades: false } },
+    dataLabels: { style: { fontSize: '12px', fontWeight: '600' } },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+    legend: { show: false },
+  };
+  return (
+    <ReactApexChart
+      key={String(dark)}
+      options={options}
+      series={[
+        {
+          data: [
+            { x: 'Compute (×20)', y: 80 },
+            { x: 'Storage array', y: 40 },
+            { x: 'IB Switch', y: 8 },
+            { x: 'Eth Switch', y: 4 },
+            { x: 'PDU ×4', y: 12 },
+            { x: 'Service ×2', y: 8 },
+            { x: 'Empty', y: 48 },
+          ],
+        },
+      ]}
+      type="treemap"
+      height={280}
+    />
+  );
+};
+
 // ── Page ──────────────────────────────────────────────────────────────────────
+
+const SECTIONS = [
+  { id: 'realtime', label: 'Realtime' },
+  { id: 'line-area', label: 'Line / Area' },
+  { id: 'radial-bar', label: 'Radial Bar' },
+  { id: 'gradient-circle', label: 'Gradient Circle' },
+  { id: 'donut', label: 'Donut' },
+  { id: 'donut-legend', label: 'Donut Legend' },
+  { id: 'semi-circle', label: 'Semi-circle' },
+  { id: 'stroked', label: 'Stroked Gauge' },
+  { id: 'sparklines', label: 'Sparklines' },
+  { id: 'treemap', label: 'Treemap' },
+];
 
 export const ChartsPage = () => {
   usePageTitle('Charts');
+
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Charts"
-        description="Interactive data visualizations powered by ApexCharts — 6 chart types."
+        description="Interactive data visualizations powered by ApexCharts — 10 chart types."
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title="Line / Area" desc="Revenue vs expenses over 12 months">
-          <LineAreaChart />
-        </SectionCard>
-        <SectionCard title="Bar / Column" desc="Grouped bars — sales and revenue by day">
-          <BarChart />
-        </SectionCard>
+      {/* Sticky nav */}
+      <div className="sticky top-0 z-20 -mx-1 overflow-x-auto rounded-2xl border border-gray-200 bg-white/90 px-3 py-2 backdrop-blur dark:border-gray-800 dark:bg-gray-900/90">
+        <div className="flex gap-1">
+          {SECTIONS.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => scrollTo(id)}
+              className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-white"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title="Donut" desc="Node health distribution with center total">
-          <DonutChart />
-        </SectionCard>
-        <SectionCard title="Mixed" desc="Area + column combo — temperature, power, alerts">
-          <MixedChart />
-        </SectionCard>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title="Heatmap" desc="Intensity grid — ideal for rack/node health maps">
-          <HeatmapChart />
-        </SectionCard>
+      {/* 1 — Realtime */}
+      <div id="realtime">
         <SectionCard
           title="Realtime"
-          desc="Live metric with WARN/CRIT thresholds — updates every 2s"
+          desc="Live metric with WARN/CRIT thresholds — updates every 2s. Ideal for current node temp, power, or network throughput."
         >
           <RealtimeChart />
         </SectionCard>
       </div>
 
-      {/* ── Radial bar ── */}
-      <SectionCard title="Radial Bar" desc="Multi-series radial gauge — health per device type">
-        <RadialBarChart />
-      </SectionCard>
-
-      {/* ── Pie chart variants ── */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title="Simple Pie" desc="Standard colored slices with labels">
-          <SimplePie />
-        </SectionCard>
-        <SectionCard title="Monochrome Pie" desc="Single brand color with shades — name + % labels">
-          <MonochromePie />
-        </SectionCard>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* 2 — Line / Area */}
+      <div id="line-area">
         <SectionCard
-          title="Gradient Donut"
-          desc="startAngle:-90 endAngle:270, gradient fill, legend with values"
+          title="Line / Area"
+          desc="Smooth area chart with gradient fill — 24h time series. Standard chart for temperature, power, CPU, memory."
         >
-          <GradientDonut />
-        </SectionCard>
-        <SectionCard title="Donut — Right Legend" desc="Compact donut, legend on the right side">
-          <DonutRightLegend />
+          <LineAreaChart />
         </SectionCard>
       </div>
 
-      <SectionCard
-        title="Pattern Fill Donut"
-        desc="Fill with patterns: verticalLines, squares, horizontalLines, circles"
-      >
-        <PatternDonut />
-      </SectionCard>
-      {/* ── Radial bar variants ── */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <SectionCard title="Semi-circle Gauges" desc="Half-circle format — ideal for single KPIs">
-          <div className="flex justify-around">
-            <SemiCircleGauge value={78} label="CPU" color={BRAND} />
-            <SemiCircleGauge value={62} label="Memory" color="#10b981" />
-            <SemiCircleGauge value={91} label="Disk" color="#f59e0b" />
-          </div>
+      {/* 3 — Radial Bar */}
+      <div id="radial-bar">
+        <SectionCard
+          title="Radial Bar"
+          desc="Multi-series radial gauge — health percentage per device type. Good for cluster-level summary."
+        >
+          <RadialBarChart />
         </SectionCard>
-        <SectionCard title="Gradient Circle" desc="Full circle with gradient fill">
-          <GradientRadial />
-        </SectionCard>
-        <SectionCard title="Stroked Gauge" desc="Thin tracks, -135° to 135°, cluster total">
+      </div>
+
+      {/* 4 + 5 — Gauges: Gradient Circle + Semi-circle */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div id="gradient-circle">
+          <SectionCard
+            title="Gradient Circle"
+            desc="Full circle radialBar with gradient fill — single KPI like cluster load."
+          >
+            <GradientRadial />
+          </SectionCard>
+        </div>
+        <div id="semi-circle">
+          <SectionCard
+            title="Semi-circle Gauges"
+            desc="Half-circle format — ideal for 3 related KPIs side by side (CPU / Mem / Disk)."
+          >
+            <div className="flex justify-around">
+              <SemiCircleGauge value={78} label="CPU" color={BRAND} />
+              <SemiCircleGauge value={62} label="Memory" color="#10b981" />
+              <SemiCircleGauge value={91} label="Disk" color="#f59e0b" />
+            </div>
+          </SectionCard>
+        </div>
+      </div>
+
+      {/* 6 — Stroked Gauge */}
+      <div id="stroked">
+        <SectionCard
+          title="Stroked Gauge"
+          desc="Thin multi-track radialBar (-135° to 135°) — 3 metrics on one dial. Good for cluster overview."
+        >
           <StrokedGauge />
+        </SectionCard>
+      </div>
+
+      {/* 7 + 8 — Donut variants */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div id="donut">
+          <SectionCard
+            title="Donut"
+            desc="Health state distribution with center total — OK / WARN / CRIT / UNKNOWN."
+          >
+            <DonutChart />
+          </SectionCard>
+        </div>
+        <div id="donut-legend">
+          <SectionCard
+            title="Donut — Right Legend"
+            desc="Compact donut with right-side legend — fits in narrow panels."
+          >
+            <DonutRightLegend />
+          </SectionCard>
+        </div>
+      </div>
+
+      {/* 9 — Sparklines */}
+      <div id="sparklines">
+        <SectionCard
+          title="Sparklines"
+          desc="Mini inline trend charts — useful for at-a-glance metric overview panels. 6 KPIs in one row."
+        >
+          <SparklineGroup />
+        </SectionCard>
+      </div>
+
+      {/* 10 — Treemap */}
+      <div id="treemap">
+        <SectionCard
+          title="Treemap"
+          desc="Area-proportional blocks — visualize rack device footprint by U-height. Distributed colors per cell (Context7 pattern)."
+        >
+          <TreemapChart />
         </SectionCard>
       </div>
     </div>

@@ -299,10 +299,8 @@ export const AppHeader = ({
               <span className="absolute top-0.5 right-0.5 flex min-w-[16px] items-center justify-center">
                 {/* Ping ring on mount */}
                 <span className="absolute inline-flex h-4 w-4 animate-ping rounded-full bg-red-400 opacity-25 [animation-iteration-count:15]" />
-                <span className="relative flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
-                  {alerts.length > 9999
-                    ? '9999+'
-                    : alerts.length}
+                <span className="relative flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] leading-none font-bold text-white">
+                  {alerts.length > 9999 ? '9999+' : alerts.length}
                 </span>
               </span>
             )}

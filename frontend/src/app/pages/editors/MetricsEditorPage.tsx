@@ -132,7 +132,9 @@ const useDark = () => {
 
 // ── Sample data for chart preview ─────────────────────────────────────────────
 
-const SAMPLE_DATA = [28, 32, 45, 41, 55, 48, 52, 58, 62, 56, 65, 70, 66, 72, 68, 75, 71, 69, 74, 78, 72, 65, 61, 58];
+const SAMPLE_DATA = [
+  28, 32, 45, 41, 55, 48, 52, 58, 62, 56, 65, 70, 66, 72, 68, 75, 71, 69, 74, 78, 72, 65, 61, 58,
+];
 const SAMPLE_CATS = Array.from({ length: 24 }, (_, i) => `${i}:00`);
 
 const MetricChartPreview = ({
@@ -157,20 +159,34 @@ const MetricChartPreview = ({
   // Annotations for threshold lines
   const annotations: ApexOptions['annotations'] = {
     yaxis: [
-      ...(!isNaN(warnNum) ? [{
-        y: warnNum,
-        borderColor: '#f59e0b',
-        borderWidth: 1.5,
-        strokeDashArray: 4,
-        label: { text: `WARN ${warnNum}${unit}`, style: { color: '#f59e0b', background: 'transparent', fontSize: '9px' } },
-      }] : []),
-      ...(!isNaN(critNum) ? [{
-        y: critNum,
-        borderColor: '#ef4444',
-        borderWidth: 1.5,
-        strokeDashArray: 4,
-        label: { text: `CRIT ${critNum}${unit}`, style: { color: '#ef4444', background: 'transparent', fontSize: '9px' } },
-      }] : []),
+      ...(!isNaN(warnNum)
+        ? [
+            {
+              y: warnNum,
+              borderColor: '#f59e0b',
+              borderWidth: 1.5,
+              strokeDashArray: 4,
+              label: {
+                text: `WARN ${warnNum}${unit}`,
+                style: { color: '#f59e0b', background: 'transparent', fontSize: '9px' },
+              },
+            },
+          ]
+        : []),
+      ...(!isNaN(critNum)
+        ? [
+            {
+              y: critNum,
+              borderColor: '#ef4444',
+              borderWidth: 1.5,
+              strokeDashArray: 4,
+              label: {
+                text: `CRIT ${critNum}${unit}`,
+                style: { color: '#ef4444', background: 'transparent', fontSize: '9px' },
+              },
+            },
+          ]
+        : []),
     ],
   };
 
@@ -190,14 +206,18 @@ const MetricChartPreview = ({
       categories: SAMPLE_CATS,
       labels: {
         show: true,
-        formatter: (v: string) => v.endsWith(':00') && [0, 6, 12, 18, 23].includes(parseInt(v)) ? v : '',
+        formatter: (v: string) =>
+          v.endsWith(':00') && [0, 6, 12, 18, 23].includes(parseInt(v)) ? v : '',
         style: { colors: dark ? '#6b7280' : '#9ca3af', fontSize: '10px' },
       },
       axisBorder: { show: false },
       axisTicks: { show: false },
     },
     yaxis: {
-      labels: { style: { colors: dark ? '#6b7280' : '#9ca3af', fontSize: '10px' }, formatter: (v: number) => `${v}${unit}` },
+      labels: {
+        style: { colors: dark ? '#6b7280' : '#9ca3af', fontSize: '10px' },
+        formatter: (v: number) => `${v}${unit}`,
+      },
     },
     tooltip: { y: { formatter: (v: number) => `${v} ${unit}` } },
     annotations,
@@ -208,7 +228,11 @@ const MetricChartPreview = ({
       <ReactApexChart
         type="bar"
         height={160}
-        options={{ ...baseOpts, plotOptions: { bar: { columnWidth: '60%', borderRadius: 3 } }, stroke: { show: false } }}
+        options={{
+          ...baseOpts,
+          plotOptions: { bar: { columnWidth: '60%', borderRadius: 3 } },
+          stroke: { show: false },
+        }}
         series={[{ name, data: SAMPLE_DATA }]}
       />
     );
@@ -222,16 +246,33 @@ const MetricChartPreview = ({
         type="radialBar"
         height={160}
         options={{
-          chart: { background: 'transparent', toolbar: { show: false }, fontFamily: 'Outfit, system-ui, sans-serif', animations: { enabled: false } },
+          chart: {
+            background: 'transparent',
+            toolbar: { show: false },
+            fontFamily: 'Outfit, system-ui, sans-serif',
+            animations: { enabled: false },
+          },
           theme: { mode: dark ? 'dark' : 'light' },
           colors: [color],
           plotOptions: {
             radialBar: {
-              startAngle: -90, endAngle: 90,
+              startAngle: -90,
+              endAngle: 90,
               hollow: { size: '65%' },
               dataLabels: {
-                name: { show: true, offsetY: -10, fontSize: '11px', color: dark ? '#9ca3af' : '#6b7280' },
-                value: { show: true, offsetY: 5, fontSize: '22px', fontWeight: 700, formatter: (v: string) => `${Math.round(parseFloat(v) * maxVal / 100)}${unit}` },
+                name: {
+                  show: true,
+                  offsetY: -10,
+                  fontSize: '11px',
+                  color: dark ? '#9ca3af' : '#6b7280',
+                },
+                value: {
+                  show: true,
+                  offsetY: 5,
+                  fontSize: '22px',
+                  fontWeight: 700,
+                  formatter: (v: string) => `${Math.round((parseFloat(v) * maxVal) / 100)}${unit}`,
+                },
               },
             },
           },
@@ -251,7 +292,9 @@ const MetricChartPreview = ({
       options={{
         ...baseOpts,
         stroke: { curve: 'smooth', width: 2 },
-        fill: isArea ? { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.02 } } : { opacity: 1 },
+        fill: isArea
+          ? { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.02 } }
+          : { opacity: 1 },
       }}
       series={[{ name, data: SAMPLE_DATA }]}
     />
@@ -309,7 +352,8 @@ const draftToMetric = (d: MetricDraft, original?: MetricDefinition): MetricDefin
 
 const inputCls =
   'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-600 dark:focus:border-brand-500';
-const labelCls = 'mb-1.5 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide dark:text-gray-400';
+const labelCls =
+  'mb-1.5 block text-[11px] font-semibold text-gray-500 uppercase tracking-wide dark:text-gray-400';
 
 // ── EditorPanel ───────────────────────────────────────────────────────────────
 
@@ -333,7 +377,7 @@ const EditorPanel = ({
     const d = draftFromMetric(metric);
     setDraft(d);
     onDraftChange(d);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [metric.id]);
 
   const update = (field: keyof MetricDraft, value: string) => {
@@ -475,7 +519,9 @@ const EditorPanel = ({
               className={inputCls}
             >
               {CHART_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
             </select>
           </div>
@@ -487,7 +533,9 @@ const EditorPanel = ({
               className={inputCls}
             >
               {AGGREGATIONS.map((a) => (
-                <option key={a} value={a}>{a}</option>
+                <option key={a} value={a}>
+                  {a}
+                </option>
               ))}
             </select>
           </div>
@@ -547,15 +595,17 @@ const EditorPanel = ({
               <AlertTriangle className="h-3.5 w-3.5" /> {saveError}
             </p>
           )}
-          {saved && (
-            <p className="text-xs text-green-500 dark:text-green-400">✓ Saved</p>
-          )}
+          {saved && <p className="text-xs text-green-500 dark:text-green-400">✓ Saved</p>}
           <button
             onClick={() => void handleSave()}
             disabled={saving}
             className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-white transition-colors disabled:opacity-60"
           >
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            {saving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
             Save
           </button>
         </div>
@@ -590,19 +640,18 @@ const ContextPanel = ({
     );
   }
 
-  const usedInDevices = deviceTemplates.filter((t) =>
-    (t.metrics ?? []).includes(metric.id)
-  );
-  const usedInRacks = rackTemplates.filter((t) =>
-    (t.metrics ?? []).includes(metric.id)
-  );
+  const usedInDevices = deviceTemplates.filter((t) => (t.metrics ?? []).includes(metric.id));
+  const usedInRacks = rackTemplates.filter((t) => (t.metrics ?? []).includes(metric.id));
 
   // ChartIcon is used in template usage section icon
   const _ChartIcon =
-    draft.chart_type === 'bar' ? BarChart2
-    : draft.chart_type === 'gauge' ? Gauge
-    : draft.chart_type === 'area' ? Activity
-    : LineChart;
+    draft.chart_type === 'bar'
+      ? BarChart2
+      : draft.chart_type === 'gauge'
+        ? Gauge
+        : draft.chart_type === 'area'
+          ? Activity
+          : LineChart;
 
   const warnNum = parseFloat(draft.threshold_warn);
   const critNum = parseFloat(draft.threshold_crit);
@@ -645,11 +694,10 @@ const ContextPanel = ({
               Chart Preview
             </p>
             <div className="flex items-center gap-1.5">
-              <div
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: draft.color }}
-              />
-              <span className="font-mono text-[10px] text-gray-400">{draft.chart_type} · {draft.unit || '—'} · {draft.aggregation}</span>
+              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: draft.color }} />
+              <span className="font-mono text-[10px] text-gray-400">
+                {draft.chart_type} · {draft.unit || '—'} · {draft.aggregation}
+              </span>
             </div>
           </div>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
@@ -673,14 +721,20 @@ const ContextPanel = ({
             <div className="space-y-2">
               {!isNaN(warnNum) && (
                 <div className="flex items-center gap-3">
-                  <span className="w-10 shrink-0 text-[10px] font-semibold text-amber-500">WARN</span>
+                  <span className="w-10 shrink-0 text-[10px] font-semibold text-amber-500">
+                    WARN
+                  </span>
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                     <div
                       className="h-full rounded-full bg-amber-400"
-                      style={{ width: `${Math.min((warnNum / (critNum || warnNum * 1.3)) * 100, 100)}%` }}
+                      style={{
+                        width: `${Math.min((warnNum / (critNum || warnNum * 1.3)) * 100, 100)}%`,
+                      }}
                     />
                   </div>
-                  <span className="shrink-0 font-mono text-xs text-gray-500">{warnNum} {draft.unit}</span>
+                  <span className="shrink-0 font-mono text-xs text-gray-500">
+                    {warnNum} {draft.unit}
+                  </span>
                 </div>
               )}
               {!isNaN(critNum) && (
@@ -689,7 +743,9 @@ const ContextPanel = ({
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                     <div className="h-full rounded-full bg-red-400" style={{ width: '95%' }} />
                   </div>
-                  <span className="shrink-0 font-mono text-xs text-gray-500">{critNum} {draft.unit}</span>
+                  <span className="shrink-0 font-mono text-xs text-gray-500">
+                    {critNum} {draft.unit}
+                  </span>
                 </div>
               )}
             </div>
@@ -738,15 +794,19 @@ const ContextPanel = ({
               Tags
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {draft.tags.split(',').map((t) => t.trim()).filter(Boolean).map((tag) => (
-                <span
-                  key={tag}
-                  className="flex items-center gap-1 rounded-full border border-gray-200 px-2 py-0.5 text-[10px] text-gray-500 dark:border-gray-700 dark:text-gray-400"
-                >
-                  <Tag className="h-2.5 w-2.5" />
-                  {tag}
-                </span>
-              ))}
+              {draft.tags
+                .split(',')
+                .map((t) => t.trim())
+                .filter(Boolean)
+                .map((tag) => (
+                  <span
+                    key={tag}
+                    className="flex items-center gap-1 rounded-full border border-gray-200 px-2 py-0.5 text-[10px] text-gray-500 dark:border-gray-700 dark:text-gray-400"
+                  >
+                    <Tag className="h-2.5 w-2.5" />
+                    {tag}
+                  </span>
+                ))}
             </div>
           </div>
         )}
@@ -784,43 +844,86 @@ const YamlDrawer = ({
   const handleChange = (v: string | undefined) => {
     const val = v ?? '';
     setValue(val);
-    try { jsYaml.load(val); setParseError(null); }
-    catch (e) { setParseError(e instanceof Error ? e.message : 'Invalid YAML'); }
+    try {
+      jsYaml.load(val);
+      setParseError(null);
+    } catch (e) {
+      setParseError(e instanceof Error ? e.message : 'Invalid YAML');
+    }
   };
 
   const handleSave = async () => {
     if (parseError) return;
     setSaving(true);
     setSaveError(null);
-    try { await onSave(value); onClose(); }
-    catch (e) { setSaveError(e instanceof Error ? e.message : 'Save failed'); }
-    finally { setSaving(false); }
+    try {
+      await onSave(value);
+      onClose();
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />}
-      <div className={`fixed top-0 right-0 z-50 flex h-full w-[680px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+      {open && (
+        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      )}
+      <div
+        className={`fixed top-0 right-0 z-50 flex h-full w-[680px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`}
+      >
         <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-5 py-4">
           <div className="flex items-center gap-2.5">
             <FileCode2 className="h-4 w-4 text-gray-500" />
             <span className="text-sm font-semibold text-white">{name}</span>
-            {parseError && <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-400">Invalid YAML</span>}
+            {parseError && (
+              <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-400">
+                Invalid YAML
+              </span>
+            )}
           </div>
-          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-white/10 hover:text-gray-300">
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-white/10 hover:text-gray-300"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
         <div className="min-h-0 flex-1">
-          <MonacoEditor height="100%" defaultLanguage="yaml" theme="vs-dark" value={value} onChange={handleChange}
-            options={{ fontSize: 13, minimap: { enabled: false }, lineNumbers: 'on', scrollBeyondLastLine: false }} />
+          <MonacoEditor
+            height="100%"
+            defaultLanguage="yaml"
+            theme="vs-dark"
+            value={value}
+            onChange={handleChange}
+            options={{
+              fontSize: 13,
+              minimap: { enabled: false },
+              lineNumbers: 'on',
+              scrollBeyondLastLine: false,
+            }}
+          />
         </div>
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-gray-800 px-5 py-3">
           {saveError && <span className="text-xs text-red-400">{saveError}</span>}
-          <button onClick={onClose} className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs text-gray-400 hover:bg-white/5">Close</button>
-          <button onClick={() => void handleSave()} disabled={saving || !!parseError}
-            className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+          <button
+            onClick={onClose}
+            className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs text-gray-400 hover:bg-white/5"
+          >
+            Close
+          </button>
+          <button
+            onClick={() => void handleSave()}
+            disabled={saving || !!parseError}
+            className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+          >
+            {saving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="h-3.5 w-3.5" />
+            )}
             Save
           </button>
         </div>
@@ -843,7 +946,7 @@ export const MetricsEditorPage = () => {
   const [previewDraft, setPreviewDraft] = useState<MetricDraft | null>(null);
 
   const [search, setSearch] = useState('');
-  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set()); // all collapsed by default
 
   const [deviceTemplates, setDeviceTemplates] = useState<DeviceTemplate[]>([]);
   const [rackTemplates, setRackTemplates] = useState<RackTemplate[]>([]);
@@ -877,9 +980,7 @@ export const MetricsEditorPage = () => {
       setFileMap(fm);
       setDeviceTemplates(catRes.device_templates ?? []);
       setRackTemplates(catRes.rack_templates ?? []);
-      // Open all categories by default
-      const cats = new Set(ms.map((m: MetricDefinition) => m.category ?? 'other'));
-      setOpenCategories(cats);
+      // Categories start collapsed — user expands on demand
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : 'Failed to load metrics library');
     } finally {
@@ -887,13 +988,16 @@ export const MetricsEditorPage = () => {
     }
   }, []);
 
-  useEffect(() => { void loadAll(); }, [loadAll]);
+  useEffect(() => {
+    void loadAll();
+  }, [loadAll]);
 
   // Grouped by category
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return metrics.filter((m) =>
-      !q || m.id.includes(q) || m.name.toLowerCase().includes(q) || (m.category ?? '').includes(q)
+    return metrics.filter(
+      (m) =>
+        !q || m.id.includes(q) || m.name.toLowerCase().includes(q) || (m.category ?? '').includes(q)
     );
   }, [metrics, search]);
 
@@ -978,7 +1082,6 @@ export const MetricsEditorPage = () => {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 gap-5">
-
           {/* ── LEFT: list by category ─────────────────────────────────────── */}
           <div className="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
             <div className="shrink-0 p-3">
@@ -1002,32 +1105,44 @@ export const MetricsEditorPage = () => {
                     const isOpen = openCategories.has(cat);
                     const dot = categoryColor(cat);
                     return (
-                      <div key={cat} className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
+                      <div
+                        key={cat}
+                        className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800"
+                      >
                         <button
                           onClick={() =>
                             setOpenCategories((prev) => {
                               const next = new Set(prev);
-                              if (isOpen) next.delete(cat); else next.add(cat);
+                              if (isOpen) next.delete(cat);
+                              else next.add(cat);
                               return next;
                             })
                           }
                           className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-white/5"
                         >
-                          <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dot }} />
+                          <div
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: dot }}
+                          />
                           <span className="flex-1 text-xs font-semibold text-gray-700 capitalize dark:text-gray-300">
                             {cat}
                           </span>
                           <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] text-gray-500 dark:bg-gray-800 dark:text-gray-500">
                             {ms.length}
                           </span>
-                          <ChevronDown className={`h-3 w-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                          <ChevronDown
+                            className={`h-3 w-3 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                          />
                         </button>
                         {isOpen && (
                           <div className="border-t border-gray-50 dark:border-gray-800">
                             {ms.map((m) => (
                               <button
                                 key={m.id}
-                                onClick={() => { setSelected(m); setPreviewDraft(draftFromMetric(m)); }}
+                                onClick={() => {
+                                  setSelected(m);
+                                  setPreviewDraft(draftFromMetric(m));
+                                }}
                                 className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${selected?.id === m.id ? 'bg-brand-50 dark:bg-brand-500/10' : ''}`}
                               >
                                 <div
@@ -1035,10 +1150,14 @@ export const MetricsEditorPage = () => {
                                   style={{ backgroundColor: m.display.color ?? dot }}
                                 />
                                 <div className="min-w-0 flex-1">
-                                  <p className={`truncate text-xs font-medium ${selected?.id === m.id ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                                  <p
+                                    className={`truncate text-xs font-medium ${selected?.id === m.id ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
+                                  >
                                     {m.name}
                                   </p>
-                                  <p className="truncate font-mono text-[9px] text-gray-400">{m.id}</p>
+                                  <p className="truncate font-mono text-[9px] text-gray-400">
+                                    {m.id}
+                                  </p>
                                 </div>
                                 <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[9px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-500">
                                   {m.display.unit}
@@ -1056,7 +1175,8 @@ export const MetricsEditorPage = () => {
 
             <div className="shrink-0 border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
               <p className="text-[10px] text-gray-400 dark:text-gray-600">
-                {metrics.length} metric{metrics.length !== 1 ? 's' : ''} · {grouped.length} categor{grouped.length !== 1 ? 'ies' : 'y'}
+                {metrics.length} metric{metrics.length !== 1 ? 's' : ''} · {grouped.length} categor
+                {grouped.length !== 1 ? 'ies' : 'y'}
               </p>
             </div>
           </div>
@@ -1092,8 +1212,12 @@ export const MetricsEditorPage = () => {
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-800">
                     <BarChart2 className="h-7 w-7 text-gray-300 dark:text-gray-600" />
                   </div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Select a metric to edit</p>
-                  <p className="mt-1 text-xs text-gray-400 dark:text-gray-600">or create a new one above</p>
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Select a metric to edit
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400 dark:text-gray-600">
+                    or create a new one above
+                  </p>
                 </div>
               </div>
             )}
@@ -1117,15 +1241,26 @@ export const MetricsEditorPage = () => {
           <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-900">
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">Delete metric?</h3>
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              <span className="font-mono font-semibold">{deleteTarget.id}</span> will be permanently deleted from the library.
+              <span className="font-mono font-semibold">{deleteTarget.id}</span> will be permanently
+              deleted from the library.
             </p>
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setDeleteTarget(null)} className="rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+              >
                 Cancel
               </button>
-              <button onClick={() => void handleDelete()} disabled={deleting}
-                className="flex items-center gap-1.5 rounded-xl bg-red-500 px-3 py-2 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-60">
-                {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              <button
+                onClick={() => void handleDelete()}
+                disabled={deleting}
+                className="flex items-center gap-1.5 rounded-xl bg-red-500 px-3 py-2 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-60"
+              >
+                {deleting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
                 Delete
               </button>
             </div>

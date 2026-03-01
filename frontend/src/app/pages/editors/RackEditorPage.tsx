@@ -1684,7 +1684,9 @@ const RackYamlDrawer = ({ open, rack, onSave, onClose }: RackYamlDrawerProps) =>
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />}
+      {open && (
+        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      )}
       <div
         className={`fixed top-0 right-0 z-50 flex h-full w-[680px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl transition-transform duration-300 ${
           open ? 'translate-x-0' : 'translate-x-full'
@@ -1693,9 +1695,7 @@ const RackYamlDrawer = ({ open, rack, onSave, onClose }: RackYamlDrawerProps) =>
         <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-5 py-4">
           <div className="flex items-center gap-2.5">
             <FileCode2 className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-semibold text-white">
-              {rack.name} — YAML
-            </span>
+            <span className="text-sm font-semibold text-white">{rack.name} — YAML</span>
             {parseError && (
               <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-400">
                 Invalid YAML
@@ -1730,7 +1730,8 @@ const RackYamlDrawer = ({ open, rack, onSave, onClose }: RackYamlDrawerProps) =>
 
         <div className="flex shrink-0 items-center justify-between border-t border-gray-800 px-5 py-3">
           <div className="text-xs text-gray-500">
-            Editing <code className="text-gray-400">{rack.id}</code> — devices are bulk-replaced on save
+            Editing <code className="text-gray-400">{rack.id}</code> — devices are bulk-replaced on
+            save
           </div>
           <div className="flex items-center gap-2">
             {saveError && <span className="text-xs text-red-400">{saveError}</span>}
@@ -1739,7 +1740,10 @@ const RackYamlDrawer = ({ open, rack, onSave, onClose }: RackYamlDrawerProps) =>
                 <Check className="h-3.5 w-3.5" /> Saved
               </span>
             )}
-            <button onClick={onClose} className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs text-gray-400 hover:bg-white/5">
+            <button
+              onClick={onClose}
+              className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs text-gray-400 hover:bg-white/5"
+            >
               Close
             </button>
             <button
@@ -1747,7 +1751,11 @@ const RackYamlDrawer = ({ open, rack, onSave, onClose }: RackYamlDrawerProps) =>
               disabled={saving || !!parseError}
               className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
             >
-              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
               Save
             </button>
           </div>

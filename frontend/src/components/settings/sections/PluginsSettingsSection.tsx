@@ -245,8 +245,8 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2.5">
             <FlaskConical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
             <p className="text-[11px] text-amber-700 dark:text-amber-400">
-              <strong>Simulator is currently running.</strong> Configuration changes will take effect
-              on next container restart — they won't interrupt the running simulator.
+              <strong>Simulator is currently running.</strong> Configuration changes will take
+              effect on next container restart — they won't interrupt the running simulator.
             </p>
           </div>
         ) : (
@@ -270,375 +270,375 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
         )}
 
         <div className={simulatorRunning ? 'pointer-events-none opacity-50' : ''}>
-        <FormToggle
-          label="Enable Simulator"
-          description="Activate simulator plugin for demo mode"
-          checked={draft.plugins.simulator.enabled}
-          onChange={(value) => updateSimulator('enabled', value)}
-        />
+          <FormToggle
+            label="Enable Simulator"
+            description="Activate simulator plugin for demo mode"
+            checked={draft.plugins.simulator.enabled}
+            onChange={(value) => updateSimulator('enabled', value)}
+          />
 
-        <button
-          type="button"
-          onClick={() => setSimulatorSettingsOpen(!simulatorSettingsOpen)}
-          disabled={!draft.plugins.simulator.enabled}
-          className={`mt-4 flex items-center gap-2 text-sm font-medium transition ${
-            draft.plugins.simulator.enabled
-              ? 'cursor-pointer text-gray-500 dark:text-gray-400'
-              : 'cursor-not-allowed text-gray-400 opacity-50 dark:text-gray-500'
-          }`}
-        >
-          {simulatorSettingsOpen ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
-          Advanced Settings
-        </button>
+          <button
+            type="button"
+            onClick={() => setSimulatorSettingsOpen(!simulatorSettingsOpen)}
+            disabled={!draft.plugins.simulator.enabled}
+            className={`mt-4 flex items-center gap-2 text-sm font-medium transition ${
+              draft.plugins.simulator.enabled
+                ? 'cursor-pointer text-gray-500 dark:text-gray-400'
+                : 'cursor-not-allowed text-gray-400 opacity-50 dark:text-gray-500'
+            }`}
+          >
+            {simulatorSettingsOpen ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+            Advanced Settings
+          </button>
 
-        {simulatorSettingsOpen && draft.plugins.simulator.enabled && (
-          <div className="mt-4 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-            <FormField
-              label="Update Interval (seconds)"
-              value={draft.plugins.simulator.update_interval_seconds}
-              onChange={(value) => updateSimulator('update_interval_seconds', value)}
-              type="number"
-            />
-            <FormField
-              label="Random Seed (optional)"
-              value={draft.plugins.simulator.seed}
-              onChange={(value) => updateSimulator('seed', value)}
-              placeholder="Leave empty for random"
-            />
-            {/* Scenario — dropdown */}
-            <div className="space-y-1">
-              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                Scenario
-                {activeScenario && (
-                  <span className="text-brand-500 ml-2 font-mono normal-case">
-                    (active: {activeScenario})
-                  </span>
-                )}
-              </label>
-              <div className="flex gap-2">
-                <select
-                  value={draft.plugins.simulator.scenario}
-                  onChange={(e) => updateSimulator('scenario', e.target.value)}
-                  className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                >
-                  {scenarios.length === 0 && (
-                    <option value={draft.plugins.simulator.scenario}>
-                      {draft.plugins.simulator.scenario || 'Loading...'}
-                    </option>
+          {simulatorSettingsOpen && draft.plugins.simulator.enabled && (
+            <div className="mt-4 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+              <FormField
+                label="Update Interval (seconds)"
+                value={draft.plugins.simulator.update_interval_seconds}
+                onChange={(value) => updateSimulator('update_interval_seconds', value)}
+                type="number"
+              />
+              <FormField
+                label="Random Seed (optional)"
+                value={draft.plugins.simulator.seed}
+                onChange={(value) => updateSimulator('seed', value)}
+                placeholder="Leave empty for random"
+              />
+              {/* Scenario — dropdown */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                  Scenario
+                  {activeScenario && (
+                    <span className="text-brand-500 ml-2 font-mono normal-case">
+                      (active: {activeScenario})
+                    </span>
                   )}
-                  {scenarios.map((s) => (
-                    <option key={s.name} value={s.name}>
-                      {s.name} — {s.description}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleApplyScenario}
-                  disabled={draft.plugins.simulator.scenario === activeScenario || applying}
-                  className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white uppercase transition disabled:opacity-40"
-                >
-                  {applying ? (
-                    <RefreshCw className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Play className="h-3 w-3" />
-                  )}
-                  {applying ? 'Applying...' : 'Apply'}
-                </button>
-              </div>
-              {draft.plugins.simulator.scenario !== activeScenario && (
-                <p className="text-xs text-yellow-500">Apply will restart the backend</p>
-              )}
-            </div>
-
-            <FormField
-              label="Scale Factor"
-              value={draft.plugins.simulator.scale_factor}
-              onChange={(value) => updateSimulator('scale_factor', value)}
-              type="number"
-            />
-
-            {/* Incident Rates */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                Incident Rates (0.0 - 1.0)
-              </label>
-              <FormField
-                label="Node Micro Failure"
-                value={draft.plugins.simulator.incident_rates.node_micro_failure}
-                onChange={(value) =>
-                  updateSimulator('incident_rates', {
-                    ...draft.plugins.simulator.incident_rates,
-                    node_micro_failure: value,
-                  })
-                }
-                type="number"
-              />
-              <FormField
-                label="Rack Macro Failure"
-                value={draft.plugins.simulator.incident_rates.rack_macro_failure}
-                onChange={(value) =>
-                  updateSimulator('incident_rates', {
-                    ...draft.plugins.simulator.incident_rates,
-                    rack_macro_failure: value,
-                  })
-                }
-                type="number"
-              />
-              <FormField
-                label="Aisle Cooling Failure"
-                value={draft.plugins.simulator.incident_rates.aisle_cooling_failure}
-                onChange={(value) =>
-                  updateSimulator('incident_rates', {
-                    ...draft.plugins.simulator.incident_rates,
-                    aisle_cooling_failure: value,
-                  })
-                }
-                type="number"
-              />
-            </div>
-
-            {/* Incident Durations */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                Incident Durations (seconds)
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  label="Rack"
-                  value={draft.plugins.simulator.incident_durations.rack}
-                  onChange={(value) =>
-                    updateSimulator('incident_durations', {
-                      ...draft.plugins.simulator.incident_durations,
-                      rack: value,
-                    })
-                  }
-                  type="number"
-                />
-                <FormField
-                  label="Aisle"
-                  value={draft.plugins.simulator.incident_durations.aisle}
-                  onChange={(value) =>
-                    updateSimulator('incident_durations', {
-                      ...draft.plugins.simulator.incident_durations,
-                      aisle: value,
-                    })
-                  }
-                  type="number"
-                />
-              </div>
-            </div>
-
-            <FormField
-              label="Overrides Path"
-              value={draft.plugins.simulator.overrides_path}
-              onChange={(value) => updateSimulator('overrides_path', value)}
-              placeholder="config/plugins/simulator/overrides.yaml"
-            />
-            <FormField
-              label="Default TTL (seconds)"
-              value={draft.plugins.simulator.default_ttl_seconds}
-              onChange={(value) => updateSimulator('default_ttl_seconds', value)}
-              type="number"
-            />
-            <FormSelect
-              label="Metrics Catalog Path"
-              tooltip="YAML file used as the metrics catalog (files starting with metrics_)"
-              value={draft.plugins.simulator.metrics_catalog_path ?? ''}
-              onChange={(value) => updateSimulator('metrics_catalog_path', value)}
-              loading={metricsFilesLoading}
-              placeholder="— Select a metrics file —"
-              options={metricsFiles.map((f) => ({ value: f.path, label: f.name }))}
-            />
-
-            {/* Metrics Catalogs */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                Metrics Catalogs (Multi-file support)
-              </label>
-              <div className="space-y-2">
-                {draft.plugins.simulator.metrics_catalogs.map((catalog, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900"
-                  >
-                    <FormToggle
-                      label=""
-                      checked={catalog.enabled}
-                      onChange={(value) => {
-                        const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
-                        newCatalogs[index].enabled = value;
-                        updateSimulator('metrics_catalogs', newCatalogs);
-                      }}
-                    />
-                    <FormField
-                      label="ID"
-                      value={catalog.id}
-                      onChange={(value) => {
-                        const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
-                        newCatalogs[index].id = value;
-                        updateSimulator('metrics_catalogs', newCatalogs);
-                      }}
-                    />
-                    <FormField
-                      label="Path"
-                      value={catalog.path}
-                      onChange={(value) => {
-                        const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
-                        newCatalogs[index].path = value;
-                        updateSimulator('metrics_catalogs', newCatalogs);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newCatalogs = draft.plugins.simulator.metrics_catalogs.filter(
-                          (_, i) => i !== index
-                        );
-                        updateSimulator('metrics_catalogs', newCatalogs);
-                      }}
-                      className="rounded bg-red-600 px-3 py-2 text-xs font-bold text-white uppercase hover:bg-red-700"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newCatalogs = [
-                      ...draft.plugins.simulator.metrics_catalogs,
-                      { id: '', path: '', enabled: true },
-                    ];
-                    updateSimulator('metrics_catalogs', newCatalogs);
-                  }}
-                  className="rounded bg-blue-600 px-4 py-2 text-xs font-bold text-white uppercase hover:bg-blue-700"
-                >
-                  Add Catalog
-                </button>
-              </div>
-            </div>
-
-            {/* ── Metric Overrides ── */}
-            <div className="space-y-3 border-t border-gray-200 pt-4 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <h4 className="font-mono text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                  Metric Overrides
-                </h4>
+                </label>
                 <div className="flex gap-2">
-                  <button
-                    onClick={loadSimulatorData}
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1 text-xs text-gray-500 transition hover:border-gray-300 dark:border-gray-700 dark:text-gray-400"
+                  <select
+                    value={draft.plugins.simulator.scenario}
+                    onChange={(e) => updateSimulator('scenario', e.target.value)}
+                    className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                   >
-                    <RefreshCw className="h-3 w-3" /> Refresh
+                    {scenarios.length === 0 && (
+                      <option value={draft.plugins.simulator.scenario}>
+                        {draft.plugins.simulator.scenario || 'Loading...'}
+                      </option>
+                    )}
+                    {scenarios.map((s) => (
+                      <option key={s.name} value={s.name}>
+                        {s.name} — {s.description}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleApplyScenario}
+                    disabled={draft.plugins.simulator.scenario === activeScenario || applying}
+                    className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white uppercase transition disabled:opacity-40"
+                  >
+                    {applying ? (
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Play className="h-3 w-3" />
+                    )}
+                    {applying ? 'Applying...' : 'Apply'}
                   </button>
-                  {overrides.length > 0 && (
-                    <button
-                      onClick={() =>
-                        api
-                          .clearSimulatorOverrides()
-                          .then(loadSimulatorData)
-                          .catch(() => {
-                            /* noop */
-                          })
-                      }
-                      className="flex items-center gap-1.5 rounded-lg border border-red-500/50 px-2.5 py-1 text-xs text-red-400 transition hover:bg-red-500/10"
+                </div>
+                {draft.plugins.simulator.scenario !== activeScenario && (
+                  <p className="text-xs text-yellow-500">Apply will restart the backend</p>
+                )}
+              </div>
+
+              <FormField
+                label="Scale Factor"
+                value={draft.plugins.simulator.scale_factor}
+                onChange={(value) => updateSimulator('scale_factor', value)}
+                type="number"
+              />
+
+              {/* Incident Rates */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                  Incident Rates (0.0 - 1.0)
+                </label>
+                <FormField
+                  label="Node Micro Failure"
+                  value={draft.plugins.simulator.incident_rates.node_micro_failure}
+                  onChange={(value) =>
+                    updateSimulator('incident_rates', {
+                      ...draft.plugins.simulator.incident_rates,
+                      node_micro_failure: value,
+                    })
+                  }
+                  type="number"
+                />
+                <FormField
+                  label="Rack Macro Failure"
+                  value={draft.plugins.simulator.incident_rates.rack_macro_failure}
+                  onChange={(value) =>
+                    updateSimulator('incident_rates', {
+                      ...draft.plugins.simulator.incident_rates,
+                      rack_macro_failure: value,
+                    })
+                  }
+                  type="number"
+                />
+                <FormField
+                  label="Aisle Cooling Failure"
+                  value={draft.plugins.simulator.incident_rates.aisle_cooling_failure}
+                  onChange={(value) =>
+                    updateSimulator('incident_rates', {
+                      ...draft.plugins.simulator.incident_rates,
+                      aisle_cooling_failure: value,
+                    })
+                  }
+                  type="number"
+                />
+              </div>
+
+              {/* Incident Durations */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                  Incident Durations (seconds)
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    label="Rack"
+                    value={draft.plugins.simulator.incident_durations.rack}
+                    onChange={(value) =>
+                      updateSimulator('incident_durations', {
+                        ...draft.plugins.simulator.incident_durations,
+                        rack: value,
+                      })
+                    }
+                    type="number"
+                  />
+                  <FormField
+                    label="Aisle"
+                    value={draft.plugins.simulator.incident_durations.aisle}
+                    onChange={(value) =>
+                      updateSimulator('incident_durations', {
+                        ...draft.plugins.simulator.incident_durations,
+                        aisle: value,
+                      })
+                    }
+                    type="number"
+                  />
+                </div>
+              </div>
+
+              <FormField
+                label="Overrides Path"
+                value={draft.plugins.simulator.overrides_path}
+                onChange={(value) => updateSimulator('overrides_path', value)}
+                placeholder="config/plugins/simulator/overrides.yaml"
+              />
+              <FormField
+                label="Default TTL (seconds)"
+                value={draft.plugins.simulator.default_ttl_seconds}
+                onChange={(value) => updateSimulator('default_ttl_seconds', value)}
+                type="number"
+              />
+              <FormSelect
+                label="Metrics Catalog Path"
+                tooltip="YAML file used as the metrics catalog (files starting with metrics_)"
+                value={draft.plugins.simulator.metrics_catalog_path ?? ''}
+                onChange={(value) => updateSimulator('metrics_catalog_path', value)}
+                loading={metricsFilesLoading}
+                placeholder="— Select a metrics file —"
+                options={metricsFiles.map((f) => ({ value: f.path, label: f.name }))}
+              />
+
+              {/* Metrics Catalogs */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                  Metrics Catalogs (Multi-file support)
+                </label>
+                <div className="space-y-2">
+                  {draft.plugins.simulator.metrics_catalogs.map((catalog, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900"
                     >
-                      <Trash2 className="h-3 w-3" /> Clear All
-                    </button>
-                  )}
+                      <FormToggle
+                        label=""
+                        checked={catalog.enabled}
+                        onChange={(value) => {
+                          const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
+                          newCatalogs[index].enabled = value;
+                          updateSimulator('metrics_catalogs', newCatalogs);
+                        }}
+                      />
+                      <FormField
+                        label="ID"
+                        value={catalog.id}
+                        onChange={(value) => {
+                          const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
+                          newCatalogs[index].id = value;
+                          updateSimulator('metrics_catalogs', newCatalogs);
+                        }}
+                      />
+                      <FormField
+                        label="Path"
+                        value={catalog.path}
+                        onChange={(value) => {
+                          const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
+                          newCatalogs[index].path = value;
+                          updateSimulator('metrics_catalogs', newCatalogs);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newCatalogs = draft.plugins.simulator.metrics_catalogs.filter(
+                            (_, i) => i !== index
+                          );
+                          updateSimulator('metrics_catalogs', newCatalogs);
+                        }}
+                        className="rounded bg-red-600 px-3 py-2 text-xs font-bold text-white uppercase hover:bg-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
                   <button
-                    onClick={() => setShowAddOverride((p) => !p)}
-                    className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold text-white transition"
+                    type="button"
+                    onClick={() => {
+                      const newCatalogs = [
+                        ...draft.plugins.simulator.metrics_catalogs,
+                        { id: '', path: '', enabled: true },
+                      ];
+                      updateSimulator('metrics_catalogs', newCatalogs);
+                    }}
+                    className="rounded bg-blue-600 px-4 py-2 text-xs font-bold text-white uppercase hover:bg-blue-700"
                   >
-                    <Plus className="h-3 w-3" /> Add
+                    Add Catalog
                   </button>
                 </div>
               </div>
 
-              {showAddOverride && (
-                <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50">
-                  <input
-                    type="text"
-                    value={newOverride.instance}
-                    onChange={(e) => setNewOverride((p) => ({ ...p, instance: e.target.value }))}
-                    placeholder="Instance (e.g. compute001)"
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      value={newOverride.metric}
-                      onChange={(e) => setNewOverride((p) => ({ ...p, metric: e.target.value }))}
-                      placeholder="Metric (e.g. up)"
-                      className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                    />
-                    <input
-                      type="number"
-                      value={newOverride.value}
-                      onChange={(e) => setNewOverride((p) => ({ ...p, value: e.target.value }))}
-                      placeholder="Value"
-                      className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                    />
-                  </div>
+              {/* ── Metric Overrides ── */}
+              <div className="space-y-3 border-t border-gray-200 pt-4 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-mono text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                    Metric Overrides
+                  </h4>
                   <div className="flex gap-2">
                     <button
-                      onClick={handleAddOverride}
-                      className="flex-1 rounded-lg bg-green-500 py-1.5 text-xs font-bold text-white uppercase hover:bg-green-600"
+                      onClick={loadSimulatorData}
+                      className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1 text-xs text-gray-500 transition hover:border-gray-300 dark:border-gray-700 dark:text-gray-400"
                     >
-                      Add Override
+                      <RefreshCw className="h-3 w-3" /> Refresh
                     </button>
-                    <button
-                      onClick={() => setShowAddOverride(false)}
-                      className="flex-1 rounded-lg border border-gray-200 py-1.5 text-xs font-bold text-gray-500 uppercase dark:border-gray-700 dark:text-gray-400"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {overrides.length === 0 ? (
-                <p className="text-center text-xs text-gray-400 dark:text-gray-500">
-                  No active overrides
-                </p>
-              ) : (
-                <div className="space-y-1.5">
-                  {overrides.map((ov) => (
-                    <div
-                      key={ov.id}
-                      className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/50"
-                    >
-                      <span className="font-mono text-xs">
-                        <span className="text-brand-500">{ov.instance ?? ov.rack_id}</span>
-                        <span className="mx-1.5 text-gray-400 dark:text-gray-500">→</span>
-                        <span className="text-amber-500">{ov.metric}</span>
-                        <span className="mx-1.5 text-gray-400 dark:text-gray-500">=</span>
-                        <span className="text-gray-800 dark:text-white/90">{ov.value}</span>
-                      </span>
+                    {overrides.length > 0 && (
                       <button
                         onClick={() =>
                           api
-                            .deleteSimulatorOverride(ov.id)
+                            .clearSimulatorOverrides()
                             .then(loadSimulatorData)
                             .catch(() => {
                               /* noop */
                             })
                         }
-                        className="text-red-500 hover:text-red-400"
+                        className="flex items-center gap-1.5 rounded-lg border border-red-500/50 px-2.5 py-1 text-xs text-red-400 transition hover:bg-red-500/10"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3 w-3" /> Clear All
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowAddOverride((p) => !p)}
+                      className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold text-white transition"
+                    >
+                      <Plus className="h-3 w-3" /> Add
+                    </button>
+                  </div>
+                </div>
+
+                {showAddOverride && (
+                  <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50">
+                    <input
+                      type="text"
+                      value={newOverride.instance}
+                      onChange={(e) => setNewOverride((p) => ({ ...p, instance: e.target.value }))}
+                      placeholder="Instance (e.g. compute001)"
+                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={newOverride.metric}
+                        onChange={(e) => setNewOverride((p) => ({ ...p, metric: e.target.value }))}
+                        placeholder="Metric (e.g. up)"
+                        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                      />
+                      <input
+                        type="number"
+                        value={newOverride.value}
+                        onChange={(e) => setNewOverride((p) => ({ ...p, value: e.target.value }))}
+                        placeholder="Value"
+                        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleAddOverride}
+                        className="flex-1 rounded-lg bg-green-500 py-1.5 text-xs font-bold text-white uppercase hover:bg-green-600"
+                      >
+                        Add Override
+                      </button>
+                      <button
+                        onClick={() => setShowAddOverride(false)}
+                        className="flex-1 rounded-lg border border-gray-200 py-1.5 text-xs font-bold text-gray-500 uppercase dark:border-gray-700 dark:text-gray-400"
+                      >
+                        Cancel
                       </button>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                )}
+
+                {overrides.length === 0 ? (
+                  <p className="text-center text-xs text-gray-400 dark:text-gray-500">
+                    No active overrides
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {overrides.map((ov) => (
+                      <div
+                        key={ov.id}
+                        className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/50"
+                      >
+                        <span className="font-mono text-xs">
+                          <span className="text-brand-500">{ov.instance ?? ov.rack_id}</span>
+                          <span className="mx-1.5 text-gray-400 dark:text-gray-500">→</span>
+                          <span className="text-amber-500">{ov.metric}</span>
+                          <span className="mx-1.5 text-gray-400 dark:text-gray-500">=</span>
+                          <span className="text-gray-800 dark:text-white/90">{ov.value}</span>
+                        </span>
+                        <button
+                          onClick={() =>
+                            api
+                              .deleteSimulatorOverride(ov.id)
+                              .then(loadSimulatorData)
+                              .catch(() => {
+                                /* noop */
+                              })
+                          }
+                          className="text-red-500 hover:text-red-400"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
 
