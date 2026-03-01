@@ -14,7 +14,8 @@ rack_component_templates:
   location: front
   u_height: 1
   checks: []
-  metrics: []
+  metrics:
+    - sequana3_pmc_power
 - id: xh-h3e
   name: H3E
   type: cooling

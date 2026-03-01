@@ -243,6 +243,19 @@ metrics:
       region: demo
       sequana_rack_id: $rack_id
       sequana_type: liquid
+  - name: sequana3_pmc_total_watt
+    scope: rack
+    racks: ["r01-*"]
+    labels:
+      job: sequana3
+      cluster: demo
+      env: demo
+      host: demo
+      mc_type: xh3000
+      model: xh3000
+      region: demo
+      sequana_rack_id: $rack_id
+      sequana_type: liquid
 
   - name: raritan_pdu_activeenergy_watthour_total
     scope: rack

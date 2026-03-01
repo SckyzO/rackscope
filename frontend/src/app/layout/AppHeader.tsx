@@ -295,13 +295,14 @@ export const AppHeader = ({
           >
             <Bell className="h-5 w-5" />
             {alerts.length > 0 && (
-              /* Outer wrapper has explicit h-4 w-4 so the ping fills + centers correctly */
-              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center">
-                {/* Ping ring — 2 iterations only, plays on mount then stops */}
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-25 [animation-iteration-count:15]" />
-                {/* Solid badge */}
-                <span className="relative flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
-                  {alerts.length > 9 ? '9+' : alerts.length}
+              /* Badge — expands horizontally for larger counts, stays circular for 1-9 */
+              <span className="absolute top-0.5 right-0.5 flex min-w-[16px] items-center justify-center">
+                {/* Ping ring on mount */}
+                <span className="absolute inline-flex h-4 w-4 animate-ping rounded-full bg-red-400 opacity-25 [animation-iteration-count:15]" />
+                <span className="relative flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
+                  {alerts.length > 9999
+                    ? '9999+'
+                    : alerts.length}
                 </span>
               </span>
             )}

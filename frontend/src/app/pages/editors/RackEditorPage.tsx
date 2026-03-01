@@ -26,7 +26,10 @@ import {
   ChevronDown,
   Plus,
   ExternalLink,
+  FileCode2,
 } from 'lucide-react';
+import MonacoEditor from '@monaco-editor/react';
+import * as jsYaml from 'js-yaml';
 import { api } from '../../../services/api';
 import type { Rack, Device, DeviceTemplate, RackTemplate } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
@@ -226,6 +229,7 @@ export const RackEditorPage = () => {
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [editForm, setEditForm] = useState({ name: '', id: '', instance: '' });
   const [editDirty, setEditDirty] = useState(false);
+  const [yamlDrawerOpen, setYamlDrawerOpen] = useState(false);
 
   // Canvas sizing
   const rackContainerRef = useRef<HTMLDivElement>(null);
@@ -734,6 +738,15 @@ export const RackEditorPage = () => {
                 <span className="flex items-center gap-1.5 text-xs text-green-500 dark:text-green-400">
                   <Check className="h-3.5 w-3.5" /> Saved
                 </span>
+              )}
+              {rack && (
+                <button
+                  onClick={() => setYamlDrawerOpen(true)}
+                  className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                >
+                  <FileCode2 className="h-4 w-4" />
+                  Edit YAML
+                </button>
               )}
               <button
                 onClick={() => setWizardOpen(true)}
@@ -1582,6 +1595,164 @@ export const RackEditorPage = () => {
           </div>
         </div>
       )}
+
+      {/* ── YAML Drawer ─────────────────────────────────────────────────────── */}
+      {rack && (
+        <RackYamlDrawer
+          open={yamlDrawerOpen}
+          rack={rack}
+          onSave={async (updated) => {
+            // Bulk-replace all devices, then reload
+            await api.updateRackDevices(rack.id, updated.devices ?? []);
+            const refreshed = await api.getRack(rack.id);
+            setRack(refreshed);
+          }}
+          onClose={() => setYamlDrawerOpen(false)}
+        />
+      )}
     </div>
+  );
+};
+
+// ── RackYamlDrawer ─────────────────────────────────────────────────────────────
+
+type RackYamlDrawerProps = {
+  open: boolean;
+  rack: Rack;
+  onSave: (parsed: Rack) => Promise<void>;
+  onClose: () => void;
+};
+
+const RackYamlDrawer = ({ open, rack, onSave, onClose }: RackYamlDrawerProps) => {
+  const toYaml = (r: Rack) =>
+    jsYaml.dump(
+      {
+        id: r.id,
+        name: r.name,
+        u_height: r.u_height,
+        template_id: r.template_id ?? null,
+        devices: (r.devices ?? []).map((d) => ({
+          id: d.id,
+          name: d.name,
+          template_id: d.template_id,
+          u_position: d.u_position,
+          ...(d.instance !== undefined && d.instance !== null ? { instance: d.instance } : {}),
+        })),
+      },
+      { lineWidth: 120, quotingType: '"' }
+    );
+
+  const [value, setValue] = useState(() => toYaml(rack));
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setValue(toYaml(rack));
+    setSaved(false);
+    setParseError(null);
+    setSaveError(null);
+  }, [rack, open]); // rack reference changes when loaded — recompute YAML
+
+  const handleChange = (val: string | undefined) => {
+    const v = val ?? '';
+    setValue(v);
+    try {
+      jsYaml.load(v);
+      setParseError(null);
+    } catch (e) {
+      setParseError(e instanceof Error ? e.message : 'Invalid YAML');
+    }
+  };
+
+  const handleSave = async () => {
+    if (parseError) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const parsed = jsYaml.load(value) as Rack;
+      await onSave(parsed);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      {open && <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />}
+      <div
+        className={`fixed top-0 right-0 z-50 flex h-full w-[680px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl transition-transform duration-300 ${
+          open ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <FileCode2 className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-semibold text-white">
+              {rack.name} — YAML
+            </span>
+            {parseError && (
+              <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-400">
+                Invalid YAML
+              </span>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-white/10 hover:text-gray-300"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1">
+          <MonacoEditor
+            height="100%"
+            defaultLanguage="yaml"
+            theme="vs-dark"
+            value={value}
+            onChange={handleChange}
+            options={{
+              fontSize: 13,
+              minimap: { enabled: false },
+              lineNumbers: 'on',
+              scrollBeyondLastLine: false,
+              wordWrap: 'off',
+              tabSize: 2,
+            }}
+          />
+        </div>
+
+        <div className="flex shrink-0 items-center justify-between border-t border-gray-800 px-5 py-3">
+          <div className="text-xs text-gray-500">
+            Editing <code className="text-gray-400">{rack.id}</code> — devices are bulk-replaced on save
+          </div>
+          <div className="flex items-center gap-2">
+            {saveError && <span className="text-xs text-red-400">{saveError}</span>}
+            {saved && (
+              <span className="flex items-center gap-1 text-xs text-green-400">
+                <Check className="h-3.5 w-3.5" /> Saved
+              </span>
+            )}
+            <button onClick={onClose} className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs text-gray-400 hover:bg-white/5">
+              Close
+            </button>
+            <button
+              onClick={() => void handleSave()}
+              disabled={saving || !!parseError}
+              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };

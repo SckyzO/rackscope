@@ -522,6 +522,8 @@ def get_fallback_supported_metrics():
         "sequana3_hyc_state_info": "rack",
         "sequana3_hyc_leak_sensor_pump": "rack",
         "sequana3_hyc_tmp_pcb_cel": "rack",
+        # PMC (Power Management Controller) — total rack power aggregated by the PMC
+        "sequana3_pmc_total_watt": "rack",
         # Raritan PDU
         "raritan_pdu_activeenergy_watthour_total": "rack",
         "raritan_pdu_activepower_watt": "rack",
@@ -1268,15 +1270,19 @@ def simulate():
             pressure = 200.0 + random.uniform(-2.0, 2.0)
             leak = 0.0
             board_temp = 60.0 + random.uniform(-2.0, 2.0)
+            # PMC total rack power — typical XH3000 rack: 4–8 kW per rack
+            pmc_power = 5500.0 + random.uniform(-300.0, 300.0)
 
             if is_aisle_hot:
                 pressure = 175.0 + random.uniform(-2.0, 2.0)
                 leak = 0.6 + random.uniform(-0.1, 0.1)
                 board_temp = 80.0 + random.uniform(-1.0, 1.0)
+                pmc_power = 7200.0 + random.uniform(-200.0, 200.0)
             if is_rack_down:
                 pressure = 160.0 + random.uniform(-1.0, 1.0)
                 leak = 1.2 + random.uniform(-0.1, 0.1)
                 board_temp = 95.0 + random.uniform(-1.0, 1.0)
+                pmc_power = 0.0
 
             base_labels = {
                 "site_id": info.get("site_id"),
@@ -1311,6 +1317,10 @@ def simulate():
             if metric_enabled("sequana3_hyc_tmp_pcb_cel", "rack", rack_id=rack_id):
                 set_metric_value(
                     "sequana3_hyc_tmp_pcb_cel", base_labels, round(board_temp, 1), context
+                )
+            if metric_enabled("sequana3_pmc_total_watt", "rack", rack_id=rack_id):
+                set_metric_value(
+                    "sequana3_pmc_total_watt", base_labels, round(pmc_power, 1), context
                 )
 
         for rack_id, info in rack_info.items():
