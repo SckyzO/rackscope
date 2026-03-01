@@ -1,11 +1,42 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Simulator Metrics Catalog — metrics_slurm.yaml
+#
+# Slurm Workload Manager metrics catalog.
+# Loaded IN ADDITION TO metrics_full.yaml when Slurm integration is active.
+#
+# This catalog uses labels_only: true so that the generated series matches
+# the real slurm_exporter output format exactly:
+#
+#   slurm_node_status{node="compute001", partition="compute", status="idle"} 1
+#
+# Without labels_only, BASE_LABELS (instance, job, rack_id, etc.) would be
+# included, which would create a mismatch with real Prometheus queries.
+#
+# Usage: add this catalog to metrics_catalogs in plugin.yaml:
+#
+#   metrics_catalogs:
+#     - id: slurm
+#       path: config/plugins/simulator/metrics/metrics_slurm.yaml
+#       enabled: true
+#
+# Or set it as the primary catalog:
+#
+#   metrics_catalog_path: config/plugins/simulator/metrics/metrics_slurm.yaml
+#
+# Note: metrics_full.yaml already includes slurm_node_status for the
+# standard demo topology. Use THIS file only if you want Slurm metrics
+# independently of the full catalog (e.g. custom topology without E-Series).
+# ─────────────────────────────────────────────────────────────────────────────
+
 metrics:
+
   - name: slurm_node_status
     scope: node
     instances:
       - compute*
       - visu*
-    labels_only: true
+    labels_only: true   # Matches real slurm_exporter format (no BASE_LABELS)
     labels:
-      node: $node_id
-      partition: $partition
-      status: $status
+      node: $node_id        # Slurm node name (matches topology instance name)
+      partition: $partition  # Slurm partition (compute, visu, all, ...)
+      status: $status        # Slurm state (idle, allocated, drain, down, maint, ...)
