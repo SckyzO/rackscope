@@ -36,6 +36,10 @@ class SimulatorPlugin(RackscopePlugin):
     def plugin_name(self) -> str:
         return "Simulator"
 
+    def config_file_path(self, base_dir: str = "config/plugins") -> str:
+        """Override: new folder layout stores config in config/plugin.yaml."""
+        return f"{base_dir}/{self.plugin_id}/config/plugin.yaml"
+
     @property
     def version(self) -> str:
         return "1.0.0"
@@ -51,7 +55,7 @@ class SimulatorPlugin(RackscopePlugin):
     def _load_config(self, app_config: Optional[AppConfig]) -> SimulatorPluginConfig:
         """
         Load simulator configuration with priority chain:
-          1. config/plugins/simulator/config.yml  (dedicated file — recommended)
+          1. config/plugins/simulator/config/plugin.yaml  (new layout — recommended)
           2. app.yaml plugins.simulator           (legacy embedded format)
           3. app.yaml simulator                   (legacy top-level format)
           4. Pydantic defaults
@@ -271,7 +275,7 @@ class SimulatorPlugin(RackscopePlugin):
         @self._router.get("/scenarios")
         def get_simulator_scenarios():
             """Get available simulator scenarios."""
-            sim_path = Path("config/plugins/simulator/scenarios.yaml")
+            sim_path = Path("config/plugins/simulator/scenarios/scenarios.yaml")
             if not sim_path.exists():
                 return {"scenarios": []}
             try:
@@ -303,22 +307,16 @@ class SimulatorPlugin(RackscopePlugin):
             """Add a new simulator override."""
             from rackscope.api import app as app_module
 
-            valid_metrics = set()
+            # Simulator-internal metrics are always valid regardless of library.
+            # rack_down and up are simulation constructs, not display metrics.
+            valid_metrics = {"up", "rack_down", "node_temperature_celsius",
+                             "node_power_watts", "node_load_percent", "node_health_status"}
             metrics_library = app_module.METRICS_LIBRARY
             if metrics_library:
-                # m.metric is the raw Prometheus metric name (e.g. "up"),
-                # not the library-level ID (e.g. "node_up").
-                valid_metrics = {m.metric for m in metrics_library.metrics}
-
-            if not valid_metrics:
-                valid_metrics = {
-                    "up",
-                    "node_temperature_celsius",
-                    "node_power_watts",
-                    "node_load_percent",
-                    "node_health_status",
-                    "rack_down",
-                }
+                # Also accept any metric whose Prometheus name is in the display library.
+                # m.metric is the raw Prometheus name (e.g. "raritan_pdu_activepower_watt"),
+                # not the library-level ID (e.g. "pdu_active_power").
+                valid_metrics |= {m.metric for m in metrics_library.metrics}
 
             instance = payload.get("instance")
             rack_id = payload.get("rack_id")
@@ -400,7 +398,7 @@ class SimulatorPlugin(RackscopePlugin):
         sim_cfg = getattr(app_config, "simulator", None) if app_config else None
         if sim_cfg and getattr(sim_cfg, "overrides_path", None):
             return Path(sim_cfg.overrides_path)
-        return Path("config/simulator_overrides.yaml")
+        return Path("config/plugins/simulator/overrides/overrides.yaml")
 
     def _load_overrides(self, app_config: Optional[AppConfig]) -> list[dict[str, Any]]:
         """Load simulator overrides from YAML file."""

@@ -25,7 +25,7 @@ from prometheus_client import start_http_server, Gauge
 TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology")
 TEMPLATES_PATH = os.getenv("TEMPLATES_PATH", "/app/config/templates")
 SIMULATOR_CONFIG_PATH = os.getenv(
-    "SIMULATOR_CONFIG", "/app/config/plugins/simulator/scenarios.yaml"
+    "SIMULATOR_CONFIG", "/app/config/plugins/simulator/scenarios/scenarios.yaml"
 )
 APP_CONFIG_PATH = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
 METRICS_LIBRARY_PATH = os.getenv("METRICS_LIBRARY", "/app/config/metrics/library")
@@ -201,7 +201,7 @@ def resolve_metrics_catalogs(sim_cfg):
     if paths:
         return paths
     single_path = sim_cfg.get(
-        "metrics_catalog_path", "/app/config/plugins/simulator/metrics_full.yaml"
+        "metrics_catalog_path", "/app/config/plugins/simulator/metrics/metrics_full.yaml"
     )
     return [single_path]
 
@@ -672,7 +672,7 @@ def simulate():
         sim_cfg.get("slurm_random_statuses", {}) if isinstance(sim_cfg, dict) else {}
     )
     slurm_random_match = sim_cfg.get("slurm_random_match", []) if isinstance(sim_cfg, dict) else []
-    overrides_path = sim_cfg.get("overrides_path", "/app/config/simulator_overrides.yaml")
+    overrides_path = sim_cfg.get("overrides_path", "/app/config/plugins/simulator/overrides/overrides.yaml")
     metrics_catalog_paths = resolve_metrics_catalogs(sim_cfg)
     metric_defs = normalize_metric_defs(load_metrics_catalogs(metrics_catalog_paths))
     if not metric_defs:

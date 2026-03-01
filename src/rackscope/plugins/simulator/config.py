@@ -15,14 +15,14 @@ class IncidentRates(BaseModel):
 
 
 class IncidentDurations(BaseModel):
-    """Incident duration configuration."""
+    """Incident duration configuration (in ticks, not seconds)."""
 
     rack: int = Field(default=3, ge=1)
     aisle: int = Field(default=5, ge=1)
 
 
 class SimulatorMetricsCatalog(BaseModel):
-    """Metrics catalog configuration."""
+    """Additional metrics catalog to merge on top of the primary catalog."""
 
     id: str = Field(min_length=1)
     path: str = Field(min_length=1)
@@ -30,34 +30,29 @@ class SimulatorMetricsCatalog(BaseModel):
 
 
 class SimulatorPluginConfig(BaseModel):
-    """Configuration for Simulator Plugin."""
+    """Configuration for the Simulator Plugin.
 
-    enabled: bool = Field(default=True, description="Enable simulator plugin")
-    update_interval_seconds: int = Field(default=20, ge=1, description="Update interval in seconds")
-    seed: Optional[int] = Field(
-        default=None, description="Random seed for deterministic simulation"
-    )
-    scenario: Optional[str] = Field(default=None, description="Scenario name to load")
-    scale_factor: float = Field(default=1.0, ge=0.0, description="Scale factor for incidents")
-    incident_rates: IncidentRates = Field(
-        default_factory=IncidentRates, description="Incident rate configuration"
-    )
-    incident_durations: IncidentDurations = Field(
-        default_factory=IncidentDurations, description="Incident duration configuration"
-    )
+    New config folder layout (config/plugins/simulator/):
+      config/plugin.yaml   — this file (loaded on startup + hot-reload every tick)
+      metrics/             — Prometheus metric generation catalogs
+      overrides/           — runtime metric override persistence
+      scenarios/           — scenario + behavioral profile definitions
+    """
+
+    enabled: bool = Field(default=True)
+    update_interval_seconds: int = Field(default=20, ge=1)
+    seed: Optional[int] = Field(default=None)
+    scenario: Optional[str] = Field(default=None)
+    scale_factor: float = Field(default=1.0, ge=0.0)
+    incident_rates: IncidentRates = Field(default_factory=IncidentRates)
+    incident_durations: IncidentDurations = Field(default_factory=IncidentDurations)
+
+    # Paths use the new folder layout as defaults
     overrides_path: str = Field(
-        default="config/plugins/simulator/overrides.yaml",
-        min_length=1,
-        description="Path to overrides file",
+        default="config/plugins/simulator/overrides/overrides.yaml",
     )
-    default_ttl_seconds: int = Field(
-        default=120, ge=0, description="Default TTL for overrides in seconds"
-    )
+    default_ttl_seconds: int = Field(default=120, ge=0)
     metrics_catalog_path: str = Field(
-        default="config/plugins/simulator/metrics_full.yaml",
-        min_length=1,
-        description="Path to metrics catalog",
+        default="config/plugins/simulator/metrics/metrics_full.yaml",
     )
-    metrics_catalogs: List[SimulatorMetricsCatalog] = Field(
-        default_factory=list, description="List of metrics catalogs"
-    )
+    metrics_catalogs: List[SimulatorMetricsCatalog] = Field(default_factory=list)

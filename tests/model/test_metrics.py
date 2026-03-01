@@ -303,6 +303,7 @@ def test_load_metrics_library_with_actual_config():
     assert node_power is not None
     assert node_power.display.unit == "W"
 
-    rack_power = library.get_metric("rack_power")
-    assert rack_power is not None
-    assert rack_power.category == "power"
+    # rack_power moved to backup (not a direct display metric — use pdu_active_power instead)
+    pdu_power = library.get_metric("pdu_active_power")
+    assert pdu_power is not None
+    assert pdu_power.category == "power"

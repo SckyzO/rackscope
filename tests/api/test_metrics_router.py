@@ -96,10 +96,9 @@ def test_list_categories(client):
     assert "categories" in data
     categories = data["categories"]
 
-    # Should have at least these categories
+    # Core categories after cleanup (performance/compute removed — belongs in Grafana)
     assert "power" in categories
     assert "temperature" in categories
-    assert "performance" in categories
 
 
 def test_list_tags(client):

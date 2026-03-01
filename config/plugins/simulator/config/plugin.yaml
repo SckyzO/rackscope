@@ -1,0 +1,29 @@
+# Simulator Plugin Configuration
+# Main plugin settings — loaded on startup and on each tick (hot-reload).
+# app.yaml only controls: plugins.simulator.enabled (true/false)
+
+update_interval_seconds: 20
+seed: null
+scenario: demo-stable
+scale_factor: 1
+
+incident_rates:
+  node_micro_failure: 0.001
+  rack_macro_failure: 0.01
+  aisle_cooling_failure: 0.005
+
+incident_durations:
+  rack: 3
+  aisle: 5
+
+# Paths relative to the project root
+overrides_path: config/plugins/simulator/overrides/overrides.yaml
+default_ttl_seconds: 120
+
+# Primary metrics catalog used to generate Prometheus metrics.
+# This file defines WHAT the simulator generates, not what the UI displays.
+metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
+
+# Additional catalogs merged on top of the primary (later = higher priority)
+# Example: add metrics_slurm.yaml when Slurm integration is active
+metrics_catalogs: []

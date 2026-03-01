@@ -79,9 +79,9 @@ plugins:
     incident_durations:
       rack: 3
       aisle: 5
-    overrides_path: config/plugins/simulator/overrides.yaml
+    overrides_path: config/plugins/simulator/overrides/overrides.yaml
     default_ttl_seconds: 120
-    metrics_catalog_path: config/plugins/simulator/metrics_full.yaml
+    metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
     metrics_catalogs: []
   slurm:
     enabled: true
