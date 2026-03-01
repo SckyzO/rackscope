@@ -25,10 +25,10 @@ Every entity in the topology has a health state:
 
 | State | Meaning |
 |-------|---------|
-| <span class="state-ok">OK</span> | All checks passing |
-| <span class="state-warn">WARN</span> | At least one warning |
-| <span class="state-crit">CRIT</span> | At least one critical issue |
-| <span class="state-unknown">UNKNOWN</span> | No data or check error |
+| <span className="state-ok">OK</span> | All checks passing |
+| <span className="state-warn">WARN</span> | At least one warning |
+| <span className="state-crit">CRIT</span> | At least one critical issue |
+| <span className="state-unknown">UNKNOWN</span> | No data or check error |
 
 States aggregate upward: Node → Chassis → Rack → Room → Site. The worst state wins.
 
