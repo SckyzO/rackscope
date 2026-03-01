@@ -5,7 +5,6 @@ import { api } from '../../services/api';
 import type { ComponentType } from 'react';
 import type { RoomSummary, Site, AisleSummary, RackSummary } from '../../types';
 import {
-  Activity,
   BarChart2,
   Globe,
   AlertTriangle,
@@ -548,7 +547,36 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
             }}
             title="Rackscope"
           >
-            <Activity className="h-5 w-5" />
+            {/* Rackscope logo — rack cabinet + monitoring pulse */}
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <rect
+                x="2"
+                y="1.5"
+                width="16"
+                height="17"
+                rx="2"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+              <rect x="4.5" y="4" width="8" height="2.5" rx="0.75" fill="currentColor" />
+              <circle cx="14.5" cy="5.25" r="1" fill="currentColor" />
+              <path
+                d="M4.5 10.5h1.5L7.5 8.5l1.5 4 1-2h1.5"
+                stroke="currentColor"
+                strokeWidth="1.25"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="14.5" cy="10.5" r="1" fill="currentColor" />
+              <rect x="4.5" y="13.5" width="8" height="2.5" rx="0.75" fill="currentColor" />
+              <circle cx="14.5" cy="14.75" r="1" fill="currentColor" />
+            </svg>
           </div>
           <div
             className={`overflow-hidden transition-all duration-300 ${

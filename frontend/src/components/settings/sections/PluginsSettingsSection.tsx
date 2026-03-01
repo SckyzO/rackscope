@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -27,6 +27,18 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 }) => {
   const [simulatorSettingsOpen, setSimulatorSettingsOpen] = useState(false);
   const [slurmSettingsOpen, setSlurmSettingsOpen] = useState(false);
+
+  // Demo ribbon visibility — localStorage preference, not saved to app.yaml
+  const [ribbonVisible, setRibbonVisible] = useState(
+    () => localStorage.getItem('rackscope.demo.ribbon') !== 'hidden'
+  );
+  const ribbonVisibleRef = useRef(ribbonVisible);
+  ribbonVisibleRef.current = ribbonVisible;
+  const toggleRibbon = (value: boolean) => {
+    localStorage.setItem('rackscope.demo.ribbon', value ? 'visible' : 'hidden');
+    setRibbonVisible(value);
+    window.dispatchEvent(new Event('rackscope-demo-ribbon'));
+  };
 
   // Metrics files for catalog path dropdown
   const [metricsFiles, setMetricsFiles] = useState<Array<{ name: string; path: string }>>([]);
@@ -276,6 +288,17 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             checked={draft.plugins.simulator.enabled}
             onChange={(value) => updateSimulator('enabled', value)}
           />
+
+          {draft.plugins.simulator.enabled && (
+            <div className="mt-3">
+              <FormToggle
+                label="Show DEMO ribbon"
+                description="Display the diagonal DEMO ribbon in the top-left corner of the UI"
+                checked={ribbonVisible}
+                onChange={toggleRibbon}
+              />
+            </div>
+          )}
 
           <button
             type="button"

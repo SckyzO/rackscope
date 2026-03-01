@@ -171,10 +171,21 @@ const AppInnerLayout = () => {
 
   const { plugins } = useAppConfigSafe();
 
+  const [ribbonVisible, setRibbonVisible] = useState(
+    () => localStorage.getItem('rackscope.demo.ribbon') !== 'hidden'
+  );
+
+  useEffect(() => {
+    const handler = () =>
+      setRibbonVisible(localStorage.getItem('rackscope.demo.ribbon') !== 'hidden');
+    window.addEventListener('rackscope-demo-ribbon', handler);
+    return () => window.removeEventListener('rackscope-demo-ribbon', handler);
+  }, []);
+
   return (
     <>
       {/* Demo ribbon — diagonal corner badge when simulator is active */}
-      {plugins.simulator && (
+      {plugins.simulator && ribbonVisible && (
         <div className="pointer-events-none fixed top-0 left-0 z-[9998] h-20 w-20 overflow-hidden">
           <div className="bg-brand-500/90 absolute top-[18px] -left-[26px] w-[108px] -rotate-45 py-1 text-center text-[9px] font-bold tracking-widest text-white uppercase shadow-sm">
             demo
