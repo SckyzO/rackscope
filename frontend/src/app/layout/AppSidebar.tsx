@@ -804,6 +804,12 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
           label="Checks Library"
           collapsed={collapsed}
         />
+        <NavItem
+          to="/editors/metrics"
+          icon={BarChart2}
+          label="Metrics Library"
+          collapsed={collapsed}
+        />
       </nav>
 
       {/* Bottom sticky — Profile, Settings, UI Library (dev only) */}

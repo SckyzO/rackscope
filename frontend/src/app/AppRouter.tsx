@@ -81,6 +81,7 @@ import { SlurmWallboardPage } from './pages/slurm/SlurmWallboardPage';
 // Editors
 import { SettingsPage } from './pages/editors/SettingsPage';
 import { ChecksEditorPage } from './pages/editors/ChecksEditorPage';
+import { MetricsEditorPage } from './pages/editors/MetricsEditorPage';
 // TopologyEditorPage is DatacenterEditorPage
 import { TemplatesEditorPage } from './pages/editors/TemplatesEditorPage';
 import { RackEditorPage } from './pages/editors/RackEditorPage';
@@ -214,6 +215,7 @@ const AppRoutes = () => (
       <Route path="editors/settings" element={<SettingsPage />} />
       <Route path="settings" element={<SettingsPage />} />
       <Route path="editors/checks" element={<ChecksEditorPage />} />
+      <Route path="editors/metrics" element={<MetricsEditorPage />} />
       <Route path="editors/topology" element={<DatacenterEditorPage />} />
       <Route path="editors/templates" element={<TemplatesEditorPage />} />
       <Route path="editors/rack" element={<RackEditorPage />} />

@@ -349,6 +349,35 @@ export const api = {
   getMetricsFiles: async (): Promise<{ files: Array<{ name: string; path: string }> }> => {
     return fetchWithCache('/api/metrics/files', 'metrics.files');
   },
+  // Metrics library CRUD
+  getMetricsLibrary: async (params?: { category?: string; tag?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.category) qs.set('category', params.category);
+    if (params?.tag) qs.set('tag', params.tag);
+    const url = `/api/metrics/library${qs.toString() ? `?${qs}` : ''}`;
+    return fetchWithCache(url, `metrics.library${params?.category ?? ''}${params?.tag ?? ''}`);
+  },
+  getMetricsLibraryFiles: async (): Promise<{ files: Array<{ name: string; path: string }> }> => {
+    return fetchWithCache('/api/metrics/library/files', 'metrics.library.files');
+  },
+  getMetricFile: async (name: string): Promise<{ name: string; content: string }> => {
+    const res = await apiFetch(`/api/metrics/library/files/${encodeURIComponent(name)}`);
+    return res.json();
+  },
+  updateMetricFile: async (name: string, content: string) => {
+    const res = await apiFetch(`/api/metrics/library/files/${encodeURIComponent(name)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    return res.json();
+  },
+  deleteMetricFile: async (name: string) => {
+    const res = await apiFetch(`/api/metrics/library/files/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    });
+    return res.json();
+  },
   getChecks: async (): Promise<ChecksLibrary> => {
     return fetchWithCache('/api/checks', 'checks.library');
   },

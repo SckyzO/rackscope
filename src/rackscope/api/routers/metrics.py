@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Optional, Annotated
 
 from fastapi import APIRouter, HTTPException, Depends, Query
+from pydantic import BaseModel
 
 from rackscope.api.dependencies import get_app_config_optional
 from rackscope.model.config import AppConfig
@@ -48,6 +49,25 @@ async def list_metrics(
         "count": len(metrics),
         "metrics": [m.model_dump() for m in metrics],
     }
+
+
+@router.get("/library/files")
+async def list_library_metric_files_v2(
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+):
+    """List all metric YAML files in the library directory.
+
+    Must be defined before /library/{metric_id} to avoid FastAPI matching 'files' as a metric_id.
+    """
+    if not app_config:
+        return {"files": []}
+    library_path = Path(app_config.paths.metrics)
+    if not library_path.exists() or not library_path.is_dir():
+        return {"files": []}
+    files = []
+    for f in sorted(library_path.glob("*.yaml")) + sorted(library_path.glob("*.yml")):
+        files.append({"name": f.name, "path": str(f)})
+    return {"files": files}
 
 
 @router.get("/library/{metric_id}")
@@ -229,3 +249,81 @@ async def list_metrics_files(
                 files.append({"name": f.name, "path": str(f)})
 
     return {"files": files}
+
+
+class MetricFileWriteRequest(BaseModel):
+    content: str
+
+
+@router.get("/library/files")
+async def list_library_metric_files(
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+):
+    """List all metric YAML files in the library directory."""
+    if not app_config:
+        return {"files": []}
+    library_path = Path(app_config.paths.metrics)
+    if not library_path.exists() or not library_path.is_dir():
+        return {"files": []}
+    files = []
+    for f in sorted(library_path.glob("*.yaml")) + sorted(library_path.glob("*.yml")):
+        files.append({"name": f.name, "path": str(f)})
+    return {"files": files}
+
+
+@router.get("/library/files/{name}")
+async def get_library_metric_file(
+    name: str,
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+):
+    """Read a metric YAML file from the library."""
+    if not app_config:
+        raise HTTPException(status_code=503, detail="Config not loaded")
+    library_path = Path(app_config.paths.metrics) / name
+    if not library_path.exists():
+        raise HTTPException(status_code=404, detail=f"Metric file '{name}' not found")
+    content = library_path.read_text(encoding="utf-8")
+    return {"name": name, "content": content}
+
+
+@router.put("/library/files/{name}")
+async def put_library_metric_file(
+    name: str,
+    body: MetricFileWriteRequest,
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+):
+    """Write a metric YAML file to the library and reload the metrics library."""
+    import yaml as _yaml
+
+    if not app_config:
+        raise HTTPException(status_code=503, detail="Config not loaded")
+    try:
+        _yaml.safe_load(body.content)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid YAML: {e}")
+    library_path = Path(app_config.paths.metrics) / name
+    library_path.write_text(body.content, encoding="utf-8")
+    from rackscope.api import app as app_module
+    from rackscope.model.loader import load_metrics_library as _load_metrics_library
+
+    app_module.METRICS_LIBRARY = _load_metrics_library(str(library_path.parent))
+    return {"status": "ok", "name": name}
+
+
+@router.delete("/library/files/{name}")
+async def delete_library_metric_file(
+    name: str,
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+):
+    """Delete a metric YAML file from the library and reload."""
+    if not app_config:
+        raise HTTPException(status_code=503, detail="Config not loaded")
+    library_path = Path(app_config.paths.metrics) / name
+    if not library_path.exists():
+        raise HTTPException(status_code=404, detail=f"Metric file '{name}' not found")
+    library_path.unlink()
+    from rackscope.api import app as app_module
+    from rackscope.model.loader import load_metrics_library as _load_metrics_library
+
+    app_module.METRICS_LIBRARY = _load_metrics_library(str(library_path.parent))
+    return {"status": "deleted", "name": name}
