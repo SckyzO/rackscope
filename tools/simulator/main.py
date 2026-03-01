@@ -650,15 +650,26 @@ def load_overrides(path):
 
 
 def simulate():
-    # Load metrics library to determine supported metrics
+    # SUPPORTED_METRICS is built from two independent sources:
+    # 1. Fallback hardcoded dict (always available)
+    # 2. Display metrics library (scope hints for well-known metrics)
+    #
+    # IMPORTANT: SUPPORTED_METRICS must NOT come from config/metrics/library/ alone.
+    # The display library only has 7 metrics (for UI charts). The simulator
+    # generates many more (node_exporter, IPMI, IPMI, Slurm, etc.) which come
+    # from metrics_full.yaml. The catalog IS the authority on what to generate.
+    # The display library just provides scope hints for metrics the catalog may
+    # not explicitly classify.
     global SUPPORTED_METRICS
-    library_metrics = load_metrics_library(METRICS_LIBRARY_PATH)
-    if library_metrics:
-        SUPPORTED_METRICS = library_metrics
-        print(f"Using metrics library with {len(SUPPORTED_METRICS)} metrics")
+    SUPPORTED_METRICS = get_fallback_supported_metrics()  # Start with the full set
+    library_hints = load_metrics_library(METRICS_LIBRARY_PATH)
+    if library_hints:
+        # Merge scope hints from display library on top of fallback (don't replace)
+        SUPPORTED_METRICS.update(library_hints)
+        print(f"Loaded display library scope hints ({len(library_hints)} entries); "
+              f"SUPPORTED_METRICS total: {len(SUPPORTED_METRICS)}")
     else:
-        SUPPORTED_METRICS = get_fallback_supported_metrics()
-        print(f"Using fallback metrics ({len(SUPPORTED_METRICS)} metrics)")
+        print(f"Using fallback metrics only ({len(SUPPORTED_METRICS)} metrics)")
 
     # Load Initial Config
     sim_cfg = apply_scenario(load_simulator_config())
