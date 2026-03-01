@@ -7,6 +7,7 @@ devices:
   name: IB Switch XH35MQ
   template_id: bs-xh35mq-ib-1u
   u_position: 12
+  instance: sw-ib-r01-07
 - id: r01-07-c01
   name: XH3610 Milo 01
   template_id: bs-xh3610-milo-1u-3n

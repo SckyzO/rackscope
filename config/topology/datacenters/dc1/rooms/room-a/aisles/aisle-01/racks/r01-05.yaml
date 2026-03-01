@@ -7,6 +7,7 @@ devices:
   name: IB Switch XH35MQ
   template_id: bs-xh35mq-ib-1u
   u_position: 12
+  instance: sw-ib-r01-05
 - id: r01-05-c01
   name: XH3420 Mato 01
   template_id: bs-xh3420-mato-1u-3n

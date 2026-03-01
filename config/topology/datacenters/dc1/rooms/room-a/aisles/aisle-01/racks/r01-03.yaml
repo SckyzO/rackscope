@@ -7,6 +7,7 @@ devices:
   name: IB Switch XH35MQ
   template_id: bs-xh35mq-ib-1u
   u_position: 12
+  instance: sw-ib-r01-03
 - id: r01-03-c01
   name: XH3150 Tino 01
   template_id: bs-xh3150-tino-1u-3n

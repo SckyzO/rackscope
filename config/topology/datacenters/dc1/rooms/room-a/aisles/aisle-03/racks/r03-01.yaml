@@ -7,10 +7,12 @@ devices:
   name: IB Switch
   template_id: ib-switch-l1
   u_position: 42
+  instance: sw-ib-r03-01
 - id: r03-01-esw
   name: Ethernet Switch
   template_id: eth-switch-tor
   u_position: 40
+  instance: sw-eth-r03-01
 - id: r03-01-m01
   name: Mgmt 01
   template_id: bs-x430-service-2u

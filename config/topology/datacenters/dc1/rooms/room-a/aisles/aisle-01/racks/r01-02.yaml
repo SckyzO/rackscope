@@ -7,6 +7,7 @@ devices:
   name: IB Switch XH35MQ
   template_id: bs-xh35mq-ib-1u
   u_position: 12
+  instance: sw-ib-r01-02
 - id: r01-02-c01
   name: XH3145 Tiya 01
   template_id: bs-xh3145-tiya-1u-2n
