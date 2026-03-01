@@ -8,6 +8,8 @@ sidebar_position: 5
 
 The simulator generates realistic Prometheus metrics for testing and demonstration without real hardware.
 
+![Simulator Settings](/img/screenshots/settings.png)
+
 ## How It Works
 
 The simulator:

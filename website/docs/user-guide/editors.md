@@ -48,6 +48,8 @@ Edit device and rack templates:
 
 **URL**: `/editors/checks`
 
+![Checks Editor](/img/screenshots/checks-editor.png)
+
 Edit health check definitions:
 - PromQL expressions
 - Severity thresholds

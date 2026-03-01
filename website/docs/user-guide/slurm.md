@@ -8,6 +8,8 @@ sidebar_position: 4
 
 The Slurm plugin provides HPC-specific views for monitoring cluster workloads alongside physical infrastructure.
 
+![Slurm Overview](/img/screenshots/slurm-overview.png)
+
 ## Views
 
 ### Slurm Wallboard
