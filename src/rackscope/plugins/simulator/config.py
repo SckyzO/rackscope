@@ -15,10 +15,15 @@ class IncidentRates(BaseModel):
 
 
 class IncidentDurations(BaseModel):
-    """Incident duration configuration (in ticks, not seconds)."""
+    """Incident duration configuration in SECONDS.
 
-    rack: int = Field(default=3, ge=1)
-    aisle: int = Field(default=5, ge=1)
+    At update_interval=20s:
+      rack=300  → 5 minutes (realistic for PDU reset / power restore)
+      aisle=600 → 10 minutes (cooling unit restart + temperature stabilization)
+    """
+
+    rack: int = Field(default=300, ge=1, description="Rack macro-failure duration in seconds")
+    aisle: int = Field(default=600, ge=1, description="Aisle cooling failure duration in seconds")
 
 
 class SimulatorMetricsCatalog(BaseModel):

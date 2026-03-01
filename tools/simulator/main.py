@@ -666,8 +666,10 @@ def simulate():
     if library_hints:
         # Merge scope hints from display library on top of fallback (don't replace)
         SUPPORTED_METRICS.update(library_hints)
-        print(f"Loaded display library scope hints ({len(library_hints)} entries); "
-              f"SUPPORTED_METRICS total: {len(SUPPORTED_METRICS)}")
+        print(
+            f"Loaded display library scope hints ({len(library_hints)} entries); "
+            f"SUPPORTED_METRICS total: {len(SUPPORTED_METRICS)}"
+        )
     else:
         print(f"Using fallback metrics only ({len(SUPPORTED_METRICS)} metrics)")
 
@@ -675,7 +677,7 @@ def simulate():
     sim_cfg = apply_scenario(load_simulator_config())
     update_interval = sim_cfg.get("update_interval_seconds", sim_cfg.get("update_interval", 20))
     rates = sim_cfg.get("incident_rates", {})
-    durations = sim_cfg.get("incident_durations", {"rack": 3, "aisle": 5})
+    durations = sim_cfg.get("incident_durations", {"rack": 300, "aisle": 600})
     profiles = sim_cfg.get("profiles", {})
     seed = sim_cfg.get("seed")
     scale_factor = sim_cfg.get("scale_factor", 1.0)
@@ -683,7 +685,9 @@ def simulate():
         sim_cfg.get("slurm_random_statuses", {}) if isinstance(sim_cfg, dict) else {}
     )
     slurm_random_match = sim_cfg.get("slurm_random_match", []) if isinstance(sim_cfg, dict) else []
-    overrides_path = sim_cfg.get("overrides_path", "/app/config/plugins/simulator/overrides/overrides.yaml")
+    overrides_path = sim_cfg.get(
+        "overrides_path", "/app/config/plugins/simulator/overrides/overrides.yaml"
+    )
     metrics_catalog_paths = resolve_metrics_catalogs(sim_cfg)
     metric_defs = normalize_metric_defs(load_metrics_catalogs(metrics_catalog_paths))
     if not metric_defs:
@@ -732,7 +736,7 @@ def simulate():
         # Reload simulator config every tick — picks up scenario changes without container restart
         _new_cfg = apply_scenario(load_simulator_config())
         rates = _new_cfg.get("incident_rates", {})
-        durations = _new_cfg.get("incident_durations", {"rack": 3, "aisle": 5})
+        durations = _new_cfg.get("incident_durations", {"rack": 300, "aisle": 600})
         profiles = _new_cfg.get("profiles", {})
         seed = _new_cfg.get("seed")
         scale_factor = _new_cfg.get("scale_factor", 1.0)
@@ -794,24 +798,35 @@ def simulate():
             overrides_by_instance.setdefault(inst, []).append(item)
 
         # --- Macro Incidents ---
+        # Durations are in SECONDS (converted from config).
+        # incident_started_tick * update_interval gives the elapsed seconds.
+        aisle_duration_s = durations.get("aisle", 600)  # default 10 min
+        rack_duration_s = durations.get("rack", 300)  # default 5 min
+
         for aisle in set(t["aisle_id"] for t in targets):
             aisle_rate = min(1.0, rates.get("aisle_cooling_failure", 0.005) * scale_factor)
             if aisle not in active_incidents["aisles"] and random.random() < aisle_rate:
-                print(f"!!! Incident: Aisle {aisle} cooling failure")
+                print(
+                    f"!!! Incident: Aisle {aisle} cooling failure (will last {aisle_duration_s}s)"
+                )
                 active_incidents["aisles"][aisle] = tick
-            elif aisle in active_incidents["aisles"] and (
-                tick - active_incidents["aisles"][aisle]
-            ) > durations.get("aisle", 5):
+            elif (
+                aisle in active_incidents["aisles"]
+                and (tick - active_incidents["aisles"][aisle]) * update_interval >= aisle_duration_s
+            ):
+                print(f"--- Incident resolved: Aisle {aisle} cooling restored")
                 del active_incidents["aisles"][aisle]
 
         for rack in set(t["rack_id"] for t in targets):
             rack_rate = min(1.0, rates.get("rack_macro_failure", 0.01) * scale_factor)
             if rack not in active_incidents["racks"] and random.random() < rack_rate:
-                print(f"!!! Incident: Rack {rack} power issue")
+                print(f"!!! Incident: Rack {rack} power issue (will last {rack_duration_s}s)")
                 active_incidents["racks"][rack] = tick
-            elif rack in active_incidents["racks"] and (
-                tick - active_incidents["racks"][rack]
-            ) > durations.get("rack", 3):
+            elif (
+                rack in active_incidents["racks"]
+                and (tick - active_incidents["racks"][rack]) * update_interval >= rack_duration_s
+            ):
+                print(f"--- Incident resolved: Rack {rack} power restored")
                 del active_incidents["racks"][rack]
 
         for target in targets:

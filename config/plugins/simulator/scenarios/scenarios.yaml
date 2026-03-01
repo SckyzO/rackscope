@@ -9,10 +9,11 @@ incident_rates:
   rack_macro_failure: 0.01    # Power issue on a whole rack
   aisle_cooling_failure: 0.005 # Cooling issue on a whole aisle
 
-# Duration of incidents (in number of ticks)
+# Duration of incidents in SECONDS (not ticks).
+# At update_interval=20s: rack=300s=5min, aisle=600s=10min
 incident_durations:
-  rack: 3
-  aisle: 5
+  rack: 300     # 5 minutes — realistic PDU reset / power restore time
+  aisle: 600    # 10 minutes — cooling unit restart + temperature stabilization
 
 # Behavioral Profiles
 profiles:
@@ -101,7 +102,7 @@ scenarios:
       rack_macro_failure: 0.02
       aisle_cooling_failure: 0.0
     incident_durations:
-      rack: 3
+      rack: 300   # 5 minutes
   random-demo-small:
     description: "Mostly OK, rare warning/critical incidents."
     seed: 42

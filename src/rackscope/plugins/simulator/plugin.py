@@ -309,8 +309,14 @@ class SimulatorPlugin(RackscopePlugin):
 
             # Simulator-internal metrics are always valid regardless of library.
             # rack_down and up are simulation constructs, not display metrics.
-            valid_metrics = {"up", "rack_down", "node_temperature_celsius",
-                             "node_power_watts", "node_load_percent", "node_health_status"}
+            valid_metrics = {
+                "up",
+                "rack_down",
+                "node_temperature_celsius",
+                "node_power_watts",
+                "node_load_percent",
+                "node_health_status",
+            }
             metrics_library = app_module.METRICS_LIBRARY
             if metrics_library:
                 # Also accept any metric whose Prometheus name is in the display library.

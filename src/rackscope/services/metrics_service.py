@@ -51,10 +51,10 @@ def resolve_metric_query(
     expr = metric_def.metric
     # Substitute placeholders
     expr = expr.replace('"{rack_id}"', f'"{rack_id}"')
-    expr = expr.replace('{rack_id}', rack_id)
+    expr = expr.replace("{rack_id}", rack_id)
     if instance:
         expr = expr.replace('"{instance}"', f'"{instance}"')
-        expr = expr.replace('{instance}', instance)
+        expr = expr.replace("{instance}", instance)
     return expr
 
 
