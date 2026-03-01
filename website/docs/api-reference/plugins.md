@@ -109,7 +109,7 @@ Returns all metrics the simulator can generate (from the metrics library).
 
 ## Slurm API
 
-### GET /api/slurm/rooms/{room_id}/nodes
+### `GET /api/slurm/rooms/{room_id}/nodes`
 
 Returns Slurm node states mapped to the room's physical layout.
 

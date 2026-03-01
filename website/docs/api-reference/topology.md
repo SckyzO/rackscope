@@ -16,19 +16,19 @@ Returns the full topology (all sites, rooms, aisles, racks, devices).
 
 Returns all sites.
 
-### GET /api/topology/sites/{site_id}
+### `GET /api/topology/sites/{site_id}`
 
 Returns a single site with its rooms.
 
-### GET /api/topology/rooms/{room_id}
+### `GET /api/topology/rooms/{room_id}`
 
 Returns a room with its aisles and racks.
 
-### GET /api/topology/racks/{rack_id}
+### `GET /api/topology/racks/{rack_id}`
 
 Returns a rack with its devices.
 
-### GET /api/topology/devices/{rack_id}/{device_id}
+### `GET /api/topology/devices/{rack_id}/{device_id}`
 
 Returns a device with its instances.
 
@@ -46,7 +46,7 @@ Returns the full catalog (all device and rack templates).
 
 Returns all device templates.
 
-### GET /api/catalog/device-templates/{template_id}
+### `GET /api/catalog/device-templates/{template_id}`
 
 Returns a single device template.
 
@@ -54,11 +54,11 @@ Returns a single device template.
 
 Creates a new device template.
 
-### PUT /api/catalog/device-templates/{template_id}
+### `PUT /api/catalog/device-templates/{template_id}`
 
 Updates an existing device template.
 
-### DELETE /api/catalog/device-templates/{template_id}
+### `DELETE /api/catalog/device-templates/{template_id}`
 
 Deletes a device template.
 
@@ -76,7 +76,7 @@ Returns all rack component templates.
 
 Returns all health checks in the library.
 
-### GET /api/checks/{check_id}
+### `GET /api/checks/{check_id}`
 
 Returns a single health check.
 
@@ -84,6 +84,6 @@ Returns a single health check.
 
 Returns the list of check YAML files.
 
-### PUT /api/checks/files/{filename}
+### `PUT /api/checks/files/{filename}`
 
 Updates a check YAML file.

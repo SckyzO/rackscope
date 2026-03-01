@@ -36,7 +36,7 @@ Returns all metric definitions.
 ]
 ```
 
-### GET /api/metrics/library/{metric_id}
+### `GET /api/metrics/library/{metric_id}`
 
 Returns a single metric definition.
 

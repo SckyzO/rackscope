@@ -61,7 +61,7 @@ Returns all active WARN/CRIT alerts across all instances.
 
 Returns all rooms with basic metadata.
 
-### GET /api/rooms/{room_id}/state
+### `GET /api/rooms/{room_id}/state`
 
 Returns room state with per-rack health summary.
 
@@ -79,7 +79,7 @@ Returns room state with per-rack health summary.
 
 ## Racks
 
-### GET /api/racks/{rack_id}/state
+### `GET /api/racks/{rack_id}/state`
 
 Returns rack state. By default returns health only (fast). Add `?include_metrics=true` for full metrics.
 
