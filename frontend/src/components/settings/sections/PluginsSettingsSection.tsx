@@ -269,7 +269,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           </div>
         )}
 
-        <div className={simulatorRunning ? 'pointer-events-none opacity-50' : ''}>
+        <div>
           <FormToggle
             label="Enable Simulator"
             description="Activate simulator plugin for demo mode"

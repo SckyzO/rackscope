@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { api } from '../../services/api';
 import type { AppConfig } from '../../types';
 
@@ -27,6 +27,8 @@ interface AppConfigContextType {
   features: AppFeatures;
   plugins: AppPlugins;
   playlist: { interval_seconds: number; views: string[] };
+  // true when demo mode is enabled but the simulator container is unreachable
+  simulatorDown: boolean;
   refresh: () => Promise<void>;
 }
 
@@ -51,6 +53,9 @@ const AppConfigContext = createContext<AppConfigContextType | undefined>(undefin
 export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  // simulatorDown: true when demo mode is enabled but simulator is unreachable.
+  // Polled every 30s so the UI reflects crashes promptly.
+  const [simulatorDown, setSimulatorDown] = useState(false);
 
   const load = async () => {
     try {
@@ -63,9 +68,34 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Poll simulator health only when demo mode is on.
+  // Uses a short 2s timeout so the UI responds quickly to crashes.
+  const checkSimulator = useCallback(async (demoEnabled: boolean) => {
+    if (!demoEnabled) {
+      setSimulatorDown(false);
+      return;
+    }
+    try {
+      const status = await api.getSimulatorStatus();
+      setSimulatorDown(!status?.running);
+    } catch {
+      setSimulatorDown(true);
+    }
+  }, []);
+
   useEffect(() => {
     void load();
   }, []);
+
+  // Start polling as soon as config is loaded and demo mode is known
+  useEffect(() => {
+    const demoEnabled = config?.features?.demo === true || config?.plugins?.['simulator']?.enabled === true;
+    void checkSimulator(demoEnabled);
+    if (!demoEnabled) return;
+    // Poll every 30s to detect simulator crashes
+    const id = setInterval(() => void checkSimulator(true), 30_000);
+    return () => clearInterval(id);
+  }, [config, checkSimulator]);
 
   // Derive feature flags — default true for core features, false for opt-in
   const features: AppFeatures = {
@@ -92,7 +122,7 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AppConfigContext.Provider
-      value={{ config, loading, features, plugins, playlist, refresh: load }}
+      value={{ config, loading, features, plugins, playlist, simulatorDown, refresh: load }}
     >
       {children}
     </AppConfigContext.Provider>
@@ -115,6 +145,7 @@ export const useAppConfigSafe = (): AppConfigContextType => {
       features: DEFAULT_FEATURES,
       plugins: DEFAULT_PLUGINS,
       playlist: { interval_seconds: 30, views: [] },
+      simulatorDown: false,
       refresh: async () => {
         /* noop */
       },

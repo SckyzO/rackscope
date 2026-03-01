@@ -197,7 +197,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
             </p>
           </div>
         )}
-        <div className={simulatorRunning ? 'pointer-events-none opacity-50' : ''}>
+        <div>
           <FormToggle
             label="Demo Mode"
             description="Enables demo/test data from the Simulator plugin. The Simulator must also be enabled and configured in the Plugins tab — this toggle alone is not sufficient."

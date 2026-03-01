@@ -18,6 +18,7 @@ import { api } from '../../services/api';
 import type { ActiveAlert } from '../../types';
 import { AppSearch } from './AppSearch';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAppConfigSafe } from '../contexts/AppConfigContext';
 import { useAvatar } from '../../hooks/useAvatar';
 import { usePageTitleValue } from '../contexts/PageTitleContext';
 import { usePlaylistSafe } from '../contexts/PlaylistContext';
@@ -79,6 +80,7 @@ export const AppHeader = ({
   const { avatar } = useAvatar();
   const displayName = authEnabled && user ? user.username : 'Admin';
   const initial = displayName.charAt(0).toUpperCase();
+  const { simulatorDown, plugins } = useAppConfigSafe();
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
@@ -285,6 +287,18 @@ export const AppHeader = ({
         >
           {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </button>
+
+        {/* Simulator down warning — shown when demo mode is on but simulator is unreachable */}
+        {plugins.simulator && simulatorDown && (
+          <a
+            href="/editors/settings"
+            title="Simulator is unreachable — check Settings › Plugins"
+            className="flex items-center gap-1.5 rounded-lg border border-amber-400/50 bg-amber-400/10 px-2.5 py-1.5 text-xs font-semibold text-amber-600 transition-colors hover:bg-amber-400/20 dark:text-amber-400"
+          >
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            Simulator down
+          </a>
+        )}
 
         {/* Notifications */}
         <div className="relative">
