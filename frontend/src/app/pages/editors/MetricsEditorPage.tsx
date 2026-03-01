@@ -34,6 +34,8 @@ import {
 } from 'lucide-react';
 import MonacoEditor from '@monaco-editor/react';
 import * as jsYaml from 'js-yaml';
+import ReactApexChart from 'react-apexcharts';
+import type { ApexOptions } from 'apexcharts';
 import { api } from '../../../services/api';
 import type { DeviceTemplate, RackTemplate } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
@@ -112,6 +114,148 @@ const categoryColor = (cat: string) => CATEGORY_COLORS[cat] ?? '#6b7280';
 const CategoryIcon = ({ cat }: { cat: string }) => {
   const Icon = CATEGORY_ICONS[cat] ?? CATEGORY_ICONS.default;
   return <Icon className="h-3.5 w-3.5" />;
+};
+
+// ── Dark mode helper (same as ChartsPage) ─────────────────────────────────────
+
+const useDark = () => {
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
+  useEffect(() => {
+    const obs = new MutationObserver(() =>
+      setDark(document.documentElement.classList.contains('dark'))
+    );
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, []);
+  return dark;
+};
+
+// ── Sample data for chart preview ─────────────────────────────────────────────
+
+const SAMPLE_DATA = [28, 32, 45, 41, 55, 48, 52, 58, 62, 56, 65, 70, 66, 72, 68, 75, 71, 69, 74, 78, 72, 65, 61, 58];
+const SAMPLE_CATS = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+
+const MetricChartPreview = ({
+  chartType,
+  color,
+  unit,
+  thresholdWarn,
+  thresholdCrit,
+  name,
+}: {
+  chartType: string;
+  color: string;
+  unit: string;
+  thresholdWarn: string;
+  thresholdCrit: string;
+  name: string;
+}) => {
+  const dark = useDark();
+  const warnNum = parseFloat(thresholdWarn);
+  const critNum = parseFloat(thresholdCrit);
+
+  // Annotations for threshold lines
+  const annotations: ApexOptions['annotations'] = {
+    yaxis: [
+      ...(!isNaN(warnNum) ? [{
+        y: warnNum,
+        borderColor: '#f59e0b',
+        borderWidth: 1.5,
+        strokeDashArray: 4,
+        label: { text: `WARN ${warnNum}${unit}`, style: { color: '#f59e0b', background: 'transparent', fontSize: '9px' } },
+      }] : []),
+      ...(!isNaN(critNum) ? [{
+        y: critNum,
+        borderColor: '#ef4444',
+        borderWidth: 1.5,
+        strokeDashArray: 4,
+        label: { text: `CRIT ${critNum}${unit}`, style: { color: '#ef4444', background: 'transparent', fontSize: '9px' } },
+      }] : []),
+    ],
+  };
+
+  const baseOpts: ApexOptions = {
+    chart: {
+      background: 'transparent',
+      toolbar: { show: false },
+      sparkline: { enabled: false },
+      fontFamily: 'Outfit, system-ui, sans-serif',
+      animations: { enabled: false },
+    },
+    theme: { mode: dark ? 'dark' : 'light' },
+    colors: [color],
+    dataLabels: { enabled: false },
+    grid: { borderColor: dark ? '#1f2937' : '#f3f4f6', strokeDashArray: 4 },
+    xaxis: {
+      categories: SAMPLE_CATS,
+      labels: {
+        show: true,
+        formatter: (v: string) => v.endsWith(':00') && [0, 6, 12, 18, 23].includes(parseInt(v)) ? v : '',
+        style: { colors: dark ? '#6b7280' : '#9ca3af', fontSize: '10px' },
+      },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+    },
+    yaxis: {
+      labels: { style: { colors: dark ? '#6b7280' : '#9ca3af', fontSize: '10px' }, formatter: (v: number) => `${v}${unit}` },
+    },
+    tooltip: { y: { formatter: (v: number) => `${v} ${unit}` } },
+    annotations,
+  };
+
+  if (chartType === 'bar') {
+    return (
+      <ReactApexChart
+        type="bar"
+        height={160}
+        options={{ ...baseOpts, plotOptions: { bar: { columnWidth: '60%', borderRadius: 3 } }, stroke: { show: false } }}
+        series={[{ name, data: SAMPLE_DATA }]}
+      />
+    );
+  }
+
+  if (chartType === 'gauge') {
+    const maxVal = Math.max(critNum || 100, warnNum || 80, 100);
+    const currentVal = Math.round(maxVal * 0.65);
+    return (
+      <ReactApexChart
+        type="radialBar"
+        height={160}
+        options={{
+          chart: { background: 'transparent', toolbar: { show: false }, fontFamily: 'Outfit, system-ui, sans-serif', animations: { enabled: false } },
+          theme: { mode: dark ? 'dark' : 'light' },
+          colors: [color],
+          plotOptions: {
+            radialBar: {
+              startAngle: -90, endAngle: 90,
+              hollow: { size: '65%' },
+              dataLabels: {
+                name: { show: true, offsetY: -10, fontSize: '11px', color: dark ? '#9ca3af' : '#6b7280' },
+                value: { show: true, offsetY: 5, fontSize: '22px', fontWeight: 700, formatter: (v: string) => `${Math.round(parseFloat(v) * maxVal / 100)}${unit}` },
+              },
+            },
+          },
+          labels: [name],
+        }}
+        series={[Math.round((currentVal / maxVal) * 100)]}
+      />
+    );
+  }
+
+  // Default: line or area
+  const isArea = chartType === 'area';
+  return (
+    <ReactApexChart
+      type={isArea ? 'area' : 'line'}
+      height={160}
+      options={{
+        ...baseOpts,
+        stroke: { curve: 'smooth', width: 2 },
+        fill: isArea ? { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.02 } } : { opacity: 1 },
+      }}
+      series={[{ name, data: SAMPLE_DATA }]}
+    />
+  );
 };
 
 const metricToYaml = (m: MetricDefinition): string =>
@@ -453,14 +597,12 @@ const ContextPanel = ({
     (t.metrics ?? []).includes(metric.id)
   );
 
-  const ChartIcon =
-    draft.chart_type === 'bar'
-      ? BarChart2
-      : draft.chart_type === 'gauge'
-        ? Gauge
-        : draft.chart_type === 'area'
-          ? Activity
-          : LineChart;
+  // ChartIcon is used in template usage section icon
+  const _ChartIcon =
+    draft.chart_type === 'bar' ? BarChart2
+    : draft.chart_type === 'gauge' ? Gauge
+    : draft.chart_type === 'area' ? Activity
+    : LineChart;
 
   const warnNum = parseFloat(draft.threshold_warn);
   const critNum = parseFloat(draft.threshold_crit);
@@ -496,30 +638,29 @@ const ContextPanel = ({
       </div>
 
       <div className="flex-1 space-y-6 overflow-y-auto p-5">
-        {/* Display preview */}
+        {/* Chart preview */}
         <div>
-          <p className="mb-3 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
-            Display
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <div className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
-              <ChartIcon className="h-3.5 w-3.5 text-gray-400" />
-              <span className="text-xs text-gray-600 dark:text-gray-300">{draft.chart_type}</span>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+              Chart Preview
+            </p>
+            <div className="flex items-center gap-1.5">
+              <div
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: draft.color }}
+              />
+              <span className="font-mono text-[10px] text-gray-400">{draft.chart_type} · {draft.unit || '—'} · {draft.aggregation}</span>
             </div>
-            <div
-              className="flex items-center gap-1.5 rounded-xl border px-3 py-2"
-              style={{
-                borderColor: `${draft.color}40`,
-                backgroundColor: `${draft.color}10`,
-                color: draft.color,
-              }}
-            >
-              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: draft.color }} />
-              <span className="text-xs font-semibold">{draft.unit || '—'}</span>
-            </div>
-            <div className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-800">
-              <span className="text-[10px] font-mono text-gray-500">{draft.aggregation}</span>
-            </div>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+            <MetricChartPreview
+              chartType={draft.chart_type}
+              color={draft.color || '#465fff'}
+              unit={draft.unit}
+              thresholdWarn={draft.threshold_warn}
+              thresholdCrit={draft.threshold_crit}
+              name={draft.name || metric?.name || 'Value'}
+            />
           </div>
         </div>
 
