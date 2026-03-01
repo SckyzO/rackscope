@@ -16,12 +16,5 @@ rack_templates:
     - template_id: pdu-raritan-16u
       side: right
       u_position: 17
-    rear_components:
-    - id: rear-fan-bank
-      name: Rear Fan Bank
-      type: cooling
-      model: Generic Fan
-      location: u-mount
-      u_position: 38
-      u_height: 4
+    rear_components: []
   checks: []
