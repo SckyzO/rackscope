@@ -1,7 +1,8 @@
 id: pdu_active_power
 name: PDU Active Power
 description: PDU active power consumption in watts
-metric: raritan_pdu_activepower_watt{rack_id="{rack_id}"}
+# inletid!="" selects inlet-level rows only (4 PDUs × 2 inlets = 8 series summed = total rack power)
+metric: raritan_pdu_activepower_watt{rack_id="{rack_id}",inletid!=""}
 labels:
   rack_id: "{rack_id}"
   pduid: "{pduid}"

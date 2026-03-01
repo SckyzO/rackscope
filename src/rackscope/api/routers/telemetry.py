@@ -190,6 +190,7 @@ async def get_rack_state(
     # Lazy import to avoid circular dependency
     from rackscope.services import metrics_service
     from rackscope.telemetry.prometheus import client as prom_client
+    from rackscope.api.app import METRICS_LIBRARY
 
     if not topology or not catalog or not checks_library or not planner:
         return {"rack_id": rack_id, "state": "UNKNOWN", "metrics": {}, "nodes": {}}
@@ -209,8 +210,10 @@ async def get_rack_state(
             rack=rack, catalog=catalog, prom_client=prom_client
         )
         # Collect component metrics (PDU, switches, etc.)
+        # Pass METRICS_LIBRARY so the service resolves library IDs (e.g. 'pdu_active_power')
+        # to actual PromQL expressions (e.g. 'raritan_pdu_activepower_watt{rack_id="..."}').
         component_metrics = await metrics_service.collect_rack_component_metrics(
-            rack=rack, catalog=catalog, prom_client=prom_client
+            rack=rack, catalog=catalog, prom_client=prom_client, library=METRICS_LIBRARY
         )
 
     # Calculate Node States and Aggregate Rack State

@@ -14,10 +14,48 @@ from typing import Dict, Optional, List
 
 from rackscope.model.catalog import Catalog, RackComponentRef, RackComponentTemplate, DeviceTemplate
 from rackscope.model.domain import Rack, Device
+from rackscope.model.metrics import MetricsLibrary
 from rackscope.services.instance_service import expand_device_instances
 from rackscope.telemetry.prometheus import PrometheusClient
 
 logger = logging.getLogger(__name__)
+
+
+def resolve_metric_query(
+    metric_id: str,
+    library: Optional["MetricsLibrary"],
+    rack_id: str,
+    instance: Optional[str] = None,
+) -> Optional[str]:
+    """Resolve a metric library ID to an actual PromQL query.
+
+    Templates store metric library IDs (e.g. 'pdu_active_power'), not raw
+    Prometheus metric names. This function looks up the ID in the library and
+    substitutes placeholders ({rack_id}, {instance}) in the metric expression.
+
+    Without a library the metric_id is used as-is (backward compat fallback).
+    """
+    if library is None:
+        # Fallback: treat the ID as a raw metric name (legacy behaviour)
+        if instance:
+            return f'{metric_id}{{instance="{instance}"}}'
+        return f'{metric_id}{{rack_id="{rack_id}"}}'
+
+    metric_def = library.get_metric(metric_id)
+    if metric_def is None:
+        logger.debug(f"Metric '{metric_id}' not found in library — using ID as raw name")
+        if instance:
+            return f'{metric_id}{{instance="{instance}"}}'
+        return f'{metric_id}{{rack_id="{rack_id}"}}'
+
+    expr = metric_def.metric
+    # Substitute placeholders
+    expr = expr.replace('"{rack_id}"', f'"{rack_id}"')
+    expr = expr.replace('{rack_id}', rack_id)
+    if instance:
+        expr = expr.replace('"{instance}"', f'"{instance}"')
+        expr = expr.replace('{instance}', instance)
+    return expr
 
 
 async def collect_component_metrics(
@@ -25,6 +63,7 @@ async def collect_component_metrics(
     component_ref: RackComponentRef,
     catalog: Catalog,
     prom_client: PrometheusClient,
+    library: Optional[MetricsLibrary] = None,
 ) -> Dict[str, float]:
     """
     Collect metrics for a rack component based on its template.
@@ -50,14 +89,20 @@ async def collect_component_metrics(
         return {}
 
     # Build all queries up front so they can be fired in parallel below.
+    # resolve_metric_query translates library IDs (e.g. 'pdu_active_power') to
+    # actual PromQL expressions via the metrics library, then falls back to
+    # treating the ID as a raw metric name for backward compatibility.
     queries = {}
     for metric_name in template.metrics:
-        query = build_metric_query(
-            metric_name=metric_name,
-            rack_id=rack.id,
-            component_ref=component_ref,
-            template=template,
-        )
+        if library is not None:
+            query = resolve_metric_query(metric_name, library, rack.id)
+        else:
+            query = build_metric_query(
+                metric_name=metric_name,
+                rack_id=rack.id,
+                component_ref=component_ref,
+                template=template,
+            )
         if query:
             queries[metric_name] = query
 
@@ -159,6 +204,7 @@ async def collect_rack_component_metrics(
     rack: Rack,
     catalog: Catalog,
     prom_client: PrometheusClient,
+    library: Optional[MetricsLibrary] = None,
 ) -> Dict[str, Dict[str, float]]:
     """
     Collect metrics for all rack components (PDUs, switches, etc.).
@@ -200,6 +246,7 @@ async def collect_rack_component_metrics(
             component_ref=component_ref,
             catalog=catalog,
             prom_client=prom_client,
+            library=library,
         )
 
         if metrics:
