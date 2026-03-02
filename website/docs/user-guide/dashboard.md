@@ -82,6 +82,36 @@ Operations: **Create** · **Duplicate** · **Rename** · **Delete**
 | Slurm Nodes | Per-partition node distribution |
 | Slurm Utilization | CPU/memory allocation gauge |
 
+## Widget Library
+
+The Widget Library panel lists all available widgets grouped by category. It only opens in **Edit mode**.
+
+### How to use it
+
+1. Click **Edit layout** (top right)
+2. Click **Widgets** — the panel slides in from the right
+3. Browse widgets by group and click **+ Add** to place a widget at the bottom of the grid
+4. Widgets already on the dashboard show **Added** (greyed out — one instance per type)
+5. Click **↺ Reset to default layout** at the bottom to restore the factory layout
+
+### Groups
+
+| Group | Widgets |
+|---|---|
+| **Stats** | Stat Card, Alert Count, Scrape Latency, Slurm Nodes |
+| **Charts** | Health Gauge, Severity Donut, Rack Utilization, Slurm Utilization |
+| **Monitoring** | Active Alerts, Recent CRIT, Node Heatmap, World Map |
+| **Overview** | Infrastructure (rooms list), Site Map, Prometheus, Slurm Cluster |
+| **Catalog** | Catalog & Checks, Check Summary, Device Types |
+
+> Slurm widgets are hidden automatically when the Slurm plugin is disabled.
+
+### Extending the system
+
+The widget system is modular — each widget is a self-contained file. Creating a new widget requires 3 steps: one new file, one type entry, one import line. See the [Dashboard Widget System](../architecture/dashboard-widgets) developer guide.
+
+---
+
 ## Persistence
 
 Widget layouts are stored in `localStorage` under `rackscope.dashboards`.

@@ -476,6 +476,87 @@ additional catalog is applied in list order.
 
 ---
 
+## Slurm Metrics (`metrics_slurm.yaml`)
+
+When the Slurm metrics catalog is enabled (`metrics_catalogs` in `plugin.yaml`), the simulator generates a full set of metrics that match the output of [SckyzO/slurm_exporter](https://github.com/SckyzO/slurm_exporter).
+
+All Slurm metrics use `labels_only: true` — no `BASE_LABELS` (`rack_id`, `job`, etc.) are added, matching the real exporter's label schema.
+
+### Per-node metrics (scope: `node`)
+
+Applied to all instances matching `compute*` and `visu*`:
+
+| Metric | Labels | Description |
+|---|---|---|
+| `slurm_node_status` | `node`, `status`, `partition` | Node active status, value always 1 |
+| `slurm_node_cpu_alloc` | `node`, `partition`, `status` | CPUs currently allocated on this node |
+| `slurm_node_cpu_total` | `node`, `partition`, `status` | Total CPUs available on this node |
+| `slurm_node_mem_alloc` | `node`, `partition`, `status` | Memory allocated (MB) |
+| `slurm_node_mem_total` | `node`, `partition`, `status` | Total memory (MB) |
+
+### Cluster CPU aggregates (scope: `rack`, no labels)
+
+| Metric | Description |
+|---|---|
+| `slurm_cpus_alloc` | Total allocated CPUs across the cluster |
+| `slurm_cpus_idle` | Total idle CPUs |
+| `slurm_cpus_total` | Total CPUs in the cluster |
+
+### Cluster node aggregates (scope: `rack`, no labels)
+
+| Metric | Description |
+|---|---|
+| `slurm_nodes_alloc` | Nodes with at least one running job |
+| `slurm_nodes_idle` | Nodes with no running job |
+| `slurm_nodes_down` | Nodes in DOWN state |
+| `slurm_nodes_drain` | Nodes being drained |
+| `slurm_nodes_total` | Total nodes registered |
+
+### Per-partition aggregates (label: `partition`)
+
+| Metric | Description |
+|---|---|
+| `slurm_partition_cpus_allocated` | Allocated CPUs in this partition |
+| `slurm_partition_cpus_idle` | Idle CPUs in this partition |
+| `slurm_partition_cpus_total` | Total CPUs in this partition |
+| `slurm_partition_jobs_running` | Running jobs in this partition |
+| `slurm_partition_jobs_pending` | Pending (queued) jobs in this partition |
+
+### GPU aggregates (scope: `rack`, no labels)
+
+| Metric | Description |
+|---|---|
+| `slurm_gpus_alloc` | Allocated GPUs |
+| `slurm_gpus_idle` | Idle GPUs |
+| `slurm_gpus_total` | Total GPUs |
+| `slurm_gpus_utilization` | GPU utilization (0–100) |
+
+### Enabling the Slurm catalog
+
+The Slurm catalog is enabled via `plugin.yaml`:
+
+```yaml
+# config/plugins/simulator/config/plugin.yaml
+metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
+metrics_catalogs:
+  - id: slurm
+    path: config/plugins/simulator/metrics/metrics_slurm.yaml
+    enabled: true
+```
+
+And declared in `app.yaml` so the simulator tool can discover it:
+
+```yaml
+# config/app.yaml
+simulator:
+  metrics_catalogs:
+    - id: slurm
+      path: config/plugins/simulator/metrics/metrics_slurm.yaml
+      enabled: true
+```
+
+---
+
 ## Overrides File Format
 
 `config/plugins/simulator/overrides/overrides.yaml` is managed

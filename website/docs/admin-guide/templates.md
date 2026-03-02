@@ -50,6 +50,38 @@ templates:
       - node_temperature
       - node_power
       - node_cpu_load
+
+    # Per-device tooltip thresholds (override the global metrics library defaults)
+    display_thresholds:
+      temperature:
+        warn: 55    # °C — arc gauge turns amber above this
+        crit: 70    # °C — arc gauge turns red above this
+      power:
+        warn: 400   # W
+        crit: 600   # W
+```
+
+### `display_thresholds`
+
+The `display_thresholds` block customises the **WARN / CRIT** colour breakpoints shown in the HUD tooltip arc gauge, overriding the global defaults from the metrics library.
+
+| Key | Description |
+|---|---|
+| `temperature.warn` | Temperature (°C) above which the arc gauge turns amber |
+| `temperature.crit` | Temperature (°C) above which the arc gauge turns red |
+| `power.warn` | Power draw (W) above which the power bar turns amber |
+| `power.crit` | Power draw (W) above which the power bar turns red |
+
+All keys are optional. Omitted keys fall back to the default thresholds defined in the metrics library YAML (`config/metrics/library/`).
+
+**When to use it**: GPU servers and storage arrays typically run hotter than standard compute nodes. Set device-specific thresholds to avoid false-amber alerts on high-TDP hardware.
+
+```yaml
+# GPU server — higher temperature thresholds than standard compute
+display_thresholds:
+  temperature:
+    warn: 65
+    crit: 80
 ```
 
 ## Rack Templates

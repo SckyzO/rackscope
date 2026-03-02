@@ -65,10 +65,37 @@ Retro = warm parchment. Midnight = ultra-dark, minimal borders.
 |---|---|
 | Enable | Activate Slurm integration |
 | Prometheus source | Metric name, node/status/partition label names |
-| Node filtering | Device roles (TagInput), include unlabeled, mapping file |
-| Node mapping editor | Add/remove/edit node name mappings with wildcard support |
+| Node filtering | Device roles (TagInput), include unlabeled toggle |
+| Node mapping editor | Add/remove/edit node name → instance mappings (wildcard support) |
 | Severity colors | Color pickers per severity level (OK/WARN/CRIT/INFO) |
-| Status mapping | Drag & drop Slurm statuses between severity zones, add new entries |
+| Status mapping | Drag & drop Slurm statuses between severity zones |
+
+#### Node Mapping Editor
+
+The mapping editor lets you link Slurm node names to topology instance names directly from the UI, without editing YAML files.
+
+**Opening the editor**: Settings → Plugins → Slurm → expand **Node mapping** → click **Edit mappings**
+
+Each entry maps a Slurm node name (or wildcard pattern) to a topology instance name:
+
+| Field | Example | Description |
+|---|---|---|
+| Slurm node | `n001` or `n*` | Slurm node name, supports `*` wildcard |
+| Instance | `compute001` or `compute*` | Topology instance name in `config/topology/` |
+
+**Wildcard rules**:
+- `n*` → `compute*` maps all nodes matching `n*` in order: `n001 → compute001`, `n002 → compute002`, etc.
+- Exact matches take priority over wildcard patterns
+- Patterns are evaluated top-to-bottom; first match wins
+
+**Buttons**:
+- **+ Add entry** — append a new row
+- **Delete** (×) — remove a mapping
+- **Save** — writes to `config/plugins/slurm/node_mapping.yaml`
+
+Changes take effect on the next Prometheus scrape cycle (no restart required).
+
+See [Slurm node mapping](../user-guide/slurm#node-mapping) for the full YAML reference.
 
 ## Topology Editor
 

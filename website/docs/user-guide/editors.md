@@ -55,12 +55,49 @@ Edit health check definitions:
 - Severity thresholds
 - Device type filters
 
+## Metrics Library Editor
+
+**URL**: `/editors/metrics`
+
+Manage the metrics library — the catalog of Prometheus queries displayed in device and rack tooltips, detail panels, and charts.
+
+The editor uses a **3-column layout**:
+
+| Column | Content |
+|---|---|
+| **Left** | Scrollable list of all metric definitions, searchable by name or category |
+| **Center** | Form editor: name, description, PromQL expression, unit, chart type, thresholds |
+| **Right** | Context panel with a **live chart preview** — executes the PromQL against the current Prometheus and renders the result |
+
+### What you can do
+
+- Add new metrics (name, PromQL expression, display unit, category, tags)
+- Edit threshold values (`warn` / `crit`) that colour the arc gauge in tooltips
+- Change the chart type (`gauge`, `bar`, `number`, `line`)
+- Delete unused metrics
+- Preview the query result before saving (live preview in context panel)
+
+### Relationship to templates
+
+Metrics are referenced by `id` in device and rack component templates:
+
+```yaml
+# In a device template:
+metrics:
+  - node_temperature   # ← id from metrics library
+  - node_power
+```
+
+Adding a metric to the library makes it available for templates to reference. The metric only appears in the UI if a device template includes its id.
+
+---
+
 ## Settings
 
 **URL**: `/editors/settings` (or `/settings`)
 
 Configure application settings:
 - Prometheus connection
-- Feature flags (demo mode, notifications, playlist)
-- Simulator scenario and overrides
+- Plugins (Simulator, Slurm)
 - Refresh intervals
+- View preferences (tooltip style, map style)
