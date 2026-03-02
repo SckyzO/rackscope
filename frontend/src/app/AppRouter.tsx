@@ -39,6 +39,7 @@ import { StatsCardsPage } from './pages/ui/StatsCardsPage';
 import { TagInputPage } from './pages/ui/TagInputPage';
 import { RangeSliderPage } from './pages/ui/RangeSliderPage';
 import { OtpInputPage } from './pages/ui/OtpInputPage';
+import { HUDTooltipPage } from './pages/ui/HUDTooltipPage';
 
 // Charts
 import { ChartsPage } from './pages/charts/ChartsPage';
@@ -174,6 +175,7 @@ const AppRoutes = () => (
       <Route path="ui/tag-input" element={<TagInputPage />} />
       <Route path="ui/range-slider" element={<RangeSliderPage />} />
       <Route path="ui/otp-input" element={<OtpInputPage />} />
+      <Route path="ui/hud-tooltip" element={<HUDTooltipPage />} />
 
       {/* Charts */}
       <Route path="charts" element={<ChartsPage />} />
