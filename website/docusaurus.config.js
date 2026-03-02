@@ -88,6 +88,12 @@ const config = {
             label: 'Plugins',
           },
           {
+            type: 'docSidebar',
+            sidebarId: 'architecture',
+            position: 'left',
+            label: 'Architecture',
+          },
+          {
             href: 'https://github.com/SckyzO/rackscope',
             label: 'GitHub',
             position: 'right',
