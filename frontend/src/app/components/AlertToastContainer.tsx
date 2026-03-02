@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { AlertTriangle, XCircle, X, ArrowRight } from 'lucide-react';
+import { AlertTriangle, XCircle, X, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
@@ -152,12 +152,12 @@ export const AlertToastContainer = () => {
       >
         <button
           onClick={() => setExpanded(false)}
-          className="flex shrink-0 items-center justify-between rounded-lg border border-gray-200 bg-white/95 px-3 py-1.5 text-xs font-medium text-gray-500 backdrop-blur-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900/95 dark:text-gray-400 dark:hover:bg-gray-800"
+          className="flex shrink-0 items-center justify-between rounded-lg border border-gray-200 bg-white/95 px-3 py-1.5 text-xs font-medium text-gray-600 backdrop-blur-sm transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800/95 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           <span>
             {toasts.length} alert{toasts.length !== 1 ? 's' : ''}
           </span>
-          <span className="text-[10px] opacity-60">▲ Collapse</span>
+          <ChevronUp className="ml-2 h-3.5 w-3.5" />
         </button>
         <div className="rs-scrollbar mt-2 flex flex-col gap-2 overflow-y-auto">
           {toasts.map((toast) => {
@@ -261,16 +261,16 @@ export const AlertToastContainer = () => {
         <div className="flex w-80 items-center justify-between px-1 text-xs">
           <button
             onClick={() => setExpanded(true)}
-            className="flex items-center gap-1 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white/90 px-2.5 py-1 font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 dark:border-gray-600 dark:bg-gray-800/90 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
           >
             <span>
               {toasts.length} alert{toasts.length !== 1 ? 's' : ''}
             </span>
-            <span className="opacity-50">▼ Expand</span>
+            <ChevronDown className="h-3 w-3" />
           </button>
           <button
             onClick={dismissAll}
-            className="rounded px-2 py-0.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+            className="rounded-lg px-2.5 py-1 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
           >
             Dismiss all
           </button>
