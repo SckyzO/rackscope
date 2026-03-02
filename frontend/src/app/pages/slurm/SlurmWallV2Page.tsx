@@ -1,23 +1,21 @@
 /**
- * SlurmWallV2Page — New Slurm Wallboard
- *
- * Multi-room, 3 views (compact dots / rack physical / columns),
- * layout modes (scroll / wrap / wrap-auto), configure panel.
- *
- * Route:      /slurm/wall
- * Persisted:  rackscope.slurmwall.config
+ * SlurmWallV2Page — Slurm Wallboard V2
+ * Design mirrors ClusterPage exactly.
+ * Route: /slurm/wall  |  Persisted: rackscope.slurmwall.config
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  RotateCcw,
-  LayoutGrid,
-  Columns,
-  Server as ServerIcon,
   SlidersHorizontal,
   X,
-  ChevronRight,
+  RefreshCw,
+  ChevronDown,
+  Check,
+  Server as ServerIcon,
+  AlertTriangle,
+  XCircle,
+  CheckCircle,
 } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
@@ -26,12 +24,9 @@ import { RackElevation } from '../../../components/RackVisualizer';
 import { api } from '../../../services/api';
 import type { Device, DeviceTemplate, Room, RoomSummary, RackNodeState } from '../../../types';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
 type WallView = 'compact' | 'rack' | 'columns';
 type WallLayout = 'scroll' | 'wrap' | 'wrap-auto';
 type CardSize = 'sm' | 'md' | 'lg';
-
 interface WallConfig {
   view: WallView;
   layout: WallLayout;
@@ -39,13 +34,7 @@ interface WallConfig {
   groupByAisle: boolean;
   autoRefreshMs: number;
 }
-
-type RackEntry = {
-  rack: Room['aisles'][0]['racks'][0];
-  roomName: string;
-  aisleName: string;
-};
-
+type RackEntry = { rack: Room['aisles'][0]['racks'][0]; roomName: string; aisleName: string };
 type HoverPayload = {
   node: string;
   status: string;
@@ -57,28 +46,22 @@ type HoverPayload = {
   y: number;
 };
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const SEV_COLOR: Record<string, string> = {
+const SEV: Record<string, string> = {
   OK: '#22c55e',
   WARN: '#f59e0b',
   CRIT: '#ef4444',
   UNKNOWN: '#374151',
 };
-
-const CARD_WIDTHS: Record<CardSize, number> = { sm: 180, md: 260, lg: 340 };
-
-const LS_CONFIG = 'rackscope.slurmwall.config';
-
-const DEFAULT_CONFIG: WallConfig = {
+const CARD_W: Record<CardSize, number> = { sm: 180, md: 260, lg: 340 };
+const LS = 'rackscope.slurmwall.config';
+const DEF: WallConfig = {
   view: 'compact',
-  layout: 'wrap',
+  layout: 'scroll',
   cardSize: 'md',
   groupByAisle: true,
   autoRefreshMs: 30000,
 };
-
-const REFRESH_OPTIONS = [
+const REFRESH_OPTS = [
   { label: 'Off', ms: 0 },
   { label: '15s', ms: 15000 },
   { label: '30s', ms: 30000 },
@@ -87,77 +70,183 @@ const REFRESH_OPTIONS = [
   { label: '5m', ms: 300000 },
 ] as const;
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function loadConfig(): WallConfig {
+function loadCfg(): WallConfig {
   try {
-    const raw = localStorage.getItem(LS_CONFIG);
-    if (raw) return { ...DEFAULT_CONFIG, ...(JSON.parse(raw) as Partial<WallConfig>) };
+    const r = localStorage.getItem(LS);
+    if (r) return { ...DEF, ...(JSON.parse(r) as Partial<WallConfig>) };
   } catch {
-    /* ignore */
+    /**/
   }
-  return { ...DEFAULT_CONFIG };
+  return { ...DEF };
 }
-function saveConfig(cfg: WallConfig) {
+function saveCfg(c: WallConfig) {
   try {
-    localStorage.setItem(LS_CONFIG, JSON.stringify(cfg));
+    localStorage.setItem(LS, JSON.stringify(c));
   } catch {
-    /* ignore */
+    /**/
   }
 }
 
-function expandPattern(pattern: string): string[] {
-  const m = pattern.match(/^(.*)\[(\d+)-(\d+)\](.*)$/);
-  if (!m) return [pattern];
+function expand(p: string): string[] {
+  const m = p.match(/^(.*)\[(\d+)-(\d+)\](.*)$/);
+  if (!m) return [p];
   const [, pre, s, e, suf] = m;
-  const start = parseInt(s, 10),
-    end = parseInt(e, 10);
   const w = Math.max(s.length, e.length);
   const res: string[] = [];
-  for (let v = Math.min(start, end); v <= Math.max(start, end); v++)
+  for (let v = Math.min(+s, +e); v <= Math.max(+s, +e); v++)
     res.push(`${pre}${String(v).padStart(w, '0')}${suf}`);
   return res;
 }
-
-function buildSlotMap(device: Device, template?: DeviceTemplate): Record<number, string> {
-  const instance = device.instance || device.nodes;
-  if (!instance) return {};
-  if (typeof instance === 'object' && !Array.isArray(instance))
-    return Object.entries(instance as Record<string, string>).reduce<Record<number, string>>(
-      (acc, [k, v]) => {
-        if (typeof v === 'string') acc[Number(k)] = v;
-        return acc;
+function getSlotMap(device: Device, tpl?: DeviceTemplate): Record<number, string> {
+  const inst = device.instance || device.nodes;
+  if (!inst) return {};
+  if (typeof inst === 'object' && !Array.isArray(inst))
+    return Object.entries(inst as Record<string, string>).reduce<Record<number, string>>(
+      (a, [k, v]) => {
+        if (typeof v === 'string') a[+k] = v;
+        return a;
       },
       {}
     );
-  if (!template) return {};
-  const layout =
-    template.type === 'storage' && template.disk_layout ? template.disk_layout : template.layout;
-  if (!layout?.matrix) return {};
-  const slots = layout.matrix.flat().filter((s) => s > 0);
-  const expanded = Array.isArray(instance) ? instance : expandPattern(instance as string);
-  return slots.reduce<Record<number, string>>((acc, slot, idx) => {
-    if (expanded[idx]) acc[slot] = expanded[idx];
-    return acc;
+  if (!tpl) return {};
+  const lay = tpl.type === 'storage' && tpl.disk_layout ? tpl.disk_layout : tpl.layout;
+  if (!lay?.matrix) return {};
+  const slots = lay.matrix.flat().filter((s) => s > 0);
+  const exp = Array.isArray(inst) ? inst : expand(inst as string);
+  return slots.reduce<Record<number, string>>((a, sl, i) => {
+    if (exp[i]) a[sl] = exp[i];
+    return a;
   }, {});
 }
-
-// nodesData uses 'state' (RackNodeState), slurmNodes uses 'severity'
-function worstSeverity(nodes: Record<string, RackNodeState | { severity: string }>): string {
-  let worst = 'UNKNOWN';
+function worstState(nodes: Record<string, RackNodeState>): string {
+  let w = 'UNKNOWN';
   for (const n of Object.values(nodes)) {
-    // Support both RackNodeState (.state) and slurmNode (.severity)
-    const sev = (n as RackNodeState).state ?? (n as { severity: string }).severity;
-    if (sev === 'CRIT') return 'CRIT';
-    if (sev === 'WARN') worst = 'WARN';
-    else if (worst === 'UNKNOWN' && sev === 'OK') worst = 'OK';
+    if (n.state === 'CRIT') return 'CRIT';
+    if (n.state === 'WARN') w = 'WARN';
+    else if (w === 'UNKNOWN' && n.state === 'OK') w = 'OK';
   }
-  return worst;
+  return w;
 }
 
-// ── Configure Panel ────────────────────────────────────────────────────────────
+// StatChip — identical to ClusterPage
+const StatChip = ({
+  icon: Icon,
+  value,
+  label,
+  color,
+}: {
+  icon: React.ElementType;
+  value: string | number;
+  label: string;
+  color?: string;
+}) => (
+  <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm dark:border-gray-800 dark:bg-gray-900">
+    <Icon className={`h-3.5 w-3.5 shrink-0 ${color ?? 'text-gray-400'}`} />
+    <span className={`font-semibold tabular-nums ${color ?? 'text-gray-700 dark:text-gray-200'}`}>
+      {value}
+    </span>
+    <span className="text-xs text-gray-400 dark:text-gray-600">{label}</span>
+  </div>
+);
 
-const SegBtns = <T,>({
+// RefreshButton — split button identical to ClusterPage
+const RefreshButton = ({
+  refreshing,
+  autoMs,
+  onRefresh,
+  onInterval,
+}: {
+  refreshing: boolean;
+  autoMs: number;
+  onRefresh: () => void;
+  onInterval: (ms: number) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const lbl = REFRESH_OPTS.find((o) => o.ms === autoMs)?.label ?? '?';
+  return (
+    <div className="relative flex items-stretch overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <button
+        onClick={onRefresh}
+        disabled={refreshing}
+        className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-700"
+      >
+        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+        <span>Refresh</span>
+        {autoMs > 0 && (
+          <span className="flex items-center gap-1 text-xs text-gray-400">
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />
+            {lbl}
+          </span>
+        )}
+      </button>
+      <div className="w-px self-stretch bg-gray-200 dark:bg-gray-700" />
+      <div className="relative">
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="flex h-full items-center px-2 text-gray-400 hover:bg-gray-50 dark:text-gray-500 dark:hover:bg-gray-700"
+        >
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
+            <div className="absolute top-full right-0 z-30 mt-1 w-28 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-900">
+              {REFRESH_OPTS.map((o) => (
+                <button
+                  key={o.ms}
+                  onClick={() => {
+                    onInterval(o.ms);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${autoMs === o.ms ? 'text-brand-600 dark:text-brand-400 font-semibold' : 'text-gray-700 dark:text-gray-300'}`}
+                >
+                  {o.label}
+                  {autoMs === o.ms && <Check className="h-3 w-3" />}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Configure panel — slide-in, identical structure to ClusterPage
+const SLbl = ({ children }: { children: React.ReactNode }) => (
+  <p className="mt-5 mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase first:mt-0 dark:text-gray-600">
+    {children}
+  </p>
+);
+function OptBtns<T>({
+  opts,
+  cur,
+  onChange,
+}: {
+  opts: { val: T; label: string; desc: string }[];
+  cur: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      {opts.map(({ val, label, desc }) => (
+        <button
+          key={String(val)}
+          onClick={() => onChange(val)}
+          className={`flex w-full flex-col items-start rounded-lg border px-3 py-2.5 text-left transition-colors ${cur === val ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10' : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5'}`}
+        >
+          <span
+            className={`text-sm font-semibold ${cur === val ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
+          >
+            {label}
+          </span>
+          <span className="text-[11px] text-gray-400 dark:text-gray-600">{desc}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+function SegBtns<T>({
   opts,
   cur,
   onChange,
@@ -165,279 +254,250 @@ const SegBtns = <T,>({
   opts: { label: string; val: T }[];
   cur: T;
   onChange: (v: T) => void;
-}) => (
-  <div className="flex gap-1">
-    {opts.map(({ label, val }) => (
-      <button
-        key={String(val)}
-        onClick={() => onChange(val)}
-        className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors ${
-          cur === val
-            ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400'
-            : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5'
-        }`}
-      >
-        {label}
-      </button>
-    ))}
-  </div>
-);
-
-const SecLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="mt-4 mb-1.5 text-[10px] font-bold tracking-widest text-gray-400 uppercase first:mt-0">
-    {children}
-  </p>
-);
-
+}) {
+  return (
+    <div className="flex gap-2">
+      {opts.map(({ label, val }) => (
+        <button
+          key={String(val)}
+          onClick={() => onChange(val)}
+          className={`flex-1 rounded-lg border py-2 text-sm font-semibold transition-colors ${cur === val ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400' : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5'}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
 const ConfigPanel = ({
+  open,
   cfg,
   onChange,
   onClose,
 }: {
+  open: boolean;
   cfg: WallConfig;
   onChange: (c: WallConfig) => void;
   onClose: () => void;
 }) => {
   const set = <K extends keyof WallConfig>(k: K, v: WallConfig[K]) => onChange({ ...cfg, [k]: v });
-
   return (
-    <div className="fixed inset-y-0 right-0 z-50 flex w-72 flex-col border-l border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
-        <span className="text-sm font-semibold text-gray-800 dark:text-white">Configure</span>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="flex-1 overflow-y-auto px-4 py-3">
-        <SecLabel>View</SecLabel>
-        <SegBtns
-          opts={[
-            { label: 'Dots', val: 'compact' as WallView },
-            { label: 'Rack', val: 'rack' as WallView },
-            { label: 'Grid', val: 'columns' as WallView },
-          ]}
-          cur={cfg.view}
-          onChange={(v) => set('view', v)}
-        />
-
-        <SecLabel>Layout</SecLabel>
-        <SegBtns
-          opts={[
-            { label: 'Scroll →', val: 'scroll' as WallLayout },
-            { label: 'Wrap', val: 'wrap' as WallLayout },
-            { label: 'Auto', val: 'wrap-auto' as WallLayout },
-          ]}
-          cur={cfg.layout}
-          onChange={(v) => set('layout', v)}
-        />
-
-        <SecLabel>Card size</SecLabel>
-        <SegBtns
-          opts={[
-            { label: 'S', val: 'sm' as CardSize },
-            { label: 'M', val: 'md' as CardSize },
-            { label: 'L', val: 'lg' as CardSize },
-          ]}
-          cur={cfg.cardSize}
-          onChange={(v) => set('cardSize', v)}
-        />
-
-        <SecLabel>Grouping</SecLabel>
-        <div className="flex flex-col gap-1">
-          {(
-            [
-              { label: 'By aisle', val: true },
-              { label: 'All flat', val: false },
-            ] as const
-          ).map(({ label, val }) => (
-            <button
-              key={label}
-              onClick={() => set('groupByAisle', val)}
-              className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors ${
-                cfg.groupByAisle === val
-                  ? 'border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300'
-                  : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700'
-              }`}
-            >
-              {label}
-              {cfg.groupByAisle === val && (
-                <span className="bg-brand-500 h-1.5 w-1.5 rounded-full" />
-              )}
-            </button>
-          ))}
+    <>
+      {open && (
+        <div className="fixed inset-0 z-30 bg-black/20 backdrop-blur-[1px]" onClick={onClose} />
+      )}
+      <div
+        className={`fixed top-0 right-0 z-40 flex h-full w-80 flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 dark:border-gray-800 dark:bg-gray-950 ${open ? 'translate-x-0' : 'translate-x-full'}`}
+      >
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-4 w-4 text-gray-500" />
+            <span className="font-semibold text-gray-800 dark:text-white">Display settings</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-
-        <SecLabel>Auto-refresh</SecLabel>
-        <div className="grid grid-cols-3 gap-1">
-          {REFRESH_OPTIONS.map(({ label, ms }) => (
-            <button
-              key={ms}
-              onClick={() => set('autoRefreshMs', ms)}
-              className={`rounded-lg border py-1.5 text-xs font-semibold transition-colors ${
-                cfg.autoRefreshMs === ms
-                  ? 'border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400'
-                  : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex-1 overflow-y-auto p-5">
+          <SLbl>View</SLbl>
+          <OptBtns
+            opts={[
+              {
+                val: 'compact' as WallView,
+                label: '· Compact dots',
+                desc: 'Colored dot per node — fast status scan',
+              },
+              {
+                val: 'rack' as WallView,
+                label: '⊞ Rack physical',
+                desc: 'Full rack elevation with Slurm colors',
+              },
+              {
+                val: 'columns' as WallView,
+                label: '≡ Slot grid',
+                desc: 'Physical slot grid, exact U positions',
+              },
+            ]}
+            cur={cfg.view}
+            onChange={(v) => set('view', v)}
+          />
+          <SLbl>Layout</SLbl>
+          <OptBtns
+            opts={[
+              {
+                val: 'scroll' as WallLayout,
+                label: '→ Horizontal scroll',
+                desc: 'Single row, fills full height',
+              },
+              {
+                val: 'wrap' as WallLayout,
+                label: '⊞ Wrap + scroll',
+                desc: 'Multiple rows, vertical scroll',
+              },
+              {
+                val: 'wrap-auto' as WallLayout,
+                label: '⊡ Wrap + autosize',
+                desc: 'Fits all racks in viewport',
+              },
+            ]}
+            cur={cfg.layout}
+            onChange={(v) => set('layout', v)}
+          />
+          <SLbl>Card size</SLbl>
+          <SegBtns
+            opts={[
+              { label: 'S', val: 'sm' as CardSize },
+              { label: 'M', val: 'md' as CardSize },
+              { label: 'L', val: 'lg' as CardSize },
+            ]}
+            cur={cfg.cardSize}
+            onChange={(v) => set('cardSize', v)}
+          />
+          <SLbl>Grouping</SLbl>
+          <OptBtns
+            opts={[
+              { val: true as boolean, label: 'By aisle', desc: 'Sections per room and aisle' },
+              {
+                val: false as boolean,
+                label: 'All flat',
+                desc: 'All racks in one continuous list',
+              },
+            ]}
+            cur={cfg.groupByAisle}
+            onChange={(v) => set('groupByAisle', v)}
+          />
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
-// ── Compact view — V1-style rack card with dot grid ──────────────────────────
-
-const CompactRackCard = ({
+// Compact card — V1 dot design
+const CompactCard = ({
   entry,
   catalog,
-  slurmNodes,
-  slurmRoles,
-  includeUnlabeled,
-  cardWidth,
+  nodes,
+  roles,
+  unlabeled,
+  width,
   onHover,
 }: {
   entry: RackEntry;
   catalog: Record<string, DeviceTemplate>;
-  slurmNodes: Record<string, { severity: string; status: string; partitions: string[] }>;
-  slurmRoles: string[];
-  includeUnlabeled: boolean;
-  cardWidth: number;
+  nodes: Record<string, { severity: string; status: string; partitions: string[] }>;
+  roles: string[];
+  unlabeled: boolean;
+  width: number;
   onHover: (p: HoverPayload | null) => void;
 }) => {
   const { rack } = entry;
-  const allNodes: { name: string; severity: string; status: string; partitions: string[] }[] = [];
-
+  const list: { name: string; sev: string; status: string; parts: string[] }[] = [];
   rack.devices.forEach((dev) => {
     const tpl = catalog[dev.template_id];
     if (!tpl) return;
     const role = tpl.role?.toLowerCase();
-    if (!role && !includeUnlabeled) return;
-    if (role && !slurmRoles.includes(role)) return;
-    const slots = buildSlotMap(dev, tpl);
-    Object.values(slots).forEach((nodeName) => {
-      const sn = slurmNodes[nodeName];
-      allNodes.push({
-        name: nodeName,
-        severity: sn?.severity ?? 'UNKNOWN',
-        status: sn?.status ?? 'unknown',
-        partitions: sn?.partitions ?? [],
+    if (!role && !unlabeled) return;
+    if (role && !roles.includes(role)) return;
+    Object.values(getSlotMap(dev, tpl)).forEach((name) => {
+      const n = nodes[name];
+      list.push({
+        name,
+        sev: n?.severity ?? 'UNKNOWN',
+        status: n?.status ?? 'unknown',
+        parts: n?.partitions ?? [],
       });
     });
   });
-
-  if (allNodes.length === 0) return null;
-  const hasCrit = allNodes.some((n) => n.severity === 'CRIT');
-  const hasWarn = !hasCrit && allNodes.some((n) => n.severity === 'WARN');
-  const borderColor = hasCrit
-    ? SEV_COLOR.CRIT
-    : hasWarn
-      ? SEV_COLOR.WARN
-      : allNodes.length > 0
-        ? SEV_COLOR.OK
-        : SEV_COLOR.UNKNOWN;
-
+  if (list.length === 0) return null;
+  const hasCrit = list.some((n) => n.sev === 'CRIT');
+  const hasWarn = !hasCrit && list.some((n) => n.sev === 'WARN');
+  const bc = hasCrit ? SEV.CRIT : hasWarn ? SEV.WARN : list.length > 0 ? SEV.OK : SEV.UNKNOWN;
   return (
     <div
       className="rounded-xl border-2 bg-white p-2.5 dark:bg-gray-900"
-      style={{ borderColor, width: cardWidth }}
+      style={{ borderColor: bc, width }}
     >
       <p className="mb-1.5 truncate font-mono text-[10px] font-semibold text-gray-700 dark:text-gray-300">
         {rack.id}
       </p>
       <p className="mb-1.5 truncate text-[10px] text-gray-500 dark:text-gray-400">{rack.name}</p>
-      {allNodes.length === 0 ? (
-        <div className="text-[9px] text-gray-400 italic">no Slurm nodes</div>
-      ) : (
-        <div className="flex flex-wrap gap-0.5">
-          {allNodes.map((n, i) => (
-            <div
-              key={i}
-              className="h-3.5 w-3.5 cursor-help rounded-sm transition-transform hover:scale-125"
-              style={{ backgroundColor: SEV_COLOR[n.severity] ?? SEV_COLOR.UNKNOWN }}
-              onMouseEnter={(e) =>
-                onHover({
-                  node: n.name,
-                  status: n.status,
-                  severity: n.severity,
-                  partitions: n.partitions,
-                  rackName: rack.name,
-                  deviceName: '',
-                  x: e.clientX,
-                  y: e.clientY,
-                })
-              }
-              onMouseMove={(e) =>
-                onHover({
-                  node: n.name,
-                  status: n.status,
-                  severity: n.severity,
-                  partitions: n.partitions,
-                  rackName: rack.name,
-                  deviceName: '',
-                  x: e.clientX,
-                  y: e.clientY,
-                })
-              }
-              onMouseLeave={() => onHover(null)}
-            />
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap gap-0.5">
+        {list.map((n, i) => (
+          <div
+            key={i}
+            className="h-3.5 w-3.5 cursor-help rounded-sm transition-transform hover:scale-125"
+            style={{ backgroundColor: SEV[n.sev] ?? SEV.UNKNOWN }}
+            onMouseEnter={(e) =>
+              onHover({
+                node: n.name,
+                status: n.status,
+                severity: n.sev,
+                partitions: n.parts,
+                rackName: rack.name,
+                deviceName: '',
+                x: e.clientX,
+                y: e.clientY,
+              })
+            }
+            onMouseMove={(e) =>
+              onHover({
+                node: n.name,
+                status: n.status,
+                severity: n.sev,
+                partitions: n.parts,
+                rackName: rack.name,
+                deviceName: '',
+                x: e.clientX,
+                y: e.clientY,
+              })
+            }
+            onMouseLeave={() => onHover(null)}
+          />
+        ))}
+      </div>
     </div>
   );
 };
 
-// ── Rack physical view — RackElevation with Slurm overlay ─────────────────────
-
-const RackPhysicalCard = ({
+// Rack physical card
+const RackCard = ({
   entry,
   catalog,
-  slurmNodes,
-  slurmRoles,
-  cardWidth,
-  navigate,
+  nodes,
+  roles,
+  width,
+  nav,
 }: {
   entry: RackEntry;
   catalog: Record<string, DeviceTemplate>;
-  slurmNodes: Record<string, { severity: string; status: string; partitions: string[] }>;
-  slurmRoles: string[];
-  cardWidth: number;
-  navigate: (path: string) => void;
+  nodes: Record<string, { severity: string; status: string; partitions: string[] }>;
+  roles: string[];
+  width: number;
+  nav: (p: string) => void;
 }) => {
   const { rack } = entry;
-
-  // Build nodesData for RackElevation from Slurm states
   const nodesData = useMemo(() => {
-    const result: Record<string, RackNodeState> = {};
+    const r: Record<string, RackNodeState> = {};
     rack.devices.forEach((dev) => {
       const tpl = catalog[dev.template_id];
       if (!tpl) return;
       const role = tpl.role?.toLowerCase();
-      if (role && !slurmRoles.includes(role)) return;
-      const slots = buildSlotMap(dev, tpl);
-      Object.values(slots).forEach((nodeName) => {
-        const sn = slurmNodes[nodeName];
-        result[nodeName] = { state: sn?.severity ?? 'UNKNOWN' };
+      if (role && !roles.includes(role)) return;
+      Object.values(getSlotMap(dev, tpl)).forEach((name) => {
+        r[name] = { state: nodes[name]?.severity ?? 'UNKNOWN' };
       });
     });
-    return result;
-  }, [rack, catalog, slurmNodes, slurmRoles]);
-
-  const worst = worstSeverity(nodesData);
-  const borderColor = SEV_COLOR[worst];
-
+    return r;
+  }, [rack, catalog, nodes, roles]);
+  const w = worstState(nodesData);
   return (
     <div
       className="flex shrink-0 cursor-pointer flex-col overflow-hidden rounded-2xl border-2 bg-white transition-all hover:shadow-md dark:bg-gray-900"
-      style={{ width: cardWidth, borderColor }}
-      onClick={() => navigate(`/views/rack/${rack.id}`)}
-      title={`${rack.name} — Click to open rack view`}
+      style={{ width, borderColor: SEV[w] }}
+      onClick={() => nav(`/views/rack/${rack.id}`)}
     >
       <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-3 py-2 dark:border-gray-800">
         <div className="min-w-0">
@@ -448,84 +508,75 @@ const RackPhysicalCard = ({
         </div>
         <span
           className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase"
-          style={{ backgroundColor: `${borderColor}20`, color: borderColor }}
+          style={{ backgroundColor: `${SEV[w]}20`, color: SEV[w] }}
         >
-          {worst}
+          {w}
         </span>
       </div>
       <div className="bg-gray-950 p-1" style={{ height: `${(rack.u_height ?? 42) * 14}px` }}>
         <RackElevation
           rack={rack as never}
           catalog={catalog}
-          health={worst}
+          health={w}
           nodesData={nodesData}
           disableZoom
           disableTooltip={false}
           fullWidth
         />
       </div>
-      <div className="flex items-center justify-between border-t border-gray-100 px-3 py-1.5 dark:border-gray-800">
-        <span className="flex items-center gap-1 text-[10px] text-gray-400">
-          <ServerIcon className="h-3 w-3" />
-          {rack.devices.length}
-        </span>
-        <ChevronRight className="h-3 w-3 text-gray-300" />
-      </div>
     </div>
   );
 };
 
-// ── Columns view — physical slot grid (from existing wallboard) ───────────────
-
-const NodeCell = ({
+// Grid slot card
+const NodeDot = ({
   slot,
-  slotMap,
-  slurmNodes,
+  sm,
+  nodes,
   rackName,
-  deviceName,
+  devName,
   onHover,
 }: {
   slot: number;
-  slotMap: Record<number, string>;
-  slurmNodes: Record<string, { severity: string; status: string; partitions: string[] }>;
+  sm: Record<number, string>;
+  nodes: Record<string, { severity: string; status: string; partitions: string[] }>;
   rackName: string;
-  deviceName: string;
+  devName: string;
   onHover: (p: HoverPayload | null) => void;
 }) => {
-  const nodeName = slotMap[slot];
-  const sn = nodeName ? slurmNodes[nodeName] : undefined;
-  const severity = sn?.severity ?? 'UNKNOWN';
-  const color = SEV_COLOR[severity];
+  const name = sm[slot];
+  const n = name ? nodes[name] : undefined;
+  const sev = n?.severity ?? 'UNKNOWN';
   return (
     <div
       className="h-full w-full rounded-[2px] border border-black/10 transition-transform hover:scale-110"
       style={{
-        backgroundColor: color,
-        opacity: nodeName ? 1 : 0.15,
-        cursor: nodeName ? 'help' : 'default',
+        backgroundColor: SEV[sev],
+        opacity: name ? 1 : 0.15,
+        cursor: name ? 'help' : 'default',
       }}
       onMouseEnter={(e) => {
-        if (!nodeName) return;
+        if (!name) return;
         onHover({
-          node: nodeName,
-          status: sn?.status ?? 'unknown',
-          severity,
-          partitions: sn?.partitions ?? [],
+          node: name,
+          status: n?.status ?? 'unknown',
+          severity: sev,
+          partitions: n?.partitions ?? [],
           rackName,
-          deviceName,
+          deviceName: devName,
           x: e.clientX,
           y: e.clientY,
         });
       }}
       onMouseMove={(e) => {
-        if (!nodeName) return;
+        if (!name) return;
         onHover({
-          node: nodeName,
-          status: sn?.status ?? 'unknown',
-          severity,
-          partitions: sn?.partitions ?? [],
+          node: name,
+          status: n?.status ?? 'unknown',
+          severity: sev,
+          partitions: n?.partitions ?? [],
           rackName,
-          deviceName,
+          deviceName: devName,
           x: e.clientX,
           y: e.clientY,
         });
@@ -534,79 +585,72 @@ const NodeCell = ({
     />
   );
 };
-
-const ColumnsRackCard = ({
+const GridCard = ({
   entry,
   catalog,
-  slurmNodes,
-  slurmRoles,
-  includeUnlabeled,
-  cardWidth,
+  nodes,
+  roles,
+  unlabeled,
+  width,
   onHover,
 }: {
   entry: RackEntry;
   catalog: Record<string, DeviceTemplate>;
-  slurmNodes: Record<string, { severity: string; status: string; partitions: string[] }>;
-  slurmRoles: string[];
-  includeUnlabeled: boolean;
-  cardWidth: number;
+  nodes: Record<string, { severity: string; status: string; partitions: string[] }>;
+  roles: string[];
+  unlabeled: boolean;
+  width: number;
   onHover: (p: HoverPayload | null) => void;
 }) => {
   const { rack } = entry;
-  const rackHeight = rack.u_height ?? 42;
-
-  const visibleDevices = rack.devices
+  const h = rack.u_height ?? 42;
+  const vis = rack.devices
     .slice()
     .sort((a, b) => a.u_position - b.u_position)
     .filter((dev) => {
       const tpl = catalog[dev.template_id];
       if (!tpl) return false;
       const role = tpl.role?.toLowerCase();
-      if (!role && !includeUnlabeled) return false;
-      if (role && !slurmRoles.includes(role)) return false;
-      return Object.keys(buildSlotMap(dev, tpl)).length > 0;
+      if (!role && !unlabeled) return false;
+      if (role && !roles.includes(role)) return false;
+      return Object.keys(getSlotMap(dev, tpl)).length > 0;
     });
-
-  if (visibleDevices.length === 0) return null;
-
+  if (vis.length === 0) return null;
   return (
-    <div className="flex flex-col items-center gap-1.5" style={{ width: cardWidth }}>
-      <span className="font-mono text-[10px] font-semibold text-gray-500">{rack.id}</span>
+    <div className="flex flex-col items-center gap-1.5" style={{ width }}>
+      <span className="font-mono text-[10px] font-semibold text-gray-400">{rack.id}</span>
       <div
-        className="relative grid w-full overflow-hidden rounded-md border border-gray-300 bg-gray-100 dark:border-gray-700 dark:bg-gray-950"
-        style={{
-          gridTemplateRows: `repeat(${rackHeight}, minmax(0, 1fr))`,
-          height: `${rackHeight * 14}px`,
-        }}
+        className="relative grid w-full overflow-hidden rounded-md border border-gray-700 bg-gray-950"
+        style={{ gridTemplateRows: `repeat(${h}, minmax(0, 1fr))`, height: `${h * 14}px` }}
       >
-        {visibleDevices.map((dev) => {
+        {vis.map((dev) => {
           const tpl = catalog[dev.template_id];
           if (!tpl) return null;
-          const layout = tpl.type === 'storage' && tpl.disk_layout ? tpl.disk_layout : tpl.layout;
-          if (!layout) return null;
-          const slotMap = buildSlotMap(dev, tpl);
-          const gridRowStart = rackHeight - (dev.u_position + tpl.u_height) + 2;
+          const lay = tpl.type === 'storage' && tpl.disk_layout ? tpl.disk_layout : tpl.layout;
+          if (!lay) return null;
+          const sm = getSlotMap(dev, tpl);
+          const gs = h - (dev.u_position + tpl.u_height) + 2;
           return (
             <div
               key={dev.id}
               className="rounded-[1px] border border-white/10 bg-white/5 p-[1px]"
-              style={{ gridRow: `${gridRowStart} / span ${tpl.u_height}` }}
+              style={{ gridRow: `${gs} / span ${tpl.u_height}` }}
             >
               <div
                 className="grid h-full w-full gap-[1px]"
                 style={{
-                  gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
-                  gridTemplateColumns: `repeat(${layout.cols}, 1fr)`,
+                  gridTemplateRows: `repeat(${lay.rows}, 1fr)`,
+                  gridTemplateColumns: `repeat(${lay.cols}, 1fr)`,
                 }}
               >
-                {layout.matrix.flat().map((slot, idx) => (
-                  <NodeCell
-                    key={idx}
+                {lay.matrix.flat().map((slot, i) => (
+                  <NodeDot
+                    key={i}
                     slot={slot}
-                    slotMap={slotMap}
-                    slurmNodes={slurmNodes}
+                    sm={sm}
+                    nodes={nodes}
                     rackName={rack.name}
-                    deviceName={dev.name}
+                    devName={dev.name}
                     onHover={onHover}
                   />
                 ))}
@@ -615,338 +659,278 @@ const ColumnsRackCard = ({
           );
         })}
       </div>
-      <span className="max-w-full truncate text-center text-[9px] text-gray-400">{rack.name}</span>
+      <span className="max-w-full truncate text-center text-[9px] text-gray-500">{rack.name}</span>
     </div>
   );
 };
 
-// ── Group header ──────────────────────────────────────────────────────────────
-
-const GroupHeader = ({ label, count }: { label: string; count: number }) => (
-  <div className="mb-3 flex items-center gap-2">
-    <span className="bg-brand-500 h-1.5 w-1.5 rounded-full opacity-60" />
-    <h3 className="text-xs font-bold tracking-wider text-gray-400 uppercase">{label}</h3>
-    <span className="text-[10px] text-gray-400">
-      ({count} rack{count !== 1 ? 's' : ''})
-    </span>
-  </div>
-);
-
-// ── Layout wrapper ────────────────────────────────────────────────────────────
-
-const LayoutWrapper = ({ layout, children }: { layout: WallLayout; children: React.ReactNode }) => {
-  if (layout === 'scroll')
-    return <div className="flex flex-nowrap items-end gap-4 overflow-x-auto pb-2">{children}</div>;
-  if (layout === 'wrap') return <div className="flex flex-wrap items-end gap-4">{children}</div>;
-  // wrap-auto: same as wrap but fills viewport
-  return <div className="flex flex-wrap items-end gap-4">{children}</div>;
-};
-
-// ── Main page ─────────────────────────────────────────────────────────────────
-
+// Main page
 export const SlurmWallV2Page = () => {
   usePageTitle('Slurm Wall');
   const navigate = useNavigate();
-
-  const [cfg, setCfg] = useState<WallConfig>(loadConfig);
-  const [showCfg, setShowCfg] = useState(false);
-
+  const [cfg, setCfg] = useState<WallConfig>(loadCfg);
+  const [configOpen, setConfigOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
-  const [roomLayouts, setRoomLayouts] = useState<Record<string, Room>>({});
+  const [layouts, setLayouts] = useState<Record<string, Room>>({});
   const [catalog, setCatalog] = useState<Record<string, DeviceTemplate>>({});
   const [slurmNodes, setSlurmNodes] = useState<
     Record<string, { severity: string; status: string; partitions: string[] }>
   >({});
-  const [slurmRoles, setSlurmRoles] = useState<string[]>(['compute', 'visu']);
-  const [includeUnlabeled, setIncludeUnlabeled] = useState(false);
+  const [roles, setRoles] = useState<string[]>(['compute', 'visu']);
+  const [unlabeled, setUnlabeled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hover, setHover] = useState<HoverPayload | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerH, setContainerH] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver((e) => setContainerH(e[0].contentRect.height));
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
-  const updateCfg = (c: WallConfig) => {
+  const update = (c: WallConfig) => {
     setCfg(c);
-    saveConfig(c);
+    saveCfg(c);
   };
 
-  const loadData = async () => {
+  const load = async () => {
+    setRefreshing(true);
     try {
-      const [roomsList, catalogData, config, slurmData] = await Promise.all([
+      const [roomList, cat, appCfg, slurm] = await Promise.all([
         api.getRooms(),
         api.getCatalog(),
         api.getConfig(),
         api.getSlurmNodes(),
       ]);
-
-      setRooms(Array.isArray(roomsList) ? roomsList : []);
-
-      const catMap: Record<string, DeviceTemplate> = {};
-      catalogData.device_templates.forEach((t) => {
-        catMap[t.id] = t;
+      setRooms(Array.isArray(roomList) ? roomList : []);
+      const cm: Record<string, DeviceTemplate> = {};
+      cat.device_templates.forEach((t) => {
+        cm[t.id] = t;
       });
-      setCatalog(catMap);
-
-      const roles = config?.plugins?.slurm?.roles;
-      if (Array.isArray(roles) && roles.length > 0)
-        setSlurmRoles(roles.map((r: string) => r.toLowerCase()));
-      if (typeof config?.plugins?.slurm?.include_unlabeled === 'boolean')
-        setIncludeUnlabeled(config.plugins.slurm.include_unlabeled);
-
-      const nodesMap: Record<string, { severity: string; status: string; partitions: string[] }> =
-        {};
-      for (const node of slurmData?.nodes ?? []) {
-        nodesMap[node.node] = {
-          severity: node.severity,
-          status: node.status,
-          partitions: node.partitions ?? [],
-        };
-      }
-      setSlurmNodes(nodesMap);
-
-      // Load room layouts in parallel
-      if (Array.isArray(roomsList) && roomsList.length > 0) {
-        const layouts = await Promise.all(
-          roomsList.map((r) => api.getRoomLayout(r.id).catch(() => null))
+      setCatalog(cm);
+      const r = appCfg?.plugins?.slurm?.roles;
+      if (Array.isArray(r) && r.length > 0) setRoles(r.map((x: string) => x.toLowerCase()));
+      if (typeof appCfg?.plugins?.slurm?.include_unlabeled === 'boolean')
+        setUnlabeled(appCfg.plugins.slurm.include_unlabeled);
+      const nm: Record<string, { severity: string; status: string; partitions: string[] }> = {};
+      for (const n of slurm?.nodes ?? [])
+        nm[n.node] = { severity: n.severity, status: n.status, partitions: n.partitions ?? [] };
+      setSlurmNodes(nm);
+      if (Array.isArray(roomList) && roomList.length > 0) {
+        const lays = await Promise.all(
+          roomList.map((r) => api.getRoomLayout(r.id).catch(() => null))
         );
-        const layoutMap: Record<string, Room> = {};
-        roomsList.forEach((r, i) => {
-          if (layouts[i]) layoutMap[r.id] = layouts[i]!;
+        const lm: Record<string, Room> = {};
+        roomList.forEach((r, i) => {
+          if (lays[i]) lm[r.id] = lays[i]!;
         });
-        setRoomLayouts(layoutMap);
+        setLayouts(lm);
       }
-
       setLoading(false);
     } catch {
       setLoading(false);
+    } finally {
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    void loadData();
+    void load();
   }, []);
-
   useEffect(() => {
-    if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
-    if (cfg.autoRefreshMs > 0)
-      refreshTimerRef.current = setInterval(() => void loadData(), cfg.autoRefreshMs);
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (cfg.autoRefreshMs > 0) timerRef.current = setInterval(() => void load(), cfg.autoRefreshMs);
     return () => {
-      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [cfg.autoRefreshMs]);
 
-  // Build flat list of all rack entries across rooms
-  const allRackEntries = useMemo((): { groupKey: string; entries: RackEntry[] }[] => {
-    const groups: Map<string, RackEntry[]> = new Map();
-
+  const groups = useMemo(() => {
+    const map = new Map<string, RackEntry[]>();
     for (const room of rooms) {
-      const layout = roomLayouts[room.id];
-      if (!layout) continue;
-
-      for (const aisle of layout.aisles) {
+      const lay = layouts[room.id];
+      if (!lay) continue;
+      for (const aisle of lay.aisles) {
         for (const rack of aisle.racks) {
-          // Only show racks that have Slurm-managed devices
-          const hasSlurmDevices = rack.devices.some((dev) => {
+          const has = rack.devices.some((dev) => {
             const tpl = catalog[dev.template_id];
             if (!tpl) return false;
             const role = tpl.role?.toLowerCase();
-            if (!role && !includeUnlabeled) return false;
-            if (role && !slurmRoles.includes(role)) return false;
-            return Object.keys(buildSlotMap(dev, tpl)).length > 0;
+            if (!role && !unlabeled) return false;
+            if (role && !roles.includes(role)) return false;
+            return Object.keys(getSlotMap(dev, tpl)).length > 0;
           });
-          if (!hasSlurmDevices) continue;
-
-          const entry: RackEntry = { rack, roomName: room.name, aisleName: aisle.name };
-          const key = cfg.groupByAisle ? `${room.name} › ${aisle.name}` : 'All Racks';
-
-          if (!groups.has(key)) groups.set(key, []);
-          groups.get(key)!.push(entry);
+          if (!has) continue;
+          const key = cfg.groupByAisle ? `${room.name} \u203a ${aisle.name}` : '_all';
+          if (!map.has(key)) map.set(key, []);
+          map.get(key)!.push({ rack, roomName: room.name, aisleName: aisle.name });
         }
       }
     }
+    return Array.from(map.entries()).map(([k, e]) => ({ key: k, entries: e }));
+  }, [rooms, layouts, catalog, roles, unlabeled, cfg.groupByAisle]);
 
-    return Array.from(groups.entries()).map(([groupKey, entries]) => ({ groupKey, entries }));
-  }, [rooms, roomLayouts, catalog, slurmRoles, includeUnlabeled, cfg.groupByAisle]);
-
-  // Stats
   const stats = useMemo(() => {
-    const vals = Object.values(slurmNodes);
+    const v = Object.values(slurmNodes);
     return {
-      total: vals.length,
-      crit: vals.filter((n) => n.severity === 'CRIT').length,
-      warn: vals.filter((n) => n.severity === 'WARN').length,
-      ok: vals.filter((n) => n.severity === 'OK').length,
+      total: v.length,
+      crit: v.filter((n) => n.severity === 'CRIT').length,
+      warn: v.filter((n) => n.severity === 'WARN').length,
+      ok: v.filter((n) => n.severity === 'OK').length,
     };
   }, [slurmNodes]);
 
-  const cardWidth = CARD_WIDTHS[cfg.cardSize];
+  const cardW = CARD_W[cfg.cardSize];
+  const scrollH = containerH > 0 ? Math.min(Math.max(200, containerH - 40), 900) : 700;
 
-  const renderRack = (entry: RackEntry) => {
-    const key = entry.rack.id;
+  const renderRack = (e: RackEntry) => {
+    const k = e.rack.id;
     if (cfg.view === 'compact')
       return (
-        <CompactRackCard
-          key={key}
-          entry={entry}
+        <CompactCard
+          key={k}
+          entry={e}
           catalog={catalog}
-          slurmNodes={slurmNodes}
-          slurmRoles={slurmRoles}
-          includeUnlabeled={includeUnlabeled}
-          cardWidth={cardWidth}
+          nodes={slurmNodes}
+          roles={roles}
+          unlabeled={unlabeled}
+          width={cardW}
           onHover={setHover}
         />
       );
     if (cfg.view === 'rack')
       return (
-        <RackPhysicalCard
-          key={key}
-          entry={entry}
+        <RackCard
+          key={k}
+          entry={e}
           catalog={catalog}
-          slurmNodes={slurmNodes}
-          slurmRoles={slurmRoles}
-          cardWidth={cardWidth}
-          navigate={navigate}
+          nodes={slurmNodes}
+          roles={roles}
+          width={cardW}
+          nav={navigate}
         />
       );
     return (
-      <ColumnsRackCard
-        key={key}
-        entry={entry}
+      <GridCard
+        key={k}
+        entry={e}
         catalog={catalog}
-        slurmNodes={slurmNodes}
-        slurmRoles={slurmRoles}
-        includeUnlabeled={includeUnlabeled}
-        cardWidth={cardWidth}
+        nodes={slurmNodes}
+        roles={roles}
+        unlabeled={unlabeled}
+        width={cardW}
         onHover={setHover}
       />
     );
   };
 
   return (
-    <div className="flex h-full flex-col gap-5">
-      <div className="shrink-0">
-        <PageHeader
-          title="Slurm Wall"
-          breadcrumb={
-            <PageBreadcrumb
-              items={[
-                { label: 'Home', href: '/' },
-                { label: 'Slurm', href: '/slurm/overview' },
-                { label: 'Wall' },
-              ]}
+    <div className="flex h-full min-h-0 flex-col p-6">
+      <PageHeader
+        title="Slurm Wall"
+        breadcrumb={
+          <PageBreadcrumb
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Slurm', href: '/slurm/overview' },
+              { label: 'Wall' },
+            ]}
+          />
+        }
+        description={`${stats.total} nodes \u00b7 ${rooms.length} room${rooms.length !== 1 ? 's' : ''}`}
+        actions={
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => setConfigOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Configure
+            </button>
+            <RefreshButton
+              refreshing={refreshing}
+              autoMs={cfg.autoRefreshMs}
+              onRefresh={() => void load()}
+              onInterval={(ms) => update({ ...cfg, autoRefreshMs: ms })}
             />
-          }
-          actions={
-            <div className="flex shrink-0 items-center gap-2">
-              {/* Stats chips */}
-              {stats.crit > 0 && (
-                <span className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-sm font-semibold text-red-600 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400">
-                  {stats.crit} CRIT
-                </span>
-              )}
-              {stats.warn > 0 && (
-                <span className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-sm font-semibold text-amber-600 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-400">
-                  {stats.warn} WARN
-                </span>
-              )}
-              <span className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-                {stats.total} nodes
-              </span>
-
-              {/* View toggle — ClusterPage style */}
-              <div className="flex items-center rounded-lg border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-800">
-                {(
-                  [
-                    { id: 'compact' as WallView, Icon: LayoutGrid, label: 'Dots' },
-                    { id: 'rack' as WallView, Icon: ServerIcon, label: 'Rack' },
-                    { id: 'columns' as WallView, Icon: Columns, label: 'Grid' },
-                  ] as const
-                ).map(({ id, Icon, label }) => (
-                  <button
-                    key={id}
-                    title={label}
-                    onClick={() => updateCfg({ ...cfg, view: id })}
-                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
-                      cfg.view === id
-                        ? 'bg-brand-500 text-white shadow-sm'
-                        : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => void loadData()}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                title="Refresh"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </button>
-
-              <button
-                onClick={() => setShowCfg(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                Configure
-              </button>
-            </div>
-          }
-        />
-      </div>
-
-      {/* Legend */}
-      <div className="flex shrink-0 flex-wrap items-center gap-3">
-        {[
-          { label: 'OK / Idle', color: SEV_COLOR.OK },
-          { label: 'WARN / Mixed', color: SEV_COLOR.WARN },
-          { label: 'CRIT / Down', color: SEV_COLOR.CRIT },
-          { label: 'Unknown', color: SEV_COLOR.UNKNOWN },
-        ].map(({ label, color }) => (
-          <div key={label} className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-[2px]" style={{ backgroundColor: color }} />
-            <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
           </div>
-        ))}
-      </div>
-
-      {/* Main content — scroll mode: no padding, full height; wrap modes: padded card */}
-      <div
-        className={`min-h-0 flex-1 ${
-          cfg.layout === 'scroll'
-            ? 'overflow-x-auto overflow-y-hidden'
-            : 'overflow-auto rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900'
-        }`}
-      >
-        {loading ? (
-          <div className="flex h-40 items-center justify-center">
-            <div className="border-t-brand-500 h-8 w-8 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
-          </div>
-        ) : allRackEntries.length === 0 ? (
-          <div className="flex h-40 flex-col items-center justify-center gap-2 text-gray-400">
-            <ServerIcon className="h-8 w-8 opacity-30" />
-            <p>No Slurm nodes found across all rooms</p>
-          </div>
-        ) : cfg.layout === 'scroll' ? (
-          // Scroll mode: single horizontal row, racks align to bottom, fills full height
-          <div className="flex h-full items-end gap-4 px-2 py-2">
-            {allRackEntries.flatMap(({ entries }) => entries).map(renderRack)}
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {allRackEntries.map(({ groupKey, entries }) => (
-              <div key={groupKey}>
-                {cfg.groupByAisle && <GroupHeader label={groupKey} count={entries.length} />}
-                <LayoutWrapper layout={cfg.layout}>{entries.map(renderRack)}</LayoutWrapper>
+        }
+      />
+      {!loading && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {stats.ok > 0 && (
+            <StatChip icon={CheckCircle} value={stats.ok} label="OK" color="text-green-500" />
+          )}
+          {stats.warn > 0 && (
+            <StatChip icon={AlertTriangle} value={stats.warn} label="WARN" color="text-amber-500" />
+          )}
+          {stats.crit > 0 && (
+            <StatChip icon={XCircle} value={stats.crit} label="CRIT" color="text-red-500" />
+          )}
+          <StatChip icon={ServerIcon} value={stats.total} label="nodes" color="text-gray-400" />
+          <div className="ml-2 flex items-center gap-3 border-l border-gray-200 pl-3 dark:border-gray-700">
+            {[
+              { l: 'OK / Idle', c: SEV.OK },
+              { l: 'WARN', c: SEV.WARN },
+              { l: 'CRIT / Down', c: SEV.CRIT },
+            ].map(({ l, c }) => (
+              <div key={l} className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-[2px]" style={{ backgroundColor: c }} />
+                <span className="text-xs text-gray-500 dark:text-gray-400">{l}</span>
               </div>
             ))}
           </div>
+        </div>
+      )}
+      <div
+        ref={containerRef}
+        className="mt-4 min-h-0 flex-1 overflow-hidden rounded-2xl border border-gray-200 bg-[#0a0c10] dark:border-gray-800"
+      >
+        {loading ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="border-t-brand-500 h-10 w-10 animate-spin rounded-full border-2 border-gray-800" />
+          </div>
+        ) : groups.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 text-gray-600">
+            <ServerIcon className="h-10 w-10 opacity-20" />
+            <p>No Slurm nodes found</p>
+          </div>
+        ) : cfg.layout === 'scroll' ? (
+          <div className="flex h-full items-center overflow-x-auto overflow-y-hidden">
+            <div className="flex min-h-0 gap-5 p-5" style={{ height: scrollH }}>
+              {groups.flatMap(({ entries }) => entries).map(renderRack)}
+            </div>
+          </div>
+        ) : cfg.layout === 'wrap' ? (
+          <div className="h-full overflow-y-auto">
+            <div className="flex flex-wrap content-start gap-5 p-5">
+              {groups.map(({ key, entries }) => (
+                <div key={key} className="w-full">
+                  {cfg.groupByAisle && key !== '_all' && (
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="bg-brand-500 h-1.5 w-1.5 rounded-full opacity-60" />
+                      <h3 className="text-xs font-bold tracking-wider text-gray-400 uppercase">
+                        {key}
+                      </h3>
+                      <span className="text-[10px] text-gray-500">({entries.length})</span>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-5">{entries.map(renderRack)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="flex h-full flex-wrap content-start gap-5 overflow-hidden p-5">
+            {groups.flatMap(({ entries }) => entries).map(renderRack)}
+          </div>
         )}
       </div>
-
-      {/* Tooltip */}
       {hover && (
         <HUDTooltip
           title={hover.node}
@@ -960,19 +944,17 @@ export const SlurmWallV2Page = () => {
           }
           details={[
             { label: 'Status', value: hover.status, italic: true },
-            { label: 'Partitions', value: hover.partitions.join(', ') || '—', italic: true },
+            { label: 'Partitions', value: hover.partitions.join(', ') || '\u2014', italic: true },
           ]}
           mousePos={{ x: hover.x, y: hover.y }}
         />
       )}
-
-      {/* Configure panel overlay */}
-      {showCfg && (
-        <>
-          <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setShowCfg(false)} />
-          <ConfigPanel cfg={cfg} onChange={updateCfg} onClose={() => setShowCfg(false)} />
-        </>
-      )}
+      <ConfigPanel
+        open={configOpen}
+        cfg={cfg}
+        onChange={update}
+        onClose={() => setConfigOpen(false)}
+      />
     </div>
   );
 };
