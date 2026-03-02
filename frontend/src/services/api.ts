@@ -334,6 +334,21 @@ export const api = {
     const params = roomId ? `?room_id=${encodeURIComponent(roomId)}` : '';
     return fetchWithCache(`/api/slurm/nodes${params}`, `slurm.nodes.${roomId || 'all'}`);
   },
+  getSlurmMetricsCatalog: async () => {
+    return fetch('/api/slurm/metrics/catalog').then((r) => r.json());
+  },
+  getSlurmMetricData: async (metricId: string) => {
+    return fetch(`/api/slurm/metrics/data?metric_id=${encodeURIComponent(metricId)}`).then((r) =>
+      r.json()
+    );
+  },
+  updateSlurmCatalogConfig: async (metricsCatalogs: string[]) => {
+    return fetch('/api/slurm/metrics/catalog/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ metrics_catalogs: metricsCatalogs }),
+    }).then((r) => r.json());
+  },
   getSlurmMapping: async () => {
     return fetch('/api/slurm/mapping').then((r) => r.json());
   },

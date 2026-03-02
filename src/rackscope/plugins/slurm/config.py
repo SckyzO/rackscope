@@ -100,3 +100,14 @@ class SlurmPluginConfig(BaseModel):
         default="config/plugins/slurm/node_mapping.yaml",
         description="Path to Slurm node to instance mapping file",
     )
+    # Metrics catalog — list of YAML files in config/plugins/slurm/metrics/
+    # Each file defines metric queries shown in dashboards and tooltips.
+    # The plugin auto-discovers all .yaml files in the metrics_catalog_dir.
+    metrics_catalog_dir: str = Field(
+        default="config/plugins/slurm/metrics",
+        description="Directory containing Slurm metric catalog YAML files",
+    )
+    metrics_catalogs: List[str] = Field(
+        default_factory=lambda: ["metrics.yaml"],
+        description="List of catalog file names to load (relative to metrics_catalog_dir)",
+    )

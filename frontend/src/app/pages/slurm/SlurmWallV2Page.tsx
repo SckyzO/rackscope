@@ -26,7 +26,7 @@ import type { Device, DeviceTemplate, Room, RoomSummary, RackNodeState } from '.
 
 type WallView = 'compact' | 'rack' | 'columns';
 type WallLayout = 'scroll' | 'wrap' | 'wrap-auto';
-type CardSize = 'sm' | 'md' | 'lg';
+type CardSize = 'sm' | 'md' | 'lg' | 'auto';
 interface WallConfig {
   view: WallView;
   layout: WallLayout;
@@ -52,7 +52,7 @@ const SEV: Record<string, string> = {
   CRIT: '#ef4444',
   UNKNOWN: '#374151',
 };
-const CARD_W: Record<CardSize, number> = { sm: 180, md: 260, lg: 340 };
+const CARD_W: Record<CardSize, number> = { sm: 180, md: 260, lg: 340, auto: 0 }; // 0 = auto-calculated
 const LS = 'rackscope.slurmwall.config';
 const DEF: WallConfig = {
   view: 'compact',
@@ -349,6 +349,7 @@ const ConfigPanel = ({
           <SLbl>Card size</SLbl>
           <SegBtns
             opts={[
+              { label: 'Auto', val: 'auto' as CardSize },
               { label: 'S', val: 'sm' as CardSize },
               { label: 'M', val: 'md' as CardSize },
               { label: 'L', val: 'lg' as CardSize },
@@ -356,6 +357,11 @@ const ConfigPanel = ({
             cur={cfg.cardSize}
             onChange={(v) => set('cardSize', v)}
           />
+          {cfg.cardSize === 'auto' && (
+            <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-600">
+              Rack &amp; grid: auto-fits all racks in available width.
+            </p>
+          )}
           <SLbl>Grouping</SLbl>
           <OptBtns
             opts={[
@@ -795,8 +801,21 @@ export const SlurmWallV2Page = () => {
     };
   }, [slurmNodes]);
 
-  const cardW = CARD_W[cfg.cardSize];
   const scrollH = containerH > 0 ? Math.min(Math.max(200, containerH - 40), 900) : 700;
+
+  // Auto card width: fit as many racks as possible in the container, min 120px
+  const autoCardW = useMemo(() => {
+    if (cfg.cardSize !== 'auto' || containerH === 0) return 0;
+    const totalRacks = groups.reduce((n, g) => n + g.entries.length, 0);
+    if (totalRacks === 0) return 260;
+    // In scroll mode: distribute evenly in the available width (approx viewport - sidebar)
+    const approxW = window.innerWidth - 280; // subtract sidebar
+    const gap = 20;
+    const ideal = Math.floor((approxW - gap) / totalRacks) - gap;
+    return Math.max(120, Math.min(ideal, 400));
+  }, [cfg.cardSize, groups, containerH]);
+
+  const cardW = cfg.cardSize === 'auto' ? autoCardW || 260 : CARD_W[cfg.cardSize];
 
   const renderRack = (e: RackEntry, rackH?: number) => {
     const k = e.rack.id;

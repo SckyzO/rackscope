@@ -2,13 +2,13 @@
 
 import logging
 import os
-from typing import Optional, Dict, Any
+from pathlib import Path
+from typing import Optional, Dict, Any, List
 
 import yaml
 
 from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List
 
 from rackscope.plugins.base import RackscopePlugin, MenuSection, MenuItem
 from rackscope.services import slurm_service, topology_service
@@ -29,6 +29,7 @@ class SlurmPlugin(RackscopePlugin):
     def __init__(self):
         self._router = APIRouter(tags=["slurm"])
         self.config: Optional[SlurmPluginConfig] = None
+        self._metrics_catalog: List[Dict[str, Any]] = []
         self._setup_routes()
 
     @property
@@ -112,13 +113,46 @@ class SlurmPlugin(RackscopePlugin):
             self.config = self._load_config(app_module.APP_CONFIG)
         return self.config
 
+    def _load_metrics_catalog(self) -> List[Dict[str, Any]]:
+        """Load metric definitions from all catalog files in metrics_catalog_dir."""
+        cfg = self._get_config()
+        catalog_dir = Path(cfg.metrics_catalog_dir)
+        all_metrics: List[Dict[str, Any]] = []
+        if not catalog_dir.exists():
+            return all_metrics
+        files_to_load = cfg.metrics_catalogs if cfg.metrics_catalogs else []
+        for fname in files_to_load:
+            fpath = catalog_dir / fname
+            if not fpath.exists():
+                logger.warning(f"Slurm metrics catalog file not found: {fpath}")
+                continue
+            try:
+                raw = yaml.safe_load(fpath.read_text()) or {}
+                metrics = raw.get("metrics", []) if isinstance(raw, dict) else []
+                if isinstance(metrics, list):
+                    all_metrics.extend(metrics)
+                    logger.debug(f"Loaded {len(metrics)} Slurm metrics from {fname}")
+            except Exception as exc:
+                logger.warning(f"Failed to load Slurm metrics from {fpath}: {exc}")
+        return all_metrics
+
+    def _list_catalog_files(self) -> List[str]:
+        """List available .yaml files in the metrics catalog directory."""
+        cfg = self._get_config()
+        d = Path(cfg.metrics_catalog_dir)
+        if not d.exists():
+            return []
+        return sorted(p.name for p in d.glob("*.yaml"))
+
     async def on_startup(self) -> None:
         """Initialize Slurm plugin and load configuration."""
         from rackscope.api.app import APP_CONFIG
 
         self.config = self._load_config(APP_CONFIG)
+        self._metrics_catalog = self._load_metrics_catalog()
         logger.info(
-            f"Slurm plugin started (metric={self.config.metric}, roles={self.config.roles})"
+            f"Slurm plugin started (metric={self.config.metric}, roles={self.config.roles}, "
+            f"metrics={len(self._metrics_catalog)})"
         )
 
     async def on_config_reload(self, app_config: AppConfig) -> None:
@@ -364,6 +398,69 @@ class SlurmPlugin(RackscopePlugin):
             entries = [e.model_dump() for e in payload.entries]
             slurm_service.save_slurm_mapping(cfg.mapping_path, entries)
             return {"ok": True, "saved": len(entries)}
+
+        # ── Metrics catalog endpoints ───────────────────────────────────────────
+
+        @self._router.get("/api/slurm/metrics/catalog")
+        async def get_slurm_metrics_catalog() -> dict:
+            """Return all loaded metric definitions + available files."""
+            self._metrics_catalog = self._load_metrics_catalog()
+            return {
+                "metrics": self._metrics_catalog,
+                "loaded_files": self._get_config().metrics_catalogs,
+                "available_files": self._list_catalog_files(),
+            }
+
+        @self._router.post("/api/slurm/metrics/catalog/config")
+        async def update_metrics_catalog_config(payload: dict) -> dict:
+            """Update which metric files to load (saved to plugin config)."""
+            cfg = self._get_config()
+            files = payload.get("metrics_catalogs", cfg.metrics_catalogs)
+            # Persist to the plugin config file
+            config_path = self.config_file_path()
+            if config_path:
+                try:
+                    raw = yaml.safe_load(Path(config_path).read_text()) or {}
+                    raw["metrics_catalogs"] = files
+                    Path(config_path).write_text(
+                        yaml.dump(raw, default_flow_style=False, allow_unicode=True)
+                    )
+                    cfg.metrics_catalogs = files
+                    self._metrics_catalog = self._load_metrics_catalog()
+                except Exception as exc:
+                    raise HTTPException(status_code=500, detail=str(exc)) from exc
+            return {"ok": True, "metrics_catalogs": files}
+
+        @self._router.get("/api/slurm/metrics/data")
+        async def get_slurm_metric_data(
+            metric_id: str,
+            scope: Optional[str] = None,
+        ) -> dict:
+            """Query Prometheus for a specific Slurm metric.
+
+            Returns raw Prometheus result for the metric.
+            The caller is responsible for filtering by node/partition.
+            """
+            from rackscope.telemetry.prometheus import client as prom_client
+
+            metric_def = next((m for m in self._metrics_catalog if m.get("id") == metric_id), None)
+            if not metric_def:
+                raise HTTPException(
+                    status_code=404, detail=f"Metric '{metric_id}' not found in catalog"
+                )
+
+            query = metric_def.get("metric", metric_id)
+            result = await prom_client.query(query, cache_type="health")
+            if result.get("status") != "success":
+                return {"metric_id": metric_id, "data": [], "error": "Prometheus query failed"}
+
+            return {
+                "metric_id": metric_id,
+                "name": metric_def.get("name", metric_id),
+                "unit": metric_def.get("display", {}).get("unit", ""),
+                "scope": metric_def.get("scope", "global"),
+                "data": result.get("data", {}).get("result", []),
+            }
 
     def register_routes(self, app: FastAPI) -> None:
         """Register Slurm routes."""
