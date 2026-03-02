@@ -112,6 +112,11 @@ export interface DeviceTemplate {
   rear_layout?: LayoutConfig;
   rear_components?: DeviceRearComponent[];
   checks?: string[];
+  metrics?: string[];
+  display_thresholds?: {
+    temperature?: { warn?: number; crit?: number };
+    power?: { warn?: number; crit?: number };
+  };
 }
 
 export interface DeviceRearComponent {

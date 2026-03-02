@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Optional, Literal
+from typing import Dict, List, Optional, Literal
 from pydantic import BaseModel, Field
 
 # --- Device Templates ---
@@ -33,6 +33,9 @@ class DeviceTemplate(BaseModel):
     rear_components: List[DeviceRearComponent] = Field(default_factory=list)
     checks: List[str] = Field(default_factory=list)
     metrics: List[str] = Field(default_factory=list)  # Metrics to collect for this device type
+    # Per-template display thresholds for the UI tooltip (overrides metrics library defaults).
+    # Format: { "temperature": { "warn": 45, "crit": 55 } }
+    display_thresholds: Optional[Dict[str, Dict[str, float]]] = None
 
 
 # --- Rack Infrastructure Templates ---

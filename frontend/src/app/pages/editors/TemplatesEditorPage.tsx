@@ -76,6 +76,8 @@ type DeviceDraft = {
   rearMatrix: number[][];
   rearComponents: DeviceRearComponent[];
   checks: string[];
+  tempWarn: string;
+  tempCrit: string;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -117,6 +119,8 @@ const toDraft = (tpl: DeviceTemplate): DeviceDraft => {
     rearMatrix: tpl.rear_layout?.matrix ?? buildMatrix(rr, rc),
     rearComponents: tpl.rear_components ?? [],
     checks: tpl.checks ?? [],
+    tempWarn: String(tpl.display_thresholds?.temperature?.warn ?? ''),
+    tempCrit: String(tpl.display_thresholds?.temperature?.crit ?? ''),
   };
 };
 
@@ -152,6 +156,16 @@ const draftToTemplate = (draft: DeviceDraft, _base?: DeviceTemplate): Record<str
       : {}),
     rear_components: draft.rearComponents,
     checks: draft.checks,
+    ...(draft.tempWarn || draft.tempCrit
+      ? {
+          display_thresholds: {
+            temperature: {
+              ...(draft.tempWarn ? { warn: parseFloat(draft.tempWarn) } : {}),
+              ...(draft.tempCrit ? { crit: parseFloat(draft.tempCrit) } : {}),
+            },
+          },
+        }
+      : {}),
   };
 };
 
@@ -629,6 +643,41 @@ const EditorPanel = ({
                 />
               </div>
             </div>
+
+            {/* Temperature display thresholds */}
+            <div>
+              <label className={labelCls}>
+                Temp thresholds{' '}
+                <span className="text-gray-400">(°C — overrides metrics library defaults)</span>
+              </label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="mb-1 block text-[10px] text-gray-400">Warn</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={150}
+                    value={draft.tempWarn}
+                    onChange={(e) => update('tempWarn', e.target.value)}
+                    placeholder="e.g. 38"
+                    className={inputCls}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="mb-1 block text-[10px] text-gray-400">Crit</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={150}
+                    value={draft.tempCrit}
+                    onChange={(e) => update('tempCrit', e.target.value)}
+                    placeholder="e.g. 45"
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+            </div>
+
             {draft.type === 'storage' && (
               <div>
                 <label className={labelCls}>Storage type</label>

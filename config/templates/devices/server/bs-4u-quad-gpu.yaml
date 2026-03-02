@@ -34,3 +34,7 @@ templates:
   metrics:
   - node_temperature
   - node_power
+  display_thresholds:
+    temperature:
+      warn: 52   # GPU nodes run hotter — warn above 52°C
+      crit: 65   # GPU thermal throttle zone

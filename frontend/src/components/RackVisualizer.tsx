@@ -1027,7 +1027,10 @@ export const DeviceChassis = ({
 }) => {
   const [suppressTooltip, setSuppressTooltip] = useState(false);
   const metricsThresholds = useMetricsThresholds();
-  const tempThresholds = metricsThresholds['node_temperature'];
+  // Template-level thresholds override the metrics library defaults.
+  // Allows per-device-type tuning (GPU: warn=52°C, switch: warn=40°C, etc.)
+  const tempThresholds =
+    template.display_thresholds?.temperature ?? metricsThresholds['node_temperature'];
 
   const nodeMap = useMemo(() => {
     // For storage devices, create virtual node IDs per slot

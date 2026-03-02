@@ -22,3 +22,7 @@ templates:
   metrics:
   - node_temperature
   - node_power
+  display_thresholds:
+    temperature:
+      warn: 48
+      crit: 60

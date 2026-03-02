@@ -26,3 +26,7 @@ templates:
   metrics:
   - node_temperature
   - node_power
+  display_thresholds:
+    temperature:
+      warn: 40   # Switches are more temperature-sensitive
+      crit: 50
