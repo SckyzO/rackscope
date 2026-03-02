@@ -6,46 +6,71 @@ sidebar_position: 4
 
 # Slurm Integration
 
-The Slurm plugin provides HPC-specific views for monitoring cluster workloads alongside physical infrastructure.
-
-![Slurm Overview](/img/screenshots/slurm-overview.png)
+The Slurm plugin provides HPC-specific views mapping workload manager states to the physical infrastructure.
 
 ## Views
 
-### Slurm Wallboard
+### Wallboard V1 (per-room)
 
 **URL**: `/slurm/wallboard/:roomId`
 
-Compact aisle view mapping Slurm node states to the physical rack layout. Ideal for NOC displays.
+Compact aisle view mapping Slurm node states to the physical rack layout.
+Ideal for NOC displays. Two view modes: compact dots and detailed slot grid.
 
-Node states are color-coded according to the `status_map` configuration.
+### Wall V2 (multi-room)
+
+**URL**: `/slurm/wall`
+
+**New in v1.1** — Multi-room wallboard with 3 display modes and a Configure panel.
+
+#### Display modes (Configure → View)
+
+| Mode | Description |
+|---|---|
+| **Compact dots** | One colored dot per node — fast status scan across all rooms |
+| **Rack physical** | Full `RackElevation` with Slurm colors — shows physical slot positions |
+| **Slot grid** | Physical slot columns at exact U positions |
+
+#### Layout modes
+
+| Mode | Behavior |
+|---|---|
+| **Horizontal scroll** | Single row, racks fill full height |
+| **Wrap + scroll** | Multiple rows, vertical scroll |
+| **Wrap + autosize** | Card height auto-calculated so all racks fit without scrolling |
+
+#### Card size: S / M / L
+
+Sets the card width. In wrap-auto mode the height adapts automatically.
+
+#### Grouping: By aisle / All flat
+
+Toggle between grouped aisle sections and a flat list.
+
+#### Auto-refresh: Off / 15s / 30s / 1m / 2m / 5m
+
+#### Multi-room by default
+
+Wall V2 loads all rooms and filters by device roles configured in the Slurm plugin.
+No room selector needed — the view follows `plugins.slurm.roles` automatically.
 
 ### Cluster Overview
 
 **URL**: `/slurm/overview`
 
-Aggregate cluster status:
-- Total nodes by state (idle, allocated, down, drain, etc.)
-- Health severity distribution
-- Partition summary
+Aggregate cluster statistics — nodes by state, health severity distribution, partition summary.
 
 ### Partitions Dashboard
 
 **URL**: `/slurm/partitions`
 
-Per-partition breakdown:
-- Nodes per state
-- Usage percentage
-- Health indicators
+Per-partition breakdown: nodes per state, usage percentage, health indicators.
 
 ### Node List
 
 **URL**: `/slurm/nodes`
 
-Flat list of all nodes with:
-- Slurm state
-- Topology context (site/room/rack/device)
-- Health state from Prometheus checks
+Flat list with Slurm state + topology context (site/room/rack/device) for each node.
 
 ### Alerts Dashboard
 
@@ -55,49 +80,38 @@ Nodes in WARN or CRIT state requiring attention.
 
 ## Configuration
 
-Enable Slurm in `config/app.yaml`:
+Enable in `config/app.yaml`:
 
 ```yaml
-slurm:
-  metric: slurm_node_status
-  label_node: node
-  label_status: status
-  label_partition: partition
-  status_map:
-    idle: OK
-    allocated: OK
-    completing: OK
-    down: CRIT
-    drain: WARN
-    drained: WARN
-    fail: CRIT
-    maint: WARN
-    reboot: WARN
-  # Optional: map Slurm names to topology instance names
-  # mapping_path: config/plugins/slurm/node_mapping.yaml
+plugins:
+  slurm:
+    enabled: true
 ```
+
+Full configuration in `config/plugins/slurm/config.yml` — see [Slurm Plugin](../plugins/slurm) for all options.
 
 ## Node Mapping (Optional)
 
-If your Slurm node names differ from your topology instance names, create a mapping file:
+Map Slurm names to topology instance names. **Wildcards supported:**
 
 ```yaml
 # config/plugins/slurm/node_mapping.yaml
 mappings:
-  - slurm_node: node001
-    topology_instance: compute001
-  - slurm_node: node002
-    topology_instance: compute002
+  - node: "n*"          # matches n001, n002, ...
+    instance: "compute*" # → compute001, compute002, ...
 ```
+
+Manage from the UI: **Settings → Plugins → Slurm → Edit mappings**.
 
 ## Device Role Filtering
 
-Templates can define a `role` field to filter devices shown in Slurm views:
+Templates define a `role` field to control which devices appear in Slurm views:
 
 ```yaml
 templates:
-  - id: my-compute-node
+  - id: compute-node
     type: server
-    role: compute   # compute, visu, login, io, storage
-    ...
+    role: compute   # compute | visu | login | io | storage
 ```
+
+Roles to include: configured via `roles` in `config/plugins/slurm/config.yml`.

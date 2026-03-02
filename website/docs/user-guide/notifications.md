@@ -94,7 +94,8 @@ Each toast shows:
 
 - Severity badge (WARN or CRIT)
 - Node ID and rack location
-- Check name that triggered the alert
+- Check name that triggered the alert (human-readable)
+- **→ Rack name link** — click to navigate directly to the rack view and dismiss the toast
 
 **Duration**: Toasts auto-dismiss after `toast_duration_seconds` (default: 5 seconds). Set to `0` to disable auto-dismiss — the user must close them manually.
 
@@ -104,7 +105,9 @@ features:
   toast_duration_seconds: 5
 ```
 
-Multiple toasts stack vertically. If more than 3 toasts would be visible simultaneously, newer ones queue behind the existing ones and appear as older ones are dismissed. This prevents the screen from being buried during a large incident.
+Multiple toasts stack vertically with a semi-transparent background (more opaque on dark mode). Hovering a toast makes it fully opaque.
+
+When multiple alerts are stacked, click the **N alerts ↓** button to expand the full list — each item animates in with a staggered slide-up effect. Click the collapse button to return to the stacked view.
 
 :::note
 Toasts are only shown for **new** alerts detected since the last polling cycle. If you reload the page, previously active alerts do not re-trigger toasts — they appear only in the alert feed.
