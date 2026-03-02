@@ -3,7 +3,7 @@
 # app.yaml only controls: plugins.slurm.enabled (true/false)
 
 metric: slurm_node_status
-label_node: node_id
+label_node: node
 label_status: status
 label_partition: partition
 mapping_path: config/plugins/slurm/node_mapping.yaml

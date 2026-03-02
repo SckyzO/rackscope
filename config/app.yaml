@@ -52,7 +52,7 @@ auth:
     require_symbol: false
 map:
   default_view: world
-  default_zoom: 3
+  default_zoom: 1
   min_zoom: 2
   max_zoom: 7
   zoom_controls: true
@@ -76,8 +76,8 @@ plugins:
       rack_macro_failure: 0.01
       aisle_cooling_failure: 0.005
     incident_durations:
-      rack: 3
-      aisle: 5
+      rack: 300
+      aisle: 600
     overrides_path: config/plugins/simulator/overrides/overrides.yaml
     default_ttl_seconds: 120
     metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
@@ -85,7 +85,7 @@ plugins:
   slurm:
     enabled: true
     metric: slurm_node_status
-    label_node: node_id
+    label_node: node
     label_status: status
     label_partition: partition
     mapping_path: config/plugins/slurm/node_mapping.yaml
