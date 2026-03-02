@@ -418,7 +418,7 @@ const CompactCard = ({
   return (
     <div
       className="rounded-xl border-2 bg-white p-2.5 dark:bg-gray-900"
-      style={{ borderColor: bc, width }}
+      style={{ borderColor: bc, minWidth: width }}
     >
       <p className="mb-1.5 truncate font-mono text-[10px] font-semibold text-gray-700 dark:text-gray-300">
         {rack.id}
@@ -469,6 +469,7 @@ const RackCard = ({
   nodes,
   roles,
   width,
+  cardHeight,
   nav,
 }: {
   entry: RackEntry;
@@ -476,6 +477,7 @@ const RackCard = ({
   nodes: Record<string, { severity: string; status: string; partitions: string[] }>;
   roles: string[];
   width: number;
+  cardHeight?: number;
   nav: (p: string) => void;
 }) => {
   const { rack } = entry;
@@ -513,7 +515,12 @@ const RackCard = ({
           {w}
         </span>
       </div>
-      <div className="bg-gray-950 p-1" style={{ height: `${(rack.u_height ?? 42) * 14}px` }}>
+      <div
+        className="min-h-0 flex-1 bg-gray-950 p-1"
+        style={
+          cardHeight ? { height: cardHeight - 44 } : { height: `${(rack.u_height ?? 42) * 14}px` }
+        }
+      >
         <RackElevation
           rack={rack as never}
           catalog={catalog}
@@ -793,7 +800,7 @@ export const SlurmWallV2Page = () => {
   const cardW = CARD_W[cfg.cardSize];
   const scrollH = containerH > 0 ? Math.min(Math.max(200, containerH - 40), 900) : 700;
 
-  const renderRack = (e: RackEntry) => {
+  const renderRack = (e: RackEntry, rackH?: number) => {
     const k = e.rack.id;
     if (cfg.view === 'compact')
       return (
@@ -817,6 +824,7 @@ export const SlurmWallV2Page = () => {
           nodes={slurmNodes}
           roles={roles}
           width={cardW}
+          cardHeight={rackH}
           nav={navigate}
         />
       );
@@ -925,7 +933,7 @@ export const SlurmWallV2Page = () => {
         ) : cfg.layout === 'scroll' ? (
           <div className="flex h-full items-center overflow-x-auto overflow-y-hidden">
             <div className="flex min-h-0 gap-5 p-5" style={{ height: scrollH }}>
-              {groups.flatMap(({ entries }) => entries).map(renderRack)}
+              {groups.flatMap(({ entries }) => entries).map((e) => renderRack(e, scrollH))}
             </div>
           </div>
         ) : cfg.layout === 'wrap' ? (
