@@ -85,10 +85,10 @@ function resolveTempColor(temp: number, warn?: number, crit?: number) {
 // Arc spans -135° → +135° (270° sweep). Value 0–100% fills the arc.
 
 const TempArc = ({ value, warn, crit }: { value: number; warn?: number; crit?: number }) => {
-  const SIZE = 76;
+  const SIZE = 82;
   const cx = SIZE / 2;
   const cy = SIZE / 2 + 4; // push center down slightly so arc fits
-  const R = 28;
+  const R = 31;
   const SW = 5; // stroke width
   const START = -135;
   const SWEEP = 270;
@@ -287,75 +287,74 @@ export const HUDTooltip = ({
 
           {/* ── Metrics ─────────────────────── */}
           {hasMetrics && (
-            <div className="mb-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
+            <div className="mb-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 pt-3 pb-2.5">
+              {/* Arc gauge + values row */}
               <div className="flex items-center gap-3">
-                {/* Arc gauge */}
+                {/* Arc gauge — value shown inside the arc, no duplicate text */}
                 {tempVal !== undefined && (
                   <div className="shrink-0">
                     <TempArc value={tempVal} warn={tempWarn} crit={tempCrit} />
                   </div>
                 )}
 
-                {/* Values column */}
-                <div className="flex min-w-0 flex-1 flex-col gap-2">
-                  {tempVal !== undefined && tempStatus && (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-baseline gap-1">
-                        <Thermometer className={`h-3 w-3 shrink-0 ${tempStatus.twText}`} />
-                        <span
-                          className={`ml-1 font-mono text-[15px] leading-none font-black ${tempStatus.twText}`}
-                        >
-                          {tempVal > 0 ? tempVal.toFixed(1) : '--'}
-                          <span className="ml-0.5 text-[10px] font-normal text-gray-500">°C</span>
-                        </span>
-                      </div>
-                      {tempLabel && (
-                        <span
-                          className={`text-[9px] font-black tracking-wider uppercase ${tempStatus.twText} opacity-70`}
-                        >
-                          {tempLabel}
-                        </span>
-                      )}
+                {/* Right column: status badge + power only */}
+                <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5">
+                  {/* Status badge — only when not OK */}
+                  {tempLabel && tempLabel !== 'OK' && tempStatus && (
+                    <div
+                      className={`inline-flex items-center gap-1.5 self-start rounded-md px-2 py-0.5 text-[10px] font-black tracking-wider uppercase ${tempStatus.twText}`}
+                      style={{
+                        background:
+                          tempLabel === 'CRIT' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
+                      }}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${tempStatus.twBg} ${tempLabel === 'CRIT' ? 'animate-pulse' : ''}`}
+                      />
+                      {tempLabel}
                     </div>
                   )}
 
+                  {/* Power */}
                   {metrics?.power !== undefined && metrics.power > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <Zap className="h-3 w-3 shrink-0 text-yellow-400" />
-                      <span className="font-mono text-[15px] leading-none font-black text-gray-200">
+                      <Zap className="h-3.5 w-3.5 shrink-0 text-yellow-400" />
+                      <span className="font-mono text-[16px] leading-none font-black text-gray-200">
                         {formatPower(metrics.power)}
                       </span>
                     </div>
                   )}
-
-                  {/* Gradient progress bar with threshold ticks */}
-                  {tempCrit !== undefined && tempVal !== undefined && tempVal > 0 && (
-                    <div
-                      className="relative h-[5px] w-full overflow-hidden rounded-full"
-                      style={{
-                        background:
-                          'linear-gradient(to right, #22c55e 0%, #f59e0b 65%, #ef4444 100%)',
-                      }}
-                    >
-                      {/* Mask the unused portion from right */}
-                      <div
-                        className="absolute inset-y-0 right-0 rounded-r-full"
-                        style={{
-                          width: `${100 - tempBarPct}%`,
-                          background: 'rgba(5,5,5,0.7)',
-                        }}
-                      />
-                      {/* Warn threshold tick */}
-                      {warnBarPct !== null && (
-                        <div
-                          className="absolute inset-y-0 w-[2px] bg-gray-950/60"
-                          style={{ left: `${warnBarPct}%` }}
-                        />
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
+
+              {/* Gradient bar — full width below the row, adds threshold context to the arc */}
+              {tempCrit !== undefined && tempVal !== undefined && tempVal > 0 && (
+                <div className="mt-2.5">
+                  <div
+                    className="relative h-[4px] w-full overflow-hidden rounded-full"
+                    style={{
+                      background:
+                        'linear-gradient(to right, #22c55e 0%, #f59e0b 65%, #ef4444 100%)',
+                    }}
+                  >
+                    <div
+                      className="absolute inset-y-0 right-0 rounded-r-full"
+                      style={{ width: `${100 - tempBarPct}%`, background: 'rgba(5,5,5,0.75)' }}
+                    />
+                    {warnBarPct !== null && (
+                      <div
+                        className="absolute inset-y-0 w-[2px] bg-gray-950/50"
+                        style={{ left: `${warnBarPct}%` }}
+                      />
+                    )}
+                  </div>
+                  <div className="mt-1 flex justify-between font-mono text-[8px] text-gray-600">
+                    <span>0°</span>
+                    {tempWarn && <span className="text-yellow-600">{tempWarn}° W</span>}
+                    <span className="text-red-700">{tempCrit}° C</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
