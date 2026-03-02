@@ -291,7 +291,7 @@ const ConfigPanel = ({
   );
 };
 
-// ── Compact view — colored dot grid ───────────────────────────────────────────
+// ── Compact view — V1-style rack card with dot grid ──────────────────────────
 
 const CompactRackCard = ({
   entry,
@@ -332,65 +332,63 @@ const CompactRackCard = ({
   });
 
   if (allNodes.length === 0) return null;
-  const worst = allNodes.some((n) => n.severity === 'CRIT')
-    ? 'CRIT'
-    : allNodes.some((n) => n.severity === 'WARN')
-      ? 'WARN'
-      : allNodes.every((n) => n.severity === 'OK')
-        ? 'OK'
-        : 'UNKNOWN';
-  const borderColor = SEV_COLOR[worst];
+  const hasCrit = allNodes.some((n) => n.severity === 'CRIT');
+  const hasWarn = !hasCrit && allNodes.some((n) => n.severity === 'WARN');
+  const borderColor = hasCrit
+    ? SEV_COLOR.CRIT
+    : hasWarn
+      ? SEV_COLOR.WARN
+      : allNodes.length > 0
+        ? SEV_COLOR.OK
+        : SEV_COLOR.UNKNOWN;
 
   return (
     <div
-      className="flex flex-col gap-1.5 rounded-xl border-2 bg-white p-2 dark:bg-gray-900"
-      style={{ width: cardWidth, borderColor }}
+      className="rounded-xl border-2 bg-white p-2.5 dark:bg-gray-900"
+      style={{ borderColor, width: cardWidth }}
     >
-      <div className="flex items-center justify-between gap-1">
-        <span className="truncate font-mono text-[9px] font-bold text-gray-500">{rack.id}</span>
-        <span className="text-[9px] font-bold uppercase" style={{ color: borderColor }}>
-          {worst}
-        </span>
-      </div>
-      <div className="flex flex-wrap gap-[2px]">
-        {allNodes.map((n) => (
-          <div
-            key={n.name}
-            className="h-[6px] w-[6px] rounded-[1px] transition-transform hover:scale-125"
-            style={{
-              backgroundColor: SEV_COLOR[n.severity],
-              opacity: n.severity === 'UNKNOWN' ? 0.3 : 1,
-              cursor: 'help',
-            }}
-            onMouseEnter={(e) =>
-              onHover({
-                node: n.name,
-                status: n.status,
-                severity: n.severity,
-                partitions: n.partitions,
-                rackName: rack.name,
-                deviceName: '',
-                x: e.clientX,
-                y: e.clientY,
-              })
-            }
-            onMouseMove={(e) =>
-              onHover({
-                node: n.name,
-                status: n.status,
-                severity: n.severity,
-                partitions: n.partitions,
-                rackName: rack.name,
-                deviceName: '',
-                x: e.clientX,
-                y: e.clientY,
-              })
-            }
-            onMouseLeave={() => onHover(null)}
-          />
-        ))}
-      </div>
-      <span className="truncate text-center text-[9px] text-gray-400">{rack.name}</span>
+      <p className="mb-1.5 truncate font-mono text-[10px] font-semibold text-gray-700 dark:text-gray-300">
+        {rack.id}
+      </p>
+      <p className="mb-1.5 truncate text-[10px] text-gray-500 dark:text-gray-400">{rack.name}</p>
+      {allNodes.length === 0 ? (
+        <div className="text-[9px] text-gray-400 italic">no Slurm nodes</div>
+      ) : (
+        <div className="flex flex-wrap gap-0.5">
+          {allNodes.map((n, i) => (
+            <div
+              key={i}
+              className="h-3.5 w-3.5 cursor-help rounded-sm transition-transform hover:scale-125"
+              style={{ backgroundColor: SEV_COLOR[n.severity] ?? SEV_COLOR.UNKNOWN }}
+              onMouseEnter={(e) =>
+                onHover({
+                  node: n.name,
+                  status: n.status,
+                  severity: n.severity,
+                  partitions: n.partitions,
+                  rackName: rack.name,
+                  deviceName: '',
+                  x: e.clientX,
+                  y: e.clientY,
+                })
+              }
+              onMouseMove={(e) =>
+                onHover({
+                  node: n.name,
+                  status: n.status,
+                  severity: n.severity,
+                  partitions: n.partitions,
+                  rackName: rack.name,
+                  deviceName: '',
+                  x: e.clientX,
+                  y: e.clientY,
+                })
+              }
+              onMouseLeave={() => onHover(null)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -838,37 +836,39 @@ export const SlurmWallV2Page = () => {
             />
           }
           actions={
-            <div className="flex items-center gap-2">
-              {/* Stats */}
+            <div className="flex shrink-0 items-center gap-2">
+              {/* Stats chips */}
               {stats.crit > 0 && (
-                <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-600 dark:bg-red-500/15 dark:text-red-400">
+                <span className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-sm font-semibold text-red-600 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400">
                   {stats.crit} CRIT
                 </span>
               )}
               {stats.warn > 0 && (
-                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
+                <span className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-sm font-semibold text-amber-600 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-400">
                   {stats.warn} WARN
                 </span>
               )}
-              <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+              <span className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
                 {stats.total} nodes
               </span>
 
-              {/* View toggle */}
-              <div className="flex items-center rounded-xl border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
-                {[
-                  { id: 'compact' as WallView, Icon: LayoutGrid, label: 'Dots' },
-                  { id: 'rack' as WallView, Icon: ServerIcon, label: 'Rack' },
-                  { id: 'columns' as WallView, Icon: Columns, label: 'Grid' },
-                ].map(({ id, Icon, label }) => (
+              {/* View toggle — ClusterPage style */}
+              <div className="flex items-center rounded-lg border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-800">
+                {(
+                  [
+                    { id: 'compact' as WallView, Icon: LayoutGrid, label: 'Dots' },
+                    { id: 'rack' as WallView, Icon: ServerIcon, label: 'Rack' },
+                    { id: 'columns' as WallView, Icon: Columns, label: 'Grid' },
+                  ] as const
+                ).map(({ id, Icon, label }) => (
                   <button
                     key={id}
                     title={label}
                     onClick={() => updateCfg({ ...cfg, view: id })}
-                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
+                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
                       cfg.view === id
                         ? 'bg-brand-500 text-white shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                        : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5'
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -879,16 +879,17 @@ export const SlurmWallV2Page = () => {
 
               <button
                 onClick={() => void loadData()}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"
+                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                title="Refresh"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
+                <RotateCcw className="h-4 w-4" />
               </button>
 
               <button
                 onClick={() => setShowCfg(true)}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"
+                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
               >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <SlidersHorizontal className="h-4 w-4" />
                 Configure
               </button>
             </div>
@@ -911,8 +912,14 @@ export const SlurmWallV2Page = () => {
         ))}
       </div>
 
-      {/* Main content */}
-      <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+      {/* Main content — scroll mode: no padding, full height; wrap modes: padded card */}
+      <div
+        className={`min-h-0 flex-1 ${
+          cfg.layout === 'scroll'
+            ? 'overflow-x-auto overflow-y-hidden'
+            : 'overflow-auto rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900'
+        }`}
+      >
         {loading ? (
           <div className="flex h-40 items-center justify-center">
             <div className="border-t-brand-500 h-8 w-8 animate-spin rounded-full border-2 border-gray-200 dark:border-gray-700" />
@@ -921,6 +928,11 @@ export const SlurmWallV2Page = () => {
           <div className="flex h-40 flex-col items-center justify-center gap-2 text-gray-400">
             <ServerIcon className="h-8 w-8 opacity-30" />
             <p>No Slurm nodes found across all rooms</p>
+          </div>
+        ) : cfg.layout === 'scroll' ? (
+          // Scroll mode: single horizontal row, racks align to bottom, fills full height
+          <div className="flex h-full items-end gap-4 px-2 py-2">
+            {allRackEntries.flatMap(({ entries }) => entries).map(renderRack)}
           </div>
         ) : (
           <div className="space-y-8">
