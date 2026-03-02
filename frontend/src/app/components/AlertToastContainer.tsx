@@ -18,17 +18,17 @@ interface ToastEntry {
 const toastConfig = {
   WARN: {
     Icon: AlertTriangle,
-    bg: 'bg-warning-50 dark:bg-warning-500/10',
-    border: 'border-warning-200 dark:border-warning-500/30',
+    bg: 'bg-warning-50 dark:bg-warning-500/22 hover:dark:bg-warning-500/90',
+    border: 'border-warning-200 dark:border-warning-500/40',
     icon_c: 'text-warning-500',
-    title_c: 'text-warning-700 dark:text-warning-400',
+    title_c: 'text-warning-700 dark:text-warning-300',
   },
   CRIT: {
     Icon: XCircle,
-    bg: 'bg-error-50 dark:bg-error-500/10',
-    border: 'border-error-200 dark:border-error-500/30',
+    bg: 'bg-error-50 dark:bg-error-500/22 hover:dark:bg-error-500/90',
+    border: 'border-error-200 dark:border-error-500/40',
     icon_c: 'text-error-500',
-    title_c: 'text-error-700 dark:text-error-400',
+    title_c: 'text-error-700 dark:text-error-300',
   },
 };
 
@@ -166,7 +166,7 @@ export const AlertToastContainer = () => {
             return (
               <div
                 key={toast.id}
-                className={`shadow-theme-lg flex shrink-0 items-start gap-3 rounded-xl border p-4 ${cfg.bg} ${cfg.border}`}
+                className={`shadow-theme-lg flex shrink-0 items-start gap-3 rounded-xl border p-4 transition-colors duration-150 ${cfg.bg} ${cfg.border}`}
               >
                 <Icon className={`h-5 w-5 shrink-0 ${cfg.icon_c}`} />
                 <div className="min-w-0 flex-1">
@@ -232,7 +232,7 @@ export const AlertToastContainer = () => {
             />
           )}
           <div
-            className={`shadow-theme-lg relative flex items-start gap-3 rounded-xl border p-4 ${cfg.bg} ${cfg.border}`}
+            className={`shadow-theme-lg relative flex items-start gap-3 rounded-xl border p-4 transition-colors duration-150 ${cfg.bg} ${cfg.border}`}
             style={{ zIndex: 10 }}
           >
             <Icon className={`h-5 w-5 shrink-0 ${cfg.icon_c}`} />
@@ -290,7 +290,7 @@ export const AlertToastContainer = () => {
         return (
           <div
             key={toast.id}
-            className={`shadow-theme-lg flex w-80 items-start gap-3 rounded-xl border p-4 ${cfg.bg} ${cfg.border}`}
+            className={`shadow-theme-lg flex w-80 items-start gap-3 rounded-xl border p-4 transition-colors duration-150 ${cfg.bg} ${cfg.border}`}
           >
             <Icon className={`h-5 w-5 shrink-0 ${cfg.icon_c}`} />
             <div className="min-w-0 flex-1">
