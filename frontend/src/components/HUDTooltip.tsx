@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 /**
  * HUDTooltip — 6 tooltip styles for the rack visualizer.
  *
@@ -245,7 +244,7 @@ const _Footer = ({ details, checkSummary }: Pick<HUDTooltipProps, 'details' | 'c
     <div className="flex items-center justify-between gap-2 border-t border-white/[0.05] pt-2.5">
       {hasDetails && (
         <div className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1">
-          {details!.map((d, i) => (
+          {(details ?? []).map((d, i) => (
             <span key={i} className={`text-[11px] text-gray-500 ${d.italic ? 'font-mono' : ''}`}>
               {d.value}
             </span>
@@ -359,7 +358,7 @@ const TintedCard = ({
       <div className="flex flex-col gap-2.5 px-3.5 pb-3.5">
         {(reasons?.length ?? 0) > 0 && (
           <div className="flex flex-col gap-[3px] border-b border-white/[0.04] pb-2.5">
-            {reasons!.map((r, i) => (
+            {(reasons ?? []).map((r, i) => (
               <div
                 key={i}
                 className={`flex items-center gap-2 rounded-[8px] px-2 py-[5px] ${r.severity === 'CRIT' ? 'bg-status-crit/[0.07]' : 'bg-status-warn/[0.06]'}`}
@@ -413,7 +412,7 @@ const TintedCard = ({
                   Power
                 </div>
                 <div className="font-mono text-[19px] leading-none font-black text-yellow-400">
-                  {fmtPower(metrics!.power!)}
+                  {fmtPower(metrics?.power ?? 0)}
                 </div>
                 {metrics?.powerMax && metrics.powerMax > 0 && (
                   <>
@@ -421,12 +420,12 @@ const TintedCard = ({
                       <div
                         className="h-full rounded-full bg-yellow-400/60"
                         style={{
-                          width: `${Math.min(100, Math.round((metrics.power! / metrics.powerMax) * 100))}%`,
+                          width: `${Math.min(100, Math.round(((metrics.power ?? 0) / (metrics.powerMax ?? 1)) * 100))}%`,
                         }}
                       />
                     </div>
                     <div className="mt-1 font-mono text-[7px] text-gray-600">
-                      {Math.round((metrics.power! / metrics.powerMax) * 100)}% of{' '}
+                      {Math.round(((metrics.power ?? 0) / (metrics.powerMax ?? 1)) * 100)}% of{' '}
                       {fmtPower(metrics.powerMax)}
                     </div>
                   </>
@@ -515,7 +514,7 @@ const CompactCard = ({
         />
         {hasAlerts && (
           <>
-            <AlertList reasons={reasons!} />
+            <AlertList reasons={reasons ?? []} />
             <div
               className="h-px"
               style={{ background: 'linear-gradient(to right,rgba(255,255,255,0.06),transparent)' }}
@@ -547,7 +546,7 @@ const CompactCard = ({
               <div className="flex items-center gap-[5px]">
                 <Zap className="h-3 w-3 shrink-0 text-yellow-400" />
                 <span className="font-mono text-[15px] leading-none font-black text-gray-200">
-                  {fmtPower(metrics!.power!)}
+                  {fmtPower(metrics?.power ?? 0)}
                 </span>
               </div>
             )}
@@ -634,7 +633,7 @@ const GlassCard = ({
       <div className="flex flex-col gap-3 px-3.5 py-3">
         {(reasons?.length ?? 0) > 0 && (
           <div className="flex flex-col gap-1">
-            {reasons!.map((r, i) => (
+            {(reasons ?? []).map((r, i) => (
               <div
                 key={i}
                 className={`flex items-center gap-2 rounded-[9px] border-l-2 px-2.5 py-1.5 ${r.severity === 'CRIT' ? 'bg-status-crit/[0.07]' : 'bg-status-warn/[0.07]'}`}
@@ -698,11 +697,11 @@ const GlassCard = ({
               {(metrics?.power ?? 0) > 0 ? (
                 <>
                   <div className="font-mono text-[17px] leading-none font-black text-gray-200">
-                    {fmtPower(metrics!.power!)}
+                    {fmtPower(metrics?.power ?? 0)}
                   </div>
                   {metrics?.powerMax && metrics.powerMax > 0 && (
                     <div className="mt-1 font-mono text-[7px] text-gray-600">
-                      {Math.round((metrics.power! / metrics.powerMax) * 100)}% of{' '}
+                      {Math.round(((metrics.power ?? 0) / (metrics.powerMax ?? 1)) * 100)}% of{' '}
                       {fmtPower(metrics.powerMax)}
                     </div>
                   )}
@@ -785,7 +784,7 @@ const SplitCard = ({
           </div>
           {(reasons?.length ?? 0) > 0 && (
             <div className="flex flex-col gap-1">
-              {reasons!.map((r, i) => (
+              {(reasons ?? []).map((r, i) => (
                 <div
                   key={i}
                   className={`truncate rounded-[6px] px-1.5 py-1 text-[10px] ${r.severity === 'CRIT' ? 'bg-status-crit/[0.08] text-status-crit' : 'bg-status-warn/[0.07] text-status-warn'}`}
@@ -825,7 +824,7 @@ const SplitCard = ({
         <div className="flex items-center gap-1.5">
           <Zap className="h-[11px] w-[11px] text-yellow-400" />
           <span className="font-mono text-[11px] font-black text-gray-200">
-            {(metrics?.power ?? 0) > 0 ? fmtPower(metrics!.power!) : '--'}
+            {(metrics?.power ?? 0) > 0 ? fmtPower(metrics?.power ?? 0) : '--'}
           </span>
         </div>
         {checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0 && (
@@ -941,7 +940,7 @@ const TerminalCard = ({
           <div>
             <span className="text-blue-400">power</span>
             <span className="text-gray-600"> = </span>
-            <span className="text-yellow-400">{Math.round(metrics!.power!)}</span>
+            <span className="text-yellow-400">{Math.round(metrics?.power ?? 0)}</span>
             <span className="text-gray-600">W</span>
           </div>
         )}
@@ -950,7 +949,7 @@ const TerminalCard = ({
             <div className="pt-1">
               <span className="text-gray-600"># Alerts</span>
             </div>
-            {reasons!.map((r, i) => (
+            {(reasons ?? []).map((r, i) => (
               <div key={i}>
                 <span className={r.severity === 'CRIT' ? 'text-red-400' : 'text-yellow-400'}>
                   !
@@ -1047,7 +1046,7 @@ const UltraCompactCard = ({
             )}
             {(metrics?.power ?? 0) > 0 && (
               <span className="font-mono text-[12px] font-bold text-gray-200">
-                ⚡ {fmtPower(metrics!.power!)}
+                ⚡ {fmtPower(metrics?.power ?? 0)}
               </span>
             )}
           </div>
@@ -1055,7 +1054,7 @@ const UltraCompactCard = ({
         {/* Alert tags */}
         {(reasons?.length ?? 0) > 0 && (
           <div className="flex flex-wrap gap-1">
-            {reasons!.slice(0, 2).map((r, i) => (
+            {(reasons ?? []).slice(0, 2).map((r, i) => (
               <span
                 key={i}
                 className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${r.severity === 'CRIT' ? 'bg-status-crit/10 text-status-crit' : 'bg-status-warn/10 text-status-warn'}`}
