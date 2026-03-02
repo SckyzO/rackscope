@@ -452,11 +452,11 @@ export const WorldMapPage = () => {
           actions={controls}
         />
 
+        {/* Stats — top 1/4 boxes */}
+        {!loading && <StatsBar sites={sites} alerts={alerts} />}
+
         {/* Map */}
         <div style={{ height: MAP_HEIGHTS[mapHeight] }}>{mapEl}</div>
-
-        {/* Stats */}
-        {!loading && <StatsBar sites={sites} alerts={alerts} />}
 
         {/* Selected site */}
         {selectedSite && (
