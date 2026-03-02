@@ -83,12 +83,10 @@ function tempLabel(temp: number, warn?: number, crit?: number): string | null {
 }
 
 function glowShadow(status: string, hex: string, enabled: boolean): string {
-  if (!enabled) return '0 8px 40px rgba(0,0,0,0.5)';
-  if (status === 'CRIT')
-    return `0 0 0 1px ${hex}22, 0 12px 48px ${hex}44, 0 4px 16px rgba(0,0,0,0.5)`;
-  if (status === 'WARN')
-    return `0 0 0 1px ${hex}18, 0 8px 36px ${hex}33, 0 4px 16px rgba(0,0,0,0.5)`;
-  return '0 8px 40px rgba(0,0,0,0.5)';
+  if (!enabled) return '0 6px 24px rgba(0,0,0,0.45)';
+  if (status === 'CRIT') return `0 6px 28px ${hex}28, 0 4px 12px rgba(0,0,0,0.45)`;
+  if (status === 'WARN') return `0 6px 24px ${hex}1e, 0 4px 12px rgba(0,0,0,0.45)`;
+  return '0 6px 24px rgba(0,0,0,0.45)';
 }
 
 // ── SVG Arc Gauge ───────────────────────────────────────────────────────────────
