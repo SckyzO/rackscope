@@ -47,6 +47,7 @@ const sidebars = {
     'architecture/data-model',
     'architecture/backend',
     'architecture/frontend',
+    'architecture/dashboard-widgets',
   ],
 
   plugins: [
