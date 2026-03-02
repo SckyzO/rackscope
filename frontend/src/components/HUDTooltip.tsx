@@ -52,11 +52,11 @@ export interface HUDTooltipProps {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-export function fmtPower(watts: number): string {
+function fmtPower(watts: number): string {
   return watts >= 1000 ? `${(watts / 1000).toFixed(1)} kW` : `${Math.round(watts)} W`;
 }
 
-export function resolveStatus(status: string) {
+function resolveStatus(status: string) {
   switch (status) {
     case 'OK':
       return { hex: '#22c55e', twText: 'text-status-ok', twBg: 'bg-status-ok' };
@@ -69,7 +69,7 @@ export function resolveStatus(status: string) {
   }
 }
 
-export function resolveTempColor(temp: number, warn?: number, crit?: number) {
+function resolveTempColor(temp: number, warn?: number, crit?: number) {
   if (crit !== undefined && temp >= crit) return resolveStatus('CRIT');
   if (warn !== undefined && temp >= warn) return resolveStatus('WARN');
   return resolveStatus('OK');
@@ -93,7 +93,7 @@ function glowShadow(status: string, hex: string, enabled: boolean): string {
 
 // ── SVG Arc Gauge ───────────────────────────────────────────────────────────────
 
-export const TempArc = ({ value, warn, crit }: { value: number; warn?: number; crit?: number }) => {
+const TempArc = ({ value, warn, crit }: { value: number; warn?: number; crit?: number }) => {
   const SIZE = 90;
   const cx = SIZE / 2;
   const cy = SIZE / 2 + 4;
