@@ -17,7 +17,7 @@ import { Plus, Minus } from 'lucide-react';
 // @ts-expect-error — world-atlas ships plain JSON, no typings needed
 import worldAtlas from 'world-atlas/countries-110m.json';
 
-export type MapStyle = 'minimal' | 'noc' | 'flat';
+export type MapStyle = 'minimal' | 'noc' | 'flat' | 'retro' | 'midnight';
 
 export interface SiteMarker {
   id: string;
@@ -39,6 +39,8 @@ interface OfflineWorldMapProps {
   zoomControl?: boolean;
   /** Called when a site marker is clicked */
   onSiteClick?: (site: SiteMarker) => void;
+  /** Called on marker hover — null when mouse leaves */
+  onSiteHover?: (site: SiteMarker | null, mousePos?: { x: number; y: number }) => void;
   className?: string;
 }
 
@@ -129,6 +131,60 @@ const STYLES: Record<MapStyle, { dark: StylePreset; light: StylePreset }> = {
       zoomBtnText: 'text-gray-700',
     },
   },
+  // retro — warm parchment / vintage cartography
+  retro: {
+    dark: {
+      fill: '#2a2218',
+      stroke: '#4a3b2a',
+      strokeWidth: 0.6,
+      hover: '#3d3020',
+      background: '#1a1510',
+      markerFill: '#d97706',
+      markerStroke: '#b45309',
+      markerPulse: 'rgba(217,119,6,0.22)',
+      zoomBtnBg: 'bg-yellow-900/60 hover:bg-yellow-800/80',
+      zoomBtnText: 'text-yellow-300',
+    },
+    light: {
+      fill: '#e8dcc8',
+      stroke: '#b8a080',
+      strokeWidth: 0.6,
+      hover: '#ddd0b4',
+      background: '#f5eed8',
+      markerFill: '#b45309',
+      markerStroke: '#92400e',
+      markerPulse: 'rgba(180,83,9,0.2)',
+      zoomBtnBg: 'bg-amber-100 hover:bg-amber-200',
+      zoomBtnText: 'text-amber-800',
+    },
+  },
+  // midnight — near-black, ultra-minimal
+  midnight: {
+    dark: {
+      fill: '#0d0d12',
+      stroke: '#1e1e2a',
+      strokeWidth: 0.5,
+      hover: '#16161f',
+      background: '#06060a',
+      markerFill: '#818cf8',
+      markerStroke: '#6366f1',
+      markerPulse: 'rgba(129,140,248,0.22)',
+      zoomBtnBg: 'bg-indigo-950/70 hover:bg-indigo-900/80',
+      zoomBtnText: 'text-indigo-300',
+    },
+    light: {
+      fill: '#e2e2e8',
+      stroke: '#b0b0c0',
+      strokeWidth: 0.5,
+      hover: '#d5d5e2',
+      background: '#f0f0f5',
+      markerFill: '#4f46e5',
+      markerStroke: '#4338ca',
+      markerPulse: 'rgba(79,70,229,0.18)',
+      zoomBtnBg: 'bg-indigo-100 hover:bg-indigo-200',
+      zoomBtnText: 'text-indigo-700',
+    },
+  },
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -141,6 +197,7 @@ export const OfflineWorldMap = ({
   initialCenter = [10, 20],
   zoomControl = true,
   onSiteClick,
+  onSiteHover,
   className = '',
 }: OfflineWorldMapProps) => {
   const [zoom, setZoom] = useState(initialZoom);
@@ -193,6 +250,13 @@ export const OfflineWorldMap = ({
               key={site.id}
               coordinates={[site.lon, site.lat]}
               onClick={() => onSiteClick?.(site)}
+              onMouseEnter={(e: React.MouseEvent) =>
+                onSiteHover?.(site, { x: e.clientX, y: e.clientY })
+              }
+              onMouseMove={(e: React.MouseEvent) =>
+                onSiteHover?.(site, { x: e.clientX, y: e.clientY })
+              }
+              onMouseLeave={() => onSiteHover?.(null)}
             >
               {/* Large semi-transparent ring creates the pulse halo effect */}
               <circle r={10} fill={theme.markerPulse} stroke="none" />
@@ -201,7 +265,7 @@ export const OfflineWorldMap = ({
                 fill={theme.markerFill}
                 stroke={theme.markerStroke}
                 strokeWidth={1.5}
-                style={{ cursor: onSiteClick ? 'pointer' : 'default' }}
+                style={{ cursor: onSiteClick || onSiteHover ? 'pointer' : 'default' }}
               />
             </Marker>
           ))}

@@ -18,6 +18,7 @@ import { useAppConfigSafe } from '../../contexts/AppConfigContext';
 import { OfflineWorldMap } from '../../components/OfflineWorldMap';
 import type { SiteMarker } from '../../components/OfflineWorldMap';
 import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from '../templates/EmptyPage';
+import { HUDTooltip } from '../../../components/HUDTooltip';
 
 // ── Layout & height persistence ────────────────────────────────────────────────
 
@@ -297,6 +298,11 @@ export const WorldMapPage = () => {
   const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  const [hoveredMarker, setHoveredMarker] = useState<{
+    site: SiteMarker;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const [layout, setLayout] = useState<Layout>(
     () => (localStorage.getItem(LS_LAYOUT) as Layout) || 'stacked'
@@ -427,17 +433,59 @@ export const WorldMapPage = () => {
           initialZoom={mapDefaultZoom}
           zoomControl={mapZoomControl}
           onSiteClick={handleSiteClick}
+          onSiteHover={(site, pos) =>
+            setHoveredMarker(site && pos ? { site, x: pos.x, y: pos.y } : null)
+          }
           className="h-full w-full"
         />
       )}
     </div>
   );
 
+  // ── Marker hover tooltip ──────────────────────────────────────────────────────
+
+  const markerTooltip = hoveredMarker
+    ? (() => {
+        const hSite = sites.find((s) => s.id === hoveredMarker.site.id);
+        const { crit, warn } = hSite ? siteAlertCounts(hSite.id, alerts) : { crit: 0, warn: 0 };
+        const status = crit > 0 ? 'CRIT' : warn > 0 ? 'WARN' : 'OK';
+        return (
+          <HUDTooltip
+            title={hoveredMarker.site.name}
+            subtitle="Site"
+            status={status}
+            enclosure={hSite?.location?.address ?? undefined}
+            checkSummary={
+              hSite
+                ? {
+                    ok: Math.max(0, hSite.rooms.length - crit - warn),
+                    warn,
+                    crit,
+                  }
+                : undefined
+            }
+            details={
+              hSite
+                ? [
+                    {
+                      value: `${hSite.rooms.length} room${hSite.rooms.length !== 1 ? 's' : ''} · ${siteRackCount(hSite)} racks`,
+                      italic: true,
+                    },
+                  ]
+                : []
+            }
+            mousePos={{ x: hoveredMarker.x, y: hoveredMarker.y }}
+          />
+        );
+      })()
+    : null;
+
   // ── Stacked layout ────────────────────────────────────────────────────────────
 
   if (layout === 'stacked') {
     return (
       <div className="space-y-5">
+        {markerTooltip}
         <PageHeader
           title="World Map"
           breadcrumb={
@@ -495,6 +543,7 @@ export const WorldMapPage = () => {
 
   return (
     <div className="flex h-[calc(100vh-120px)] min-h-[600px] flex-col gap-4">
+      {markerTooltip}
       <PageHeader
         title="World Map"
         breadcrumb={

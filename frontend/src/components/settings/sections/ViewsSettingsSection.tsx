@@ -320,7 +320,7 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
         <div className="mt-4">
           <FormSelect
             label="Map style"
-            tooltip="Visual style of the world map. 'Minimal' adapts to dark/light mode. 'NOC' uses glowing teal outlines ideal for wallboards."
+            tooltip="Visual style of the world map. 'Minimal' adapts to dark/light mode. 'NOC' uses glowing teal outlines for wallboards."
             value={m.style ?? 'minimal'}
             onChange={(v) => {
               setMap('style', v);
@@ -332,6 +332,8 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
               { value: 'minimal', label: 'Minimal — adaptive dark/light (default)' },
               { value: 'noc', label: 'NOC — glowing teal for wallboards' },
               { value: 'flat', label: 'Flat — solid fills, crisp borders' },
+              { value: 'retro', label: 'Retro — warm parchment, vintage cartography' },
+              { value: 'midnight', label: 'Midnight — ultra-dark, minimal borders' },
             ]}
           />
         </div>
