@@ -30,6 +30,8 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 }) => {
   const [simulatorSettingsOpen, setSimulatorSettingsOpen] = useState(false);
   const [slurmSettingsOpen, setSlurmSettingsOpen] = useState(false);
+  const [roleInput, setRoleInput] = useState('');
+  const roleInputRef = useRef<HTMLInputElement>(null);
 
   // Demo ribbon visibility — localStorage preference, not saved to app.yaml
   const [ribbonVisible, setRibbonVisible] = useState(
@@ -773,47 +775,55 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 label="Device roles"
                 tooltip="Only devices whose template role matches one of these values will appear in Slurm views. Leave empty to match all."
               >
-                <div className="flex flex-wrap gap-1.5">
+                {/* TagInput — same design as /ui/tag-input */}
+                <div
+                  onClick={() => roleInputRef.current?.focus()}
+                  className="focus-within:border-brand-500 flex min-h-[42px] flex-wrap items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700"
+                >
                   {draft.plugins.slurm.roles.map((role, idx) => (
                     <span
                       key={idx}
-                      className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                      className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
                     >
                       {role}
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={(e) => {
+                          e.stopPropagation();
                           updateSlurm(
                             'roles',
                             draft.plugins.slurm.roles.filter((_, i) => i !== idx)
-                          )
-                        }
-                        className="ml-0.5 rounded-full text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                          );
+                        }}
                       >
                         <X className="h-3 w-3" />
                       </button>
                     </span>
                   ))}
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const input = e.currentTarget.elements[0] as HTMLInputElement;
-                      const val = input.value.trim();
-                      if (val && !draft.plugins.slurm.roles.includes(val)) {
-                        updateSlurm('roles', [...draft.plugins.slurm.roles, val]);
-                        input.value = '';
+                  <input
+                    ref={roleInputRef}
+                    value={roleInput}
+                    onChange={(e) => setRoleInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && roleInput.trim()) {
+                        e.preventDefault();
+                        const val = roleInput.trim().toLowerCase();
+                        if (!draft.plugins.slurm.roles.includes(val))
+                          updateSlurm('roles', [...draft.plugins.slurm.roles, val]);
+                        setRoleInput('');
+                      } else if (
+                        e.key === 'Backspace' &&
+                        !roleInput &&
+                        draft.plugins.slurm.roles.length > 0
+                      ) {
+                        updateSlurm('roles', draft.plugins.slurm.roles.slice(0, -1));
                       }
                     }}
-                  >
-                    <input
-                      type="text"
-                      placeholder="Add role…"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') e.currentTarget.form?.requestSubmit();
-                      }}
-                      className="rounded-full border border-dashed border-gray-300 px-2.5 py-1 text-xs text-gray-500 focus:outline-none dark:border-gray-600 dark:text-gray-400"
-                    />
-                  </form>
+                    className="min-w-[100px] flex-1 border-none bg-transparent text-sm outline-none dark:text-white"
+                    placeholder={
+                      draft.plugins.slurm.roles.length === 0 ? 'Type a role and press Enter' : ''
+                    }
+                  />
                 </div>
               </SettingField>
 
