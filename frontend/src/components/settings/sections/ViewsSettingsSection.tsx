@@ -8,9 +8,7 @@ import {
   Check,
   MousePointerClick,
 } from 'lucide-react';
-import { Server } from 'lucide-react';
 import { useTooltipSettings, TOOLTIP_STYLES } from '../../../hooks/useTooltipSettings';
-import { HUDTooltipCard } from '../../HUDTooltip';
 import { FormToggle } from '../common/FormToggle';
 import { Link } from 'react-router-dom';
 import type { ConfigDraft } from '../useSettingsConfig';
@@ -78,92 +76,44 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 const inputCls =
   'focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white';
 
-// ── Tooltip style preview data (same WARN compute node for every preview) ─────
-const PREVIEW_PROPS = {
-  title: 'COMPUTE125',
-  subtitle: 'Node',
-  status: 'WARN' as const,
-  enclosure: 'BullSequana X410 · 1U Twin CPU',
-  icon: Server,
-  checkSummary: { ok: 4, warn: 1, crit: 0 },
-  details: [{ label: 'Location', value: 'RACK U14 · S2', italic: true }],
-  reasons: [{ label: 'IPMI temperature high', severity: 'WARN' }],
-  metrics: { temp: 39.8, tempWarn: 38, tempCrit: 45, power: 285, powerMax: 350 },
-  mousePos: { x: 0, y: 0 },
-};
-
-// Scale factors per style to fit the preview container (100px wide × 86px tall)
-const PREVIEW_SCALE: Record<string, number> = {
-  tinted: 0.3,
-  compact: 0.3,
-  glass: 0.3,
-  split: 0.32,
-  terminal: 0.35,
-  ultracompact: 0.45,
-};
-
 const TooltipStyleSection = () => {
   const { style, aura, setStyle, setAura } = useTooltipSettings();
+  const sorted = [...TOOLTIP_STYLES].sort((a, b) => a.label.localeCompare(b.label));
   return (
     <SectionCard
       title="Tooltip style"
-      desc="Choose how node/device tooltips look in rack views"
+      desc="Applies to all tooltips across Rackscope (nodes, devices, racks, PDUs…)"
       icon={MousePointerClick}
       iconColor="text-brand-500"
       iconBg="bg-brand-50 dark:bg-brand-500/10"
     >
-      {/* Visual style grid */}
-      <div className="grid grid-cols-3 gap-3">
-        {TOOLTIP_STYLES.map((s) => {
-          const scale = PREVIEW_SCALE[s.id] ?? 0.32;
-          const previewW = 320;
-          const previewH = Math.round(previewW * 1.1);
-          const containerW = Math.round(previewW * scale);
-          const containerH = Math.round(previewH * scale);
-          return (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setStyle(s.id)}
-              className={`flex flex-col items-center gap-2 rounded-xl border-2 p-2.5 transition-all ${
-                style === s.id
-                  ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
-                  : 'border-transparent bg-gray-100 hover:border-gray-300 dark:bg-gray-800/50 dark:hover:border-gray-600'
-              }`}
-            >
-              {/* Scaled-down real tooltip preview */}
-              <div
-                className="overflow-hidden rounded-lg bg-gray-950"
-                style={{ width: containerW, height: containerH }}
-              >
-                <div
-                  style={{
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'top left',
-                    width: previewW,
-                    pointerEvents: 'none',
-                    userSelect: 'none',
-                  }}
-                >
-                  <HUDTooltipCard style={s.id} aura={false} {...PREVIEW_PROPS} />
-                </div>
+      {/* Style list — alphabetical */}
+      <div className="flex flex-col gap-2">
+        {sorted.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => setStyle(s.id)}
+            className={`flex items-center justify-between rounded-xl border-2 px-3.5 py-3 text-left transition-all ${
+              style === s.id
+                ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
+                : 'border-transparent bg-gray-100 hover:border-gray-300 dark:bg-gray-800/50 dark:hover:border-gray-600'
+            }`}
+          >
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+                {s.label}
+                {s.id === 'tinted' && (
+                  <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[9px] font-bold text-gray-500 uppercase dark:bg-gray-700 dark:text-gray-400">
+                    défaut
+                  </span>
+                )}
               </div>
-              {/* Label */}
-              <div className="text-center">
-                <div
-                  className={`text-[11px] font-semibold ${style === s.id ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
-                >
-                  {s.label}
-                  {s.id === 'tinted' && (
-                    <span className="ml-1 rounded bg-gray-200 px-1 text-[9px] font-bold text-gray-500 uppercase dark:bg-gray-700 dark:text-gray-400">
-                      défaut
-                    </span>
-                  )}
-                </div>
-              </div>
-            </button>
-          );
-        })}
+              <div className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">{s.desc}</div>
+            </div>
+            {style === s.id && <Check className="text-brand-500 h-4 w-4 shrink-0" />}
+          </button>
+        ))}
       </div>
 
       {/* Aura toggle */}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { HUDTooltip } from '../../../components/HUDTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   RefreshCw,
@@ -162,83 +162,49 @@ const RackCell = ({
 }: RackCellProps) => {
   const color = HC[state] ?? HC.UNKNOWN;
   const dimmed = isHighlighted === false;
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [hovered, setHovered] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseEnter = () => {
-    if (wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect();
-      setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top });
-    }
-    setShowTooltip(true);
+  const handleMouseEnter = (e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
+    setHovered(true);
   };
-  const handleMouseLeave = () => {
-    setShowTooltip(false);
+  const handleMouseMove = (e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
   };
+  const handleMouseLeave = () => setHovered(false);
 
   const deviceCount = rack.devices?.length ?? 0;
   // Assumes average device height of 2U; rack is considered "full" at half
   // the U-count worth of devices, giving a conservative occupancy estimate.
   const occupancy = Math.min(100, (deviceCount / (rack.u_height / 2)) * 100);
 
-  const tooltip = showTooltip
-    ? createPortal(
-        <div
-          className="pointer-events-none fixed z-[9999] min-w-[240px] overflow-hidden rounded-xl bg-gray-900 shadow-[0_8px_40px_rgba(0,0,0,0.55)] ring-1 ring-white/10 dark:bg-gray-800"
-          style={{ left: tooltipPos.x, top: tooltipPos.y - 8, transform: 'translate(-50%, -100%)' }}
-        >
-          <div
-            className="px-3.5 pt-3 pb-2.5"
-            style={{
-              background: `linear-gradient(135deg, ${color}22 0%, transparent 80%)`,
-              borderBottom: `1px solid ${color}25`,
-            }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-sm leading-tight font-bold text-white">{rack.name}</p>
-              <span
-                className="mt-0.5 shrink-0 rounded px-2 py-0.5 font-mono text-[10px] font-bold tracking-wide uppercase"
-                style={{ backgroundColor: `${color}30`, color }}
-              >
-                {state}
-              </span>
-            </div>
-            <p className="mt-1 font-mono text-[10px] text-gray-500">{rack.id}</p>
-          </div>
-          <div className="space-y-2.5 px-3.5 py-3">
-            <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-xs text-gray-400">Occupancy</span>
-                <span className="font-mono text-xs text-gray-300">
-                  {deviceCount} device{deviceCount !== 1 ? 's' : ''} / {rack.u_height}U
-                </span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-gray-700">
-                <div
-                  className="h-2 rounded-full"
-                  style={{ width: `${occupancy}%`, backgroundColor: color }}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-gray-700/50 pt-2.5">
-              <span className="text-xs text-gray-400">Height</span>
-              <span className="text-right font-mono text-xs text-gray-200">{rack.u_height}U</span>
-              {deviceCount > 0 && (
-                <>
-                  <span className="text-xs text-gray-400">Devices</span>
-                  <span className="text-right text-xs font-semibold text-gray-200">
-                    {deviceCount}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-gray-900 dark:border-t-gray-800" />
-        </div>,
-        document.body
-      )
-    : null;
+  const checkSummary = nodeCounts
+    ? {
+        ok: Math.max(0, nodeCounts.total - nodeCounts.crit - nodeCounts.warn),
+        warn: nodeCounts.warn,
+        crit: nodeCounts.crit,
+      }
+    : undefined;
+
+  const tooltip = hovered ? (
+    <HUDTooltip
+      title={rack.name}
+      subtitle="Rack"
+      status={state}
+      details={[
+        { label: 'ID', value: rack.id, italic: true },
+        { label: 'Height', value: `${rack.u_height}U` },
+        {
+          label: 'Occupancy',
+          value: `${deviceCount} device${deviceCount !== 1 ? 's' : ''} · ${Math.round(occupancy)}%`,
+        },
+      ]}
+      checkSummary={checkSummary}
+      mousePos={mousePos}
+    />
+  ) : null;
 
   const ringClass = [
     isSelected ? 'ring-brand-500 ring-2 ring-offset-1 dark:ring-offset-gray-900' : '',
@@ -253,6 +219,7 @@ const RackCell = ({
         ref={wrapperRef}
         className="relative"
         onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         <button
@@ -277,6 +244,7 @@ const RackCell = ({
         ref={wrapperRef}
         className="relative flex flex-col items-center gap-1"
         onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         <button
@@ -320,6 +288,7 @@ const RackCell = ({
         ref={wrapperRef}
         className="relative flex flex-col items-center gap-1.5"
         onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         <button
@@ -381,6 +350,7 @@ const RackCell = ({
         ref={wrapperRef}
         className="relative flex flex-col items-center gap-1.5"
         onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         <button
@@ -439,6 +409,7 @@ const RackCell = ({
         ref={wrapperRef}
         className="relative flex flex-col items-center gap-1.5"
         onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         <button
@@ -505,6 +476,7 @@ const RackCell = ({
         ref={wrapperRef}
         className="relative flex flex-col items-center gap-1.5"
         onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         <button
@@ -560,6 +532,7 @@ const RackCell = ({
         ref={wrapperRef}
         className="relative flex flex-col items-center gap-1.5"
         onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         <button
@@ -619,6 +592,7 @@ const RackCell = ({
         ref={wrapperRef}
         className="relative flex flex-col items-center gap-1.5"
         onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         <button
@@ -680,6 +654,7 @@ const RackCell = ({
         ref={wrapperRef}
         className="relative flex flex-col items-center gap-1.5"
         onMouseEnter={handleMouseEnter}
+        onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         <button
@@ -744,6 +719,7 @@ const RackCell = ({
       ref={wrapperRef}
       className="relative flex flex-col items-center gap-1.5"
       onMouseEnter={handleMouseEnter}
+      onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
       <button
