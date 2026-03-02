@@ -843,7 +843,7 @@ export const SlurmWallV2Page = () => {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col p-6">
+    <div className="flex h-full min-h-0 flex-col">
       <PageHeader
         title="Slurm Wall"
         breadcrumb={

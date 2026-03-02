@@ -1129,7 +1129,7 @@ export const ClusterPage = () => {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full min-h-0 flex-col p-6">
+    <div className="flex h-full min-h-0 flex-col">
       {/* ── Header using PageHeader ── */}
       <PageHeader
         title="Cluster Overview"
