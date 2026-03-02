@@ -28,4 +28,7 @@ metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
 
 # Additional catalogs merged on top of the primary (later = higher priority)
 # Example: add metrics_slurm.yaml when Slurm integration is active
-metrics_catalogs: []
+metrics_catalogs:
+  - id: slurm
+    path: config/plugins/simulator/metrics/metrics_slurm.yaml
+    enabled: true

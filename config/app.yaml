@@ -81,7 +81,10 @@ plugins:
     overrides_path: config/plugins/simulator/overrides/overrides.yaml
     default_ttl_seconds: 120
     metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
-    metrics_catalogs: []
+    metrics_catalogs:
+      - id: slurm
+        path: config/plugins/simulator/metrics/metrics_slurm.yaml
+        enabled: true
   slurm:
     enabled: true
     metric: slurm_node_status

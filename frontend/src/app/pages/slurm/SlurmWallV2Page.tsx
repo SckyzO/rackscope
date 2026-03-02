@@ -26,7 +26,7 @@ import type { Device, DeviceTemplate, Room, RoomSummary, RackNodeState } from '.
 
 type WallView = 'compact' | 'rack' | 'columns';
 type WallLayout = 'scroll' | 'wrap' | 'wrap-auto';
-type CardSize = 'sm' | 'md' | 'lg' | 'auto';
+type CardSize = 'sm' | 'md' | 'lg';
 interface WallConfig {
   view: WallView;
   layout: WallLayout;
@@ -52,7 +52,7 @@ const SEV: Record<string, string> = {
   CRIT: '#ef4444',
   UNKNOWN: '#374151',
 };
-const CARD_W: Record<CardSize, number> = { sm: 180, md: 260, lg: 340, auto: 0 }; // 0 = auto-calculated
+const CARD_W: Record<CardSize, number> = { sm: 180, md: 260, lg: 340 };
 const LS = 'rackscope.slurmwall.config';
 const DEF: WallConfig = {
   view: 'compact',
@@ -349,7 +349,6 @@ const ConfigPanel = ({
           <SLbl>Card size</SLbl>
           <SegBtns
             opts={[
-              { label: 'Auto', val: 'auto' as CardSize },
               { label: 'S', val: 'sm' as CardSize },
               { label: 'M', val: 'md' as CardSize },
               { label: 'L', val: 'lg' as CardSize },
@@ -357,9 +356,9 @@ const ConfigPanel = ({
             cur={cfg.cardSize}
             onChange={(v) => set('cardSize', v)}
           />
-          {cfg.cardSize === 'auto' && (
+          {cfg.layout === 'wrap-auto' && (
             <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-600">
-              Rack &amp; grid: auto-fits all racks in available width.
+              In auto-size mode, card height is calculated to fit all racks in the viewport.
             </p>
           )}
           <SLbl>Grouping</SLbl>
@@ -696,12 +695,16 @@ export const SlurmWallV2Page = () => {
   const [hover, setHover] = useState<HoverPayload | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerH, setContainerH] = useState(0);
+  const [containerW, setContainerW] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const obs = new ResizeObserver((e) => setContainerH(e[0].contentRect.height));
+    const obs = new ResizeObserver((e) => {
+      setContainerH(e[0].contentRect.height);
+      setContainerW(e[0].contentRect.width);
+    });
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
@@ -803,19 +806,23 @@ export const SlurmWallV2Page = () => {
 
   const scrollH = containerH > 0 ? Math.min(Math.max(200, containerH - 40), 900) : 700;
 
-  // Auto card width: fit as many racks as possible in the container, min 120px
-  const autoCardW = useMemo(() => {
-    if (cfg.cardSize !== 'auto' || containerH === 0) return 0;
+  // wrap-auto: height auto-calculated so all racks fit without scrolling (ClusterPage pattern)
+  // Width = S/M/L setting; height = (containerH - padding) / rows
+  const wrapAutoCardH = useMemo(() => {
+    if (cfg.layout !== 'wrap-auto' || containerW === 0 || containerH === 0) return scrollH;
     const totalRacks = groups.reduce((n, g) => n + g.entries.length, 0);
-    if (totalRacks === 0) return 260;
-    // In scroll mode: distribute evenly in the available width (approx viewport - sidebar)
-    const approxW = window.innerWidth - 280; // subtract sidebar
+    if (totalRacks === 0) return scrollH;
     const gap = 20;
-    const ideal = Math.floor((approxW - gap) / totalRacks) - gap;
-    return Math.max(120, Math.min(ideal, 400));
-  }, [cfg.cardSize, groups, containerH]);
+    const pad = 40;
+    const usableW = Math.max(1, containerW - pad);
+    const usableH = Math.max(1, containerH - pad);
+    const cardsPerRow = Math.max(1, Math.floor((usableW + gap) / (CARD_W[cfg.cardSize] + gap)));
+    const rows = Math.ceil(totalRacks / cardsPerRow);
+    const h = Math.floor((usableH - (rows - 1) * gap) / rows);
+    return Math.max(200, h);
+  }, [cfg.layout, cfg.cardSize, groups, containerW, containerH, scrollH]);
 
-  const cardW = cfg.cardSize === 'auto' ? autoCardW || 260 : CARD_W[cfg.cardSize];
+  const cardW = CARD_W[cfg.cardSize];
 
   const renderRack = (e: RackEntry, rackH?: number) => {
     const k = e.rack.id;
@@ -950,7 +957,9 @@ export const SlurmWallV2Page = () => {
         ) : cfg.layout === 'scroll' ? (
           <div className="flex h-full items-center overflow-x-auto overflow-y-hidden">
             <div className="flex min-h-0 gap-5 p-5" style={{ height: scrollH }}>
-              {groups.flatMap(({ entries }) => entries).map((e) => renderRack(e, scrollH))}
+              {groups
+                .flatMap(({ entries }) => entries)
+                .map((e) => renderRack(e, cfg.layout === 'wrap-auto' ? wrapAutoCardH : scrollH))}
             </div>
           </div>
         ) : cfg.layout === 'wrap' ? (
@@ -968,7 +977,9 @@ export const SlurmWallV2Page = () => {
                     </div>
                   )}
                   <div className="flex flex-wrap gap-5">
-                    {entries.map((e) => renderRack(e, scrollH))}
+                    {entries.map((e) =>
+                      renderRack(e, cfg.layout === 'wrap-auto' ? wrapAutoCardH : scrollH)
+                    )}
                   </div>
                 </div>
               ))}
@@ -976,7 +987,9 @@ export const SlurmWallV2Page = () => {
           </div>
         ) : (
           <div className="flex h-full flex-wrap content-start gap-5 overflow-hidden p-5">
-            {groups.flatMap(({ entries }) => entries).map((e) => renderRack(e, scrollH))}
+            {groups
+              .flatMap(({ entries }) => entries)
+              .map((e) => renderRack(e, cfg.layout === 'wrap-auto' ? wrapAutoCardH : scrollH))}
           </div>
         )}
       </div>

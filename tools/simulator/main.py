@@ -184,26 +184,27 @@ def load_metrics_catalogs(paths):
 
 
 def resolve_metrics_catalogs(sim_cfg):
+    # Primary catalog is always first
+    primary = sim_cfg.get(
+        "metrics_catalog_path", "/app/config/plugins/simulator/metrics/metrics_full.yaml"
+    )
+    paths = [primary]
+    # Additional catalogs merged on top (later = higher priority)
     catalogs = sim_cfg.get("metrics_catalogs")
-    paths = []
     if isinstance(catalogs, list):
         for item in catalogs:
             if isinstance(item, str):
-                paths.append(item)
+                if item not in paths:
+                    paths.append(item)
                 continue
             if not isinstance(item, dict):
                 continue
             if item.get("enabled") is False:
                 continue
             path = item.get("path")
-            if isinstance(path, str) and path:
+            if isinstance(path, str) and path and path not in paths:
                 paths.append(path)
-    if paths:
-        return paths
-    single_path = sim_cfg.get(
-        "metrics_catalog_path", "/app/config/plugins/simulator/metrics/metrics_full.yaml"
-    )
-    return [single_path]
+    return paths
 
 
 def build_metric_registry(metric_defs):
@@ -252,7 +253,10 @@ def set_metric_value(name, base_labels, value, context):
     if not definition or not gauge:
         return
     labels = resolve_labels(definition, base_labels, context)
-    gauge.labels(**labels).set(value)
+    if labels:
+        gauge.labels(**labels).set(value)
+    else:
+        gauge.set(value)  # Gauge with no labels (global metrics)
 
 
 def load_topology_data(path):
@@ -506,8 +510,31 @@ def get_fallback_supported_metrics():
         "ipmi_temperature_state": "node",
         "ipmi_voltage_state": "node",
         "ipmi_up": "node",
-        # Slurm
+        # Slurm — per-node (node collector)
         "slurm_node_status": "node",
+        "slurm_node_cpu_alloc": "node",
+        "slurm_node_cpu_idle": "node",
+        "slurm_node_cpu_total": "node",
+        "slurm_node_mem_alloc": "node",
+        "slurm_node_mem_total": "node",
+        # Slurm — cluster-wide aggregates (cpus / nodes / gpus / partitions / scheduler)
+        "slurm_cpus_alloc": "rack",
+        "slurm_cpus_idle": "rack",
+        "slurm_cpus_total": "rack",
+        "slurm_nodes_alloc": "rack",
+        "slurm_nodes_idle": "rack",
+        "slurm_nodes_down": "rack",
+        "slurm_nodes_drain": "rack",
+        "slurm_nodes_total": "rack",
+        "slurm_gpus_alloc": "rack",
+        "slurm_gpus_idle": "rack",
+        "slurm_gpus_total": "rack",
+        "slurm_gpus_utilization": "rack",
+        "slurm_partition_cpus_allocated": "rack",
+        "slurm_partition_cpus_idle": "rack",
+        "slurm_partition_cpus_total": "rack",
+        "slurm_partition_jobs_running": "rack",
+        "slurm_partition_jobs_pending": "rack",
         # E-Series storage
         "eseries_exporter_collect_error": "node",
         "eseries_storage_system_status": "node",
@@ -754,6 +781,7 @@ def simulate():
         topo_data = load_topology_data(TOPOLOGY_PATH)
         targets = load_topology_nodes(topo_data, device_templates)
         forced_slurm_status = {}
+        _slurm_agg: dict = {}  # cluster-wide aggregates accumulated during node loop
         if isinstance(slurm_random_statuses, dict):
             available_nodes = [target["node_id"] for target in targets if target.get("node_id")]
             if isinstance(slurm_random_match, list) and slurm_random_match:
@@ -1218,22 +1246,94 @@ def simulate():
                 elif final_load >= 70:
                     slurm_status = "allocated"
             partitions = ["all", "cpu"]
-            if "gpu" in nid:
+            is_gpu_node = "gpu" in nid or "visu" in nid
+            if is_gpu_node:
                 partitions.append("gpu")
+
+            # CPU / memory specs per node type (realistic values)
+            node_cpu_total = 128 if is_gpu_node else 64
+            node_mem_total_mb = 512 * 1024 if is_gpu_node else 256 * 1024  # MB
+            node_cpu_alloc = (
+                int(node_cpu_total * final_load / 100) if slurm_status == "allocated" else 0
+            )
+            node_mem_alloc_mb = (
+                int(node_mem_total_mb * min(final_load / 100 * 0.8 + 0.1, 0.95))
+                if slurm_status == "allocated"
+                else 0
+            )
+
             if metric_enabled("slurm_node_status", "node", node_id=target["node_id"]):
                 for partition in partitions:
+                    node_labels = {
+                        "status": slurm_status,
+                        "partition": partition,
+                        "node_id": target["node_id"],
+                    }
                     for status_name in SLURM_STATUS_LEVELS:
-                        value = 1 if status_name == slurm_status else 0
                         set_metric_value(
                             "slurm_node_status",
                             base_labels,
-                            value,
+                            1 if status_name == slurm_status else 0,
                             {
                                 "status": status_name,
                                 "partition": partition,
                                 "node_id": target["node_id"],
                             },
                         )
+
+                    # Per-node CPU / memory (slurm_node_* from node collector)
+                    for mname, val in [
+                        ("slurm_node_cpu_alloc", node_cpu_alloc),
+                        ("slurm_node_cpu_total", node_cpu_total),
+                        ("slurm_node_mem_alloc", node_mem_alloc_mb),
+                        ("slurm_node_mem_total", node_mem_total_mb),
+                    ]:
+                        if metric_enabled(mname, "node", node_id=target["node_id"]):
+                            set_metric_value(mname, base_labels, val, node_labels)
+
+            # Accumulate cluster-wide aggregates (emitted after the node loop)
+            _stt = slurm_status
+            _slurm_agg.setdefault("cpu_total", 0)
+            _slurm_agg.setdefault("cpu_alloc", 0)
+            _slurm_agg.setdefault("cpu_idle", 0)
+            _slurm_agg.setdefault("nodes_total", 0)
+            _slurm_agg.setdefault("nodes_alloc", 0)
+            _slurm_agg.setdefault("nodes_idle", 0)
+            _slurm_agg.setdefault("nodes_down", 0)
+            _slurm_agg.setdefault("nodes_drain", 0)
+            _slurm_agg.setdefault("gpu_total", 0)
+            _slurm_agg.setdefault("gpu_alloc", 0)
+            _slurm_agg.setdefault("partitions", {})
+            _slurm_agg["cpu_total"] += node_cpu_total
+            _slurm_agg["cpu_alloc"] += node_cpu_alloc
+            _slurm_agg["cpu_idle"] += (
+                node_cpu_total - node_cpu_alloc if _stt not in ("down", "drain") else 0
+            )
+            _slurm_agg["nodes_total"] += 1
+            if _stt == "allocated":
+                _slurm_agg["nodes_alloc"] += 1
+            elif _stt == "idle":
+                _slurm_agg["nodes_idle"] += 1
+            elif _stt == "down":
+                _slurm_agg["nodes_down"] += 1
+            elif _stt in ("drain", "draining", "drained"):
+                _slurm_agg["nodes_drain"] += 1
+            if is_gpu_node:
+                _slurm_agg["gpu_total"] += 4  # assume 4 GPUs per GPU node
+                if _stt == "allocated":
+                    _slurm_agg["gpu_alloc"] += 4
+            for part in partitions:
+                p = _slurm_agg["partitions"].setdefault(
+                    part,
+                    {"cpu_alloc": 0, "cpu_idle": 0, "cpu_total": 0, "jobs_run": 0, "jobs_pend": 0},
+                )
+                p["cpu_total"] += node_cpu_total
+                p["cpu_alloc"] += node_cpu_alloc
+                if _stt == "allocated":
+                    p["jobs_run"] += 1
+                    p["cpu_idle"] += 0
+                else:
+                    p["cpu_idle"] += node_cpu_total
 
             state_value = 2 if status == 2 else 1 if status == 1 else 0
             if metric_enabled("ipmi_fan_speed_state", "node", node_id=target["node_id"]):
@@ -1270,6 +1370,50 @@ def simulate():
                         crit_value if _es_label == "failed" else 0,
                         {"status": _es_label},
                     )
+
+        # ── Emit cluster-wide Slurm aggregates (slurm_exporter format) ──────────
+        print(
+            f"[DEBUG] _slurm_agg={len(_slurm_agg)} keys, metric_enabled(slurm_cpus_alloc)={metric_enabled('slurm_cpus_alloc', 'rack')}, in METRICS_DEFS={('slurm_cpus_alloc' in METRICS_DEFS)}, in METRICS={('slurm_cpus_alloc' in METRICS)}"
+        )
+        if _slurm_agg:
+            _ag = _slurm_agg
+            empty_labels: dict = {}
+            for mname, val in [
+                ("slurm_cpus_alloc", _ag.get("cpu_alloc", 0)),
+                ("slurm_cpus_idle", _ag.get("cpu_idle", 0)),
+                ("slurm_cpus_total", _ag.get("cpu_total", 0)),
+                ("slurm_nodes_alloc", _ag.get("nodes_alloc", 0)),
+                ("slurm_nodes_idle", _ag.get("nodes_idle", 0)),
+                ("slurm_nodes_down", _ag.get("nodes_down", 0)),
+                ("slurm_nodes_drain", _ag.get("nodes_drain", 0)),
+                ("slurm_nodes_total", _ag.get("nodes_total", 0)),
+                ("slurm_gpus_alloc", _ag.get("gpu_alloc", 0)),
+                ("slurm_gpus_idle", _ag.get("gpu_total", 0) - _ag.get("gpu_alloc", 0)),
+                ("slurm_gpus_total", _ag.get("gpu_total", 0)),
+            ]:
+                if metric_enabled(mname, "rack"):
+                    set_metric_value(mname, empty_labels, val, {})
+
+            gpu_total = _ag.get("gpu_total", 0)
+            if gpu_total > 0 and metric_enabled("slurm_gpus_utilization", "rack"):
+                set_metric_value(
+                    "slurm_gpus_utilization", empty_labels, _ag.get("gpu_alloc", 0) / gpu_total, {}
+                )
+
+            # Per-partition aggregates
+            for part, pdata in _ag.get("partitions", {}).items():
+                for mname, val in [
+                    ("slurm_partition_cpus_allocated", pdata.get("cpu_alloc", 0)),
+                    ("slurm_partition_cpus_idle", pdata.get("cpu_idle", 0)),
+                    ("slurm_partition_cpus_total", pdata.get("cpu_total", 0)),
+                    ("slurm_partition_jobs_running", pdata.get("jobs_run", 0)),
+                    (
+                        "slurm_partition_jobs_pending",
+                        max(0, int(pdata.get("jobs_run", 0) * random.uniform(0.1, 0.4))),
+                    ),
+                ]:
+                    if metric_enabled(mname, "rack"):
+                        set_metric_value(mname, empty_labels, val, {"partition": part})
 
         for rack_id, info in rack_info.items():
             if (
