@@ -9,7 +9,8 @@ import {
   AlertTriangle,
   HelpCircle,
 } from 'lucide-react';
-import { DeviceChassis, HUDTooltip } from '../../../components/RackVisualizer';
+import { DeviceChassis } from '../../../components/RackVisualizer';
+import { HUDTooltip } from '../../../components/HUDTooltip';
 
 // Mirrors HUDTooltip's internal prop shape — not exported from RackVisualizer,
 // so redeclared here to keep TypeScript strict without importing internals.

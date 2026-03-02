@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { RotateCcw, LayoutGrid, Columns } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
-import { HUDTooltip } from '../../../components/RackVisualizer';
+import { HUDTooltip } from '../../../components/HUDTooltip';
 import { api } from '../../../services/api';
 import type {
   Catalog,

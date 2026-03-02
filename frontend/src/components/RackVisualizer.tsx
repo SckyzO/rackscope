@@ -11,14 +11,8 @@ import type {
   AlertCheck,
 } from '../types';
 import { expandInstanceMap, type InstanceInput } from '../utils/instances';
-export type {
-  TooltipReason,
-  HUDTooltipMetrics,
-  HUDTooltipCheckSummary,
-  HUDTooltipProps,
-} from './HUDTooltip';
-export { HUDTooltip } from './HUDTooltip';
 import type { TooltipReason, HUDTooltipProps } from './HUDTooltip';
+import { HUDTooltip } from './HUDTooltip';
 
 // --- Core Visualizers ---
 

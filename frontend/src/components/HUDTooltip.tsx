@@ -15,6 +15,7 @@ import { createPortal } from 'react-dom';
 import { Zap } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTooltipSettings } from '../hooks/useTooltipSettings';
+import type { TooltipStyle } from '../hooks/useTooltipSettings';
 
 // ── Shared types ────────────────────────────────────────────────────────────────
 
@@ -986,8 +987,6 @@ const UltraCompactCard = ({
 // HUDTooltipCard — picks variant based on style prop
 // Used both by HUDTooltip (portal) and by the settings visual picker
 // ══════════════════════════════════════════════════════════════════════════════
-
-import type { TooltipStyle } from '../hooks/useTooltipSettings';
 
 interface CardProps extends HUDTooltipProps {
   style: TooltipStyle;
