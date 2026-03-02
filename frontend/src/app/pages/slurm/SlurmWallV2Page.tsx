@@ -516,10 +516,8 @@ const RackCard = ({
         </span>
       </div>
       <div
-        className="min-h-0 flex-1 bg-gray-950 p-1"
-        style={
-          cardHeight ? { height: cardHeight - 44 } : { height: `${(rack.u_height ?? 42) * 14}px` }
-        }
+        className="shrink-0 bg-gray-950 p-1"
+        style={{ height: cardHeight ? cardHeight - 44 : (rack.u_height ?? 42) * 14 }}
       >
         <RackElevation
           rack={rack as never}
@@ -950,14 +948,14 @@ export const SlurmWallV2Page = () => {
                       <span className="text-[10px] text-gray-500">({entries.length})</span>
                     </div>
                   )}
-                  <div className="flex flex-wrap gap-5">{entries.map(renderRack)}</div>
+                  <div className="flex flex-wrap gap-5">{entries.map((e) => renderRack(e, scrollH))}</div>
                 </div>
               ))}
             </div>
           </div>
         ) : (
           <div className="flex h-full flex-wrap content-start gap-5 overflow-hidden p-5">
-            {groups.flatMap(({ entries }) => entries).map(renderRack)}
+            {groups.flatMap(({ entries }) => entries).map((e) => renderRack(e, scrollH))}
           </div>
         )}
       </div>
