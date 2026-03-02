@@ -880,7 +880,7 @@ export const SlurmWallV2Page = () => {
           <StatChip icon={ServerIcon} value={stats.total} label="nodes" color="text-gray-400" />
           <div className="ml-2 flex items-center gap-3 border-l border-gray-200 pl-3 dark:border-gray-700">
             {(['ok', 'warn', 'crit', 'info'] as const)
-              .filter((sev) => severityColors[sev] && (statusMap[sev]?.length ?? 0) > 0)
+              .filter((sev) => severityColors[sev])
               .map((sev) => {
                 const color = severityColors[sev] ?? SEV.UNKNOWN;
                 const examples = (statusMap[sev] ?? []).slice(0, 2).join(' / ');
