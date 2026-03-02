@@ -679,6 +679,8 @@ export const SlurmWallV2Page = () => {
   >({});
   const [roles, setRoles] = useState<string[]>(['compute', 'visu']);
   const [unlabeled, setUnlabeled] = useState(false);
+  const [severityColors, setSeverityColors] = useState<Record<string, string>>(SEV);
+  const [statusMap, setStatusMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [hover, setHover] = useState<HoverPayload | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -717,6 +719,9 @@ export const SlurmWallV2Page = () => {
       if (Array.isArray(r) && r.length > 0) setRoles(r.map((x: string) => x.toLowerCase()));
       if (typeof appCfg?.plugins?.slurm?.include_unlabeled === 'boolean')
         setUnlabeled(appCfg.plugins.slurm.include_unlabeled);
+      if (appCfg?.plugins?.slurm?.severity_colors)
+        setSeverityColors({ ...SEV, ...appCfg.plugins.slurm.severity_colors });
+      if (appCfg?.plugins?.slurm?.status_map) setStatusMap(appCfg.plugins.slurm.status_map);
       const nm: Record<string, { severity: string; status: string; partitions: string[] }> = {};
       for (const n of slurm?.nodes ?? [])
         nm[n.node] = { severity: n.severity, status: n.status, partitions: n.partitions ?? [] };
@@ -874,16 +879,33 @@ export const SlurmWallV2Page = () => {
           )}
           <StatChip icon={ServerIcon} value={stats.total} label="nodes" color="text-gray-400" />
           <div className="ml-2 flex items-center gap-3 border-l border-gray-200 pl-3 dark:border-gray-700">
-            {[
-              { l: 'OK / Idle', c: SEV.OK },
-              { l: 'WARN', c: SEV.WARN },
-              { l: 'CRIT / Down', c: SEV.CRIT },
-            ].map(({ l, c }) => (
-              <div key={l} className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-[2px]" style={{ backgroundColor: c }} />
-                <span className="text-xs text-gray-500 dark:text-gray-400">{l}</span>
-              </div>
-            ))}
+            {(['ok', 'warn', 'crit', 'info'] as const)
+              .filter((sev) => severityColors[sev] && (statusMap[sev]?.length ?? 0) > 0)
+              .map((sev) => {
+                const color = severityColors[sev] ?? SEV.UNKNOWN;
+                const examples = (statusMap[sev] ?? []).slice(0, 2).join(' / ');
+                return (
+                  <div key={sev} className="flex items-center gap-1.5">
+                    <span
+                      className="h-2.5 w-2.5 rounded-[2px]"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="font-medium uppercase">{sev}</span>
+                      {examples && (
+                        <span className="ml-1 text-gray-400 dark:text-gray-600">({examples})</span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            <div className="flex items-center gap-1.5">
+              <span
+                className="h-2.5 w-2.5 rounded-[2px]"
+                style={{ backgroundColor: SEV.UNKNOWN }}
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-400">Unknown</span>
+            </div>
           </div>
         </div>
       )}
