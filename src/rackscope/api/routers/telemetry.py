@@ -210,7 +210,7 @@ async def get_rack_state(
     if include_metrics and rack and catalog:
         # Collect device metrics (nodes)
         nodes_metrics = await metrics_service.collect_rack_devices_metrics(
-            rack=rack, catalog=catalog, prom_client=prom_client
+            rack=rack, catalog=catalog, prom_client=prom_client, library=METRICS_LIBRARY
         )
         # Collect component metrics (PDU, switches, etc.)
         # Pass METRICS_LIBRARY so the service resolves library IDs (e.g. 'pdu_active_power')

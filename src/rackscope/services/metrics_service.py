@@ -263,6 +263,7 @@ async def collect_device_metrics(
     rack_id: str,
     template: DeviceTemplate,
     prom_client: PrometheusClient,
+    library: Optional[MetricsLibrary] = None,
 ) -> Dict[str, Dict[str, float]]:
     """
     Collect metrics for a single device based on its template.
@@ -287,15 +288,21 @@ async def collect_device_metrics(
 
     instances = expand_device_instances(device)
 
-    queries = {}
-    for metric_name in template.metrics:
+    # Map prometheus_name → query. Use the Prometheus metric name as key so that
+    # results are stored under the real metric name (e.g. "node_temperature_celsius")
+    # rather than the library ID ("node_temperature"), matching what collect_rack_state
+    # expects when it reads m.get("node_temperature_celsius").
+    queries: Dict[str, str] = {}
+    for metric_id in template.metrics:
+        metric_def = library.get_metric(metric_id) if library else None
+        prometheus_name = metric_def.metric if metric_def else metric_id
         query = build_device_metric_query(
-            metric_name=metric_name,
+            metric_name=prometheus_name,
             rack_id=rack_id,
             instances=instances,
         )
         if query:
-            queries[metric_name] = query
+            queries[prometheus_name] = query
 
     all_instances_metrics: Dict[str, Dict[str, float]] = {}
     try:
@@ -373,6 +380,7 @@ async def collect_rack_devices_metrics(
     rack: Rack,
     catalog: Catalog,
     prom_client: PrometheusClient,
+    library: Optional[MetricsLibrary] = None,
 ) -> Dict[str, Dict[str, float]]:
     """
     Collect metrics for all devices in a rack.
@@ -403,6 +411,7 @@ async def collect_rack_devices_metrics(
             rack_id=rack.id,
             template=template,
             prom_client=prom_client,
+            library=library,
         )
 
         all_metrics.update(device_metrics)
