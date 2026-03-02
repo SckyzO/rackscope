@@ -10,6 +10,7 @@ import {
   Cpu,
   X,
   GripVertical,
+  Save,
 } from 'lucide-react';
 import { SettingField } from '../../../app/components/SettingTooltip';
 import { api } from '../../../services/api';
@@ -18,6 +19,162 @@ import { FormField } from '../common/FormField';
 import { FormToggle } from '../common/FormToggle';
 import { FormSelect } from '../common/FormSelect';
 import type { ConfigDraft } from '../useSettingsConfig';
+
+// ── Slurm Node Mapping Editor ─────────────────────────────────────────────────
+
+interface MappingEntry {
+  node: string;
+  instance: string;
+}
+
+const SlurmMappingEditor = ({ mappingPath }: { mappingPath?: string }) => {
+  const [open, setOpen] = useState(false);
+  const [entries, setEntries] = useState<MappingEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await api.getSlurmMapping();
+      setEntries(data.entries ?? []);
+    } catch {
+      /**/
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpen = () => {
+    setOpen(true);
+    load();
+  };
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await api.saveSlurmMapping(entries);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      /**/
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const update = (i: number, field: keyof MappingEntry, val: string) => {
+    const next = [...entries];
+    next[i] = { ...next[i], [field]: val };
+    setEntries(next);
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={handleOpen}
+        className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 mt-1 flex items-center gap-1.5 text-xs font-medium"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Edit mappings
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-3 space-y-3 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+            Node mappings
+          </p>
+          <p className="text-[10px] text-gray-400 dark:text-gray-600">
+            Supports wildcards: <span className="font-mono">n*</span> →{' '}
+            <span className="font-mono">compute*</span>
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="text-gray-400 hover:text-gray-600"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="py-4 text-center text-xs text-gray-400">Loading…</div>
+      ) : (
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-2 px-1">
+            <span className="text-[9px] font-bold tracking-wider text-gray-400 uppercase">
+              Slurm node (pattern)
+            </span>
+            <span className="text-[9px] font-bold tracking-wider text-gray-400 uppercase">
+              Topology instance
+            </span>
+          </div>
+          {entries.map((e, i) => (
+            <div key={i} className="grid grid-cols-2 gap-2">
+              <input
+                value={e.node}
+                onChange={(ev) => update(i, 'node', ev.target.value)}
+                placeholder="n* or n001"
+                className="rounded border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              />
+              <div className="flex gap-1">
+                <input
+                  value={e.instance}
+                  onChange={(ev) => update(i, 'instance', ev.target.value)}
+                  placeholder="compute* or compute001"
+                  className="flex-1 rounded border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => setEntries(entries.filter((_, j) => j !== i))}
+                  className="rounded p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setEntries([...entries, { node: '', instance: '' }])}
+            className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add mapping
+          </button>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-800">
+        {!mappingPath && (
+          <p className="text-[10px] text-amber-500">Set the mapping file path first</p>
+        )}
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving || !mappingPath}
+          className={`ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-40 ${
+            saved
+              ? 'bg-green-50 text-green-600 dark:bg-green-500/10 dark:text-green-400'
+              : 'bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400'
+          }`}
+        >
+          <Save className="h-3.5 w-3.5" />
+          {saved ? 'Saved!' : saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── Main section ───────────────────────────────────────────────────────────────
 
 interface PluginsSettingsSectionProps {
   draft: ConfigDraft;
@@ -836,7 +993,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
               <SettingField
                 label="Node mapping file"
-                tooltip="Optional YAML file mapping Slurm node names to topology instance names when they differ."
+                tooltip="YAML file mapping Slurm node names / patterns to topology instance names. Supports wildcards: n* → compute*."
               >
                 <input
                   value={draft.plugins.slurm.mapping_path}
@@ -845,6 +1002,9 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                   className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                 />
               </SettingField>
+
+              {/* Mapping editor */}
+              <SlurmMappingEditor mappingPath={draft.plugins.slurm.mapping_path} />
             </div>
 
             {/* ── Severity Colors ── */}

@@ -948,7 +948,9 @@ export const SlurmWallV2Page = () => {
                       <span className="text-[10px] text-gray-500">({entries.length})</span>
                     </div>
                   )}
-                  <div className="flex flex-wrap gap-5">{entries.map((e) => renderRack(e, scrollH))}</div>
+                  <div className="flex flex-wrap gap-5">
+                    {entries.map((e) => renderRack(e, scrollH))}
+                  </div>
                 </div>
               ))}
             </div>

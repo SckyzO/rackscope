@@ -7,6 +7,8 @@ from typing import Optional, Dict, Any
 import yaml
 
 from fastapi import APIRouter, FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List
 
 from rackscope.plugins.base import RackscopePlugin, MenuSection, MenuItem
 from rackscope.services import slurm_service, topology_service
@@ -165,7 +167,7 @@ class SlurmPlugin(RackscopePlugin):
             }
 
             slurm_cfg = self._get_config()
-            mapping = slurm_service.load_slurm_mapping(slurm_cfg)
+            mapping_entries = slurm_service.load_slurm_mapping_raw(slurm_cfg.mapping_path)
             results = await slurm_service.fetch_slurm_results(slurm_cfg)
 
             if not results:
@@ -180,8 +182,9 @@ class SlurmPlugin(RackscopePlugin):
                 except (TypeError, ValueError):
                     continue
                 node = metric.get(slurm_cfg.label_node)
-                if node in mapping:
-                    node = mapping[node]
+                node = (
+                    slurm_service.resolve_slurm_node(str(node), mapping_entries) if node else node
+                )
                 if not node or (room_nodes and node not in room_nodes):
                     continue
                 raw_status = metric.get(slurm_cfg.label_status, "unknown")
@@ -270,7 +273,7 @@ class SlurmPlugin(RackscopePlugin):
                 allowed_nodes = slurm_service.collect_room_nodes(room)
 
             slurm_cfg = self._get_config()
-            mapping = slurm_service.load_slurm_mapping(slurm_cfg)
+            mapping_entries = slurm_service.load_slurm_mapping_raw(slurm_cfg.mapping_path)
             results = await slurm_service.fetch_slurm_results(slurm_cfg)
             if not results:
                 return {"room_id": room_id, "partitions": {}}
@@ -285,8 +288,9 @@ class SlurmPlugin(RackscopePlugin):
                 except (TypeError, ValueError):
                     continue
                 node = metric.get(slurm_cfg.label_node)
-                if node in mapping:
-                    node = mapping[node]
+                node = (
+                    slurm_service.resolve_slurm_node(str(node), mapping_entries) if node else node
+                )
                 if not node:
                     continue
                 if allowed_nodes is not None and node not in allowed_nodes:
@@ -334,6 +338,32 @@ class SlurmPlugin(RackscopePlugin):
                 payload.append(entry)
 
             return {"room_id": room_id, "nodes": payload}
+
+        # ── Node mapping CRUD ───────────────────────────────────────────────────
+
+        class MappingEntry(BaseModel):
+            node: str  # Slurm node name or pattern (e.g. "n*", "n001")
+            instance: str  # Topology instance name or pattern (e.g. "compute*")
+
+        class MappingPayload(BaseModel):
+            entries: List[MappingEntry]
+
+        @self._router.get("/api/slurm/mapping")
+        async def get_slurm_mapping() -> dict:
+            """Return current node mapping entries."""
+            cfg = self._get_config()
+            raw = slurm_service.load_slurm_mapping_raw(cfg.mapping_path)
+            return {"mapping_path": cfg.mapping_path, "entries": raw}
+
+        @self._router.post("/api/slurm/mapping")
+        async def save_slurm_mapping(payload: MappingPayload) -> dict:
+            """Save node mapping entries to file."""
+            cfg = self._get_config()
+            if not cfg.mapping_path:
+                raise HTTPException(status_code=400, detail="mapping_path is not configured")
+            entries = [e.model_dump() for e in payload.entries]
+            slurm_service.save_slurm_mapping(cfg.mapping_path, entries)
+            return {"ok": True, "saved": len(entries)}
 
     def register_routes(self, app: FastAPI) -> None:
         """Register Slurm routes."""

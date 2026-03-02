@@ -7,6 +7,7 @@ Business logic for Slurm data processing.
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Set, Protocol, runtime_checkable, cast
 import logging
+import re
 
 import yaml
 
@@ -173,35 +174,74 @@ def build_node_context(topology: Topology) -> Dict[str, Dict[str, str]]:
     return context
 
 
-def load_slurm_mapping(slurm_cfg: SlurmConfigLike) -> Dict[str, str]:
-    """Load Slurm node name mapping.
-
-    Args:
-        slurm_cfg: The Slurm configuration
+def load_slurm_mapping_raw(mapping_path: Optional[str]) -> List[Dict[str, str]]:
+    """Load raw mapping entries from YAML file.
 
     Returns:
-        Dictionary mapping Slurm node names to instance names
+        List of raw mapping dicts with 'node' and 'instance' keys.
     """
-    mapping: Dict[str, str] = {}
-    mapping_path = slurm_cfg.mapping_path
     if not mapping_path:
-        return mapping
+        return []
     try:
-        raw_mapping = yaml.safe_load(Path(mapping_path).read_text()) or {}
+        raw = yaml.safe_load(Path(mapping_path).read_text()) or {}
     except (OSError, yaml.YAMLError) as exc:
         logger.warning(f"Failed to load Slurm mapping from {mapping_path}: {exc}")
-        return mapping
-    mappings = raw_mapping.get("mappings") if isinstance(raw_mapping, dict) else []
+        return []
+    mappings = raw.get("mappings") if isinstance(raw, dict) else []
     if not isinstance(mappings, list):
-        return mapping
-    for item in mappings:
-        if not isinstance(item, dict):
+        return []
+    return [
+        m
+        for m in mappings
+        if isinstance(m, dict)
+        and isinstance(m.get("node"), str)
+        and isinstance(m.get("instance"), str)
+    ]
+
+
+def save_slurm_mapping(mapping_path: str, entries: List[Dict[str, str]]) -> None:
+    """Save mapping entries to YAML file."""
+    Path(mapping_path).write_text(
+        yaml.dump({"mappings": entries}, default_flow_style=False, allow_unicode=True)
+    )
+
+
+def resolve_slurm_node(node: str, entries: List[Dict[str, str]]) -> str:
+    """Resolve a Slurm node name using mapping entries.
+
+    Supports two modes:
+    - Exact:   node="n001"  instance="compute001"
+    - Pattern: node="n*"    instance="compute*"
+               The '*' is a wildcard — matched suffix is substituted in instance.
+
+    Returns:
+        Resolved instance name, or original node name if no mapping found.
+    """
+    for entry in entries:
+        node_pat = entry.get("node", "")
+        inst_tpl = entry.get("instance", "")
+        if not node_pat or not inst_tpl:
             continue
-        node = item.get("node")
-        instance = item.get("instance")
-        if isinstance(node, str) and isinstance(instance, str):
-            mapping[node] = instance
-    return mapping
+        if "*" in node_pat:
+            # Convert glob pattern to regex (only * supported)
+            regex = "^" + re.escape(node_pat).replace(r"\*", "(.+)") + "$"
+            m = re.match(regex, node)
+            if m:
+                matched = m.group(1)
+                return inst_tpl.replace("*", matched, 1) if "*" in inst_tpl else inst_tpl
+        elif node_pat == node:
+            return inst_tpl
+    return node
+
+
+def load_slurm_mapping(slurm_cfg: SlurmConfigLike) -> Dict[str, str]:
+    """Build exact mapping dict (for backward-compat lookup).
+
+    Pattern entries are kept verbatim in the dict so resolve_slurm_node
+    can handle them. Direct lookup still works for exact entries.
+    """
+    entries = load_slurm_mapping_raw(slurm_cfg.mapping_path)
+    return {e["node"]: e["instance"] for e in entries if "node" in e and "instance" in e}
 
 
 async def fetch_slurm_results(slurm_cfg: SlurmConfigLike) -> List[Dict[str, Any]]:
@@ -238,7 +278,7 @@ async def build_slurm_states(
     Returns:
         Dictionary mapping node names to their Slurm state
     """
-    mapping = load_slurm_mapping(slurm_cfg)
+    mapping_entries = load_slurm_mapping_raw(slurm_cfg.mapping_path)
     results = await fetch_slurm_results(slurm_cfg)
     if not results:
         return {}
@@ -253,8 +293,8 @@ async def build_slurm_states(
         except (TypeError, ValueError):
             continue
         node = metric.get(slurm_cfg.label_node)
-        if node in mapping:
-            node = mapping[node]
+        # Resolve via mapping (supports wildcards: n* → compute*)
+        node = resolve_slurm_node(str(node), mapping_entries) if node else node
         if not node:
             continue
         if allowed_nodes is not None and node not in allowed_nodes:

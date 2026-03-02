@@ -493,9 +493,13 @@ async def test_build_slurm_states_with_mapping():
     ]
 
     slurm_cfg = SlurmConfig()
-    mapping = {"slurm-node-01": "node01"}
+    # load_slurm_mapping_raw now returns list of dicts
+    mapping_entries = [{"node": "slurm-node-01", "instance": "node01"}]
 
-    with patch("rackscope.services.slurm_service.load_slurm_mapping", return_value=mapping):
+    with patch(
+        "rackscope.services.slurm_service.load_slurm_mapping_raw",
+        return_value=mapping_entries,
+    ):
         with patch(
             "rackscope.services.slurm_service.fetch_slurm_results",
             AsyncMock(return_value=mock_results),
