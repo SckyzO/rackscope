@@ -85,22 +85,23 @@ function resolveTempColor(temp: number, warn?: number, crit?: number) {
 // Arc spans -135° → +135° (270° sweep). Value 0–100% fills the arc.
 
 const TempArc = ({ value, warn, crit }: { value: number; warn?: number; crit?: number }) => {
-  const SIZE = 82;
-  const cx = SIZE / 2;
-  const cy = SIZE / 2 + 4; // push center down slightly so arc fits
-  const R = 31;
+  const SIZE = 90;
+  const cx = SIZE / 2; // 45
+  const cy = SIZE / 2 + 4; // 49 — push center down so arc fits in viewBox
+  const R = 34; // arc radius
   const SW = 5; // stroke width
+  const R_LBL = R + SW / 2 + 9; // label radius — outside the stroke
   const START = -135;
   const SWEEP = 270;
   const maxVal = crit ? crit * 1.15 : 60;
   const pct = value > 0 ? Math.min(1, value / maxVal) : 0;
 
-  const { hex: fillColor } = value > 0 ? resolveTempColor(value, warn, crit) : { hex: '#6b7280' };
+  const { hex: fillColor } = value > 0 ? resolveTempColor(value, warn, crit) : { hex: '#4b5563' };
 
   const toRad = (d: number) => (d * Math.PI) / 180;
-  const pt = (deg: number) => ({
-    x: cx + R * Math.cos(toRad(deg)),
-    y: cy + R * Math.sin(toRad(deg)),
+  const pt = (deg: number, r = R) => ({
+    x: cx + r * Math.cos(toRad(deg)),
+    y: cy + r * Math.sin(toRad(deg)),
   });
 
   const arcPath = (from: number, to: number) => {
@@ -126,11 +127,11 @@ const TempArc = ({ value, warn, crit }: { value: number; warn?: number; crit?: n
       <path
         d={arcPath(START, START + SWEEP)}
         fill="none"
-        stroke="rgba(255,255,255,0.07)"
+        stroke="rgba(255,255,255,0.06)"
         strokeWidth={SW}
         strokeLinecap="round"
       />
-      {/* Fill */}
+      {/* Filled arc */}
       {value > 0 && pct > 0.01 && (
         <path
           d={arcPath(START, fillEnd)}
@@ -138,36 +139,66 @@ const TempArc = ({ value, warn, crit }: { value: number; warn?: number; crit?: n
           stroke={fillColor}
           strokeWidth={SW}
           strokeLinecap="round"
-          style={{ filter: `drop-shadow(0 0 5px ${fillColor}99)` }}
+          style={{ filter: `drop-shadow(0 0 5px ${fillColor}88)` }}
         />
       )}
-      {/* Warn threshold tick */}
-      {warnPct !== null && (
-        <circle
-          cx={pt(START + SWEEP * warnPct).x}
-          cy={pt(START + SWEEP * warnPct).y}
-          r={SW / 2 + 1}
-          fill="#f59e0b"
-          opacity={0.5}
-        />
+      {/* Warn threshold — notch + label on arc */}
+      {warnPct !== null && warn && (
+        <>
+          <circle
+            cx={pt(START + SWEEP * warnPct).x}
+            cy={pt(START + SWEEP * warnPct).y}
+            r={SW / 2 + 0.5}
+            fill="#f59e0b"
+            opacity={0.65}
+          />
+          <text
+            x={pt(START + SWEEP * warnPct, R_LBL).x}
+            y={pt(START + SWEEP * warnPct, R_LBL).y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="6.5"
+            fontWeight="700"
+            fontFamily="monospace"
+            fill="#d97706"
+            opacity="0.9"
+          >
+            {warn}°
+          </text>
+        </>
       )}
-      {/* Crit threshold tick */}
-      {critPct !== null && critPct < 1 && (
-        <circle
-          cx={pt(START + SWEEP * critPct).x}
-          cy={pt(START + SWEEP * critPct).y}
-          r={SW / 2 + 1}
-          fill="#ef4444"
-          opacity={0.5}
-        />
+      {/* Crit threshold — notch + label on arc */}
+      {critPct !== null && critPct < 1 && crit && (
+        <>
+          <circle
+            cx={pt(START + SWEEP * critPct).x}
+            cy={pt(START + SWEEP * critPct).y}
+            r={SW / 2 + 0.5}
+            fill="#ef4444"
+            opacity={0.65}
+          />
+          <text
+            x={pt(START + SWEEP * critPct, R_LBL).x}
+            y={pt(START + SWEEP * critPct, R_LBL).y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="6.5"
+            fontWeight="700"
+            fontFamily="monospace"
+            fill="#dc2626"
+            opacity="0.9"
+          >
+            {crit}°
+          </text>
+        </>
       )}
-      {/* Center value */}
+      {/* Center: value */}
       <text
         x={cx}
-        y={cy - 5}
+        y={cy - 6}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontSize="14"
+        fontSize="15"
         fontWeight="900"
         fontFamily="monospace"
         fill={fillColor}
@@ -176,11 +207,11 @@ const TempArc = ({ value, warn, crit }: { value: number; warn?: number; crit?: n
       </text>
       <text
         x={cx}
-        y={cy + 10}
+        y={cy + 9}
         textAnchor="middle"
         dominantBaseline="middle"
         fontSize="8"
-        fill="rgba(255,255,255,0.35)"
+        fill="rgba(255,255,255,0.3)"
         fontFamily="monospace"
       >
         °C
@@ -223,14 +254,6 @@ export const HUDTooltip = ({
           ? 'WARN'
           : 'OK'
       : null;
-
-  // Gradient bar: uses static gradient + right-overlay to reveal % of bar
-  const tempBarPct =
-    tempVal !== undefined && tempVal > 0 && tempCrit
-      ? Math.min(100, Math.round((tempVal / tempCrit) * 100))
-      : 0;
-  const warnBarPct =
-    tempWarn && tempCrit ? Math.min(100, Math.round((tempWarn / tempCrit) * 100)) : null;
 
   // Status-based glow shadow
   const glowShadow =
@@ -287,25 +310,23 @@ export const HUDTooltip = ({
 
           {/* ── Metrics ─────────────────────── */}
           {hasMetrics && (
-            <div className="mb-3 rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 pt-3 pb-2.5">
-              {/* Arc gauge + values row */}
-              <div className="flex items-center gap-3">
-                {/* Arc gauge — value shown inside the arc, no duplicate text */}
+            <div className="mb-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
+              <div className="flex items-center gap-2">
+                {/* Arc — value + threshold notches + threshold labels, all on arc */}
                 {tempVal !== undefined && (
                   <div className="shrink-0">
                     <TempArc value={tempVal} warn={tempWarn} crit={tempCrit} />
                   </div>
                 )}
 
-                {/* Right column: status badge + power only */}
-                <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5">
-                  {/* Status badge — only when not OK */}
+                {/* Right: status badge (WARN/CRIT only) + power */}
+                <div className="flex min-w-0 flex-1 flex-col justify-center gap-3 pl-1">
                   {tempLabel && tempLabel !== 'OK' && tempStatus && (
                     <div
-                      className={`inline-flex items-center gap-1.5 self-start rounded-md px-2 py-0.5 text-[10px] font-black tracking-wider uppercase ${tempStatus.twText}`}
+                      className={`inline-flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-black tracking-wider uppercase ${tempStatus.twText}`}
                       style={{
                         background:
-                          tempLabel === 'CRIT' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)',
+                          tempLabel === 'CRIT' ? 'rgba(239,68,68,0.14)' : 'rgba(245,158,11,0.14)',
                       }}
                     >
                       <span
@@ -315,46 +336,16 @@ export const HUDTooltip = ({
                     </div>
                   )}
 
-                  {/* Power */}
                   {metrics?.power !== undefined && metrics.power > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <Zap className="h-3.5 w-3.5 shrink-0 text-yellow-400" />
-                      <span className="font-mono text-[16px] leading-none font-black text-gray-200">
+                      <Zap className="h-3.5 w-3.5 shrink-0 text-yellow-400/80" />
+                      <span className="font-mono text-[17px] leading-none font-black text-gray-100">
                         {formatPower(metrics.power)}
                       </span>
                     </div>
                   )}
                 </div>
               </div>
-
-              {/* Gradient bar — full width below the row, adds threshold context to the arc */}
-              {tempCrit !== undefined && tempVal !== undefined && tempVal > 0 && (
-                <div className="mt-2.5">
-                  <div
-                    className="relative h-[4px] w-full overflow-hidden rounded-full"
-                    style={{
-                      background:
-                        'linear-gradient(to right, #22c55e 0%, #f59e0b 65%, #ef4444 100%)',
-                    }}
-                  >
-                    <div
-                      className="absolute inset-y-0 right-0 rounded-r-full"
-                      style={{ width: `${100 - tempBarPct}%`, background: 'rgba(5,5,5,0.75)' }}
-                    />
-                    {warnBarPct !== null && (
-                      <div
-                        className="absolute inset-y-0 w-[2px] bg-gray-950/50"
-                        style={{ left: `${warnBarPct}%` }}
-                      />
-                    )}
-                  </div>
-                  <div className="mt-1 flex justify-between font-mono text-[8px] text-gray-600">
-                    <span>0°</span>
-                    {tempWarn && <span className="text-yellow-600">{tempWarn}° W</span>}
-                    <span className="text-red-700">{tempCrit}° C</span>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
