@@ -78,6 +78,7 @@ import { SlurmNodesPage } from './pages/slurm/SlurmNodesPage';
 import { SlurmAlertsPage } from './pages/slurm/SlurmAlertsPage';
 import { SlurmPartitionsPage } from './pages/slurm/SlurmPartitionsPage';
 import { SlurmWallboardPage } from './pages/slurm/SlurmWallboardPage';
+import { SlurmWallV2Page } from './pages/slurm/SlurmWallV2Page';
 
 // Editors
 import { SettingsPage } from './pages/editors/SettingsPage';
@@ -209,6 +210,7 @@ const AppRoutes = () => (
       <Route path="slurm/alerts" element={<SlurmAlertsPage />} />
       <Route path="slurm/partitions" element={<SlurmPartitionsPage />} />
       <Route path="slurm/wallboard/:roomId" element={<SlurmWallboardPage />} />
+      <Route path="slurm/wall" element={<SlurmWallV2Page />} />
 
       {/* ── Playlist ── */}
       <Route path="playlist" element={<PlaylistCenterPage />} />

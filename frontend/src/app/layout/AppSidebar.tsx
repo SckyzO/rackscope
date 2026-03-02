@@ -803,6 +803,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
               label="Wallboard"
               collapsed={collapsed}
             />
+            <NavItem to="/slurm/wall" icon={LayoutGrid} label="Wall v2" collapsed={collapsed} />
           </>
         )}
 
