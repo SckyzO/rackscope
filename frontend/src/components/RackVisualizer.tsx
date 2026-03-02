@@ -46,9 +46,7 @@ export interface HUDTooltipProps {
   title: string;
   subtitle?: string;
   status: string;
-  /** Full enclosure / chassis name — shown below title, no truncation */
   enclosure?: string;
-  /** Check summary badges — replaces raw "Active checks: N" count */
   checkSummary?: HUDTooltipCheckSummary;
   details?: { label: string; value: string; italic?: boolean }[];
   reasons?: TooltipReason[];
@@ -56,17 +54,142 @@ export interface HUDTooltipProps {
   mousePos: { x: number; y: number };
 }
 
-// Derive color class from value vs thresholds
-function tempColorClass(temp: number, warn?: number, crit?: number): string {
-  if (crit !== undefined && temp >= crit) return 'text-status-crit';
-  if (warn !== undefined && temp >= warn) return 'text-status-warn';
-  return 'text-status-ok';
-}
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function formatPower(watts: number): string {
   if (watts >= 1000) return `${(watts / 1000).toFixed(1)} kW`;
   return `${Math.round(watts)} W`;
 }
+
+function resolveStatus(status: string) {
+  switch (status) {
+    case 'OK':
+      return { hex: '#22c55e', twText: 'text-status-ok', twBg: 'bg-status-ok' };
+    case 'WARN':
+      return { hex: '#f59e0b', twText: 'text-status-warn', twBg: 'bg-status-warn' };
+    case 'CRIT':
+      return { hex: '#ef4444', twText: 'text-status-crit', twBg: 'bg-status-crit' };
+    default:
+      return { hex: '#6b7280', twText: 'text-gray-400', twBg: 'bg-gray-600' };
+  }
+}
+
+function resolveTempColor(temp: number, warn?: number, crit?: number) {
+  if (crit !== undefined && temp >= crit) return resolveStatus('CRIT');
+  if (warn !== undefined && temp >= warn) return resolveStatus('WARN');
+  return resolveStatus('OK');
+}
+
+// ── SVG Arc Gauge ──────────────────────────────────────────────────────────────
+// Pure SVG: no library overhead, instant render on tooltip mount/unmount.
+// Arc spans -135° → +135° (270° sweep). Value 0–100% fills the arc.
+
+const TempArc = ({ value, warn, crit }: { value: number; warn?: number; crit?: number }) => {
+  const SIZE = 76;
+  const cx = SIZE / 2;
+  const cy = SIZE / 2 + 4; // push center down slightly so arc fits
+  const R = 28;
+  const SW = 5; // stroke width
+  const START = -135;
+  const SWEEP = 270;
+  const maxVal = crit ? crit * 1.15 : 60;
+  const pct = value > 0 ? Math.min(1, value / maxVal) : 0;
+
+  const { hex: fillColor } = value > 0 ? resolveTempColor(value, warn, crit) : { hex: '#6b7280' };
+
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const pt = (deg: number) => ({
+    x: cx + R * Math.cos(toRad(deg)),
+    y: cy + R * Math.sin(toRad(deg)),
+  });
+
+  const arcPath = (from: number, to: number) => {
+    const s = pt(from);
+    const e = pt(to);
+    const large = to - from > 180 ? 1 : 0;
+    return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${R} ${R} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
+  };
+
+  const fillEnd = START + SWEEP * pct;
+  const warnPct = warn && crit ? warn / maxVal : null;
+  const critPct = crit ? crit / maxVal : null;
+
+  return (
+    <svg
+      width={SIZE}
+      height={SIZE}
+      viewBox={`0 0 ${SIZE} ${SIZE}`}
+      style={{ overflow: 'visible' }}
+      aria-hidden="true"
+    >
+      {/* Track */}
+      <path
+        d={arcPath(START, START + SWEEP)}
+        fill="none"
+        stroke="rgba(255,255,255,0.07)"
+        strokeWidth={SW}
+        strokeLinecap="round"
+      />
+      {/* Fill */}
+      {value > 0 && pct > 0.01 && (
+        <path
+          d={arcPath(START, fillEnd)}
+          fill="none"
+          stroke={fillColor}
+          strokeWidth={SW}
+          strokeLinecap="round"
+          style={{ filter: `drop-shadow(0 0 5px ${fillColor}99)` }}
+        />
+      )}
+      {/* Warn threshold tick */}
+      {warnPct !== null && (
+        <circle
+          cx={pt(START + SWEEP * warnPct).x}
+          cy={pt(START + SWEEP * warnPct).y}
+          r={SW / 2 + 1}
+          fill="#f59e0b"
+          opacity={0.5}
+        />
+      )}
+      {/* Crit threshold tick */}
+      {critPct !== null && critPct < 1 && (
+        <circle
+          cx={pt(START + SWEEP * critPct).x}
+          cy={pt(START + SWEEP * critPct).y}
+          r={SW / 2 + 1}
+          fill="#ef4444"
+          opacity={0.5}
+        />
+      )}
+      {/* Center value */}
+      <text
+        x={cx}
+        y={cy - 5}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize="14"
+        fontWeight="900"
+        fontFamily="monospace"
+        fill={fillColor}
+      >
+        {value > 0 ? value.toFixed(1) : '--'}
+      </text>
+      <text
+        x={cx}
+        y={cy + 10}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize="8"
+        fill="rgba(255,255,255,0.35)"
+        fontFamily="monospace"
+      >
+        °C
+      </text>
+    </svg>
+  );
+};
+
+// ── HUDTooltip ─────────────────────────────────────────────────────────────────
 
 export const HUDTooltip = ({
   title,
@@ -79,175 +202,195 @@ export const HUDTooltip = ({
   metrics,
   mousePos,
 }: HUDTooltipProps) => {
-  const statusColor =
-    status === 'OK'
-      ? 'bg-status-ok'
-      : status === 'CRIT'
-        ? 'bg-status-crit'
-        : status === 'WARN'
-          ? 'bg-status-warn'
-          : 'bg-gray-600';
-
-  const statusText =
-    status === 'OK'
-      ? 'text-status-ok'
-      : status === 'CRIT'
-        ? 'text-status-crit'
-        : status === 'WARN'
-          ? 'text-status-warn'
-          : 'text-gray-400';
+  const { hex: statusHex, twText: statusText, twBg: statusBg } = resolveStatus(status);
 
   const showBelow = mousePos.y < 400;
-  const hasMetrics = metrics?.temp !== undefined || metrics?.power !== undefined;
+  const hasMetrics =
+    metrics?.temp !== undefined || (metrics?.power !== undefined && metrics.power > 0);
   const hasDetails = details.length > 0;
+  const hasChecks = checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0;
 
-  // Temperature derived state
   const tempVal = metrics?.temp;
   const tempWarn = metrics?.tempWarn;
   const tempCrit = metrics?.tempCrit;
-  const tempColor =
-    tempVal !== undefined ? tempColorClass(tempVal, tempWarn, tempCrit) : 'text-gray-400';
+  const tempStatus =
+    tempVal !== undefined && tempVal > 0 ? resolveTempColor(tempVal, tempWarn, tempCrit) : null;
+  const tempLabel =
+    tempVal !== undefined && tempVal > 0 && tempWarn !== undefined
+      ? tempVal >= (tempCrit ?? Infinity)
+        ? 'CRIT'
+        : tempVal >= tempWarn
+          ? 'WARN'
+          : 'OK'
+      : null;
+
+  // Gradient bar: uses static gradient + right-overlay to reveal % of bar
   const tempBarPct =
-    tempVal !== undefined && tempCrit ? Math.min(100, Math.round((tempVal / tempCrit) * 100)) : 0;
-  const tempBarColor =
-    tempVal !== undefined && tempCrit && tempVal >= tempCrit
-      ? 'bg-status-crit'
-      : tempVal !== undefined && tempWarn && tempVal >= tempWarn
-        ? 'bg-status-warn'
-        : 'bg-status-ok';
+    tempVal !== undefined && tempVal > 0 && tempCrit
+      ? Math.min(100, Math.round((tempVal / tempCrit) * 100))
+      : 0;
+  const warnBarPct =
+    tempWarn && tempCrit ? Math.min(100, Math.round((tempWarn / tempCrit) * 100)) : null;
+
+  // Status-based glow shadow
+  const glowShadow =
+    status === 'CRIT'
+      ? `0 0 0 1px ${statusHex}22, 0 12px 48px ${statusHex}44, 0 4px 16px rgba(0,0,0,0.5)`
+      : status === 'WARN'
+        ? `0 0 0 1px ${statusHex}18, 0 8px 36px ${statusHex}33, 0 4px 16px rgba(0,0,0,0.5)`
+        : '0 8px 40px rgba(0,0,0,0.5)';
 
   return createPortal(
     <div
       style={{
         position: 'fixed',
-        top: showBelow ? `${mousePos.y + 15}px` : `${mousePos.y - 15}px`,
+        top: showBelow ? `${mousePos.y + 12}px` : `${mousePos.y - 12}px`,
         left: `${mousePos.x}px`,
         transform: showBelow ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
         zIndex: 999999,
         pointerEvents: 'none',
       }}
-      className="animate-in fade-in zoom-in-98 w-80 duration-200 ease-out"
+      className="animate-in fade-in zoom-in-95 w-80 duration-150 ease-out"
     >
-      <div className="relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-panel)]/97 shadow-[0_24px_56px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
-        {showBelow && (
-          <div className="absolute top-0 left-1/2 -mt-1 h-0 w-0 -translate-x-1/2 border-r-[6px] border-b-[6px] border-l-[6px] border-r-transparent border-b-[var(--color-accent-primary)] border-l-transparent" />
-        )}
-
-        {/* Status bar — left edge, pulses on CRIT */}
+      <div
+        className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-gray-950/95 backdrop-blur-2xl"
+        style={{ boxShadow: glowShadow }}
+      >
+        {/* Left status accent bar */}
         <div
-          className={`absolute top-0 bottom-0 left-0 w-[3px] ${statusColor} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
+          className={`absolute top-0 bottom-0 left-0 w-[3px] ${statusBg} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
         />
 
-        <div className="p-4 pl-5 text-left">
-          {/* ── Header ──────────────────────────────────── */}
-          <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="p-4 pl-[18px]">
+          {/* ── Header ──────────────────────── */}
+          <div className="mb-3 flex items-start gap-2">
             <div className="min-w-0 flex-1">
-              <div className="text-[9px] font-bold tracking-[0.18em] text-[var(--color-accent-primary)] uppercase opacity-60">
+              <div className="text-[9px] font-semibold tracking-[0.2em] text-gray-500 uppercase">
                 {subtitle || 'Node'}
               </div>
-              <div className="mt-0.5 text-xl leading-none font-black tracking-tighter text-[var(--color-text-base)] uppercase">
+              <div className="mt-0.5 text-xl leading-tight font-black tracking-tight text-white uppercase">
                 {title}
               </div>
               {enclosure && (
-                <div className="mt-1 text-[11px] leading-tight text-gray-400 dark:text-gray-500">
-                  {enclosure}
-                </div>
+                <div className="mt-0.5 text-[11px] leading-snug text-gray-500">{enclosure}</div>
               )}
             </div>
-            <div
-              className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-black tracking-wider uppercase ${statusColor.replace('bg-', 'border-')}/25 ${statusText} ${statusColor}/8`}
-            >
-              {status}
+            {/* Status chip — dot + label */}
+            <div className={`mt-0.5 flex shrink-0 items-center gap-1.5 ${statusText}`}>
+              <div
+                className={`h-2 w-2 rounded-full ${statusBg} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
+                style={{ boxShadow: `0 0 6px ${statusHex}` }}
+              />
+              <span className="text-[11px] font-black tracking-wider uppercase">{status}</span>
             </div>
           </div>
 
-          {/* ── Metrics ─────────────────────────────────── */}
+          {/* ── Metrics ─────────────────────── */}
           {hasMetrics && (
-            <div className="mb-3 space-y-2 rounded-lg border border-[var(--color-border)]/10 bg-[var(--color-border)]/5 p-3">
-              {tempVal !== undefined && (
-                <div className="flex items-center gap-2.5">
-                  <Thermometer className={`h-3.5 w-3.5 shrink-0 ${tempColor}`} />
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <div className="flex items-baseline gap-1.5">
-                      <span
-                        className={`font-mono text-[17px] leading-none font-black ${tempColor}`}
-                      >
-                        {tempVal > 0 ? tempVal.toFixed(1) : '--'}
-                      </span>
-                      <span className="text-[10px] text-gray-400">°C</span>
-                      {tempVal > 0 && tempWarn !== undefined && (
+            <div className="mb-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
+              <div className="flex items-center gap-3">
+                {/* Arc gauge */}
+                {tempVal !== undefined && (
+                  <div className="shrink-0">
+                    <TempArc value={tempVal} warn={tempWarn} crit={tempCrit} />
+                  </div>
+                )}
+
+                {/* Values column */}
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  {tempVal !== undefined && tempStatus && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-baseline gap-1">
+                        <Thermometer className={`h-3 w-3 shrink-0 ${tempStatus.twText}`} />
                         <span
-                          className={`ml-auto text-[9px] font-bold uppercase ${tempColor} opacity-80`}
+                          className={`ml-1 font-mono text-[15px] leading-none font-black ${tempStatus.twText}`}
                         >
-                          {tempVal >= (tempCrit ?? Infinity)
-                            ? 'CRIT'
-                            : tempVal >= tempWarn
-                              ? 'WARN'
-                              : 'OK'}
+                          {tempVal > 0 ? tempVal.toFixed(1) : '--'}
+                          <span className="ml-0.5 text-[10px] font-normal text-gray-500">°C</span>
+                        </span>
+                      </div>
+                      {tempLabel && (
+                        <span
+                          className={`text-[9px] font-black tracking-wider uppercase ${tempStatus.twText} opacity-70`}
+                        >
+                          {tempLabel}
                         </span>
                       )}
                     </div>
-                    {tempCrit !== undefined && tempVal > 0 && (
-                      <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--color-border)]/20">
+                  )}
+
+                  {metrics?.power !== undefined && metrics.power > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <Zap className="h-3 w-3 shrink-0 text-yellow-400" />
+                      <span className="font-mono text-[15px] leading-none font-black text-gray-200">
+                        {formatPower(metrics.power)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Gradient progress bar with threshold ticks */}
+                  {tempCrit !== undefined && tempVal !== undefined && tempVal > 0 && (
+                    <div
+                      className="relative h-[5px] w-full overflow-hidden rounded-full"
+                      style={{
+                        background:
+                          'linear-gradient(to right, #22c55e 0%, #f59e0b 65%, #ef4444 100%)',
+                      }}
+                    >
+                      {/* Mask the unused portion from right */}
+                      <div
+                        className="absolute inset-y-0 right-0 rounded-r-full"
+                        style={{
+                          width: `${100 - tempBarPct}%`,
+                          background: 'rgba(5,5,5,0.7)',
+                        }}
+                      />
+                      {/* Warn threshold tick */}
+                      {warnBarPct !== null && (
                         <div
-                          className={`h-full rounded-full transition-all ${tempBarColor}`}
-                          style={{ width: `${tempBarPct}%` }}
+                          className="absolute inset-y-0 w-[2px] bg-gray-950/60"
+                          style={{ left: `${warnBarPct}%` }}
                         />
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
-              {metrics?.power !== undefined && metrics.power > 0 && (
-                <div className="flex items-center gap-2.5">
-                  <Zap className="h-3.5 w-3.5 shrink-0 text-yellow-400" />
-                  <span className="font-mono text-[17px] leading-none font-black text-[var(--color-text-base)]">
-                    {formatPower(metrics.power)}
-                  </span>
-                </div>
-              )}
+              </div>
             </div>
           )}
 
-          {/* ── Details + Check Summary ──────────────────── */}
-          {(hasDetails || checkSummary) && (
-            <div className="mb-3 border-y border-[var(--color-border)]/10 py-2.5">
+          {/* ── Context row: location + check badges ─── */}
+          {(hasDetails || hasChecks) && (
+            <div className="mb-3 flex items-center justify-between gap-2 border-y border-white/[0.05] py-2">
               {hasDetails && (
-                <div className="mb-2 grid grid-cols-2 gap-x-4 gap-y-2">
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
                   {details.map((d, i) => (
-                    <div key={i} className={`space-y-0.5 ${i % 2 !== 0 ? 'text-right' : ''}`}>
-                      <span className="block text-[9px] font-bold tracking-wider text-gray-500 uppercase opacity-60">
-                        {d.label}
-                      </span>
-                      <span
-                        className={`block text-[12px] font-semibold text-[var(--color-text-base)] ${d.italic ? 'font-mono italic' : ''}`}
-                      >
-                        {d.value}
-                      </span>
-                    </div>
+                    <span
+                      key={i}
+                      className={`text-[11px] text-gray-400 ${d.italic ? 'font-mono' : ''}`}
+                    >
+                      {d.value}
+                    </span>
                   ))}
                 </div>
               )}
-              {checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0 && (
-                <div className="flex items-center gap-3 text-[11px] font-bold">
-                  <span className="text-[9px] font-bold tracking-wider text-gray-500 uppercase opacity-60">
-                    Checks
-                  </span>
+              {hasChecks && checkSummary && (
+                <div className="flex shrink-0 items-center gap-2.5 text-[11px] font-bold">
                   {checkSummary.ok > 0 && (
-                    <span className="text-status-ok flex items-center gap-1">
-                      <span className="text-[10px]">✓</span>
+                    <span className="text-status-ok flex items-center gap-0.5">
+                      <span>✓</span>
                       {checkSummary.ok}
                     </span>
                   )}
                   {checkSummary.warn > 0 && (
-                    <span className="text-status-warn flex items-center gap-1">
-                      <span className="text-[10px]">⚠</span>
+                    <span className="text-status-warn flex items-center gap-0.5">
+                      <span>⚠</span>
                       {checkSummary.warn}
                     </span>
                   )}
                   {checkSummary.crit > 0 && (
-                    <span className="text-status-crit flex items-center gap-1">
-                      <span className="text-[10px]">✕</span>
+                    <span className="text-status-crit flex items-center gap-0.5">
+                      <span>✕</span>
                       {checkSummary.crit}
                     </span>
                   )}
@@ -256,51 +399,48 @@ export const HUDTooltip = ({
             </div>
           )}
 
-          {/* ── Reasons ─────────────────────────────────── */}
+          {/* ── Alerts ──────────────────────── */}
           {reasons && reasons.length > 0 && (
-            <div>
-              <div className="mb-1.5 text-[9px] font-bold tracking-[0.15em] text-gray-500 uppercase opacity-70">
-                Alerts
-              </div>
-              <div className="space-y-1">
-                {reasons.map((r, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-2 rounded-md px-2 py-1 ${
+            <div className="space-y-[3px]">
+              {reasons.map((r, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-3 rounded-lg px-2 py-[5px]"
+                  style={{
+                    background:
                       r.severity === 'CRIT'
-                        ? 'bg-status-crit/8 border-status-crit/60 border-l-2'
+                        ? 'rgba(239,68,68,0.08)'
                         : r.severity === 'WARN'
-                          ? 'bg-status-warn/8 border-status-warn/60 border-l-2'
-                          : 'bg-[var(--color-border)]/5'
-                    }`}
-                  >
-                    <span className="min-w-0 flex-1 truncate text-[11px] text-[var(--color-text-base)] opacity-90">
-                      {r.label}
+                          ? 'rgba(245,158,11,0.08)'
+                          : 'rgba(255,255,255,0.03)',
+                    borderLeft:
+                      r.severity === 'CRIT'
+                        ? '2px solid rgba(239,68,68,0.5)'
+                        : r.severity === 'WARN'
+                          ? '2px solid rgba(245,158,11,0.5)'
+                          : '2px solid transparent',
+                  }}
+                >
+                  <span className="min-w-0 truncate text-[11px] text-gray-300">{r.label}</span>
+                  {r.severity && (
+                    <span
+                      className={`shrink-0 text-[9px] font-black tracking-wider uppercase ${
+                        r.severity === 'CRIT'
+                          ? 'text-status-crit'
+                          : r.severity === 'WARN'
+                            ? 'text-status-warn'
+                            : 'text-gray-500'
+                      }`}
+                    >
+                      {r.severity}
                     </span>
-                    {r.severity && (
-                      <span
-                        className={`shrink-0 text-[9px] font-black uppercase ${
-                          r.severity === 'CRIT'
-                            ? 'text-status-crit'
-                            : r.severity === 'WARN'
-                              ? 'text-status-warn'
-                              : 'text-gray-500'
-                        }`}
-                      >
-                        {r.severity}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
       </div>
-
-      {!showBelow && (
-        <div className="mx-auto h-0 w-0 border-t-[8px] border-r-[8px] border-l-[8px] border-t-[var(--color-bg-panel)]/97 border-r-transparent border-l-transparent drop-shadow-lg" />
-      )}
     </div>,
     document.getElementById('tooltip-root') as HTMLElement
   );
