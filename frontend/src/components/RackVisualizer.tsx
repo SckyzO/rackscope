@@ -23,12 +23,17 @@ import { expandInstanceMap, type InstanceInput } from '../utils/instances';
 
 // --- Reusable HUD Tooltip Component ---
 
+interface TooltipReason {
+  label: string;
+  severity?: string;
+}
+
 interface HUDTooltipProps {
   title: string;
   subtitle?: string;
   status: string;
   details: { label: string; value: string; italic?: boolean }[];
-  reasons?: string[];
+  reasons?: TooltipReason[];
   metrics?: {
     temp?: number;
     power?: number;
@@ -149,13 +154,25 @@ export const HUDTooltip = ({
               <div className="mb-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase">
                 Reasons
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {reasons.map((r, i) => (
-                  <div
-                    key={i}
-                    className="truncate font-mono text-[11px] text-[var(--color-text-base)] opacity-80"
-                  >
-                    {r}
+                  <div key={i} className="flex items-center justify-between gap-2">
+                    <span className="truncate text-[11px] text-[var(--color-text-base)] opacity-80">
+                      {r.label}
+                    </span>
+                    {r.severity && (
+                      <span
+                        className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                          r.severity === 'CRIT'
+                            ? 'bg-status-crit/15 text-status-crit'
+                            : r.severity === 'WARN'
+                              ? 'bg-status-warn/15 text-status-warn'
+                              : 'bg-gray-500/15 text-gray-500'
+                        }`}
+                      >
+                        {r.severity}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -591,10 +608,10 @@ const SideAttachment = ({
             value: `${maxCurrent.toFixed(1)} A`,
           });
         }
-        const checkReasons =
+        const checkReasons: TooltipReason[] =
           component.checks && component.checks.length > 0
-            ? component.checks
-            : ['No checks configured for this component'];
+            ? component.checks.map((id) => ({ label: id.replace(/_/g, ' ') }))
+            : [{ label: 'No checks configured for this component' }];
         onTooltipChange?.({
           title: component.name,
           subtitle: component.type === 'power' ? 'PDU' : 'Rack Component',
@@ -630,10 +647,10 @@ const SideAttachment = ({
             value: `${maxCurrent.toFixed(1)} A`,
           });
         }
-        const checkReasons =
+        const checkReasons: TooltipReason[] =
           component.checks && component.checks.length > 0
-            ? component.checks
-            : ['No checks configured for this component'];
+            ? component.checks.map((id) => ({ label: id.replace(/_/g, ' ') }))
+            : [{ label: 'No checks configured for this component' }];
         onTooltipChange?.({
           title: component.name,
           subtitle: component.type === 'power' ? 'PDU' : 'Rack Component',
@@ -786,17 +803,26 @@ export const DeviceChassis = ({
     return Array.from(checkIds);
   }, [instanceList, nodesData]);
 
-  const chassisAlerts = useMemo(() => {
+  const chassisAlerts = useMemo((): TooltipReason[] => {
     if (!nodesData) return [];
-    const alertIds = new Set<string>();
+    // Deduplicate by check ID, keeping the most critical severity
+    const alertMap = new Map<string, TooltipReason>();
+    const sevOrder = (s?: string) => (s === 'CRIT' ? 2 : s === 'WARN' ? 1 : 0);
     for (const nodeId of instanceList) {
       const alerts = nodesData[nodeId]?.alerts;
       if (!Array.isArray(alerts)) continue;
       for (const alert of alerts as AlertCheck[]) {
-        if (alert?.id) alertIds.add(alert.id);
+        if (!alert?.id) continue;
+        const existing = alertMap.get(alert.id);
+        if (!existing || sevOrder(alert.severity) > sevOrder(existing.severity)) {
+          alertMap.set(alert.id, {
+            label: alert.name || alert.id.replace(/_/g, ' '),
+            severity: alert.severity,
+          });
+        }
       }
     }
-    return Array.from(alertIds);
+    return Array.from(alertMap.values());
   }, [instanceList, nodesData]);
 
   const hasRearLayout = Boolean(template.rear_layout);
@@ -1062,8 +1088,13 @@ export const NodeUnit = ({
   const activeChecks = Array.isArray(nodeMetrics?.checks)
     ? (nodeMetrics.checks as AlertCheck[]).map((check) => check?.id).filter(Boolean)
     : [];
-  const reasons = Array.isArray(nodeMetrics?.alerts)
-    ? (nodeMetrics.alerts as AlertCheck[]).map((alert) => alert?.id).filter(Boolean)
+  const reasons: TooltipReason[] = Array.isArray(nodeMetrics?.alerts)
+    ? (nodeMetrics.alerts as AlertCheck[])
+        .map((alert) => ({
+          label: alert?.name || alert?.id?.replace(/_/g, ' ') || '',
+          severity: alert?.severity,
+        }))
+        .filter((r) => r.label)
     : [];
 
   return (

@@ -201,6 +201,9 @@ async def get_rack_state(
     targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
     snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
 
+    # Build check name lookup for human-readable labels in the response
+    check_names = {c.id: c.name for c in checks_library.checks}
+
     # Collect metrics only if requested (to avoid performance impact)
     nodes_metrics = {}
     component_metrics = {}
@@ -271,8 +274,14 @@ async def get_rack_state(
             "state": state,
             "temperature": temp if temp is not None else 0,
             "power": power if power is not None else 0,
-            "checks": [{"id": cid, "severity": sev} for cid, sev in checks.items()],
-            "alerts": [{"id": cid, "severity": sev} for cid, sev in alerts.items()],
+            "checks": [
+                {"id": cid, "name": check_names.get(cid, cid), "severity": sev}
+                for cid, sev in checks.items()
+            ],
+            "alerts": [
+                {"id": cid, "name": check_names.get(cid, cid), "severity": sev}
+                for cid, sev in alerts.items()
+            ],
         }
 
     rack_state = snapshot.rack_states.get(rack_id, aggregate_states(node_states))
@@ -284,8 +293,14 @@ async def get_rack_state(
     return {
         "rack_id": rack_id,
         "state": rack_state,
-        "checks": [{"id": cid, "severity": sev} for cid, sev in rack_checks_dict.items()],
-        "alerts": [{"id": cid, "severity": sev} for cid, sev in rack_alerts.items()],
+        "checks": [
+            {"id": cid, "name": check_names.get(cid, cid), "severity": sev}
+            for cid, sev in rack_checks_dict.items()
+        ],
+        "alerts": [
+            {"id": cid, "name": check_names.get(cid, cid), "severity": sev}
+            for cid, sev in rack_alerts.items()
+        ],
         "metrics": {"temperature": avg_temp, "power": total_power},
         "infra_metrics": {"components": component_metrics},
         "nodes": processed_nodes,

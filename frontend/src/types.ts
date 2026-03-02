@@ -229,6 +229,7 @@ export interface GlobalStats {
 
 export interface AlertCheck {
   id: string;
+  name?: string;
   severity: string;
 }
 
