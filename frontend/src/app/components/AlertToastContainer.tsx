@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { AlertTriangle, XCircle, X } from 'lucide-react';
+import { AlertTriangle, XCircle, X, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
 import type { ActiveAlert } from '../../types';
@@ -10,6 +11,8 @@ interface ToastEntry {
   title: string;
   message: string;
   severity: string;
+  rackId: string;
+  rackName: string;
 }
 
 const toastConfig = {
@@ -47,6 +50,7 @@ let toastCounter = 0;
 
 export const AlertToastContainer = () => {
   const { features } = useAppConfigSafe();
+  const navigate = useNavigate();
   const [toasts, setToasts] = useState<ToastEntry[]>([]);
   const seenAlertIds = useRef<Set<string>>(new Set());
   const isFirstPoll = useRef(true);
@@ -89,14 +93,19 @@ export const AlertToastContainer = () => {
         const critChecks = alert.checks.filter((c) => c.severity === 'CRIT');
         const warnChecks = alert.checks.filter((c) => c.severity === 'WARN');
         const relevantChecks = severity === 'CRIT' ? critChecks : warnChecks;
-        const checkName = relevantChecks[0]?.id ?? 'unknown check';
+        const firstCheck = relevantChecks[0];
+        // Use human-readable name if available, else format the ID
+        const checkName = firstCheck?.name || firstCheck?.id?.replace(/_/g, ' ') || 'unknown check';
+        const extraCount = relevantChecks.length - 1;
 
         newToasts.push({
           id: `toast-${++toastCounter}`,
           alertId,
           title: alert.device_name || alert.node_id,
-          message: checkName,
+          message: extraCount > 0 ? `${checkName} +${extraCount} more` : checkName,
           severity,
+          rackId: alert.rack_id,
+          rackName: alert.rack_name || alert.rack_id,
         });
       });
 
@@ -119,6 +128,14 @@ export const AlertToastContainer = () => {
     const interval = setInterval(() => void poll(), 30_000);
     return () => clearInterval(interval);
   }, [features.notifications, poll]);
+
+  const goToRack = useCallback(
+    (toast: ToastEntry) => {
+      dismiss(toast.id);
+      navigate(`/views/rack/${toast.rackId}`);
+    },
+    [dismiss, navigate]
+  );
 
   const [expanded, setExpanded] = useState(false);
 
@@ -155,6 +172,15 @@ export const AlertToastContainer = () => {
                 <div className="min-w-0 flex-1">
                   <p className={`text-sm font-semibold ${cfg.title_c}`}>{toast.title}</p>
                   <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{toast.message}</p>
+                  {toast.rackId && (
+                    <button
+                      onClick={() => goToRack(toast)}
+                      className={`mt-1.5 flex items-center gap-1 text-xs font-medium opacity-70 transition-opacity hover:opacity-100 ${cfg.title_c}`}
+                    >
+                      <ArrowRight className="h-3 w-3" />
+                      {toast.rackName}
+                    </button>
+                  )}
                 </div>
                 <button
                   onClick={() => dismiss(toast.id)}
@@ -213,6 +239,15 @@ export const AlertToastContainer = () => {
             <div className="min-w-0 flex-1">
               <p className={`text-sm font-semibold ${cfg.title_c}`}>{mainToast.title}</p>
               <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{mainToast.message}</p>
+              {mainToast.rackId && (
+                <button
+                  onClick={() => goToRack(mainToast)}
+                  className={`mt-1.5 flex items-center gap-1 text-xs font-medium opacity-70 transition-opacity hover:opacity-100 ${cfg.title_c}`}
+                >
+                  <ArrowRight className="h-3 w-3" />
+                  {mainToast.rackName}
+                </button>
+              )}
             </div>
             <button
               onClick={() => dismiss(mainToast.id)}
@@ -261,6 +296,15 @@ export const AlertToastContainer = () => {
             <div className="min-w-0 flex-1">
               <p className={`text-sm font-semibold ${cfg.title_c}`}>{toast.title}</p>
               <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{toast.message}</p>
+              {toast.rackId && (
+                <button
+                  onClick={() => goToRack(toast)}
+                  className={`mt-1.5 flex items-center gap-1 text-xs font-medium opacity-70 transition-opacity hover:opacity-100 ${cfg.title_c}`}
+                >
+                  <ArrowRight className="h-3 w-3" />
+                  {toast.rackName}
+                </button>
+              )}
             </div>
             <button onClick={() => dismiss(toast.id)} className="text-gray-400 hover:text-gray-600">
               <X className="h-4 w-4" />
