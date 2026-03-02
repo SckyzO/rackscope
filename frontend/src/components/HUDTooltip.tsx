@@ -222,7 +222,7 @@ const TempArc = ({ value, warn, crit }: { value: number; warn?: number; crit?: n
 
 // ── Power bar ───────────────────────────────────────────────────────────────────
 
-const PowerBar = ({ watts, max }: { watts: number; max: number }) => {
+const _PowerBar = ({ watts, max }: { watts: number; max: number }) => {
   const p = Math.min(100, Math.round((watts / max) * 100));
   const c = p >= 90 ? 'bg-status-crit' : p >= 70 ? 'bg-status-warn' : 'bg-yellow-400/60';
   return (
@@ -237,7 +237,7 @@ const PowerBar = ({ watts, max }: { watts: number; max: number }) => {
 
 // ── Shared footer ───────────────────────────────────────────────────────────────
 
-const Footer = ({ details, checkSummary }: Pick<HUDTooltipProps, 'details' | 'checkSummary'>) => {
+const _Footer = ({ details, checkSummary }: Pick<HUDTooltipProps, 'details' | 'checkSummary'>) => {
   const hasDetails = (details?.length ?? 0) > 0;
   const hasChecks = checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0;
   if (!hasDetails && !hasChecks) return null;
@@ -312,17 +312,12 @@ const AlertList = ({ reasons }: { reasons: TooltipReason[] }) => (
   </div>
 );
 
-// ══════════════════════════════════════════════════════════════════════════════
-// STYLE 9 — Tinted (DEFAULT)
-// Header avec fond teinté selon statut, séparateur coloré, alertes en premier
-// ══════════════════════════════════════════════════════════════════════════════
-
 const TintedCard = ({
   title,
   subtitle,
   status,
   enclosure,
-  icon: Icon,
+  icon: _Icon,
   checkSummary,
   details,
   reasons,
@@ -330,101 +325,136 @@ const TintedCard = ({
   aura,
 }: HUDTooltipProps & { aura: boolean }) => {
   const st = resolveStatus(status);
-  const hasAlerts = (reasons?.length ?? 0) > 0;
   const tv = metrics?.temp;
   const tw = metrics?.tempWarn;
   const tc = metrics?.tempCrit;
   const tRes = tv !== undefined && tv > 0 ? resolveTempColor(tv, tw, tc) : null;
   const tLbl = tv !== undefined && tv > 0 ? tempLabel(tv, tw, tc) : null;
+  const loc = details?.find((d) => d.italic)?.value;
   return (
     <div
-      className="overflow-hidden rounded-2xl border border-white/[0.06] bg-gray-950/95 backdrop-blur-2xl"
+      className="overflow-hidden rounded-2xl border border-white/[0.05] bg-[#0a0a12]"
       style={{ boxShadow: glowShadow(status, st.hex, aura) }}
     >
-      {/* Tinted header */}
-      <div className="px-4 pt-4 pb-3" style={{ background: `${st.hex}0d` }}>
-        <div className="flex items-start gap-2.5">
-          {Icon && (
-            <div className="mt-0.5 shrink-0 rounded-lg bg-white/[0.06] p-1.5">
-              <Icon className="h-3.5 w-3.5 text-gray-400" />
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="text-[9px] font-semibold tracking-[0.2em] text-gray-500 uppercase">
-              {subtitle || 'Node'}
-            </div>
-            <div className="mt-0.5 text-xl leading-tight font-black tracking-tight text-white uppercase">
-              {title}
-            </div>
-            {enclosure && (
-              <div className="mt-0.5 text-[11px] leading-snug text-gray-500">{enclosure}</div>
-            )}
+      <div
+        className="px-3.5 pt-3.5 pb-3"
+        style={{ background: `linear-gradient(180deg,${st.hex}12 0%,transparent 100%)` }}
+      >
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <div className="text-[8px] font-bold tracking-[0.15em] text-gray-600 uppercase">
+            {subtitle || 'Node'}
           </div>
-          <div className={`mt-0.5 flex shrink-0 items-center gap-1.5 ${st.twText}`}>
-            <div
-              className={`h-2 w-2 rounded-full ${st.twBg} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
-              style={{ boxShadow: `0 0 6px ${st.hex}` }}
-            />
-            <span className="text-[11px] font-black tracking-wider uppercase">{status}</span>
+          <div
+            className={`rounded-[6px] border px-2 py-[3px] text-[9px] font-black tracking-[0.12em] uppercase ${st.twText}`}
+            style={{ borderColor: `${st.hex}4d`, background: 'rgba(255,255,255,0.04)' }}
+          >
+            {status}
           </div>
         </div>
+        <div className="text-[20px] leading-none font-black tracking-[-0.03em] text-white uppercase">
+          {title}
+        </div>
+        {enclosure && <div className="mt-[3px] text-[10px] text-gray-600">{enclosure}</div>}
       </div>
-      <div
-        className="h-px"
-        style={{ background: `linear-gradient(to right, ${st.hex}50, ${st.hex}18, transparent)` }}
-      />
-
-      <div className="space-y-3 px-4 py-3">
-        {hasAlerts && <AlertList reasons={reasons!} />}
-        {(metrics?.temp !== undefined ||
-          (metrics?.power !== undefined && (metrics.power ?? 0) > 0)) && (
-          <div
-            className={`flex items-start gap-3 ${hasAlerts ? 'border-t border-white/[0.05] pt-3' : ''}`}
-          >
+      <div className="flex flex-col gap-2.5 px-3.5 pb-3.5">
+        {(reasons?.length ?? 0) > 0 && (
+          <div className="flex flex-col gap-[3px] border-b border-white/[0.04] pb-2.5">
+            {reasons!.map((r, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-2 rounded-[8px] px-2 py-[5px] ${r.severity === 'CRIT' ? 'bg-status-crit/[0.07]' : 'bg-status-warn/[0.06]'}`}
+              >
+                <div
+                  className={`h-5 w-[2px] shrink-0 rounded-[1px] ${r.severity === 'CRIT' ? 'bg-status-crit' : 'bg-status-warn'}`}
+                />
+                <span className="min-w-0 flex-1 truncate text-[10px] text-gray-200">{r.label}</span>
+                <span
+                  className={`shrink-0 text-[8px] font-black tracking-[0.1em] uppercase ${r.severity === 'CRIT' ? 'text-status-crit' : 'text-status-warn'}`}
+                >
+                  {r.severity}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        {(tv !== undefined || (metrics?.power ?? 0) > 0) && (
+          <div className="flex gap-1">
             {tv !== undefined && (
-              <div className="flex shrink-0 flex-col items-center gap-1">
-                <TempArc value={tv} warn={tw} crit={tc} />
-                <div className="text-center">
-                  <span
-                    className={`font-mono text-[15px] leading-none font-black ${tRes?.twText ?? 'text-gray-300'}`}
-                  >
-                    {tv > 0 ? tv.toFixed(1) : '--'}
-                    <span className="ml-0.5 text-[9px] font-normal text-gray-500">°C</span>
-                  </span>
-                  {tLbl && tLbl !== 'OK' && (
-                    <div
-                      className={`mt-0.5 text-[8px] font-black tracking-widest uppercase ${tRes?.twText}`}
-                    >
-                      {tLbl}
-                    </div>
-                  )}
+              <div className="flex-1 rounded-[10px] bg-white/[0.03] p-2.5">
+                <div className="mb-1 text-[8px] font-bold tracking-[0.15em] text-gray-600 uppercase">
+                  Thermal
                 </div>
+                <div
+                  className={`font-mono text-[19px] leading-none font-black ${tRes?.twText ?? 'text-gray-300'}`}
+                >
+                  {tv > 0 ? tv.toFixed(1) : '--'}
+                  <span className="ml-0.5 text-[9px] font-normal text-gray-500">°C</span>
+                </div>
+                {tc !== undefined && tv > 0 && (
+                  <div className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
+                    <div
+                      className={`h-full rounded-full ${tRes?.twBg ?? 'bg-gray-600'}`}
+                      style={{ width: `${Math.min(100, Math.round((tv / tc) * 100))}%` }}
+                    />
+                  </div>
+                )}
+                {tLbl && tLbl !== 'OK' && (
+                  <div
+                    className={`mt-1 text-[8px] font-black tracking-[0.1em] uppercase ${tRes?.twText}`}
+                  >
+                    {tLbl}
+                  </div>
+                )}
               </div>
             )}
             {(metrics?.power ?? 0) > 0 && (
-              <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pt-1">
-                <div className="flex items-center gap-1.5">
-                  <Zap className="h-3.5 w-3.5 shrink-0 text-yellow-400/80" />
-                  <span className="font-mono text-[17px] leading-none font-black text-gray-100">
-                    {fmtPower(metrics!.power!)}
-                  </span>
+              <div className="flex-1 rounded-[10px] bg-white/[0.03] p-2.5">
+                <div className="mb-1 text-[8px] font-bold tracking-[0.15em] text-gray-600 uppercase">
+                  Power
+                </div>
+                <div className="font-mono text-[19px] leading-none font-black text-yellow-400">
+                  {fmtPower(metrics!.power!)}
                 </div>
                 {metrics?.powerMax && metrics.powerMax > 0 && (
-                  <PowerBar watts={metrics.power!} max={metrics.powerMax} />
+                  <>
+                    <div className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
+                      <div
+                        className="h-full rounded-full bg-yellow-400/60"
+                        style={{
+                          width: `${Math.min(100, Math.round((metrics.power! / metrics.powerMax) * 100))}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="mt-1 font-mono text-[7px] text-gray-600">
+                      {Math.round((metrics.power! / metrics.powerMax) * 100)}% of{' '}
+                      {fmtPower(metrics.powerMax)}
+                    </div>
+                  </>
                 )}
               </div>
             )}
           </div>
         )}
-        <Footer details={details} checkSummary={checkSummary} />
+        {(loc || (checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0)) && (
+          <div className="flex items-center justify-between border-t border-white/[0.04] pt-2">
+            <span className="font-mono text-[9px] text-gray-600">{loc ?? ''}</span>
+            {checkSummary && (
+              <div className="flex gap-2 text-[10px] font-bold">
+                {checkSummary.warn > 0 && (
+                  <span className="text-status-warn">⚠{checkSummary.warn}</span>
+                )}
+                {checkSummary.crit > 0 && (
+                  <span className="text-status-crit">✕{checkSummary.crit}</span>
+                )}
+                {checkSummary.ok > 0 && <span className="text-status-ok">✓{checkSummary.ok}</span>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 };
-
-// ══════════════════════════════════════════════════════════════════════════════
-// STYLE 1 — Compact (barre top 2px, split temp/power en deux colonnes)
-// ══════════════════════════════════════════════════════════════════════════════
 
 const CompactCard = ({
   title,
@@ -443,94 +473,110 @@ const CompactCard = ({
   const tw = metrics?.tempWarn;
   const tc = metrics?.tempCrit;
   const tRes = tv !== undefined && tv > 0 ? resolveTempColor(tv, tw, tc) : null;
-  const tLbl = tv !== undefined && tv > 0 ? tempLabel(tv, tw, tc) : null;
+  const hasAlerts = (reasons?.length ?? 0) > 0;
+  const loc = details?.find((d) => d.italic)?.value;
   return (
     <div
-      className="overflow-hidden rounded-2xl border border-white/[0.06] bg-gray-950/95 backdrop-blur-2xl"
+      className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#111118]"
       style={{ boxShadow: glowShadow(status, st.hex, aura) }}
     >
-      {/* 2px top bar */}
-      <div className={`h-[2px] w-full ${st.twBg} ${status === 'CRIT' ? 'animate-pulse' : ''}`} />
-      <div className="space-y-3 p-4">
-        {/* Header */}
+      <div
+        className={`h-[2px] w-full opacity-70 ${st.twBg} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
+      />
+      <div className="flex flex-col gap-2.5 px-3.5 py-3">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-1 items-start gap-2">
+          <div className="flex min-w-0 items-start gap-2">
             {Icon && (
-              <div className="mt-0.5 shrink-0 rounded-lg bg-white/[0.06] p-1.5">
-                <Icon className="h-3.5 w-3.5 text-gray-400" />
+              <div className="mt-0.5 flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[7px] bg-white/[0.05]">
+                <Icon className="h-[13px] w-[13px] text-gray-400" />
               </div>
             )}
             <div className="min-w-0">
-              <div className="text-[9px] font-semibold tracking-[0.2em] text-gray-500 uppercase">
+              <div className="text-[8px] font-semibold tracking-[0.18em] text-gray-500 uppercase">
                 {subtitle || 'Node'}
               </div>
-              <div className="mt-0.5 text-xl leading-tight font-black tracking-tight text-white uppercase">
+              <div className="text-[16px] leading-tight font-black tracking-[-0.02em] text-white uppercase">
                 {title}
               </div>
-              {enclosure && <div className="mt-0.5 text-[11px] text-gray-500">{enclosure}</div>}
+              {enclosure && <div className="text-[10px] text-gray-600">{enclosure}</div>}
             </div>
           </div>
-          <div className={`flex shrink-0 items-center gap-1.5 ${st.twText}`}>
+          <div className={`flex shrink-0 items-center gap-[5px] ${st.twText}`}>
             <div
-              className={`h-2 w-2 rounded-full ${st.twBg} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
-              style={{ boxShadow: `0 0 6px ${st.hex}` }}
+              className={`h-[6px] w-[6px] rounded-full ${st.twBg} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
+              style={{ boxShadow: `0 0 5px ${st.hex}` }}
             />
-            <span className="text-[11px] font-black tracking-wider uppercase">{status}</span>
+            <span className="text-[10px] font-black tracking-[0.12em] uppercase">{status}</span>
           </div>
         </div>
-        {/* Alerts */}
-        {(reasons?.length ?? 0) > 0 && <AlertList reasons={reasons!} />}
-        {/* Metrics — 2 equal columns */}
+        <div
+          className="h-px"
+          style={{ background: 'linear-gradient(to right,rgba(255,255,255,0.06),transparent)' }}
+        />
+        {hasAlerts && (
+          <>
+            <AlertList reasons={reasons!} />
+            <div
+              className="h-px"
+              style={{ background: 'linear-gradient(to right,rgba(255,255,255,0.06),transparent)' }}
+            />
+          </>
+        )}
         {(tv !== undefined || (metrics?.power ?? 0) > 0) && (
-          <div
-            className={`grid gap-3 ${tv !== undefined && (metrics?.power ?? 0) > 0 ? 'grid-cols-2' : 'grid-cols-1'} border-t border-white/[0.05] pt-3`}
-          >
-            {tv !== undefined && (
-              <div className="flex flex-col items-center gap-1 rounded-xl bg-white/[0.03] p-3">
-                <TempArc value={tv} warn={tw} crit={tc} />
-                <span
-                  className={`font-mono text-[14px] font-black ${tRes?.twText ?? 'text-gray-300'}`}
+          <div className="flex items-center gap-4">
+            {tv !== undefined && tv > 0 && (
+              <div className={`flex items-center gap-[5px] ${tRes?.twText ?? 'text-gray-300'}`}>
+                <svg
+                  className="h-3 w-3 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
                 >
-                  {tv > 0 ? tv.toFixed(1) : '--'}
-                  <span className="text-[9px] font-normal text-gray-500">°C</span>
+                  <path d="M12 2a4 4 0 0 1 4 4v8a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
+                  <line x1="12" y1="18" x2="12" y2="22" />
+                </svg>
+                <span className="font-mono text-[15px] leading-none font-black">
+                  {tv.toFixed(1)}
+                  <span className="ml-0.5 text-[9px] font-normal text-gray-500">°C</span>
                 </span>
-                {tLbl && tLbl !== 'OK' && (
-                  <span
-                    className={`text-[8px] font-black tracking-widest uppercase ${tRes?.twText}`}
-                  >
-                    {tLbl}
-                  </span>
-                )}
               </div>
             )}
             {(metrics?.power ?? 0) > 0 && (
-              <div className="flex flex-col justify-center gap-2 rounded-xl bg-white/[0.03] p-3">
-                <div className="flex items-center gap-1.5">
-                  <Zap className="h-3.5 w-3.5 shrink-0 text-yellow-400/80" />
-                  <span className="font-mono text-[17px] leading-none font-black text-gray-100">
-                    {fmtPower(metrics!.power!)}
-                  </span>
-                </div>
-                {metrics?.powerMax && metrics.powerMax > 0 && (
-                  <PowerBar watts={metrics.power!} max={metrics.powerMax} />
-                )}
+              <div className="flex items-center gap-[5px]">
+                <Zap className="h-3 w-3 shrink-0 text-yellow-400" />
+                <span className="font-mono text-[15px] leading-none font-black text-gray-200">
+                  {fmtPower(metrics!.power!)}
+                </span>
               </div>
             )}
           </div>
         )}
-        <Footer details={details} checkSummary={checkSummary} />
+        {(loc || (checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0)) && (
+          <div className="flex items-center justify-between border-t border-white/[0.05] pt-2">
+            <span className="font-mono text-[10px] text-gray-600">{loc ?? ''}</span>
+            {checkSummary && (
+              <div className="flex gap-2 text-[10px] font-bold">
+                {checkSummary.crit > 0 && (
+                  <span className="text-status-crit">✕{checkSummary.crit}</span>
+                )}
+                {checkSummary.warn > 0 && (
+                  <span className="text-status-warn">⚠{checkSummary.warn}</span>
+                )}
+                {checkSummary.ok > 0 && <span className="text-status-ok">✓{checkSummary.ok}</span>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-// ══════════════════════════════════════════════════════════════════════════════
-// STYLE 4 — Border accent (top + left seulement, couleur selon statut)
-// ══════════════════════════════════════════════════════════════════════════════
-
-const BorderCard = ({
+const GlassCard = ({
   title,
-  subtitle,
+  subtitle: _subtitle,
   status,
   enclosure,
   icon: Icon,
@@ -546,93 +592,161 @@ const BorderCard = ({
   const tc = metrics?.tempCrit;
   const tRes = tv !== undefined && tv > 0 ? resolveTempColor(tv, tw, tc) : null;
   const tLbl = tv !== undefined && tv > 0 ? tempLabel(tv, tw, tc) : null;
+  const loc = details?.find((d) => d.italic)?.value;
   return (
     <div
-      className="overflow-hidden rounded-2xl bg-gray-950/95 backdrop-blur-2xl"
-      style={{
-        boxShadow: glowShadow(status, st.hex, aura),
-        borderTop: `2px solid ${st.hex}80`,
-        borderLeft: `2px solid ${st.hex}80`,
-        borderRight: '1px solid rgba(255,255,255,0.06)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}
+      className="overflow-hidden rounded-[18px] border border-white/[0.05] backdrop-blur-2xl"
+      style={{ background: 'rgba(15,15,25,0.96)', boxShadow: glowShadow(status, st.hex, aura) }}
     >
-      <div className="space-y-3 p-4">
-        {/* Header */}
-        <div className="flex items-start gap-2.5">
-          {Icon && (
-            <div className="mt-0.5 shrink-0 rounded-lg bg-white/[0.06] p-1.5">
-              <Icon className="h-3.5 w-3.5 text-gray-400" />
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="text-[9px] font-semibold tracking-[0.2em] text-gray-500 uppercase">
-              {subtitle || 'Node'}
-            </div>
-            <div className="mt-0.5 text-xl leading-tight font-black tracking-tight text-white uppercase">
-              {title}
-            </div>
-            {enclosure && <div className="mt-0.5 text-[11px] text-gray-500">{enclosure}</div>}
-          </div>
-          <div
-            className={`rounded-lg border px-2 py-1 text-[10px] font-black tracking-wider uppercase ${st.twText}`}
-            style={{ borderColor: `${st.hex}40`, background: `${st.hex}0c` }}
-          >
-            {status}
-          </div>
-        </div>
-        {/* Alerts */}
-        {(reasons?.length ?? 0) > 0 && <AlertList reasons={reasons!} />}
-        {/* Metrics */}
-        {(tv !== undefined || (metrics?.power ?? 0) > 0) && (
-          <div
-            className={`flex items-start gap-3 ${(reasons?.length ?? 0) > 0 ? 'border-t border-white/[0.05] pt-3' : ''}`}
-          >
-            {tv !== undefined && (
-              <div className="flex shrink-0 flex-col items-center gap-1">
-                <TempArc value={tv} warn={tw} crit={tc} />
-                <span
-                  className={`font-mono text-[14px] font-black ${tRes?.twText ?? 'text-gray-300'}`}
-                >
-                  {tv > 0 ? tv.toFixed(1) : '--'}
-                  <span className="text-[9px] font-normal text-gray-500">°C</span>
-                </span>
-                {tLbl && tLbl !== 'OK' && (
-                  <span className={`text-[8px] font-black uppercase ${tRes?.twText}`}>{tLbl}</span>
-                )}
+      <div className="px-3.5 pt-3.5 pb-3">
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            {Icon && (
+              <div
+                className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-[8px]"
+                style={{ background: `${st.hex}1a` }}
+              >
+                <Icon className={`h-[13px] w-[13px] ${st.twText}`} />
               </div>
             )}
-            {(metrics?.power ?? 0) > 0 && (
-              <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 pt-1">
-                <div className="flex items-center gap-1.5">
-                  <Zap className="h-3.5 w-3.5 shrink-0 text-yellow-400/80" />
-                  <span className="font-mono text-[17px] leading-none font-black text-gray-100">
-                    {fmtPower(metrics!.power!)}
-                  </span>
+            <div className="min-w-0 truncate text-[15px] font-black tracking-[-0.02em] text-white uppercase">
+              {title}
+            </div>
+          </div>
+          <div
+            className={`flex shrink-0 items-center gap-1 rounded-full border px-[9px] py-[3px] ${st.twText}`}
+            style={{ borderColor: `${st.hex}66`, background: `${st.hex}0d` }}
+          >
+            <div
+              className={`h-[5px] w-[5px] rounded-full ${st.twBg} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
+            />
+            <span className="text-[9px] font-black tracking-[0.1em] uppercase">{status}</span>
+          </div>
+        </div>
+        {enclosure && <div className="pl-9 text-[10px] text-gray-600">{enclosure}</div>}
+      </div>
+      <div
+        className="mx-3.5 h-px opacity-40"
+        style={{
+          background: `linear-gradient(to right,${st.hex},rgba(255,255,255,0.04),transparent)`,
+        }}
+      />
+      <div className="flex flex-col gap-3 px-3.5 py-3">
+        {(reasons?.length ?? 0) > 0 && (
+          <div className="flex flex-col gap-1">
+            {reasons!.map((r, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-2 rounded-[9px] border-l-2 px-2.5 py-1.5 ${r.severity === 'CRIT' ? 'bg-status-crit/[0.07]' : 'bg-status-warn/[0.07]'}`}
+                style={{
+                  borderLeftColor:
+                    r.severity === 'CRIT' ? 'rgba(239,68,68,0.5)' : 'rgba(245,158,11,0.4)',
+                }}
+              >
+                <div
+                  className={`flex h-[14px] w-[14px] shrink-0 items-center justify-center rounded-full text-[8px] font-black ${r.severity === 'CRIT' ? 'bg-status-crit/20 text-status-crit' : 'bg-status-warn/15 text-status-warn'}`}
+                >
+                  !
                 </div>
-                {metrics?.powerMax && metrics.powerMax > 0 && (
-                  <PowerBar watts={metrics.power!} max={metrics.powerMax} />
+                <span className="min-w-0 flex-1 truncate text-[11px] text-gray-200">{r.label}</span>
+                <span
+                  className={`shrink-0 text-[8px] font-black tracking-[0.1em] uppercase ${r.severity === 'CRIT' ? 'text-status-crit' : 'text-status-warn'}`}
+                >
+                  {r.severity}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        {(tv !== undefined || (metrics?.power ?? 0) > 0) && (
+          <div className="flex gap-3">
+            <div className="flex-1 rounded-[10px] border border-white/[0.05] bg-white/[0.03] p-2.5">
+              <div className="mb-1 text-[8px] font-bold tracking-[0.15em] text-gray-600 uppercase">
+                Thermal
+              </div>
+              {tv !== undefined && tv > 0 ? (
+                <>
+                  <div
+                    className={`font-mono text-[17px] leading-none font-black ${tRes?.twText ?? 'text-gray-300'}`}
+                  >
+                    {tv.toFixed(1)}
+                    <span className="ml-0.5 text-[9px] font-normal text-gray-500">°C</span>
+                  </div>
+                  {tLbl && (
+                    <div
+                      className={`mt-1 text-[8px] font-bold tracking-[0.1em] uppercase ${tRes?.twText}`}
+                    >
+                      {tLbl}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="font-mono text-[17px] leading-none font-black text-gray-600">
+                    --<span className="ml-0.5 text-[9px] text-gray-600">°C</span>
+                  </div>
+                  <div className="mt-1 text-[8px] font-bold tracking-[0.1em] text-gray-700 uppercase">
+                    N/A
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex-1 rounded-[10px] border border-white/[0.05] bg-white/[0.03] p-2.5">
+              <div className="mb-1 text-[8px] font-bold tracking-[0.15em] text-gray-600 uppercase">
+                Power
+              </div>
+              {(metrics?.power ?? 0) > 0 ? (
+                <>
+                  <div className="font-mono text-[17px] leading-none font-black text-gray-200">
+                    {fmtPower(metrics!.power!)}
+                  </div>
+                  {metrics?.powerMax && metrics.powerMax > 0 && (
+                    <div className="mt-1 font-mono text-[7px] text-gray-600">
+                      {Math.round((metrics.power! / metrics.powerMax) * 100)}% of{' '}
+                      {fmtPower(metrics.powerMax)}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="font-mono text-[17px] leading-none font-black text-gray-600">
+                    50<span className="ml-0.5 text-[9px] text-gray-600">W</span>
+                  </div>
+                  <div className="mt-1 text-[8px] font-bold tracking-[0.1em] text-gray-700 uppercase">
+                    Standby
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+        {(loc || (checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0)) && (
+          <div className="flex items-center justify-between border-t border-white/[0.05] pt-2.5">
+            <span className="font-mono text-[10px] text-gray-600">{loc ?? ''}</span>
+            {checkSummary && (
+              <div className="flex gap-2.5 text-[10px] font-bold">
+                {checkSummary.crit > 0 && (
+                  <span className="text-status-crit">✕{checkSummary.crit}</span>
                 )}
+                {checkSummary.warn > 0 && (
+                  <span className="text-status-warn">⚠{checkSummary.warn}</span>
+                )}
+                {checkSummary.ok > 0 && <span className="text-status-ok">✓{checkSummary.ok}</span>}
               </div>
             )}
           </div>
         )}
-        <Footer details={details} checkSummary={checkSummary} />
       </div>
     </div>
   );
 };
 
-// ══════════════════════════════════════════════════════════════════════════════
-// STYLE 8 — Notification card
-// ══════════════════════════════════════════════════════════════════════════════
-
-const NotificationCard = ({
+const SplitCard = ({
   title,
   subtitle,
   status,
   enclosure,
-  icon: Icon,
+  icon: _Icon,
   checkSummary,
   details,
   reasons,
@@ -644,97 +758,85 @@ const NotificationCard = ({
   const tw = metrics?.tempWarn;
   const tc = metrics?.tempCrit;
   const tRes = tv !== undefined && tv > 0 ? resolveTempColor(tv, tw, tc) : null;
+  const tLbl = tv !== undefined && tv > 0 ? tempLabel(tv, tw, tc) : null;
+  const loc = details?.find((d) => d.italic)?.value;
   return (
     <div
-      className="overflow-hidden rounded-2xl border border-white/[0.06] bg-gray-950/95 backdrop-blur-2xl"
+      className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0e0e1a]"
       style={{ boxShadow: glowShadow(status, st.hex, aura) }}
     >
-      {/* Header */}
-      <div className="flex items-start gap-3 px-4 pt-4 pb-3">
-        {Icon ? (
-          <div
-            className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-            style={{ background: `${st.hex}18` }}
-          >
-            <Icon className={`h-4 w-4 ${st.twText}`} />
-          </div>
-        ) : (
-          <div
-            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${st.twBg}/10`}
-          >
-            <div
-              className={`h-3 w-3 rounded-full ${st.twBg} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
-            />
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-bold text-white">
-            {title} <span className={`text-[11px] font-black ${st.twText}`}>— {status}</span>
-          </div>
-          {enclosure && <div className="mt-0.5 text-[10px] text-gray-400">{enclosure}</div>}
-          {subtitle && (
-            <div className="mt-0.5 text-[9px] tracking-wider text-gray-600 uppercase">
-              {subtitle}
+      <div className="flex">
+        <div className="flex flex-1 flex-col gap-2.5 border-r border-white/[0.05] p-3.5">
+          <div>
+            <div className="text-[8px] font-bold tracking-[0.2em] text-gray-600 uppercase">
+              {subtitle || 'Node'}
             </div>
+            <div className="mt-0.5 text-[15px] leading-tight font-black tracking-[-0.02em] text-white uppercase">
+              {title}
+            </div>
+            {enclosure && <div className="mt-0.5 text-[9px] text-gray-600">{enclosure}</div>}
+          </div>
+          <div className={`flex items-center gap-[5px] ${st.twText}`}>
+            <div
+              className={`h-[6px] w-[6px] rounded-full ${st.twBg} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
+              style={{ boxShadow: `0 0 6px ${st.hex}` }}
+            />
+            <span className="text-[10px] font-black tracking-[0.1em] uppercase">{status}</span>
+          </div>
+          {(reasons?.length ?? 0) > 0 && (
+            <div className="flex flex-col gap-1">
+              {reasons!.map((r, i) => (
+                <div
+                  key={i}
+                  className={`truncate rounded-[6px] px-1.5 py-1 text-[10px] ${r.severity === 'CRIT' ? 'bg-status-crit/[0.08] text-status-crit' : 'bg-status-warn/[0.07] text-status-warn'}`}
+                >
+                  {r.label}
+                </div>
+              ))}
+            </div>
+          )}
+          {loc && <div className="font-mono text-[9px] text-gray-600">{loc}</div>}
+        </div>
+        <div className="flex w-[110px] shrink-0 flex-col items-center justify-center gap-1.5 px-2.5 py-3.5">
+          <div className="text-[10px] font-bold tracking-[0.1em] text-gray-600 uppercase">
+            Thermal
+          </div>
+          {tv !== undefined ? (
+            <>
+              <TempArc value={tv} warn={tw} crit={tc} />
+              <div
+                className={`text-center font-mono text-[18px] leading-none font-black ${tRes?.twText ?? 'text-gray-400'}`}
+              >
+                {tv > 0 ? tv.toFixed(1) : '--'}
+                <span className="ml-0.5 text-[9px] font-normal text-gray-600">°C</span>
+              </div>
+              {tLbl && (
+                <div className={`text-[8px] font-black tracking-[0.1em] uppercase ${tRes?.twText}`}>
+                  {tLbl}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="font-mono text-[18px] font-black text-gray-600">--</div>
           )}
         </div>
       </div>
-      <div className="h-px bg-white/[0.05]" />
-      {/* Alerts */}
-      {(reasons?.length ?? 0) > 0 && (
-        <div className="space-y-2 px-4 py-3">
-          {reasons!.map((r, i) => (
-            <div key={i} className="flex items-start gap-2.5">
-              <div
-                className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${r.severity === 'CRIT' ? 'bg-status-crit animate-pulse' : r.severity === 'WARN' ? 'bg-status-warn' : 'bg-gray-600'}`}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="text-[11px] leading-snug text-gray-200">{r.label}</div>
-                {r.severity && (
-                  <div
-                    className={`mt-0.5 text-[8px] font-black tracking-wider uppercase ${r.severity === 'CRIT' ? 'text-status-crit' : r.severity === 'WARN' ? 'text-status-warn' : 'text-gray-500'}`}
-                  >
-                    {r.severity}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+      <div className="flex items-center justify-between border-t border-white/[0.04] bg-black/20 px-3.5 py-2">
+        <div className="flex items-center gap-1.5">
+          <Zap className="h-[11px] w-[11px] text-yellow-400" />
+          <span className="font-mono text-[11px] font-black text-gray-200">
+            {(metrics?.power ?? 0) > 0 ? fmtPower(metrics!.power!) : '--'}
+          </span>
         </div>
-      )}
-      {/* Footer metrics + location */}
-      <div className="h-px bg-white/[0.05]" />
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <div className="flex gap-3">
-          {tv !== undefined && tv > 0 && (
-            <div
-              className={`flex items-center gap-1.5 font-mono text-[12px] font-bold ${tRes?.twText ?? 'text-gray-300'}`}
-            >
-              <span>🌡</span>
-              {tv.toFixed(1)}°C
-            </div>
-          )}
-          {(metrics?.power ?? 0) > 0 && (
-            <div className="flex items-center gap-1.5">
-              <Zap className="h-3 w-3 text-yellow-400/80" />
-              <span className="font-mono text-[12px] font-bold text-gray-200">
-                {fmtPower(metrics!.power!)}
-              </span>
-            </div>
-          )}
-        </div>
-        {(details?.length ?? 0) > 0 && (
-          <span className="font-mono text-[10px] text-gray-500">{details![0].value}</span>
-        )}
-        {checkSummary && checkSummary.crit + checkSummary.warn > 0 && (
-          <div className="flex gap-2 text-[10px] font-bold">
-            {checkSummary.crit > 0 && (
-              <span className="text-status-crit">✕{checkSummary.crit}</span>
-            )}
+        {checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0 && (
+          <div className="flex gap-2 text-[9px] font-bold">
+            {checkSummary.ok > 0 && <span className="text-status-ok">✓{checkSummary.ok}</span>}
             {checkSummary.warn > 0 && (
               <span className="text-status-warn">⚠{checkSummary.warn}</span>
             )}
-            {checkSummary.ok > 0 && <span className="text-status-ok">✓{checkSummary.ok}</span>}
+            {checkSummary.crit > 0 && (
+              <span className="text-status-crit">✕{checkSummary.crit}</span>
+            )}
           </div>
         )}
       </div>
@@ -997,12 +1099,12 @@ export const HUDTooltipCard = ({ style, aura, ...props }: CardProps) => {
   switch (style) {
     case 'compact':
       return <CompactCard {...props} aura={aura} />;
-    case 'border':
-      return <BorderCard {...props} aura={aura} />;
+    case 'glass':
+      return <GlassCard {...props} aura={aura} />;
     case 'terminal':
       return <TerminalCard {...props} aura={aura} />;
-    case 'notification':
-      return <NotificationCard {...props} aura={aura} />;
+    case 'split':
+      return <SplitCard {...props} aura={aura} />;
     case 'ultracompact':
       return <UltraCompactCard {...props} aura={aura} />;
     case 'tinted':
@@ -1015,9 +1117,9 @@ export const HUDTooltipCard = ({ style, aura, ...props }: CardProps) => {
 
 const STYLE_WIDTH: Record<TooltipStyle, string> = {
   compact: 'w-80',
-  border: 'w-80',
+  glass: 'w-80',
   terminal: 'w-72',
-  notification: 'w-80',
+  split: 'w-80',
   tinted: 'w-80',
   ultracompact: 'w-56',
 };

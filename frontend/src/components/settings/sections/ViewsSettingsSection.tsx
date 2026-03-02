@@ -94,10 +94,10 @@ const PREVIEW_PROPS = {
 
 // Scale factors per style to fit the preview container (100px wide × 86px tall)
 const PREVIEW_SCALE: Record<string, number> = {
-  tinted: 0.32,
-  compact: 0.32,
-  border: 0.32,
-  notification: 0.32,
+  tinted: 0.3,
+  compact: 0.3,
+  glass: 0.3,
+  split: 0.32,
   terminal: 0.35,
   ultracompact: 0.45,
 };

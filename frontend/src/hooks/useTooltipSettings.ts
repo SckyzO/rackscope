@@ -26,8 +26,8 @@ export interface TooltipStyleMeta {
 export const TOOLTIP_STYLES: TooltipStyleMeta[] = [
   { id: 'tinted', label: 'Tinted', desc: 'Sections colorées — défaut', width: 'w-80' },
   { id: 'compact', label: 'Compact', desc: 'Barre top + split temp/power', width: 'w-80' },
-  { id: 'border', label: 'Border', desc: 'Bordure haut + gauche colorée', width: 'w-80' },
-  { id: 'notification', label: 'Notification', desc: 'Card style notification', width: 'w-80' },
+  { id: 'glass', label: 'Glass cards', desc: 'Glassmorphism + 2 metric cards', width: 'w-80' },
+  { id: 'split', label: 'Split layout', desc: 'Infos gauche, arc droite', width: 'w-80' },
   { id: 'terminal', label: 'Terminal', desc: 'Style monospace HPC', width: 'w-72' },
   { id: 'ultracompact', label: 'Ultra-compact', desc: 'Vue cluster, 220px', width: 'w-56' },
 ];
