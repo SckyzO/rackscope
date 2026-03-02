@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useState, useMemo, type KeyboardEvent } from 'react';
+import { useMetricsThresholds } from '../hooks/useMetricsThresholds';
 import { createPortal } from 'react-dom';
 import {
   Server,
@@ -23,29 +24,57 @@ import { expandInstanceMap, type InstanceInput } from '../utils/instances';
 
 // --- Reusable HUD Tooltip Component ---
 
-interface TooltipReason {
+export interface TooltipReason {
   label: string;
   severity?: string;
 }
 
-interface HUDTooltipProps {
+export interface HUDTooltipMetrics {
+  temp?: number;
+  tempWarn?: number;
+  tempCrit?: number;
+  power?: number;
+}
+
+export interface HUDTooltipCheckSummary {
+  ok: number;
+  warn: number;
+  crit: number;
+}
+
+export interface HUDTooltipProps {
   title: string;
   subtitle?: string;
   status: string;
-  details: { label: string; value: string; italic?: boolean }[];
+  /** Full enclosure / chassis name — shown below title, no truncation */
+  enclosure?: string;
+  /** Check summary badges — replaces raw "Active checks: N" count */
+  checkSummary?: HUDTooltipCheckSummary;
+  details?: { label: string; value: string; italic?: boolean }[];
   reasons?: TooltipReason[];
-  metrics?: {
-    temp?: number;
-    power?: number;
-  };
+  metrics?: HUDTooltipMetrics;
   mousePos: { x: number; y: number };
+}
+
+// Derive color class from value vs thresholds
+function tempColorClass(temp: number, warn?: number, crit?: number): string {
+  if (crit !== undefined && temp >= crit) return 'text-status-crit';
+  if (warn !== undefined && temp >= warn) return 'text-status-warn';
+  return 'text-status-ok';
+}
+
+function formatPower(watts: number): string {
+  if (watts >= 1000) return `${(watts / 1000).toFixed(1)} kW`;
+  return `${Math.round(watts)} W`;
 }
 
 export const HUDTooltip = ({
   title,
   subtitle,
   status,
-  details,
+  enclosure,
+  checkSummary,
+  details = [],
   reasons,
   metrics,
   mousePos,
@@ -59,7 +88,33 @@ export const HUDTooltip = ({
           ? 'bg-status-warn'
           : 'bg-gray-600';
 
+  const statusText =
+    status === 'OK'
+      ? 'text-status-ok'
+      : status === 'CRIT'
+        ? 'text-status-crit'
+        : status === 'WARN'
+          ? 'text-status-warn'
+          : 'text-gray-400';
+
   const showBelow = mousePos.y < 400;
+  const hasMetrics = metrics?.temp !== undefined || metrics?.power !== undefined;
+  const hasDetails = details.length > 0;
+
+  // Temperature derived state
+  const tempVal = metrics?.temp;
+  const tempWarn = metrics?.tempWarn;
+  const tempCrit = metrics?.tempCrit;
+  const tempColor =
+    tempVal !== undefined ? tempColorClass(tempVal, tempWarn, tempCrit) : 'text-gray-400';
+  const tempBarPct =
+    tempVal !== undefined && tempCrit ? Math.min(100, Math.round((tempVal / tempCrit) * 100)) : 0;
+  const tempBarColor =
+    tempVal !== undefined && tempCrit && tempVal >= tempCrit
+      ? 'bg-status-crit'
+      : tempVal !== undefined && tempWarn && tempVal >= tempWarn
+        ? 'bg-status-warn'
+        : 'bg-status-ok';
 
   return createPortal(
     <div
@@ -73,101 +128,163 @@ export const HUDTooltip = ({
       }}
       className="animate-in fade-in zoom-in-98 w-80 duration-200 ease-out"
     >
-      <div className="relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-panel)]/95 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+      <div className="relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-panel)]/97 shadow-[0_24px_56px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
         {showBelow && (
-          <div className="absolute top-0 left-1/2 -mt-1 h-0 w-0 -translate-x-1/2 border-r-[6px] border-b-[6px] border-l-[6px] border-r-transparent border-b-[var(--color-accent-primary)] border-l-transparent"></div>
+          <div className="absolute top-0 left-1/2 -mt-1 h-0 w-0 -translate-x-1/2 border-r-[6px] border-b-[6px] border-l-[6px] border-r-transparent border-b-[var(--color-accent-primary)] border-l-transparent" />
         )}
 
+        {/* Status bar — left edge, pulses on CRIT */}
         <div
-          className={`absolute top-0 bottom-0 left-0 w-1 ${statusColor} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
-        ></div>
+          className={`absolute top-0 bottom-0 left-0 w-[3px] ${statusColor} ${status === 'CRIT' ? 'animate-pulse' : ''}`}
+        />
 
-        <div className="p-5 pl-7 text-left">
-          {/* Header */}
-          <div className="mb-5 flex items-start justify-between">
-            <div className="space-y-0.5">
-              <h4 className="text-[11px] font-black tracking-widest text-[var(--color-accent-primary)] uppercase opacity-70">
-                {subtitle || 'Identity'}
-              </h4>
-              <div className="text-2xl leading-none font-black tracking-tighter text-[var(--color-text-base)] uppercase">
+        <div className="p-4 pl-5 text-left">
+          {/* ── Header ──────────────────────────────────── */}
+          <div className="mb-3 flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="text-[9px] font-bold tracking-[0.18em] text-[var(--color-accent-primary)] uppercase opacity-60">
+                {subtitle || 'Node'}
+              </div>
+              <div className="mt-0.5 text-xl leading-none font-black tracking-tighter text-[var(--color-text-base)] uppercase">
                 {title}
               </div>
+              {enclosure && (
+                <div className="mt-1 text-[11px] leading-tight text-gray-400 dark:text-gray-500">
+                  {enclosure}
+                </div>
+              )}
             </div>
             <div
-              className={`rounded-md border px-2 py-1 text-[10px] font-black uppercase ${statusColor.replace('bg-', 'border-')}/20 ${statusColor.replace('bg-', 'text-')} bg-current/5`}
+              className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-black tracking-wider uppercase ${statusColor.replace('bg-', 'border-')}/25 ${statusText} ${statusColor}/8`}
             >
               {status}
             </div>
           </div>
 
-          {/* Details Grid */}
-          <div className="mb-5 grid grid-cols-2 gap-4 border-y border-[var(--color-border)]/10 py-4">
-            {details.map((d, i) => (
-              <div key={i} className={`space-y-1 ${i % 2 !== 0 ? 'text-right' : ''}`}>
-                <span className="block text-[10px] font-bold tracking-wider text-gray-500 uppercase opacity-60">
-                  {d.label}
-                </span>
-                <span
-                  className={`block truncate text-[13px] font-bold text-[var(--color-text-base)] ${d.italic ? 'font-mono italic' : ''}`}
-                >
-                  {d.value}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Metrics */}
-          {(metrics?.temp !== undefined || metrics?.power !== undefined) && (
-            <div className="flex gap-4">
-              <div className="flex flex-1 items-center gap-3 rounded-xl border border-[var(--color-accent-primary)]/5 bg-[var(--color-accent-primary)]/5 p-2.5 shadow-inner">
-                <div className="bg-status-warn/10 text-status-warn rounded-lg p-1.5">
-                  <Thermometer className="h-4 w-4" />
+          {/* ── Metrics ─────────────────────────────────── */}
+          {hasMetrics && (
+            <div className="mb-3 space-y-2 rounded-lg border border-[var(--color-border)]/10 bg-[var(--color-border)]/5 p-3">
+              {tempVal !== undefined && (
+                <div className="flex items-center gap-2.5">
+                  <Thermometer className={`h-3.5 w-3.5 shrink-0 ${tempColor}`} />
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <div className="flex items-baseline gap-1.5">
+                      <span
+                        className={`font-mono text-[17px] leading-none font-black ${tempColor}`}
+                      >
+                        {tempVal > 0 ? tempVal.toFixed(1) : '--'}
+                      </span>
+                      <span className="text-[10px] text-gray-400">°C</span>
+                      {tempVal > 0 && tempWarn !== undefined && (
+                        <span
+                          className={`ml-auto text-[9px] font-bold uppercase ${tempColor} opacity-80`}
+                        >
+                          {tempVal >= (tempCrit ?? Infinity)
+                            ? 'CRIT'
+                            : tempVal >= tempWarn
+                              ? 'WARN'
+                              : 'OK'}
+                        </span>
+                      )}
+                    </div>
+                    {tempCrit !== undefined && tempVal > 0 && (
+                      <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--color-border)]/20">
+                        <div
+                          className={`h-full rounded-full transition-all ${tempBarColor}`}
+                          style={{ width: `${tempBarPct}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black tracking-tighter text-gray-500 uppercase">
-                    Thermal
-                  </span>
-                  <span className="mt-0.5 font-mono text-base leading-none font-black text-[var(--color-text-base)]">
-                    {metrics.temp ? `${metrics.temp.toFixed(1)}°` : '--'}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-1 items-center gap-3 rounded-xl border border-[var(--color-accent-primary)]/5 bg-[var(--color-accent-primary)]/5 p-2.5 shadow-inner">
-                <div className="bg-status-ok/10 text-status-ok rounded-lg p-1.5">
-                  <Zap className="h-4 w-4" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black tracking-tighter text-gray-500 uppercase">
-                    Power
-                  </span>
-                  <span className="mt-0.5 font-mono text-base leading-none font-black text-[var(--color-text-base)]">
-                    {metrics.power ? `${(metrics.power / 1000).toFixed(1)}k` : '--'}
+              )}
+              {metrics?.power !== undefined && metrics.power > 0 && (
+                <div className="flex items-center gap-2.5">
+                  <Zap className="h-3.5 w-3.5 shrink-0 text-yellow-400" />
+                  <span className="font-mono text-[17px] leading-none font-black text-[var(--color-text-base)]">
+                    {formatPower(metrics.power)}
                   </span>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
-          {/* Reasons */}
+          {/* ── Details + Check Summary ──────────────────── */}
+          {(hasDetails || checkSummary) && (
+            <div className="mb-3 border-y border-[var(--color-border)]/10 py-2.5">
+              {hasDetails && (
+                <div className="mb-2 grid grid-cols-2 gap-x-4 gap-y-2">
+                  {details.map((d, i) => (
+                    <div key={i} className={`space-y-0.5 ${i % 2 !== 0 ? 'text-right' : ''}`}>
+                      <span className="block text-[9px] font-bold tracking-wider text-gray-500 uppercase opacity-60">
+                        {d.label}
+                      </span>
+                      <span
+                        className={`block text-[12px] font-semibold text-[var(--color-text-base)] ${d.italic ? 'font-mono italic' : ''}`}
+                      >
+                        {d.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0 && (
+                <div className="flex items-center gap-3 text-[11px] font-bold">
+                  <span className="text-[9px] font-bold tracking-wider text-gray-500 uppercase opacity-60">
+                    Checks
+                  </span>
+                  {checkSummary.ok > 0 && (
+                    <span className="text-status-ok flex items-center gap-1">
+                      <span className="text-[10px]">✓</span>
+                      {checkSummary.ok}
+                    </span>
+                  )}
+                  {checkSummary.warn > 0 && (
+                    <span className="text-status-warn flex items-center gap-1">
+                      <span className="text-[10px]">⚠</span>
+                      {checkSummary.warn}
+                    </span>
+                  )}
+                  {checkSummary.crit > 0 && (
+                    <span className="text-status-crit flex items-center gap-1">
+                      <span className="text-[10px]">✕</span>
+                      {checkSummary.crit}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Reasons ─────────────────────────────────── */}
           {reasons && reasons.length > 0 && (
-            <div className="mt-4 border-t border-[var(--color-border)]/10 pt-4">
-              <div className="mb-2 text-[10px] font-bold tracking-wider text-gray-500 uppercase">
-                Reasons
+            <div>
+              <div className="mb-1.5 text-[9px] font-bold tracking-[0.15em] text-gray-500 uppercase opacity-70">
+                Alerts
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {reasons.map((r, i) => (
-                  <div key={i} className="flex items-center justify-between gap-2">
-                    <span className="truncate text-[11px] text-[var(--color-text-base)] opacity-80">
+                  <div
+                    key={i}
+                    className={`flex items-center gap-2 rounded-md px-2 py-1 ${
+                      r.severity === 'CRIT'
+                        ? 'bg-status-crit/8 border-status-crit/60 border-l-2'
+                        : r.severity === 'WARN'
+                          ? 'bg-status-warn/8 border-status-warn/60 border-l-2'
+                          : 'bg-[var(--color-border)]/5'
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1 truncate text-[11px] text-[var(--color-text-base)] opacity-90">
                       {r.label}
                     </span>
                     {r.severity && (
                       <span
-                        className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
+                        className={`shrink-0 text-[9px] font-black uppercase ${
                           r.severity === 'CRIT'
-                            ? 'bg-status-crit/15 text-status-crit'
+                            ? 'text-status-crit'
                             : r.severity === 'WARN'
-                              ? 'bg-status-warn/15 text-status-warn'
-                              : 'bg-gray-500/15 text-gray-500'
+                              ? 'text-status-warn'
+                              : 'text-gray-500'
                         }`}
                       >
                         {r.severity}
@@ -182,7 +299,7 @@ export const HUDTooltip = ({
       </div>
 
       {!showBelow && (
-        <div className="mx-auto h-0 w-0 border-t-[8px] border-r-[8px] border-l-[8px] border-t-[var(--color-bg-panel)]/95 border-r-transparent border-l-transparent drop-shadow-lg"></div>
+        <div className="mx-auto h-0 w-0 border-t-[8px] border-r-[8px] border-l-[8px] border-t-[var(--color-bg-panel)]/97 border-r-transparent border-l-transparent drop-shadow-lg" />
       )}
     </div>,
     document.getElementById('tooltip-root') as HTMLElement
@@ -769,6 +886,9 @@ export const DeviceChassis = ({
   rackWidth?: number;
 }) => {
   const [suppressTooltip, setSuppressTooltip] = useState(false);
+  const metricsThresholds = useMetricsThresholds();
+  const tempThresholds = metricsThresholds['node_temperature'];
+
   const nodeMap = useMemo(() => {
     // For storage devices, create virtual node IDs per slot
     if (template.type === 'storage') {
@@ -916,55 +1036,75 @@ export const DeviceChassis = ({
       onKeyDown={handleKeyDown}
       onMouseEnter={(e) => {
         if (suppressTooltip) return;
+        const chassisCheckSummary = {
+          ok: Math.max(0, chassisChecks.length - chassisAlerts.length),
+          warn: chassisAlerts.filter((a) => a.severity === 'WARN').length,
+          crit: chassisAlerts.filter((a) => a.severity === 'CRIT').length,
+        };
         onTooltipChange?.({
           title: device.name,
-          subtitle: 'Device',
+          subtitle:
+            template.type === 'storage'
+              ? 'Storage'
+              : template.type === 'network'
+                ? 'Network'
+                : 'Device',
           status: chassisHealth,
+          enclosure: template.name !== device.name ? template.name : undefined,
+          checkSummary: chassisCheckSummary,
           details: [
-            { label: 'Template', value: template.id },
+            { label: 'Location', value: `RACK U${uPosition}`, italic: true },
             {
-              label: 'Instances',
+              label: 'Nodes',
               value:
-                instanceList.length > 4
-                  ? `${instanceList.slice(0, 4).join(', ')} +${instanceList.length - 4}`
+                instanceList.length > 3
+                  ? `${instanceList.slice(0, 3).join(', ')} +${instanceList.length - 3}`
                   : instanceList.join(', ') || 'None',
             },
-            { label: 'Active checks', value: String(chassisChecks.length) },
-            { label: 'Location', value: `RACK U${uPosition}`, italic: true },
           ],
           reasons:
             chassisAlerts.length > 0
               ? chassisAlerts
               : template.checks?.length
                 ? []
-                : ['No checks configured for this device'],
+                : [{ label: 'No checks configured' }],
           mousePos: { x: e.clientX, y: e.clientY },
         });
       }}
       onMouseMove={(e) => {
         if (suppressTooltip) return;
+        const chassisCheckSummary = {
+          ok: Math.max(0, chassisChecks.length - chassisAlerts.length),
+          warn: chassisAlerts.filter((a) => a.severity === 'WARN').length,
+          crit: chassisAlerts.filter((a) => a.severity === 'CRIT').length,
+        };
         onTooltipChange?.({
           title: device.name,
-          subtitle: 'Device',
+          subtitle:
+            template.type === 'storage'
+              ? 'Storage'
+              : template.type === 'network'
+                ? 'Network'
+                : 'Device',
           status: chassisHealth,
+          enclosure: template.name !== device.name ? template.name : undefined,
+          checkSummary: chassisCheckSummary,
           details: [
-            { label: 'Template', value: template.id },
+            { label: 'Location', value: `RACK U${uPosition}`, italic: true },
             {
-              label: 'Instances',
+              label: 'Nodes',
               value:
-                instanceList.length > 4
-                  ? `${instanceList.slice(0, 4).join(', ')} +${instanceList.length - 4}`
+                instanceList.length > 3
+                  ? `${instanceList.slice(0, 3).join(', ')} +${instanceList.length - 3}`
                   : instanceList.join(', ') || 'None',
             },
-            { label: 'Active checks', value: String(chassisChecks.length) },
-            { label: 'Location', value: `RACK U${uPosition}`, italic: true },
           ],
           reasons:
             chassisAlerts.length > 0
               ? chassisAlerts
               : template.checks?.length
                 ? []
-                : ['No checks configured for this device'],
+                : [{ label: 'No checks configured' }],
           mousePos: { x: e.clientX, y: e.clientY },
         });
       }}
@@ -1017,6 +1157,7 @@ export const DeviceChassis = ({
                   slotNum={slotNum}
                   nodeHealth={nodeHealth}
                   nodeMetrics={nodeMetrics}
+                  tempThresholds={tempThresholds}
                   type={template.type}
                   uHeight={template.u_height}
                   uPosition={uPosition}
@@ -1101,6 +1242,7 @@ export const NodeUnit = ({
   uPosition,
   chassisName,
   nodeMetrics,
+  tempThresholds,
   onHoverChange,
   onTooltipChange,
   hideText: hideTextProp,
@@ -1113,62 +1255,57 @@ export const NodeUnit = ({
   uPosition: number;
   chassisName: string;
   nodeMetrics?: RackNodeState;
+  tempThresholds?: { warn?: number; crit?: number };
   onHoverChange?: (value: boolean) => void;
   onTooltipChange?: (payload: HUDTooltipProps | null) => void;
   hideText?: boolean;
 }) => {
   const Icon = type === 'network' ? RouterIcon : Server;
   const hideText = hideTextProp !== undefined ? hideTextProp : uHeight === 1;
-  const activeChecks = Array.isArray(nodeMetrics?.checks)
-    ? (nodeMetrics.checks as AlertCheck[]).map((check) => check?.id).filter(Boolean)
-    : [];
-  const reasons: TooltipReason[] = Array.isArray(nodeMetrics?.alerts)
-    ? (nodeMetrics.alerts as AlertCheck[])
-        .map((alert) => ({
-          label: alert?.name || alert?.id?.replace(/_/g, ' ') || '',
-          severity: alert?.severity,
-        }))
-        .filter((r) => r.label)
-    : [];
+
+  const checks = Array.isArray(nodeMetrics?.checks) ? (nodeMetrics.checks as AlertCheck[]) : [];
+  const alertList = Array.isArray(nodeMetrics?.alerts) ? (nodeMetrics.alerts as AlertCheck[]) : [];
+  const checkSummary = {
+    ok: Math.max(0, checks.length - alertList.length),
+    warn: alertList.filter((a) => a.severity === 'WARN').length,
+    crit: alertList.filter((a) => a.severity === 'CRIT').length,
+  };
+  const reasons: TooltipReason[] = alertList
+    .map((alert) => ({
+      label: alert?.name || alert?.id?.replace(/_/g, ' ') || '',
+      severity: alert?.severity,
+    }))
+    .filter((r) => r.label);
+
+  const tooltipPayload = (): HUDTooltipProps => ({
+    title: nodeName || 'UNASSIGNED',
+    subtitle: 'Node',
+    status: nodeHealth,
+    enclosure: chassisName,
+    checkSummary,
+    details: [{ label: 'Location', value: `RACK U${uPosition} · S${slotNum}`, italic: true }],
+    reasons,
+    metrics: nodeMetrics
+      ? {
+          temp: nodeMetrics.temperature,
+          tempWarn: tempThresholds?.warn,
+          tempCrit: tempThresholds?.crit,
+          power: nodeMetrics.power,
+        }
+      : undefined,
+    mousePos: { x: 0, y: 0 },
+  });
 
   return (
     <div
       onMouseEnter={(e) => {
         e.stopPropagation();
         onHoverChange?.(true);
-        onTooltipChange?.({
-          title: nodeName || 'UNASSIGNED',
-          subtitle: 'Node Identity',
-          status: nodeHealth,
-          details: [
-            { label: 'Enclosure', value: chassisName },
-            { label: 'Active checks', value: String(activeChecks.length) },
-            { label: 'Physical Location', value: `RACK U${uPosition} S${slotNum}`, italic: true },
-          ],
-          reasons,
-          metrics: nodeMetrics
-            ? { temp: nodeMetrics.temperature, power: nodeMetrics.power }
-            : undefined,
-          mousePos: { x: e.clientX, y: e.clientY },
-        });
+        onTooltipChange?.({ ...tooltipPayload(), mousePos: { x: e.clientX, y: e.clientY } });
       }}
       onMouseMove={(e) => {
         e.stopPropagation();
-        onTooltipChange?.({
-          title: nodeName || 'UNASSIGNED',
-          subtitle: 'Node Identity',
-          status: nodeHealth,
-          details: [
-            { label: 'Enclosure', value: chassisName },
-            { label: 'Active checks', value: String(activeChecks.length) },
-            { label: 'Physical Location', value: `RACK U${uPosition} S${slotNum}`, italic: true },
-          ],
-          reasons,
-          metrics: nodeMetrics
-            ? { temp: nodeMetrics.temperature, power: nodeMetrics.power }
-            : undefined,
-          mousePos: { x: e.clientX, y: e.clientY },
-        });
+        onTooltipChange?.({ ...tooltipPayload(), mousePos: { x: e.clientX, y: e.clientY } });
       }}
       onMouseLeave={(e) => {
         e.stopPropagation();

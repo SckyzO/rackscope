@@ -16,8 +16,8 @@ display:
   default_range: 24h
   aggregation: avg
   thresholds:
-    warn: 70
-    crit: 85
+    warn: 38    # °C — node inlet/ambient warning threshold
+    crit: 45    # °C — node inlet/ambient critical threshold
 category: temperature
 tags:
   - compute
