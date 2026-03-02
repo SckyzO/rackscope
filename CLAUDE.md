@@ -656,7 +656,42 @@ Target audience: NOC operators, N1/N2 sysadmins, MCO teams.
 
 ## Development Workflow
 
-### Current Status: v1.0 Release Preparation
+### 🚀 Current Status: Road to Beta
+
+**Documentation is now a first-class deliverable. Every user-facing feature MUST be reflected in the Docusaurus site (`website/docs/`) in the same commit or PR that ships it.**
+
+#### Documentation rules (NON-NEGOTIABLE from beta onwards)
+
+1. **New feature → update the relevant doc page before committing.** If no page exists yet, create one and add it to `sidebars.js`.
+2. **Changed behaviour → update the doc.** Config key renamed, API changed, UI reworked — the doc must match reality.
+3. **New config field → document it.** Every YAML key added to `app.yaml`, a template, a plugin config, or a metrics catalog must appear in the admin guide or the relevant reference page.
+4. **New API endpoint → update `api-reference/`.** Route, method, parameters, response shape.
+5. **Developer-facing change** (new hook, new registry, new plugin API) → update or create a page under `architecture/`.
+
+#### Doc pages to keep in sync
+
+| What changed | Doc file to update |
+|---|---|
+| New UI view or page | `user-guide/views.md` or a new `user-guide/*.md` |
+| New dashboard widget | `user-guide/dashboard.md` + `architecture/dashboard-widgets.md` |
+| New editor | `user-guide/editors.md` |
+| New setting in Settings UI | `admin-guide/settings-ui.md` |
+| New `app.yaml` key | `admin-guide/app-yaml.md` |
+| New template field | `admin-guide/templates.md` |
+| New health check field | `user-guide/health-checks.md` |
+| New API endpoint | `api-reference/*.md` |
+| Simulator change | `plugins/simulator.md` |
+| Slurm plugin change | `plugins/slurm.md` + `user-guide/slurm.md` |
+| New plugin | `plugins/` new page + `sidebars.js` |
+| Frontend architecture change | `architecture/frontend.md` |
+| Backend architecture change | `architecture/backend.md` |
+
+#### Commit message convention for doc updates
+
+- If code + doc ship together: single commit, e.g. `feat(slurm): wildcard node mapping + docs`
+- If doc is a follow-up: `docs(<scope>): update <page> for <feature>`
+
+### Current Status: v1.0 → Beta
 
 **All phases complete** (1 through 9):
 
@@ -696,8 +731,9 @@ Planned improvements after v1.0 release:
 4. **Run linters** with `make lint` to catch issues early
 5. **Test manually** using the UI at `http://localhost:5173`
 6. **Add tests** for new features and run `make test`
-7. **Validate with Docker Compose stack** (check logs with `make logs`, rebuild with `make build` when needed)
-8. **Never commit ARCHITECTURE/ files** (private design documents)
+7. **Update Docusaurus docs** — see the doc rules above. Every user-facing change ships with its doc update.
+8. **Validate with Docker Compose stack** (check logs with `make logs`, rebuild with `make build` when needed)
+9. **Never commit ARCHITECTURE/ files** (private design documents)
 
 ## Testing
 
