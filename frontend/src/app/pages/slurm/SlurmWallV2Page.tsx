@@ -142,12 +142,15 @@ function buildSlotMap(device: Device, template?: DeviceTemplate): Record<number,
   }, {});
 }
 
-function worstSeverity(nodes: Record<string, { severity: string }>): string {
+// nodesData uses 'state' (RackNodeState), slurmNodes uses 'severity'
+function worstSeverity(nodes: Record<string, RackNodeState | { severity: string }>): string {
   let worst = 'UNKNOWN';
   for (const n of Object.values(nodes)) {
-    if (n.severity === 'CRIT') return 'CRIT';
-    if (n.severity === 'WARN') worst = 'WARN';
-    else if (worst === 'UNKNOWN' && n.severity === 'OK') worst = 'OK';
+    // Support both RackNodeState (.state) and slurmNode (.severity)
+    const sev = (n as RackNodeState).state ?? (n as { severity: string }).severity;
+    if (sev === 'CRIT') return 'CRIT';
+    if (sev === 'WARN') worst = 'WARN';
+    else if (worst === 'UNKNOWN' && sev === 'OK') worst = 'OK';
   }
   return worst;
 }
@@ -452,7 +455,7 @@ const RackPhysicalCard = ({
           {worst}
         </span>
       </div>
-      <div className="flex-1 bg-gray-950 p-1">
+      <div className="bg-gray-950 p-1" style={{ height: `${(rack.u_height ?? 42) * 14}px` }}>
         <RackElevation
           rack={rack as never}
           catalog={catalog}
@@ -937,9 +940,14 @@ export const SlurmWallV2Page = () => {
           title={hover.node}
           subtitle="Slurm Node"
           status={hover.severity}
+          enclosure={hover.rackName}
+          reasons={
+            hover.status !== 'idle' && hover.status !== 'allocated'
+              ? [{ label: hover.status, severity: hover.severity }]
+              : undefined
+          }
           details={[
-            { label: 'Rack', value: hover.rackName },
-            { label: 'Status', value: hover.status },
+            { label: 'Status', value: hover.status, italic: true },
             { label: 'Partitions', value: hover.partitions.join(', ') || '—', italic: true },
           ]}
           mousePos={{ x: hover.x, y: hover.y }}

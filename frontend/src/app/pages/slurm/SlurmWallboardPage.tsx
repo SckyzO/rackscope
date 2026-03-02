@@ -608,13 +608,17 @@ export const SlurmWallboardPage = () => {
           title={hover.node}
           subtitle="Slurm Node"
           status={hover.severity}
+          enclosure={`${hover.rackName} · ${hover.deviceName}`}
+          reasons={
+            hover.status !== 'idle' && hover.status !== 'allocated'
+              ? [{ label: hover.status, severity: hover.severity }]
+              : undefined
+          }
           details={[
-            { label: 'Rack', value: hover.rackName },
-            { label: 'Device', value: hover.deviceName },
-            { label: 'Status', value: hover.status.toUpperCase(), italic: true },
+            { label: 'Status', value: hover.status, italic: true },
             {
               label: 'Partitions',
-              value: hover.partitions.length ? hover.partitions.join(', ') : 'N/A',
+              value: hover.partitions.length ? hover.partitions.join(', ') : '—',
               italic: true,
             },
           ]}
