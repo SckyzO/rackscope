@@ -313,7 +313,8 @@ export const RackPage = () => {
                   infraComponents={frontInfra}
                   sideComponents={sideInfra}
                   allowInfraOverlap={false}
-                  pduMetrics={health?.infra_metrics?.pdu}
+                  pduMetrics={health?.infra_metrics?.components}
+                  rackAlerts={health?.alerts ?? []}
                   onDeviceClick={handleDeviceClick}
                   maxUPx={48}
                 />
@@ -338,7 +339,8 @@ export const RackPage = () => {
                   infraComponents={rearInfra}
                   sideComponents={sideInfra}
                   allowInfraOverlap={true}
-                  pduMetrics={health?.infra_metrics?.pdu}
+                  pduMetrics={health?.infra_metrics?.components}
+                  rackAlerts={health?.alerts ?? []}
                   onDeviceClick={handleDeviceClick}
                   maxUPx={48}
                 />

@@ -205,6 +205,7 @@ export const RackElevation = ({
   overlay,
   onDeviceClick,
   pduMetrics,
+  rackAlerts = [],
   fullWidth = false,
   disableZoom = false,
   disableTooltip = false,
@@ -233,6 +234,7 @@ export const RackElevation = ({
       inlet_rating_amp?: number;
     }
   >;
+  rackAlerts?: AlertCheck[];
   fullWidth?: boolean;
   /** Disable the hover scale-up zoom effect on devices */
   disableZoom?: boolean;
@@ -345,6 +347,7 @@ export const RackElevation = ({
             rackName={rack.name}
             onTooltipChange={setTooltip}
             pduMetrics={pduMetrics}
+            rackAlerts={rackAlerts}
           />
         )}
         <div className="relative flex h-full w-full flex-col-reverse rounded-sm border-x-[24px] border-[var(--color-rack-frame)] bg-[var(--color-rack-frame)] shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-colors duration-500">
@@ -418,6 +421,7 @@ export const RackElevation = ({
             rackName={rack.name}
             onTooltipChange={setTooltip}
             pduMetrics={pduMetrics}
+            rackAlerts={rackAlerts}
           />
         )}
       </div>
@@ -478,6 +482,7 @@ const SideRail = ({
   rackName,
   onTooltipChange,
   pduMetrics,
+  rackAlerts = [],
 }: {
   components: Array<{
     component: InfrastructureComponent & { slot?: number; span?: number };
@@ -498,6 +503,7 @@ const SideRail = ({
       inlet_rating_amp?: number;
     }
   >;
+  rackAlerts?: AlertCheck[];
 }) => {
   return (
     <div
@@ -520,6 +526,7 @@ const SideRail = ({
               rackName={rackName}
               onTooltipChange={onTooltipChange}
               pduMetrics={pduMetrics}
+              rackAlerts={rackAlerts}
             />
           </div>
         );
@@ -535,6 +542,7 @@ const SideAttachment = ({
   rackName,
   onTooltipChange,
   pduMetrics,
+  rackAlerts = [],
 }: {
   component: InfrastructureComponent & { slot?: number; span?: number };
   horizontal?: boolean;
@@ -551,17 +559,31 @@ const SideAttachment = ({
       inlet_rating_amp?: number;
     }
   >;
+  rackAlerts?: AlertCheck[];
 }) => {
+  // Derive component health from rack-level alerts for PDU checks
+  const pduCheckIds = new Set(component.checks ?? []);
+  const relevantAlerts = rackAlerts.filter((a) => pduCheckIds.has(a.id));
+  const compHealth = relevantAlerts.some((a) => a.severity === 'CRIT')
+    ? 'CRIT'
+    : relevantAlerts.some((a) => a.severity === 'WARN')
+      ? 'WARN'
+      : 'OK';
+
   const accent =
-    component.type === 'power'
-      ? 'text-status-warn border-status-warn/40'
-      : component.type === 'cooling'
-        ? 'text-blue-400 border-blue-500/40'
-        : component.type === 'management'
-          ? 'text-cyan-400 border-cyan-500/40'
-          : component.type === 'network'
-            ? 'text-indigo-400 border-indigo-500/40'
-            : 'text-gray-400 border-[var(--color-border)]/40';
+    compHealth === 'CRIT'
+      ? 'text-status-crit border-status-crit/60'
+      : compHealth === 'WARN'
+        ? 'text-status-warn border-status-warn/60'
+        : component.type === 'power'
+          ? 'text-status-warn/50 border-status-warn/30'
+          : component.type === 'cooling'
+            ? 'text-blue-400 border-blue-500/40'
+            : component.type === 'management'
+              ? 'text-cyan-400 border-cyan-500/40'
+              : component.type === 'network'
+                ? 'text-indigo-400 border-indigo-500/40'
+                : 'text-gray-400 border-[var(--color-border)]/40';
   const layout = horizontal ? 'h-full w-full' : 'h-full w-full';
   const Icon =
     component.type === 'power'
@@ -615,9 +637,15 @@ const SideAttachment = ({
         onTooltipChange?.({
           title: component.name,
           subtitle: component.type === 'power' ? 'PDU' : 'Rack Component',
-          status: 'OK',
+          status: compHealth,
           details,
-          reasons: checkReasons,
+          reasons:
+            relevantAlerts.length > 0
+              ? relevantAlerts.map((a) => ({
+                  label: a.name || a.id.replace(/_/g, ' '),
+                  severity: a.severity,
+                }))
+              : checkReasons,
           mousePos: { x: e.clientX, y: e.clientY },
         });
       }}
@@ -654,9 +682,15 @@ const SideAttachment = ({
         onTooltipChange?.({
           title: component.name,
           subtitle: component.type === 'power' ? 'PDU' : 'Rack Component',
-          status: 'OK',
+          status: compHealth,
           details,
-          reasons: checkReasons,
+          reasons:
+            relevantAlerts.length > 0
+              ? relevantAlerts.map((a) => ({
+                  label: a.name || a.id.replace(/_/g, ' '),
+                  severity: a.severity,
+                }))
+              : checkReasons,
           mousePos: { x: e.clientX, y: e.clientY },
         });
       }}

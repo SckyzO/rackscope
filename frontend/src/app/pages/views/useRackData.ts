@@ -168,6 +168,13 @@ export function useRackData(rackId: string | undefined): RackData {
     },
     {} as Record<string, number>
   );
+  // Include rack-level alerts (e.g. PDU checks) in WARN/CRIT counters
+  for (const alert of health?.alerts ?? []) {
+    const sev = alert.severity;
+    if (sev === 'WARN' || sev === 'CRIT') {
+      nodeCounts[sev] = (nodeCounts[sev] ?? 0) + 1;
+    }
+  }
 
   return {
     rack,

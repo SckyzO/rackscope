@@ -257,12 +257,14 @@ export interface RackNodeState {
 
 export interface RackState {
   state?: string;
+  checks?: AlertCheck[];
+  alerts?: AlertCheck[];
   metrics?: {
     temperature?: number;
     power?: number;
   };
   infra_metrics?: {
-    pdu?: Record<
+    components?: Record<
       string,
       {
         activepower_watt?: number;
