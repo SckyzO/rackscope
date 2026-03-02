@@ -1,5 +1,17 @@
 import { useState } from 'react';
-import { Globe, LayoutDashboard, MonitorPlay, ArrowRight, RotateCcw, Check } from 'lucide-react';
+import {
+  Globe,
+  LayoutDashboard,
+  MonitorPlay,
+  ArrowRight,
+  RotateCcw,
+  Check,
+  MousePointerClick,
+} from 'lucide-react';
+import { Server } from 'lucide-react';
+import { useTooltipSettings, TOOLTIP_STYLES } from '../../../hooks/useTooltipSettings';
+import { HUDTooltipCard } from '../../HUDTooltip';
+import { FormToggle } from '../common/FormToggle';
 import { Link } from 'react-router-dom';
 import type { ConfigDraft } from '../useSettingsConfig';
 import { SettingField, SettingTooltip } from '../../../app/components/SettingTooltip';
@@ -65,6 +77,107 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 const inputCls =
   'focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white';
+
+// ── Tooltip style preview data (same WARN compute node for every preview) ─────
+const PREVIEW_PROPS = {
+  title: 'COMPUTE125',
+  subtitle: 'Node',
+  status: 'WARN' as const,
+  enclosure: 'BullSequana X410 · 1U Twin CPU',
+  icon: Server,
+  checkSummary: { ok: 4, warn: 1, crit: 0 },
+  details: [{ label: 'Location', value: 'RACK U14 · S2', italic: true }],
+  reasons: [{ label: 'IPMI temperature high', severity: 'WARN' }],
+  metrics: { temp: 39.8, tempWarn: 38, tempCrit: 45, power: 285, powerMax: 350 },
+  mousePos: { x: 0, y: 0 },
+};
+
+// Scale factors per style to fit the preview container (100px wide × 86px tall)
+const PREVIEW_SCALE: Record<string, number> = {
+  tinted: 0.32,
+  compact: 0.32,
+  border: 0.32,
+  notification: 0.32,
+  terminal: 0.35,
+  ultracompact: 0.45,
+};
+
+const TooltipStyleSection = () => {
+  const { style, aura, setStyle, setAura } = useTooltipSettings();
+  return (
+    <SectionCard
+      title="Tooltip style"
+      desc="Choose how node/device tooltips look in rack views"
+      icon={MousePointerClick}
+      iconColor="text-brand-500"
+      iconBg="bg-brand-50 dark:bg-brand-500/10"
+    >
+      {/* Visual style grid */}
+      <div className="grid grid-cols-3 gap-3">
+        {TOOLTIP_STYLES.map((s) => {
+          const scale = PREVIEW_SCALE[s.id] ?? 0.32;
+          const previewW = 320;
+          const previewH = Math.round(previewW * 1.1);
+          const containerW = Math.round(previewW * scale);
+          const containerH = Math.round(previewH * scale);
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setStyle(s.id)}
+              className={`flex flex-col items-center gap-2 rounded-xl border-2 p-2.5 transition-all ${
+                style === s.id
+                  ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
+                  : 'border-transparent bg-gray-100 hover:border-gray-300 dark:bg-gray-800/50 dark:hover:border-gray-600'
+              }`}
+            >
+              {/* Scaled-down real tooltip preview */}
+              <div
+                className="overflow-hidden rounded-lg bg-gray-950"
+                style={{ width: containerW, height: containerH }}
+              >
+                <div
+                  style={{
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                    width: previewW,
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                  }}
+                >
+                  <HUDTooltipCard style={s.id} aura={false} {...PREVIEW_PROPS} />
+                </div>
+              </div>
+              {/* Label */}
+              <div className="text-center">
+                <div
+                  className={`text-[11px] font-semibold ${style === s.id ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
+                >
+                  {s.label}
+                  {s.id === 'tinted' && (
+                    <span className="ml-1 rounded bg-gray-200 px-1 text-[9px] font-bold text-gray-500 uppercase dark:bg-gray-700 dark:text-gray-400">
+                      défaut
+                    </span>
+                  )}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Aura toggle */}
+      <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+        <FormToggle
+          label="Color aura"
+          description="Glow shadow around the tooltip matching the alert severity (amber for WARN, red for CRIT)"
+          checked={aura}
+          onChange={setAura}
+        />
+      </div>
+    </SectionCard>
+  );
+};
 
 export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
   const f = draft.features;
@@ -260,6 +373,9 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
           </Link>
         )}
       </SectionCard>
+
+      {/* ── Tooltip Style ── */}
+      <TooltipStyleSection />
 
       {/* ── Dashboard Reset ── */}
       <DashboardResetCard />
