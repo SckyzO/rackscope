@@ -152,7 +152,7 @@ export const AlertToastContainer = () => {
       >
         <button
           onClick={() => setExpanded(false)}
-          className="flex shrink-0 items-center justify-between rounded-lg border border-gray-200 bg-white/95 px-3 py-1.5 text-xs font-medium text-gray-600 backdrop-blur-sm transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800/95 dark:text-gray-300 dark:hover:bg-gray-700"
+          className="animate-in fade-in slide-in-from-top-2 flex shrink-0 items-center justify-between rounded-lg border border-gray-200 bg-white/95 px-3 py-1.5 text-xs font-medium text-gray-600 backdrop-blur-sm transition-colors duration-200 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800/95 dark:text-gray-300 dark:hover:bg-gray-700"
         >
           <span>
             {toasts.length} alert{toasts.length !== 1 ? 's' : ''}
@@ -160,13 +160,18 @@ export const AlertToastContainer = () => {
           <ChevronUp className="ml-2 h-3.5 w-3.5" />
         </button>
         <div className="rs-scrollbar mt-2 flex flex-col gap-2 overflow-y-auto">
-          {toasts.map((toast) => {
+          {toasts.map((toast, idx) => {
             const cfg = toastConfig[toast.severity as 'WARN' | 'CRIT'] ?? toastConfig.WARN;
             const { Icon } = cfg;
             return (
               <div
                 key={toast.id}
-                className={`shadow-theme-lg flex shrink-0 items-start gap-3 rounded-xl border p-4 transition-colors duration-150 ${cfg.bg} ${cfg.border}`}
+                className={`animate-in fade-in slide-in-from-bottom-3 shadow-theme-lg flex shrink-0 items-start gap-3 rounded-xl border p-4 transition-colors duration-150 ${cfg.bg} ${cfg.border}`}
+                style={{
+                  animationDuration: '220ms',
+                  animationDelay: `${idx * 40}ms`,
+                  animationFillMode: 'both',
+                }}
               >
                 <Icon className={`h-5 w-5 shrink-0 ${cfg.icon_c}`} />
                 <div className="min-w-0 flex-1">
