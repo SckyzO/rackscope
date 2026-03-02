@@ -338,8 +338,13 @@ class SimulatorPlugin(RackscopePlugin):
                 )
             if not instance and not rack_id:
                 raise HTTPException(status_code=400, detail="instance or rack_id is required")
-            if rack_id and metric != "rack_down":
-                raise HTTPException(status_code=400, detail="rack overrides only support rack_down")
+            # rack_id overrides: allow rack_down (simulation concept) + any rack-scoped metric
+            # (e.g. pdu current, cooling pressure — vendor-agnostic)
+            if rack_id and metric != "rack_down" and metric not in valid_metrics:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unknown metric. Available: {sorted(valid_metrics)}",
+                )
             if instance and metric == "rack_down":
                 raise HTTPException(status_code=400, detail="rack_down requires rack_id")
             if value is None:

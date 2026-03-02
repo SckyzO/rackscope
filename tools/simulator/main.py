@@ -1362,6 +1362,8 @@ def simulate():
             ):
                 continue
 
+            rack_overrides = overrides_by_rack.get(rack_id, [])
+
             base_labels = {
                 "site_id": info.get("site_id"),
                 "room_id": info.get("room_id"),
@@ -1385,6 +1387,20 @@ def simulate():
                 apparent_va = power_watt * random.uniform(1.02, 1.08)
                 current_amp = power_watt / 230.0
                 rating_amp = 16 if idx % 2 == 0 else 20
+
+                # Apply any rack-level metric override that matches a PDU current metric.
+                # Checks for any metric whose name ends with "_current_ampere" to stay
+                # vendor-agnostic (works for raritan, APC, Eaton, etc.).
+                for ov in rack_overrides:
+                    ov_metric = ov.get("metric", "")
+                    if ov_metric.endswith("_current_ampere"):
+                        try:
+                            current_amp = float(ov.get("value", current_amp))
+                            power_watt = current_amp * 230.0
+                            apparent_va = power_watt * 1.05
+                        except (TypeError, ValueError):
+                            pass
+                        break
 
                 energy_key = (rack_id, pduid, "inlet")
                 prev_energy = pdu_energy_state.get(energy_key, random.uniform(800000, 1600000))
