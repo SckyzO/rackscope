@@ -8,7 +8,10 @@ import {
   RefreshCw,
   FlaskConical,
   Cpu,
+  X,
+  GripVertical,
 } from 'lucide-react';
+import { SettingField } from '../../../app/components/SettingTooltip';
 import { api } from '../../../services/api';
 import type { SimulatorScenario, SimulatorOverride } from '../../../types';
 import { FormField } from '../common/FormField';
@@ -674,14 +677,15 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           <div className="pt-0.5">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Slurm Plugin</h3>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Workload manager integration for HPC clusters
+              Workload manager integration for HPC clusters. Configuration file:
+              config/plugins/slurm/config.yml
             </p>
           </div>
         </div>
 
         <FormToggle
           label="Enable Slurm Integration"
-          description="Activate Slurm plugin for HPC views"
+          description="Activate Slurm plugin — enables HPC wallboard, node list, partitions and alerts views."
           checked={draft.plugins.slurm.enabled}
           onChange={(value) => updateSlurm('enabled', value)}
         />
@@ -705,270 +709,280 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
         </button>
 
         {slurmSettingsOpen && draft.plugins.slurm.enabled && (
-          <div className="mt-4 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-            <FormField
-              label="Metric Name"
-              value={draft.plugins.slurm.metric}
-              onChange={(value) => updateSlurm('metric', value)}
-              placeholder="slurm_node_status"
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                label="Node Label"
-                value={draft.plugins.slurm.label_node}
-                onChange={(value) => updateSlurm('label_node', value)}
-                placeholder="node"
-              />
-              <FormField
-                label="Status Label"
-                value={draft.plugins.slurm.label_status}
-                onChange={(value) => updateSlurm('label_status', value)}
-                placeholder="status"
-              />
-            </div>
-            <FormField
-              label="Partition Label"
-              value={draft.plugins.slurm.label_partition}
-              onChange={(value) => updateSlurm('label_partition', value)}
-              placeholder="partition"
-            />
-            <FormField
-              label="Node Mapping File (optional)"
-              value={draft.plugins.slurm.mapping_path}
-              onChange={(value) => updateSlurm('mapping_path', value)}
-              placeholder="config/plugins/slurm/node_mapping.yaml"
-            />
-
-            {/* Roles */}
-            <div className="space-y-2">
-              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                Roles (filter by device role)
-              </label>
-              <div className="space-y-2">
-                {draft.plugins.slurm.roles.map((role, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <FormField
-                      label=""
-                      value={role}
-                      onChange={(value) => {
-                        const newRoles = [...draft.plugins.slurm.roles];
-                        newRoles[index] = value;
-                        updateSlurm('roles', newRoles);
-                      }}
-                      placeholder="compute, visu, login, etc."
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newRoles = draft.plugins.slurm.roles.filter((_, i) => i !== index);
-                        updateSlurm('roles', newRoles);
-                      }}
-                      className="rounded bg-red-600 px-3 py-2 text-xs font-bold text-white uppercase hover:bg-red-700"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newRoles = [...draft.plugins.slurm.roles, ''];
-                    updateSlurm('roles', newRoles);
-                  }}
-                  className="rounded bg-blue-600 px-4 py-2 text-xs font-bold text-white uppercase hover:bg-blue-700"
+          <div className="mt-4 space-y-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+            {/* ── Prometheus Source ── */}
+            <div className="space-y-3">
+              <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                Prometheus Source
+              </p>
+              <SettingField
+                label="Metric name"
+                tooltip="Prometheus metric name that exposes Slurm node statuses. Default: slurm_node_status"
+              >
+                <input
+                  value={draft.plugins.slurm.metric}
+                  onChange={(e) => updateSlurm('metric', e.target.value)}
+                  placeholder="slurm_node_status"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                />
+              </SettingField>
+              <div className="grid grid-cols-3 gap-3">
+                <SettingField
+                  label="Node label"
+                  tooltip="Prometheus label that identifies the node name (e.g. node, hostname)."
                 >
-                  Add Role
-                </button>
+                  <input
+                    value={draft.plugins.slurm.label_node}
+                    onChange={(e) => updateSlurm('label_node', e.target.value)}
+                    placeholder="node"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                  />
+                </SettingField>
+                <SettingField
+                  label="Status label"
+                  tooltip="Prometheus label that carries the Slurm node status value (e.g. status, state)."
+                >
+                  <input
+                    value={draft.plugins.slurm.label_status}
+                    onChange={(e) => updateSlurm('label_status', e.target.value)}
+                    placeholder="status"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                  />
+                </SettingField>
+                <SettingField
+                  label="Partition label"
+                  tooltip="Prometheus label for the Slurm partition name (e.g. partition, queue)."
+                >
+                  <input
+                    value={draft.plugins.slurm.label_partition}
+                    onChange={(e) => updateSlurm('label_partition', e.target.value)}
+                    placeholder="partition"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                  />
+                </SettingField>
               </div>
             </div>
 
-            <FormToggle
-              label="Include Unlabeled Nodes"
-              description="Include nodes without role labels in Slurm views"
-              checked={draft.plugins.slurm.include_unlabeled}
-              onChange={(value) => updateSlurm('include_unlabeled', value)}
-            />
+            {/* ── Node Filtering ── */}
+            <div className="space-y-3 border-t border-gray-200 pt-5 dark:border-gray-700">
+              <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                Node Filtering
+              </p>
 
-            {/* Severity Colors */}
-            <div className="space-y-3">
-              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                Severity Colors
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-3">
-                  <label className="min-w-[60px] text-xs text-gray-400 dark:text-gray-500">
-                    OK
-                  </label>
-                  <input
-                    type="color"
-                    value={draft.plugins.slurm.severity_colors.ok}
-                    onChange={(e) => updateSlurmColor('ok', e.target.value)}
-                    className="h-10 w-full cursor-pointer rounded border border-gray-200 dark:border-gray-700"
-                  />
-                  <input
-                    type="text"
-                    value={draft.plugins.slurm.severity_colors.ok}
-                    onChange={(e) => updateSlurmColor('ok', e.target.value)}
-                    className="w-24 rounded border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <label className="min-w-[60px] text-xs text-gray-400 dark:text-gray-500">
-                    WARN
-                  </label>
-                  <input
-                    type="color"
-                    value={draft.plugins.slurm.severity_colors.warn}
-                    onChange={(e) => updateSlurmColor('warn', e.target.value)}
-                    className="h-10 w-full cursor-pointer rounded border border-gray-200 dark:border-gray-700"
-                  />
-                  <input
-                    type="text"
-                    value={draft.plugins.slurm.severity_colors.warn}
-                    onChange={(e) => updateSlurmColor('warn', e.target.value)}
-                    className="w-24 rounded border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <label className="min-w-[60px] text-xs text-gray-400 dark:text-gray-500">
-                    CRIT
-                  </label>
-                  <input
-                    type="color"
-                    value={draft.plugins.slurm.severity_colors.crit}
-                    onChange={(e) => updateSlurmColor('crit', e.target.value)}
-                    className="h-10 w-full cursor-pointer rounded border border-gray-200 dark:border-gray-700"
-                  />
-                  <input
-                    type="text"
-                    value={draft.plugins.slurm.severity_colors.crit}
-                    onChange={(e) => updateSlurmColor('crit', e.target.value)}
-                    className="w-24 rounded border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <label className="min-w-[60px] text-xs text-gray-400 dark:text-gray-500">
-                    INFO
-                  </label>
-                  <input
-                    type="color"
-                    value={draft.plugins.slurm.severity_colors.info}
-                    onChange={(e) => updateSlurmColor('info', e.target.value)}
-                    className="h-10 w-full cursor-pointer rounded border border-gray-200 dark:border-gray-700"
-                  />
-                  <input
-                    type="text"
-                    value={draft.plugins.slurm.severity_colors.info}
-                    onChange={(e) => updateSlurmColor('info', e.target.value)}
-                    className="w-24 rounded border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Status Mapping */}
-            <div className="space-y-3">
-              <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                Status Mapping (Drag &amp; Drop to Reorganize)
-              </label>
-              <div className="grid grid-cols-4 gap-3">
-                {(['ok', 'warn', 'crit', 'info'] as const).map((severity) => (
-                  <div
-                    key={severity}
-                    className="rounded-lg border-2 border-dashed p-4 transition"
-                    style={{
-                      borderColor: draft.plugins.slurm.severity_colors[severity],
-                      backgroundColor: 'transparent',
-                    }}
-                    onDragOver={(e) => {
+              <SettingField
+                label="Device roles"
+                tooltip="Only devices whose template role matches one of these values will appear in Slurm views. Leave empty to match all."
+              >
+                <div className="flex flex-wrap gap-1.5">
+                  {draft.plugins.slurm.roles.map((role, idx) => (
+                    <span
+                      key={idx}
+                      className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                    >
+                      {role}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateSlurm(
+                            'roles',
+                            draft.plugins.slurm.roles.filter((_, i) => i !== idx)
+                          )
+                        }
+                        className="ml-0.5 rounded-full text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                  <form
+                    onSubmit={(e) => {
                       e.preventDefault();
-                      e.currentTarget.style.opacity = '0.6';
-                    }}
-                    onDragLeave={(e) => {
-                      e.currentTarget.style.opacity = '1';
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.currentTarget.style.opacity = '1';
-                      const status = e.dataTransfer.getData('status');
-                      const fromSeverity = e.dataTransfer.getData('fromSeverity') as
-                        | 'ok'
-                        | 'warn'
-                        | 'crit'
-                        | 'info'
-                        | null;
-                      if (status) {
-                        moveSlurmStatus(status, fromSeverity || null, severity);
+                      const input = e.currentTarget.elements[0] as HTMLInputElement;
+                      const val = input.value.trim();
+                      if (val && !draft.plugins.slurm.roles.includes(val)) {
+                        updateSlurm('roles', [...draft.plugins.slurm.roles, val]);
+                        input.value = '';
                       }
                     }}
                   >
-                    <div className="mb-3 flex items-center justify-between">
+                    <input
+                      type="text"
+                      placeholder="Add role…"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.form?.requestSubmit();
+                      }}
+                      className="rounded-full border border-dashed border-gray-300 px-2.5 py-1 text-xs text-gray-500 focus:outline-none dark:border-gray-600 dark:text-gray-400"
+                    />
+                  </form>
+                </div>
+              </SettingField>
+
+              <FormToggle
+                label="Include unlabeled nodes"
+                description="Show devices that have no role defined in their template."
+                checked={draft.plugins.slurm.include_unlabeled}
+                onChange={(value) => updateSlurm('include_unlabeled', value)}
+              />
+
+              <SettingField
+                label="Node mapping file"
+                tooltip="Optional YAML file mapping Slurm node names to topology instance names when they differ."
+              >
+                <input
+                  value={draft.plugins.slurm.mapping_path}
+                  onChange={(e) => updateSlurm('mapping_path', e.target.value)}
+                  placeholder="config/plugins/slurm/node_mapping.yaml"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                />
+              </SettingField>
+            </div>
+
+            {/* ── Severity Colors ── */}
+            <div className="space-y-3 border-t border-gray-200 pt-5 dark:border-gray-700">
+              <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                Severity Colors
+              </p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {(['ok', 'warn', 'crit', 'info'] as const).map((sev) => (
+                  <div
+                    key={sev}
+                    className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900"
+                  >
+                    <input
+                      type="color"
+                      value={draft.plugins.slurm.severity_colors[sev]}
+                      onChange={(e) => updateSlurmColor(sev, e.target.value)}
+                      className="h-7 w-7 cursor-pointer rounded border-0 bg-transparent"
+                    />
+                    <div className="min-w-0 flex-1">
                       <div
-                        className="text-xs font-bold tracking-wider uppercase"
-                        style={{ color: draft.plugins.slurm.severity_colors[severity] }}
+                        className="text-[10px] font-bold tracking-wider uppercase"
+                        style={{ color: draft.plugins.slurm.severity_colors[sev] }}
                       >
-                        {severity}
+                        {sev}
                       </div>
-                      <div className="text-xs text-gray-400 dark:text-gray-500">
-                        {draft.plugins.slurm.status_map[severity].length}
+                      <div className="font-mono text-[9px] text-gray-400">
+                        {draft.plugins.slurm.severity_colors[sev]}
                       </div>
-                    </div>
-                    <div className="min-h-[100px] space-y-2">
-                      {draft.plugins.slurm.status_map[severity].map((status) => (
-                        <div
-                          key={status}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData('status', status);
-                            e.dataTransfer.setData('fromSeverity', severity);
-                            e.currentTarget.style.opacity = '0.4';
-                          }}
-                          onDragEnd={(e) => {
-                            e.currentTarget.style.opacity = '1';
-                          }}
-                          className="flex cursor-move items-center gap-2 rounded border border-gray-200 bg-white px-3 py-2 transition dark:border-gray-700 dark:bg-gray-900"
-                          style={{
-                            borderLeftWidth: '3px',
-                            borderLeftColor: draft.plugins.slurm.severity_colors[severity],
-                          }}
-                        >
-                          <svg
-                            className="h-4 w-4 flex-shrink-0 text-gray-400 dark:text-gray-500"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke="currentColor"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 8h16M4 16h16"
-                            />
-                          </svg>
-                          <span className="flex-1 font-mono text-xs text-gray-600 dark:text-gray-300">
-                            {status}
-                          </span>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500">
-                Drag and drop statuses between severity zones to reorganize them.
-              </p>
             </div>
 
-            <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
-              <h4 className="mb-2 font-mono text-xs font-bold tracking-wider text-blue-400 uppercase">
-                Slurm Features
-              </h4>
-              <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
-                <li>• Wallboard view with compact aisle layout</li>
-                <li>• Cluster overview with partition status</li>
-                <li>• Node list with topology context</li>
-                <li>• Alerts dashboard for WARN/CRIT nodes</li>
-              </ul>
+            {/* ── Status Mapping ── */}
+            <div className="space-y-3 border-t border-gray-200 pt-5 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                  Status Mapping
+                </p>
+                <span className="text-[10px] text-gray-400 dark:text-gray-600">
+                  — drag to move between zones, click + to add
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                {(['ok', 'warn', 'crit', 'info'] as const).map((sev) => {
+                  const color = draft.plugins.slurm.severity_colors[sev];
+                  return (
+                    <div
+                      key={sev}
+                      className="flex flex-col gap-2 rounded-lg border-2 border-dashed p-3 transition"
+                      style={{ borderColor: color }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.style.background = `${color}12`;
+                      }}
+                      onDragLeave={(e) => {
+                        e.currentTarget.style.background = '';
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.style.background = '';
+                        const status = e.dataTransfer.getData('status');
+                        const from = e.dataTransfer.getData('fromSeverity') as
+                          | 'ok'
+                          | 'warn'
+                          | 'crit'
+                          | 'info'
+                          | null;
+                        if (status) moveSlurmStatus(status, from || null, sev);
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span
+                          className="text-[10px] font-black tracking-wider uppercase"
+                          style={{ color }}
+                        >
+                          {sev}
+                        </span>
+                        <span className="text-[10px] text-gray-400">
+                          {draft.plugins.slurm.status_map[sev].length}
+                        </span>
+                      </div>
+                      <div className="min-h-[60px] space-y-1">
+                        {draft.plugins.slurm.status_map[sev].map((status) => (
+                          <div
+                            key={status}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('status', status);
+                              e.dataTransfer.setData('fromSeverity', sev);
+                              e.currentTarget.style.opacity = '0.4';
+                            }}
+                            onDragEnd={(e) => {
+                              e.currentTarget.style.opacity = '1';
+                            }}
+                            className="group flex cursor-grab items-center gap-1.5 rounded border border-gray-200 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-900"
+                            style={{ borderLeftWidth: 2, borderLeftColor: color }}
+                          >
+                            <GripVertical className="h-3 w-3 shrink-0 text-gray-300 dark:text-gray-600" />
+                            <span className="flex-1 font-mono text-gray-600 dark:text-gray-300">
+                              {status}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => moveSlurmStatus(status, sev, null)}
+                              className="hidden text-gray-300 group-hover:block hover:text-red-400 dark:text-gray-600"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Add new status to this zone */}
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const input = e.currentTarget.elements[0] as HTMLInputElement;
+                          const val = input.value.trim().toLowerCase();
+                          if (val && !draft.plugins.slurm.status_map[sev].includes(val)) {
+                            moveSlurmStatus(val, null, sev);
+                            input.value = '';
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            placeholder="add status…"
+                            className="min-w-0 flex-1 rounded border border-dashed border-gray-200 bg-transparent px-2 py-1 font-mono text-[10px] text-gray-400 focus:outline-none dark:border-gray-700"
+                          />
+                          <button
+                            type="submit"
+                            className="rounded p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                Drag statuses between zones to reclassify them. Click × to remove. Unclassified
+                statuses are shown as UNKNOWN.
+              </p>
             </div>
           </div>
         )}
