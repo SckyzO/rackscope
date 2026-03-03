@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { AppLayout } from './layout/AppLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { Error500Page, Error503Page, Error403Page, Error401Page } from './pages/ErrorPage';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 
 // UI Elements
@@ -228,6 +229,10 @@ const AppRoutes = () => (
       {/* UI Library hub */}
       <Route path="ui-library" element={<UILibraryPage />} />
 
+      <Route path="error/500" element={<Error500Page />} />
+      <Route path="error/503" element={<Error503Page />} />
+      <Route path="error/403" element={<Error403Page />} />
+      <Route path="error/401" element={<Error401Page />} />
       <Route path="*" element={<NotFoundPage />} />
     </Route>
   </Routes>

@@ -69,7 +69,7 @@ quality: lint typecheck complexity coverage
 ## Backend: bandit static analysis (Python)
 security-backend:
 	@echo "🔍 Backend security scan (bandit)..."
-	docker compose -f $(COMPOSE_DEV) exec backend python3 -m bandit -r src/rackscope -ll -f screen
+	docker compose -f $(COMPOSE_DEV) exec backend python3 -m bandit -r src/rackscope -c pyproject.toml -ll -f screen
 	@echo "✅ Backend security scan complete."
 
 ## Frontend: npm audit

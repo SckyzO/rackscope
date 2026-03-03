@@ -44,7 +44,7 @@ def _find_rack_component_path(templates_dir: Path, template_id: str) -> Optional
             for t in data.get("rack_component_templates", []):
                 if t.get("id") == template_id:
                     return yaml_file
-        except Exception:  # nosec B112
+        except Exception:
             continue
     return None
 
