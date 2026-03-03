@@ -10,50 +10,49 @@ Get Rackscope running in 3 steps using Docker Compose.
 
 ## Prerequisites
 
-- **Docker** and **Docker Compose** installed on your host machine
+- **Docker** and **Docker Compose v2+** on your host machine
 - No local Python or Node.js required — everything runs in containers
 
-## Step 1: Clone the Repository
+## Step 1: Clone
 
 ```bash
 git clone https://github.com/SckyzO/rackscope.git
 cd rackscope
 ```
 
-## Step 2: Start the Stack
+## Step 2: Start the stack
 
 ```bash
 make up
 ```
 
-This starts 4 services:
+Five services start automatically:
 
 | Service | URL | Description |
-|---------|-----|-------------|
-| **Frontend** | http://localhost:5173 | React web UI |
+|---|---|---|
+| **Frontend** | http://localhost:5173 | React UI |
 | **Backend** | http://localhost:8000 | FastAPI REST API |
 | **Prometheus** | http://localhost:9090 | Metrics storage |
 | **Simulator** | http://localhost:9000 | Demo metrics generator |
+| **Docs** | http://localhost:3001 | This documentation site |
 
 ## Step 3: Open the UI
 
 Navigate to **http://localhost:5173**
 
-The stack starts with a demo topology and simulated metrics, so you can explore immediately — no hardware required.
+The stack starts with a demo topology and simulated metrics — no hardware required. The dashboard is live immediately.
 
-## What You'll See
+## Explore
 
-- **World Map**: overview of sites with health status
-- **Room Views**: floor plan with racks color-coded by health
-- **Rack Views**: front and rear views with devices
-- **Device Views**: instance-level drill-down with checks
+- **Dashboard** (`/`) — widgets with infrastructure health at a glance
+- **World Map** (`/views/worldmap`) — sites with health markers
+- **Room View** (`/views/room/:id`) — floor plan with rack grid
+- **Rack View** (`/views/rack/:id`) — front/rear elevation with devices
+- **Slurm** (`/slurm/overview`) — HPC cluster status (simulator enabled)
+- **API docs** — http://localhost:8000/docs (Swagger UI)
 
-## Explore the API
+## Next steps
 
-Interactive API documentation is available at **http://localhost:8000/docs** (Swagger UI).
-
-## Next Steps
-
-- [Configuration](/getting-started/configuration) — customize topology and settings
-- [User Guide](/user-guide/overview) — learn all the views
-- [Admin Guide](/admin-guide/topology-yaml) — define your own infrastructure
+- [Configuration](/getting-started/configuration) — connect to your Prometheus and define your topology
+- [User Guide](/user-guide/overview) — all views and features
+- [Admin Guide](/admin-guide/topology-yaml) — YAML schema reference
