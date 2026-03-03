@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { HUDTooltip } from '../../../components/HUDTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
+import { RefreshButton, useAutoRefresh } from '../../../components/RefreshButton';
+import { PageActionButton } from '../../../components/PageActionButton';
 import {
-  RefreshCw,
   Settings2,
   X,
   Search,
@@ -1201,7 +1202,6 @@ interface Settings {
   showRackName: boolean;
   wheelZoomEnabled: boolean;
   hiddenAisles: Set<string>;
-  refreshInterval: number; // seconds, 0 = off
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -1219,7 +1219,6 @@ const DEFAULT_SETTINGS: Settings = {
   showRackName: true,
   wheelZoomEnabled: true,
   hiddenAisles: new Set(),
-  refreshInterval: 60,
 };
 
 const settingsKey = (roomId: string) => `rackscope.room.${roomId}.settings`;
@@ -1308,44 +1307,6 @@ const CustomizePanel = ({
           </button>
         </div>
         <div className="flex-1 space-y-5 overflow-y-auto p-4">
-          {/* Auto Refresh */}
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
-                Auto Refresh
-              </p>
-              {settings.refreshInterval > 0 && (
-                <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[9px] font-bold text-green-600 dark:bg-green-500/15 dark:text-green-400">
-                  Active
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {(
-                [
-                  { label: 'Off', value: 0 },
-                  { label: '15s', value: 15 },
-                  { label: '30s', value: 30 },
-                  { label: '1m', value: 60 },
-                  { label: '2m', value: 120 },
-                  { label: '5m', value: 300 },
-                ] as { label: string; value: number }[]
-              ).map(({ label, value }) => (
-                <button
-                  key={value}
-                  onClick={() => setSettings({ ...settings, refreshInterval: value })}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                    settings.refreshInterval === value
-                      ? 'bg-brand-500 text-white'
-                      : 'border border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div>
             <p className="mb-2 text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
               Display
@@ -1537,9 +1498,6 @@ export const RoomPage = () => {
     if (roomId) saveRoomSettings(roomId, settings);
   }, [roomId, settings]);
 
-  // Countdown drives the auto-refresh UI indicator; effect is registered after `load`.
-  const [countdown, setCountdown] = useState(0);
-  const countdownRef = useRef(0);
 
   const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
   const { zoom, panX, panY } = viewport;
@@ -1706,24 +1664,11 @@ export const RoomPage = () => {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    if (settings.refreshInterval === 0) {
-      setCountdown(0);
-      return;
-    }
-    countdownRef.current = settings.refreshInterval;
-    setCountdown(settings.refreshInterval);
-    const tick = setInterval(() => {
-      countdownRef.current -= 1;
-      setCountdown(countdownRef.current);
-      if (countdownRef.current <= 0) {
-        void load(true);
-        countdownRef.current = settings.refreshInterval;
-        setCountdown(settings.refreshInterval);
-      }
-    }, 1000);
-    return () => clearInterval(tick);
-  }, [settings.refreshInterval, load]);
+  const handleQuietRefresh = useCallback(() => void load(true), [load]);
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh(
+    `room-${roomId ?? ''}`,
+    handleQuietRefresh
+  );
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -1896,40 +1841,22 @@ export const RoomPage = () => {
             {viewLocked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
           </button>
 
-          <button
+          <PageActionButton
+            icon={Settings2}
+            variant={customizeOpen ? 'brand-outline' : 'outline'}
             onClick={() => {
               setCustomizeOpen((o) => !o);
               setDrawerOpen(false);
             }}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-              customizeOpen
-                ? 'border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-700/50 dark:bg-brand-500/10 dark:text-brand-400'
-                : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
-            }`}
           >
-            <Settings2 className="h-4 w-4" /> Customize
-          </button>
-          <button
-            onClick={() => {
-              void load(true);
-              if (settings.refreshInterval > 0) {
-                countdownRef.current = settings.refreshInterval;
-                setCountdown(settings.refreshInterval);
-              }
-            }}
-            disabled={refreshing}
-            title={
-              settings.refreshInterval > 0
-                ? `Auto-refresh every ${settings.refreshInterval}s`
-                : 'Refresh'
-            }
-            className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {settings.refreshInterval > 0 && !refreshing && (
-              <span className="font-mono text-xs tabular-nums">{countdown}s</span>
-            )}
-          </button>
+            Customize
+          </PageActionButton>
+          <RefreshButton
+            refreshing={refreshing}
+            autoRefreshMs={autoRefreshMs}
+            onRefresh={() => void load(true)}
+            onIntervalChange={onIntervalChange}
+          />
         </div>
       </div>
 
