@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ChevronRight,
-  RotateCcw,
   Thermometer,
   Zap,
   Server,
@@ -13,6 +12,8 @@ import {
   Building2,
   Pencil,
 } from 'lucide-react';
+import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
+import { PageActionButton } from '../../components/PageActionButton';
 import { RackElevation } from '../../../components/RackVisualizer';
 import { useRackData } from './useRackData';
 import type { Device, InfrastructureComponent, RackNodeState } from '../../../types';
@@ -87,6 +88,9 @@ export const RackPage = () => {
     uHeight,
     loadHealth,
   } = useRackData(rackId);
+
+  const handleQuietRefresh = useCallback(() => void loadHealth(true), [loadHealth]);
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('rack', handleQuietRefresh);
 
   if (loading)
     return (
@@ -277,21 +281,19 @@ export const RackPage = () => {
             />
           </div>
           <div className="flex items-center gap-1.5">
-            <button
+            <PageActionButton
+              icon={Pencil}
+              variant="brand-outline"
               onClick={() => navigate(`/editors/rack?rackId=${rack.id}`)}
-              title="Edit rack"
-              className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
             >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit
-            </button>
-            <button
-              onClick={loadHealth}
-              title="Refresh"
-              className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:text-gray-600 dark:border-gray-700"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </button>
+              Edit rack
+            </PageActionButton>
+            <RefreshButton
+              refreshing={loading}
+              autoRefreshMs={autoRefreshMs}
+              onRefresh={() => void loadHealth()}
+              onIntervalChange={onIntervalChange}
+            />
           </div>
         </div>
 

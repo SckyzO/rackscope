@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import {
   ChevronRight,
@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   HelpCircle,
 } from 'lucide-react';
+import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
 import { DeviceChassis } from '../../../components/RackVisualizer';
 import { HUDTooltip } from '../../../components/HUDTooltip';
 
@@ -133,24 +134,22 @@ export const DevicePage = () => {
   // Metrics are loaded here with include_metrics=true — this is the only view that
   // needs full temperature/power data per instance. Room/Rack list views use the
   // cheaper health-only endpoint to keep response times under ~40ms.
-  useEffect(() => {
+  const loadRackState = useCallback(async () => {
     if (!rackId) return;
-    let active = true;
-    const load = async () => {
-      try {
-        const state = await api.getRackState(rackId, true);
-        if (active) setRackState(state);
-      } catch {
-        /* ignore */
-      }
-    };
-    load();
-    const t = setInterval(load, 30000);
-    return () => {
-      active = false;
-      clearInterval(t);
-    };
+    try {
+      const state = await api.getRackState(rackId, true);
+      setRackState(state);
+    } catch {
+      /* ignore */
+    }
   }, [rackId]);
+
+  useEffect(() => {
+    void loadRackState();
+  }, [loadRackState]);
+
+  const handleQuietRefresh = useCallback(() => void loadRackState(), [loadRackState]);
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('device', handleQuietRefresh);
 
   if (loading)
     return (
@@ -196,27 +195,37 @@ export const DevicePage = () => {
   return (
     <>
       <div className="flex flex-col gap-4">
-        <nav className="flex flex-wrap items-center gap-1 text-sm">
-          <Link to="/views/worldmap" className="text-brand-500 hover:underline">
-            {site.name}
-          </Link>
-          <ChevronRight className="h-4 w-4 text-gray-400" />
-          <Link to={`/views/room/${room.id}`} className="text-brand-500 hover:underline">
-            {room.name}
-          </Link>
-          <ChevronRight className="h-4 w-4 text-gray-400" />
-          {aisle && (
-            <>
-              <span className="text-gray-500 dark:text-gray-400">{aisle.name}</span>
-              <ChevronRight className="h-4 w-4 text-gray-400" />
-            </>
-          )}
-          <Link to={`/views/rack/${rack.id}`} className="text-brand-500 hover:underline">
-            {rack.name}
-          </Link>
-          <ChevronRight className="h-4 w-4 text-gray-400" />
-          <span className="font-semibold text-gray-900 dark:text-white">{device.name}</span>
-        </nav>
+        <div className="flex items-center justify-between gap-4">
+          <nav className="flex flex-wrap items-center gap-1 text-sm">
+            <Link to="/views/worldmap" className="text-brand-500 hover:underline">
+              {site.name}
+            </Link>
+            <ChevronRight className="h-4 w-4 text-gray-400" />
+            <Link to={`/views/room/${room.id}`} className="text-brand-500 hover:underline">
+              {room.name}
+            </Link>
+            <ChevronRight className="h-4 w-4 text-gray-400" />
+            {aisle && (
+              <>
+                <span className="text-gray-500 dark:text-gray-400">{aisle.name}</span>
+                <ChevronRight className="h-4 w-4 text-gray-400" />
+              </>
+            )}
+            <Link to={`/views/rack/${rack.id}`} className="text-brand-500 hover:underline">
+              {rack.name}
+            </Link>
+            <ChevronRight className="h-4 w-4 text-gray-400" />
+            <span className="font-semibold text-gray-900 dark:text-white">{device.name}</span>
+          </nav>
+          <div className="flex shrink-0 items-center gap-2">
+            <RefreshButton
+              refreshing={loading}
+              autoRefreshMs={autoRefreshMs}
+              onRefresh={() => void loadRackState()}
+              onIntervalChange={onIntervalChange}
+            />
+          </div>
+        </div>
 
         <div className="flex items-center gap-3">
           <div className="flex-1">

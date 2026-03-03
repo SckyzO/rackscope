@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2,
@@ -11,6 +11,7 @@ import {
   Server,
   DoorOpen,
 } from 'lucide-react';
+import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
 import { api } from '../../../services/api';
 import type { Site, ActiveAlert } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
@@ -328,7 +329,8 @@ export const WorldMapPage = () => {
     config?.map?.style ||
     'minimal') as 'minimal' | 'noc' | 'flat';
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
+    setLoading(true);
     Promise.all([api.getSites(), api.getActiveAlerts().catch(() => ({ alerts: [] }))])
       .then(([sitesData, alertsData]) => {
         setSites(Array.isArray(sitesData) ? sitesData : []);
@@ -337,6 +339,13 @@ export const WorldMapPage = () => {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleRefresh = useCallback(() => void loadData(), [loadData]);
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('worldmap', handleRefresh);
 
   const geoSites = useMemo(() => sites.filter((s) => s.location?.lat && s.location?.lon), [sites]);
 
@@ -412,6 +421,14 @@ export const WorldMapPage = () => {
           ))}
         </div>
       )}
+
+      {/* Refresh button */}
+      <RefreshButton
+        refreshing={loading}
+        autoRefreshMs={autoRefreshMs}
+        onRefresh={() => void loadData()}
+        onIntervalChange={onIntervalChange}
+      />
     </div>
   );
 
