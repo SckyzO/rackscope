@@ -6,7 +6,19 @@ export type SoundAlertSettings = {
   critSound: SoundPreset | 'none';
   volume: number; // 0–100
   visibility: 'always' | 'hidden-only' | 'visible-only';
+  alertPollMs: number; // polling interval in ms
 };
+
+export const ALERT_POLL_OPTIONS = [
+  { label: '15s', ms: 15_000 },
+  { label: '30s', ms: 30_000 },
+  { label: '1m',  ms: 60_000 },
+  { label: '2m',  ms: 120_000 },
+  { label: '5m',  ms: 300_000 },
+  { label: '10m', ms: 600_000 },
+  { label: '15m', ms: 900_000 },
+  { label: '30m', ms: 1_800_000 },
+];
 
 export const DEFAULT_SOUND_SETTINGS: SoundAlertSettings = {
   enabled: false,
@@ -14,6 +26,7 @@ export const DEFAULT_SOUND_SETTINGS: SoundAlertSettings = {
   critSound: 'siren',
   volume: 70,
   visibility: 'always',
+  alertPollMs: 60_000,
 };
 
 export const SOUND_PRESETS: Record<SoundPreset, { name: string; description: string }> = {

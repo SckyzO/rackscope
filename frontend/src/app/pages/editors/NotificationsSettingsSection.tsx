@@ -11,6 +11,7 @@ import {
   loadSoundSettings,
   saveSoundSettings,
   SOUND_PRESETS,
+  ALERT_POLL_OPTIONS,
   playSound,
   type SoundAlertSettings,
   type SoundPreset,
@@ -239,6 +240,20 @@ export const NotificationsSettingsSection = () => {
                     value={settings.visibility}
                     onChange={(v) => update('visibility', v as SoundAlertSettings['visibility'])}
                     options={VISIBILITY_OPTIONS}
+                  />
+                </FormRow>
+              </div>
+
+              {/* Alert poll interval */}
+              <div className="py-3">
+                <FormRow
+                  label="Check interval"
+                  description="How often to poll for new alerts (requires page reload to take effect)"
+                >
+                  <SelectInput
+                    value={String(settings.alertPollMs)}
+                    onChange={(v) => update('alertPollMs', Number(v))}
+                    options={ALERT_POLL_OPTIONS.map((o) => ({ value: String(o.ms), label: o.label }))}
                   />
                 </FormRow>
               </div>

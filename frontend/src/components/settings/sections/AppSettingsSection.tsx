@@ -83,8 +83,8 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
       </FormSection>
 
       <FormSection
-        title="Refresh Intervals"
-        description="UI refresh intervals in seconds"
+        title="Backend refresh intervals"
+        description="How often the server re-queries Prometheus for room and rack state (app.yaml)"
         icon={RefreshCw}
         iconColor="text-green-500"
         iconBg="bg-green-50 dark:bg-green-500/10"

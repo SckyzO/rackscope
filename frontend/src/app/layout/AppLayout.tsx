@@ -13,6 +13,7 @@ import { PlaylistCountdownBar } from '../components/PlaylistCountdown';
 import { AlertToastContainer } from '../components/AlertToastContainer';
 import { SetupWizard, LS_KEY as SETUP_LS_KEY } from '../components/SetupWizard';
 import { useSoundAlerts } from '../hooks/useSoundAlerts';
+import { loadSoundSettings } from '../lib/soundAlerts';
 import { api } from '../../services/api';
 import type { ActiveAlert } from '../../types';
 import '../app.css';
@@ -129,18 +130,17 @@ const AppInnerLayout = () => {
     return () => clearTimeout(t);
   }, []);
 
-  // Sound alerts polling
+  // Sound alerts polling — interval from user settings (default 60s)
   const [soundAlerts, setSoundAlerts] = useState<ActiveAlert[]>([]);
   useEffect(() => {
+    const { alertPollMs } = loadSoundSettings();
     const poll = () =>
       api
         .getActiveAlerts()
         .then((d) => setSoundAlerts(d?.alerts ?? []))
-        .catch(() => {
-          // Ignore polling errors
-        });
+        .catch(() => {});
     poll();
-    const t = setInterval(poll, 30_000);
+    const t = setInterval(poll, alertPollMs);
     return () => clearInterval(t);
   }, []);
   useSoundAlerts(soundAlerts);
