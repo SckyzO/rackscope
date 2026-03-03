@@ -215,3 +215,5 @@ def test_expand_device_instances_empty_string():
     result = expand_device_instances(device)
     # Empty string pattern returns list with empty string (actual behavior)
     assert result == [""]
+
+

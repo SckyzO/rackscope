@@ -181,3 +181,31 @@ class TestPluginsRouter:
         assert data["sections"][0]["id"] == "low-menu"
         assert data["sections"][1]["id"] == "mid-menu"
         assert data["sections"][2]["id"] == "high-menu"
+
+    def test_get_plugin_config_not_found(self):
+        """Test getting config for nonexistent plugin returns 404."""
+        response = client.get("/api/plugins/nonexistent-xyz/config")
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"]
+
+    def test_get_plugin_config_registered_plugin(self):
+        """Test getting config for registered plugin."""
+        plugin = MockTestPlugin("test-plugin")
+        registry.register(plugin)
+
+        response = client.get("/api/plugins/test-plugin/config")
+        # Should return 200 with config structure
+        assert response.status_code == 200
+        data = response.json()
+        assert "config" in data
+        assert "source" in data
+        assert "path" in data
+
+    def test_update_plugin_config_not_found(self):
+        """Test updating config for nonexistent plugin returns 404."""
+        response = client.post(
+            "/api/plugins/nonexistent-xyz/config",
+            json={"config": {"key": "value"}},
+        )
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"]
