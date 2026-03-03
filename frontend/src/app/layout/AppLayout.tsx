@@ -12,6 +12,9 @@ import { usePlaylistSafe } from '../contexts/PlaylistContext';
 import { PlaylistCountdownBar } from '../components/PlaylistCountdown';
 import { AlertToastContainer } from '../components/AlertToastContainer';
 import { SetupWizard, LS_KEY as SETUP_LS_KEY } from '../components/SetupWizard';
+import { useSoundAlerts } from '../hooks/useSoundAlerts';
+import { api } from '../../services/api';
+import type { ActiveAlert } from '../../types';
 import '../app.css';
 
 // ── MatrixBackground ──────────────────────────────────────────────────────────
@@ -125,6 +128,22 @@ const AppInnerLayout = () => {
     const t = setTimeout(() => setPageLoading(false), 500);
     return () => clearTimeout(t);
   }, []);
+
+  // Sound alerts polling
+  const [soundAlerts, setSoundAlerts] = useState<ActiveAlert[]>([]);
+  useEffect(() => {
+    const poll = () =>
+      api
+        .getActiveAlerts()
+        .then((d) => setSoundAlerts(d?.alerts ?? []))
+        .catch(() => {
+          // Ignore polling errors
+        });
+    poll();
+    const t = setInterval(poll, 30_000);
+    return () => clearInterval(t);
+  }, []);
+  useSoundAlerts(soundAlerts);
 
   const [isDark, setIsDark] = useState(() => {
     // Theme resolution: check new key first (theme-mode, shared with ThemeContext),

@@ -9,6 +9,9 @@ import {
   Layers,
   MonitorPlay,
   Palette,
+  Bell,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
 import { useSettingsConfig } from '../../../components/settings/useSettingsConfig';
 import { useAppConfigSafe } from '../../contexts/AppConfigContext';
@@ -21,10 +24,19 @@ import { PlannerSettingsSection } from '../../../components/settings/sections/Pl
 import { PluginsSettingsSection } from '../../../components/settings/sections/PluginsSettingsSection';
 import { SecuritySettingsSection } from '../../../components/settings/sections/SecuritySettingsSection';
 import { ViewsSettingsSection } from '../../../components/settings/sections/ViewsSettingsSection';
+import { NotificationsSettingsSection } from './NotificationsSettingsSection';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
-type TabId = 'general' | 'telemetry' | 'planner' | 'views' | 'security' | 'plugins' | 'appearance';
+type TabId =
+  | 'general'
+  | 'telemetry'
+  | 'planner'
+  | 'views'
+  | 'security'
+  | 'plugins'
+  | 'appearance'
+  | 'notifications';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'general', label: 'General', icon: Settings2 },
@@ -32,6 +44,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: 'telemetry', label: 'Telemetry', icon: Activity },
   { id: 'planner', label: 'Planner', icon: Cpu },
   { id: 'views', label: 'Views', icon: MonitorPlay },
+  { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'security', label: 'Security', icon: Shield },
   { id: 'plugins', label: 'Plugins', icon: Layers },
 ];
@@ -262,6 +275,7 @@ export const SettingsPage = () => {
               <PlannerSettingsSection draft={draft} setDraft={setDraft} />
             )}
             {activeTab === 'views' && <ViewsSettingsSection draft={draft} setDraft={setDraft} />}
+            {activeTab === 'notifications' && <NotificationsSettingsSection />}
             {activeTab === 'security' && (
               <SecuritySettingsSection draft={draft} setDraft={setDraft} />
             )}
