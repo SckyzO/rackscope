@@ -46,6 +46,8 @@ import { StatusDot } from '../../components/ui/StatusDot';
 import { IconBox } from '../../components/ui/IconBox';
 import { AlertBanner } from '../../components/ui/AlertBanner';
 import { SelectInput } from '../../components/ui/SelectInput';
+import { Dropdown } from '../../components/ui/Dropdown';
+import { ZoomBar } from '../../components/ui/ZoomBar';
 
 // Forms
 import { SearchInput } from '../../components/forms/SearchInput';
@@ -118,6 +120,7 @@ export const TemplateDefaultPage = () => {
   const [formSelect, setFormSelect] = useState('30');
   const [numVal, setNumVal] = useState(60);
   const [numZoom, setNumZoom] = useState(4);
+  const [demoZoom, setDemoZoom] = useState(1.0);
 
   const STATUSES = ['OK', 'WARN', 'CRIT', 'UNKNOWN'] as const;
 
@@ -292,6 +295,23 @@ export const TemplateDefaultPage = () => {
               ]}
             />
           </Row>
+          <Row label="Dropdown — standard select with styled menu">
+            <Dropdown
+              value={select}
+              onChange={setSelect}
+              options={[
+                { value: 'dc1', label: 'DC1 / Room A' },
+                { value: 'dc2', label: 'DC1 / Room B' },
+                { value: 'dc3', label: 'DC2 / Server Hall' },
+              ]}
+            />
+            <Dropdown
+              value=""
+              onChange={() => {}}
+              options={[{ value: 'all', label: 'All rooms' }, { value: 'dc1', label: 'DC1 / Room A' }]}
+              placeholder="All rooms"
+            />
+          </Row>
         </div>
       </SectionCard>
 
@@ -356,6 +376,15 @@ export const TemplateDefaultPage = () => {
             <NumberInput value={numZoom} onChange={setNumZoom} min={1} max={18} step={1} />
             <NumberInput value={numVal} onChange={setNumVal} min={0} max={100} step={5} unit="%" width="w-16" />
             <NumberInput value={42} onChange={() => {}} disabled unit="ms" />
+          </Row>
+          <Row label="ZoomBar — inline zoom control for canvas/map views">
+            <ZoomBar
+              zoom={demoZoom}
+              onZoomOut={() => setDemoZoom((z) => Math.max(0.15, Math.round((z - 0.1) * 10) / 10))}
+              onZoomIn={() => setDemoZoom((z) => Math.min(3, Math.round((z + 0.1) * 10) / 10))}
+              onFit={() => setDemoZoom(1.0)}
+              onReset={() => setDemoZoom(1.0)}
+            />
           </Row>
         </div>
       </SectionCard>

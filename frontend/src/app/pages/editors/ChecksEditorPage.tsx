@@ -1590,12 +1590,17 @@ export const ChecksEditorPage = () => {
           <div className="flex min-h-0 w-[560px] shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
             {selectedCheck ? (
               <>
-                {/* Edit file YAML button */}
+                {/* Center panel header */}
                 <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
-                  <span className="font-mono text-[10px] text-gray-400 dark:text-gray-600">
-                    {fileManifest[selectedCheck.id] ?? '—'}
-                  </span>
-                  <button
+                  <PageActionButton
+                    variant="danger-outline"
+                    icon={Trash2}
+                    onClick={() => setDeleteTarget(selectedCheck)}
+                  >
+                    Delete
+                  </PageActionButton>
+                  <PageActionButton
+                    icon={FileCode2}
                     onClick={() => {
                       const fn = fileManifest[selectedCheck.id];
                       if (!fn) return;
@@ -1606,10 +1611,9 @@ export const ChecksEditorPage = () => {
                       };
                       setDrawerOpen(true);
                     }}
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
                   >
-                    <FileCode2 className="h-3.5 w-3.5" /> Edit file YAML
-                  </button>
+                    Edit YAML
+                  </PageActionButton>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   <EditorPanel

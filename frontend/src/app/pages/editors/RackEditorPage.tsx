@@ -741,13 +741,9 @@ export const RackEditorPage = () => {
                 </span>
               )}
               {rack && (
-                <button
-                  onClick={() => setYamlDrawerOpen(true)}
-                  className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-                >
-                  <FileCode2 className="h-4 w-4" />
+                <PageActionButton icon={FileCode2} onClick={() => setYamlDrawerOpen(true)}>
                   Edit YAML
-                </button>
+                </PageActionButton>
               )}
               <PageActionButton
                 variant="primary"

@@ -19,6 +19,8 @@ import type { Site, Room, RackTemplate } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from '../templates/EmptyPage';
 import { PageActionButton } from '../../components/PageActionButton';
+import { Drawer } from '../../components/layout/Drawer';
+import { DrawerHeader } from '../../components/layout/DrawerHeader';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type ViewLevel = 'sites' | 'rooms' | 'room-editor';
@@ -84,44 +86,22 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
   const isValid = !parseError;
 
   return (
-    <>
-      {/* Backdrop */}
-      {open && (
-        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      )}
+    <Drawer open={open} onClose={onClose} width={680}>
+      <DrawerHeader title={title} onClose={onClose} icon={FileCode2}>
+        {parseError && (
+          <span className="flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-medium text-red-400">
+            <AlertTriangle className="h-3 w-3" /> Invalid YAML
+          </span>
+        )}
+        {isValid && value !== initialYaml && (
+          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-400">
+            Unsaved
+          </span>
+        )}
+      </DrawerHeader>
 
-      {/* Drawer panel — 680px wide */}
-      <div
-        className={`fixed top-0 right-0 z-50 flex h-full w-[680px] flex-col border-l border-gray-800 bg-gray-950 shadow-2xl transition-transform duration-300 ${
-          open ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
-        {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <FileCode2 className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-semibold text-white">{title}</span>
-            {parseError && (
-              <span className="flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[11px] font-medium text-red-400">
-                <AlertTriangle className="h-3 w-3" /> Invalid YAML
-              </span>
-            )}
-            {isValid && value !== initialYaml && (
-              <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-400">
-                Unsaved
-              </span>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-white/10 hover:text-gray-300"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Monaco Editor */}
-        <div className="min-h-0 flex-1">
+      {/* Monaco Editor */}
+      <div className="min-h-0 flex-1">
           <MonacoEditor
             height="100%"
             defaultLanguage="yaml"
@@ -139,17 +119,17 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
               padding: { top: 12, bottom: 12 },
             }}
           />
+      </div>
+
+      {/* Validation error */}
+      {parseError && (
+        <div className="shrink-0 border-t border-red-500/20 bg-red-500/5 px-5 py-2.5">
+          <p className="font-mono text-xs text-red-400">{parseError}</p>
         </div>
+      )}
 
-        {/* Validation error */}
-        {parseError && (
-          <div className="shrink-0 border-t border-red-500/20 bg-red-500/5 px-5 py-2.5">
-            <p className="font-mono text-xs text-red-400">{parseError}</p>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="shrink-0 border-t border-gray-800 px-5 py-4">
+      {/* Footer */}
+      <div className="shrink-0 border-t border-gray-200 px-5 py-4 dark:border-gray-800">
           {saveError && (
             <div className="mb-3 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-400" />
@@ -183,8 +163,7 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
             </div>
           </div>
         </div>
-      </div>
-    </>
+    </Drawer>
   );
 };
 

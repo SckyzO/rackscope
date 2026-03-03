@@ -8,7 +8,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   SlidersHorizontal,
-  X,
   RefreshCw,
   ChevronDown,
   Check,
@@ -23,6 +22,8 @@ import { HUDTooltip } from '../../../components/HUDTooltip';
 import { RackElevation } from '../../../components/RackVisualizer';
 import { api } from '../../../services/api';
 import type { Device, DeviceTemplate, Room, RoomSummary, RackNodeState } from '../../../types';
+import { Drawer } from '../../components/layout/Drawer';
+import { DrawerHeader } from '../../components/layout/DrawerHeader';
 
 type WallView = 'compact' | 'rack' | 'columns';
 type WallLayout = 'scroll' | 'wrap' | 'wrap-auto';
@@ -282,26 +283,9 @@ const ConfigPanel = ({
 }) => {
   const set = <K extends keyof WallConfig>(k: K, v: WallConfig[K]) => onChange({ ...cfg, [k]: v });
   return (
-    <>
-      {open && (
-        <div className="fixed inset-0 z-30 bg-black/20 backdrop-blur-[1px]" onClick={onClose} />
-      )}
-      <div
-        className={`fixed top-0 right-0 z-40 flex h-full w-80 flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 dark:border-gray-800 dark:bg-gray-950 ${open ? 'translate-x-0' : 'translate-x-full'}`}
-      >
-        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 text-gray-500" />
-            <span className="font-semibold text-gray-800 dark:text-white">Display settings</span>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-5">
+    <Drawer open={open} onClose={onClose} width={320}>
+      <DrawerHeader title="Display settings" onClose={onClose} icon={SlidersHorizontal} />
+      <div className="flex-1 overflow-y-auto p-5">
           <SLbl>View</SLbl>
           <OptBtns
             opts={[
@@ -375,8 +359,7 @@ const ConfigPanel = ({
             onChange={(v) => set('groupByAisle', v)}
           />
         </div>
-      </div>
-    </>
+      </Drawer>
   );
 };
 

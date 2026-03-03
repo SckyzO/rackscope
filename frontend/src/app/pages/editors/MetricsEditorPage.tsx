@@ -46,6 +46,7 @@ import {
   LoadingState,
   ErrorState,
 } from '../templates/EmptyPage';
+import { PageActionButton } from '../../components/PageActionButton';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -1186,15 +1187,16 @@ export const MetricsEditorPage = () => {
             {selected ? (
               <>
                 <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
-                  <span className="font-mono text-[10px] text-gray-400 dark:text-gray-600">
-                    {fileMap[selected.id] ?? `${selected.id}.yaml`}
-                  </span>
-                  <button
-                    onClick={() => void openYamlDrawer(selected)}
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
+                  <PageActionButton
+                    variant="danger-outline"
+                    icon={Trash2}
+                    onClick={() => void handleDelete(selected)}
                   >
-                    <FileCode2 className="h-3.5 w-3.5" /> Edit YAML
-                  </button>
+                    Delete
+                  </PageActionButton>
+                  <PageActionButton icon={FileCode2} onClick={() => void openYamlDrawer(selected)}>
+                    Edit YAML
+                  </PageActionButton>
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <EditorPanel

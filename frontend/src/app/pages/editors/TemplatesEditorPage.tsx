@@ -1366,8 +1366,9 @@ export const TemplatesEditorPage = () => {
             {selectedTemplate ? (
               <>
                 <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
-                  {/* Delete */}
-                  <button
+                  <PageActionButton
+                    variant="danger-outline"
+                    icon={Trash2}
                     onClick={async () => {
                       if (
                         !confirm(
@@ -1383,12 +1384,11 @@ export const TemplatesEditorPage = () => {
                         alert(e instanceof Error ? e.message : 'Delete failed');
                       }
                     }}
-                    className="flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-50 dark:border-red-700/40 dark:text-red-400 dark:hover:bg-red-500/10"
                   >
-                    <X className="h-3.5 w-3.5" /> Delete
-                  </button>
-                  {/* Edit YAML */}
-                  <button
+                    Delete
+                  </PageActionButton>
+                  <PageActionButton
+                    icon={FileCode2}
                     onClick={() =>
                       openYamlDrawer(
                         `Device Template — ${selectedTemplate.name}`,
@@ -1400,10 +1400,9 @@ export const TemplatesEditorPage = () => {
                         }
                       )
                     }
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800"
                   >
-                    <FileCode2 className="h-3.5 w-3.5" /> Edit YAML
-                  </button>
+                    Edit YAML
+                  </PageActionButton>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   <EditorPanel
