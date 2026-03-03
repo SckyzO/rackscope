@@ -57,7 +57,7 @@ export const TagInputPage = () => {
           <PageBreadcrumb
             items={[
               { label: 'Home', href: '/' },
-              { label: 'UI Library', href: '/ui' },
+              { label: 'UI Library', href: '/ui-library' },
               { label: 'Tag Input' },
             ]}
           />

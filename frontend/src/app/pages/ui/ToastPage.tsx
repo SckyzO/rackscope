@@ -107,7 +107,7 @@ export const ToastPage = () => {
           <PageBreadcrumb
             items={[
               { label: 'Home', href: '/' },
-              { label: 'UI Library', href: '/ui' },
+              { label: 'UI Library', href: '/ui-library' },
               { label: 'Toast' },
             ]}
           />
