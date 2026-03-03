@@ -360,7 +360,7 @@ const TooltipCard = ({
 const VARIANTS: (CardProps & { label: string; desc: string })[] = [
   {
     label: 'Compute — OK',
-    desc: 'Nœud compute sain. Métriques disponibles, aucune alerte.',
+    desc: 'Healthy compute node. Metrics available, no alerts.',
     title: 'COMPUTE042',
     subtitle: 'Node',
     status: 'OK',
@@ -376,7 +376,7 @@ const VARIANTS: (CardProps & { label: string; desc: string })[] = [
   },
   {
     label: 'Compute — WARN',
-    desc: 'Température au-dessus du seuil WARN. Alerte visible avant les métriques.',
+    desc: 'Temperature above WARN threshold. Alert visible before metrics.',
     title: 'COMPUTE125',
     subtitle: 'Node',
     status: 'WARN',
@@ -393,7 +393,7 @@ const VARIANTS: (CardProps & { label: string; desc: string })[] = [
   },
   {
     label: 'Compute — CRIT',
-    desc: 'Nœud critique. Plusieurs checks en échec. Alertes au premier plan.',
+    desc: 'Critical node. Multiple checks failing. Alerts in foreground.',
     title: 'COMPUTE031',
     subtitle: 'Node',
     status: 'CRIT',
@@ -413,7 +413,7 @@ const VARIANTS: (CardProps & { label: string; desc: string })[] = [
   },
   {
     label: 'GPU Node — WARN',
-    desc: 'GPU avec seuils élevés (warn=52°C). Barre power à 87%.',
+    desc: 'GPU with high thresholds (warn=52°C). Power bar at 87%.',
     title: 'VISU003',
     subtitle: 'Node',
     status: 'WARN',
@@ -429,8 +429,8 @@ const VARIANTS: (CardProps & { label: string; desc: string })[] = [
     alerts: [{ label: 'IPMI temperature high', severity: 'WARN' }],
   },
   {
-    label: 'Nœud down — CRIT',
-    desc: 'Nœud inaccessible. Pas de métriques, juste les alertes.',
+    label: 'Node down — CRIT',
+    desc: 'Unreachable node. No metrics, alerts only.',
     title: 'COMPUTE007',
     subtitle: 'Node',
     status: 'CRIT',
@@ -445,8 +445,8 @@ const VARIANTS: (CardProps & { label: string; desc: string })[] = [
     ],
   },
   {
-    label: 'Switch réseau — OK',
-    desc: 'Switch avec seuils plus bas (warn=40°C). Pas de power max défini.',
+    label: 'Network switch — OK',
+    desc: 'Switch with lower thresholds (warn=40°C). No max power defined.',
     title: 'SW-IB-R02-01',
     subtitle: 'Network',
     status: 'OK',
@@ -460,8 +460,8 @@ const VARIANTS: (CardProps & { label: string; desc: string })[] = [
     checks: { ok: 3, warn: 0, crit: 0 },
   },
   {
-    label: 'Switch réseau — WARN',
-    desc: 'Switch proche du seuil thermique. Alerte check.',
+    label: 'Network switch — WARN',
+    desc: 'Switch near thermal threshold. Check alert triggered.',
     title: 'SW-ETH-R01-03',
     subtitle: 'Network',
     status: 'WARN',
@@ -476,8 +476,8 @@ const VARIANTS: (CardProps & { label: string; desc: string })[] = [
     alerts: [{ label: 'IPMI temperature high', severity: 'WARN' }],
   },
   {
-    label: 'Stockage — CRIT',
-    desc: 'Baie de stockage E-Series. Icône Server (pas de HardDrive importé ici). Métriques de stockage.',
+    label: 'Storage — CRIT',
+    desc: 'E-Series storage array. Server icon (no HardDrive import here). Storage metrics.',
     title: 'STORAGE001',
     subtitle: 'Storage',
     status: 'CRIT',
@@ -494,7 +494,7 @@ const VARIANTS: (CardProps & { label: string; desc: string })[] = [
   },
   {
     label: 'PDU Raritan — WARN',
-    desc: 'Composant PDU. Icône Power. Pas de température, juste la puissance.',
+    desc: 'PDU component. Power icon. No temperature, power only.',
     title: 'PDU-R02-01',
     subtitle: 'PDU',
     status: 'WARN',
@@ -506,8 +506,8 @@ const VARIANTS: (CardProps & { label: string; desc: string })[] = [
     alerts: [{ label: 'PDU current high (warn)', severity: 'WARN' }],
   },
   {
-    label: 'Chassis multi-nœuds — WARN',
-    desc: 'Chassis 4-nœuds. Alertes agrégées de tous les nœuds.',
+    label: 'Multi-node chassis — WARN',
+    desc: '4-node chassis. Aggregated alerts from all nodes.',
     title: 'R02-01-DA03',
     subtitle: 'Device',
     status: 'WARN',

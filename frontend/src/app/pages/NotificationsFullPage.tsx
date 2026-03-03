@@ -77,7 +77,7 @@ export const NotificationsFullPage = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [showAll, setShowAll] = useState(false);
-  // Dynamic rows — ResizeObserver calcule combien de lignes tiennent sans scroll
+  // Dynamic rows — ResizeObserver calculates how many rows fit without scrolling
   const [perPage, setPerPage] = useState(10);
   const tableAreaRef = useRef<HTMLDivElement>(null);
 
@@ -110,14 +110,14 @@ export const NotificationsFullPage = () => {
     void loadData();
   }, [loadData]);
 
-  // ResizeObserver — mesure les vraies hauteurs depuis le DOM, recalcule perPage
+  // ResizeObserver — measures real heights from the DOM, recalculates perPage
   useEffect(() => {
     if (!tableAreaRef.current) return;
     const calc = () => {
       const container = tableAreaRef.current;
       if (!container) return;
       const available = container.getBoundingClientRect().height;
-      // Mesure réelle depuis le DOM (fallback si pas encore rendu)
+      // Real measurement from the DOM (fallback if not yet rendered)
       const firstRow = container.querySelector('tbody tr');
       const thead = container.querySelector('thead');
       const rowH = firstRow ? firstRow.getBoundingClientRect().height : FALLBACK_ROW_H;
@@ -135,7 +135,7 @@ export const NotificationsFullPage = () => {
     setPage(0);
   }, [filter, search]);
 
-  // Recalcule perPage une fois que les vraies lignes sont rendues (données chargées)
+  // Recalculate perPage once real rows are rendered (data loaded)
   useEffect(() => {
     if (!tableAreaRef.current || loading) return;
     const container = tableAreaRef.current;
@@ -380,7 +380,7 @@ export const NotificationsFullPage = () => {
             </div>
           ) : (
             <table className="w-full table-fixed">
-              {/* Largeurs proportionnelles — stables de 700px à 4K */}
+              {/* Proportional widths — stable from 700px to 4K */}
               <colgroup>
                 <col style={{ width: '10%' }} /> {/* Severity  */}
                 <col style={{ width: '12%' }} /> {/* Name      */}

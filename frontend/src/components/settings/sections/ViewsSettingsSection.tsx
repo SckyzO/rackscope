@@ -204,7 +204,7 @@ const TooltipStyleSection = () => {
                 {s.label}
                 {s.id === 'tinted' && (
                   <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[9px] font-bold text-gray-500 uppercase dark:bg-gray-700 dark:text-gray-400">
-                    défaut
+                    default
                   </span>
                 )}
               </div>
