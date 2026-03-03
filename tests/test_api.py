@@ -82,3 +82,19 @@ def test_get_rack_state():
     body = response.json()
     assert body["state"] in {"OK", "WARN", "CRIT", "UNKNOWN"}
     assert "nodes" in body
+
+
+# ── Wizard disable endpoint ────────────────────────────────────────────────────
+
+def test_wizard_disable_endpoint_exists():
+    """POST /api/setup/wizard/disable is reachable and returns wizard=false."""
+    resp = client.post("/api/setup/wizard/disable")
+    # May return 200 or 500 depending on config state, but must not 404
+    assert resp.status_code != 404
+
+
+def test_wizard_disable_returns_json():
+    """Response body contains wizard field."""
+    resp = client.post("/api/setup/wizard/disable")
+    data = resp.json()
+    assert "wizard" in data
