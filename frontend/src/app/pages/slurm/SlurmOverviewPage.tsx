@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Activity, AlertTriangle, XCircle, Server } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { SlurmSummary, SlurmPartitionSummary, RoomSummary } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard, LoadingState } from '../templates/EmptyPage';
+import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
 
 const SEV_COLOR: Record<string, string> = {
   OK: '#22c55e',
@@ -44,29 +45,36 @@ export const SlurmOverviewPage = () => {
       });
   }, []);
 
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [s, p] = await Promise.all([
+        api.getSlurmSummary(roomId || undefined),
+        api.getSlurmPartitions(roomId || undefined),
+      ]);
+      setSummary(s);
+      setPartitions(p);
+      setLoading(false);
+    } catch {
+      setLoading(false);
+    }
+  }, [roomId]);
+
   useEffect(() => {
     let active = true;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [s, p] = await Promise.all([
-          api.getSlurmSummary(roomId || undefined),
-          api.getSlurmPartitions(roomId || undefined),
-        ]);
-        if (active) {
-          setSummary(s);
-          setPartitions(p);
-          setLoading(false);
-        }
-      } catch {
-        if (active) setLoading(false);
+    void load().then(() => {
+      if (!active) {
+        // Cleanup if component unmounts during load
+        setLoading(false);
       }
-    };
-    void load();
+    });
     return () => {
       active = false;
     };
-  }, [roomId]);
+  }, [load]);
+
+  const handleQuietRefresh = useCallback(() => void load(), [load]);
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('slurm-overview', handleQuietRefresh);
 
   const totalNodes = summary?.total_nodes ?? 0;
   const crit = summary?.by_severity?.CRIT ?? 0;
@@ -92,18 +100,26 @@ export const SlurmOverviewPage = () => {
           />
         }
         actions={
-          <select
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
-            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-          >
-            <option value="">All rooms</option>
-            {rooms.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+            >
+              <option value="">All rooms</option>
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+            <RefreshButton
+              onRefresh={load}
+              loading={loading}
+              autoRefreshMs={autoRefreshMs}
+              onIntervalChange={onIntervalChange}
+            />
+          </div>
         }
       />
 

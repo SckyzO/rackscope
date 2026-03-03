@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../../../services/api';
 import type { SlurmPartitionSummary, RoomSummary } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
@@ -9,6 +9,7 @@ import {
   LoadingState,
   EmptyState,
 } from '../templates/EmptyPage';
+import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
 
 const STATUS_COLOR: Record<string, string> = {
   idle: '#10b981',
@@ -41,25 +42,31 @@ export const SlurmPartitionsPage = () => {
       });
   }, []);
 
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const d = await api.getSlurmPartitions(roomId || undefined);
+      setData(d);
+      setLoading(false);
+    } catch {
+      setLoading(false);
+    }
+  }, [roomId]);
+
   useEffect(() => {
     let active = true;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const d = await api.getSlurmPartitions(roomId || undefined);
-        if (active) {
-          setData(d);
-          setLoading(false);
-        }
-      } catch {
-        if (active) setLoading(false);
+    void load().then(() => {
+      if (!active) {
+        setLoading(false);
       }
-    };
-    void load();
+    });
     return () => {
       active = false;
     };
-  }, [roomId]);
+  }, [load]);
+
+  const handleQuietRefresh = useCallback(() => void load(), [load]);
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('slurm-partitions', handleQuietRefresh);
 
   const partEntries = Object.entries(data?.partitions ?? {});
 
@@ -78,18 +85,26 @@ export const SlurmPartitionsPage = () => {
           />
         }
         actions={
-          <select
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
-            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-          >
-            <option value="">All rooms</option>
-            {rooms.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <select
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+            >
+              <option value="">All rooms</option>
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+            <RefreshButton
+              onRefresh={load}
+              loading={loading}
+              autoRefreshMs={autoRefreshMs}
+              onIntervalChange={onIntervalChange}
+            />
+          </div>
         }
       />
 

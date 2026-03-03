@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { RotateCcw, LayoutGrid, Columns } from 'lucide-react';
+import { LayoutGrid, Columns } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 import { HUDTooltip } from '../../../components/HUDTooltip';
@@ -13,6 +13,8 @@ import type {
   RoomSummary,
   SlurmRoomNodes,
 } from '../../../types';
+import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
+import { SegmentedControl } from '../../components/forms/SegmentedControl';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -339,7 +341,6 @@ export const SlurmWallboardPage = () => {
   const [slurmNodes, setSlurmNodes] = useState<SlurmRoomNodes | null>(null);
   const [slurmRoles, setSlurmRoles] = useState<string[]>(['compute', 'visu']);
   const [includeUnlabeled, setIncludeUnlabeled] = useState(false);
-  const [refreshMs, setRefreshMs] = useState(30000);
   const [loading, setLoading] = useState(true);
   const [hover, setHover] = useState<HoverPayload | null>(null);
   const [wallView, setWallView] = useState<WallboardView>(
@@ -353,8 +354,6 @@ export const SlurmWallboardPage = () => {
         const [roomsData, cfg] = await Promise.all([api.getRooms(), api.getConfig()]);
         if (!active) return;
         setRooms(Array.isArray(roomsData) ? roomsData : []);
-        const nextRefresh = Number(cfg?.refresh?.room_state_seconds) || 30;
-        setRefreshMs(Math.max(10, nextRefresh) * 1000);
         const roles = cfg?.plugins?.slurm?.roles;
         if (Array.isArray(roles) && roles.length > 0) {
           setSlurmRoles(roles.map((r: string) => r.toLowerCase()));
@@ -378,32 +377,38 @@ export const SlurmWallboardPage = () => {
     navigate(`/slurm/wallboard/${rooms[0].id}`, { replace: true });
   }, [roomId, rooms, navigate]);
 
-  useEffect(() => {
+  const loadRoomData = useCallback(async () => {
     if (!roomId) return;
+    setLoading(true);
+    try {
+      const [roomData, catalogData, slurmData] = await Promise.all([
+        api.getRoomLayout(roomId),
+        api.getCatalog(),
+        api.getSlurmRoomNodes(roomId),
+      ]);
+      setRoom(roomData);
+      setCatalog(catalogData);
+      setSlurmNodes(slurmData);
+      setLoading(false);
+    } catch {
+      setLoading(false);
+    }
+  }, [roomId]);
+
+  useEffect(() => {
     let active = true;
-    const load = async () => {
-      try {
-        const [roomData, catalogData, slurmData] = await Promise.all([
-          api.getRoomLayout(roomId),
-          api.getCatalog(),
-          api.getSlurmRoomNodes(roomId),
-        ]);
-        if (!active) return;
-        setRoom(roomData);
-        setCatalog(catalogData);
-        setSlurmNodes(slurmData);
+    void loadRoomData().then(() => {
+      if (!active) {
         setLoading(false);
-      } catch {
-        if (active) setLoading(false);
       }
-    };
-    load();
-    const t = setInterval(load, refreshMs);
+    });
     return () => {
       active = false;
-      clearInterval(t);
     };
-  }, [roomId, refreshMs]);
+  }, [loadRoomData]);
+
+  const handleQuietRefresh = useCallback(() => void loadRoomData(), [loadRoomData]);
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('slurm-wallboard', handleQuietRefresh);
 
   const templatesById = useMemo(() => {
     const map = new Map<string, DeviceTemplate>();
@@ -484,41 +489,24 @@ export const SlurmWallboardPage = () => {
                 ))}
               </select>
 
-              <div className="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-                {(
-                  [
-                    { value: 'compact', icon: LayoutGrid, title: 'Vue compacte' },
-                    { value: 'detailed', icon: Columns, title: 'Vue détaillée' },
-                  ] as { value: WallboardView; icon: React.ElementType; title: string }[]
-                ).map(({ value, icon: Icon, title }) => (
-                  <button
-                    key={value}
-                    title={title}
-                    onClick={() => {
-                      setWallView(value);
-                      localStorage.setItem('slurm-wallboard-view', value);
-                    }}
-                    className={`p-1.5 transition-colors ${wallView === value ? 'bg-brand-500 text-white' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => {
-                  if (roomId)
-                    api
-                      .getSlurmRoomNodes(roomId)
-                      .then(setSlurmNodes)
-                      .catch(() => {
-                        /* noop */
-                      });
+              <SegmentedControl
+                value={wallView}
+                onChange={(value) => {
+                  setWallView(value as WallboardView);
+                  localStorage.setItem('slurm-wallboard-view', value);
                 }}
-                className="rounded-lg border border-gray-200 p-1.5 text-gray-400 hover:text-gray-600 dark:border-gray-700"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </button>
+                options={[
+                  { value: 'compact', label: 'Compact', icon: LayoutGrid },
+                  { value: 'detailed', label: 'Detailed', icon: Columns },
+                ]}
+              />
+
+              <RefreshButton
+                onRefresh={loadRoomData}
+                loading={loading}
+                autoRefreshMs={autoRefreshMs}
+                onIntervalChange={onIntervalChange}
+              />
             </div>
           }
         />

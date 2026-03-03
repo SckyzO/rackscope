@@ -1,9 +1,11 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { Search, Filter } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Filter } from 'lucide-react';
 import { api } from '../../../services/api';
 import type { SlurmNodeEntry, RoomSummary } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from '../templates/EmptyPage';
+import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
+import { SearchInput } from '../../components/forms/SearchInput';
 
 // ── Status badge — inline style (many status values) ──────────────────────────
 
@@ -97,25 +99,31 @@ export const SlurmNodesPage = () => {
       });
   }, []);
 
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.getSlurmNodes(roomId || undefined);
+      setNodes(data?.nodes ?? []);
+      setLoading(false);
+    } catch {
+      setLoading(false);
+    }
+  }, [roomId]);
+
   useEffect(() => {
     let active = true;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const data = await api.getSlurmNodes(roomId || undefined);
-        if (active) {
-          setNodes(data?.nodes ?? []);
-          setLoading(false);
-        }
-      } catch {
-        if (active) setLoading(false);
+    void load().then(() => {
+      if (!active) {
+        setLoading(false);
       }
-    };
-    void load();
+    });
     return () => {
       active = false;
     };
-  }, [roomId]);
+  }, [load]);
+
+  const handleQuietRefresh = useCallback(() => void load(), [load]);
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('slurm-nodes', handleQuietRefresh);
 
   // Reset page on filter change (queueMicrotask avoids synchronous setState in effect)
   useEffect(() => {
@@ -203,32 +211,34 @@ export const SlurmNodesPage = () => {
             />
           }
           actions={
-            <select
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-            >
-              <option value="">All rooms</option>
-              {rooms.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value)}
+                className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+              >
+                <option value="">All rooms</option>
+                {rooms.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+              <RefreshButton
+                onRefresh={load}
+                loading={loading}
+                autoRefreshMs={autoRefreshMs}
+                onIntervalChange={onIntervalChange}
+              />
+            </div>
           }
         />
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-2.5 dark:border-gray-800">
-          <div className="relative min-w-[200px] flex-1">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search nodes…"
-              className="focus:border-brand-500 h-9 w-full rounded-lg border border-gray-200 pr-4 pl-9 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
-            />
+          <div className="min-w-[200px] flex-1">
+            <SearchInput value={search} onChange={setSearch} placeholder="Search nodes…" />
           </div>
 
           {availableSevs.length > 0 && (
