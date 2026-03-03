@@ -557,6 +557,51 @@ This design is fully vendor-agnostic in the core: the same `expand_by_label` mec
 
 ---
 
+## Virtual Nodes — `expand_by_label`
+
+For devices that expose per-component metrics (storage arrays with per-disk checks, switches with per-port status), use `expand_by_label` to monitor each sub-component individually.
+
+```yaml
+checks:
+  - id: eseries_drive_status
+    name: "E-Series Drive Status"
+    kind: storage
+    scope: node
+    expr: 'eseries_drive_status{instance=~"$instances"}'
+    output: numeric
+    expand_by_label: "slot"        # ← expand per unique value of this label
+    rules:
+      - op: "!="
+        value: 0
+        severity: CRIT
+```
+
+### How it works
+
+1. The [TelemetryPlanner](../architecture/backend.md#telemetry-planner) queries Prometheus for all unique values of the specified label (e.g., `slot=1`, `slot=2`, … `slot=60`)
+2. A **virtual node** is created per unique value: `da01-r02-01.1`, `da01-r02-01.2`, …
+3. Each virtual node has its own health state (OK / WARN / CRIT / UNKNOWN)
+4. Health is propagated independently: a failed drive makes the array CRIT, but other arrays stay OK
+
+### Use cases
+
+| Device type | `expand_by_label` | Virtual node format |
+|---|---|---|
+| E-Series storage (slot-based) | `slot` | `da01-r02-01.1` |
+| DDN storage (drive) | `drive` | `ddn01.5` |
+| NetApp (disk) | `disk` | `filer01.3` |
+| Network switch (port) | `port` | `sw01.eth0` |
+| Chassis (fan, PSU) | `fan_id` | `chassis01.fan1` |
+
+### Important
+
+- `expand_by_label` only works for checks with `scope: node`
+- The label must exist in the Prometheus metric's labels
+- If no data is found for a virtual node, it is assigned `UNKNOWN`
+- Virtual nodes appear in the device view alongside physical instances
+
+---
+
 ## Template Binding
 
 Checks are activated **only for devices whose template references them**. A check that exists in the library but is not referenced by any template in the loaded topology will never be queried.

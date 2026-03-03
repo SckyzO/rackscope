@@ -19,10 +19,23 @@ This file defines the built-in monitoring checks library used by templates.
 ## Check definition (concept)
 Each check has:
 - id, name, scope (node|chassis|rack)
+- kind (server|switch|storage|pdu|cooling) — for UI grouping
 - expr (PromQL, vector-friendly)
 - selectors (labels expected, resolved from topology)
 - rules (operator/value -> severity)
 - output (bool or numeric)
+- expand_by_label (optional) — label name to expand into virtual nodes (e.g. "slot" for per-drive checks)
+
+### expand_by_label — Virtual Nodes
+
+When a check defines `expand_by_label: "slot"`, the planner performs a discovery pre-pass:
+1. Queries Prometheus for all unique values of the label
+2. Creates virtual instance keys: `{instance}.{label_value}` (e.g. `da01-r02-01.3`)
+3. Evaluates health per virtual node independently
+4. Propagates to parent: if ≥1 virtual node is CRIT, parent instance is CRIT
+
+This is used for storage arrays (per-disk health), switches (per-port), chassis (per-fan).
+See `config/checks/library/eseries.yaml` for a real example.
 
 ## YAML format (v0.1)
 Each file under `config/checks/library/` must contain a top-level `checks:` list.

@@ -28,6 +28,7 @@ class Site(BaseModel):
     id: str
     name: str
     location: Optional[Location]  # lat/lon for world map
+    timezone: Optional[str]       # IANA timezone (e.g., "Europe/Paris")
     rooms: List[str]              # room IDs
 ```
 
@@ -63,7 +64,10 @@ class Device(BaseModel):
     template_id: str
     u_position: int
     instance: Union[str, List[str], Dict[int, str]]  # Prometheus node(s)
+    role: Optional[str]                              # compute, visu, login, io, storage
 ```
+
+> **`instance` vs `nodes`**: Use `instance` in all new configurations. `nodes` is a deprecated alias kept for backward compatibility. Both are accepted but `nodes` will be removed in a future version.
 
 ### Instance Expansion
 
@@ -83,8 +87,8 @@ class DeviceTemplate(BaseModel):
     u_height: int
     layout: Optional[DeviceLayout]
     rear_layout: Optional[DeviceLayout]
-    checks: List[str]             # check IDs
-    metrics: List[str]            # metric IDs
+    checks: List[str]             # check IDs from the checks library
+    metrics: List[str]            # metric IDs from the metrics library
 ```
 
 ## Health States

@@ -32,6 +32,7 @@ sites:
     location:
       lat: 48.8566
       lon: 2.3522
+    timezone: "Europe/Paris"   # optional IANA timezone
     rooms:
       - r001
       - r002
@@ -72,6 +73,8 @@ racks:
 
 ## Rack Definition
 
+> **Note**: The field `nodes` is a deprecated alias for `instance`. New configurations should use `instance:`.
+
 ```yaml
 # config/topology/datacenters/dc1/rooms/r001/aisles/a01/racks/a01-r01.yaml
 id: a01-r01
@@ -85,6 +88,7 @@ devices:
     template_id: bs-x440-a5
     u_position: 1
     instance: compute[001-020]   # pattern expansion
+    role: compute                # optional: compute, visu, login, io, storage
 
   - id: top-of-rack-switch
     name: "ToR Switch"

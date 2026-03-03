@@ -32,6 +32,7 @@ const sidebars = {
     'admin-guide/prometheus',
     'admin-guide/app-yaml',
     'admin-guide/settings-ui',
+    'admin-guide/importers',
   ],
 
   apiReference: [
@@ -48,6 +49,10 @@ const sidebars = {
     'architecture/backend',
     'architecture/frontend',
     'architecture/dashboard-widgets',
+  ],
+
+  development: [
+    'development/testing',
   ],
 
   designSystem: [

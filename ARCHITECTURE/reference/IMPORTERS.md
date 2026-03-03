@@ -1,4 +1,6 @@
 # IMPORTERS.md (Private) — Philosophy v0.1
+<!-- Status: PLANNED — NOT IMPLEMENTED. No code exists yet. Post-v1.0 roadmap item. -->
+<!-- Public docs: website/docs/admin-guide/importers.md -->
 Importers/adapters convert external inventory sources into the View Model files.
 
 ## Principles

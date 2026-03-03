@@ -85,6 +85,28 @@ The TelemetryPlanner is critical for performance:
 
 Without batching, a 1000-node cluster would generate 1000 individual Prometheus queries on every refresh. With batching, it generates 10 queries (100 nodes per query).
 
+### Virtual Node Expansion (`expand_by_label`)
+
+When a check defines `expand_by_label: "slot"`, the planner performs a **discovery pre-pass**:
+
+1. Runs a discovery query to enumerate all unique label values for the metric
+2. Creates virtual instance keys: `{instance}.{label_value}` (e.g., `da01-r02-01.3`)
+3. Adds these virtual keys to the `$instances` placeholder
+4. Evaluates health per virtual node independently
+
+This enables per-component monitoring (drives, ports, fans) without listing each component in the topology YAML. The backend creates the virtual identities at runtime from Prometheus data.
+
+```python
+# Example: check with expand_by_label
+check = CheckDefinition(
+    id="eseries_drive_status",
+    expand_by_label="slot",   # ← planner will expand per slot value
+    expr='eseries_drive_status{instance=~"$instances"}',
+    ...
+)
+# Planner creates: da01-r02-01.1, da01-r02-01.2, ..., da01-r02-01.60
+```
+
 ## Performance: Conditional Metrics
 
 The `/api/racks/{id}/state` endpoint defaults to health-only (fast):
