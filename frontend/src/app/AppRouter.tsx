@@ -88,6 +88,7 @@ import { MetricsEditorPage } from './pages/editors/MetricsEditorPage';
 import { TemplatesEditorPage } from './pages/editors/TemplatesEditorPage';
 import { RackEditorPage } from './pages/editors/RackEditorPage';
 import { EmptyPage, TemplatesShowcase, CenteredPage } from './pages/templates/EmptyPage';
+import { TemplateDefaultPage } from './pages/templates/TemplateDefaultPage';
 import { PlaylistCenterPage } from './pages/PlaylistCenterPage';
 import {
   RackViewTemplate,
@@ -229,6 +230,7 @@ const AppRoutes = () => (
 
       {/* ── Page templates (design system) ── */}
       <Route path="templates/empty" element={<EmptyPage />} />
+      <Route path="templates/default" element={<TemplateDefaultPage />} />
       <Route path="templates/centered" element={<CenteredPage />} />
       <Route path="templates/showcase" element={<TemplatesShowcase />} />
       <Route path="templates/rack" element={<RackViewTemplate />} />
