@@ -32,6 +32,7 @@ import { PageActionButton, PageActionIconButton } from '../../components/PageAct
 
 // New components
 import { FormRow } from '../../components/forms/FormRow';
+import { NumberInput } from '../../components/forms/NumberInput';
 import { StatefulSaveButton, type SaveState } from '../../components/ui/StatefulSaveButton';
 import { UnsavedIndicator } from '../../components/ui/UnsavedIndicator';
 import { ConfirmationModal } from '../../components/layout/ConfirmationModal';
@@ -115,6 +116,8 @@ export const TemplateDefaultPage = () => {
   // FormRow demo
   const [formToggle, setFormToggle] = useState(true);
   const [formSelect, setFormSelect] = useState('30');
+  const [numVal, setNumVal] = useState(60);
+  const [numZoom, setNumZoom] = useState(4);
 
   const STATUSES = ['OK', 'WARN', 'CRIT', 'UNKNOWN'] as const;
 
@@ -264,7 +267,7 @@ export const TemplateDefaultPage = () => {
       </SectionCard>
 
       {/* ── 4. Forms ── */}
-      <SectionCard title="4 · Forms" desc="forms/SearchInput · forms/SegmentedControl · forms/FilterPills · forms/ToggleSwitch">
+      <SectionCard title="4 · Forms" desc="forms/SearchInput · forms/SegmentedControl · forms/FilterPills · forms/ToggleSwitch · forms/NumberInput">
         <div className="space-y-4">
           <Row label="SearchInput">
             <SearchInput
@@ -312,6 +315,12 @@ export const TemplateDefaultPage = () => {
             <ToggleSwitch checked={toggle2} onChange={() => setToggle2((v) => !v)} />
             <ToggleSwitch checked={true} onChange={() => {}} disabled label="Disabled on" />
             <ToggleSwitch checked={false} onChange={() => {}} disabled label="Disabled off" />
+          </Row>
+          <Row label="NumberInput — − / + buttons, unit suffix, min/max">
+            <NumberInput value={numVal} onChange={setNumVal} min={1} max={3600} step={1} unit="s" />
+            <NumberInput value={numZoom} onChange={setNumZoom} min={1} max={18} step={1} />
+            <NumberInput value={numVal} onChange={setNumVal} min={0} max={100} step={5} unit="%" width="w-16" />
+            <NumberInput value={42} onChange={() => {}} disabled unit="ms" />
           </Row>
         </div>
       </SectionCard>
