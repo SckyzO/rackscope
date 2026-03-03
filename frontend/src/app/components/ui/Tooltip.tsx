@@ -40,10 +40,10 @@ const ARROW_POS: Record<TooltipPosition, string> = {
 // ── Variant styles ─────────────────────────────────────────────────────────────
 
 const VARIANT_BOX: Record<TooltipVariant, string> = {
-  dark: 'bg-gray-900 text-white shadow-lg dark:bg-gray-700',
+  dark: 'bg-gray-900 text-white shadow-[0_0_20px_rgba(0,0,0,0.35)] dark:bg-gray-700',
   white:
-    'bg-white text-gray-700 border border-gray-200 shadow-lg dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700',
-  brand: 'bg-brand-500 text-white shadow-lg',
+    'bg-white text-gray-700 border border-gray-200 shadow-[0_0_20px_rgba(0,0,0,0.15)] dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700',
+  brand: 'bg-brand-500 text-white shadow-[0_0_20px_rgba(0,0,0,0.25)]',
 };
 
 // Arrow border color per variant (matching box edge)
@@ -75,7 +75,7 @@ export const Tooltip = ({
     {/* Tooltip box */}
     <div
       className={`pointer-events-none absolute z-50 w-max ${maxWidth} rounded-lg px-3 py-2
-        text-xs leading-relaxed whitespace-normal
+        text-xs font-normal normal-case leading-relaxed tracking-normal whitespace-normal
         opacity-0 transition-opacity duration-150 group-hover:opacity-100
         ${BOX_POS[position]} ${VARIANT_BOX[variant]}`}
       role="tooltip"
