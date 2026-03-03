@@ -747,12 +747,12 @@ const RefreshButton = ({
   const isAutoActive = autoRefreshMs > 0;
 
   return (
-    <div className="relative flex items-stretch overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div className="relative flex items-stretch rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
       {/* Left: manual refresh */}
       <button
         onClick={onRefresh}
         disabled={refreshing}
-        className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-700"
+        className="flex items-center gap-1.5 rounded-l-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-700"
       >
         <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
         <span>Refresh</span>
@@ -771,7 +771,7 @@ const RefreshButton = ({
       <div className="relative">
         <button
           onClick={() => setDropOpen((v) => !v)}
-          className="flex h-full items-center px-2 text-gray-400 transition-colors hover:bg-gray-50 dark:text-gray-500 dark:hover:bg-gray-700"
+          className="flex h-full items-center rounded-r-lg px-2 text-gray-400 transition-colors hover:bg-gray-50 dark:text-gray-500 dark:hover:bg-gray-700"
         >
           <ChevronDown className="h-3.5 w-3.5" />
         </button>
