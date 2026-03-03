@@ -12,6 +12,7 @@ import {
   DoorOpen,
 } from 'lucide-react';
 import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
+import { SegmentedControl } from '../../components/forms/SegmentedControl';
 import { api } from '../../../services/api';
 import type { Site, ActiveAlert } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
@@ -379,47 +380,26 @@ export const WorldMapPage = () => {
   const controls = (
     <div className="flex items-center gap-2">
       {/* Layout toggle */}
-      <div className="flex items-center rounded-xl border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
-        {(
-          [
-            { id: 'stacked', icon: LayoutTemplate, label: 'Stacked' },
-            { id: 'split', icon: Columns2, label: 'Split' },
-          ] as const
-        ).map(({ id, icon: Icon, label }) => (
-          <button
-            key={id}
-            title={label}
-            onClick={() => changeLayout(id)}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
-              layout === id
-                ? 'bg-brand-500 text-white shadow-sm'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            }`}
-          >
-            <Icon className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">{label}</span>
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        options={[
+          { label: 'Stacked', value: 'stacked', icon: LayoutTemplate },
+          { label: 'Split', value: 'split', icon: Columns2 },
+        ]}
+        value={layout}
+        onChange={changeLayout}
+      />
 
       {/* Height control (stacked only) */}
       {layout === 'stacked' && (
-        <div className="flex items-center rounded-xl border border-gray-200 bg-white p-0.5 dark:border-gray-700 dark:bg-gray-900">
-          {(['sm', 'md', 'lg'] as const).map((h) => (
-            <button
-              key={h}
-              title={{ sm: 'Compact', md: 'Normal', lg: 'Tall' }[h]}
-              onClick={() => changeHeight(h)}
-              className={`flex items-center justify-center rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
-                mapHeight === h
-                  ? 'bg-brand-500 text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
-            >
-              {h.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          options={[
+            { label: 'S', value: 'sm' },
+            { label: 'M', value: 'md' },
+            { label: 'L', value: 'lg' },
+          ]}
+          value={mapHeight}
+          onChange={changeHeight}
+        />
       )}
 
       {/* Refresh button */}

@@ -10,6 +10,7 @@ import {
   EmptyState,
 } from '../templates/EmptyPage';
 import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
+import { Dropdown } from '../../components/ui/Dropdown';
 
 const STATUS_COLOR: Record<string, string> = {
   idle: '#10b981',
@@ -86,18 +87,14 @@ export const SlurmPartitionsPage = () => {
         }
         actions={
           <div className="flex items-center gap-2">
-            <select
+            <Dropdown
               value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-            >
-              <option value="">All rooms</option>
-              {rooms.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+              onChange={setRoomId}
+              options={[
+                { value: '', label: 'All rooms' },
+                ...rooms.map((r) => ({ value: r.id, label: r.name })),
+              ]}
+            />
             <RefreshButton
               onRefresh={load}
               loading={loading}

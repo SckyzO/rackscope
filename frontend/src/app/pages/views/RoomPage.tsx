@@ -3,6 +3,7 @@ import { HUDTooltip } from '../../../components/HUDTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
 import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
 import { PageActionButton } from '../../components/PageActionButton';
+import { ZoomBar } from '../../components/ui/ZoomBar';
 import {
   Settings2,
   X,
@@ -23,10 +24,6 @@ import {
   Tag,
   ListFilter,
   ChevronDown,
-  Minus,
-  Plus,
-  Maximize2,
-  RotateCcw,
   Lock,
   LockOpen,
   MouseOff,
@@ -1784,50 +1781,20 @@ export const RoomPage = () => {
             />
           </div>
 
-          {/* Zoom controls — [ - | xx% | + | autosize | reset ] */}
-          <div className="flex overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-            <button
-              onClick={() =>
-                setViewport((v) => {
-                  const newZoom = Math.max(0.15, Math.round((v.zoom - 0.05) * 100) / 100);
-                  return { ...v, zoom: newZoom, ...clampPan(v.panX, v.panY, newZoom) };
-                })
-              }
-              className="flex items-center border-r border-gray-200 px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-              title="Zoom out (−5%)"
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-            <span className="flex min-w-[3.5rem] items-center justify-center border-r border-gray-200 px-3 py-2 font-mono text-sm font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300">
-              {Math.round(zoom * 100)}%
-            </span>
-            <button
-              onClick={() =>
-                setViewport((v) => {
-                  const newZoom = Math.min(3, Math.round((v.zoom + 0.05) * 100) / 100);
-                  return { ...v, zoom: newZoom, ...clampPan(v.panX, v.panY, newZoom) };
-                })
-              }
-              className="flex items-center border-r border-gray-200 px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-              title="Zoom in (+5%)"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-            <button
-              onClick={fitToCanvas}
-              className="flex items-center border-r border-gray-200 px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-              title="Autosize — fit to canvas"
-            >
-              <Maximize2 className="h-4 w-4" />
-            </button>
-            <button
-              onClick={resetToDefault}
-              className="flex items-center px-2.5 py-2 text-gray-500 transition-colors hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"
-              title="Reset — 100%"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-          </div>
+          {/* Zoom controls */}
+          <ZoomBar
+            zoom={zoom}
+            onZoomOut={() => setViewport((v) => {
+              const newZoom = Math.max(0.15, Math.round((v.zoom - 0.05) * 100) / 100);
+              return { ...v, zoom: newZoom, ...clampPan(v.panX, v.panY, newZoom) };
+            })}
+            onZoomIn={() => setViewport((v) => {
+              const newZoom = Math.min(3, Math.round((v.zoom + 0.05) * 100) / 100);
+              return { ...v, zoom: newZoom, ...clampPan(v.panX, v.panY, newZoom) };
+            })}
+            onFit={fitToCanvas}
+            onReset={resetToDefault}
+          />
 
           <button
             onClick={() => setViewLocked((v) => !v)}

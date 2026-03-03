@@ -15,7 +15,6 @@ import {
   X,
   SlidersHorizontal,
   LayoutDashboard,
-  RefreshCw,
   ListVideo,
   ExternalLink,
   AlignLeft,
@@ -23,6 +22,8 @@ import {
 } from 'lucide-react';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
 import { api } from '../../services/api';
+import { PageActionButton, PageActionIconButton } from '../components/PageActionButton';
+import { RefreshButton, useAutoRefresh } from '../components/RefreshButton';
 import type {
   ActiveAlert,
   Site,
@@ -504,6 +505,9 @@ export const DashboardPage = () => {
     }
   };
 
+  const handleQuietRefresh = useCallback(() => void loadAll(true), []);
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('dashboard', handleQuietRefresh);
+
   useEffect(() => {
     void loadAll();
     const t = setInterval(() => void loadAll(true), refreshInterval * 1000);
@@ -737,70 +741,50 @@ export const DashboardPage = () => {
         <div className="flex items-center gap-2">
           {editMode ? (
             <>
-              <button
+              <PageActionButton
+                icon={PanelRight}
                 onClick={() => setPickerOpen((o) => !o)}
-                className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm transition-colors ${
-                  pickerOpen
-                    ? 'border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-700/50 dark:bg-brand-500/10 dark:text-brand-400'
-                    : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
-                }`}
+                variant={pickerOpen ? 'brand-outline' : 'outline'}
               >
-                <PanelRight className="h-4 w-4" />
                 Widgets
-              </button>
-              <button
-                onClick={() => {
-                  // Discard: clear pending layout without persisting — reverts to saved state
-                  setPendingLayout(null);
-                  setEditMode(false);
-                  setPickerOpen(false);
-                }}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-              >
-                <Undo2 className="h-4 w-4" />
+              </PageActionButton>
+              <PageActionButton icon={Undo2} onClick={() => {
+                setPendingLayout(null);
+                setEditMode(false);
+                setPickerOpen(false);
+              }} variant="outline">
                 Discard
-              </button>
-              <button
-                onClick={() => {
-                  // Save: persist pending layout (or current if no changes) to localStorage
-                  saveWidgets(pendingLayout ?? widgets);
-                  setPendingLayout(null);
-                  setEditMode(false);
-                  setPickerOpen(false);
-                }}
-                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-white transition-colors"
-              >
-                <Check className="h-4 w-4" />
+              </PageActionButton>
+              <PageActionButton icon={Check} onClick={() => {
+                saveWidgets(pendingLayout ?? widgets);
+                setPendingLayout(null);
+                setEditMode(false);
+                setPickerOpen(false);
+              }} variant="primary">
                 Save
-              </button>
+              </PageActionButton>
             </>
           ) : (
-            <button
-              onClick={() => {
-                widgetSnapshot.current = widgets;
-                setPendingLayout(null); // start with no pending changes
-                setEditMode(true);
-              }}
-              className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Edit layout
-            </button>
+            <>
+              <PageActionButton
+                icon={LayoutDashboard}
+                onClick={() => {
+                  widgetSnapshot.current = widgets;
+                  setPendingLayout(null);
+                  setEditMode(true);
+                }}
+              >
+                Edit layout
+              </PageActionButton>
+              <PageActionIconButton icon={SlidersHorizontal} title="Dashboard settings" onClick={() => setSettingsOpen(true)} />
+              <RefreshButton
+                refreshing={refreshing}
+                autoRefreshMs={autoRefreshMs}
+                onRefresh={() => void loadAll(true)}
+                onIntervalChange={onIntervalChange}
+              />
+            </>
           )}
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => void loadAll(true)}
-            disabled={refreshing}
-            className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
         </div>
       </div>
 

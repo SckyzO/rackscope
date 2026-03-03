@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell,
   XCircle,
   AlertTriangle,
-  RefreshCw,
   Filter,
   ChevronRight,
   ChevronLeft,
@@ -16,6 +15,7 @@ import { api } from '../../services/api';
 import type { ActiveAlert, SlurmNodeEntry } from '../../types';
 import { usePageTitle } from '../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from './templates/EmptyPage';
+import { RefreshButton, useAutoRefresh } from '../components/RefreshButton';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -54,15 +54,6 @@ const FALLBACK_ROW_H = 72; // measured: badge (py-1+text-xs) in td py-3.5
 const FALLBACK_THEAD_H = 41; // measured: th py-3 + text-xs
 const SAFETY = 8; // sub-pixel safety buffer
 
-const REFRESH_OPTIONS = [
-  { label: 'Off', value: 0 },
-  { label: '15s', value: 15 },
-  { label: '30s', value: 30 },
-  { label: '1m', value: 60 },
-  { label: '2m', value: 120 },
-  { label: '5m', value: 300 },
-];
-
 function buildPages(current: number, total: number): (number | '...')[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i);
   if (current <= 3) return [0, 1, 2, 3, '...', total - 1];
@@ -86,15 +77,11 @@ export const NotificationsFullPage = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [showAll, setShowAll] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState(60);
-  const [countdown, setCountdown] = useState(60);
-  const countdownRef = useRef(60);
-  const [refreshMenuOpen, setRefreshMenuOpen] = useState(false);
   // Dynamic rows — ResizeObserver calcule combien de lignes tiennent sans scroll
   const [perPage, setPerPage] = useState(10);
   const tableAreaRef = useRef<HTMLDivElement>(null);
 
-  const load = async (quiet = false) => {
+  const loadData = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true);
     else setRefreshing(true);
     try {
@@ -114,12 +101,14 @@ export const NotificationsFullPage = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
+
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('notifications', loadData);
 
   // Initial load
   useEffect(() => {
-    void load();
-  }, []);
+    void loadData();
+  }, [loadData]);
 
   // ResizeObserver — mesure les vraies hauteurs depuis le DOM, recalcule perPage
   useEffect(() => {
@@ -140,26 +129,6 @@ export const NotificationsFullPage = () => {
     obs.observe(tableAreaRef.current);
     return () => obs.disconnect();
   }, []);
-
-  // Auto-refresh countdown
-  useEffect(() => {
-    if (refreshInterval === 0) {
-      setCountdown(0);
-      return;
-    }
-    countdownRef.current = refreshInterval;
-    setCountdown(refreshInterval);
-    const tick = setInterval(() => {
-      countdownRef.current -= 1;
-      setCountdown(countdownRef.current);
-      if (countdownRef.current <= 0) {
-        void load(true);
-        countdownRef.current = refreshInterval;
-        setCountdown(refreshInterval);
-      }
-    }, 1000);
-    return () => clearInterval(tick);
-  }, [refreshInterval]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -265,48 +234,12 @@ export const NotificationsFullPage = () => {
             />
           }
           actions={
-            <div className="relative">
-              <button
-                onClick={() => setRefreshMenuOpen((v) => !v)}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                {refreshInterval === 0
-                  ? 'Auto-refresh : Off'
-                  : `Auto-refresh : ${REFRESH_OPTIONS.find((o) => o.value === refreshInterval)?.label}`}
-                {refreshInterval > 0 && !refreshing && (
-                  <span className="font-mono text-xs text-gray-400 tabular-nums">
-                    · {countdown}s
-                  </span>
-                )}
-              </button>
-              {refreshMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-10" onClick={() => setRefreshMenuOpen(false)} />
-                  <div className="absolute top-full right-0 z-20 mt-1 min-w-[140px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
-                    {REFRESH_OPTIONS.map((o) => (
-                      <button
-                        key={o.value}
-                        onClick={() => {
-                          setRefreshInterval(o.value);
-                          setRefreshMenuOpen(false);
-                        }}
-                        className={`flex w-full items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${
-                          refreshInterval === o.value
-                            ? 'text-brand-500 font-semibold'
-                            : 'text-gray-600 dark:text-gray-300'
-                        }`}
-                      >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${refreshInterval === o.value ? 'bg-brand-500' : ''}`}
-                        />
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+            <RefreshButton
+              refreshing={refreshing}
+              autoRefreshMs={autoRefreshMs}
+              onRefresh={() => void loadData()}
+              onIntervalChange={onIntervalChange}
+            />
           }
         />
       </div>
