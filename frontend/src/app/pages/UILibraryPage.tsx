@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Search, X } from 'lucide-react';
+import { ChevronRight, Search, X, LayoutTemplate, ArrowRight } from 'lucide-react';
 import { usePageTitle } from '../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from './templates/EmptyPage';
 
@@ -28,28 +28,28 @@ const CATEGORIES: CategorySection[] = [
     title: 'Components',
     color: '#465fff',
     items: [
-      { name: 'Badges', description: 'Status and label pills', route: '/ui/badges' },
-      { name: 'Alerts', description: 'Contextual feedback messages', route: '/ui/alerts' },
+      { name: 'Badges', description: 'Status and label pills', route: '/ui-library/badges' },
+      { name: 'Alerts', description: 'Contextual feedback messages', route: '/ui-library/alerts' },
       {
         name: 'Buttons',
         description: 'Primary, secondary, icon, sizes, states',
-        route: '/ui/buttons',
+        route: '/ui-library/buttons',
       },
       {
         name: 'Buttons Group',
         description: 'Grouped buttons sharing a container',
-        route: '/ui/buttons-group',
+        route: '/ui-library/buttons-group',
       },
-      { name: 'Cards', description: 'Content container cards', route: '/ui/cards' },
-      { name: 'Modals', description: 'Dialog overlays', route: '/ui/modals' },
-      { name: 'Drawers', description: 'Slide-in side panels', route: '/ui/drawer' },
+      { name: 'Cards', description: 'Content container cards', route: '/ui-library/cards' },
+      { name: 'Modals', description: 'Dialog overlays', route: '/ui-library/modals' },
+      { name: 'Drawers', description: 'Slide-in side panels', route: '/ui-library/drawer' },
       {
         name: 'Dropdowns',
         description: 'Context menus and selects',
-        route: '/ui/dropdowns',
+        route: '/ui-library/dropdowns',
       },
-      { name: 'Tooltips', description: 'Hover information hints', route: '/ui/tooltips' },
-      { name: 'Popovers', description: 'Rich hover content panels', route: '/ui/popovers' },
+      { name: 'Tooltips', description: 'Hover information hints', route: '/ui-library/tooltips' },
+      { name: 'Popovers', description: 'Rich hover content panels', route: '/ui-library/popovers' },
     ],
   },
   {
@@ -60,15 +60,15 @@ const CATEGORIES: CategorySection[] = [
       {
         name: 'Form Elements',
         description: 'Inputs, selects, checkboxes',
-        route: '/ui/form-elements',
+        route: '/ui-library/form-elements',
       },
-      { name: 'OTP Input', description: 'One-time password entry', route: '/ui/otp-input' },
+      { name: 'OTP Input', description: 'One-time password entry', route: '/ui-library/otp-input' },
       {
         name: 'Range Slider',
         description: 'Numeric range selector',
-        route: '/ui/range-slider',
+        route: '/ui-library/range-slider',
       },
-      { name: 'Tag Input', description: 'Multi-value token input', route: '/ui/tag-input' },
+      { name: 'Tag Input', description: 'Multi-value token input', route: '/ui-library/tag-input' },
     ],
   },
   {
@@ -79,61 +79,61 @@ const CATEGORIES: CategorySection[] = [
       {
         name: 'Realtime',
         description: 'Live metric with WARN/CRIT threshold lines',
-        route: '/charts#realtime',
+        route: '/ui-library/charts#realtime',
         tag: 'realtime',
       },
       {
         name: 'Line / Area',
         description: 'Smooth time-series with gradient fill',
-        route: '/charts#line-area',
+        route: '/ui-library/charts#line-area',
         tag: 'area',
       },
       {
         name: 'Radial Bar',
         description: 'Multi-series radial gauge',
-        route: '/charts#radial-bar',
+        route: '/ui-library/charts#radial-bar',
         tag: 'radialBar',
       },
       {
         name: 'Gradient Circle',
         description: 'Full circle with gradient fill',
-        route: '/charts#gradient-circle',
+        route: '/ui-library/charts#gradient-circle',
         tag: 'gauge',
       },
       {
         name: 'Donut',
         description: 'Health distribution with center total',
-        route: '/charts#donut',
+        route: '/ui-library/charts#donut',
         tag: 'donut',
       },
       {
         name: 'Donut Right Legend',
         description: 'Compact donut, legend on the right',
-        route: '/charts#donut-legend',
+        route: '/ui-library/charts#donut-legend',
         tag: 'donut',
       },
       {
         name: 'Semi-circle Gauges',
         description: 'Half-circle KPI — CPU / Mem / Disk',
-        route: '/charts#semi-circle',
+        route: '/ui-library/charts#semi-circle',
         tag: 'gauge',
       },
       {
         name: 'Stroked Gauge',
         description: 'Thin multi-track -135° to 135°',
-        route: '/charts#stroked',
+        route: '/ui-library/charts#stroked',
         tag: 'gauge',
       },
       {
         name: 'Sparklines',
         description: 'Mini inline trend charts for overview panels',
-        route: '/charts#sparklines',
+        route: '/ui-library/charts#sparklines',
         tag: 'spark',
       },
       {
         name: 'Treemap',
         description: 'Area-proportional blocks — rack device footprint',
-        route: '/charts#treemap',
+        route: '/ui-library/charts#treemap',
         tag: 'tree',
       },
     ],
@@ -146,17 +146,17 @@ const CATEGORIES: CategorySection[] = [
       {
         name: 'Stats Cards',
         description: 'KPI metric summary cards',
-        route: '/ui/stats-cards',
+        route: '/ui-library/stats-cards',
       },
       {
         name: 'Data Tables',
         description: 'Sortable and filterable tables',
-        route: '/tables',
+        route: '/ui-library/tables',
       },
-      { name: 'Avatars', description: 'User and entity avatars', route: '/ui/avatars' },
-      { name: 'Ribbons', description: 'Corner ribbon decorations', route: '/ui/ribbons' },
-      { name: 'List', description: 'Structured list items', route: '/ui/list' },
-      { name: 'Links', description: 'Styled anchor variants', route: '/ui/links' },
+      { name: 'Avatars', description: 'User and entity avatars', route: '/ui-library/avatars' },
+      { name: 'Ribbons', description: 'Corner ribbon decorations', route: '/ui-library/ribbons' },
+      { name: 'List', description: 'Structured list items', route: '/ui-library/list' },
+      { name: 'Links', description: 'Styled anchor variants', route: '/ui-library/links' },
     ],
   },
   {
@@ -164,16 +164,16 @@ const CATEGORIES: CategorySection[] = [
     title: 'Navigation',
     color: '#06b6d4',
     items: [
-      { name: 'Tabs', description: 'Horizontal tab switcher', route: '/ui/tabs' },
+      { name: 'Tabs', description: 'Horizontal tab switcher', route: '/ui-library/tabs' },
       {
         name: 'Pagination',
         description: 'Page navigation controls',
-        route: '/ui/pagination',
+        route: '/ui-library/pagination',
       },
       {
         name: 'Breadcrumb',
         description: 'Hierarchical path trail',
-        route: '/ui/breadcrumb',
+        route: '/ui-library/breadcrumb',
       },
     ],
   },
@@ -182,22 +182,22 @@ const CATEGORIES: CategorySection[] = [
     title: 'Feedback',
     color: '#ef4444',
     items: [
-      { name: 'Toast', description: 'Transient notification toasts', route: '/ui/toast' },
-      { name: 'Spinners', description: 'Loading indicators', route: '/ui/spinners' },
+      { name: 'Toast', description: 'Transient notification toasts', route: '/ui-library/toast' },
+      { name: 'Spinners', description: 'Loading indicators', route: '/ui-library/spinners' },
       {
         name: 'Skeleton',
         description: 'Content loading placeholders',
-        route: '/ui/skeleton',
+        route: '/ui-library/skeleton',
       },
       {
         name: 'Progress Bar',
         description: 'Linear progress indicator',
-        route: '/ui/progress-bar',
+        route: '/ui-library/progress-bar',
       },
       {
         name: 'Empty State',
         description: 'No-data placeholder views',
-        route: '/ui/empty-state',
+        route: '/ui-library/empty-state',
       },
     ],
   },
@@ -209,15 +209,15 @@ const CATEGORIES: CategorySection[] = [
       {
         name: 'Accordion',
         description: 'Collapsible content sections',
-        route: '/ui/accordion',
+        route: '/ui-library/accordion',
       },
-      { name: 'Stepper', description: 'Multi-step wizard flow', route: '/ui/stepper' },
-      { name: 'Timeline', description: 'Chronological event list', route: '/ui/timeline' },
-      { name: 'Carousel', description: 'Sliding content carousel', route: '/ui/carousel' },
+      { name: 'Stepper', description: 'Multi-step wizard flow', route: '/ui-library/stepper' },
+      { name: 'Timeline', description: 'Chronological event list', route: '/ui-library/timeline' },
+      { name: 'Carousel', description: 'Sliding content carousel', route: '/ui-library/carousel' },
       {
         name: 'Notifications',
         description: 'Notification feed items',
-        route: '/ui/notifications',
+        route: '/ui-library/notifications',
       },
       { name: 'Calendar', description: 'Date and event calendar', route: '/calendar' },
     ],
@@ -230,17 +230,17 @@ const CATEGORIES: CategorySection[] = [
       {
         name: 'Empty Page',
         description: 'Standard full-width page template',
-        route: '/templates/empty',
+        route: '/ui-library/templates/empty',
       },
       {
         name: 'Centered Page',
         description: 'Narrow centered layout for forms',
-        route: '/templates/centered',
+        route: '/ui-library/templates/centered',
       },
       {
         name: 'Design System',
         description: 'All reusable building blocks',
-        route: '/templates/showcase',
+        route: '/ui-library/templates/showcase',
       },
       { name: 'Sign In', description: 'Authentication login page', route: '/auth/signin' },
       { name: 'Sign Up', description: 'Registration page', route: '/auth/signup' },
@@ -254,19 +254,19 @@ const CATEGORIES: CategorySection[] = [
       {
         name: 'Rack View',
         description: 'Dual front/rear RackElevation + sidebar + device drawer',
-        route: '/templates/rack',
+        route: '/ui-library/templates/rack',
         tag: 'live',
       },
       {
         name: 'Device View',
         description: 'Breadcrumb + metrics + instance selector + check tabs',
-        route: '/templates/device',
+        route: '/ui-library/templates/device',
         tag: 'live',
       },
       {
         name: 'Room View',
         description: 'Health summary + rack grid + elevation on click',
-        route: '/templates/room',
+        route: '/ui-library/templates/room',
         tag: 'live',
       },
     ],
@@ -397,6 +397,25 @@ export const UILibraryPage = () => {
           )}
         </div>
       </div>
+
+      {/* ── TemplateDefaultPage banner ── */}
+      <button
+        onClick={() => navigate('/templates/default')}
+        className="group flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-brand-200 bg-brand-50 px-5 py-4 text-left transition-all hover:border-brand-300 hover:bg-brand-100/60 dark:border-brand-700/40 dark:bg-brand-500/10 dark:hover:bg-brand-500/15"
+      >
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500/15 dark:bg-brand-500/20">
+          <LayoutTemplate className="h-5 w-5 text-brand-500" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-brand-700 dark:text-brand-300">
+            Component Showcase
+          </p>
+          <p className="mt-0.5 text-xs text-brand-600/70 dark:text-brand-400/70">
+            Visual reference for all 20 shared components — Spinner, StatusPill, Drawer, Modal, Tabs, KpiCard…
+          </p>
+        </div>
+        <ArrowRight className="h-4 w-4 shrink-0 text-brand-400 transition-transform group-hover:translate-x-0.5 dark:text-brand-500" />
+      </button>
 
       {/* ── Category filters ── */}
       <div className="flex flex-wrap gap-2">

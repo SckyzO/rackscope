@@ -145,46 +145,46 @@ const AppRoutes = () => (
       <Route path="dashboard/:dashboardId" element={<DashboardPage />} />
 
       {/* UI Elements */}
-      <Route path="ui/buttons" element={<ButtonsPage />} />
-      <Route path="ui/buttons-group" element={<ButtonsGroupPage />} />
-      <Route path="ui/badges" element={<BadgesPage />} />
-      <Route path="ui/alerts" element={<AlertsPage />} />
-      <Route path="ui/cards" element={<CardsPage />} />
-      <Route path="ui/carousel" element={<CarouselPage />} />
-      <Route path="ui/dropdowns" element={<DropdownsPage />} />
-      <Route path="ui/links" element={<LinksPage />} />
-      <Route path="ui/list" element={<ListPage />} />
-      <Route path="ui/modals" element={<ModalsPage />} />
-      <Route path="ui/notifications" element={<NotificationsPage />} />
-      <Route path="ui/pagination" element={<PaginationPage />} />
-      <Route path="ui/popovers" element={<PopoversPage />} />
-      <Route path="ui/progress-bar" element={<ProgressBarPage />} />
-      <Route path="ui/ribbons" element={<RibbonsPage />} />
-      <Route path="ui/spinners" element={<SpinnersPage />} />
-      <Route path="ui/tabs" element={<TabsPage />} />
-      <Route path="ui/tooltips" element={<TooltipsPage />} />
-      <Route path="ui/breadcrumb" element={<BreadcrumbPage />} />
-      <Route path="ui/form-elements" element={<FormElementsPage />} />
-      <Route path="ui/avatars" element={<AvatarsPage />} />
+      <Route path="ui-library/buttons" element={<ButtonsPage />} />
+      <Route path="ui-library/buttons-group" element={<ButtonsGroupPage />} />
+      <Route path="ui-library/badges" element={<BadgesPage />} />
+      <Route path="ui-library/alerts" element={<AlertsPage />} />
+      <Route path="ui-library/cards" element={<CardsPage />} />
+      <Route path="ui-library/carousel" element={<CarouselPage />} />
+      <Route path="ui-library/dropdowns" element={<DropdownsPage />} />
+      <Route path="ui-library/links" element={<LinksPage />} />
+      <Route path="ui-library/list" element={<ListPage />} />
+      <Route path="ui-library/modals" element={<ModalsPage />} />
+      <Route path="ui-library/notifications" element={<NotificationsPage />} />
+      <Route path="ui-library/pagination" element={<PaginationPage />} />
+      <Route path="ui-library/popovers" element={<PopoversPage />} />
+      <Route path="ui-library/progress-bar" element={<ProgressBarPage />} />
+      <Route path="ui-library/ribbons" element={<RibbonsPage />} />
+      <Route path="ui-library/spinners" element={<SpinnersPage />} />
+      <Route path="ui-library/tabs" element={<TabsPage />} />
+      <Route path="ui-library/tooltips" element={<TooltipsPage />} />
+      <Route path="ui-library/breadcrumb" element={<BreadcrumbPage />} />
+      <Route path="ui-library/form-elements" element={<FormElementsPage />} />
+      <Route path="ui-library/avatars" element={<AvatarsPage />} />
       {/* New generic */}
-      <Route path="ui/accordion" element={<AccordionPage />} />
-      <Route path="ui/stepper" element={<StepperPage />} />
-      <Route path="ui/timeline" element={<TimelinePage />} />
-      <Route path="ui/skeleton" element={<SkeletonPage />} />
-      <Route path="ui/empty-state" element={<EmptyStatePage />} />
-      <Route path="ui/toast" element={<ToastPage />} />
-      <Route path="ui/drawer" element={<DrawerPage />} />
-      <Route path="ui/stats-cards" element={<StatsCardsPage />} />
-      <Route path="ui/tag-input" element={<TagInputPage />} />
-      <Route path="ui/range-slider" element={<RangeSliderPage />} />
-      <Route path="ui/otp-input" element={<OtpInputPage />} />
-      <Route path="ui/hud-tooltip" element={<HUDTooltipPage />} />
+      <Route path="ui-library/accordion" element={<AccordionPage />} />
+      <Route path="ui-library/stepper" element={<StepperPage />} />
+      <Route path="ui-library/timeline" element={<TimelinePage />} />
+      <Route path="ui-library/skeleton" element={<SkeletonPage />} />
+      <Route path="ui-library/empty-state" element={<EmptyStatePage />} />
+      <Route path="ui-library/toast" element={<ToastPage />} />
+      <Route path="ui-library/drawer" element={<DrawerPage />} />
+      <Route path="ui-library/stats-cards" element={<StatsCardsPage />} />
+      <Route path="ui-library/tag-input" element={<TagInputPage />} />
+      <Route path="ui-library/range-slider" element={<RangeSliderPage />} />
+      <Route path="ui-library/otp-input" element={<OtpInputPage />} />
+      <Route path="ui-library/hud-tooltip" element={<HUDTooltipPage />} />
 
       {/* Charts */}
-      <Route path="charts" element={<ChartsPage />} />
+      <Route path="ui-library/charts" element={<ChartsPage />} />
 
       {/* Tables */}
-      <Route path="tables" element={<DataTablesPage />} />
+      <Route path="ui-library/tables" element={<DataTablesPage />} />
 
       {/* Pages */}
       <Route path="profile" element={<ProfilePage />} />
@@ -229,16 +229,16 @@ const AppRoutes = () => (
       <Route path="editors/datacenter" element={<DatacenterEditorPage />} />
 
       {/* ── Page templates (design system) ── */}
-      <Route path="templates/empty" element={<EmptyPage />} />
+      <Route path="ui-library/templates/empty" element={<EmptyPage />} />
       <Route path="templates/default" element={<TemplateDefaultPage />} />
-      <Route path="templates/centered" element={<CenteredPage />} />
-      <Route path="templates/showcase" element={<TemplatesShowcase />} />
-      <Route path="templates/rack" element={<RackViewTemplate />} />
-      <Route path="templates/device" element={<DeviceViewTemplate />} />
-      <Route path="templates/room" element={<RoomViewTemplate />} />
+      <Route path="ui-library/templates/centered" element={<CenteredPage />} />
+      <Route path="ui-library/templates/showcase" element={<TemplatesShowcase />} />
+      <Route path="ui-library/templates/rack" element={<RackViewTemplate />} />
+      <Route path="ui-library/templates/device" element={<DeviceViewTemplate />} />
+      <Route path="ui-library/templates/room" element={<RoomViewTemplate />} />
 
       {/* UI Library hub */}
-      <Route path="ui" element={<UILibraryPage />} />
+      <Route path="ui-library" element={<UILibraryPage />} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Route>

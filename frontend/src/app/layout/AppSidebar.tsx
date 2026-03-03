@@ -844,7 +844,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
       {/* Bottom sticky — Profile, Settings, UI Library (dev only) */}
       <div className="shrink-0 border-t border-gray-200 py-2 dark:border-gray-800">
         {features.dev_tools && (
-          <NavItem to="/ui" icon={Layers} label="UI Library" collapsed={collapsed} />
+          <NavItem to="/ui-library" icon={Layers} label="UI Library" collapsed={collapsed} />
         )}
         <NavItem to="/profile" icon={User} label="Profile" collapsed={collapsed} />
         <NavItem to="/settings" icon={Settings} label="Settings" collapsed={collapsed} />
