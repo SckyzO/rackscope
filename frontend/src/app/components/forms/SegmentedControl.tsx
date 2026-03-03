@@ -23,7 +23,7 @@ export const SegmentedControl = <T extends string>({
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
+          className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
             i > 0 ? 'border-l border-gray-200 dark:border-gray-700' : ''
           } ${
             isActive
@@ -31,7 +31,7 @@ export const SegmentedControl = <T extends string>({
               : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5'
           }`}
         >
-          {Icon && <Icon className="h-3.5 w-3.5" />}
+          {Icon && <Icon className="h-4 w-4" />}
           {opt.label}
         </button>
       );

@@ -30,6 +30,12 @@ import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage'
 import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
 import { PageActionButton, PageActionIconButton } from '../../components/PageActionButton';
 
+// New components
+import { FormRow } from '../../components/forms/FormRow';
+import { StatefulSaveButton, type SaveState } from '../../components/ui/StatefulSaveButton';
+import { UnsavedIndicator } from '../../components/ui/UnsavedIndicator';
+import { ConfirmationModal } from '../../components/layout/ConfirmationModal';
+
 // UI primitives
 import { Spinner } from '../../components/ui/Spinner';
 import { SectionLabel } from '../../components/ui/SectionLabel';
@@ -93,7 +99,22 @@ export const TemplateDefaultPage = () => {
   // Layout demo
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+
+  // StatefulSaveButton demo
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const simulateSave = () => {
+    setSaveState('saving');
+    setTimeout(() => {
+      setSaveState('saved');
+      setTimeout(() => setSaveState('idle'), 2000);
+    }, 1500);
+  };
+
+  // FormRow demo
+  const [formToggle, setFormToggle] = useState(true);
+  const [formSelect, setFormSelect] = useState('30');
 
   const STATUSES = ['OK', 'WARN', 'CRIT', 'UNKNOWN'] as const;
 
@@ -305,6 +326,80 @@ export const TemplateDefaultPage = () => {
         </Row>
       </SectionCard>
 
+      {/* ── 5.5 · Forms & Settings ── */}
+      <SectionCard
+        title="5.5 · Forms & Settings"
+        desc="forms/FormRow · ui/StatefulSaveButton · ui/UnsavedIndicator · layout/ConfirmationModal"
+      >
+        <div className="space-y-5">
+          {/* FormRow */}
+          <div className="space-y-1.5">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              FormRow — label + description left, control right
+            </p>
+            <div className="divide-y divide-gray-100 rounded-xl border border-gray-200 px-4 dark:divide-gray-800 dark:border-gray-800">
+              <div className="py-3">
+                <FormRow label="Auto-refresh" description="Reload page data automatically">
+                  <ToggleSwitch checked={formToggle} onChange={() => setFormToggle((v) => !v)} />
+                </FormRow>
+              </div>
+              <div className="py-3">
+                <FormRow label="Default interval" description="Time between refreshes">
+                  <SelectInput
+                    value={formSelect}
+                    onChange={setFormSelect}
+                    options={[
+                      { label: '15s', value: '15' },
+                      { label: '30s', value: '30' },
+                      { label: '1m', value: '60' },
+                      { label: '5m', value: '300' },
+                    ]}
+                  />
+                </FormRow>
+              </div>
+              <div className="py-3">
+                <FormRow label="Show health legend" description="Display color legend on room view">
+                  <ToggleSwitch checked={!formToggle} onChange={() => setFormToggle((v) => !v)} />
+                </FormRow>
+              </div>
+            </div>
+          </div>
+
+          {/* StatefulSaveButton + UnsavedIndicator */}
+          <div className="space-y-1.5">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              StatefulSaveButton — click to cycle idle → saving → saved → idle
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <UnsavedIndicator visible={saveState === 'dirty' || saveState === 'idle'} />
+                <StatefulSaveButton state={saveState} onClick={simulateSave} />
+              </div>
+              {/* All 5 states side by side for visual reference */}
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-100 px-3 py-2 dark:border-gray-800">
+                <p className="mr-1 text-[10px] font-semibold tracking-wider text-gray-300 uppercase dark:text-gray-700">
+                  states:
+                </p>
+                {(['idle', 'dirty', 'saving', 'saved', 'error'] as SaveState[]).map((s) => (
+                  <StatefulSaveButton key={s} state={s} onClick={() => {}} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ConfirmationModal */}
+          <Row label="ConfirmationModal">
+            <PageActionButton
+              icon={Bell}
+              variant="brand-outline"
+              onClick={() => setConfirmOpen(true)}
+            >
+              Open confirmation modal
+            </PageActionButton>
+          </Row>
+        </div>
+      </SectionCard>
+
       {/* ── 6. Layout ── */}
       <SectionCard title="6 · Layout" desc="layout/Tabs · layout/Drawer · layout/Modal · layout/DrawerHeader · layout/Backdrop">
         <div className="space-y-4">
@@ -361,6 +456,17 @@ export const TemplateDefaultPage = () => {
           </div>
         </div>
       </SectionCard>
+
+      {/* ── ConfirmationModal ── */}
+      <ConfirmationModal
+        open={confirmOpen}
+        title="Unsaved changes"
+        message="You have unsaved changes. What would you like to do?"
+        onStay={() => setConfirmOpen(false)}
+        onDiscard={() => setConfirmOpen(false)}
+        onSave={() => { simulateSave(); setConfirmOpen(false); }}
+        saving={saveState === 'saving'}
+      />
 
       {/* ── Drawer (portal) ── */}
       <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} width={320}>
