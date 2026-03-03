@@ -48,7 +48,7 @@ def get_app_config(
             "prometheus_heartbeat_seconds": 30,
             "prometheus_latency_window": 20,
             "basic_auth_user": None,
-            "basic_auth_password": None,
+            "basic_auth_password": None,  # nosec B105 — placeholder default, not a real password
             "tls_verify": True,
             "tls_ca_file": None,
             "tls_cert_file": None,

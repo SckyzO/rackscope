@@ -7,6 +7,7 @@ COMPOSE_PROD := docker-compose.prod.yml
 .PHONY: up down restart logs build lint test clean coverage typecheck complexity quality shell-backend shell-frontend watch-logs
 .PHONY: up-prod down-prod logs-prod build-prod
 .PHONY: docs docs-build docs-logs
+.PHONY: security security-backend security-frontend security-deps
 
 # Development Stack Management (default)
 up:
@@ -60,6 +61,35 @@ complexity:
 
 quality: lint typecheck complexity coverage
 	@echo "✅ All quality checks complete!"
+
+# ── Security Audit ──────────────────────────────────────────────────────────
+# Run: make security
+# Requires stack running: make up
+
+## Backend: bandit static analysis (Python)
+security-backend:
+	@echo "🔍 Backend security scan (bandit)..."
+	docker compose -f $(COMPOSE_DEV) exec backend python3 -m bandit -r src/rackscope -ll -f screen
+	@echo "✅ Backend security scan complete."
+
+## Frontend: npm audit
+security-frontend:
+	@echo "🔍 Frontend dependency audit (npm audit)..."
+	docker compose -f $(COMPOSE_DEV) exec frontend npm audit --audit-level=high
+	@echo "✅ Frontend security audit complete."
+
+## Backend deps: pip-audit
+security-deps:
+	@echo "🔍 Python dependency audit (pip-audit)..."
+	docker compose -f $(COMPOSE_DEV) exec backend pip-audit 2>/dev/null || \
+	docker compose -f $(COMPOSE_DEV) exec backend python3 -m pip_audit 2>/dev/null || \
+	(docker compose -f $(COMPOSE_DEV) exec backend pip install --quiet pip-audit && \
+	 docker compose -f $(COMPOSE_DEV) exec backend pip-audit)
+	@echo "✅ Python dependency audit complete."
+
+## Full security audit
+security: security-backend security-frontend security-deps
+	@echo "🛡️  Full security audit complete!"
 
 # Development Helpers
 shell-backend:

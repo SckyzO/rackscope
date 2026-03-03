@@ -448,7 +448,8 @@ async def delete_aisle(
             break
     if not target_room_id:
         raise HTTPException(status_code=404, detail=f"Aisle {aisle_id!r} not found")
-    assert target_site_id is not None
+    if target_site_id is None:
+        raise HTTPException(status_code=500, detail="Internal error: site_id could not be resolved")
 
     base_dir = Path(app_config.paths.topology)
     room_path = base_dir / "datacenters" / target_site_id / "rooms" / target_room_id / "room.yaml"
@@ -498,7 +499,8 @@ async def create_rack(
             break
     if not target_room_id:
         raise HTTPException(status_code=404, detail=f"Aisle {aisle_id!r} not found")
-    assert target_site_id is not None
+    if target_site_id is None:
+        raise HTTPException(status_code=500, detail="Internal error: site_id could not be resolved")
 
     base_dir = Path(app_config.paths.topology)
     rack_id = safe_segment(payload.id or name, "rack")

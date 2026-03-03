@@ -53,6 +53,7 @@ const sidebars = {
 
   development: [
     'development/testing',
+    'development/security',
   ],
 
   designSystem: [

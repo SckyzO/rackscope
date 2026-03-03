@@ -135,7 +135,8 @@ def get_rack_path(rack_id: str, app_config: AppConfig, topology: Topology) -> Op
             / "standalone_racks"
             / f"{rack_id}.yaml"
         )
-    assert aisle_id is not None, f"aisle_id must not be None for non-standalone rack {rack_id}"
+    if aisle_id is None:
+        raise ValueError(f"aisle_id must not be None for non-standalone rack {rack_id}")
     return (
         base_dir
         / "datacenters"

@@ -168,7 +168,7 @@ async def update_plugin_config(plugin_id: str, body: PluginConfigUpdate) -> Dict
 
         if APP_CONFIG:
             await plugin.on_config_reload(APP_CONFIG)
-    except Exception:
-        pass  # Non-critical — config is saved, plugin will reload on next restart
+    except Exception:  # nosec B110 — intentional: non-critical, plugin reloads on next restart
+        pass
 
     return {"config": body.config, "source": "file", "path": config_path, "status": "saved"}
