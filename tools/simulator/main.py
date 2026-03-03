@@ -422,10 +422,6 @@ def load_topology_nodes(topo_data, device_templates=None):
                         # Get the instance name (should be a single value, e.g., da01-r02-01)
                         instance_name = list(nodes_map.values())[0] if nodes_map else device["id"]
 
-                        print(
-                            f"Creating storage target: device={device['id']}, instance={instance_name}, slots={slot_count}, type={device_type}, storage_type={storage_type}"
-                        )
-
                         targets.append(
                             {
                                 "site_id": site["id"],
@@ -759,6 +755,23 @@ def simulate():
 
     tick = 0
 
+    # Track topology file mtime to reload only when files change (avoids per-tick GC pressure)
+    _topo_mtime: float = 0.0
+    targets: list = []
+
+    def _get_topo_mtime(path: str) -> float:
+        """Return the newest mtime across all YAML files under path, or 0 on error."""
+        try:
+            p = Path(path)
+            if p.is_file():
+                return p.stat().st_mtime
+            if p.is_dir():
+                mtimes = [f.stat().st_mtime for f in p.rglob("*.yaml")]
+                return max(mtimes) if mtimes else 0.0
+        except Exception:
+            pass
+        return 0.0
+
     while True:
         # Reload simulator config every tick — picks up scenario changes without container restart
         _new_cfg = apply_scenario(load_simulator_config())
@@ -777,9 +790,14 @@ def simulate():
             "update_interval_seconds", _new_cfg.get("update_interval", update_interval)
         )
 
-        # Reload topology every tick to support dynamic changes
-        topo_data = load_topology_data(TOPOLOGY_PATH)
-        targets = load_topology_nodes(topo_data, device_templates)
+        # Reload topology only when files change (mtime-based) to avoid per-tick GC pressure.
+        # This was causing a SIGSEGV crash under WSL2 after ~15h due to unbounded RSS growth.
+        _current_mtime = _get_topo_mtime(TOPOLOGY_PATH)
+        if _current_mtime != _topo_mtime or not targets:
+            topo_data = load_topology_data(TOPOLOGY_PATH)
+            targets = load_topology_nodes(topo_data, device_templates)
+            _topo_mtime = _current_mtime
+            print(f"[topology] Reloaded {len(targets)} targets (mtime changed)")
         forced_slurm_status = {}
         _slurm_agg: dict = {}  # cluster-wide aggregates accumulated during node loop
         if isinstance(slurm_random_statuses, dict):
