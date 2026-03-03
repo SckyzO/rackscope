@@ -4,7 +4,7 @@ SHELL := /bin/bash
 COMPOSE_DEV := docker-compose.dev.yml
 COMPOSE_PROD := docker-compose.prod.yml
 
-.PHONY: up down restart logs build lint test clean coverage typecheck complexity quality shell-backend shell-frontend watch-logs
+.PHONY: up down restart logs build lint test test-v test-k test-file clean coverage typecheck complexity quality ci shell-backend shell-frontend watch-logs
 .PHONY: up-prod down-prod logs-prod build-prod
 .PHONY: docs docs-build docs-logs
 .PHONY: security security-backend security-frontend security-deps
@@ -46,12 +46,26 @@ lint:
 	docker compose -f $(COMPOSE_DEV) exec frontend npm run lint:css
 	docker compose -f $(COMPOSE_DEV) exec frontend npm run lint:format
 
+## Run all tests (quiet)
 test:
-	docker compose -f $(COMPOSE_DEV) exec backend pytest
+	docker compose -f $(COMPOSE_DEV) exec backend pytest -q
 
+## Verbose output — shows each test name
+test-v:
+	docker compose -f $(COMPOSE_DEV) exec backend pytest -v
+
+## Run tests matching a keyword: make test-k K=planner
+test-k:
+	docker compose -f $(COMPOSE_DEV) exec backend pytest -v -k "$(K)"
+
+## Run a specific file or directory: make test-file F=tests/test_model.py
+test-file:
+	docker compose -f $(COMPOSE_DEV) exec backend pytest -v $(F)
+
+## Coverage report (terminal + HTML at htmlcov/index.html)
 coverage:
-	docker compose -f $(COMPOSE_DEV) exec backend pytest --cov=rackscope --cov-report=term --cov-report=html
-	@echo "Coverage report generated: htmlcov/index.html"
+	docker compose -f $(COMPOSE_DEV) exec backend pytest --cov=rackscope --cov-report=term --cov-report=html -q
+	@echo "Coverage report: htmlcov/index.html"
 
 typecheck:
 	docker compose -f $(COMPOSE_DEV) exec backend /home/appuser/.local/bin/mypy src/rackscope
@@ -61,6 +75,10 @@ complexity:
 
 quality: lint typecheck complexity coverage
 	@echo "✅ All quality checks complete!"
+
+## Full CI pipeline: quality + security (run before any release)
+ci: quality security
+	@echo "🚀 CI pipeline complete — ready to ship!"
 
 # ── Security Audit ──────────────────────────────────────────────────────────
 # Run: make security
