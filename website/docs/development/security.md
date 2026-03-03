@@ -6,77 +6,108 @@ sidebar_position: 2
 
 # Security Audit
 
-Rackscope uses automated security scanning on every push and weekly via GitHub Actions.
+Rackscope runs automated security scanning on every push, every pull request, and weekly via GitHub Actions (`.github/workflows/security.yml`).
 
 ## Run locally
 
 ```bash
 make security           # Full audit: bandit + npm audit + pip-audit
-make security-backend   # Python SAST only (bandit)
-make security-frontend  # npm audit only
-make security-deps      # Python dependency audit (pip-audit)
+make security-backend   # Python SAST only
+make security-frontend  # npm dependency audit only
+make security-deps      # Python dependency audit only
 ```
 
 The stack must be running (`make up`) before running these commands.
 
+---
+
 ## Tools
 
-### Backend — bandit (Python SAST)
+### bandit — Python static analysis
 
-[bandit](https://bandit.readthedocs.io/) scans Python source for common security issues. The `-ll` flag reports Medium and High severity only — Low findings are informational.
+[bandit](https://bandit.readthedocs.io/) scans Python source code for common security issues: hardcoded credentials, unsafe deserialization, dangerous function calls, weak cryptography, etc.
 
 ```bash
 make security-backend
 ```
 
-**Current status**: ✅ 0 high/medium issues in `src/rackscope/`
+bandit scans every `.py` file under `src/rackscope/` and reports findings by severity (**Low / Medium / High**) and confidence (**Low / Medium / High**).
 
-Known Low-severity findings (not suppressed, not blocking):
+The `make security-backend` command uses the `-ll` flag, which reports **Medium and High** severity only. Low findings are visible if you run bandit directly without `-ll`:
 
-| Rule | Location | Why it's acceptable |
-|---|---|---|
-| `B101` (assert) | `model/loader.py` | Internal type invariant on a dict we just constructed — never user-controlled |
-| `B110` (try/except/pass) | `routers/auth.py`, `routers/plugins.py` | Non-critical path — config reloads on next startup |
-| `B112` (try/except/continue) | `routers/catalog.py` | Skips malformed YAML files safely |
-| `B105` (hardcoded password) | `routers/config.py` | False positive — default value is `None` |
+```bash
+docker compose -f docker-compose.dev.yml exec backend python3 -m bandit -r src/rackscope
+```
 
-These findings are left as-is in the code (no inline `# nosec` suppression, no global config skips). They surface on `make security` without the `-ll` flag but do not block CI.
+**What bandit checks (examples):**
 
-### Frontend — npm audit
+| Rule | What it detects |
+|---|---|
+| `B101` | `assert` statements (stripped in optimised bytecode) |
+| `B105/B106/B107` | Hardcoded password strings |
+| `B110/B112` | Silent `except: pass` / `except: continue` |
+| `B201/B202` | Flask debug mode, SQL injection |
+| `B301–B315` | Unsafe pickle, XML, YAML, marshal |
+| `B501–B510` | Weak TLS/SSL configuration |
+| `B601–B612` | Shell injection, subprocess misuse |
+
+---
+
+### npm audit — Frontend dependency scan
+
+[npm audit](https://docs.npmjs.com/cli/commands/npm-audit) checks all frontend dependencies (including transitive) against the GitHub Advisory Database for known CVEs.
 
 ```bash
 make security-frontend
 ```
 
-**Current status**: ⚠️ 5 high in `react-simple-maps` d3 dependencies (tracked in [#4](https://github.com/SckyzO/rackscope/issues/4))
+The command runs `npm audit --audit-level=high`, which exits with a non-zero code only if **High or Critical** vulnerabilities are found. Moderate and Low findings are reported but do not fail the build.
 
-These vulnerabilities affect d3 color/data parsing. In Rackscope, all data comes from internal Prometheus/topology sources — no user-controlled input reaches these paths. Risk is low in practice.
+To see the full report:
 
-### Python dependencies — pip-audit
+```bash
+docker compose -f docker-compose.dev.yml exec frontend npm audit
+```
+
+To attempt automatic fixes:
+
+```bash
+docker compose -f docker-compose.dev.yml exec frontend npm audit fix
+```
+
+> Note: some fixes require `--force` when they involve breaking semver changes. Always test after running `npm audit fix --force`.
+
+---
+
+### pip-audit — Python dependency scan
+
+[pip-audit](https://pypi.org/project/pip-audit/) checks installed Python packages against the [OSV vulnerability database](https://osv.dev/) for known CVEs.
 
 ```bash
 make security-deps
 ```
 
-Scans `pyproject.toml` dependencies against the OSV vulnerability database.
+pip-audit inspects the packages installed in the backend container and reports any package with a known vulnerability, the affected version range, and the fixed version.
 
-## GitHub Actions
-
-Security runs automatically:
-
-- **On every push to `main`**
-- **On every pull request to `main`**
-- **Weekly** (Monday 08:00 UTC) — catches newly disclosed CVEs
-
-Workflow: `.github/workflows/security.yml`
-
-Reports are uploaded as artifacts on each run.
+---
 
 ## Severity policy
 
-| Severity | Policy |
-|---|---|
-| **Critical** | Block merge immediately — fix before any release |
-| **High** | Fix within current sprint — document exceptions in this file |
-| **Moderate** | Fix before next minor release |
-| **Low** | Informational — no suppression, no blocking |
+| Severity | CI behaviour | Action |
+|---|---|---|
+| **Critical** | ❌ Blocks merge | Fix before any release |
+| **High** | ❌ Blocks merge | Fix within current sprint — document exception if deferred |
+| **Moderate** | ⚠️ Warning only | Fix before next minor release |
+| **Low** | ✅ Non-blocking | Informational — track in issues |
+
+---
+
+## GitHub Actions
+
+The security workflow runs:
+
+- On every **push to `main`**
+- On every **pull request to `main`**
+- **Weekly** on Monday at 08:00 UTC — catches newly disclosed CVEs in unchanged code
+
+Each job uploads its report as a build artifact, downloadable from the Actions tab.
