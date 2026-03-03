@@ -3,7 +3,7 @@
 
 update_interval_seconds: 20
 seed: null
-scenario: full-ok
+scenario: demo-stable
 scale_factor: 1
 incident_rates:
   node_micro_failure: 0.001
@@ -15,4 +15,7 @@ incident_durations:
 overrides_path: config/plugins/simulator/overrides/overrides.yaml
 default_ttl_seconds: 120
 metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
-metrics_catalogs: []
+metrics_catalogs:
+- id: slurm
+  path: config/plugins/simulator/metrics/metrics_slurm.yaml
+  enabled: true

@@ -21,7 +21,6 @@ import {
   Filter,
   Settings,
   Bell,
-  User,
 } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
@@ -33,12 +32,14 @@ import { PageActionButton, PageActionIconButton } from '../../components/PageAct
 // New components
 import { FormRow } from '../../components/forms/FormRow';
 import { NumberInput } from '../../components/forms/NumberInput';
+import { StepperInput } from '../../components/forms/StepperInput';
 import { StatefulSaveButton, type SaveState } from '../../components/ui/StatefulSaveButton';
 import { UnsavedIndicator } from '../../components/ui/UnsavedIndicator';
 import { ConfirmationModal } from '../../components/layout/ConfirmationModal';
 
 // UI primitives
 import { Spinner } from '../../components/ui/Spinner';
+import { Tooltip, TooltipHelp } from '../../components/ui/Tooltip';
 import { SectionLabel } from '../../components/ui/SectionLabel';
 import { StatusPill } from '../../components/ui/StatusPill';
 import { StatusDot } from '../../components/ui/StatusDot';
@@ -56,7 +57,6 @@ import { ToggleSwitch } from '../../components/forms/ToggleSwitch';
 import { KpiCard } from '../../components/data/KpiCard';
 
 // Layout
-import { Backdrop } from '../../components/layout/Backdrop';
 import { DrawerHeader } from '../../components/layout/DrawerHeader';
 import { Drawer } from '../../components/layout/Drawer';
 import { Modal, ModalHeader, ModalFooter } from '../../components/layout/Modal';
@@ -214,6 +214,35 @@ export const TemplateDefaultPage = () => {
         </div>
       </SectionCard>
 
+      {/* ── 2.5 · Tooltip ── */}
+      <SectionCard title="2.5 · Tooltip" desc="ui/Tooltip · ui/TooltipHelp — hover to reveal">
+        <div className="space-y-4">
+          <Row label="TooltipHelp (HelpCircle shortcut — replaces SettingTooltip)">
+            <div className="flex items-center gap-6">
+              {(['top', 'right', 'bottom', 'left'] as const).map((pos) => (
+                <div key={pos} className="flex items-center gap-1.5">
+                  <span className="text-xs text-gray-400">{pos}</span>
+                  <TooltipHelp text={`Tooltip position: ${pos}. Prometheus scrape interval in seconds.`} position={pos} />
+                </div>
+              ))}
+            </div>
+          </Row>
+          <Row label="Variants dark / white / brand">
+            <div className="flex items-center gap-6">
+              <Tooltip content="Dark tooltip (default)" variant="dark">
+                <button className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300">Dark</button>
+              </Tooltip>
+              <Tooltip content="White tooltip with border" variant="white">
+                <button className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300">White</button>
+              </Tooltip>
+              <Tooltip content="Brand-colored tooltip" variant="brand">
+                <button className="bg-brand-500 rounded-lg px-3 py-1.5 text-xs font-medium text-white">Brand</button>
+              </Tooltip>
+            </div>
+          </Row>
+        </div>
+      </SectionCard>
+
       {/* ── 3. UI Primitives ── */}
       <SectionCard title="3 · UI Primitives" desc="ui/Spinner · ui/SectionLabel · ui/IconBox · ui/AlertBanner · ui/SelectInput">
         <div className="space-y-4">
@@ -267,7 +296,7 @@ export const TemplateDefaultPage = () => {
       </SectionCard>
 
       {/* ── 4. Forms ── */}
-      <SectionCard title="4 · Forms" desc="forms/SearchInput · forms/SegmentedControl · forms/FilterPills · forms/ToggleSwitch · forms/NumberInput">
+      <SectionCard title="4 · Forms" desc="forms/SearchInput · forms/SegmentedControl · forms/FilterPills · forms/ToggleSwitch · forms/NumberInput · forms/StepperInput">
         <div className="space-y-4">
           <Row label="SearchInput">
             <SearchInput
@@ -316,7 +345,13 @@ export const TemplateDefaultPage = () => {
             <ToggleSwitch checked={true} onChange={() => {}} disabled label="Disabled on" />
             <ToggleSwitch checked={false} onChange={() => {}} disabled label="Disabled off" />
           </Row>
-          <Row label="NumberInput — − / + buttons, unit suffix, min/max">
+          <Row label="StepperInput — ↑/↓ inside field (settings style)">
+            <StepperInput value={numVal} onChange={setNumVal} min={5} max={3600} step={5} unit="s" className="w-28" />
+            <StepperInput value={numZoom} onChange={setNumZoom} min={1} max={18} className="w-20" />
+            <StepperInput value={numVal} onChange={setNumVal} min={0} max={100} step={10} unit="%" className="w-24" />
+            <StepperInput value={60} onChange={() => {}} disabled unit="s" className="w-28" />
+          </Row>
+          <Row label="NumberInput — − / + buttons outside, unit suffix">
             <NumberInput value={numVal} onChange={setNumVal} min={1} max={3600} step={1} unit="s" />
             <NumberInput value={numZoom} onChange={setNumZoom} min={1} max={18} step={1} />
             <NumberInput value={numVal} onChange={setNumVal} min={0} max={100} step={5} unit="%" width="w-16" />

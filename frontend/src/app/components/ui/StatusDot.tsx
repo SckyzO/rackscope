@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 export const STATUS_COLOR: Record<string, string> = {
   OK: '#10b981',
   WARN: '#f59e0b',

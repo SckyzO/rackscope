@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 export type HealthStatus = 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
 
 export const HEALTH_STATUS_PILL: Record<HealthStatus, string> = {

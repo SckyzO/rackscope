@@ -63,7 +63,7 @@ export const NumberInput = ({
         tabIndex={-1}
         aria-label="Decrease"
       >
-        <span className="text-base font-medium leading-none">−</span>
+        <span className="text-base font-semibold leading-none text-gray-500 dark:text-gray-400">−</span>
       </button>
 
       {/* Input + optional unit */}
@@ -93,7 +93,7 @@ export const NumberInput = ({
         tabIndex={-1}
         aria-label="Increase"
       >
-        <span className="text-base font-medium leading-none">+</span>
+        <span className="text-base font-semibold leading-none text-gray-500 dark:text-gray-400">+</span>
       </button>
     </div>
   );

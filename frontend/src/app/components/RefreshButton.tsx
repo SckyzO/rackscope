@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+/* eslint-disable react-refresh/only-export-components */
 import { RefreshCw, ChevronDown, Check } from 'lucide-react';
 
 // ── Shared interval options ────────────────────────────────────────────────────

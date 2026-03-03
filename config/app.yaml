@@ -52,7 +52,7 @@ auth:
     require_symbol: false
 map:
   default_view: world
-  default_zoom: 1
+  default_zoom: 2
   min_zoom: 2
   max_zoom: 7
   zoom_controls: true
@@ -69,7 +69,7 @@ plugins:
     enabled: true
     update_interval_seconds: 20
     seed: null
-    scenario: full-ok
+    scenario: demo-stable
     scale_factor: 1
     incident_rates:
       node_micro_failure: 0.001
@@ -82,9 +82,9 @@ plugins:
     default_ttl_seconds: 120
     metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
     metrics_catalogs:
-      - id: slurm
-        path: config/plugins/simulator/metrics/metrics_slurm.yaml
-        enabled: true
+    - id: slurm
+      path: config/plugins/simulator/metrics/metrics_slurm.yaml
+      enabled: true
   slurm:
     enabled: true
     metric: slurm_node_status

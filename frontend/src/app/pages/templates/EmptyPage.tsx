@@ -40,11 +40,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
-import {
-  RefreshButton,
-  useAutoRefresh,
-  REFRESH_OPTIONS,
-} from '../../components/RefreshButton';
+import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
 import {
   PageActionButton,
   PageActionIconButton,
