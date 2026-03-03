@@ -1,10 +1,25 @@
 import { Activity, CheckCircle } from 'lucide-react';
 import { HealthGauge } from '../primitives';
-import { registerWidget } from '../registry';
+import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'health-gauge',
+  title: 'Health Score',
+  description: 'Overall infrastructure health as a gauge',
+  group: 'Charts',
+  icon: Activity,
+  defaultW: 4,
+  defaultH: 2,
+  minW: 2,
+  minH: 1,
+  showTitle: false,
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 export const HealthGaugeWidget = ({ data }: { data: DashboardData }) => (
-  <div className="flex h-full items-center gap-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+  <div className="flex h-full items-center gap-5 p-5">
     <HealthGauge score={data.healthScore} />
     <div>
       <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Health Score</p>
@@ -30,13 +45,4 @@ export const HealthGaugeWidget = ({ data }: { data: DashboardData }) => (
   </div>
 );
 
-registerWidget({
-  type: 'health-gauge',
-  title: 'Health Score',
-  description: 'Overall infrastructure health as a gauge',
-  defaultW: 4,
-  defaultH: 2,
-  icon: Activity,
-  group: 'Charts',
-  component: HealthGaugeWidget,
-});
+registerWidget({ ...WIDGET_META, component: HealthGaugeWidget });

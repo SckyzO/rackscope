@@ -1,14 +1,26 @@
 import { AlertTriangle } from 'lucide-react';
-import { registerWidget } from '../registry';
+import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'recent-alerts',
+  title: 'Recent CRIT',
+  description: 'Last 3 critical alerts',
+  group: 'Monitoring',
+  icon: AlertTriangle,
+  defaultW: 4,
+  defaultH: 2,
+  minW: 1,
+  minH: 1,
+  showTitle: true,
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 export const RecentAlertsWidget = ({ data }: { data: DashboardData }) => {
   const top3 = data.alerts.filter((a) => a.state === 'CRIT').slice(0, 3);
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <p className="mb-2 shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-300">
-        Recent CRIT
-      </p>
+    <div className="flex h-full flex-col p-4">
       {top3.length === 0 ? (
         <p className="text-xs text-green-500">No CRIT alerts</p>
       ) : (
@@ -27,13 +39,4 @@ export const RecentAlertsWidget = ({ data }: { data: DashboardData }) => {
   );
 };
 
-registerWidget({
-  type: 'recent-alerts',
-  title: 'Recent CRIT',
-  description: 'Last 3 critical alerts',
-  defaultW: 4,
-  defaultH: 2,
-  icon: AlertTriangle,
-  group: 'Monitoring',
-  component: RecentAlertsWidget,
-});
+registerWidget({ ...WIDGET_META, component: RecentAlertsWidget });

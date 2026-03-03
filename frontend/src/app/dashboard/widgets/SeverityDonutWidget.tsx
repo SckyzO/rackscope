@@ -1,10 +1,25 @@
 import { Globe } from 'lucide-react';
 import { SeverityDonut } from '../primitives';
-import { registerWidget } from '../registry';
+import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'severity-donut',
+  title: 'Severity Distribution',
+  description: 'CRIT / WARN / OK node distribution',
+  group: 'Charts',
+  icon: Globe,
+  defaultW: 4,
+  defaultH: 2,
+  minW: 2,
+  minH: 1,
+  showTitle: false,
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 export const SeverityDonutWidget = ({ data }: { data: DashboardData }) => (
-  <div className="flex h-full items-center gap-5 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+  <div className="flex h-full items-center gap-5 p-5">
     <SeverityDonut slices={data.donutSlices} />
     <div className="flex-1 space-y-2">
       <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -30,13 +45,4 @@ export const SeverityDonutWidget = ({ data }: { data: DashboardData }) => (
   </div>
 );
 
-registerWidget({
-  type: 'severity-donut',
-  title: 'Severity Distribution',
-  description: 'CRIT / WARN / OK node distribution',
-  defaultW: 4,
-  defaultH: 2,
-  icon: Globe,
-  group: 'Charts',
-  component: SeverityDonutWidget,
-});
+registerWidget({ ...WIDGET_META, component: SeverityDonutWidget });

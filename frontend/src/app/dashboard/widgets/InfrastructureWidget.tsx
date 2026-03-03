@@ -1,8 +1,23 @@
 import { Server } from 'lucide-react';
 import { HC, SEV_PILL } from '../constants';
-import { registerWidget } from '../registry';
+import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData, WidgetProps } from '../types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'infrastructure',
+  title: 'Infrastructure',
+  description: 'Rooms health overview',
+  group: 'Overview',
+  icon: Server,
+  defaultW: 4,
+  defaultH: 2,
+  minW: 1,
+  minH: 1,
+  showTitle: true,
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 export const InfrastructureWidget = ({
   data,
   navigate,
@@ -10,19 +25,7 @@ export const InfrastructureWidget = ({
   data: DashboardData;
   navigate: WidgetProps['navigate'];
 }) => (
-  <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-    <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
-      <div className="flex items-center gap-2">
-        <Server className="text-brand-500 h-4 w-4" />
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Infrastructure</h2>
-      </div>
-      <button
-        onClick={() => navigate('/views/worldmap')}
-        className="text-brand-500 text-xs hover:underline"
-      >
-        World Map →
-      </button>
-    </div>
+  <div className="flex h-full flex-col overflow-hidden">
     <div className="flex-1 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
       {data.allRooms.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm text-gray-400">No rooms configured</div>
@@ -52,16 +55,15 @@ export const InfrastructureWidget = ({
         ))
       )}
     </div>
+    <div className="shrink-0 border-t border-gray-100 px-5 py-2 dark:border-gray-800">
+      <button
+        onClick={() => navigate('/views/worldmap')}
+        className="text-brand-500 text-xs hover:underline"
+      >
+        World Map →
+      </button>
+    </div>
   </div>
 );
 
-registerWidget({
-  type: 'infrastructure',
-  title: 'Infrastructure',
-  description: 'Rooms health overview',
-  defaultW: 4,
-  defaultH: 2,
-  icon: Server,
-  group: 'Overview',
-  component: InfrastructureWidget,
-});
+registerWidget({ ...WIDGET_META, component: InfrastructureWidget });

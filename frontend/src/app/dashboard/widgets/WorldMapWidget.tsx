@@ -3,9 +3,24 @@ import { Globe } from 'lucide-react';
 import { OfflineWorldMap } from '../../components/OfflineWorldMap';
 import type { SiteMarker, MapStyle } from '../../components/OfflineWorldMap';
 import { useAppConfigSafe } from '../../contexts/AppConfigContext';
-import { registerWidget } from '../registry';
+import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData, WidgetProps } from '../types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'world-map',
+  title: 'World Map',
+  description: 'Mini map with site markers and health states',
+  group: 'Monitoring',
+  icon: Globe,
+  defaultW: 6,
+  defaultH: 3,
+  minW: 2,
+  minH: 1,
+  showTitle: true,
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 export const WorldMapWidget = ({
   data,
   navigate,
@@ -40,24 +55,14 @@ export const WorldMapWidget = ({
   }));
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
-        <div className="flex items-center gap-2">
-          <Globe className="text-brand-500 h-4 w-4" />
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">World Map</p>
-          {geoSites.length > 0 && (
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800">
-              {geoSites.length} site{geoSites.length > 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-        <button
-          onClick={() => navigate('/views/worldmap')}
-          className="text-brand-500 text-xs hover:underline"
-        >
-          Full map →
-        </button>
-      </div>
+    <div className="relative flex h-full flex-col overflow-hidden">
+      {/* "Full map" link as floating overlay */}
+      <button
+        onClick={() => navigate('/views/worldmap')}
+        className="text-brand-500 absolute top-2 right-2 z-10 rounded-lg bg-white/80 px-2 py-1 text-xs backdrop-blur-sm hover:underline dark:bg-gray-900/80"
+      >
+        Full map →
+      </button>
 
       <div className="min-h-0 flex-1">
         {geoSites.length === 0 ? (
@@ -81,13 +86,4 @@ export const WorldMapWidget = ({
   );
 };
 
-registerWidget({
-  type: 'world-map',
-  title: 'World Map',
-  description: 'Mini map with site markers and health states',
-  defaultW: 6,
-  defaultH: 3,
-  icon: Globe,
-  group: 'Monitoring',
-  component: WorldMapWidget,
-});
+registerWidget({ ...WIDGET_META, component: WorldMapWidget });

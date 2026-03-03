@@ -1,17 +1,25 @@
 import { ShieldCheck, Cpu } from 'lucide-react';
 import { DEV_TYPE_ICON, DEV_TYPE_COLOR } from '../constants';
-import { registerWidget } from '../registry';
+import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
 
-export const CatalogChecksWidget = ({ data }: { data: DashboardData }) => (
-  <div className="flex h-full flex-col overflow-y-auto rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-    <div className="mb-4 flex items-center gap-2">
-      <ShieldCheck className="text-brand-500 h-4 w-4" />
-      <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-        Catalog &amp; Checks
-      </h2>
-    </div>
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'catalog-checks',
+  title: 'Catalog & Checks',
+  description: 'Templates and checks library stats',
+  group: 'Catalog',
+  icon: ShieldCheck,
+  defaultW: 4,
+  defaultH: 2,
+  minW: 1,
+  minH: 1,
+  showTitle: true,
+};
 
+// ── Component ──────────────────────────────────────────────────────────────
+export const CatalogChecksWidget = ({ data }: { data: DashboardData }) => (
+  <div className="flex h-full flex-col overflow-y-auto p-5">
     {Object.keys(data.devsByType).length > 0 && (
       <div className="mb-4 space-y-2">
         <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
@@ -72,13 +80,4 @@ export const CatalogChecksWidget = ({ data }: { data: DashboardData }) => (
   </div>
 );
 
-registerWidget({
-  type: 'catalog-checks',
-  title: 'Catalog & Checks',
-  description: 'Templates and checks library stats',
-  defaultW: 4,
-  defaultH: 2,
-  icon: ShieldCheck,
-  group: 'Catalog',
-  component: CatalogChecksWidget,
-});
+registerWidget({ ...WIDGET_META, component: CatalogChecksWidget });

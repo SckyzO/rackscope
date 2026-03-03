@@ -1,17 +1,29 @@
 import { Server } from 'lucide-react';
 import { WidgetPlaceholder } from '../primitives';
 import { HC } from '../constants';
-import { registerWidget } from '../registry';
+import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'rack-utilization',
+  title: 'Rack Utilization',
+  description: 'Fill % per room as bar chart',
+  group: 'Charts',
+  icon: Server,
+  defaultW: 6,
+  defaultH: 3,
+  minW: 2,
+  minH: 1,
+  showTitle: true,
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 export const RackUtilizationWidget = ({ data }: { data: DashboardData }) => {
   const rooms = data.allRooms.slice(0, 6);
   if (rooms.length === 0) return <WidgetPlaceholder title="Rack Utilization" icon={Server} />;
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <p className="mb-3 shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-300">
-        Rack Utilization
-      </p>
+    <div className="flex h-full flex-col p-4">
       <div className="space-y-2">
         {rooms.map((r) => (
           <div key={r.id} className="space-y-0.5">
@@ -35,13 +47,4 @@ export const RackUtilizationWidget = ({ data }: { data: DashboardData }) => {
   );
 };
 
-registerWidget({
-  type: 'rack-utilization',
-  title: 'Rack Utilization',
-  description: 'Fill % per room as bar chart',
-  defaultW: 6,
-  defaultH: 3,
-  icon: Server,
-  group: 'Charts',
-  component: RackUtilizationWidget,
-});
+registerWidget({ ...WIDGET_META, component: RackUtilizationWidget });

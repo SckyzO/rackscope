@@ -1,8 +1,23 @@
 import { Globe, DoorOpen, Server, Cpu, XCircle, AlertTriangle, BarChart2 } from 'lucide-react';
 import { StatCard } from '../primitives';
-import { registerWidget } from '../registry';
+import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData, WidgetConfig } from '../types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'stat-card',
+  title: 'Stat Card',
+  description: 'Single metric (sites, rooms, racks...)',
+  group: 'Stats',
+  icon: BarChart2,
+  defaultW: 2,
+  defaultH: 1,
+  minW: 1,
+  minH: 1,
+  showTitle: false,
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 const STAT_CONFIG: Record<
   string,
   {
@@ -49,13 +64,4 @@ export const StatCardWidget = ({ widget, data }: { widget: WidgetConfig; data: D
   );
 };
 
-registerWidget({
-  type: 'stat-card',
-  title: 'Stat Card',
-  description: 'Single metric (sites, rooms, racks...)',
-  defaultW: 2,
-  defaultH: 1,
-  icon: BarChart2,
-  group: 'Stats',
-  component: StatCardWidget,
-});
+registerWidget({ ...WIDGET_META, component: StatCardWidget });

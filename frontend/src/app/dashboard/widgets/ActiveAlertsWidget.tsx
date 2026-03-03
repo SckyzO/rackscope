@@ -1,8 +1,23 @@
 import { Bell, CheckCircle, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { AlertRow } from '../primitives';
-import { registerWidget } from '../registry';
+import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData, WidgetProps } from '../types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'active-alerts',
+  title: 'Active Alerts',
+  description: 'Live CRIT/WARN alerts with filters',
+  group: 'Monitoring',
+  icon: XCircle,
+  defaultW: 8,
+  defaultH: 2,
+  minW: 2,
+  minH: 1,
+  showTitle: true,
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 export const ActiveAlertsWidget = ({
   data,
   navigate,
@@ -14,12 +29,11 @@ export const ActiveAlertsWidget = ({
   const warnCount = data.alerts.filter((a) => a.state === 'WARN').length;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-800">
-        <div className="flex items-center gap-2.5">
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* Badge row + toolbar */}
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-2 dark:border-gray-800">
+        <div className="flex items-center gap-2">
           <Bell className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Active Alerts</h2>
           {critCount > 0 && (
             <span className="bg-error-50 text-error-500 dark:bg-error-500/15 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold">
               <span className="bg-error-500 h-1.5 w-1.5 rounded-full" />
@@ -33,16 +47,7 @@ export const ActiveAlertsWidget = ({
             </span>
           )}
         </div>
-        <button
-          onClick={() => navigate('/notifications')}
-          className="text-brand-500 hover:text-brand-600 text-xs font-medium transition-colors"
-        >
-          View all →
-        </button>
-      </div>
 
-      {/* Toolbar */}
-      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-2 dark:border-gray-800">
         <div className="flex h-8 items-center gap-0.5 rounded-lg border border-gray-200 px-1 dark:border-gray-700">
           {[
             { id: 'all', label: 'All', count: data.alerts.length },
@@ -165,19 +170,20 @@ export const ActiveAlertsWidget = ({
               </button>
             </div>
           )}
+
+          {/* View all link */}
+          <div className="shrink-0 border-t border-gray-100 px-4 py-2 dark:border-gray-800">
+            <button
+              onClick={() => navigate('/notifications')}
+              className="text-brand-500 hover:text-brand-600 text-xs font-medium transition-colors"
+            >
+              View all →
+            </button>
+          </div>
         </>
       )}
     </div>
   );
 };
 
-registerWidget({
-  type: 'active-alerts',
-  title: 'Active Alerts',
-  description: 'Live CRIT/WARN alerts with filters',
-  defaultW: 8,
-  defaultH: 2,
-  icon: XCircle,
-  group: 'Monitoring',
-  component: ActiveAlertsWidget,
-});
+registerWidget({ ...WIDGET_META, component: ActiveAlertsWidget });

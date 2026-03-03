@@ -15,7 +15,7 @@ type StatCardProps = {
 };
 
 export const StatCard = ({ icon: Icon, label, value, color, sub }: StatCardProps) => (
-  <div className="flex h-full items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+  <div className="flex h-full items-center gap-4 p-4">
     <div
       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
       style={{ backgroundColor: `${color}18` }}

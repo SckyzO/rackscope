@@ -1,7 +1,22 @@
 import { ShieldCheck } from 'lucide-react';
-import { registerWidget } from '../registry';
+import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'check-summary',
+  title: 'Check Summary',
+  description: 'Checks library stats',
+  group: 'Catalog',
+  icon: ShieldCheck,
+  defaultW: 3,
+  defaultH: 2,
+  minW: 1,
+  minH: 1,
+  showTitle: true,
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 export const CheckSummaryWidget = ({ data }: { data: DashboardData }) => {
   const scopes = data.checks.reduce<Record<string, number>>((a, c) => {
     const key = c.scope ?? 'unknown';
@@ -9,8 +24,7 @@ export const CheckSummaryWidget = ({ data }: { data: DashboardData }) => {
     return a;
   }, {});
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <p className="mb-3 shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-300">Checks</p>
+    <div className="flex h-full flex-col p-4">
       <div className="flex items-end gap-4">
         <span className="text-3xl font-bold text-gray-900 dark:text-white">
           {data.checks.length}
@@ -29,13 +43,4 @@ export const CheckSummaryWidget = ({ data }: { data: DashboardData }) => {
   );
 };
 
-registerWidget({
-  type: 'check-summary',
-  title: 'Check Summary',
-  description: 'Checks library stats',
-  defaultW: 3,
-  defaultH: 2,
-  icon: ShieldCheck,
-  group: 'Catalog',
-  component: CheckSummaryWidget,
-});
+registerWidget({ ...WIDGET_META, component: CheckSummaryWidget });

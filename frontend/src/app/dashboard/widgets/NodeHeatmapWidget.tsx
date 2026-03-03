@@ -1,10 +1,25 @@
 import { useState } from 'react';
 import { Cpu, CheckCircle } from 'lucide-react';
 import { HC } from '../constants';
-import { registerWidget } from '../registry';
+import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
 import type { ActiveAlert } from '../../../types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'node-heatmap',
+  title: 'Node Health',
+  description: 'Alert nodes grouped by room with CRIT/WARN/OK summary',
+  group: 'Monitoring',
+  icon: Cpu,
+  defaultW: 6,
+  defaultH: 3,
+  minW: 2,
+  minH: 1,
+  showTitle: true,
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 type NodeTooltip = { alert: ActiveAlert; x: number; y: number };
 
 export const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
@@ -26,19 +41,16 @@ export const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
   );
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      {/* Header */}
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Node Health</p>
-        <div className="flex items-center gap-2.5 text-xs">
-          {critAlerts.length > 0 && (
-            <span className="font-semibold text-red-500">{critAlerts.length} CRIT</span>
-          )}
-          {warnAlerts.length > 0 && (
-            <span className="font-semibold text-amber-500">{warnAlerts.length} WARN</span>
-          )}
-          <span className="text-gray-400">{okCount} OK</span>
-        </div>
+    <div className="flex h-full flex-col p-4">
+      {/* Summary counts row */}
+      <div className="mb-3 flex items-center justify-end gap-2.5 text-xs">
+        {critAlerts.length > 0 && (
+          <span className="font-semibold text-red-500">{critAlerts.length} CRIT</span>
+        )}
+        {warnAlerts.length > 0 && (
+          <span className="font-semibold text-amber-500">{warnAlerts.length} WARN</span>
+        )}
+        <span className="text-gray-400">{okCount} OK</span>
       </div>
 
       {/* Content */}
@@ -119,13 +131,4 @@ export const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
   );
 };
 
-registerWidget({
-  type: 'node-heatmap',
-  title: 'Node Health',
-  description: 'Alert nodes grouped by room with CRIT/WARN/OK summary',
-  defaultW: 6,
-  defaultH: 3,
-  icon: Cpu,
-  group: 'Monitoring',
-  component: NodeHeatmapWidget,
-});
+registerWidget({ ...WIDGET_META, component: NodeHeatmapWidget });
