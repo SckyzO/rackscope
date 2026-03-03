@@ -271,38 +271,6 @@ const CATEGORIES: CategorySection[] = [
       },
     ],
   },
-  {
-    id: 'examples',
-    title: 'Examples',
-    color: '#0ea5e9',
-    items: [
-      {
-        name: 'Health Status',
-        description: 'OK/WARN/CRIT/UNKNOWN badges, dots, summary bars',
-        route: '/rackscope/health',
-      },
-      {
-        name: 'Alert Feed',
-        description: 'Alert list with severity, filters and actions',
-        route: '/rackscope/alerts',
-      },
-      {
-        name: 'Metrics',
-        description: 'Sparklines, gauges, progress bars, PDU bars',
-        route: '/rackscope/metrics',
-      },
-      {
-        name: 'Infra Navigation',
-        description: 'Breadcrumb, rack mini-cards, device type icons',
-        route: '/rackscope/infra-nav',
-      },
-      {
-        name: 'Slurm (design)',
-        description: 'HPC cluster layout — node grid, wallboard',
-        route: '/rackscope/slurm',
-      },
-    ],
-  },
 ];
 
 const ALL_FILTER = 'all';

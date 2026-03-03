@@ -65,12 +65,6 @@ import { ClusterPage } from './pages/views/ClusterPage';
 import { DevicePage } from './pages/views/DevicePage';
 import { RackPage } from './pages/views/RackPage';
 
-// Rackscope-specific
-import { HealthStatusPage } from './pages/rackscope/HealthStatusPage';
-import { AlertFeedPage } from './pages/rackscope/AlertFeedPage';
-import { MetricsPage } from './pages/rackscope/MetricsPage';
-import { InfrastructureNavPage } from './pages/rackscope/InfrastructureNavPage';
-import { SlurmPage } from './pages/rackscope/SlurmPage';
 
 // Slurm live views
 import { SlurmOverviewPage } from './pages/slurm/SlurmOverviewPage';
@@ -199,12 +193,6 @@ const AppRoutes = () => (
       <Route path="views/rack/:rackId" element={<RackPage />} />
       <Route path="views/device/:rackId/:deviceId" element={<DevicePage />} />
 
-      {/* Rackscope UI Components */}
-      <Route path="rackscope/health" element={<HealthStatusPage />} />
-      <Route path="rackscope/alerts" element={<AlertFeedPage />} />
-      <Route path="rackscope/metrics" element={<MetricsPage />} />
-      <Route path="rackscope/infra-nav" element={<InfrastructureNavPage />} />
-      <Route path="rackscope/slurm" element={<SlurmPage />} />
 
       {/* ── Slurm live views ── */}
       <Route path="slurm/overview" element={<SlurmOverviewPage />} />
