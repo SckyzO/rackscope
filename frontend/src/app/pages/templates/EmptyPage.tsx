@@ -501,16 +501,36 @@ export const ContentNarrow = ({
   </div>
 );
 
-// ── EmptyPage — the actual blank template to copy ────────────────────────────
+// ── TemplateDefaultPage — reference template for all new pages ────────────────
 //
-// This is what you duplicate when starting a new page.
-// Delete / replace the placeholder content and add your own.
+// Route: /templates/empty
+//
+// COPY THIS PAGE when creating a new page. It shows:
+//   • Standard PageHeader with title + breadcrumb + actions
+//   • All PageActionButton variants (outline, primary, brand-outline, danger-outline)
+//   • PageActionIconButton (icon-only, same height as text buttons)
+//   • RefreshButton split button with useAutoRefresh hook
+//   • SectionCard as the base content container
+//
+// Delete the reference sections below and add your own content.
 
 export const EmptyPage = () => {
-  usePageTitle('Page Title'); // ← change this
+  usePageTitle('Template Reference');
+
+  const [demoRefreshing, setDemoRefreshing] = useState(false);
+  const fakeRefresh = () => {
+    setDemoRefreshing(true);
+    setTimeout(() => setDemoRefreshing(false), 1200);
+  };
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('template-demo', fakeRefresh);
 
   return (
     <div className="space-y-6">
+
+      {/* ── Standard page header ──────────────────────────────────────────────
+          Copy this pattern. Swap title, breadcrumb items and actions.
+          For pages without refresh: remove <RefreshButton>.
+          For pages without config: remove <PageActionButton icon={SlidersHorizontal}>.  */}
       <PageHeader
         title="Page Title"
         breadcrumb={
@@ -522,49 +542,35 @@ export const EmptyPage = () => {
             ]}
           />
         }
-        // actions={<> … buttons … </>}  ← uncomment to add action buttons
+        actions={
+          <>
+            <PageActionButton icon={SlidersHorizontal}>Configure</PageActionButton>
+            <RefreshButton
+              refreshing={demoRefreshing}
+              autoRefreshMs={autoRefreshMs}
+              onRefresh={fakeRefresh}
+              onIntervalChange={onIntervalChange}
+            />
+          </>
+        }
       />
 
-      <SectionCard title="Section title" desc="Optional description.">
-        <p className="text-sm text-gray-400 dark:text-gray-500">Content goes here.</p>
-      </SectionCard>
-    </div>
-  );
-};
-
-// ── TemplatesShowcase — component library reference ───────────────────────────
-//
-// Route: /templates/showcase
-// Shows every building block available in this file.
-// Do NOT copy this — copy EmptyPage above instead.
-
-// ── Page Actions & Refresh showcase ──────────────────────────────────────────
-//
-// Reference section for all standard page-level interactive patterns.
-// Import PageActionButton, PageActionIconButton, RefreshButton from components/.
-
-const PageActionsShowcase = () => {
-  const [refreshing, setRefreshing] = useState(false);
-  const fakeRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1200);
-  };
-  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('design-system-demo', fakeRefresh);
-
-  return (
-    <div className="space-y-2">
-      <LayoutLabel>Page actions — standard buttons and refresh split button</LayoutLabel>
-      <SectionCard title="PageActionButton variants" desc="Import from components/PageActionButton">
-        {/* Pattern 1 — monitoring page toolbar */}
-        <div className="space-y-5">
+      {/* ── PageActionButton variants ─────────────────────────────────────────
+          Import from: app/components/PageActionButton
+          Use in the `actions` prop of PageHeader.                            */}
+      <SectionCard
+        title="PageActionButton"
+        desc="Standard action buttons for page headers — import from components/PageActionButton"
+      >
+        <div className="space-y-4">
           <div className="space-y-1.5">
-            <p className="text-xs text-gray-400 dark:text-gray-600">
-              Monitoring page (Configure + Refresh)
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Monitoring page — Configure + Refresh split button
             </p>
             <div className="flex items-center gap-2">
               <PageActionButton icon={SlidersHorizontal}>Configure</PageActionButton>
               <RefreshButton
-                refreshing={refreshing}
+                refreshing={demoRefreshing}
                 autoRefreshMs={autoRefreshMs}
                 onRefresh={fakeRefresh}
                 onIntervalChange={onIntervalChange}
@@ -573,73 +579,59 @@ const PageActionsShowcase = () => {
           </div>
 
           <div className="space-y-1.5">
-            <p className="text-xs text-gray-400 dark:text-gray-600">
-              Editor page (New primary + icon-only settings)
-            </p>
-            <div className="flex items-center gap-2">
-              <PageActionIconButton icon={SlidersHorizontal} title="Configure" />
-              <PageActionButton icon={Plus} variant="primary">
-                New template
-              </PageActionButton>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <p className="text-xs text-gray-400 dark:text-gray-600">All variants</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">All variants</p>
             <div className="flex flex-wrap items-center gap-2">
               <PageActionButton icon={SlidersHorizontal}>outline (default)</PageActionButton>
               <PageActionButton icon={Plus} variant="primary">primary</PageActionButton>
               <PageActionButton icon={Pencil} variant="brand-outline">brand-outline</PageActionButton>
               <PageActionButton icon={Trash2} variant="danger-outline">danger-outline</PageActionButton>
-              <PageActionIconButton icon={Download} title="Download" />
-              <PageActionIconButton icon={Upload} title="Upload" variant="primary" />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <p className="text-xs text-gray-400 dark:text-gray-600">
-              Disabled state (add disabled prop)
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              PageActionIconButton — icon-only, same height as text buttons (p-2.5)
             </p>
+            <div className="flex items-center gap-2">
+              <PageActionIconButton icon={SlidersHorizontal} title="Configure" />
+              <PageActionIconButton icon={Download} title="Download" />
+              <PageActionIconButton icon={Upload} title="Upload" variant="primary" />
+              {/* Alignment check — these must all be the same height */}
+              <PageActionButton icon={SlidersHorizontal}>Configure</PageActionButton>
+              <PageActionButton icon={Plus} variant="primary">New</PageActionButton>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-xs text-gray-400 dark:text-gray-500">Disabled state</p>
             <div className="flex items-center gap-2">
               <PageActionButton icon={SlidersHorizontal} disabled>Configure</PageActionButton>
               <PageActionButton icon={Plus} variant="primary" disabled>New</PageActionButton>
+              <PageActionIconButton icon={SlidersHorizontal} title="Configure" disabled />
             </div>
           </div>
         </div>
       </SectionCard>
 
-      <SectionCard title="RefreshButton" desc="Import from components/RefreshButton — persists interval per pageKey in localStorage">
+      {/* ── RefreshButton + useAutoRefresh ────────────────────────────────────
+          Import from: app/components/RefreshButton
+          Intervals: Off / 15s / 30s / 1m / 2m / 5m / 10m / 30m / 1h
+          Persisted per page in localStorage: rackscope.refresh.<pageKey>    */}
+      <SectionCard
+        title="RefreshButton"
+        desc="Split button — manual refresh + interval picker. Import from components/RefreshButton"
+      >
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <p className="text-xs text-gray-400 dark:text-gray-600">
-              Split button — left triggers manual refresh, right opens interval picker
-            </p>
-            <RefreshButton
-              refreshing={refreshing}
-              autoRefreshMs={autoRefreshMs}
-              onRefresh={fakeRefresh}
-              onIntervalChange={onIntervalChange}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <p className="text-xs text-gray-400 dark:text-gray-600">
-              Available intervals (Off / 15s / 30s / 1m / 2m / 5m / 10m / 30m / 1h)
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {REFRESH_OPTIONS.map((o) => (
-                <span
-                  key={o.ms}
-                  className="rounded-full border border-gray-200 px-2 py-0.5 font-mono text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400"
-                >
-                  {o.label}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <p className="text-xs text-gray-400 dark:text-gray-600">useAutoRefresh hook usage</p>
-            <pre className="overflow-x-auto rounded-lg bg-gray-50 px-4 py-3 font-mono text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-              {`const { autoRefreshMs, onIntervalChange } = useAutoRefresh('my-page', loadData);
+          <RefreshButton
+            refreshing={demoRefreshing}
+            autoRefreshMs={autoRefreshMs}
+            onRefresh={fakeRefresh}
+            onIntervalChange={onIntervalChange}
+          />
+
+          <pre className="overflow-x-auto rounded-lg bg-gray-50 px-4 py-3 font-mono text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+            {`// In your page component:
+const { autoRefreshMs, onIntervalChange } = useAutoRefresh('my-page', loadData);
 
 <RefreshButton
   refreshing={loading}
@@ -647,13 +639,19 @@ const PageActionsShowcase = () => {
   onRefresh={loadData}
   onIntervalChange={onIntervalChange}
 />`}
-            </pre>
-          </div>
+          </pre>
         </div>
       </SectionCard>
+
     </div>
   );
 };
+
+// ── TemplatesShowcase — full component library ────────────────────────────────
+//
+// Route: /templates/showcase
+// Shows every building block. Do NOT copy — copy EmptyPage (templates/empty) instead.
+
 
 export const TemplatesShowcase = () => {
   usePageTitle('Design System');
@@ -671,9 +669,6 @@ export const TemplatesShowcase = () => {
           </>
         }
       />
-
-      {/* ── Page Actions & Refresh ── */}
-      <PageActionsShowcase />
 
       {/* ── Centered layout ── */}
       <div className="space-y-2">

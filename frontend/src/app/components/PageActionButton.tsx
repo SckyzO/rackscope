@@ -80,7 +80,7 @@ export const PageActionIconButton = ({
     onClick={onClick}
     disabled={disabled}
     title={title}
-    className={`flex items-center justify-center rounded-lg border p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${VARIANT_CLS[variant]}`}
+    className={`flex items-center justify-center rounded-lg border p-2.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${VARIANT_CLS[variant]}`}
   >
     <Icon className="h-4 w-4" />
   </button>
