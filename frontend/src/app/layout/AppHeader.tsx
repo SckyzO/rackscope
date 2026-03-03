@@ -5,6 +5,9 @@ import {
   Moon,
   Sun,
   Bell,
+  BellOff,
+  VolumeX,
+  Volume2,
   ChevronDown,
   AlertTriangle,
   XCircle,
@@ -80,7 +83,9 @@ export const AppHeader = ({
   const { avatar } = useAvatar();
   const displayName = authEnabled && user ? user.username : 'Admin';
   const initial = displayName.charAt(0).toUpperCase();
-  const { simulatorDown, plugins } = useAppConfigSafe();
+  const { simulatorDown, plugins, features } = useAppConfigSafe();
+  const maxVisible = features.notifications_max_visible ?? 10;
+  const [muted, setMuted] = useState(() => localStorage.getItem('rackscope.notifications.muted') === 'true');
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
@@ -115,6 +120,12 @@ export const AppHeader = ({
   const playlist = usePlaylistSafe();
   const critCount = alerts.filter((a) => a.state === 'CRIT').length;
   const warnCount = alerts.filter((a) => a.state === 'WARN').length;
+
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    localStorage.setItem('rackscope.notifications.muted', String(next));
+  };
 
   const handleOpenNotif = () => {
     if (!notifOpen && notifBtnRef.current) {
@@ -305,17 +316,25 @@ export const AppHeader = ({
           <button
             ref={notifBtnRef}
             onClick={handleOpenNotif}
-            className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+            className={`relative flex h-10 w-10 items-center justify-center rounded-lg border transition-colors hover:bg-gray-100 dark:hover:bg-white/5 ${
+              muted
+                ? 'border-gray-200 text-gray-400 dark:border-gray-800 dark:text-gray-600'
+                : 'border-gray-200 text-gray-500 hover:text-gray-700 dark:border-gray-800 dark:text-gray-400 dark:hover:text-white'
+            }`}
+            title={muted ? 'Sound alerts muted' : 'Notifications'}
           >
-            <Bell className="h-5 w-5" />
-            {alerts.length > 0 && (
-              /* Badge — expands horizontally for larger counts, stays circular for 1-9 */
+            {muted ? <BellOff className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+            {alerts.length > 0 && !muted && (
               <span className="absolute top-0.5 right-0.5 flex min-w-[16px] items-center justify-center">
-                {/* Ping ring on mount */}
                 <span className="absolute inline-flex h-4 w-4 animate-ping rounded-full bg-red-400 opacity-25 [animation-iteration-count:15]" />
                 <span className="relative flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] leading-none font-bold text-white">
                   {alerts.length > 9999 ? '9999+' : alerts.length}
                 </span>
+              </span>
+            )}
+            {alerts.length > 0 && muted && (
+              <span className="absolute top-0.5 right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gray-400 px-1 text-[9px] leading-none font-bold text-white dark:bg-gray-600">
+                {alerts.length > 9999 ? '9999+' : alerts.length}
               </span>
             )}
           </button>
@@ -337,20 +356,32 @@ export const AppHeader = ({
                       {critCount > 0 && (
                         <span className="flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-500/15 dark:text-red-400">
                           <XCircle className="h-3 w-3" />
-                          {critCount} CRIT
+                          {critCount}
                         </span>
                       )}
                       {warnCount > 0 && (
                         <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
                           <AlertTriangle className="h-3 w-3" />
-                          {warnCount} WARN
+                          {warnCount}
                         </span>
                       )}
+                      {/* Mute toggle */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+                        title={muted ? 'Unmute sound alerts' : 'Mute sound alerts'}
+                        className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+                          muted
+                            ? 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'
+                            : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300'
+                        }`}
+                      >
+                        {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
 
-                  {/* Alert list */}
-                  <div className="max-h-96 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
+                  {/* Alert list — height adapts to actual count, capped at maxVisible */}
+                  <div className="divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
                     {alerts.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
                         <Bell className="h-8 w-8 text-gray-300 dark:text-gray-700" />
@@ -362,7 +393,7 @@ export const AppHeader = ({
                         </p>
                       </div>
                     ) : (
-                      alerts.slice(0, 15).map((alert, i) => (
+                      alerts.slice(0, maxVisible).map((alert, i) => (
                         <button
                           key={i}
                           onClick={() => {
@@ -413,15 +444,12 @@ export const AppHeader = ({
                         </button>
                       ))
                     )}
-                    {alerts.length > 15 && (
+                    {alerts.length > maxVisible && (
                       <button
-                        onClick={() => {
-                          setNotifOpen(false);
-                          navigate('/notifications');
-                        }}
+                        onClick={() => { setNotifOpen(false); navigate('/notifications'); }}
                         className="text-brand-500 w-full px-4 py-2 text-center text-xs font-medium transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
                       >
-                        View all {alerts.length} alerts →
+                        +{alerts.length - maxVisible} more — View all {alerts.length} →
                       </button>
                     )}
                   </div>

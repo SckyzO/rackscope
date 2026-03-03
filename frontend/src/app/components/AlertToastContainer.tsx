@@ -119,8 +119,9 @@ export const AlertToastContainer = () => {
       });
 
       // Play sound in sync with the toast — single source of truth for new alerts
+      const muted = localStorage.getItem('rackscope.notifications.muted') === 'true';
       const soundSettings = loadSoundSettings();
-      if (soundSettings.enabled) {
+      if (soundSettings.enabled && !muted) {
         const hasCrit = newToasts.some((t) => t.severity === 'CRIT');
         const hasWarn = newToasts.some((t) => t.severity === 'WARN');
         const preset =
