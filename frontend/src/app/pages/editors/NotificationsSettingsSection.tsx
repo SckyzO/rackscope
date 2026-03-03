@@ -11,7 +11,6 @@ import {
   loadSoundSettings,
   saveSoundSettings,
   SOUND_PRESETS,
-  ALERT_POLL_OPTIONS,
   playSound,
   type SoundAlertSettings,
   type SoundPreset,
@@ -21,17 +20,54 @@ import type { ConfigDraft } from '../../../components/settings/useSettingsConfig
 
 const SOUND_OPTIONS = [
   { value: 'none', label: 'None (silent)' },
-  ...Object.entries(SOUND_PRESETS).map(([id, p]) => ({
-    value: id,
-    label: p.name,
-  })),
+  ...Object.entries(SOUND_PRESETS).map(([id, p]) => ({ value: id, label: p.name })),
 ];
 
 const VISIBILITY_OPTIONS = [
-  { value: 'always', label: 'Always' },
-  { value: 'hidden-only', label: 'Tab in background only' },
+  { value: 'always',       label: 'Always' },
+  { value: 'hidden-only',  label: 'Tab in background only' },
   { value: 'visible-only', label: 'Tab in foreground only' },
 ];
+
+const SoundRow = ({
+  label,
+  description,
+  soundKey,
+  settings,
+  update,
+  previewing,
+  preview,
+}: {
+  label: string;
+  description: string | undefined;
+  soundKey: 'critSound' | 'warnSound';
+  settings: SoundAlertSettings;
+  update: <K extends keyof SoundAlertSettings>(key: K, value: SoundAlertSettings[K]) => void;
+  previewing: string | null;
+  preview: (preset: SoundPreset) => void;
+}) => (
+  <div className="py-3">
+    <FormRow label={label} description={description}>
+      <div className="flex items-center gap-2">
+        <SelectInput
+          value={settings[soundKey]}
+          onChange={(v) => update(soundKey, v as SoundPreset | 'none')}
+          options={SOUND_OPTIONS}
+        />
+        {settings[soundKey] !== 'none' && (
+          <PageActionButton
+            icon={Play}
+            onClick={() => preview(settings[soundKey] as SoundPreset)}
+            disabled={previewing !== null}
+            title="Preview this sound"
+          >
+            {previewing === settings[soundKey] ? '…' : 'Test'}
+          </PageActionButton>
+        )}
+      </div>
+    </FormRow>
+  </div>
+);
 
 export const NotificationsSettingsSection = () => {
   const { draft, setDraft } = useSettingsConfig();
@@ -52,13 +88,7 @@ export const NotificationsSettingsSection = () => {
   const updateDraft = (section: keyof ConfigDraft, field: string, value: string | number) => {
     setDraft((prev) => {
       if (!prev) return prev;
-      return {
-        ...prev,
-        [section]: {
-          ...prev[section],
-          [field]: value,
-        },
-      };
+      return { ...prev, [section]: { ...prev[section], [field]: value } };
     });
   };
 
@@ -76,146 +106,60 @@ export const NotificationsSettingsSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* Toast notification settings */}
-      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-        <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
-          <SectionLabel>Alert toast popups</SectionLabel>
-        </div>
-        <div className="divide-y divide-gray-100 px-4 dark:divide-gray-800">
-          <div className="py-3">
-            <FormRow
-              label="Toast position"
-              description="Where alert toast popups appear on screen"
-            >
-              <SelectInput
-                value={draft.features.toast_position}
-                onChange={(v) => updateDraft('features', 'toast_position', v)}
-                options={[
-                  { value: 'bottom-right', label: 'Bottom right' },
-                  { value: 'top-right', label: 'Top right' },
-                ]}
-              />
-            </FormRow>
-          </div>
-          <div className="py-3">
-            <FormRow
-              label="Display duration"
-              description="How long toasts remain visible"
-            >
-              <StepperInput
-                value={Number(draft.features.toast_duration_seconds)}
-                onChange={(v) => updateDraft('features', 'toast_duration_seconds', String(v))}
-                min={3}
-                max={60}
-                step={1}
-                unit="s"
-                className="w-28"
-              />
-            </FormRow>
-          </div>
-          <div className="py-3">
-            <FormRow
-              label="Stack threshold"
-              description="Maximum number of toasts to show at once"
-            >
-              <StepperInput
-                value={Number(draft.features.toast_stack_threshold)}
-                onChange={(v) => updateDraft('features', 'toast_stack_threshold', String(v))}
-                min={0}
-                max={20}
-                step={1}
-                className="w-28"
-              />
-            </FormRow>
-          </div>
-        </div>
-      </div>
 
-      {/* Master toggle for sound alerts */}
+      {/* ── 1. Sound alerts ───────────────────────────────────────────────── */}
       <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <FormRow
           label="Enable sound alerts"
-          description="Play a sound when new CRIT or WARN alerts are detected"
+          description="Play a sound when new Critical or Warning alerts arrive — fires in sync with toast notifications"
         >
-          <ToggleSwitch checked={settings.enabled} onChange={() => update('enabled', !settings.enabled)} />
+          <ToggleSwitch
+            checked={settings.enabled}
+            onChange={() => update('enabled', !settings.enabled)}
+          />
         </FormRow>
       </div>
 
       {settings.enabled && (
         <>
-          {/* Browser permission note */}
           <AlertBanner variant="info">
-            Browsers require a user interaction before playing audio. Click any Preview button once to
-            unlock sounds.
+            Browsers require a user interaction before playing audio. Click any Test button once to
+            unlock sounds for this session.
           </AlertBanner>
 
-          {/* Sound pickers */}
+          {/* ── 2. Sound pickers ────────────────────────────────────────── */}
           <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
             <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
-              <SectionLabel>Sound configuration</SectionLabel>
+              <SectionLabel>Sounds</SectionLabel>
             </div>
             <div className="divide-y divide-gray-100 px-4 dark:divide-gray-800">
-              {/* WARN sound */}
-              <div className="py-3">
-                <FormRow
-                  label="WARN sound"
-                  description={
-                    settings.warnSound !== 'none'
-                      ? SOUND_PRESETS[settings.warnSound as SoundPreset]?.description
-                      : 'No sound'
-                  }
-                >
-                  <div className="flex items-center gap-2">
-                    <SelectInput
-                      value={settings.warnSound}
-                      onChange={(v) => update('warnSound', v as SoundPreset | 'none')}
-                      options={SOUND_OPTIONS}
-                    />
-                    {settings.warnSound !== 'none' && (
-                      <PageActionButton
-                        icon={Play}
-                        onClick={() => preview(settings.warnSound as SoundPreset)}
-                        disabled={previewing !== null}
-                        title="Preview this sound"
-                      >
-                        {previewing === settings.warnSound ? '…' : 'Test'}
-                      </PageActionButton>
-                    )}
-                  </div>
-                </FormRow>
-              </div>
+              <SoundRow
+                label="Critical sound"
+                description={
+                  settings.critSound !== 'none'
+                    ? SOUND_PRESETS[settings.critSound as SoundPreset]?.description
+                    : 'No sound'
+                }
+                soundKey="critSound"
+                settings={settings}
+                update={update}
+                previewing={previewing}
+                preview={preview}
+              />
+              <SoundRow
+                label="Warning sound"
+                description={
+                  settings.warnSound !== 'none'
+                    ? SOUND_PRESETS[settings.warnSound as SoundPreset]?.description
+                    : 'No sound'
+                }
+                soundKey="warnSound"
+                settings={settings}
+                update={update}
+                previewing={previewing}
+                preview={preview}
+              />
 
-              {/* CRIT sound */}
-              <div className="py-3">
-                <FormRow
-                  label="CRIT sound"
-                  description={
-                    settings.critSound !== 'none'
-                      ? SOUND_PRESETS[settings.critSound as SoundPreset]?.description
-                      : 'No sound'
-                  }
-                >
-                  <div className="flex items-center gap-2">
-                    <SelectInput
-                      value={settings.critSound}
-                      onChange={(v) => update('critSound', v as SoundPreset | 'none')}
-                      options={SOUND_OPTIONS}
-                    />
-                    {settings.critSound !== 'none' && (
-                      <PageActionButton
-                        icon={Play}
-                        onClick={() => preview(settings.critSound as SoundPreset)}
-                        disabled={previewing !== null}
-                        title="Preview this sound"
-                      >
-                        {previewing === settings.critSound ? '…' : 'Test'}
-                      </PageActionButton>
-                    )}
-                  </div>
-                </FormRow>
-              </div>
-
-              {/* Volume */}
               <div className="py-3">
                 <FormRow label="Volume" description="Alert sound volume">
                   <StepperInput
@@ -229,8 +173,15 @@ export const NotificationsSettingsSection = () => {
                   />
                 </FormRow>
               </div>
+            </div>
+          </div>
 
-              {/* Visibility */}
+          {/* ── 3. Behaviour ────────────────────────────────────────────── */}
+          <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+            <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+              <SectionLabel>Behaviour</SectionLabel>
+            </div>
+            <div className="divide-y divide-gray-100 px-4 dark:divide-gray-800">
               <div className="py-3">
                 <FormRow
                   label="Play when"
@@ -243,24 +194,10 @@ export const NotificationsSettingsSection = () => {
                   />
                 </FormRow>
               </div>
-
-              {/* Alert poll interval */}
-              <div className="py-3">
-                <FormRow
-                  label="Check interval"
-                  description="How often to poll for new alerts (requires page reload to take effect)"
-                >
-                  <SelectInput
-                    value={String(settings.alertPollMs)}
-                    onChange={(v) => update('alertPollMs', Number(v))}
-                    options={ALERT_POLL_OPTIONS.map((o) => ({ value: String(o.ms), label: o.label }))}
-                  />
-                </FormRow>
-              </div>
             </div>
           </div>
 
-          {/* Preview all */}
+          {/* ── 4. Preview all ──────────────────────────────────────────── */}
           <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-3">
               <SectionLabel>Preview all sounds</SectionLabel>
@@ -280,6 +217,53 @@ export const NotificationsSettingsSection = () => {
           </div>
         </>
       )}
+
+      {/* ── 5. Visual notifications (toast popups) ─────────────────────────── */}
+      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+          <SectionLabel>Visual notifications (toast popups)</SectionLabel>
+        </div>
+        <div className="divide-y divide-gray-100 px-4 dark:divide-gray-800">
+          <div className="py-3">
+            <FormRow label="Position" description="Where toasts appear on screen">
+              <SelectInput
+                value={draft.features.toast_position}
+                onChange={(v) => updateDraft('features', 'toast_position', v)}
+                options={[
+                  { value: 'bottom-right', label: 'Bottom right' },
+                  { value: 'top-right', label: 'Top right' },
+                ]}
+              />
+            </FormRow>
+          </div>
+          <div className="py-3">
+            <FormRow label="Display duration" description="How long each toast stays visible">
+              <StepperInput
+                value={Number(draft.features.toast_duration_seconds)}
+                onChange={(v) => updateDraft('features', 'toast_duration_seconds', String(v))}
+                min={3}
+                max={60}
+                step={1}
+                unit="s"
+                className="w-28"
+              />
+            </FormRow>
+          </div>
+          <div className="py-3">
+            <FormRow label="Stack threshold" description="Max toasts shown simultaneously">
+              <StepperInput
+                value={Number(draft.features.toast_stack_threshold)}
+                onChange={(v) => updateDraft('features', 'toast_stack_threshold', String(v))}
+                min={1}
+                max={20}
+                step={1}
+                className="w-28"
+              />
+            </FormRow>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 };

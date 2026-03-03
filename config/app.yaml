@@ -1,44 +1,66 @@
+# ── Application identity ──────────────────────────────────────────────────────
 app:
   name: Rackscope
   description: Datacenter Monitoring
+
+# ── Configuration file paths ──────────────────────────────────────────────────
 paths:
   topology: config/topology
   templates: config/templates
   checks: config/checks/library
   metrics: config/metrics/library
+
+# ── Backend refresh intervals ─────────────────────────────────────────────────
+# Server-side Prometheus polling cadence — distinct from per-page frontend
+# refresh buttons (which are per-user settings stored in localStorage).
 refresh:
   room_state_seconds: 60
   rack_state_seconds: 60
+
+# ── Prometheus query cache ────────────────────────────────────────────────────
 cache:
   ttl_seconds: 60
   health_checks_ttl_seconds: 30
   metrics_ttl_seconds: 120
+
+# ── Telemetry (Prometheus connection) ─────────────────────────────────────────
 telemetry:
   prometheus_url: http://prometheus:9090
-  identity_label: instance
+  identity_label: instance        # Prometheus label that maps to a node name
   rack_label: rack_id
   chassis_label: chassis_id
   job_regex: node|rackscope-simulator
   prometheus_heartbeat_seconds: 30
-  prometheus_latency_window: 20
+  prometheus_latency_window: 20   # Samples used to compute average latency
   debug_stats: false
+  # HTTP Basic Auth (uncomment to enable)
   basic_auth_user: null
   basic_auth_password: null
+  # TLS (uncomment and configure for HTTPS Prometheus endpoints)
   tls_verify: false
   tls_ca_file: null
   tls_cert_file: null
   tls_key_file: null
+
+# ── TelemetryPlanner ──────────────────────────────────────────────────────────
+# Batches Prometheus queries to avoid per-device query explosion.
+# See docs/architecture/backend.md for details.
 planner:
-  unknown_state: UNKNOWN
-  cache_ttl_seconds: 60
-  max_ids_per_query: 300
+  unknown_state: UNKNOWN          # State assigned when no data is returned
+  cache_ttl_seconds: 60           # Planner snapshot cache TTL
+  max_ids_per_query: 300          # Max node IDs per PromQL query (tune for large clusters)
+
+# ── Feature flags ─────────────────────────────────────────────────────────────
 features:
-  notifications: true
-  notifications_max_visible: 10
-  playlist: true
-  offline: true
-  worldmap: true
-  dev_tools: true
+  notifications: true             # Alert toast popups
+  notifications_max_visible: 10   # Max visible entries in notification feed
+  playlist: true                  # Wallboard / kiosk rotation
+  offline: true                   # Offline mode indicator
+  worldmap: true                  # World Map view
+  dev_tools: true                 # Developer tools section in sidebar
+  wizard: true                    # Setup wizard on first launch (set false to disable)
+
+# ── Authentication ────────────────────────────────────────────────────────────
 auth:
   enabled: false
   username: admin
@@ -50,6 +72,9 @@ auth:
     max_length: 128
     require_digit: false
     require_symbol: false
+
+# ── World map defaults ────────────────────────────────────────────────────────
+# Can be overridden per-user in Settings → Views.
 map:
   default_view: world
   default_zoom: 2
@@ -59,87 +84,21 @@ map:
   center:
     lat: 20.0
     lon: 0.0
+
+# ── Playlist defaults ─────────────────────────────────────────────────────────
+# Per-user queue and interval are stored in localStorage.
+# These are the factory defaults shown in Settings → Views.
 playlist:
   interval_seconds: 30
   views:
-  - /views/worldmap
-  - /slurm/overview
+    - /views/worldmap
+    - /slurm/overview
+
+# ── Plugins ───────────────────────────────────────────────────────────────────
+# Only the enabled flag lives here.
+# Full plugin configuration is in config/plugins/{plugin_id}/config.yml
 plugins:
   simulator:
     enabled: true
-    update_interval_seconds: 20
-    seed: null
-    scenario: demo-stable
-    scale_factor: 1
-    incident_rates:
-      node_micro_failure: 0.001
-      rack_macro_failure: 0.01
-      aisle_cooling_failure: 0.005
-    incident_durations:
-      rack: 300
-      aisle: 600
-    overrides_path: config/plugins/simulator/overrides/overrides.yaml
-    default_ttl_seconds: 120
-    metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
-    metrics_catalogs:
-    - id: slurm
-      path: config/plugins/simulator/metrics/metrics_slurm.yaml
-      enabled: true
   slurm:
     enabled: true
-    metric: slurm_node_status
-    label_node: node
-    label_status: status
-    label_partition: partition
-    mapping_path: config/plugins/slurm/node_mapping.yaml
-    roles:
-    - compute
-    - visu
-    include_unlabeled: false
-    status_map:
-      ok:
-      - allocated
-      - alloc
-      - completing
-      - comp
-      - idle
-      - mixed
-      - mix
-      warn:
-      - maint
-      - planned
-      - plnd
-      - reserved
-      - resv
-      - blocked
-      - block
-      - power_down
-      - pow_dn
-      - power_up
-      - pow_up
-      - powering_up
-      - powered_down
-      - reboot_issued
-      - reboot_req
-      crit:
-      - down
-      - drain
-      - drained
-      - draining
-      - drng
-      - fail
-      - failing
-      - failg
-      - error
-      - unknown
-      - unk
-      - noresp
-      - inval
-      info: []
-    severity_colors:
-      ok: '#22c55e'
-      warn: '#f59e0b'
-      crit: '#ef4444'
-      info: '#3b82f6'
-simulator: null
-slurm: null

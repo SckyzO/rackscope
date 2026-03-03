@@ -3,6 +3,7 @@ import { AlertTriangle, XCircle, X, ArrowRight, ChevronDown, ChevronUp } from 'l
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
+import { loadSoundSettings, playSound } from '../lib/soundAlerts';
 import type { ActiveAlert } from '../../types';
 
 interface ToastEntry {
@@ -116,6 +117,22 @@ export const AlertToastContainer = () => {
       newToasts.forEach((toast) => {
         setTimeout(() => dismiss(toast.id), durationMs);
       });
+
+      // Play sound in sync with the toast — single source of truth for new alerts
+      const soundSettings = loadSoundSettings();
+      if (soundSettings.enabled) {
+        const hasCrit = newToasts.some((t) => t.severity === 'CRIT');
+        const hasWarn = newToasts.some((t) => t.severity === 'WARN');
+        const preset =
+          hasCrit && soundSettings.critSound !== 'none'
+            ? soundSettings.critSound
+            : hasWarn && soundSettings.warnSound !== 'none'
+              ? soundSettings.warnSound
+              : null;
+        if (preset) {
+          playSound(preset, soundSettings.volume / 100).catch(() => {});
+        }
+      }
     } catch {
       // Silently ignore polling errors — non-critical background task
     }
