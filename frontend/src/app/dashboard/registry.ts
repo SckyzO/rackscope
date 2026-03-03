@@ -15,9 +15,12 @@ export type WidgetRegistration = {
   description: string;
   defaultW: number;
   defaultH: number;
+  minW?: number;
+  minH?: number;
+  showTitle?: boolean;
   icon: React.ElementType;
   group: WidgetGroup;
-  requiresSlurm?: boolean;
+  requiresPlugin?: string;
   component: React.ComponentType<{
     widget: WidgetConfig;
     data: DashboardData;

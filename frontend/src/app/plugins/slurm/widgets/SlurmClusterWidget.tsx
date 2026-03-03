@@ -1,8 +1,24 @@
 import { Activity } from 'lucide-react';
-import { STATUS_COLOR } from '../constants';
-import { registerWidget } from '../registry';
-import type { DashboardData, WidgetProps } from '../types';
+import { STATUS_COLOR } from '../../../dashboard/constants';
+import { registerWidget, type WidgetRegistration } from '../../../dashboard/registry';
+import type { DashboardData, WidgetProps } from '../../../dashboard/types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'slurm-cluster',
+  title: 'Slurm Cluster',
+  description: 'HPC cluster status and node breakdown',
+  group: 'Overview',
+  icon: Activity,
+  defaultW: 8,
+  defaultH: 2,
+  minW: 2,
+  minH: 1,
+  showTitle: true,
+  requiresPlugin: 'slurm',
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 export const SlurmClusterWidget = ({
   data,
   navigate,
@@ -15,22 +31,7 @@ export const SlurmClusterWidget = ({
   const slurmStatus = data.slurm.by_status ?? {};
   const slurmSevs = data.slurm.by_severity ?? {};
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
-        <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-purple-500" />
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Slurm Cluster</h2>
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800">
-            {slurmTotal} nodes
-          </span>
-        </div>
-        <button
-          onClick={() => navigate('/slurm/overview')}
-          className="text-brand-500 text-xs hover:underline"
-        >
-          Details →
-        </button>
-      </div>
+    <div className="flex h-full flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-4 p-5">
           <div className="space-y-1.5">
@@ -85,18 +86,16 @@ export const SlurmClusterWidget = ({
           </div>
         </div>
       </div>
+      <div className="shrink-0 border-t border-gray-100 px-5 py-2 dark:border-gray-800">
+        <button
+          onClick={() => navigate('/slurm/overview')}
+          className="text-brand-500 text-xs hover:underline"
+        >
+          Details →
+        </button>
+      </div>
     </div>
   );
 };
 
-registerWidget({
-  type: 'slurm-cluster',
-  title: 'Slurm Cluster',
-  description: 'HPC cluster status and node breakdown',
-  defaultW: 8,
-  defaultH: 2,
-  icon: Activity,
-  group: 'Overview',
-  requiresSlurm: true,
-  component: SlurmClusterWidget,
-});
+registerWidget({ ...WIDGET_META, component: SlurmClusterWidget });

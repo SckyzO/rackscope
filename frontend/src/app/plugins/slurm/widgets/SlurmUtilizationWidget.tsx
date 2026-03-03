@@ -1,11 +1,27 @@
 import { Activity } from 'lucide-react';
-import { registerWidget } from '../registry';
-import type { DashboardData } from '../types';
+import { registerWidget, type WidgetRegistration } from '../../../dashboard/registry';
+import type { DashboardData } from '../../../dashboard/types';
 
+// ── Widget config ──────────────────────────────────────────────────────────
+const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
+  type: 'slurm-utilization',
+  title: 'Slurm Utilization',
+  description: 'Allocated % gauge',
+  group: 'Charts',
+  icon: Activity,
+  defaultW: 6,
+  defaultH: 3,
+  minW: 2,
+  minH: 1,
+  showTitle: true,
+  requiresPlugin: 'slurm',
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 export const SlurmUtilizationWidget = ({ data }: { data: DashboardData }) => {
   if (!data.slurmEnabled || !data.slurm)
     return (
-      <div className="flex h-full items-center justify-center rounded-2xl border border-gray-200 bg-white p-5 text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-900">
+      <div className="flex h-full items-center justify-center p-5 text-xs text-gray-400">
         Slurm not enabled
       </div>
     );
@@ -13,10 +29,7 @@ export const SlurmUtilizationWidget = ({ data }: { data: DashboardData }) => {
   const allocated = (data.slurm.by_status?.allocated ?? 0) + (data.slurm.by_status?.alloc ?? 0);
   const pct = total > 0 ? Math.round((allocated / total) * 100) : 0;
   return (
-    <div className="flex h-full flex-col justify-center rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <p className="mb-3 shrink-0 text-sm font-semibold text-gray-700 dark:text-gray-300">
-        Slurm Utilization
-      </p>
+    <div className="flex h-full flex-col justify-center p-4">
       <div className="flex items-center gap-4">
         <p
           className="text-4xl font-black"
@@ -40,14 +53,4 @@ export const SlurmUtilizationWidget = ({ data }: { data: DashboardData }) => {
   );
 };
 
-registerWidget({
-  type: 'slurm-utilization',
-  title: 'Slurm Utilization',
-  description: 'Allocated % gauge',
-  defaultW: 6,
-  defaultH: 3,
-  icon: Activity,
-  group: 'Charts',
-  requiresSlurm: true,
-  component: SlurmUtilizationWidget,
-});
+registerWidget({ ...WIDGET_META, component: SlurmUtilizationWidget });

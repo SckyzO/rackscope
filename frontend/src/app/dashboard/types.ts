@@ -38,7 +38,8 @@ export type WidgetType =
   | 'device-types'
   | 'slurm-nodes'
   | 'slurm-utilization'
-  | 'world-map';
+  | 'world-map'
+  | 'simulator-status';
 
 export type WidgetConfig = {
   id: string;
@@ -57,6 +58,7 @@ export type Dashboard = {
   id: string;
   name: string;
   widgets: WidgetConfig[];
+  inPlaylist?: boolean;
 };
 
 export type DashboardData = {

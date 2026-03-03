@@ -5,12 +5,10 @@
 import './widgets/StatCardWidget';
 import './widgets/AlertCountWidget';
 import './widgets/UptimeWidget';
-import './widgets/SlurmNodesWidget';
 
 import './widgets/HealthGaugeWidget';
 import './widgets/SeverityDonutWidget';
 import './widgets/RackUtilizationWidget';
-import './widgets/SlurmUtilizationWidget';
 
 import './widgets/ActiveAlertsWidget';
 import './widgets/RecentAlertsWidget';
@@ -20,13 +18,16 @@ import './widgets/WorldMapWidget';
 import './widgets/InfrastructureWidget';
 import './widgets/SiteMapWidget';
 import './widgets/PrometheusWidget';
-import './widgets/SlurmClusterWidget';
 
 import './widgets/CatalogChecksWidget';
 import './widgets/CheckSummaryWidget';
 import './widgets/DeviceTypesWidget';
 
 import './widgets/StatsRowWidget';
+
+// Plugin widgets — self-register via their index files
+import '../plugins/slurm/widgets';
+import '../plugins/simulator/widgets';
 
 export { registerWidget, getWidget, getAllWidgets } from './registry';
 export type { WidgetRegistration, WidgetGroup } from './registry';
