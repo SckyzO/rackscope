@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import ReactGridLayout, { type Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   GripVertical,
   Check,
@@ -16,7 +16,12 @@ import {
   SlidersHorizontal,
   LayoutDashboard,
   RefreshCw,
+  ListVideo,
+  ExternalLink,
+  AlignLeft,
+  AlignCenter,
 } from 'lucide-react';
+import { useAppConfigSafe } from '../contexts/AppConfigContext';
 import { api } from '../../services/api';
 import type {
   ActiveAlert,
@@ -76,40 +81,54 @@ const applyRglLayout = (widgets: WidgetConfig[], newLayout: Layout[]): WidgetCon
 
 // ── Widget renderer ───────────────────────────────────────────────────────────
 
+type TitleAlign = 'left' | 'center';
+
 type WidgetRendererProps = {
   widget: WidgetConfig;
   data: DashboardData;
   navigate: (path: string) => void;
+  titleAlign: TitleAlign;
 };
 
-const WidgetContent = ({ widget, data, navigate }: WidgetRendererProps) => {
+const WidgetContent = ({ widget, data, navigate, titleAlign }: WidgetRendererProps) => {
   const reg = getWidget(widget.type);
   if (!reg) return null;
   const Component = reg.component;
-  return <Component widget={widget} data={data} navigate={navigate} />;
+  return (
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      {reg.showTitle && (
+        <div
+          className={`flex shrink-0 items-center border-b border-gray-100 px-5 py-3 dark:border-gray-800 ${
+            titleAlign === 'center' ? 'justify-center' : ''
+          }`}
+        >
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{reg.title}</h3>
+        </div>
+      )}
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <Component widget={widget} data={data} navigate={navigate} />
+      </div>
+    </div>
+  );
 };
 
 // ── Widget picker panel ───────────────────────────────────────────────────────
 
 type WidgetPickerProps = {
   widgets: WidgetConfig[];
-  slurmEnabled: boolean;
   onAdd: (type: WidgetType) => void;
   onReset: () => void;
   onClose: () => void;
   open: boolean;
 };
 
-const WidgetPicker = ({
-  widgets,
-  slurmEnabled,
-  onAdd,
-  onReset,
-  onClose,
-  open,
-}: WidgetPickerProps) => {
+const WidgetPicker = ({ widgets, onAdd, onReset, onClose, open }: WidgetPickerProps) => {
+  const { plugins } = useAppConfigSafe();
   const allDefs = getAllWidgets();
-  const available = allDefs.filter((def) => !def.requiresSlurm || slurmEnabled);
+  const available = allDefs.filter(
+    (def) =>
+      !def.requiresPlugin || Boolean(plugins[def.requiresPlugin as keyof typeof plugins])
+  );
   const addedTypes = new Set(widgets.map((w) => w.type));
 
   const groups = [
@@ -216,6 +235,7 @@ const WidgetPicker = ({
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
+  const { dashboardId: urlDashboardId } = useParams<{ dashboardId?: string }>();
 
   // ── Data state ────────────────────────────────────────────────────────────
   const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
@@ -241,6 +261,9 @@ export const DashboardPage = () => {
 
   // ── Settings panel state ──────────────────────────────────────────────────
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [titleAlign, setTitleAlign] = useState<TitleAlign>(() => {
+    return (localStorage.getItem('rackscope.dash.title-align') as TitleAlign) ?? 'left';
+  });
   const [refreshInterval, setRefreshInterval] = useState<number>(() => {
     const stored = localStorage.getItem('rackscope.dash.refresh');
     return stored ? Number(stored) : 30;
@@ -269,7 +292,8 @@ export const DashboardPage = () => {
   // id without capturing a stale closure over activeDashboardId.
   const activeDashboardIdRef = useRef(activeDashboardId);
 
-  const activeDashboard = dashboards.find((d) => d.id === activeDashboardId) ?? dashboards[0];
+  const resolvedId = urlDashboardId ?? activeDashboardId;
+  const activeDashboard = dashboards.find((d) => d.id === resolvedId) ?? dashboards[0];
   const widgets = activeDashboard?.widgets ?? DEFAULT_WIDGETS;
 
   useEffect(() => {
@@ -351,7 +375,8 @@ export const DashboardPage = () => {
       y: maxY,
       w: def.defaultW,
       h: def.defaultH,
-      minH: def.defaultH > 1 ? 2 : 1,
+      ...(def.minW !== undefined && { minW: def.minW }),
+      ...(def.minH !== undefined && { minH: def.minH }),
     };
     if (editMode) {
       setPendingLayout([...current, newWidget]);
@@ -417,6 +442,12 @@ export const DashboardPage = () => {
 
   const renameDashboard = (id: string, name: string) => {
     const next = dashboards.map((d) => (d.id === id ? { ...d, name } : d));
+    setDashboards(next);
+    persistDashboards(next);
+  };
+
+  const toggleDashboardPlaylist = (id: string) => {
+    const next = dashboards.map((d) => (d.id === id ? { ...d, inPlaylist: !d.inPlaylist } : d));
     setDashboards(next);
     persistDashboards(next);
   };
@@ -664,6 +695,21 @@ export const DashboardPage = () => {
                       >
                         <Copy className="h-3 w-3" />
                       </button>
+                      <button
+                        title={d.inPlaylist ? 'Remove from playlist' : 'Add to playlist'}
+                        onClick={() => toggleDashboardPlaylist(d.id)}
+                        className={`rounded p-0.5 ${d.inPlaylist ? 'text-amber-300 hover:bg-white/20' : 'hover:bg-white/20'}`}
+                      >
+                        <ListVideo className="h-3 w-3" />
+                      </button>
+                      <Link
+                        to={`/dashboard/${d.id}`}
+                        title="Open as standalone page"
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded p-0.5 hover:bg-white/20"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
                       {dashboards.length > 1 && (
                         <button
                           title="Delete"
@@ -815,7 +861,7 @@ export const DashboardPage = () => {
 
                 {/* Widget content — pointer-events-none in edit mode so RGL handles all mouse events */}
                 <div className={`h-full ${editMode ? 'pointer-events-none select-none' : ''}`}>
-                  <WidgetContent widget={widget} data={dashboardData} navigate={navigate} />
+                  <WidgetContent widget={widget} data={dashboardData} navigate={navigate} titleAlign={titleAlign} />
                 </div>
               </div>
             ))}
@@ -827,7 +873,6 @@ export const DashboardPage = () => {
       {editMode && (
         <WidgetPicker
           widgets={widgets}
-          slurmEnabled={slurmEnabled}
           onAdd={addWidget}
           onReset={resetLayout}
           onClose={() => setPickerOpen(false)}
@@ -852,6 +897,33 @@ export const DashboardPage = () => {
               </button>
             </div>
             <div className="space-y-5 p-5">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                  Widget title alignment
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {([
+                    { value: 'left' as const, icon: AlignLeft, label: 'Left' },
+                    { value: 'center' as const, icon: AlignCenter, label: 'Center' },
+                  ] as const).map(({ value, icon: Icon, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => {
+                        setTitleAlign(value);
+                        localStorage.setItem('rackscope.dash.title-align', value);
+                      }}
+                      className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-medium transition-colors ${
+                        titleAlign === value
+                          ? 'bg-brand-500 text-white'
+                          : 'border border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400'
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="space-y-2">
                 <label className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
                   Refresh interval

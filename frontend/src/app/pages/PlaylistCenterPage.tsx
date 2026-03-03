@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { ElementType } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Monitor,
   Maximize2,
@@ -13,6 +13,8 @@ import {
   Play,
   ListVideo,
   GripVertical,
+  LayoutDashboard,
+  ExternalLink,
   BarChart2 as FallbackIcon,
 } from 'lucide-react';
 import { usePageTitle } from '../contexts/PageTitleContext';
@@ -29,9 +31,16 @@ import {
   expandRegistry,
   PLAYLIST_REGISTRY,
   getIcon,
+  getDashboardPlaylistItems,
   type PlaylistQueueItem,
   type PlaylistMode,
 } from '../playlist/PlaylistRegistry';
+import {
+  DASHBOARDS_STORAGE_KEY,
+  DASHBOARDS_STORAGE_VERSION_KEY,
+  DASHBOARDS_STORAGE_VERSION,
+} from '../dashboard';
+import type { Dashboard } from '../dashboard/types';
 
 // ── Duration presets ──────────────────────────────────────────────────────────
 const DURATION_PRESETS = [
@@ -71,6 +80,7 @@ const ICON_COMPONENTS: Record<string, ElementType> = {
   AlertTriangle: getIcon('AlertTriangle'),
   Bell: getIcon('Bell'),
   Server: getIcon('Server'),
+  LayoutDashboard,
 };
 
 const RegistryIcon = ({ name, className }: { name: string; className?: string }) => {
@@ -170,6 +180,25 @@ export const PlaylistCenterPage = () => {
   const [localQueue, setLocalQueue] = useState<PlaylistQueueItem[]>(playlist.queue);
   const [localInterval, setLocalInterval] = useState(snapToPreset(playlist.globalInterval) || 30);
 
+  // ── Custom dashboards ──────────────────────────────────────────────────────
+  const [dashboards, setDashboards] = useState<Dashboard[]>(() => {
+    try {
+      const version = localStorage.getItem(DASHBOARDS_STORAGE_VERSION_KEY);
+      const stored = localStorage.getItem(DASHBOARDS_STORAGE_KEY);
+      if (stored && version === DASHBOARDS_STORAGE_VERSION) return JSON.parse(stored) as Dashboard[];
+    } catch {
+      /* ignore */
+    }
+    return [];
+  });
+
+  const toggleDashboardInPlaylist = (id: string) => {
+    const next = dashboards.map((d) => (d.id === id ? { ...d, inPlaylist: !d.inPlaylist } : d));
+    setDashboards(next);
+    localStorage.setItem(DASHBOARDS_STORAGE_KEY, JSON.stringify(next));
+    localStorage.setItem(DASHBOARDS_STORAGE_VERSION_KEY, DASHBOARDS_STORAGE_VERSION);
+  };
+
   useEffect(() => {
     api
       .getRooms()
@@ -215,11 +244,17 @@ export const PlaylistCenterPage = () => {
   }, []);
 
   const startPlaylist = (mode: PlaylistMode) => {
-    if (localQueue.length === 0) return;
-    playlist.setQueue(localQueue);
+    // Merge custom dashboard items into the queue based on current inPlaylist flags
+    const dashboardItems = getDashboardPlaylistItems();
+    const mergedQueue = [
+      ...localQueue,
+      ...dashboardItems.filter((di) => !localQueue.some((q) => q.id === di.id)),
+    ];
+    if (mergedQueue.length === 0) return;
+    playlist.setQueue(mergedQueue);
     playlist.setGlobalInterval(localInterval);
     playlist.play(mode);
-    navigate(localQueue[0].route);
+    navigate(mergedQueue[0].route);
   };
 
   return (
@@ -312,6 +347,50 @@ export const PlaylistCenterPage = () => {
                 </div>
               </SectionCard>
             ))
+          )}
+
+          {/* Custom Dashboards section */}
+          {dashboards.length > 0 && (
+            <SectionCard title="Custom Dashboards" icon={LayoutDashboard}>
+              <div className="space-y-1.5">
+                {dashboards.map((d) => (
+                  <div
+                    key={d.id}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5"
+                  >
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800">
+                      <LayoutDashboard className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                        {d.name}
+                      </p>
+                      <p className="truncate font-mono text-[10px] text-gray-400 dark:text-gray-600">
+                        /dashboard/{d.id}
+                      </p>
+                    </div>
+                    <Link
+                      to={`/dashboard/${d.id}`}
+                      title="Open dashboard"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Link>
+                    <button
+                      onClick={() => toggleDashboardInPlaylist(d.id)}
+                      title={d.inPlaylist ? 'Remove from playlist' : 'Include in playlist'}
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors ${
+                        d.inPlaylist
+                          ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10'
+                          : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-400'
+                      }`}
+                    >
+                      <ListVideo className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
           )}
         </div>
 

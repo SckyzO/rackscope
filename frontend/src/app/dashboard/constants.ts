@@ -54,7 +54,9 @@ export const ACTIVE_DASHBOARD_STORAGE_KEY = 'rackscope.dashboard.active';
 export const DASHBOARDS_STORAGE_VERSION_KEY = 'rackscope.dashboards.version';
 // Version '2' introduced x/y/w/h coordinates (react-grid-layout) replacing
 // the old colSpan/rowSpan model. Stale data is discarded on version mismatch.
-export const DASHBOARDS_STORAGE_VERSION = '2';
+// Version '3' added inPlaylist flag to Dashboard.
+// Version '4' standardised widget title bars (outer card shell moved to WidgetContent).
+export const DASHBOARDS_STORAGE_VERSION = '4';
 
 // 2D grid layout — x/y/w/h (12-column grid, rowHeight=ROW_PX)
 export const DEFAULT_WIDGETS: WidgetConfig[] = [
@@ -66,14 +68,14 @@ export const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'stat-crit', type: 'stat-card', x: 8, y: 0, w: 2, h: 1, minH: 1, statKey: 'crit' },
   { id: 'stat-warn', type: 'stat-card', x: 10, y: 0, w: 2, h: 1, minH: 1, statKey: 'warn' },
   // ── y=1, h=3 — Primary monitoring ────────────────────────────────────────
-  { id: 'alerts', type: 'active-alerts', x: 0, y: 1, w: 6, h: 3, minW: 3, minH: 2 },
-  { id: 'worldmap', type: 'world-map', x: 6, y: 1, w: 6, h: 3, minW: 3, minH: 2 },
+  { id: 'alerts', type: 'active-alerts', x: 0, y: 1, w: 6, h: 3, minW: 3, minH: 1 },
+  { id: 'worldmap', type: 'world-map', x: 6, y: 1, w: 6, h: 3, minW: 3, minH: 1 },
   // ── y=4, h=2 — Gauges ────────────────────────────────────────────────────
-  { id: 'gauge', type: 'health-gauge', x: 0, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
-  { id: 'donut', type: 'severity-donut', x: 4, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
-  { id: 'prometheus', type: 'prometheus', x: 8, y: 4, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'gauge', type: 'health-gauge', x: 0, y: 4, w: 4, h: 2, minW: 2, minH: 1 },
+  { id: 'donut', type: 'severity-donut', x: 4, y: 4, w: 4, h: 2, minW: 2, minH: 1 },
+  { id: 'prometheus', type: 'prometheus', x: 8, y: 4, w: 4, h: 2, minW: 2, minH: 1 },
   // ── y=6, h=2 — Operational ───────────────────────────────────────────────
-  { id: 'infra', type: 'infrastructure', x: 0, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
-  { id: 'heatmap', type: 'node-heatmap', x: 4, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
-  { id: 'catalog', type: 'catalog-checks', x: 8, y: 6, w: 4, h: 2, minW: 2, minH: 2 },
+  { id: 'infra', type: 'infrastructure', x: 0, y: 6, w: 4, h: 2, minW: 2, minH: 1 },
+  { id: 'heatmap', type: 'node-heatmap', x: 4, y: 6, w: 4, h: 2, minW: 2, minH: 1 },
+  { id: 'catalog', type: 'catalog-checks', x: 8, y: 6, w: 4, h: 2, minW: 2, minH: 1 },
 ];

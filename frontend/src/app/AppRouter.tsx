@@ -141,6 +141,7 @@ const AppRoutes = () => (
       }
     >
       <Route index element={<DashboardPage />} />
+      <Route path="dashboard/:dashboardId" element={<DashboardPage />} />
 
       {/* UI Elements */}
       <Route path="ui/buttons" element={<ButtonsPage />} />

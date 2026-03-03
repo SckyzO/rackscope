@@ -10,8 +10,10 @@ import {
   AlertTriangle,
   Bell,
   Server,
+  LayoutDashboard,
 } from 'lucide-react';
 import type { RoomSummary } from '../../types';
+import type { Dashboard } from '../dashboard/types';
 
 // ── Icon registry ─────────────────────────────────────────────────────────────
 
@@ -26,6 +28,7 @@ const ICON_MAP: Record<string, ElementType> = {
   AlertTriangle,
   Bell,
   Server,
+  LayoutDashboard,
 };
 
 export const getIcon = (name: string): ElementType => ICON_MAP[name] ?? BarChart2;
@@ -196,4 +199,28 @@ export const expandRegistry = (
       return { id: cat.id, label: cat.label, iconName: cat.iconName, pages: expanded };
     })
     .filter((cat) => cat.pages.length > 0);
+};
+
+// ── getDashboardPlaylistItems ──────────────────────────────────────────────────
+
+/**
+ * Returns playlist items for all dashboards that have inPlaylist=true.
+ * Reads directly from localStorage so it stays in sync without a React context.
+ */
+export const getDashboardPlaylistItems = (): PlaylistQueueItem[] => {
+  try {
+    const stored = localStorage.getItem('rackscope.dashboards');
+    if (!stored) return [];
+    return (JSON.parse(stored) as Dashboard[])
+      .filter((d) => d.inPlaylist)
+      .map((d) => ({
+        id: `dashboard-${d.id}`,
+        title: d.name,
+        route: `/dashboard/${d.id}`,
+        iconName: 'LayoutDashboard',
+        duration: 0,
+      }));
+  } catch {
+    return [];
+  }
 };
