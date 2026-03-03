@@ -90,7 +90,7 @@ const SectionLabel = ({ label, collapsed }: { label: string; collapsed: boolean 
     {/* Full text label: hidden when collapsed, shown on hover */}
     <p
       className={`mb-1.5 text-[11px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500 ${
-        collapsed ? 'mt-2 hidden group-hover:block' : 'mt-6'
+        collapsed ? 'mt-1 hidden group-hover:block' : 'mt-4'
       }`}
     >
       {label}
@@ -598,7 +598,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4">
+      <nav className="flex-1 overflow-y-auto pt-2 pb-4">
         <SectionLabel label="Main" collapsed={collapsed} />
         <NavItem to="/" icon={BarChart2} label="Dashboard" collapsed={collapsed} end />
         {features.playlist && (

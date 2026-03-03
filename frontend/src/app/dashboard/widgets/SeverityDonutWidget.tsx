@@ -1,5 +1,6 @@
 import { Globe } from 'lucide-react';
 import { SeverityDonut } from '../primitives';
+import { getSeverityLabel } from '../../lib/severityLabels';
 import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
 
@@ -29,7 +30,7 @@ export const SeverityDonutWidget = ({ data }: { data: DashboardData }) => (
         <div key={s.label} className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: s.color }} />
-            <span className="text-gray-600 dark:text-gray-400">{s.label}</span>
+            <span className="text-gray-600 dark:text-gray-400">{getSeverityLabel(s.label)}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="font-mono font-semibold text-gray-800 dark:text-gray-200">

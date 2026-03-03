@@ -19,7 +19,6 @@ import {
   LayoutDashboard,
 } from 'lucide-react';
 import { ConfirmationModal } from './layout/ConfirmationModal';
-import { api } from '../../services/api';
 
 export const LS_KEY = 'rackscope.setup.done';
 

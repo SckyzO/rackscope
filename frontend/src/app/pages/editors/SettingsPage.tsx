@@ -25,6 +25,7 @@ import { PluginsSettingsSection } from '../../../components/settings/sections/Pl
 import { SecuritySettingsSection } from '../../../components/settings/sections/SecuritySettingsSection';
 import { ViewsSettingsSection } from '../../../components/settings/sections/ViewsSettingsSection';
 import { NotificationsSettingsSection } from './NotificationsSettingsSection';
+import { SeverityLabelsSettingsSection } from './SeverityLabelsSettingsSection';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
@@ -267,7 +268,12 @@ export const SettingsPage = () => {
 
           <div className="p-6">
             {activeTab === 'general' && <AppSettingsSection draft={draft} setDraft={setDraft} />}
-            {activeTab === 'appearance' && <AppearanceSettingsSection />}
+            {activeTab === 'appearance' && (
+              <div className="space-y-6">
+                <AppearanceSettingsSection />
+                <SeverityLabelsSettingsSection />
+              </div>
+            )}
             {activeTab === 'telemetry' && (
               <TelemetrySettingsSection draft={draft} setDraft={setDraft} />
             )}

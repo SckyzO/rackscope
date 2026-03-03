@@ -2,6 +2,7 @@
 // These are NOT registered — they are internal building blocks.
 
 import { ChevronRight } from 'lucide-react';
+import { getSeverityLabel } from '../lib/severityLabels';
 import type { ActiveAlert } from '../../types';
 
 // ── StatCard ──────────────────────────────────────────────────────────────────
@@ -37,13 +38,13 @@ export const AlertSevBadge = ({ state }: { state: string }) => {
     return (
       <span className="bg-error-50 text-error-500 dark:bg-error-500/15 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium">
         <span className="bg-error-500 h-1.5 w-1.5 rounded-full" />
-        Critical
+        {getSeverityLabel('CRIT')}
       </span>
     );
   return (
     <span className="bg-warning-50 text-warning-500 dark:bg-warning-500/15 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium">
       <span className="bg-warning-500 h-1.5 w-1.5 rounded-full" />
-      Warning
+      {getSeverityLabel('WARN')}
     </span>
   );
 };
@@ -208,7 +209,7 @@ export const SeverityDonut = ({ slices }: { slices: { label: string; count: numb
         fontWeight="700"
         fill={dominant?.color ?? '#9ca3af'}
       >
-        {dominant?.label ?? ''}
+        {dominant ? getSeverityLabel(dominant.label) : ''}
       </text>
       <text
         x={cx}
