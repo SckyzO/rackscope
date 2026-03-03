@@ -31,6 +31,15 @@ from rackscope.telemetry.prometheus import client as prom_client
 SEVERITY_ORDER = {"OK": 0, "UNKNOWN": 1, "WARN": 2, "CRIT": 3}
 
 
+def _parse_duration(duration: str) -> float:
+    """Parse Prometheus duration string to seconds. Returns 0.0 if invalid."""
+    match = re.match(r'^(\d+)([smhdwy])$', duration)
+    if not match:
+        return 0.0
+    value, unit = int(match.group(1)), match.group(2)
+    return float(value * {'s': 1, 'm': 60, 'h': 3600, 'd': 86400, 'w': 604800, 'y': 31536000}[unit])
+
+
 @dataclass
 class PlannerConfig:
     """Configuration for TelemetryPlanner batching and caching behaviour."""
@@ -67,6 +76,10 @@ class TelemetryPlanner:
     def __init__(self, config: Optional[PlannerConfig] = None) -> None:
         self.config = config or PlannerConfig()
         self._snapshot: Optional[PlannerSnapshot] = None
+        # Pending state: key = f"{check_id}:{instance_id}", value = severity string
+        self._pending_states: Dict[str, str] = {}
+        # When pending started: key = f"{check_id}:{instance_id}", value = monotonic timestamp
+        self._pending_since: Dict[str, float] = {}
 
     def update_config(self, config: PlannerConfig) -> None:
         """Replace configuration and invalidate the current snapshot."""
@@ -193,6 +206,46 @@ class TelemetryPlanner:
                     effective_scope = check.scope
 
                 severity = _evaluate_rules(check, item.get("value"))
+
+                # Debounce: if check has for_duration and severity is WARN/CRIT,
+                # only fire after duration has elapsed
+                if check.for_duration and severity in ("WARN", "CRIT"):
+                    pending_key = f"{check.id}:{key}"
+                    now = time.monotonic()
+                    for_seconds = _parse_duration(check.for_duration)
+
+                    if pending_key not in self._pending_states:
+                        # First time seeing this failure — start timer, keep current state (no fire)
+                        self._pending_states[pending_key] = severity
+                        self._pending_since[pending_key] = now
+                        severity = node_states.get(key, "UNKNOWN") if effective_scope == "node" else (
+                            chassis_states.get(key, "UNKNOWN") if effective_scope == "chassis" else rack_states.get(key, "UNKNOWN")
+                        )
+                    elif self._pending_states[pending_key] == severity:
+                        # Same severity still failing — check if duration elapsed
+                        if now - self._pending_since[pending_key] >= for_seconds:
+                            # Duration elapsed → fire! Clear pending state
+                            del self._pending_states[pending_key]
+                            del self._pending_since[pending_key]
+                            # severity remains as-is (WARN/CRIT) → fires
+                        else:
+                            # Still pending — hold previous state
+                            severity = node_states.get(key, "UNKNOWN") if effective_scope == "node" else (
+                                chassis_states.get(key, "UNKNOWN") if effective_scope == "chassis" else rack_states.get(key, "UNKNOWN")
+                            )
+                    else:
+                        # Severity changed — reset timer
+                        self._pending_states[pending_key] = severity
+                        self._pending_since[pending_key] = now
+                        severity = node_states.get(key, "UNKNOWN") if effective_scope == "node" else (
+                            chassis_states.get(key, "UNKNOWN") if effective_scope == "chassis" else rack_states.get(key, "UNKNOWN")
+                        )
+                else:
+                    # No for_duration or severity is OK/UNKNOWN — clear pending and fire immediately
+                    pending_key = f"{check.id}:{key}"
+                    self._pending_states.pop(pending_key, None)
+                    self._pending_since.pop(pending_key, None)
+                    # severity used as-is
 
                 if effective_scope == "node":
                     seen_nodes.add(key)

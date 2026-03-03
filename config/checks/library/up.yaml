@@ -3,6 +3,7 @@
 checks:
   - id: node_up
     name: Node up
+    for: null
     scope: node
     kind: core
     expr: up{job=~"$jobs",instance=~"$instances"}
@@ -14,6 +15,7 @@ checks:
 
   - id: node_recent_reboot
     name: Node recent reboot
+    for: null
     scope: node
     kind: core
     expr: time() - node_boot_time_seconds{instance=~"$instances"}

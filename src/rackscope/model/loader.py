@@ -291,7 +291,7 @@ def _load_checks_file(path: Path, library: ChecksLibrary) -> None:
 
     for c in checks:
         try:
-            library.checks.append(CheckDefinition(**c))
+            library.checks.append(CheckDefinition.model_validate(c))
         except Exception as e:
             logger.warning(f"Failed to load check in {path}: {e}")
 

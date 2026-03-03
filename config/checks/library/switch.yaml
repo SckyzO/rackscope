@@ -3,6 +3,7 @@
 checks:
   - id: switch_up
     name: Switch up
+    for: null
     scope: node
     kind: network
     expr: up{instance=~"$instances"} == 0
@@ -14,6 +15,7 @@ checks:
 
   - id: switch_temp_warn
     name: Switch temperature warn
+    for: "5m"
     scope: node
     kind: network
     expr: node_temperature_celsius{instance=~"$instances"}
@@ -25,6 +27,7 @@ checks:
 
   - id: switch_temp_crit
     name: Switch temperature crit
+    for: "5m"
     scope: node
     kind: network
     expr: node_temperature_celsius{instance=~"$instances"}
@@ -36,6 +39,7 @@ checks:
 
   - id: switch_power_warn
     name: Switch power warn
+    for: "5m"
     scope: node
     kind: network
     expr: node_power_watts{instance=~"$instances"}
@@ -47,6 +51,7 @@ checks:
 
   - id: switch_power_crit
     name: Switch power crit
+    for: "5m"
     scope: node
     kind: network
     expr: node_power_watts{instance=~"$instances"}

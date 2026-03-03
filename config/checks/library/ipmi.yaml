@@ -3,6 +3,7 @@
 checks:
   - id: ipmi_fan_speed_state
     name: IPMI fan speed state
+    for: "1m"
     scope: node
     kind: ipmi
     expr: ipmi_fan_speed_state{instance=~"$instances"}
@@ -17,6 +18,7 @@ checks:
 
   - id: ipmi_power_state
     name: IPMI power state
+    for: "1m"
     scope: node
     kind: ipmi
     expr: ipmi_power_state{instance=~"$instances"}
@@ -31,6 +33,7 @@ checks:
 
   - id: ipmi_sensor_state
     name: IPMI sensor state
+    for: "1m"
     scope: node
     kind: ipmi
     expr: ipmi_sensor_state{name!~"Low Security Jmp|Phy Presence Jmp|Dongle Cable",instance=~"$instances"}
@@ -45,6 +48,7 @@ checks:
 
   - id: ipmi_temperature_state
     name: IPMI temperature state
+    for: "5m"
     scope: node
     kind: ipmi
     expr: ipmi_temperature_state{instance=~"$instances"}
@@ -59,6 +63,7 @@ checks:
 
   - id: ipmi_up
     name: IPMI exporter up
+    for: null
     scope: node
     kind: ipmi
     expr: ipmi_up{instance=~"$instances"}
@@ -70,6 +75,7 @@ checks:
 
   - id: ipmi_voltage_state
     name: IPMI voltage state
+    for: "1m"
     scope: node
     kind: ipmi
     expr: ipmi_voltage_state{instance=~"$instances"}

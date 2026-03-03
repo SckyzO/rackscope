@@ -4,6 +4,7 @@
 checks:
   - id: sequana3_pressure
     name: Sequana3 pressure
+    for: "5m"
     scope: rack
     kind: sequana3
     selectors: ["sequana_rack_id"]
@@ -22,6 +23,7 @@ checks:
 
   - id: sequana3_leak
     name: Sequana3 leak sensor
+    for: null
     scope: rack
     kind: sequana3
     selectors: ["sequana_rack_id"]
@@ -37,6 +39,7 @@ checks:
 
   - id: sequana3_board_temperature
     name: Sequana3 board temperature
+    for: "5m"
     scope: rack
     kind: sequana3
     selectors: ["sequana_rack_id"]

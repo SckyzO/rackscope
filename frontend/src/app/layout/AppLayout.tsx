@@ -13,7 +13,6 @@ import { PlaylistCountdownBar } from '../components/PlaylistCountdown';
 import { AlertToastContainer } from '../components/AlertToastContainer';
 import { SetupWizard, LS_KEY as SETUP_LS_KEY } from '../components/SetupWizard';
 import { api } from '../../services/api';
-import type { ActiveAlert } from '../../types';
 import '../app.css';
 
 // ── MatrixBackground ──────────────────────────────────────────────────────────

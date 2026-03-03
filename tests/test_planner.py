@@ -278,3 +278,128 @@ async def test_no_threshold_single_crit_makes_parent_crit():
         snapshot = await planner.get_snapshot(topology, checks)
 
     assert snapshot.node_states.get("da01") == "CRIT"
+
+
+# ── for_duration debounce tests ───────────────────────────────────────────────
+
+import asyncio
+import time as _time
+
+
+def _make_for_check(check_id: str = "node_up", for_duration: str | None = None) -> ChecksLibrary:
+    """Helper: create a simple bool check with optional for_duration."""
+    check = CheckDefinition(
+        id=check_id,
+        name=check_id,
+        scope="node",
+        kind="server",
+        expr=f'up{{instance=~"$instances"}}',
+        output="bool",
+        for_duration=for_duration,
+        rules=[CheckRule(op="==", value=0, severity="CRIT")],
+    )
+    return ChecksLibrary(checks=[check])
+
+
+@pytest.mark.asyncio
+async def test_for_null_fires_immediately():
+    """for_duration: null → CRIT fires on first failing poll."""
+    topology = _make_topology("compute001")
+    checks = _make_for_check(for_duration=None)
+    planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
+
+    with patch("rackscope.telemetry.planner.prom_client") as mock_client:
+        mock_client.query = AsyncMock(
+            return_value=_prom_ok(
+                [{"metric": {"instance": "compute001"}, "value": [0, "0"]}]  # up=0 → CRIT
+            )
+        )
+        mock_client.record_planner_batch = lambda **_: None
+        snapshot = await planner.get_snapshot(topology, checks)
+
+    # for_duration: null → immediate CRIT
+    assert snapshot.node_states.get("compute001") == "CRIT"
+
+
+@pytest.mark.asyncio
+async def test_for_duration_pending_on_first_failure():
+    """for_duration: 5m → first failure starts timer, state stays as previous (UNKNOWN)."""
+    topology = _make_topology("compute001")
+    checks = _make_for_check(for_duration="5m")
+    planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
+
+    with patch("rackscope.telemetry.planner.prom_client") as mock_client:
+        mock_client.query = AsyncMock(
+            return_value=_prom_ok(
+                [{"metric": {"instance": "compute001"}, "value": [0, "0"]}]  # up=0 → CRIT
+            )
+        )
+        mock_client.record_planner_batch = lambda **_: None
+        snapshot = await planner.get_snapshot(topology, checks)
+
+    # First failure with for_duration: 5m → NOT CRIT yet (pending timer started)
+    assert snapshot.node_states.get("compute001") != "CRIT"
+    # Pending state recorded
+    assert "node_up:compute001" in planner._pending_states
+    assert planner._pending_states["node_up:compute001"] == "CRIT"
+
+
+@pytest.mark.asyncio
+async def test_for_duration_fires_after_elapsed():
+    """for_duration: 1s → fires after duration elapses."""
+    topology = _make_topology("compute001")
+    checks = _make_for_check(for_duration="1s")  # 1 second for fast test
+    planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
+
+    with patch("rackscope.telemetry.planner.prom_client") as mock_client:
+        mock_client.query = AsyncMock(
+            return_value=_prom_ok(
+                [{"metric": {"instance": "compute001"}, "value": [0, "0"]}]
+            )
+        )
+        mock_client.record_planner_batch = lambda **_: None
+
+        # First poll: starts pending timer
+        snapshot1 = await planner.get_snapshot(topology, checks)
+        assert snapshot1.node_states.get("compute001") != "CRIT"
+
+        # Wait 1.5s — duration elapsed
+        await asyncio.sleep(1.5)
+
+        # Second poll: duration elapsed → CRIT fires
+        snapshot2 = await planner.get_snapshot(topology, checks)
+
+    assert snapshot2.node_states.get("compute001") == "CRIT"
+    # Pending state cleared after firing
+    assert "node_up:compute001" not in planner._pending_states
+
+
+@pytest.mark.asyncio
+async def test_for_duration_clears_on_recovery():
+    """Pending state clears when check recovers before duration elapses."""
+    topology = _make_topology("compute001")
+    checks = _make_for_check(for_duration="5m")
+    planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
+
+    with patch("rackscope.telemetry.planner.prom_client") as mock_client:
+        # First poll: failing
+        mock_client.query = AsyncMock(
+            return_value=_prom_ok(
+                [{"metric": {"instance": "compute001"}, "value": [0, "0"]}]
+            )
+        )
+        mock_client.record_planner_batch = lambda **_: None
+        await planner.get_snapshot(topology, checks)
+        assert "node_up:compute001" in planner._pending_states
+
+        # Second poll: recovered
+        mock_client.query = AsyncMock(
+            return_value=_prom_ok(
+                [{"metric": {"instance": "compute001"}, "value": [0, "1"]}]  # up=1 → OK
+            )
+        )
+        snapshot = await planner.get_snapshot(topology, checks)
+
+    # Recovered → OK, pending cleared
+    assert snapshot.node_states.get("compute001") == "OK"
+    assert "node_up:compute001" not in planner._pending_states

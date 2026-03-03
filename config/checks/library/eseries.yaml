@@ -4,6 +4,7 @@
 checks:
   - id: eseries_exporter_collect_error
     name: E-Series exporter collect error
+    for: "1m"
     scope: node
     kind: eseries
     expr: eseries_exporter_collect_error{instance=~"$instances"}
@@ -15,6 +16,7 @@ checks:
 
   - id: eseries_storage_system_status
     name: E-Series storage system health
+    for: "1m"
     scope: node
     kind: eseries
     expr: eseries_storage_system_status{status!~"(optimal)",instance=~"$instances"}
@@ -26,6 +28,7 @@ checks:
 
   - id: eseries_drive_status
     name: E-Series drive health
+    for: "5m"
     scope: node
     kind: eseries
     expr: eseries_drive_status{status!~"(optimal)",instance=~"$instances"}
@@ -42,6 +45,7 @@ checks:
 
   - id: eseries_battery_status
     name: E-Series battery health
+    for: "5m"
     scope: node
     kind: eseries
     expr: eseries_battery_status{status!~"(optimal|learning)",instance=~"$instances"}
@@ -53,6 +57,7 @@ checks:
 
   - id: eseries_fan_status
     name: E-Series fan health
+    for: "1m"
     scope: node
     kind: eseries
     expr: eseries_fan_status{status!~"(optimal)",instance=~"$instances"}
@@ -64,6 +69,7 @@ checks:
 
   - id: eseries_power_supply_status
     name: E-Series power supply health
+    for: "1m"
     scope: node
     kind: eseries
     expr: eseries_power_supply_status{status!~"(optimal)",instance=~"$instances"}
@@ -75,6 +81,7 @@ checks:
 
   - id: eseries_cache_memory_dimm_status
     name: E-Series cache memory DIMM health
+    for: "5m"
     scope: node
     kind: eseries
     expr: eseries_cache_memory_dimm_status{status!~"(optimal)",instance=~"$instances"}
@@ -86,6 +93,7 @@ checks:
 
   - id: eseries_thermal_sensor_status
     name: E-Series thermal sensor health
+    for: "5m"
     scope: node
     kind: eseries
     expr: eseries_thermal_sensor_status{status!~"(optimal)",instance=~"$instances"}

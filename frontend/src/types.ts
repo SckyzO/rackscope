@@ -193,6 +193,7 @@ export interface CheckDefinition {
     severity: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
   }>;
   kind?: string;
+  for?: string | null;
 }
 
 export interface ChecksLibrary {

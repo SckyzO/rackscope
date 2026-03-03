@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import re
 from typing import List, Optional, Literal, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 
 class CheckRule(BaseModel):
@@ -12,6 +13,8 @@ class CheckRule(BaseModel):
 
 
 class CheckDefinition(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     id: str
     name: str
     scope: Literal["node", "chassis", "rack"]
@@ -46,6 +49,22 @@ class CheckDefinition(BaseModel):
             "are CRIT; fewer CRIT virtual nodes result in WARN instead."
         ),
     )
+    for_duration: Optional[str] = Field(
+        alias='for',
+        default=None,
+        description="Prometheus duration before alert fires (e.g. '5m'). null = immediate.",
+    )
+
+    @field_validator('for_duration')
+    @classmethod
+    def _validate_for_duration(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if not re.match(r'^\d+[smhdwy]$', v):
+            raise ValueError(
+                f"Invalid duration '{v}'. Use Prometheus format: 30s, 1m, 5m, 1h"
+            )
+        return v
 
 
 class ChecksLibrary(BaseModel):

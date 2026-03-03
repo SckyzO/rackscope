@@ -50,6 +50,7 @@ type CheckDraft = {
   scope: string;
   output: string;
   expr: string;
+  forDuration: string;
   rules: RuleDraft[];
 };
 
@@ -128,6 +129,7 @@ const toDraft = (c: CheckDefinition): CheckDraft => ({
   scope: c.scope,
   output: c.output ?? 'bool',
   expr: c.expr,
+  forDuration: c.for ?? '',
   rules: (c.rules ?? []).map((r) => ({ op: r.op, value: String(r.value), severity: r.severity })),
 });
 
@@ -138,6 +140,7 @@ const draftToCheck = (d: CheckDraft): Record<string, unknown> => ({
   scope: d.scope,
   output: d.output,
   expr: d.expr.trim(),
+  for: d.forDuration.trim() || null,
   rules: d.rules.map((r) => ({
     op: r.op,
     value: isNaN(Number(r.value)) ? r.value : Number(r.value),
@@ -739,6 +742,20 @@ const EditorPanel = ({
                 </select>
               </div>
             </div>
+            <div>
+              <label className={labelCls}>
+                For duration
+                <span className="ml-2 text-[10px] font-normal text-gray-400 dark:text-gray-600">
+                  debounce before firing (30s · 1m · 5m · 10m · 1h) — leave empty for immediate
+                </span>
+              </label>
+              <input
+                value={draft.forDuration}
+                onChange={(e) => update('forDuration', e.target.value)}
+                placeholder="null (immediate)"
+                className={inputCls}
+              />
+            </div>
             {validationErrors.length > 0 &&
               validationErrors.map((msg, i) => (
                 <p
@@ -1073,6 +1090,7 @@ const NewCheckModal = ({
           scope: form.scope,
           output: form.output,
           expr: form.expr.trim(),
+          forDuration: '',
           rules: [{ op: '==', value: '0', severity: 'CRIT' }],
         },
         targetFile
