@@ -50,6 +50,15 @@ const sidebars = {
     'architecture/dashboard-widgets',
   ],
 
+  designSystem: [
+    'design-system/overview',
+    'design-system/page-actions',
+    'design-system/forms',
+    'design-system/status',
+    'design-system/overlays',
+    'design-system/feedback',
+  ],
+
   plugins: [
     'plugins/overview',
     'plugins/simulator',
