@@ -19,7 +19,7 @@ import type { PasswordPolicy } from '../../contexts/AuthContext';
 import { useAvatar, resizeAvatar } from '../../hooks/useAvatar';
 import { usePageTitle } from '../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from './templates/EmptyPage';
-import { SettingField } from '../components/SettingTooltip';
+import { TooltipHelp } from '../components/ui/Tooltip';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -130,7 +130,11 @@ const PwInput = ({
   autoComplete: string;
   required?: boolean;
 }) => (
-  <SettingField label={label} tooltip={tooltip}>
+  <div>
+    <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+      {label}
+      <TooltipHelp text={tooltip} />
+    </label>
     <div className="relative">
       <input
         type={show ? 'text' : 'password'}
@@ -151,7 +155,7 @@ const PwInput = ({
         {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
       </button>
     </div>
-  </SettingField>
+  </div>
 );
 
 // ── Avatar section ────────────────────────────────────────────────────────────
@@ -283,10 +287,11 @@ const ChangeUsernameForm = () => {
         </span>
       </div>
 
-      <SettingField
-        label="New username"
-        tooltip="Your display name shown in the header, audit logs, and activity feed. Must be unique."
-      >
+      <div>
+        <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+          New username
+          <TooltipHelp text="Your display name shown in the header, audit logs, and activity feed. Must be unique." />
+        </label>
         <input
           type="text"
           value={newUsername}
@@ -295,13 +300,14 @@ const ChangeUsernameForm = () => {
           required
           className={INPUT_CLS}
         />
-      </SettingField>
+      </div>
 
       {authConfigured && (
-        <SettingField
-          label="Current password"
-          tooltip="Required to verify your identity before changing your username."
-        >
+        <div>
+          <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+            Current password
+            <TooltipHelp text="Required to verify your identity before changing your username." />
+          </label>
           <div className="relative">
             <input
               type={showPw ? 'text' : 'password'}
@@ -322,7 +328,7 @@ const ChangeUsernameForm = () => {
               {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-        </SettingField>
+        </div>
       )}
 
       <div className="flex items-center gap-3 pt-1">

@@ -15,7 +15,6 @@ import { FormToggle } from '../common/FormToggle';
 import { HUDTooltip } from '../../HUDTooltip';
 import { Link } from 'react-router-dom';
 import type { ConfigDraft } from '../useSettingsConfig';
-import { SettingField } from '../../../app/components/SettingTooltip';
 import { TooltipHelp } from '../../../app/components/ui/Tooltip';
 import { StepperInput } from '../../../app/components/forms/StepperInput';
 import { SectionCard } from '../../../app/pages/templates/EmptyPage';
@@ -256,10 +255,11 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
         iconBg="bg-sky-50 dark:bg-sky-500/10"
       >
         <div className="grid grid-cols-2 gap-4">
-          <SettingField
-            label="Default zoom"
-            tooltip="Initial zoom level when the world map loads. 2 = world view, 7 = country level."
-          >
+          <div>
+            <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+              Default zoom
+              <TooltipHelp text="Initial zoom level when the world map loads. 2 = world view, 7 = country level." />
+            </label>
             <StepperInput
               value={Number(m.default_zoom ?? 4)}
               onChange={(v) => setMap('default_zoom', String(v))}
@@ -268,8 +268,12 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
               step={1}
               className="w-full"
             />
-          </SettingField>
-          <SettingField label="Min / Max zoom" tooltip="Users cannot zoom below min or above max.">
+          </div>
+          <div>
+            <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+              Min / Max zoom
+              <TooltipHelp text="Users cannot zoom below min or above max." />
+            </label>
             <div className="flex gap-2">
               <StepperInput
                 value={Number(m.min_zoom ?? 2)}
@@ -288,11 +292,12 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
                 className="w-full"
               />
             </div>
-          </SettingField>
-          <SettingField
-            label="Center latitude"
-            tooltip="Default map center latitude (-90 to 90). 20 = slightly north of equator."
-          >
+          </div>
+          <div>
+            <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+              Center latitude
+              <TooltipHelp text="Default map center latitude (-90 to 90). 20 = slightly north of equator." />
+            </label>
             <StepperInput
               value={Number(m.center_lat ?? 20)}
               onChange={(v) => setMap('center_lat', String(v))}
@@ -301,11 +306,12 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
               step={0.1}
               className="w-full"
             />
-          </SettingField>
-          <SettingField
-            label="Center longitude"
-            tooltip="Default map center longitude (-180 to 180). 0 = prime meridian."
-          >
+          </div>
+          <div>
+            <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+              Center longitude
+              <TooltipHelp text="Default map center longitude (-180 to 180). 0 = prime meridian." />
+            </label>
             <StepperInput
               value={Number(m.center_lon ?? 0)}
               onChange={(v) => setMap('center_lon', String(v))}
@@ -314,7 +320,7 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
               step={0.1}
               className="w-full"
             />
-          </SettingField>
+          </div>
         </div>
         <div className="mt-4">
           <FormSelect

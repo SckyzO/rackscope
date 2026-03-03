@@ -12,7 +12,7 @@ import {
   GripVertical,
   Save,
 } from 'lucide-react';
-import { SettingField } from '../../../app/components/SettingTooltip';
+import { TooltipHelp } from '../../../app/components/ui/Tooltip';
 import { api } from '../../../services/api';
 import type { SimulatorScenario, SimulatorOverride } from '../../../types';
 import { FormField } from '../common/FormField';
@@ -874,51 +874,55 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
               <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase dark:text-gray-600">
                 Prometheus Source
               </p>
-              <SettingField
-                label="Metric name"
-                tooltip="Prometheus metric name that exposes Slurm node statuses. Default: slurm_node_status"
-              >
+              <div>
+                <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Metric name
+                  <TooltipHelp text="Prometheus metric name that exposes Slurm node statuses. Default: slurm_node_status" />
+                </label>
                 <input
                   value={draft.plugins.slurm.metric}
                   onChange={(e) => updateSlurm('metric', e.target.value)}
                   placeholder="slurm_node_status"
                   className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                 />
-              </SettingField>
+              </div>
               <div className="grid grid-cols-3 gap-3">
-                <SettingField
-                  label="Node label"
-                  tooltip="Prometheus label that identifies the node name (e.g. node, hostname)."
-                >
+                <div>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Node label
+                    <TooltipHelp text="Prometheus label that identifies the node name (e.g. node, hostname)." />
+                  </label>
                   <input
                     value={draft.plugins.slurm.label_node}
                     onChange={(e) => updateSlurm('label_node', e.target.value)}
                     placeholder="node"
                     className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                   />
-                </SettingField>
-                <SettingField
-                  label="Status label"
-                  tooltip="Prometheus label that carries the Slurm node status value (e.g. status, state)."
-                >
+                </div>
+                <div>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Status label
+                    <TooltipHelp text="Prometheus label that carries the Slurm node status value (e.g. status, state)." />
+                  </label>
                   <input
                     value={draft.plugins.slurm.label_status}
                     onChange={(e) => updateSlurm('label_status', e.target.value)}
                     placeholder="status"
                     className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                   />
-                </SettingField>
-                <SettingField
-                  label="Partition label"
-                  tooltip="Prometheus label for the Slurm partition name (e.g. partition, queue)."
-                >
+                </div>
+                <div>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Partition label
+                    <TooltipHelp text="Prometheus label for the Slurm partition name (e.g. partition, queue)." />
+                  </label>
                   <input
                     value={draft.plugins.slurm.label_partition}
                     onChange={(e) => updateSlurm('label_partition', e.target.value)}
                     placeholder="partition"
                     className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                   />
-                </SettingField>
+                </div>
               </div>
             </div>
 
@@ -928,10 +932,11 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 Node Filtering
               </p>
 
-              <SettingField
-                label="Device roles"
-                tooltip="Only devices whose template role matches one of these values will appear in Slurm views. Leave empty to match all."
-              >
+              <div>
+                <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Device roles
+                  <TooltipHelp text="Only devices whose template role matches one of these values will appear in Slurm views. Leave empty to match all." />
+                </label>
                 {/* TagInput — same design as /ui/tag-input */}
                 <div
                   onClick={() => roleInputRef.current?.focus()}
@@ -982,7 +987,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                     }
                   />
                 </div>
-              </SettingField>
+              </div>
 
               <FormToggle
                 label="Include unlabeled nodes"
@@ -991,17 +996,18 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 onChange={(value) => updateSlurm('include_unlabeled', value)}
               />
 
-              <SettingField
-                label="Node mapping file"
-                tooltip="YAML file mapping Slurm node names / patterns to topology instance names. Supports wildcards: n* → compute*."
-              >
+              <div>
+                <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Node mapping file
+                  <TooltipHelp text="YAML file mapping Slurm node names / patterns to topology instance names. Supports wildcards: n* → compute*." />
+                </label>
                 <input
                   value={draft.plugins.slurm.mapping_path}
                   onChange={(e) => updateSlurm('mapping_path', e.target.value)}
                   placeholder="config/plugins/slurm/node_mapping.yaml"
                   className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                 />
-              </SettingField>
+              </div>
 
               {/* Mapping editor */}
               <SlurmMappingEditor mappingPath={draft.plugins.slurm.mapping_path} />
