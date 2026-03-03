@@ -17,10 +17,10 @@
  * All grids use gap-4. Swap to gap-5 or gap-6 for more breathing room.
  */
 
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Plus,
-  RefreshCw,
   SlidersHorizontal,
   AlertCircle,
   InboxIcon,
@@ -34,8 +34,21 @@ import {
   Building2,
   Box,
   Cpu,
+  Pencil,
+  Trash2,
+  Download,
+  Upload,
 } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
+import {
+  RefreshButton,
+  useAutoRefresh,
+  REFRESH_OPTIONS,
+} from '../../components/RefreshButton';
+import {
+  PageActionButton,
+  PageActionIconButton,
+} from '../../components/PageActionButton';
 
 // ── Shared sub-components ─────────────────────────────────────────────────────
 
@@ -525,6 +538,123 @@ export const EmptyPage = () => {
 // Shows every building block available in this file.
 // Do NOT copy this — copy EmptyPage above instead.
 
+// ── Page Actions & Refresh showcase ──────────────────────────────────────────
+//
+// Reference section for all standard page-level interactive patterns.
+// Import PageActionButton, PageActionIconButton, RefreshButton from components/.
+
+const PageActionsShowcase = () => {
+  const [refreshing, setRefreshing] = useState(false);
+  const fakeRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1200);
+  };
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('design-system-demo', fakeRefresh);
+
+  return (
+    <div className="space-y-2">
+      <LayoutLabel>Page actions — standard buttons and refresh split button</LayoutLabel>
+      <SectionCard title="PageActionButton variants" desc="Import from components/PageActionButton">
+        {/* Pattern 1 — monitoring page toolbar */}
+        <div className="space-y-5">
+          <div className="space-y-1.5">
+            <p className="text-xs text-gray-400 dark:text-gray-600">
+              Monitoring page (Configure + Refresh)
+            </p>
+            <div className="flex items-center gap-2">
+              <PageActionButton icon={SlidersHorizontal}>Configure</PageActionButton>
+              <RefreshButton
+                refreshing={refreshing}
+                autoRefreshMs={autoRefreshMs}
+                onRefresh={fakeRefresh}
+                onIntervalChange={onIntervalChange}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-xs text-gray-400 dark:text-gray-600">
+              Editor page (New primary + icon-only settings)
+            </p>
+            <div className="flex items-center gap-2">
+              <PageActionIconButton icon={SlidersHorizontal} title="Configure" />
+              <PageActionButton icon={Plus} variant="primary">
+                New template
+              </PageActionButton>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-xs text-gray-400 dark:text-gray-600">All variants</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <PageActionButton icon={SlidersHorizontal}>outline (default)</PageActionButton>
+              <PageActionButton icon={Plus} variant="primary">primary</PageActionButton>
+              <PageActionButton icon={Pencil} variant="brand-outline">brand-outline</PageActionButton>
+              <PageActionButton icon={Trash2} variant="danger-outline">danger-outline</PageActionButton>
+              <PageActionIconButton icon={Download} title="Download" />
+              <PageActionIconButton icon={Upload} title="Upload" variant="primary" />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-xs text-gray-400 dark:text-gray-600">
+              Disabled state (add disabled prop)
+            </p>
+            <div className="flex items-center gap-2">
+              <PageActionButton icon={SlidersHorizontal} disabled>Configure</PageActionButton>
+              <PageActionButton icon={Plus} variant="primary" disabled>New</PageActionButton>
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="RefreshButton" desc="Import from components/RefreshButton — persists interval per pageKey in localStorage">
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <p className="text-xs text-gray-400 dark:text-gray-600">
+              Split button — left triggers manual refresh, right opens interval picker
+            </p>
+            <RefreshButton
+              refreshing={refreshing}
+              autoRefreshMs={autoRefreshMs}
+              onRefresh={fakeRefresh}
+              onIntervalChange={onIntervalChange}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-xs text-gray-400 dark:text-gray-600">
+              Available intervals (Off / 15s / 30s / 1m / 2m / 5m / 10m / 30m / 1h)
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {REFRESH_OPTIONS.map((o) => (
+                <span
+                  key={o.ms}
+                  className="rounded-full border border-gray-200 px-2 py-0.5 font-mono text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400"
+                >
+                  {o.label}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-xs text-gray-400 dark:text-gray-600">useAutoRefresh hook usage</p>
+            <pre className="overflow-x-auto rounded-lg bg-gray-50 px-4 py-3 font-mono text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+              {`const { autoRefreshMs, onIntervalChange } = useAutoRefresh('my-page', loadData);
+
+<RefreshButton
+  refreshing={loading}
+  autoRefreshMs={autoRefreshMs}
+  onRefresh={loadData}
+  onIntervalChange={onIntervalChange}
+/>`}
+            </pre>
+          </div>
+        </div>
+      </SectionCard>
+    </div>
+  );
+};
+
 export const TemplatesShowcase = () => {
   usePageTitle('Design System');
 
@@ -536,23 +666,14 @@ export const TemplatesShowcase = () => {
         description="All Rackscope building blocks — reference for new pages."
         actions={
           <>
-            <button
-              title="Settings"
-              className="flex items-center justify-center rounded-xl border border-gray-200 p-2 text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-            </button>
-            <button className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5">
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </button>
-            <button className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors">
-              <Plus className="h-4 w-4" />
-              New
-            </button>
+            <PageActionIconButton icon={SlidersHorizontal} title="Configure" />
+            <PageActionButton icon={Plus} variant="primary">New</PageActionButton>
           </>
         }
       />
+
+      {/* ── Page Actions & Refresh ── */}
+      <PageActionsShowcase />
 
       {/* ── Centered layout ── */}
       <div className="space-y-2">
