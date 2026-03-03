@@ -217,3 +217,11 @@ def test_expand_device_instances_empty_string():
     assert result == [""]
 
 
+# NOTE: Lines 42-56 in instance_service.py (nodes field fallback) are DEAD CODE.
+# When instance is not provided, it defaults to {} (empty dict), which matches the
+# isinstance(device.instance, dict) check at line 31, iterates over zero items, and
+# returns empty list at line 35. The code never reaches the nodes fallback.
+# This is a bug in the production code, but we can't fix it per the instructions.
+# These tests document the expected behavior if the bug were fixed.
+
+

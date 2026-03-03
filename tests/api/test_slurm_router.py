@@ -87,6 +87,77 @@ def mock_slurm_results():
     ]
 
 
+def test_slurm_plugin_config_loading():
+    """Test that SlurmPlugin loads configuration correctly."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+    assert plugin.plugin_id == "slurm"
+    assert plugin.plugin_name == "Slurm Workload"
+    assert plugin.version == "1.0.0"
+
+
+def test_slurm_plugin_metrics_catalog_loading(tmp_path):
+    """Test that SlurmPlugin can load metrics catalog files."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    # Test with non-existent directory
+    plugin.config = SlurmPluginConfig(metrics_catalog_dir=str(tmp_path / "nonexistent"))
+    metrics = plugin._load_metrics_catalog()
+    assert metrics == []
+
+    # Test with empty directory
+    catalog_dir = tmp_path / "metrics"
+    catalog_dir.mkdir()
+    plugin.config = SlurmPluginConfig(
+        metrics_catalog_dir=str(catalog_dir),
+        metrics_catalogs=[]
+    )
+    metrics = plugin._load_metrics_catalog()
+    assert metrics == []
+
+
+def test_slurm_plugin_list_catalog_files(tmp_path):
+    """Test that SlurmPlugin can list catalog files."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    # Test with non-existent directory
+    plugin.config = SlurmPluginConfig(metrics_catalog_dir=str(tmp_path / "nonexistent"))
+    files = plugin._list_catalog_files()
+    assert files == []
+
+    # Test with directory containing YAML files
+    catalog_dir = tmp_path / "metrics"
+    catalog_dir.mkdir()
+    (catalog_dir / "test1.yaml").write_text("metrics: []")
+    (catalog_dir / "test2.yaml").write_text("metrics: []")
+
+    plugin.config = SlurmPluginConfig(metrics_catalog_dir=str(catalog_dir))
+    files = plugin._list_catalog_files()
+    assert len(files) == 2
+    assert "test1.yaml" in files
+    assert "test2.yaml" in files
+
+
+def test_slurm_plugin_menu_sections():
+    """Test that SlurmPlugin registers menu sections."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    sections = plugin.register_menu_sections()
+
+    # May be empty if plugin is disabled
+    if len(sections) == 0:
+        return
+
+    # Should have a Workload section
+    workload_section = next((s for s in sections if s.id == "workload"), None)
+    assert workload_section is not None
+    assert workload_section.label == "Workload"
+    assert len(workload_section.items) > 0
+
+
 def test_get_slurm_room_nodes_success(
     mock_topology, mock_app_config, mock_slurm_results, mock_slurm_plugin_config
 ):

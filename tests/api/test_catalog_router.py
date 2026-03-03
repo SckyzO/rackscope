@@ -546,3 +546,177 @@ def test_validate_device_template_invalid_layout():
     assert response.status_code == 400
     detail = response.json()["detail"]
     assert "errors" in detail
+
+
+def test_delete_device_template_success(mock_app_config, temp_templates_dir):
+    """Test deleting an existing device template."""
+    import rackscope.api.app as app_module
+
+    # Create a template file
+    device_dir = temp_templates_dir / "devices" / "server"
+    device_dir.mkdir(parents=True)
+    device_file = device_dir / "test_delete.yaml"
+    device_file.write_text(
+        yaml.safe_dump(
+            {
+                "templates": [
+                    {
+                        "id": "test_delete",
+                        "name": "To Delete",
+                        "type": "server",
+                        "u_height": 1,
+                        "layout": {"type": "grid", "rows": 1, "cols": 1, "matrix": [[1]]},
+                    }
+                ]
+            }
+        )
+    )
+
+    app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
+    app_module.CATALOG = None
+
+    # Delete the template
+    response = client.delete("/api/catalog/templates/device/test_delete")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["deleted"] == "test_delete"
+
+    # Verify file was deleted
+    assert not device_file.exists()
+
+    app.dependency_overrides.clear()
+
+
+def test_delete_device_template_not_found(mock_app_config):
+    """Test deleting a non-existent device template returns 404."""
+    import rackscope.api.app as app_module
+
+    app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
+    app_module.CATALOG = None
+
+    response = client.delete("/api/catalog/templates/device/nonexistent_template")
+
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"].lower()
+
+    app.dependency_overrides.clear()
+
+
+def test_create_rack_component_template_success(mock_app_config, temp_templates_dir):
+    """Test creating a new rack component template."""
+    import rackscope.api.app as app_module
+
+    app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
+    app.dependency_overrides[get_catalog_optional] = override_catalog(None)
+    app_module.CATALOG = None
+
+    response = client.post(
+        "/api/catalog/templates",
+        json={
+            "kind": "rack_component",
+            "template": {
+                "id": "test_pdu",
+                "name": "Test PDU",
+                "type": "pdu",
+                "location": "side",
+                "u_height": 42,
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == "test_pdu"
+    assert data["name"] == "Test PDU"
+
+    # Verify file was created
+    comp_file = temp_templates_dir / "rack_components" / "test_pdu.yaml"
+    assert comp_file.exists()
+    file_data = yaml.safe_load(comp_file.read_text())
+    assert file_data["rack_component_templates"][0]["id"] == "test_pdu"
+
+    app.dependency_overrides.clear()
+
+
+def test_create_rack_component_template_already_exists(mock_app_config, temp_templates_dir):
+    """Test creating duplicate rack component template returns 400."""
+    import rackscope.api.app as app_module
+
+    # Create existing file
+    comp_dir = temp_templates_dir / "rack_components"
+    comp_dir.mkdir(parents=True)
+    comp_file = comp_dir / "test_pdu.yaml"
+    comp_file.write_text(
+        yaml.safe_dump({"rack_component_templates": [{"id": "test_pdu", "name": "PDU"}]})
+    )
+
+    app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
+    app.dependency_overrides[get_catalog_optional] = override_catalog(None)
+    app_module.CATALOG = None
+
+    response = client.post(
+        "/api/catalog/templates",
+        json={
+            "kind": "rack_component",
+            "template": {
+                "id": "test_pdu",
+                "name": "Duplicate PDU",
+                "type": "pdu",
+                "location": "side",
+                "u_height": 42,
+            },
+        },
+    )
+
+    assert response.status_code == 400
+    assert "already exists" in response.json()["detail"]
+
+    app.dependency_overrides.clear()
+
+
+def test_update_rack_component_template_success(mock_app_config, temp_templates_dir):
+    """Test updating an existing rack component template."""
+    import rackscope.api.app as app_module
+
+    # Create existing template file
+    comp_dir = temp_templates_dir / "rack_components"
+    comp_dir.mkdir(parents=True)
+    comp_file = comp_dir / "test_pdu.yaml"
+    comp_file.write_text(
+        yaml.safe_dump(
+            {
+                "rack_component_templates": [
+                    {"id": "test_pdu", "name": "Old PDU", "type": "pdu", "location": "side", "u_height": 42}
+                ]
+            }
+        )
+    )
+
+    app.dependency_overrides[get_app_config] = override_app_config(mock_app_config)
+    app_module.CATALOG = None
+
+    response = client.put(
+        "/api/catalog/templates",
+        json={
+            "kind": "rack_component",
+            "template": {
+                "id": "test_pdu",
+                "name": "Updated PDU",
+                "type": "pdu",
+                "location": "side",
+                "u_height": 42,
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Updated PDU"
+
+    # Verify file was updated
+    file_data = yaml.safe_load(comp_file.read_text())
+    assert file_data["rack_component_templates"][0]["name"] == "Updated PDU"
+
+    app.dependency_overrides.clear()
