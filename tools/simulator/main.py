@@ -767,6 +767,7 @@ def simulate():
                 return p.stat().st_mtime
             if p.is_dir():
                 mtimes = [f.stat().st_mtime for f in p.rglob("*.yaml")]
+                mtimes += [f.stat().st_mtime for f in p.rglob("*.yml")]
                 return max(mtimes) if mtimes else 0.0
         except Exception:
             pass
