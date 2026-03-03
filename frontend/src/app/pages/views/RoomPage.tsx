@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { HUDTooltip } from '../../../components/HUDTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
 import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import { PageActionButton } from '../../components/PageActionButton';
+import { PageActionButton, PageActionIconButton } from '../../components/PageActionButton';
 import { ZoomBar } from '../../components/ui/ZoomBar';
 import {
   Settings2,
@@ -1796,17 +1796,12 @@ export const RoomPage = () => {
             onReset={resetToDefault}
           />
 
-          <button
+          <PageActionIconButton
+            icon={viewLocked ? Lock : LockOpen}
+            variant={viewLocked ? 'brand-outline' : 'outline'}
             onClick={() => setViewLocked((v) => !v)}
             title={viewLocked ? 'Locked — click to unlock pan & zoom' : 'Lock pan & zoom'}
-            className={`flex items-center rounded-xl border px-2.5 py-2 transition-colors ${
-              viewLocked
-                ? 'border-amber-300 bg-amber-50 text-amber-600 dark:border-amber-700/50 dark:bg-amber-500/10 dark:text-amber-400'
-                : 'border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
-            }`}
-          >
-            {viewLocked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
-          </button>
+          />
 
           <PageActionButton
             icon={Settings2}
