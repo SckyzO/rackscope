@@ -18,6 +18,7 @@ import { api } from '../../../services/api';
 import type { Site, Room, RackTemplate } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from '../templates/EmptyPage';
+import { PageActionButton } from '../../components/PageActionButton';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type ViewLevel = 'sites' | 'rooms' | 'room-editor';
@@ -850,7 +851,8 @@ export const DatacenterEditorPage = () => {
           <div className="flex items-center gap-2">
             {/* Back button */}
             {level === 'rooms' && (
-              <button
+              <PageActionButton
+                icon={ArrowLeft}
                 title="Back to sites"
                 onClick={() => {
                   setLevel('sites');
@@ -858,25 +860,22 @@ export const DatacenterEditorPage = () => {
                   setCurrentRoom(null);
                   setCanvasIsDirty(false);
                 }}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
               >
-                <ArrowLeft className="h-4 w-4" />
                 Sites
-              </button>
+              </PageActionButton>
             )}
             {level === 'room-editor' && (
-              <button
+              <PageActionButton
+                icon={ArrowLeft}
                 title={`Back to rooms in ${currentSite?.name ?? ''}`}
                 onClick={() => {
                   setLevel('rooms');
                   setCurrentRoom(null);
                   setCanvasIsDirty(false);
                 }}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5"
               >
-                <ArrowLeft className="h-4 w-4" />
                 Rooms
-              </button>
+              </PageActionButton>
             )}
 
             {/* Save button — only when canvas has unsaved changes */}
@@ -900,34 +899,34 @@ export const DatacenterEditorPage = () => {
 
             {/* Primary action */}
             {level === 'sites' && (
-              <button
+              <PageActionButton
+                variant="primary"
+                icon={Plus}
                 title="Add a new datacenter site"
                 onClick={() => setAddingSite(true)}
-                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
               >
-                <Plus className="h-4 w-4" />
                 Add Site
-              </button>
+              </PageActionButton>
             )}
             {level === 'rooms' && currentSite && (
-              <button
+              <PageActionButton
+                variant="primary"
+                icon={Plus}
                 title={`Add a room to ${currentSite.name}`}
                 onClick={() => setAddingRoom(true)}
-                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
               >
-                <Plus className="h-4 w-4" />
                 Add Room
-              </button>
+              </PageActionButton>
             )}
             {level === 'room-editor' && currentRoom && (
-              <button
+              <PageActionButton
+                variant="primary"
+                icon={Plus}
                 title="Add a new aisle to this room"
                 onClick={() => setAddingAisle(true)}
-                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
               >
-                <Plus className="h-4 w-4" />
                 Add Aisle
-              </button>
+              </PageActionButton>
             )}
           </div>
         }

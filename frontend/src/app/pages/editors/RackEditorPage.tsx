@@ -34,6 +34,7 @@ import { api } from '../../../services/api';
 import type { Rack, Device, DeviceTemplate, RackTemplate } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
+import { PageActionButton } from '../../components/PageActionButton';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -748,13 +749,13 @@ export const RackEditorPage = () => {
                   Edit YAML
                 </button>
               )}
-              <button
+              <PageActionButton
+                variant="primary"
+                icon={Plus}
                 onClick={() => setWizardOpen(true)}
-                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white transition-colors"
               >
-                <Plus className="h-4 w-4" />
                 New Rack
-              </button>
+              </PageActionButton>
               {dirty && (
                 <button
                   onClick={() => void handleSave()}
