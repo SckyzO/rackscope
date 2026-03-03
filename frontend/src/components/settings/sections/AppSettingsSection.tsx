@@ -3,6 +3,7 @@ import { Info, FolderOpen, RefreshCw, Database, Zap, Bell } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
 import { FormSelect } from '../common/FormSelect';
+import { StepperInput } from '../../../app/components/forms/StepperInput';
 import type { ConfigDraft } from '../useSettingsConfig';
 
 interface AppSettingsSectionProps {
@@ -89,20 +90,34 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         iconColor="text-green-500"
         iconBg="bg-green-50 dark:bg-green-500/10"
       >
-        <FormField
-          label="Room State Refresh (seconds)"
-          tooltip="How often the backend refreshes room health states. Lower = more responsive but more Prometheus load. Default: 60."
-          value={draft.refresh.room_state_seconds}
-          onChange={(value) => update('refresh', 'room_state_seconds', value)}
-          type="number"
-        />
-        <FormField
-          label="Rack State Refresh (seconds)"
-          tooltip="How often rack details are refreshed. Default: 60."
-          value={draft.refresh.rack_state_seconds}
-          onChange={(value) => update('refresh', 'rack_state_seconds', value)}
-          type="number"
-        />
+        <div className="space-y-2">
+          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+            Room State Refresh (seconds)
+          </label>
+          <StepperInput
+            value={Number(draft.refresh.room_state_seconds)}
+            onChange={(v) => update('refresh', 'room_state_seconds', String(v))}
+            min={5}
+            max={3600}
+            step={5}
+            unit="s"
+            className="w-32"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+            Rack State Refresh (seconds)
+          </label>
+          <StepperInput
+            value={Number(draft.refresh.rack_state_seconds)}
+            onChange={(v) => update('refresh', 'rack_state_seconds', String(v))}
+            min={5}
+            max={3600}
+            step={5}
+            unit="s"
+            className="w-32"
+          />
+        </div>
       </FormSection>
 
       <FormSection
@@ -112,27 +127,48 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         iconColor="text-purple-500"
         iconBg="bg-purple-50 dark:bg-purple-500/10"
       >
-        <FormField
-          label="Legacy TTL (seconds)"
-          tooltip="Deprecated cache TTL kept for backward compatibility."
-          value={draft.cache.ttl_seconds}
-          onChange={(value) => update('cache', 'ttl_seconds', value)}
-          type="number"
-        />
-        <FormField
-          label="Health Checks TTL (seconds)"
-          tooltip="Cache duration for health check results from Prometheus. Default: 30."
-          value={draft.cache.health_checks_ttl_seconds}
-          onChange={(value) => update('cache', 'health_checks_ttl_seconds', value)}
-          type="number"
-        />
-        <FormField
-          label="Metrics TTL (seconds)"
-          tooltip="Cache duration for detailed metrics (temperature, power). Higher values reduce Prometheus load. Default: 120."
-          value={draft.cache.metrics_ttl_seconds}
-          onChange={(value) => update('cache', 'metrics_ttl_seconds', value)}
-          type="number"
-        />
+        <div className="space-y-2">
+          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+            Legacy TTL (seconds)
+          </label>
+          <StepperInput
+            value={Number(draft.cache.ttl_seconds)}
+            onChange={(v) => update('cache', 'ttl_seconds', String(v))}
+            min={5}
+            max={3600}
+            step={5}
+            unit="s"
+            className="w-32"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+            Health Checks TTL (seconds)
+          </label>
+          <StepperInput
+            value={Number(draft.cache.health_checks_ttl_seconds)}
+            onChange={(v) => update('cache', 'health_checks_ttl_seconds', String(v))}
+            min={5}
+            max={3600}
+            step={5}
+            unit="s"
+            className="w-32"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+            Metrics TTL (seconds)
+          </label>
+          <StepperInput
+            value={Number(draft.cache.metrics_ttl_seconds)}
+            onChange={(v) => update('cache', 'metrics_ttl_seconds', String(v))}
+            min={5}
+            max={3600}
+            step={10}
+            unit="s"
+            className="w-32"
+          />
+        </div>
       </FormSection>
 
       <FormSection
@@ -152,20 +188,33 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
             { value: 'top-right', label: 'Top right' },
           ]}
         />
-        <FormField
-          label="Display duration (seconds)"
-          tooltip="How long WARN/CRIT toasts stay visible before auto-dismissing. Default: 15."
-          value={draft.features.toast_duration_seconds}
-          onChange={(value) => update('features', 'toast_duration_seconds', value)}
-          type="number"
-        />
-        <FormField
-          label="Stack threshold"
-          tooltip="When more than N toasts appear at once, they collapse into a stacked view with a count indicator. Set to 0 to disable stacking."
-          value={draft.features.toast_stack_threshold}
-          onChange={(value) => update('features', 'toast_stack_threshold', value)}
-          type="number"
-        />
+        <div className="space-y-2">
+          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+            Display duration (seconds)
+          </label>
+          <StepperInput
+            value={Number(draft.features.toast_duration_seconds)}
+            onChange={(v) => update('features', 'toast_duration_seconds', String(v))}
+            min={3}
+            max={60}
+            step={1}
+            unit="s"
+            className="w-32"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+            Stack threshold
+          </label>
+          <StepperInput
+            value={Number(draft.features.toast_stack_threshold)}
+            onChange={(v) => update('features', 'toast_stack_threshold', String(v))}
+            min={0}
+            max={20}
+            step={1}
+            className="w-32"
+          />
+        </div>
       </FormSection>
 
       {/* Features — at the bottom of General */}

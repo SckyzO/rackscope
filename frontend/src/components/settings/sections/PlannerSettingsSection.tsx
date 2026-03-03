@@ -2,6 +2,7 @@ import React from 'react';
 import { Cpu } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
+import { StepperInput } from '../../../app/components/forms/StepperInput';
 import type { ConfigDraft } from '../useSettingsConfig';
 
 interface PlannerSettingsSectionProps {
@@ -42,20 +43,33 @@ export const PlannerSettingsSection: React.FC<PlannerSettingsSectionProps> = ({
           onChange={(value) => update('unknown_state', value)}
           placeholder="UNKNOWN"
         />
-        <FormField
-          label="Cache TTL (seconds)"
-          tooltip="How long the query planner caches batched health check results. Default: 60."
-          value={draft.planner.cache_ttl_seconds}
-          onChange={(value) => update('cache_ttl_seconds', value)}
-          type="number"
-        />
-        <FormField
-          label="Max IDs per Query"
-          tooltip="Maximum number of node IDs to batch in a single Prometheus query. Increase for large clusters. Default: 200."
-          value={draft.planner.max_ids_per_query}
-          onChange={(value) => update('max_ids_per_query', value)}
-          type="number"
-        />
+        <div className="space-y-2">
+          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+            Cache TTL (seconds)
+          </label>
+          <StepperInput
+            value={Number(draft.planner.cache_ttl_seconds)}
+            onChange={(v) => update('cache_ttl_seconds', String(v))}
+            min={5}
+            max={3600}
+            step={5}
+            unit="s"
+            className="w-32"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+            Max IDs per Query
+          </label>
+          <StepperInput
+            value={Number(draft.planner.max_ids_per_query)}
+            onChange={(v) => update('max_ids_per_query', String(v))}
+            min={10}
+            max={1000}
+            step={10}
+            className="w-32"
+          />
+        </div>
       </FormSection>
 
       <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">

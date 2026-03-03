@@ -3,6 +3,7 @@ import { Activity, Tag, KeyRound, ShieldCheck, Wifi, WifiOff, Loader2 } from 'lu
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
 import { FormToggle } from '../common/FormToggle';
+import { StepperInput } from '../../../app/components/forms/StepperInput';
 import type { ConfigDraft } from '../useSettingsConfig';
 
 interface TelemetrySettingsSectionProps {
@@ -138,20 +139,33 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
           )}
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <FormField
-            label="Heartbeat Interval (seconds)"
-            tooltip="How often the backend pings Prometheus to verify connectivity (seconds)."
-            value={draft.telemetry.prometheus_heartbeat_seconds}
-            onChange={(value) => update('prometheus_heartbeat_seconds', value)}
-            type="number"
-          />
-          <FormField
-            label="Latency Window (queries)"
-            tooltip="Number of samples used to compute average Prometheus latency."
-            value={draft.telemetry.prometheus_latency_window}
-            onChange={(value) => update('prometheus_latency_window', value)}
-            type="number"
-          />
+          <div className="space-y-2">
+            <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+              Heartbeat Interval (seconds)
+            </label>
+            <StepperInput
+              value={Number(draft.telemetry.prometheus_heartbeat_seconds)}
+              onChange={(v) => update('prometheus_heartbeat_seconds', String(v))}
+              min={5}
+              max={300}
+              step={5}
+              unit="s"
+              className="w-32"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+              Latency Window (queries)
+            </label>
+            <StepperInput
+              value={Number(draft.telemetry.prometheus_latency_window)}
+              onChange={(v) => update('prometheus_latency_window', String(v))}
+              min={5}
+              max={100}
+              step={5}
+              className="w-32"
+            />
+          </div>
         </div>
         <FormToggle
           label="Debug Stats"

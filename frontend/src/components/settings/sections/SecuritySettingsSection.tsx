@@ -1,6 +1,7 @@
 import { AlertTriangle, Type, Lock, ShieldAlert } from 'lucide-react';
 import { FormSection } from '../common/FormSection';
-import { SettingTooltip } from '../../../app/components/SettingTooltip';
+import { TooltipHelp } from '../../../app/components/ui/Tooltip';
+import { StepperInput } from '../../../app/components/forms/StepperInput';
 import type { ConfigDraft } from '../useSettingsConfig';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -28,7 +29,7 @@ const Toggle = ({
     <div>
       <p className="flex items-center gap-1.5 text-sm font-medium text-gray-800 dark:text-gray-200">
         {label}
-        {tooltip && <SettingTooltip text={tooltip} />}
+        {tooltip && <TooltipHelp text={tooltip} />}
       </p>
       {description && <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>}
     </div>
@@ -93,7 +94,7 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
           <div>
             <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
               Session duration
-              <SettingTooltip text="How long authentication tokens remain valid before requiring re-login." />
+              <TooltipHelp text="How long authentication tokens remain valid before requiring re-login." />
             </label>
             <div className="flex gap-2">
               {(['8h', '24h', 'unlimited'] as const).map((d) => (
@@ -133,29 +134,29 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
                 <Type className="h-3.5 w-3.5" /> Min length
-                <SettingTooltip text="Minimum number of characters required for the password." />
+                <TooltipHelp text="Minimum number of characters required for the password." />
               </label>
-              <input
-                type="number"
+              <StepperInput
+                value={Number(auth.policy_min_length)}
+                onChange={(v) => setAuth({ policy_min_length: String(v) })}
                 min={1}
                 max={64}
-                value={auth.policy_min_length}
-                onChange={(e) => setAuth({ policy_min_length: e.target.value })}
-                className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                step={1}
+                className="w-full"
               />
             </div>
             <div>
               <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
                 <Type className="h-3.5 w-3.5" /> Max length
-                <SettingTooltip text="Maximum password length allowed." />
+                <TooltipHelp text="Maximum password length allowed." />
               </label>
-              <input
-                type="number"
+              <StepperInput
+                value={Number(auth.policy_max_length)}
+                onChange={(v) => setAuth({ policy_max_length: String(v) })}
                 min={6}
                 max={512}
-                value={auth.policy_max_length}
-                onChange={(e) => setAuth({ policy_max_length: e.target.value })}
-                className="focus:border-brand-500 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                step={1}
+                className="w-full"
               />
             </div>
           </div>

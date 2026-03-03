@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
-import { SettingTooltip } from '../../../app/components/SettingTooltip';
+import { TooltipHelp } from '../../../app/components/ui/Tooltip';
 
 interface FormSelectOption {
   value: string;
@@ -34,7 +34,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
     <div className={`space-y-2 ${className}`}>
       <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
         {label}
-        {tooltip && <SettingTooltip text={tooltip} />}
+        {tooltip && <TooltipHelp text={tooltip} />}
       </label>
       <div className="relative">
         <select

@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  Save,
-  Check,
-  AlertCircle,
   Loader2,
   Settings2,
   Activity,
@@ -11,12 +8,12 @@ import {
   Shield,
   Layers,
   MonitorPlay,
-  AlertTriangle,
-  X,
   Palette,
 } from 'lucide-react';
 import { useSettingsConfig } from '../../../components/settings/useSettingsConfig';
 import { useAppConfigSafe } from '../../contexts/AppConfigContext';
+import { ConfirmationModal } from '../../components/layout/ConfirmationModal';
+import { StatefulSaveButton, type SaveState } from '../../components/ui/StatefulSaveButton';
 import { AppSettingsSection } from '../../../components/settings/sections/AppSettingsSection';
 import { AppearanceSettingsSection } from '../../components/settings/AppearanceSettingsSection';
 import { TelemetrySettingsSection } from '../../../components/settings/sections/TelemetrySettingsSection';
@@ -40,70 +37,6 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 ];
 
 const TAB_IDS = TABS.map((t) => t.id);
-
-// ── Unsaved Changes Modal ──────────────────────────────────────────────────────
-
-const UnsavedModal = ({
-  onSave,
-  onDiscard,
-  onStay,
-  saving,
-  message,
-}: {
-  onSave: () => void;
-  onDiscard: () => void;
-  onStay: () => void;
-  saving: boolean;
-  message?: string;
-}) => (
-  <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-    <div className="w-full max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
-      <div className="flex items-start gap-4 p-6">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-500/10">
-          <AlertTriangle className="h-5 w-5 text-amber-500" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Unsaved changes</h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {message ?? 'You have unsaved changes. What would you like to do?'}
-          </p>
-        </div>
-        <button
-          onClick={onStay}
-          className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
-      <div className="flex flex-nowrap items-center justify-end gap-2 border-t border-gray-100 px-6 py-4 dark:border-gray-800">
-        <button
-          onClick={onStay}
-          className="shrink-0 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-        >
-          Stay
-        </button>
-        <button
-          onClick={onDiscard}
-          className="shrink-0 rounded-xl border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700/40 dark:text-red-400 dark:hover:bg-red-500/10"
-        >
-          Discard
-        </button>
-        <button
-          onClick={onSave}
-          disabled={saving}
-          className="bg-brand-500 hover:bg-brand-600 flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-white disabled:opacity-70"
-        >
-          {saving ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Save className="h-3.5 w-3.5" />
-          )}
-          Save &amp; go
-        </button>
-      </div>
-    </div>
-  </div>
-);
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
@@ -240,31 +173,16 @@ export const SettingsPage = () => {
     setShowNavModal(false);
   };
 
-  const saveBtn = saving
-    ? {
-        icon: <Loader2 className="h-4 w-4 animate-spin" />,
-        label: 'Saving…',
-        cls: 'bg-brand-500 text-white opacity-70',
-      }
+  // Derive save button state
+  const saveState: SaveState = saving
+    ? 'saving'
     : saved
-      ? { icon: <Check className="h-4 w-4" />, label: 'Saved', cls: 'bg-green-500 text-white' }
+      ? 'saved'
       : saveError
-        ? {
-            icon: <AlertCircle className="h-4 w-4" />,
-            label: 'Error',
-            cls: 'bg-red-500 text-white',
-          }
+        ? 'error'
         : isDirty
-          ? {
-              icon: <Save className="h-4 w-4" />,
-              label: 'Save Changes',
-              cls: 'bg-brand-500 hover:bg-brand-600 text-white animate-pulse',
-            }
-          : {
-              icon: <Save className="h-4 w-4" />,
-              label: 'Save Changes',
-              cls: 'bg-brand-500 hover:bg-brand-600 text-white',
-            };
+          ? 'dirty'
+          : 'idle';
 
   if (loading || !draft) {
     return (
@@ -280,25 +198,23 @@ export const SettingsPage = () => {
   return (
     <>
       {/* ── Unsaved changes modal (tab switch) ──────────────────────────── */}
-      {showTabModal && (
-        <UnsavedModal
-          onSave={tabModalSaveAndGo}
-          onDiscard={tabModalDiscard}
-          onStay={tabModalStay}
-          saving={saving}
-        />
-      )}
+      <ConfirmationModal
+        open={showTabModal}
+        onSave={tabModalSaveAndGo}
+        onDiscard={tabModalDiscard}
+        onStay={tabModalStay}
+        saving={saving}
+      />
 
       {/* ── Unsaved changes modal (leaving settings page) ───────────────── */}
-      {showNavModal && (
-        <UnsavedModal
-          onSave={navModalSaveAndGo}
-          onDiscard={navModalDiscard}
-          onStay={navModalStay}
-          saving={saving}
-          message="You have unsaved settings changes. Save before leaving?"
-        />
-      )}
+      <ConfirmationModal
+        open={showNavModal}
+        onSave={navModalSaveAndGo}
+        onDiscard={navModalDiscard}
+        onStay={navModalStay}
+        saving={saving}
+        message="You have unsaved settings changes. Save before leaving?"
+      />
 
       <div className="mx-auto w-full max-w-[800px] space-y-6">
         <PageHeader
@@ -311,14 +227,7 @@ export const SettingsPage = () => {
               {isDirty && !saving && !saved && (
                 <span className="text-xs text-amber-500 dark:text-amber-400">Unsaved changes</span>
               )}
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all disabled:cursor-not-allowed ${saveBtn.cls}`}
-              >
-                {saveBtn.icon}
-                {saveBtn.label}
-              </button>
+              <StatefulSaveButton state={saveState} onClick={handleSave} />
             </div>
           }
         />

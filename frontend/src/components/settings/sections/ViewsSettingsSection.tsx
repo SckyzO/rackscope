@@ -15,7 +15,9 @@ import { FormToggle } from '../common/FormToggle';
 import { HUDTooltip } from '../../HUDTooltip';
 import { Link } from 'react-router-dom';
 import type { ConfigDraft } from '../useSettingsConfig';
-import { SettingField, SettingTooltip } from '../../../app/components/SettingTooltip';
+import { SettingField } from '../../../app/components/SettingTooltip';
+import { TooltipHelp } from '../../../app/components/ui/Tooltip';
+import { StepperInput } from '../../../app/components/forms/StepperInput';
 import { SectionCard } from '../../../app/pages/templates/EmptyPage';
 import { FormSelect } from '../common/FormSelect';
 
@@ -75,9 +77,6 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     />
   </button>
 );
-
-const inputCls =
-  'focus:border-brand-500 w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white';
 
 // ── Sample data for the live preview button ────────────────────────────────────
 
@@ -261,34 +260,32 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
             label="Default zoom"
             tooltip="Initial zoom level when the world map loads. 2 = world view, 7 = country level."
           >
-            <input
-              type="number"
+            <StepperInput
+              value={Number(m.default_zoom ?? 4)}
+              onChange={(v) => setMap('default_zoom', String(v))}
               min={1}
               max={18}
-              value={m.default_zoom ?? 4}
-              onChange={(e) => setMap('default_zoom', e.target.value)}
-              className={inputCls}
+              step={1}
+              className="w-full"
             />
           </SettingField>
           <SettingField label="Min / Max zoom" tooltip="Users cannot zoom below min or above max.">
             <div className="flex gap-2">
-              <input
-                type="number"
+              <StepperInput
+                value={Number(m.min_zoom ?? 2)}
+                onChange={(v) => setMap('min_zoom', String(v))}
                 min={1}
                 max={18}
-                placeholder="Min"
-                value={m.min_zoom ?? 2}
-                onChange={(e) => setMap('min_zoom', e.target.value)}
-                className={inputCls}
+                step={1}
+                className="w-full"
               />
-              <input
-                type="number"
+              <StepperInput
+                value={Number(m.max_zoom ?? 7)}
+                onChange={(v) => setMap('max_zoom', String(v))}
                 min={1}
                 max={18}
-                placeholder="Max"
-                value={m.max_zoom ?? 7}
-                onChange={(e) => setMap('max_zoom', e.target.value)}
-                className={inputCls}
+                step={1}
+                className="w-full"
               />
             </div>
           </SettingField>
@@ -296,24 +293,26 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
             label="Center latitude"
             tooltip="Default map center latitude (-90 to 90). 20 = slightly north of equator."
           >
-            <input
-              type="number"
-              step="0.1"
-              value={m.center_lat ?? 20}
-              onChange={(e) => setMap('center_lat', e.target.value)}
-              className={inputCls}
+            <StepperInput
+              value={Number(m.center_lat ?? 20)}
+              onChange={(v) => setMap('center_lat', String(v))}
+              min={-90}
+              max={90}
+              step={0.1}
+              className="w-full"
             />
           </SettingField>
           <SettingField
             label="Center longitude"
             tooltip="Default map center longitude (-180 to 180). 0 = prime meridian."
           >
-            <input
-              type="number"
-              step="0.1"
-              value={m.center_lon ?? 0}
-              onChange={(e) => setMap('center_lon', e.target.value)}
-              className={inputCls}
+            <StepperInput
+              value={Number(m.center_lon ?? 0)}
+              onChange={(v) => setMap('center_lon', String(v))}
+              min={-180}
+              max={180}
+              step={0.1}
+              className="w-full"
             />
           </SettingField>
         </div>
@@ -342,7 +341,7 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Zoom controls
             </span>
-            <SettingTooltip text="Show +/− zoom buttons on the map. Disable for kiosk/display mode." />
+            <TooltipHelp text="Show +/− zoom buttons on the map. Disable for kiosk/display mode." />
           </div>
           <Toggle checked={m.zoom_controls ?? true} onChange={(v) => setMap('zoom_controls', v)} />
         </div>
@@ -390,7 +389,7 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   {label}
                 </span>
-                <SettingTooltip text={tooltip} />
+                <TooltipHelp text={tooltip} />
               </div>
               <Toggle
                 checked={f[key] as boolean}
@@ -414,7 +413,7 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Enable playlist
             </span>
-            <SettingTooltip text="Shows play/pause/next buttons in the header. Views cycle automatically." />
+            <TooltipHelp text="Shows play/pause/next buttons in the header. Views cycle automatically." />
           </div>
           <Toggle checked={f.playlist} onChange={(v) => setFeature('playlist', v)} />
         </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { SettingTooltip } from '../../../app/components/SettingTooltip';
+import { TooltipHelp } from '../../../app/components/ui/Tooltip';
 
 interface FormFieldProps {
   label: string;
@@ -26,7 +26,7 @@ export const FormField: React.FC<FormFieldProps> = ({
     <div className={`space-y-2 ${className}`}>
       <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
         {label}
-        {tooltip && <SettingTooltip text={tooltip} />}
+        {tooltip && <TooltipHelp text={tooltip} />}
       </label>
       <input
         type={type}
