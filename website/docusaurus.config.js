@@ -55,6 +55,7 @@ const config = {
         logo: {
           alt: 'Rackscope Logo',
           src: 'img/logo.svg',
+          href: '/',
         },
         items: [
           {
