@@ -270,5 +270,5 @@ def _update_auth_config(app_config: AppConfig, updates: dict) -> None:
             asyncio.ensure_future(apply_config(updated))
         else:
             loop.run_until_complete(apply_config(updated))
-    except Exception:  # nosec B110 — intentional: config reloads on next startup if async fails
+    except Exception:  # nosec B110
         pass
