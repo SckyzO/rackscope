@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { HUDTooltip } from '../../../components/HUDTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
-import { RefreshButton, useAutoRefresh } from '../../../components/RefreshButton';
-import { PageActionButton } from '../../../components/PageActionButton';
+import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
+import { PageActionButton } from '../../components/PageActionButton';
 import {
   Settings2,
   X,
