@@ -1,4 +1,4 @@
-export type SoundPreset = 'soft-ping' | 'double-beep' | 'alert-tone' | 'alarm' | 'noc-chime';
+export type SoundPreset = 'soft-ping' | 'double-beep' | 'alert-tone' | 'alarm' | 'noc-chime' | 'siren';
 
 export type SoundAlertSettings = {
   enabled: boolean;
@@ -11,7 +11,7 @@ export type SoundAlertSettings = {
 export const DEFAULT_SOUND_SETTINGS: SoundAlertSettings = {
   enabled: false,
   warnSound: 'double-beep',
-  critSound: 'alarm',
+  critSound: 'siren',
   volume: 70,
   visibility: 'always',
 };
@@ -22,6 +22,7 @@ export const SOUND_PRESETS: Record<SoundPreset, { name: string; description: str
   'alert-tone': { name: 'Alert tone', description: 'Rising tone — moderate urgency' },
   alarm: { name: 'Alarm', description: 'Rapid alternating tones — high urgency' },
   'noc-chime': { name: 'NOC chime', description: 'Three-note chime — professional NOC style' },
+  siren: { name: 'Siren', description: 'Emergency siren sweep 380→1050Hz — maximum urgency' },
 };
 
 // Plays a preset at given volume (0–1). Returns a Promise that resolves when done.
@@ -114,6 +115,31 @@ export async function playSound(preset: SoundPreset, volume: number): Promise<vo
         osc.stop(t + 0.3);
       }
       await new Promise((r) => setTimeout(r, 800));
+      break;
+    }
+    case 'siren': {
+      // Emergency siren: sawtooth sweep 380→1050→380Hz, 2 full cycles (2.6s)
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      const g = ctx.createGain();
+      osc.connect(g);
+      g.connect(ctx.destination);
+
+      const half = 0.65; // seconds per half-cycle
+      osc.frequency.setValueAtTime(380, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(1050, ctx.currentTime + half);
+      osc.frequency.linearRampToValueAtTime(380, ctx.currentTime + half * 2);
+      osc.frequency.linearRampToValueAtTime(1050, ctx.currentTime + half * 3);
+      osc.frequency.linearRampToValueAtTime(380, ctx.currentTime + half * 4);
+
+      const totalTime = half * 4;
+      g.gain.setValueAtTime(volume * 0.45, ctx.currentTime);
+      g.gain.setValueAtTime(volume * 0.45, ctx.currentTime + totalTime - 0.15);
+      g.gain.linearRampToValueAtTime(0.001, ctx.currentTime + totalTime);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + totalTime);
+      await new Promise((r) => setTimeout(r, totalTime * 1000 + 100));
       break;
     }
   }
