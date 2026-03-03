@@ -145,6 +145,7 @@ const AppInnerLayout = () => {
   }, []);
   useSoundAlerts(soundAlerts);
 
+  const { features } = useAppConfigSafe();
   const [isDark, setIsDark] = useState(() => {
     // Theme resolution: check new key first (theme-mode, shared with ThemeContext),
     // then legacy key (cosmos-dark-mode, pre-v1.0 migration), then default to dark.
@@ -155,6 +156,10 @@ const AppInnerLayout = () => {
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showWizard, setShowWizard] = useState(() => !localStorage.getItem(SETUP_LS_KEY));
+
+  // Override: if backend has wizard disabled, never show regardless of localStorage
+  const wizardEnabled = features.wizard !== false;
+  const shouldShowWizard = showWizard && wizardEnabled;
 
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -201,6 +206,19 @@ const AppInnerLayout = () => {
     return () => window.removeEventListener('rackscope-demo-ribbon', handler);
   }, []);
 
+  const handlePermanentWizardDisable = useCallback(async () => {
+    try {
+      await api.disableSetupWizard();
+      localStorage.setItem(SETUP_LS_KEY, 'true');
+      setShowWizard(false);
+    } catch (err) {
+      console.error('Failed to disable wizard:', err);
+      // Still dismiss on failure — user can try again later
+      localStorage.setItem(SETUP_LS_KEY, 'true');
+      setShowWizard(false);
+    }
+  }, []);
+
   return (
     <>
       {/* Demo ribbon — diagonal corner badge when simulator is active */}
@@ -238,7 +256,15 @@ const AppInnerLayout = () => {
 
       <PlaylistCountdownBar />
       <KioskExitButton />
-      {showWizard && <SetupWizard onDismiss={() => setShowWizard(false)} />}
+      {shouldShowWizard && (
+        <SetupWizard
+          onDismiss={() => {
+            localStorage.setItem(SETUP_LS_KEY, 'true');
+            setShowWizard(false);
+          }}
+          onPermanentDisable={handlePermanentWizardDisable}
+        />
+      )}
       {/* Canvas rendered outside rs-root so CSS z-index stacking works correctly */}
       <MatrixBackground />
       <AlertToastContainer />

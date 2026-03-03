@@ -15,6 +15,8 @@ import {
   type SoundAlertSettings,
   type SoundPreset,
 } from '../../lib/soundAlerts';
+import { useSettingsConfig } from '../../../components/settings/useSettingsConfig';
+import type { ConfigDraft } from '../../../components/settings/useSettingsConfig';
 
 const SOUND_OPTIONS = [
   { value: 'none', label: 'None (silent)' },
@@ -31,6 +33,7 @@ const VISIBILITY_OPTIONS = [
 ];
 
 export const NotificationsSettingsSection = () => {
+  const { draft, setDraft } = useSettingsConfig();
   const [settings, setSettings] = useState<SoundAlertSettings>(() => loadSoundSettings());
   const [previewing, setPreviewing] = useState<string | null>(null);
 
@@ -45,6 +48,19 @@ export const NotificationsSettingsSection = () => {
     []
   );
 
+  const updateDraft = (section: keyof ConfigDraft, field: string, value: string | number) => {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: value,
+        },
+      };
+    });
+  };
+
   const preview = async (preset: SoundPreset) => {
     if (previewing) return;
     setPreviewing(preset);
@@ -55,9 +71,66 @@ export const NotificationsSettingsSection = () => {
     }
   };
 
+  if (!draft) return null;
+
   return (
     <div className="space-y-6">
-      {/* Master toggle */}
+      {/* Toast notification settings */}
+      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+          <SectionLabel>Alert toast popups</SectionLabel>
+        </div>
+        <div className="divide-y divide-gray-100 px-4 dark:divide-gray-800">
+          <div className="py-3">
+            <FormRow
+              label="Toast position"
+              description="Where alert toast popups appear on screen"
+            >
+              <SelectInput
+                value={draft.features.toast_position}
+                onChange={(v) => updateDraft('features', 'toast_position', v)}
+                options={[
+                  { value: 'bottom-right', label: 'Bottom right' },
+                  { value: 'top-right', label: 'Top right' },
+                ]}
+              />
+            </FormRow>
+          </div>
+          <div className="py-3">
+            <FormRow
+              label="Display duration"
+              description="How long toasts remain visible"
+            >
+              <StepperInput
+                value={Number(draft.features.toast_duration_seconds)}
+                onChange={(v) => updateDraft('features', 'toast_duration_seconds', String(v))}
+                min={3}
+                max={60}
+                step={1}
+                unit="s"
+                className="w-28"
+              />
+            </FormRow>
+          </div>
+          <div className="py-3">
+            <FormRow
+              label="Stack threshold"
+              description="Maximum number of toasts to show at once"
+            >
+              <StepperInput
+                value={Number(draft.features.toast_stack_threshold)}
+                onChange={(v) => updateDraft('features', 'toast_stack_threshold', String(v))}
+                min={0}
+                max={20}
+                step={1}
+                className="w-28"
+              />
+            </FormRow>
+          </div>
+        </div>
+      </div>
+
+      {/* Master toggle for sound alerts */}
       <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <FormRow
           label="Enable sound alerts"

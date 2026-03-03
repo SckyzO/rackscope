@@ -22,7 +22,7 @@ export const SOUND_PRESETS: Record<SoundPreset, { name: string; description: str
   'alert-tone': { name: 'Alert tone', description: 'Rising tone — moderate urgency' },
   alarm: { name: 'Alarm', description: 'Rapid alternating tones — high urgency' },
   'noc-chime': { name: 'NOC chime', description: 'Three-note chime — professional NOC style' },
-  siren: { name: 'Siren', description: 'Emergency siren sweep 380→1050Hz — maximum urgency' },
+  siren: { name: 'Siren', description: 'Fire truck two-tone siren (960/770Hz, 3 cycles) — maximum urgency' },
 };
 
 // Plays a preset at given volume (0–1). Returns a Promise that resolves when done.
@@ -118,27 +118,49 @@ export async function playSound(preset: SoundPreset, volume: number): Promise<vo
       break;
     }
     case 'siren': {
-      // Emergency siren: sawtooth sweep 380→1050→380Hz, 2 full cycles (2.6s)
-      const osc = ctx.createOscillator();
-      osc.type = 'sawtooth';
-      const g = ctx.createGain();
-      osc.connect(g);
-      g.connect(ctx.destination);
+      // Fire truck siren (European two-tone: 960Hz / 770Hz, alternating, 3 cycles)
+      // Two detuned oscillators per tone + bandpass filter = authentic horn character
+      const toneDuration = 0.42;
+      const tones = [960, 770];
+      const cycles = 3;
 
-      const half = 0.65; // seconds per half-cycle
-      osc.frequency.setValueAtTime(380, ctx.currentTime);
-      osc.frequency.linearRampToValueAtTime(1050, ctx.currentTime + half);
-      osc.frequency.linearRampToValueAtTime(380, ctx.currentTime + half * 2);
-      osc.frequency.linearRampToValueAtTime(1050, ctx.currentTime + half * 3);
-      osc.frequency.linearRampToValueAtTime(380, ctx.currentTime + half * 4);
+      for (let cycle = 0; cycle < cycles; cycle++) {
+        for (let t = 0; t < 2; t++) {
+          const startTime = ctx.currentTime + (cycle * 2 + t) * toneDuration;
+          const freq = tones[t];
 
-      const totalTime = half * 4;
-      g.gain.setValueAtTime(volume * 0.45, ctx.currentTime);
-      g.gain.setValueAtTime(volume * 0.45, ctx.currentTime + totalTime - 0.15);
-      g.gain.linearRampToValueAtTime(0.001, ctx.currentTime + totalTime);
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          osc1.type = 'sawtooth';
+          osc2.type = 'sawtooth';
+          osc1.frequency.value = freq;
+          osc2.frequency.value = freq * 1.006; // slight detuning for richness
 
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + totalTime);
+          const filter = ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.value = freq;
+          filter.Q.value = 1.2;
+
+          const g = ctx.createGain();
+          osc1.connect(filter);
+          osc2.connect(filter);
+          filter.connect(g);
+          g.connect(ctx.destination);
+
+          // Sharp 20ms attack + hold + 20ms release = clean two-tone character
+          g.gain.setValueAtTime(0.001, startTime);
+          g.gain.linearRampToValueAtTime(volume * 0.45, startTime + 0.02);
+          g.gain.setValueAtTime(volume * 0.45, startTime + toneDuration - 0.02);
+          g.gain.linearRampToValueAtTime(0.001, startTime + toneDuration);
+
+          osc1.start(startTime);
+          osc1.stop(startTime + toneDuration);
+          osc2.start(startTime);
+          osc2.stop(startTime + toneDuration);
+        }
+      }
+
+      const totalTime = cycles * 2 * toneDuration;
       await new Promise((r) => setTimeout(r, totalTime * 1000 + 100));
       break;
     }

@@ -104,6 +104,7 @@ class FeatureConfig(BaseModel):
     notifications_max_visible: int = Field(default=10, ge=1)
     playlist: bool = False
     offline: bool = False
+    wizard: bool = True  # Show setup wizard on first launch; set to false to disable permanently
     # Page visibility
     worldmap: bool = True
     dev_tools: bool = False  # UI Library, showcase, dev pages (off in prod)

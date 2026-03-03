@@ -812,4 +812,7 @@ export const api = {
     }
     return res.json() as Promise<{ username: string }>;
   },
+  disableSetupWizard: async (): Promise<void> => {
+    await apiFetch('/api/setup/wizard/disable', { method: 'POST' });
+  },
 };

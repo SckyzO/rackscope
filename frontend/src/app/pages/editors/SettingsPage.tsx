@@ -229,7 +229,7 @@ export const SettingsPage = () => {
         message="You have unsaved settings changes. Save before leaving?"
       />
 
-      <div className="mx-auto w-full max-w-[800px] space-y-6">
+      <div className="mx-auto w-full max-w-[1000px] space-y-6">
         <PageHeader
           title="Settings"
           breadcrumb={
@@ -252,7 +252,7 @@ export const SettingsPage = () => {
                 <button
                   key={id}
                   onClick={() => handleTabChange(id)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 py-3 text-xs font-medium transition-colors ${
+                  className={`flex flex-1 items-center justify-center gap-2 border-b-2 px-4 py-3.5 text-sm font-medium transition-colors ${
                     activeTab === id
                       ? 'border-brand-500 text-brand-500'
                       : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'

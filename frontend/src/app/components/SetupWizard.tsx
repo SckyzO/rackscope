@@ -18,6 +18,8 @@ import {
   Settings,
   LayoutDashboard,
 } from 'lucide-react';
+import { ConfirmationModal } from './layout/ConfirmationModal';
+import { api } from '../../services/api';
 
 export const LS_KEY = 'rackscope.setup.done';
 
@@ -27,17 +29,52 @@ type TestState = 'idle' | 'testing' | 'ok' | 'error';
 
 // ── Wizard ────────────────────────────────────────────────────────────────────
 
-export const SetupWizard = ({ onDismiss }: { onDismiss: () => void }) => {
+export const SetupWizard = ({
+  onDismiss,
+  onPermanentDisable,
+}: {
+  onDismiss: () => void;
+  onPermanentDisable?: () => void;
+}) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [prometheusUrl, setPrometheusUrl] = useState('http://prometheus:9090');
   const [testState, setTestState] = useState<TestState>('idle');
   const [testDetail, setTestDetail] = useState('');
+  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [disabling, setDisabling] = useState(false);
   const navigate = useNavigate();
 
   const dismiss = useCallback(() => {
-    localStorage.setItem(LS_KEY, 'true');
     onDismiss();
   }, [onDismiss]);
+
+  const handleDismissClick = useCallback(() => {
+    setShowDisableModal(true);
+  }, []);
+
+  const handleKeepShowing = useCallback(() => {
+    setShowDisableModal(false);
+    dismiss();
+  }, [dismiss]);
+
+  const handlePermanentDisable = useCallback(async () => {
+    if (!onPermanentDisable) {
+      setShowDisableModal(false);
+      dismiss();
+      return;
+    }
+    setDisabling(true);
+    try {
+      await onPermanentDisable();
+      setShowDisableModal(false);
+    } catch (err) {
+      console.error('Failed to disable wizard:', err);
+      // Still close on error — user can try again later
+      setShowDisableModal(false);
+    } finally {
+      setDisabling(false);
+    }
+  }, [onPermanentDisable, dismiss]);
 
   const handleTest = async () => {
     setTestState('testing');
@@ -83,16 +120,17 @@ export const SetupWizard = ({ onDismiss }: { onDismiss: () => void }) => {
   );
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
-        {/* Close / skip */}
-        <button
-          onClick={dismiss}
-          className="absolute top-4 right-4 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
-          title="Skip setup"
-        >
-          <X className="h-5 w-5" />
-        </button>
+    <>
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+          {/* Close / skip */}
+          <button
+            onClick={handleDismissClick}
+            className="absolute top-4 right-4 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+            title="Skip setup"
+          >
+            <X className="h-5 w-5" />
+          </button>
 
         {/* ── Step 1: Welcome ─────────────────────────────────────────────── */}
         {step === 1 && (
@@ -136,7 +174,7 @@ export const SetupWizard = ({ onDismiss }: { onDismiss: () => void }) => {
                 <ArrowRight className="h-4 w-4" />
               </button>
               <button
-                onClick={dismiss}
+                onClick={handleDismissClick}
                 className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
                 Skip — I'll configure manually
@@ -264,5 +302,18 @@ export const SetupWizard = ({ onDismiss }: { onDismiss: () => void }) => {
         </div>
       </div>
     </div>
+
+      <ConfirmationModal
+        open={showDisableModal}
+        title="Disable setup wizard?"
+        message="Would you like to permanently disable the setup wizard? This will update your app.yaml and the wizard won't appear again, even after clearing your browser cache."
+        onStay={handleKeepShowing}
+        onSave={handlePermanentDisable}
+        saving={disabling}
+        stayLabel="Not now"
+        saveLabel="Disable permanently"
+        hideSave={false}
+      />
+    </>
   );
 };

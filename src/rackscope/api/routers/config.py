@@ -168,3 +168,27 @@ def get_env() -> Dict[str, Any]:
         "PROMETHEUS_CACHE_TTL",
     ]
     return {key: os.getenv(key) for key in keys}
+
+
+@router.post("/setup/wizard/disable")
+async def disable_setup_wizard(
+    app_config: Annotated[AppConfig | None, Depends(get_app_config_optional)] = None,
+) -> dict:
+    """Permanently disable the setup wizard by writing features.wizard=false to app.yaml."""
+    import copy
+
+    from rackscope.api.app import apply_config
+
+    if not app_config:
+        return {"error": "No app config loaded", "wizard": True}
+
+    updated = copy.deepcopy(app_config)
+    updated.features.wizard = False
+
+    config_path = Path(os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml"))
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    with config_path.open("w") as f:
+        yaml.safe_dump(updated.model_dump(), f, sort_keys=False)
+
+    await apply_config(updated)
+    return {"wizard": False, "status": "disabled"}

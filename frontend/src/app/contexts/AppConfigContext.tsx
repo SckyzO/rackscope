@@ -13,6 +13,7 @@ interface AppFeatures {
   aisle_dashboard: boolean;
   dev_tools: boolean;
   playlist: boolean;
+  wizard: boolean;
 }
 
 // Plugin enabled status
@@ -41,6 +42,7 @@ const DEFAULT_FEATURES: AppFeatures = {
   aisle_dashboard: true,
   dev_tools: false,
   playlist: false,
+  wizard: true,
 };
 
 const DEFAULT_PLUGINS: AppPlugins = {
@@ -107,6 +109,7 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
     aisle_dashboard: config?.features?.aisle_dashboard !== false,
     dev_tools: config?.features?.dev_tools === true,
     playlist: config?.features?.playlist === true,
+    wizard: config?.features?.wizard !== false,
   };
 
   // Derive plugin enabled flags from plugins dict

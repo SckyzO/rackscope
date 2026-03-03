@@ -1,8 +1,7 @@
 import React from 'react';
-import { Info, FolderOpen, RefreshCw, Database, Zap, Bell } from 'lucide-react';
+import { Info, FolderOpen, RefreshCw, Database } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
-import { FormSelect } from '../common/FormSelect';
 import { StepperInput } from '../../../app/components/forms/StepperInput';
 import type { ConfigDraft } from '../useSettingsConfig';
 
@@ -171,64 +170,6 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         </div>
       </FormSection>
 
-      <FormSection
-        title="Notifications"
-        icon={Bell}
-        iconColor="text-sky-500"
-        iconBg="bg-sky-50 dark:bg-sky-500/10"
-        description="Configure alert toast popups (WARN/CRIT)"
-      >
-        <FormSelect
-          label="Toast position"
-          tooltip="Where alert toast popups appear on screen."
-          value={draft.features.toast_position}
-          onChange={(value) => update('features', 'toast_position', value)}
-          options={[
-            { value: 'bottom-right', label: 'Bottom right' },
-            { value: 'top-right', label: 'Top right' },
-          ]}
-        />
-        <div className="space-y-2">
-          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-            Display duration (seconds)
-          </label>
-          <StepperInput
-            value={Number(draft.features.toast_duration_seconds)}
-            onChange={(v) => update('features', 'toast_duration_seconds', String(v))}
-            min={3}
-            max={60}
-            step={1}
-            unit="s"
-            className="w-32"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-            Stack threshold
-          </label>
-          <StepperInput
-            value={Number(draft.features.toast_stack_threshold)}
-            onChange={(v) => update('features', 'toast_stack_threshold', String(v))}
-            min={0}
-            max={20}
-            step={1}
-            className="w-32"
-          />
-        </div>
-      </FormSection>
-
-      {/* Features — at the bottom of General */}
-      <FormSection
-        title="Features"
-        icon={Zap}
-        iconColor="text-brand-500"
-        iconBg="bg-brand-50 dark:bg-brand-500/10"
-      >
-        <p className="text-[11px] text-gray-400 dark:text-gray-600">
-          Page visibility and playlist are in the <strong>Views</strong> tab. Plugin configuration
-          is in <strong>Plugins</strong>.
-        </p>
-      </FormSection>
     </div>
   );
 };
