@@ -118,3 +118,15 @@ templates:
     type: server
     role: compute   # compute | visu | login | io | storage
 ```
+
+## Dashboard Widgets
+
+When the Slurm plugin is enabled, three widgets become available in the Dashboard Widget Library:
+
+| Widget type | Group | Description |
+|---|---|---|
+| `slurm-cluster` | Overview | Node state bar + severity breakdown |
+| `slurm-nodes` | Stats | Total Slurm node count |
+| `slurm-utilization` | Charts | Allocated % gauge |
+
+These widgets live in `frontend/src/app/plugins/slurm/widgets/` and are hidden automatically when the plugin is disabled. They use `requiresPlugin: 'slurm'` — see the [Dashboard Widget System](../architecture/dashboard-widgets) guide.

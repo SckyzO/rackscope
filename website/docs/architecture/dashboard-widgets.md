@@ -21,11 +21,23 @@ frontend/src/app/dashboard/
 ├── widgets/
 │   ├── ActiveAlertsWidget.tsx
 │   ├── WorldMapWidget.tsx
-│   └── …             ← One file per widget
+│   └── …             ← One file per core widget
 └── index.ts          ← Barrel: imports all widgets → triggers registrations
+
+frontend/src/app/plugins/
+├── slurm/widgets/
+│   ├── SlurmClusterWidget.tsx
+│   ├── SlurmNodesWidget.tsx
+│   ├── SlurmUtilizationWidget.tsx
+│   └── index.ts      ← Imported by dashboard/index.ts
+└── simulator/widgets/
+    ├── SimulatorStatusWidget.tsx
+    └── index.ts      ← Imported by dashboard/index.ts
 ```
 
-`DashboardPage.tsx` imports `from '../dashboard'` which runs `index.ts`, which imports every widget file, which calls `registerWidget()`. The page then renders via `getWidget(type).component`.
+`DashboardPage.tsx` imports `from '../dashboard'` which runs `index.ts`, which imports every widget file (including plugin widget barrels), which calls `registerWidget()`. The page then renders via `getWidget(type).component`.
+
+Plugin widgets live in `plugins/<name>/widgets/` — they register themselves the same way as core widgets but declare a `requiresPlugin` field so the Widget Library hides them when the plugin is disabled.
 
 ---
 
@@ -78,10 +90,20 @@ export type WidgetType =
 
 ### 3. Import the file in `index.ts`
 
+For a **core widget** (not tied to a plugin):
+
 ```ts title="frontend/src/app/dashboard/index.ts"
 // … existing imports …
 import './widgets/MyWidget';   // ← add this line
 ```
+
+For a **plugin widget**, add it to the plugin barrel instead:
+
+```ts title="frontend/src/app/plugins/myplugin/widgets/index.ts"
+import './MyPluginWidget';
+```
+
+The plugin barrel is already imported by `dashboard/index.ts` (one import per plugin, not per widget).
 
 That's it. The widget appears in **Edit layout → Widget Library** and can be added to any dashboard.
 
@@ -173,24 +195,32 @@ Widgets are organised in the Widget Library panel by their `group` field:
 
 ## Plugin-specific widgets
 
-Widgets for optional plugins (Slurm, future plugins) should set `requiresSlurm: true` (or a future `requiresPlugin` field) so the Widget Library hides them when the plugin is disabled.
+Widgets tied to an optional plugin live in `plugins/<name>/widgets/` and declare `requiresPlugin` with the plugin ID (e.g. `'slurm'`, `'simulator'`). The Widget Library reads enabled plugins from `AppConfigContext` and hides widgets whose plugin is inactive.
 
-```ts
+```ts title="frontend/src/app/plugins/slurm/widgets/SlurmMyWidget.tsx"
 registerWidget({
   type: 'slurm-my-widget',
   // …
-  requiresSlurm: true,   // hides widget if slurmEnabled === false
+  requiresPlugin: 'slurm',   // hidden when Slurm plugin is disabled
   component: SlurmMyWidget,
 });
 ```
 
-The `WidgetPicker` already filters on this flag:
+The `WidgetPicker` filters using context:
 
 ```ts
+const { plugins } = useAppConfigSafe();
 const available = getAllWidgets().filter(
-  (def) => !def.requiresSlurm || slurmEnabled
+  (def) => !def.requiresPlugin || Boolean(plugins[def.requiresPlugin as keyof typeof plugins])
 );
 ```
+
+To add a new plugin widget:
+1. Create `plugins/<name>/widgets/MyPluginWidget.tsx`
+2. Add `'my-plugin-widget'` to `WidgetType` in `types.ts`
+3. Import from the plugin's `index.ts` barrel (already imported by `dashboard/index.ts`)
+
+No changes needed to `dashboard/widgets/` or `dashboard/index.ts` beyond the barrel import, which only needs to be added once per plugin.
 
 ---
 
@@ -334,10 +364,19 @@ import './widgets/TopWarnRoomsWidget';
 
 ---
 
-## Checklist
+## Checklist — core widget
 
-- [ ] Create `widgets/MyWidget.tsx` with `export const MyWidget` + `registerWidget()`
+- [ ] Create `dashboard/widgets/MyWidget.tsx` with `export const MyWidget` + `registerWidget()`
 - [ ] Add `'my-widget'` to `WidgetType` in `types.ts`
-- [ ] Add `import './widgets/MyWidget'` in `index.ts`
+- [ ] Add `import './widgets/MyWidget'` in `dashboard/index.ts`
 - [ ] Run `make lint` to catch any ESLint issues
 - [ ] Test: open the dashboard → Edit layout → Widget Library → find your widget → Add
+
+## Checklist — plugin widget
+
+- [ ] Create `plugins/<name>/widgets/MyWidget.tsx` with `requiresPlugin: '<name>'`
+- [ ] Add `'my-widget'` to `WidgetType` in `types.ts`
+- [ ] Add `import './MyWidget'` in `plugins/<name>/widgets/index.ts`
+- [ ] (First widget for the plugin only) Add `import '../plugins/<name>/widgets'` in `dashboard/index.ts`
+- [ ] Run `make lint` + `npx tsc --noEmit` to verify
+- [ ] Test: disable plugin → widget absent from picker; enable → widget appears

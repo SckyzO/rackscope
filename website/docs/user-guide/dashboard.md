@@ -33,7 +33,20 @@ Click the **Edit** button (pencil icon) in the header to enter edit mode:
 Create multiple dashboards for different use cases (Overview, NOC, Slurm, etc.).
 Use the dashboard selector in the header to switch between them.
 
-Operations: **Create** · **Duplicate** · **Rename** · **Delete**
+Operations: **Create** · **Duplicate** · **Rename** · **Delete** · **Playlist toggle** · **Open as page**
+
+### Standalone dashboard URLs
+
+Every dashboard is accessible at `/dashboard/<id>` — a deep-linkable URL that loads the correct dashboard regardless of your local active-dashboard selection. Use the **External link** icon (↗) on a tab to open it.
+
+This is useful for:
+- Bookmarking a specific dashboard directly
+- Embedding a dashboard URL in a NOC runbook or monitoring page
+- Running two dashboards side-by-side in separate browser tabs without interfering with each other
+
+### Playlist integration
+
+Each dashboard tab has a **ListVideo** toggle icon. When lit, the dashboard is included in playlist rotation via `/dashboard/<id>`. Configure the rotation in [Playlist Center](/playlist).
 
 ## Widget Catalog
 
@@ -82,6 +95,14 @@ Operations: **Create** · **Duplicate** · **Rename** · **Delete**
 | Slurm Nodes | Per-partition node distribution |
 | Slurm Utilization | CPU/memory allocation gauge |
 
+### Simulator (requires Simulator plugin)
+
+| Widget | Description |
+|---|---|
+| Simulator Status | Running state, active scenario, active overrides count, update interval |
+
+> Plugin widgets are hidden automatically from the Widget Library when their plugin is disabled.
+
 ## Widget Library
 
 The Widget Library panel lists all available widgets grouped by category. It only opens in **Edit mode**.
@@ -98,13 +119,14 @@ The Widget Library panel lists all available widgets grouped by category. It onl
 
 | Group | Widgets |
 |---|---|
-| **Stats** | Stat Card, Alert Count, Scrape Latency, Slurm Nodes |
-| **Charts** | Health Gauge, Severity Donut, Rack Utilization, Slurm Utilization |
+| **Stats** | Stat Card, Alert Count, Scrape Latency, Slurm Nodes* |
+| **Charts** | Health Gauge, Severity Donut, Rack Utilization, Slurm Utilization* |
 | **Monitoring** | Active Alerts, Recent CRIT, Node Heatmap, World Map |
-| **Overview** | Infrastructure (rooms list), Site Map, Prometheus, Slurm Cluster |
+| **Overview** | Infrastructure (rooms list), Site Map, Prometheus, Slurm Cluster*, Simulator Status** |
 | **Catalog** | Catalog & Checks, Check Summary, Device Types |
 
-> Slurm widgets are hidden automatically when the Slurm plugin is disabled.
+\* Requires Slurm plugin — hidden when disabled.
+\*\* Requires Simulator plugin — hidden when disabled.
 
 ### Extending the system
 
@@ -114,8 +136,14 @@ The widget system is modular — each widget is a self-contained file. Creating 
 
 ## Persistence
 
-Widget layouts are stored in `localStorage` under `rackscope.dashboards`.
+Widget layouts are stored in `localStorage` under `rackscope.dashboards` (schema version `3`).
 They are **not synced to the server** — each browser has its own layout.
+
+Each `Dashboard` object persists:
+- `id` — stable identifier used in `/dashboard/:id` URLs
+- `name` — display name shown in tabs
+- `widgets` — array of widget positions and types
+- `inPlaylist` — whether this dashboard is included in playlist rotation
 
 ## Default Layout
 

@@ -674,3 +674,15 @@ take effect without waiting for a config reload.
 `scenarios.yaml` is **not** hot-reloaded by the simulator process. Changes
 require a container restart (`docker compose -f docker-compose.dev.yml
 restart simulator`).
+
+## Dashboard Widget
+
+When the Simulator plugin is enabled, a **Simulator Status** widget is available in the Dashboard Widget Library:
+
+| Widget type | Group | Description |
+|---|---|---|
+| `simulator-status` | Overview | Running state, active scenario, override count, update interval |
+
+The widget is hidden automatically when the plugin is disabled (`requiresPlugin: 'simulator'`). It lives in `frontend/src/app/plugins/simulator/widgets/SimulatorStatusWidget.tsx`.
+
+Clicking **Settings ↗** in the widget header navigates to **Settings → Plugins** where you can change the scenario and manage overrides.
