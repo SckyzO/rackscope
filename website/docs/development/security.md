@@ -23,7 +23,7 @@ The stack must be running (`make up`) before running these commands.
 
 ### Backend — bandit (Python SAST)
 
-[bandit](https://bandit.readthedocs.io/) scans Python source for common security issues.
+[bandit](https://bandit.readthedocs.io/) scans Python source for common security issues. The `-ll` flag reports Medium and High severity only — Low findings are informational.
 
 ```bash
 make security-backend
@@ -31,14 +31,16 @@ make security-backend
 
 **Current status**: ✅ 0 high/medium issues in `src/rackscope/`
 
-Known suppressed findings (intentional patterns, marked with `# nosec`):
+Known Low-severity findings (not suppressed, not blocking):
 
-| Rule | Location | Reason |
+| Rule | Location | Why it's acceptable |
 |---|---|---|
-| `B101` (assert) | `model/loader.py` | Internal type invariant — never user-controlled |
-| `B110` (try/except/pass) | `routers/auth.py`, `routers/plugins.py` | Non-critical path — reloads on next startup |
-| `B112` (try/except/continue) | `routers/catalog.py` | Skip malformed YAML files safely |
-| `B105` (hardcoded password) | `routers/config.py` | False positive — default is `None` |
+| `B101` (assert) | `model/loader.py` | Internal type invariant on a dict we just constructed — never user-controlled |
+| `B110` (try/except/pass) | `routers/auth.py`, `routers/plugins.py` | Non-critical path — config reloads on next startup |
+| `B112` (try/except/continue) | `routers/catalog.py` | Skips malformed YAML files safely |
+| `B105` (hardcoded password) | `routers/config.py` | False positive — default value is `None` |
+
+These findings are left as-is in the code (no inline `# nosec` suppression, no global config skips). They surface on `make security` without the `-ll` flag but do not block CI.
 
 ### Frontend — npm audit
 
@@ -48,7 +50,7 @@ make security-frontend
 
 **Current status**: ⚠️ 5 high in `react-simple-maps` d3 dependencies (tracked in [#4](https://github.com/SckyzO/rackscope/issues/4))
 
-These vulnerabilities affect d3 color/data parsing. In Rackscope's context, all data comes from internal Prometheus/topology sources — no user-controlled input reaches these paths. Risk is low.
+These vulnerabilities affect d3 color/data parsing. In Rackscope, all data comes from internal Prometheus/topology sources — no user-controlled input reaches these paths. Risk is low in practice.
 
 ### Python dependencies — pip-audit
 
@@ -77,4 +79,4 @@ Reports are uploaded as artifacts on each run.
 | **Critical** | Block merge immediately — fix before any release |
 | **High** | Fix within current sprint — document exceptions in this file |
 | **Moderate** | Fix before next minor release |
-| **Low** | Track in issues, fix opportunistically |
+| **Low** | Informational — no suppression, no blocking |

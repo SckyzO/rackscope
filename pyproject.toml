@@ -38,6 +38,3 @@ line-length = 100
 
 [tool.ruff.format]
 quote-style = "double"
-
-[tool.bandit]
-skips = ["B101", "B105", "B110", "B112"]
