@@ -22,6 +22,7 @@ const sidebars = {
     'user-guide/notifications',
     'user-guide/ui-library',
     'user-guide/wizard',
+    'user-guide/error-pages',
     'user-guide/about',
   ],
 

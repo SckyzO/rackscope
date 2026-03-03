@@ -17,19 +17,27 @@ The setup wizard can be re-launched at any time from **Settings > General > Re-r
 
 ## When It Appears
 
-The wizard launches automatically in two situations:
+The wizard launches automatically when the feature flag is enabled:
 
-- **First launch**: No topology file is found at the configured path (or the topology is empty).
+- **First launch**: No topology file is found at the configured path (or the topology is empty), and `features.wizard: true` in `config/app.yaml`
 - **Manual reset**: You triggered a reset from **Settings > General > Re-run Setup Wizard** or
-  issued a `DELETE /api/topology/reset` API call.
+  issued a `DELETE /api/topology/reset` API call
 
-Once you complete (or skip) the wizard, Rackscope stores a flag and will not show it again
-on next load — unless you explicitly re-run it.
+Once you complete (or skip) the wizard, you can choose to dismiss it permanently (see [Permanent Dismissal](#permanent-dismissal) below).
 
 :::tip
 Even if you prefer to write YAML by hand, running the wizard once is a useful way to generate
 a valid base configuration that you can then version-control with Git.
 :::
+
+## Permanent dismissal
+
+When you close or skip the wizard, a confirmation dialog asks whether to disable it permanently:
+
+- **Not now**: Wizard dismissed for this session (reappears if you clear your browser cache)
+- **Disable permanently**: Updates `features.wizard: false` in `app.yaml` — the wizard will not appear again, even after clearing your browser cache
+
+To re-enable the wizard after permanent dismissal, set `features.wizard: true` in `config/app.yaml` (or via Settings → General).
 
 ---
 

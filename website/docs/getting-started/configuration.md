@@ -62,6 +62,7 @@ features:
   offline: true
   worldmap: true
   dev_tools: false
+  wizard: true    # Show setup wizard on first launch; set to false to disable permanently
 
 # Authentication (disabled by default)
 auth:
@@ -92,27 +93,15 @@ playlist:
     - /views/worldmap
     - /slurm/overview
 
-# Plugins
+# Plugins — only enabled flag lives here; full config in config/plugins/{id}/config.yml
 plugins:
   simulator:
     enabled: true
-    scenario: demo-stable
-    update_interval_seconds: 20
-    scale_factor: 1.0
-
   slurm:
     enabled: true
-    metric: slurm_node_status
-    label_node: node
-    label_status: status
-    label_partition: partition
-    roles: [compute, visu]
-    mapping_path: config/plugins/slurm/node_mapping.yaml
-    status_map:
-      ok:   [allocated, alloc, idle, mixed, mix, completing, comp]
-      warn: [maint, drain, draining, planned, reserved, power_down, power_up]
-      crit: [down, drained, fail, error, unknown, noresp]
 ```
+
+> **Plugin configuration**: Each plugin's detailed settings live in a dedicated file at `config/plugins/{plugin_id}/config.yml`. Only the `enabled` flag is in `app.yaml`. See [Plugins](/plugins/overview) for details.
 
 ## Topology
 

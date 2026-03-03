@@ -25,8 +25,7 @@ calling `POST /api/config/reload`.
 | [`auth`](#auth) | UI authentication |
 | [`map`](#map) | World map defaults |
 | [`playlist`](#playlist) | NOC screen rotation |
-| [`plugins.simulator`](#pluginssimulator) | Demo/simulation mode |
-| [`plugins.slurm`](#pluginsslurm) | Slurm workload manager integration |
+| [`plugins`](#plugins) | Plugin enable/disable flags |
 
 ---
 
@@ -244,6 +243,7 @@ features:
   offline: true
   worldmap: true
   dev_tools: true
+  wizard: true
 ```
 
 | Key | Type | Default | Description |
@@ -252,9 +252,9 @@ features:
 | `notifications_max_visible` | integer | `10` | Maximum number of notifications shown in the panel at once (minimum: 1) |
 | `playlist` | boolean | `false` | Enable NOC playlist mode (screen rotation). Exposes the playlist controls and `/playlist` route |
 | `offline` | boolean | `false` | Enable offline mode indicator. When Prometheus is unreachable, shows a banner rather than erroring |
-| `demo` | boolean | `false` | Activate the SimulatorPlugin and demo mode. Required for the simulator to generate metrics |
 | `worldmap` | boolean | `true` | Show the World Map view (`/views/worldmap`). Hide this if all your sites lack geolocation data |
 | `dev_tools` | boolean | `false` | Show developer tools pages (UI component showcase, internal diagnostics). Disable in production |
+| `wizard` | boolean | `true` | Show the setup wizard on first launch. Set to `false` to disable permanently |
 
 ---
 
@@ -367,165 +367,31 @@ playlist:
 
 ---
 
-## `plugins.simulator`
+## `plugins`
 
-Configuration for the SimulatorPlugin, which generates realistic Prometheus metrics for
-testing and demos. Enable by setting `plugins.simulator.enabled: true`.
+Plugin enable/disable flags. Detailed plugin configuration lives in separate files at `config/plugins/{plugin_id}/config.yml`, not in `app.yaml`. This separation was introduced to avoid configuration duplication and improve maintainability.
 
 ```yaml
 plugins:
   simulator:
     enabled: true
-    update_interval_seconds: 20
-    seed: null
-    scenario: demo-stable
-    scale_factor: 1
-    incident_rates:
-      node_micro_failure: 0.001
-      rack_macro_failure: 0.01
-      aisle_cooling_failure: 0.005
-    incident_durations:
-      rack: 300    # seconds (5 min)
-      aisle: 600   # seconds (10 min)
-    overrides_path: config/plugins/simulator/overrides.yaml
-    default_ttl_seconds: 120
-    metrics_catalog_path: config/plugins/simulator/metrics_full.yaml
-    metrics_catalogs: []
-```
-
-### Core options
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `enabled` | boolean | `false` | Activate the SimulatorPlugin. When enabled, a "DEMO" ribbon appears in the UI corner |
-| `update_interval_seconds` | integer | `20` | How often (seconds) the simulator regenerates its metric dataset |
-| `seed` | integer \| null | `null` | Random seed for deterministic metric generation. Set to a fixed integer for reproducible demos |
-| `scenario` | string \| null | `null` | Named scenario to load from `config/plugins/simulator/scenarios.yaml`. Examples: `demo-stable`, `demo-small`, `random-failures` |
-| `scale_factor` | float | `1.0` | Multiplier applied to all generated metric values. Values below `1.0` reduce simulated power/temperature readings |
-
-### Incident injection
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `incident_rates.node_micro_failure` | float | `0.001` | Per-update probability (0–1) of a single node transitioning to a failure state |
-| `incident_rates.rack_macro_failure` | float | `0.01` | Per-update probability (0–1) of a rack-wide failure event |
-| `incident_rates.aisle_cooling_failure` | float | `0.005` | Per-update probability (0–1) of an aisle-level cooling failure |
-| `incident_durations.rack` | integer | `3` | Number of update cycles a rack incident persists |
-| `incident_durations.aisle` | integer | `5` | Number of update cycles an aisle incident persists |
-
-### Overrides and catalog
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `overrides_path` | string | `config/plugins/simulator/overrides.yaml` | Path to the overrides file where runtime metric overrides are persisted |
-| `default_ttl_seconds` | integer | `120` | Default time-to-live for manual overrides created via the API. `0` = permanent |
-| `metrics_catalog_path` | string | `config/plugins/simulator/metrics_full.yaml` | Primary metrics catalog file used by the simulator |
-| `metrics_catalogs` | list | `[]` | Additional metrics catalog files. Each entry has `id`, `path`, and optional `enabled: true/false` |
-
----
-
-## `plugins.slurm`
-
-Configuration for the SlurmPlugin, which reads Slurm node states from Prometheus and adds
-HPC-specific views (Wallboard, Cluster Overview, Partitions, Node List, Alerts).
-
-```yaml
-plugins:
   slurm:
     enabled: true
-    metric: slurm_node_status
-    label_node: node_id
-    label_status: status
-    label_partition: partition
-    mapping_path: config/plugins/slurm/node_mapping.yaml
-    roles:
-      - compute
-      - visu
-    include_unlabeled: false
-    status_map:
-      ok:
-        - allocated
-        - alloc
-        - completing
-        - comp
-        - idle
-        - mixed
-        - mix
-      warn:
-        - maint
-        - planned
-        - plnd
-        - reserved
-        - resv
-        - blocked
-        - block
-        - power_down
-        - pow_dn
-        - power_up
-        - pow_up
-        - powering_up
-        - powered_down
-        - reboot_issued
-        - reboot_req
-      crit:
-        - down
-        - drain
-        - drained
-        - draining
-        - drng
-        - fail
-        - failing
-        - failg
-        - error
-        - unknown
-        - unk
-        - noresp
-        - inval
-      info: []
-    severity_colors:
-      ok: '#22c55e'
-      warn: '#f59e0b'
-      crit: '#ef4444'
-      info: '#3b82f6'
 ```
 
-### Core options
+| Plugin | Key | Type | Default | Description |
+|--------|-----|------|---------|-------------|
+| Simulator | `simulator.enabled` | boolean | `false` | Activate the SimulatorPlugin for demo/testing mode |
+| Slurm | `slurm.enabled` | boolean | `true` | Activate the SlurmPlugin for HPC workload manager integration |
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `enabled` | boolean | `true` | Activate the SlurmPlugin and its views |
-| `metric` | string | `slurm_node_status` | Prometheus metric name that carries Slurm node state |
-| `label_node` | string | `node` | Prometheus label on the metric that holds the Slurm node name |
-| `label_status` | string | `status` | Prometheus label that holds the Slurm node status string |
-| `label_partition` | string | `partition` | Prometheus label that holds the partition name |
-| `mapping_path` | string \| null | `config/plugins/slurm/node_mapping.yaml` | Optional path to a YAML file mapping Slurm node names to topology instance names. Required when Slurm node names differ from Prometheus instance labels |
-| `roles` | list of strings | `[compute, visu]` | Device template roles that Slurm views should display. Devices whose template has a `role` not in this list are excluded |
-| `include_unlabeled` | boolean | `false` | When `true`, include devices that have no `role` label in their template |
+:::note Plugin configuration files
+Each plugin's detailed settings are managed in dedicated configuration files:
+- Simulator: `config/plugins/simulator/config.yml`
+- Slurm: `config/plugins/slurm/config.yml`
 
-### `status_map`
+See [Plugins](/plugins/overview) for detailed plugin configuration reference.
+:::
 
-Maps Slurm status strings (as they appear in the Prometheus metric label) to Rackscope
-severity levels. All four severity buckets accept a list of strings.
-
-| Bucket | Severity | Typical statuses |
-|--------|----------|-----------------|
-| `ok` | OK (green) | `idle`, `allocated`, `completing` |
-| `warn` | WARN (orange) | `maint`, `reserved`, `power_down`, `reboot_issued` |
-| `crit` | CRIT (red) | `down`, `drain`, `fail`, `error`, `unknown` |
-| `info` | INFO (blue) | Custom statuses; empty by default |
-
-Any status string not found in any bucket is treated as UNKNOWN.
-
-### `severity_colors`
-
-Hex color codes used in the Slurm Wallboard and dashboards to represent each severity.
-
-| Key | Default | Description |
-|-----|---------|-------------|
-| `severity_colors.ok` | `#22c55e` | Color for OK severity |
-| `severity_colors.warn` | `#f59e0b` | Color for WARN severity |
-| `severity_colors.crit` | `#ef4444` | Color for CRIT severity |
-| `severity_colors.info` | `#3b82f6` | Color for INFO severity |
 
 ---
 
@@ -588,6 +454,7 @@ features:
   offline: true
   worldmap: true
   dev_tools: true
+  wizard: true                    # Show setup wizard on first launch
 
 # ── Authentication ────────────────────────────────────────────────────────────
 auth:
@@ -621,78 +488,10 @@ playlist:
     - /slurm/overview
 
 # ── Plugins ───────────────────────────────────────────────────────────────────
+# Only enabled flags live here — full config in config/plugins/{id}/config.yml
 plugins:
   simulator:
     enabled: true
-    update_interval_seconds: 20
-    seed: null
-    scenario: demo-stable
-    scale_factor: 1
-    incident_rates:
-      node_micro_failure: 0.001
-      rack_macro_failure: 0.01
-      aisle_cooling_failure: 0.005
-    incident_durations:
-      rack: 300    # seconds (5 min)
-      aisle: 600   # seconds (10 min)
-    overrides_path: config/plugins/simulator/overrides.yaml
-    default_ttl_seconds: 120
-    metrics_catalog_path: config/plugins/simulator/metrics_full.yaml
-    metrics_catalogs: []
   slurm:
     enabled: true
-    metric: slurm_node_status
-    label_node: node_id
-    label_status: status
-    label_partition: partition
-    mapping_path: config/plugins/slurm/node_mapping.yaml
-    roles:
-      - compute
-      - visu
-    include_unlabeled: false
-    status_map:
-      ok:
-        - allocated
-        - alloc
-        - completing
-        - comp
-        - idle
-        - mixed
-        - mix
-      warn:
-        - maint
-        - planned
-        - plnd
-        - reserved
-        - resv
-        - blocked
-        - block
-        - power_down
-        - pow_dn
-        - power_up
-        - pow_up
-        - powering_up
-        - powered_down
-        - reboot_issued
-        - reboot_req
-      crit:
-        - down
-        - drain
-        - drained
-        - draining
-        - drng
-        - fail
-        - failing
-        - failg
-        - error
-        - unknown
-        - unk
-        - noresp
-        - inval
-      info: []
-    severity_colors:
-      ok: '#22c55e'
-      warn: '#f59e0b'
-      crit: '#ef4444'
-      info: '#3b82f6'
 ```

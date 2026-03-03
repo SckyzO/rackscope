@@ -22,6 +22,10 @@ Shows all sites on a world map with health status markers.
 **Map styles** (Settings → Views → World map style):
 `Minimal` · `Flat` · `NOC` · `Retro` · `Midnight`
 
+**Controls:**
+- **Layout toggle**: Stacked (all rooms in a column) or Split (side by side)
+- **Height toggle**: S / M / L — compact to expanded room cards (Stacked only)
+
 **Features:**
 - Click a site marker → tooltip shows rooms + rack count + alert state
 - Click a site in the sidebar → detail panel with clickable rooms
@@ -33,6 +37,11 @@ Shows all sites on a world map with health status markers.
 **URL**: `/views/room/:roomId`
 
 Floor plan with all racks as a color-coded grid.
+
+**Controls:**
+- **Zoom bar**: − / % / + / Fit / Reset — zoom and fit the floor plan
+- **Lock button**: Lock/unlock pan and zoom to prevent accidental navigation during monitoring
+- **Customize panel**: Toggle display options (grid, labels, legend, rack style, etc.)
 
 **Features:**
 - Hover a rack → `HUDTooltip` with rack name, occupancy, check summary

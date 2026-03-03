@@ -37,16 +37,20 @@ Operations: **Create** · **Duplicate** · **Rename** · **Delete** · **Playlis
 
 ### Standalone dashboard URLs
 
-Every dashboard is accessible at `/dashboard/<id>` — a deep-linkable URL that loads the correct dashboard regardless of your local active-dashboard selection. Use the **External link** icon (↗) on a tab to open it.
+Every dashboard is accessible at `/dashboard/<id>` — a deep-linkable URL that loads the correct dashboard regardless of your local active-dashboard selection.
+
+Click the **↗** (ExternalLink) icon on a dashboard tab to open the current dashboard in standalone mode.
 
 This is useful for:
 - Bookmarking a specific dashboard directly
-- Embedding a dashboard URL in a NOC runbook or monitoring page
-- Running two dashboards side-by-side in separate browser tabs without interfering with each other
+- Running two dashboards side-by-side in separate tabs
+- Embedding a dashboard URL in NOC runbooks
 
 ### Playlist integration
 
-Each dashboard tab has a **ListVideo** toggle icon. When lit, the dashboard is included in playlist rotation via `/dashboard/<id>`. Configure the rotation in [Playlist Center](/playlist).
+Each dashboard tab shows a **ListVideo** icon. When lit (amber), the dashboard is included in playlist rotation accessible at `/dashboard/<id>`.
+
+Configure playlist rotation in the [Playlist Center](/playlist).
 
 ## Widget Catalog
 
@@ -128,6 +132,13 @@ The Widget Library panel lists all available widgets grouped by category. It onl
 \* Requires Slurm plugin — hidden when disabled.
 \*\* Requires Simulator plugin — hidden when disabled.
 
+### Widget titles
+
+All widgets display a standardized title bar at the top (controlled by `showTitle` in widget config).
+Stat-panel widgets (Stat Card, Alert Count, Health Gauge, etc.) hide the title bar by default.
+
+**Title alignment**: Configurable in Dashboard Settings (gear icon) → Widget title alignment: Left or Center.
+
 ### Extending the system
 
 The widget system is modular — each widget is a self-contained file. Creating a new widget requires 3 steps: one new file, one type entry, one import line. See the [Dashboard Widget System](../architecture/dashboard-widgets) developer guide.
@@ -136,7 +147,7 @@ The widget system is modular — each widget is a self-contained file. Creating 
 
 ## Persistence
 
-Widget layouts are stored in `localStorage` under `rackscope.dashboards` (schema version `3`).
+Widget layouts are stored in `localStorage` under `rackscope.dashboards` (schema version `4`).
 They are **not synced to the server** — each browser has its own layout.
 
 Each `Dashboard` object persists:

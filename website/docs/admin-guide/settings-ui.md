@@ -110,3 +110,53 @@ Includes per-template thermal thresholds for the HUD tooltip.
 ## Checks Library Editor
 
 Browse and edit health check definitions.
+
+---
+
+## Appearance
+
+### Severity Labels
+
+**Location**: Settings → Appearance → Severity display labels
+
+Configure how health states are displayed throughout the UI. These are display-only labels — they do not affect data, API responses, or YAML configuration.
+
+| State key | Default label | Description |
+|---|---|---|
+| `OK` | OK | All checks passing |
+| `WARN` | Warning | At least one warning |
+| `CRIT` | Critical | At least one critical failure |
+| `UNKNOWN` | Unknown | No data or check error |
+| `INFO` | Info | Informational state |
+
+**Changes are applied immediately** and persist in `localStorage` under `rackscope.severity-labels`.
+
+To reset to defaults, use the **Reset to defaults** button at the bottom of the section.
+
+---
+
+## Notifications
+
+**Location**: Settings → Notifications
+
+### Sound alerts
+
+Configure sounds that play when new Critical or Warning alerts arrive (synchronized with toast notifications):
+
+| Setting | Description |
+|---|---|
+| **Enable sound alerts** | Master toggle |
+| **Critical sound** | Sound for new CRIT alerts |
+| **Warning sound** | Sound for new WARN alerts |
+| **Volume** | 0–100% |
+| **Play when** | Always / Tab in background only / Tab in foreground only |
+
+Available presets: Soft ping, Double beep, Alert tone, Alarm, NOC chime, Siren.
+
+### Visual notifications (toast popups)
+
+| Setting | Description |
+|---|---|
+| **Position** | Bottom right or Top right |
+| **Display duration** | How long each toast stays visible (seconds) |
+| **Stack threshold** | Maximum toasts shown simultaneously |
