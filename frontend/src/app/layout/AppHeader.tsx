@@ -333,7 +333,7 @@ export const AppHeader = ({
               </span>
             )}
             {alerts.length > 0 && muted && (
-              <span className="absolute top-0.5 right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gray-400 px-1 text-[9px] leading-none font-bold text-white dark:bg-gray-600">
+              <span className="absolute top-0.5 right-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] leading-none font-bold text-white">
                 {alerts.length > 9999 ? '9999+' : alerts.length}
               </span>
             )}
