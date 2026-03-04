@@ -1262,13 +1262,15 @@ export const ClusterPage = () => {
             <button
               onClick={() => scrollBy('left')}
               aria-label="Scroll left"
-              className={`absolute left-0 top-0 z-10 flex h-full w-12 items-center justify-center transition-all duration-200 ${
+              className={`group absolute left-0 top-0 z-10 flex h-full w-20 items-center justify-start pl-3 transition-all duration-200 ${
                 canScrollLeft && slideState === 'idle'
-                  ? 'bg-gradient-to-r from-black/50 to-transparent opacity-100 hover:from-black/70 cursor-pointer'
+                  ? 'bg-gradient-to-r from-black/60 to-transparent opacity-100 cursor-pointer'
                   : 'pointer-events-none opacity-0'
               }`}
             >
-              <ChevronLeft className="h-6 w-6 text-white drop-shadow-lg" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20 backdrop-blur-sm transition-all duration-150 group-hover:bg-white/20 group-hover:ring-white/40 group-hover:scale-110">
+                <ChevronLeft className="h-5 w-5 text-white" strokeWidth={2.5} />
+              </div>
             </button>
 
             {/* Rack row — scrolls horizontally, snap-x, no native scrollbar */}
@@ -1296,13 +1298,15 @@ export const ClusterPage = () => {
             <button
               onClick={() => scrollBy('right')}
               aria-label="Scroll right"
-              className={`absolute right-0 top-0 z-10 flex h-full w-12 items-center justify-center transition-all duration-200 ${
+              className={`group absolute right-0 top-0 z-10 flex h-full w-20 items-center justify-end pr-3 transition-all duration-200 ${
                 canScrollRight && slideState === 'idle'
-                  ? 'bg-gradient-to-l from-black/50 to-transparent opacity-100 hover:from-black/70 cursor-pointer'
+                  ? 'bg-gradient-to-l from-black/60 to-transparent opacity-100 cursor-pointer'
                   : 'pointer-events-none opacity-0'
               }`}
             >
-              <ChevronRight className="h-6 w-6 text-white drop-shadow-lg" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20 backdrop-blur-sm transition-all duration-150 group-hover:bg-white/20 group-hover:ring-white/40 group-hover:scale-110">
+                <ChevronRight className="h-5 w-5 text-white" strokeWidth={2.5} />
+              </div>
             </button>
           </div>
         ) : displayConfig.layout === 'wrap' ? (
