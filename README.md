@@ -1,213 +1,205 @@
-# Rackscope
+<div align="center">
 
-[![Tests](https://img.shields.io/badge/tests-362%20passing-brightgreen.svg)](tests/)
-[![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](pyproject.toml)
-[![React](https://img.shields.io/badge/react-19-61DAFB.svg)](frontend/package.json)
-[![TypeScript](https://img.shields.io/badge/typescript-5.x-3178C6.svg)](frontend/tsconfig.json)
-[![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-active-brightgreen.svg)]()
+# 🔭 Rackscope
 
-**Prometheus-first physical infrastructure monitoring for data centers and HPC environments.**
-Visualize the full hierarchy — Site → Room → Aisle → Rack → Device — using live Prometheus metrics, with zero database requirements and full GitOps compatibility.
+**Prometheus-first physical infrastructure monitoring for data centers and HPC environments**
 
----
+[![Version](https://img.shields.io/badge/version-1.0.0--beta-blue?style=flat-square)](CHANGELOG.md)
+[![Tests](https://img.shields.io/badge/tests-683%20passing-brightgreen?style=flat-square)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen?style=flat-square)](tests/)
+[![Python](https://img.shields.io/badge/python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white)](pyproject.toml)
+[![React](https://img.shields.io/badge/react-19-61DAFB?style=flat-square&logo=react&logoColor=black)](frontend/package.json)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-orange?style=flat-square)](LICENSE)
 
-## Features
+[📚 Documentation](https://rackscope.dev) · [🐛 Issues](https://github.com/SckyzO/rackscope/issues) · [🚀 Quick Start](#-quick-start)
 
-- **Prometheus-First**: live PromQL queries, no internal time-series DB
-- **File-Based Topology**: YAML is the source of truth, GitOps-friendly
-- **Template-Driven**: define hardware once, reuse across racks
-- **Physical Views**: world map, room layout, front/rear rack views, device drill-down
-- **Visual Editors**: topology, rack, template, checks, and settings editors
-- **HPC Native**: Twins/Quads/Blades, liquid cooling, dense chassis, Slurm integration
-- **Plugin Architecture**: optional Slurm and Simulator plugins, extensible for new integrations
-- **Metrics Library**: 39+ pre-defined metrics with display configuration (units, thresholds, chart type)
-- **Modern UI**: React 19 + Tailwind CSS v4, dark/light mode, custom accents, NOC-ready
+</div>
 
 ---
 
-## Quick Start (Docker)
+## What is Rackscope?
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/SckyzO/rackscope.git
-   cd rackscope
-   ```
+Rackscope is a **visualization layer** for your existing Prometheus monitoring stack. It renders your physical infrastructure — servers, racks, rooms, data centers — as interactive views with live health states, without owning a CMDB or collecting metrics itself.
 
-2. **Start the full stack**:
-   ```bash
-   make up
-   ```
-   Or manually: `docker compose -f docker-compose.dev.yml up -d --build`
-
-3. **Open the interfaces**:
-
-   | Service | URL |
-   |---------|-----|
-   | **Web UI** | http://localhost:5173 |
-   | **API Docs** | http://localhost:8000/docs |
-   | **Prometheus** | http://localhost:9090 |
-   | **Simulator** | http://localhost:9000 |
-
-That's it. The stack starts with a demo topology and simulated metrics so you can explore immediately.
-
----
-
-## Architecture
+> **It is NOT** a Prometheus replacement, a Grafana plugin, or a CMDB.
+> It **complements** your existing stack with physical views your NOC operators can actually use.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  YAML Config (topology, templates, checks, metrics)     │
-│  config/topology/   config/templates/   config/checks/  │
-└────────────────────────────┬────────────────────────────┘
-                             │ load
-                    ┌────────▼────────┐
-                    │  Backend (8000)  │  FastAPI + Python 3.12
-                    │  - Topology API  │  Plugin: Slurm, Simulator
-                    │  - Health engine │  TelemetryPlanner (batched PromQL)
-                    └────────┬────────┘
-                             │ PromQL queries
-              ┌──────────────▼──────────────┐
-              │     Prometheus (9090)        │
-              └──────────────┬──────────────┘
-                             │ scrapes
-              ┌──────────────▼──────────────┐
-              │  Simulator (9000) or        │
-              │  real infrastructure        │
-              └─────────────────────────────┘
-                             ▲
-                    ┌────────┴────────┐
-                    │ Frontend (5173)  │  React 19 + Tailwind v4
-                    │ - Physical views │  ApexCharts, Leaflet, Monaco
-                    │ - Visual editors │  Dark mode first-class
-                    └─────────────────┘
-```
-
-**Physical Hierarchy**: `Site → Room → Aisle → Rack → Device → Instance`
-
----
-
-## Configuration
-
-| File/Directory | Purpose |
-|----------------|---------|
-| `config/app.yaml` | Central config: Prometheus URL, paths, features, plugin settings |
-| `config/topology/` | Infrastructure definition (sites, rooms, racks, devices) |
-| `config/templates/` | Hardware templates (device types, rack blueprints) |
-| `config/checks/library/` | Health check definitions (PromQL expressions + rules) |
-| `config/metrics/library/` | Metric definitions (display config, thresholds, chart type) |
-
-Example device definition:
-```yaml
-- id: r01-01-c01
-  name: Compute 01
-  template_id: bs-x440-a5
-  u_position: 1
-  instance: compute[001-004]   # expands to compute001..compute004
+                     ┌─────────────────────────────────────┐
+                     │  YAML Topology  (config/)           │
+                     │  Sites · Rooms · Racks · Devices    │
+                     └───────────────┬─────────────────────┘
+                                     │
+                          ┌──────────▼──────────┐
+                          │   Backend  :8000    │   FastAPI · Python 3.12
+                          │  Query planner      │   Batched PromQL queries
+                          │  Health engine      │   Plugin system
+                          └──────────┬──────────┘
+                                     │  PromQL
+                          ┌──────────▼──────────┐
+                          │   Prometheus :9090  │
+                          └──────────┬──────────┘
+                                     │  scrapes
+                          ┌──────────▼──────────┐
+                          │  Your infrastructure │  or the built-in Simulator
+                          └─────────────────────┘
+                                     ▲
+                          ┌──────────┴──────────┐
+                          │   Frontend  :5173   │   React 19 · Tailwind v4
+                          │  Physical views     │   Dark mode · NOC-ready
+                          └─────────────────────┘
 ```
 
 ---
 
-## How It Works
+## ✨ Key Features
 
-You describe your infrastructure in **YAML** (sites, rooms, racks, templates).
-The **backend** loads those files, plans PromQL queries in batches, and exposes a REST API.
-The **frontend** renders visual rack/room views with live health states from Prometheus.
+### 🗺️ Physical Views
+- **World Map** — sites across the globe with live health markers
+- **Room View** — floor plan with rack grid, zoom controls, 6 tooltip styles
+- **Rack View** — front/rear elevation with template-driven device placement
+- **Device View** — instance-level drill-down with live metrics and check results
+- **Cluster Overview** — wallboard for small clusters, drag-and-drop rack ordering
 
-**YAML → Backend (query planner) → Prometheus → Frontend** — no database, no agent.
+### 📊 Dashboard
+- Drag-and-drop widget grid with 20+ widgets
+- Deep-linkable dashboard URLs (`/dashboard/:id`)
+- Per-user layout, widget title alignment, dark/light mode
+
+### 🏥 Health Checks
+- PromQL-based checks with severity rules (OK / Warning / Critical)
+- `for:` debounce — alert only if condition persists N minutes
+- `expand_by_label` — per-sub-component checks (per disk slot, per port…)
+- Health propagates: node → chassis → rack → room → site
+
+### 🖥️ HPC / Slurm
+- Node state monitoring with configurable status mapping
+- Wallboard, partitions, alerts, and nodes list views
+- Node mapping with wildcard patterns
+
+### 🔔 NOC Features
+- **Sound alerts** — 6 configurable presets including fire truck siren, mute toggle
+- **Playlist mode** — automatic view rotation for NOC screens
+- **Notification panel** — adaptive height, mute toggle, real-time badge
+
+### ⚙️ Configuration & Editors
+- All config in YAML — GitOps-friendly, no database required
+- Visual editors: topology, rack, templates, checks, metrics, settings
 
 ---
 
-## Metrics Simulator
+## 🚀 Quick Start
 
-A built-in simulator generates realistic Prometheus metrics for testing without real hardware:
-
-- Simulate up/down nodes, warning/critical states
-- Inject IPMI temperature spikes, storage failures, PDU load
-- Runtime overrides via API or Settings UI
-- Deterministic seeding for reproducible demos
-
-Enable it in `config/app.yaml`:
-```yaml
-features:
-  demo: true
-simulator:
-  scenario: demo-small   # or full-ok, random-demo-small
-```
-
----
-
-## Development Commands
+**Requirements**: Docker & Docker Compose. Nothing else.
 
 ```bash
-make up           # Start full stack (backend, frontend, simulator, prometheus)
-make down         # Stop stack
-make restart      # Restart services (reload config)
-make build        # Rebuild containers
+git clone https://github.com/SckyzO/rackscope.git
+cd rackscope
+make up
+```
+
+| Service | URL | Description |
+|---|---|---|
+| 🖥️ **Web UI** | http://localhost:5173 | Main interface |
+| 📖 **API Docs** | http://localhost:8000/docs | Swagger / OpenAPI |
+| 📊 **Prometheus** | http://localhost:9090 | Metrics backend |
+| 🔬 **Simulator** | http://localhost:9000 | Demo metrics |
+| 📚 **Docs** | http://localhost:3001 | Documentation site |
+
+The stack starts with a demo topology and simulated metrics — explore immediately, no hardware required.
+
+---
+
+## 📁 Project Structure
+
+```
+rackscope/
+├── config/                  # All configuration (YAML, GitOps-friendly)
+│   ├── app.yaml             # Central config: Prometheus URL, features, plugins
+│   ├── topology/            # Infrastructure: sites, rooms, racks, devices
+│   ├── templates/           # Hardware templates (devices, racks, components)
+│   ├── checks/library/      # Health check definitions (PromQL + rules)
+│   ├── metrics/library/     # Metric definitions (display config, thresholds)
+│   └── plugins/             # Per-plugin config (slurm, simulator)
+├── src/rackscope/           # Backend (FastAPI / Python 3.12)
+├── frontend/src/            # Frontend (React 19 / TypeScript / Tailwind v4)
+├── tools/simulator/         # Demo metrics generator
+├── website/                 # Documentation site (Docusaurus 3)
+└── tests/                   # Backend test suite (683 tests, 90% coverage)
+```
+
+---
+
+## 🔌 Plugin System
+
+Rackscope ships with two built-in plugins and a documented API to build your own:
+
+| Plugin | Description | Status |
+|---|---|---|
+| **Simulator** | Realistic metric generation for demos and testing | Built-in |
+| **Slurm** | HPC workload manager integration | Built-in |
+| *Custom* | Build your own plugin with routes + menu sections | [See docs](https://rackscope.dev/plugins/writing-plugins) |
+
+---
+
+## 🛠️ Development
+
+All commands run **inside Docker containers** — no local Python or Node.js needed.
+
+```bash
+# Stack
+make up           # Start (backend · frontend · simulator · prometheus)
+make down         # Stop
+make restart      # Restart (picks up config changes)
 make logs         # Follow all logs
-make lint         # Run all linters (ruff + eslint + stylelint + prettier)
-make test         # Run backend tests (362 tests)
-make typecheck    # Run mypy (0 errors)
-make coverage     # Generate coverage report
-make quality      # Run lint + typecheck + complexity + coverage
-make docs         # Start Docusaurus documentation site (http://localhost:3001)
-make docs-build   # Build static documentation site
-```
 
-All commands run **inside Docker containers** — no local Python or Node.js required.
+# Quality
+make lint         # ruff + eslint + stylelint + prettier
+make test         # pytest (683 tests)
+make test-v       # Verbose — shows each test name
+make test-k K=x   # Filter by keyword  (e.g. K=planner, K=auth)
+make typecheck    # mypy — 0 errors
+make coverage     # Coverage report → htmlcov/
+make security     # bandit + npm audit + pip-audit
+make ci           # Full pipeline: quality + security
 
----
-
-## Plugin System
-
-Rackscope uses a plugin architecture to separate optional features from the core:
-
-- **Core**: topology visualization, health checks, editors, REST API
-- **SlurmPlugin**: HPC workload manager integration (node states, partitions, job tracking)
-- **SimulatorPlugin**: demo mode with metric overrides and failure injection
-
-Plugins register their own routes and contribute menu sections to the frontend dynamically.
-
----
-
-## Linting & Quality
-
-```bash
-make lint        # ruff + eslint + stylelint + prettier
-make typecheck   # mypy — target: 0 errors (currently achieved)
-make test        # pytest — 362 tests
-make coverage    # 70%+ target
+# Docs
+make docs         # Docusaurus → http://localhost:3001
 ```
 
 ---
 
-## Documentation
+## 📚 Documentation
 
-Full documentation is available in the `website/` directory (Docusaurus 3):
+Full documentation at **https://rackscope.dev** (or `make docs` locally):
 
-```bash
-make docs   # → http://localhost:3001
-```
-
-Or browse the source docs:
-- [Architecture](docs/ARCHITECTURE.md)
-- [API Reference](docs/API_REFERENCE.md)
-- [Admin Guide](docs/ADMIN_GUIDE.md)
-- [User Guide](docs/USER_GUIDE.md)
-- [Simulator](docs/SIMULATOR.md)
-- [Roadmap](ARCHITECTURE/plans/CONSOLIDATED_ROADMAP.md)
+- [Getting Started](https://rackscope.dev/getting-started/quick-start)
+- [Configuration Reference](https://rackscope.dev/admin-guide/app-yaml)
+- [Topology YAML](https://rackscope.dev/admin-guide/topology-yaml)
+- [Health Checks](https://rackscope.dev/user-guide/health-checks)
+- [Plugin Development](https://rackscope.dev/plugins/writing-plugins)
+- [Design System](https://rackscope.dev/design-system/overview)
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
-Contributions are welcome.
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md) before opening a PR.
+Contributions are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+
+Bug reports and feature requests → [GitHub Issues](https://github.com/SckyzO/rackscope/issues)
 
 ---
 
-## License
+## 📄 License
 
-AGPL-3.0-or-later — see [LICENSE](LICENSE).
+[AGPL-3.0-or-later](LICENSE) — Thomas Bourcey ([@SckyzO](https://github.com/SckyzO))
 
-For commercial use, proprietary deployments, or SaaS offerings, contact the maintainers for a commercial license.
+For commercial use or proprietary deployments, contact **sckyzo@gmail.com**.
+
+---
+
+<div align="center">
+
+Made with ❤️ for datacenter operators and HPC teams
+
+</div>

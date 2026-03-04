@@ -1,176 +1,101 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-
----
-
-## [Unreleased] — v1.0.0
-
-### Breaking Changes
-
-- **App URL migration**: All routes moved from `/cosmos/*` to `/*` (root prefix)
-  - Old: `http://localhost:5173/cosmos/views/room/dc1-a-r1`
-  - New: `http://localhost:5173/views/room/dc1-a-r1`
-- **localStorage keys renamed**: `cosmos-*` → `rackscope.*`
-  - `cosmos-theme` → `rackscope.theme`
-  - `cosmos-sidebar` → `rackscope.sidebar`
-- **CSS classes renamed**: `.cosmos-*` → `.rs-*`
-  - `.cosmos-root` → `.rs-root`
-  - `.cosmos-sidebar` → `.rs-sidebar`
-  - `.cosmos-scrollbar` → `.rs-scrollbar`
-- **Topology editor URL**: `/cosmos/topology/editor` → `/editors/topology`
-- **Rack editor URL**: `/cosmos/rack/{id}/editor` → `/editors/rack`
-
-### Added
-
-#### Phase 6 — Backend Plugin Architecture
-
-- `SimulatorPlugin`: full extraction of simulator functionality into plugin
-  - Routes: `/api/simulator/status`, `/api/simulator/scenarios`, `/api/simulator/overrides`
-  - Menu section "Simulator" (order=200)
-- `SlurmPlugin`: full extraction of Slurm integration into plugin
-  - Routes: `/api/slurm/rooms/{id}/nodes`, `/api/slurm/summary`, `/api/slurm/partitions`, `/api/slurm/nodes`
-  - Menu section "Workload" (order=50)
-- `RackscopePlugin` abstract base class (`plugins/base.py`)
-- `PluginRegistry` for lifecycle management (`plugins/registry.py`)
-- `MenuSection` / `MenuItem` models for dynamic frontend navigation
-- `/api/plugins` and `/api/plugins/menu` endpoints for plugin discovery
-- `services/metrics_service.py`: generic template-driven metrics collection
-  - `collect_component_metrics()` — replaces 35 lines of hardcoded Raritan PDU queries
-  - `collect_device_metrics()` — replaces 37 lines of hardcoded node temperature/power queries
-- `metrics: List[str]` field added to `DeviceTemplate` (mirrors `RackComponentTemplate.metrics`)
-- 37 new plugin system tests
-
-#### Phase 6.5 — Metrics Library System
-
-- `model/metrics.py`: `MetricDefinition`, `MetricsLibrary` Pydantic models
-- `api/routers/metrics.py`: metrics API endpoints
-  - `GET /api/metrics/library` — list all metric definitions
-  - `GET /api/metrics/library/{id}` — get single metric definition
-  - `GET /api/metrics/data` — query live metric data (instant + range)
-- `config/metrics/library/`: 39 metric YAML definitions
-  - Categories: temperature, power, compute, storage, network, infrastructure
-  - Display config: unit, chart_type, color, thresholds (warn/crit), time_ranges
-- Simulator refactored to use metrics library dynamically (no hardcoded metric lists)
-- `GET /api/simulator/metrics` — discover available metrics from simulator
-- `ARCHITECTURE/decisions/ADR-007-METRICS-LIBRARY.md` — architecture decision record
-
-#### Phase 7 — Frontend Rebuild (cosmos → app/ migration)
-
-- `frontend/src/app/`: complete frontend application (migrated from `frontend/src/cosmos/`)
-- `AppRouter.tsx`: React Router v6 with all routes at `/` root
-- `AppLayout.tsx` + `AppHeader.tsx` + `AppSidebar.tsx`: new application shell
-- `AppConfigContext.tsx`: app configuration and feature flags context
-- Dynamic plugin menu: sidebar fetches `/api/plugins/menu` and renders plugin sections
-- ApexCharts integration replacing Chart.js for metrics visualization
-- `PUT /api/config` endpoint: saves config to `config/plugins/simulator/config.yml` and syncs simulator
-- Auth: `GET /api/auth/status`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
-- Slurm live views: Overview, Nodes, Partitions, Alerts, Wallboard pages (all fully functional)
-- `SlurmConfigLike` Protocol in `services/slurm_service.py` for type-safe service layer
-
-#### Phase 8 — Performance Optimizations
-
-- Backend: dict-indexed topology lookup (O(1) rack/room resolution)
-- Frontend: `useMemo` / `useCallback` on expensive components
-- Bundle size reduction via code splitting
-
-#### Phase 9 — Documentation & Cleanup
-
-- `website/`: Docusaurus 3 documentation site
-  - `make docs` to start (http://localhost:3001)
-  - `make docs-build` to build static site
-- `CLAUDE.md`: full rewrite reflecting post-migration state
-- `README.md`: professional rewrite with badges and accurate Quick Start
-- `CHANGELOG.md`: this file — full history from v0.x to v1.0
-- `old_claude.md`: archived pre-migration CLAUDE.md for historical reference
-- `mypy.ini`: 0 type errors (resolved 57 errors across 16 files)
-
-### Changed
-
-- `frontend/src/cosmos/` → `frontend/src/app/` (full directory rename + file cleanup)
-- Simulator status endpoint: uses Docker hostname `simulator:9000` (was `localhost:9000`)
-- `PUT /api/config` now syncs to `config/plugins/simulator/config.yml` after save
-- `SlurmPlugin` uses `SlurmPluginConfig` (separate from `SlurmConfig` in `model/config.py`)
-- `SimulatorPlugin` uses `SimulatorPluginConfig` (separate from `SimulatorConfig`)
-- `make typecheck` now calls `/home/appuser/.local/bin/mypy` (explicit path in container)
-- `ARCHITECTURE/plans/CONSOLIDATED_ROADMAP.md`: phases 6, 6.5, 7, 8, 9 marked ✅ COMPLETE
-- `.gitignore`: added `website/node_modules/`, `website/build/`, `website/.docusaurus/`
-- `Makefile`: added `docs` and `docs-build` targets
-
-### Fixed
-
-- `saveWidgets` temporal dead zone crash in `DashboardPage.tsx`
-- Simulator `running=false` incorrect in `/api/simulator/status` endpoint
-- Scenario not applying after settings save (config sync bug)
-- Slurm test isolation: `SlurmPluginConfig` vs `SlurmConfig` mismatch causing test failures
-- 362/362 tests passing (was 360/362 with 2 pre-existing failures)
-- 0 mypy type errors (was 57 errors across 16 files)
-- All linters passing: ruff, eslint, stylelint, prettier
+All notable changes to Rackscope will be documented in this file.
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: [SemVer](https://semver.org/)
 
 ---
 
-## [0.9.0] — Phase 6 completion (2026-02-02)
+## [1.0.0-beta] — 2026-03
 
-### Added
-- Plugin architecture: `RackscopePlugin`, `PluginRegistry`, `MenuSection`/`MenuItem`
-- `SimulatorPlugin` and `SlurmPlugin` extracted from core
-- Generic `metrics_service.py` (removed 105 lines of hardcoded Prometheus queries)
-- 311 tests (was 251)
+> First public release of Rackscope.
+
+### Physical Infrastructure Views
+
+- **World Map** — site overview with health markers and geolocation, layout toggle (Stacked / Split)
+- **Room View** — floor plan with rack grid, zoom/fit controls, customizable tooltip styles (6 variants)
+- **Rack View** — front and rear elevation with device placement, U-collision detection, template-driven
+- **Device View** — instance-level drill-down with tabs, live metrics charts, health check results
+- **Cluster Overview** — wallboard-style multi-rack view, configurable rack width, drag-and-drop reorder
+
+### Physical Hierarchy
+
+- Full `Site → Room → Aisle → Rack → Device → Instance` hierarchy
+- Segmented YAML topology (per-site/room/aisle/rack files) or monolithic single file
+- `instance` field expands nodeset patterns: `compute[001-004]` → 4 nodes
+- Template-driven hardware: define once, reuse across racks
+- Rack component templates (PDUs, HMC, switches, cooling units)
+
+### Health Checks
+
+- PromQL-based health checks with configurable severity rules (OK / Warning / Critical / Unknown)
+- Scope levels: `node`, `chassis`, `rack`
+- `for:` duration field — alert fires only after condition persists N minutes (debounce)
+- `expand_by_label` — per-sub-component checks (e.g., per disk slot on storage arrays)
+- Aggregation: max severity wins, propagates from node → chassis → rack → room → site
+- Visual Checks Editor with YAML mode, live PromQL test-query
+
+### Dashboard
+
+- Drag-and-drop widget grid (react-grid-layout), configurable per-user
+- 20+ built-in widgets: Node Health (HUDTooltip), Severity Donut, Active Alerts, World Map, KPI cards, Slurm cluster, Simulator Status, and more
+- Widget title bar alignment setting (left / center)
+- URL-based dashboards `/dashboard/:id` — deep-linkable, multi-tab independent
+- Playlist integration — include dashboards in NOC rotation
+
+### NOC Features
+
+- **Playlist mode** — automatic rotation through views, configurable intervals, kiosk/fullscreen/split
+- **Sound alerts** — per-severity configurable sounds (soft ping, double beep, alert tone, alarm, NOC chime, fire truck siren), mute toggle in notification panel
+- **Notification panel** — adaptive height (auto-fit to alert count), red badge, mute toggle
+- **Slurm Wallboard** — compact aisle view mapping Slurm node states to rack layout
+- Error pages: 500 (overheating rack), 503 (disconnected cable), 403/401 (padlock)
+
+### HPC / Slurm Integration
+
+- Slurm node state monitoring via configurable metric + label mapping
+- Views: Overview, Nodes (filterable), Alerts, Partitions, Wallboard
+- Node mapping file (wildcard patterns `compute[001-100]` → topology instances)
+- Configurable status map (Slurm states → OK / Warning / Critical)
+- Device role filtering (`compute`, `visu`, `login`, `io`, `storage`)
+
+### Configuration & Editors
+
+- **Topology Editor** — visual room layout, aisle/rack CRUD, YAML fallback mode
+- **Rack Editor** — front/rear device placement, drag-and-drop, U-space validation
+- **Template Editor** — device and rack component templates with live preview
+- **Checks Editor** — PromQL expression editor with variable substitution and live test-query
+- **Metrics Editor** — metric definition management
+- **Settings** — Prometheus connection, planner config, feature flags, auth, map defaults, appearance, severity labels, notification sounds
+
+### Metrics Library
+
+- 39 pre-defined metric definitions (temperature, power, CPU, storage, network, infrastructure)
+- Per-metric display config: unit, chart type, color, warn/crit thresholds, time ranges
+- Template-driven: assign metrics to device/rack templates via YAML
+
+### Security
+
+- JWT-based authentication (configurable, disabled by default)
+- bcrypt password hashing, configurable password policy
+- Setup wizard with permanent dismissal (writes to `app.yaml`)
+- Automated security audit pipeline: `make security` (bandit + npm audit + pip-audit)
+- GitHub Actions workflow: security scan on every push + weekly CVE check
+
+### Plugin Architecture
+
+- `RackscopePlugin` abstract base — register routes, contribute menu sections, lifecycle hooks
+- `SimulatorPlugin` — demo mode with realistic metric generation, scenario switching, runtime overrides, incident injection
+- `SlurmPlugin` — Slurm workload manager integration
+- Plugin config priority chain: dedicated file → `app.yaml plugins.{id}` → legacy fallback
+
+### Developer
+
+- REST API fully documented (Swagger UI at `/docs`)
+- 683 backend tests (pytest), 90% code coverage
+- `make test-v`, `make test-k K=keyword`, `make test-file F=path`, `make ci`
+- mypy type checking: 0 errors
+- Docusaurus documentation site (`make docs` → http://localhost:3001)
 
 ---
 
-## [0.8.0] — Phase 5 completion
-
-### Added
-- Test coverage: 66% (was 36%), 251 tests
-- Router tests, service tests, model tests
-
----
-
-## [0.7.0] — Phase 4 completion
-
-### Added
-- Structured logging replacing `print()` calls
-- Global exception handlers
-- Request logging middleware
-
----
-
-## [0.6.0] — Phase 3 completion
-
-### Added
-- `services/` directory: topology, telemetry, instance, slurm services
-- Business logic extracted from API layer
-
----
-
-## [0.5.0] — Phase 2 completion
-
-### Added
-- `api/dependencies.py`: FastAPI dependency injection
-- Clean dependency graph, improved testability
-
----
-
-## [0.4.0] — Phase 1 completion
-
-### Added
-- `api/routers/`: domain-scoped router files (topology, catalog, checks, telemetry, config)
-- `app.py` reduced from 2014 lines to < 200 lines
-
----
-
-## [0.1.0] — Initial release
-
-### Added
-- Physical topology model: Site → Room → Aisle → Rack → Device → Instance
-- YAML-based configuration (topology, templates, checks)
-- Prometheus integration with PromQL query planning
-- FastAPI backend with REST API
-- React frontend with rack/room visualization
-- Simulator for testing without real hardware
-- Slurm integration (node states, wallboard)
-- Health check engine (OK/WARN/CRIT/UNKNOWN aggregation)
-- Visual editors (topology, rack, templates, checks)
+*For questions or issues: https://github.com/SckyzO/rackscope/issues*
