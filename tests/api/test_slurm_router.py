@@ -7,6 +7,7 @@ Tests for Slurm-specific endpoints and dashboards.
 from unittest.mock import AsyncMock, patch
 
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 
 from rackscope.api.app import app
@@ -494,3 +495,275 @@ def test_get_slurm_nodes_empty(mock_topology, mock_app_config):
     assert response.status_code == 200
     data = response.json()
     assert data["nodes"] == []
+
+
+def test_get_slurm_nodes_room_not_found(mock_topology, mock_app_config):
+    """Test error when room filter doesn't exist for nodes endpoint."""
+    import rackscope.api.app as app_module
+
+    app_module.TOPOLOGY = mock_topology
+    app_module.APP_CONFIG = mock_app_config
+
+    response = client.get("/api/slurm/nodes?room_id=nonexistent")
+
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"].lower()
+
+
+def test_get_slurm_partitions_room_not_found(mock_topology, mock_app_config):
+    """Test error when room filter doesn't exist for partitions endpoint."""
+    import rackscope.api.app as app_module
+
+    app_module.TOPOLOGY = mock_topology
+    app_module.APP_CONFIG = mock_app_config
+
+    response = client.get("/api/slurm/partitions?room_id=nonexistent")
+
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"].lower()
+
+
+def test_get_slurm_mapping_success(tmp_path):
+    """Test getting node mapping."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    mapping_path = tmp_path / "node_mapping.yaml"
+    mapping_content = {
+        "mappings": [  # Note: plural form
+            {"node": "n001", "instance": "compute001"},
+            {"node": "n002", "instance": "compute002"},
+        ]
+    }
+    mapping_path.write_text(yaml.safe_dump(mapping_content))
+
+    plugin.config = SlurmPluginConfig(mapping_path=str(mapping_path))
+
+    response = client.get("/api/slurm/mapping")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "entries" in data
+    assert len(data["entries"]) == 2
+    # Check that entries were loaded correctly
+    assert data["entries"][0]["node"] == "n001"
+    assert data["entries"][0]["instance"] == "compute001"
+    assert data["mapping_path"] == str(mapping_path)
+
+
+def test_get_slurm_mapping_no_file():
+    """Test getting mapping when file doesn't exist."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    plugin.config = SlurmPluginConfig(mapping_path="/nonexistent/mapping.yaml")
+
+    response = client.get("/api/slurm/mapping")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["entries"] == []
+
+
+def test_save_slurm_mapping_success(tmp_path):
+    """Test saving node mapping."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    mapping_path = tmp_path / "node_mapping.yaml"
+    # Create parent directory
+    mapping_path.parent.mkdir(parents=True, exist_ok=True)
+    plugin.config = SlurmPluginConfig(mapping_path=str(mapping_path))
+
+    response = client.post(
+        "/api/slurm/mapping",
+        json={
+            "entries": [
+                {"node": "n001", "instance": "compute001"},
+                {"node": "n*", "instance": "compute*"},
+            ]
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["ok"] is True
+    assert data["saved"] == 2
+
+    # Verify file was written
+    assert mapping_path.exists()
+    content = yaml.safe_load(mapping_path.read_text())
+    # The service saves to "mappings" key (plural)
+    assert "mappings" in content
+    assert len(content["mappings"]) == 2
+
+
+def test_save_slurm_mapping_no_path():
+    """Test error when mapping_path is not configured."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    plugin.config = SlurmPluginConfig(mapping_path=None)
+
+    response = client.post(
+        "/api/slurm/mapping",
+        json={"entries": [{"node": "n001", "instance": "compute001"}]},
+    )
+
+    assert response.status_code == 400
+    assert "not configured" in response.json()["detail"]
+
+
+def test_get_slurm_metrics_catalog(tmp_path):
+    """Test getting Slurm metrics catalog."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    catalog_dir = tmp_path / "metrics"
+    catalog_dir.mkdir()
+
+    (catalog_dir / "metrics1.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "metrics": [
+                    {"id": "slurm_nodes", "name": "Slurm Nodes", "metric": "slurm_node_status"},
+                    {"id": "slurm_jobs", "name": "Slurm Jobs", "metric": "slurm_job_count"},
+                ]
+            }
+        )
+    )
+
+    plugin.config = SlurmPluginConfig(
+        metrics_catalog_dir=str(catalog_dir), metrics_catalogs=["metrics1.yaml"]
+    )
+
+    response = client.get("/api/slurm/metrics/catalog")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "metrics" in data
+    assert len(data["metrics"]) == 2
+    assert "loaded_files" in data
+    assert "available_files" in data
+
+
+def test_get_slurm_metrics_catalog_file_not_found(tmp_path):
+    """Test metrics catalog when file doesn't exist."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    catalog_dir = tmp_path / "metrics"
+    catalog_dir.mkdir()
+
+    plugin.config = SlurmPluginConfig(
+        metrics_catalog_dir=str(catalog_dir), metrics_catalogs=["nonexistent.yaml"]
+    )
+
+    response = client.get("/api/slurm/metrics/catalog")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["metrics"] == []
+
+
+def test_update_metrics_catalog_config(tmp_path):
+    """Test updating metrics catalog configuration."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text(yaml.safe_dump({"metrics_catalogs": ["old.yaml"]}))
+
+    with patch.object(plugin, "config_file_path", return_value=str(config_file)):
+        plugin.config = SlurmPluginConfig(metrics_catalogs=["old.yaml"])
+
+        response = client.post(
+            "/api/slurm/metrics/catalog/config",
+            json={"metrics_catalogs": ["new1.yaml", "new2.yaml"]},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["ok"] is True
+    assert data["metrics_catalogs"] == ["new1.yaml", "new2.yaml"]
+
+    # Verify file was updated
+    content = yaml.safe_load(config_file.read_text())
+    assert content["metrics_catalogs"] == ["new1.yaml", "new2.yaml"]
+
+
+def test_update_metrics_catalog_config_error(tmp_path):
+    """Test error handling when updating catalog config fails."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    plugin.config = SlurmPluginConfig()
+
+    with patch.object(plugin, "config_file_path", return_value="/nonexistent/config.yaml"):
+        response = client.post(
+            "/api/slurm/metrics/catalog/config", json={"metrics_catalogs": ["new.yaml"]}
+        )
+
+    assert response.status_code == 500
+
+
+def test_get_slurm_metric_data_success():
+    """Test querying Slurm metric data."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    plugin._metrics_catalog = [
+        {
+            "id": "slurm_nodes",
+            "name": "Slurm Node Count",
+            "metric": "slurm_node_status",
+            "display": {"unit": "count"},
+            "scope": "global",
+        }
+    ]
+
+    with patch("rackscope.telemetry.prometheus.client.query", AsyncMock(return_value={
+        "status": "success",
+        "data": {"result": [{"metric": {"node": "n001"}, "value": [1234, "1"]}]},
+    })):
+        response = client.get("/api/slurm/metrics/data?metric_id=slurm_nodes")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["metric_id"] == "slurm_nodes"
+    assert data["name"] == "Slurm Node Count"
+    assert data["unit"] == "count"
+    assert len(data["data"]) == 1
+
+
+def test_get_slurm_metric_data_not_found():
+    """Test error when metric not in catalog."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    plugin._metrics_catalog = []
+
+    response = client.get("/api/slurm/metrics/data?metric_id=nonexistent")
+
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"]
+
+
+def test_get_slurm_metric_data_prometheus_error():
+    """Test handling Prometheus query failure."""
+    plugin = registry.get_plugin("slurm")
+    assert plugin is not None
+
+    plugin._metrics_catalog = [
+        {"id": "slurm_nodes", "name": "Slurm Nodes", "metric": "slurm_node_status"}
+    ]
+
+    with patch("rackscope.telemetry.prometheus.client.query", AsyncMock(return_value={
+        "status": "error",
+        "error": "Query timeout",
+    })):
+        response = client.get("/api/slurm/metrics/data?metric_id=slurm_nodes")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "error" in data

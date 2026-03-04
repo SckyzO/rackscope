@@ -198,6 +198,196 @@ async def test_propagation_crit_virtual_node_makes_parent_crit():
     assert snapshot.node_states.get("da01") == "CRIT"
 
 
+# ── Additional edge cases ─────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_planner_empty_topology():
+    """Test planner with empty topology (no nodes, chassis, racks)."""
+    topology = Topology(sites=[])
+    checks = _make_expand_check()
+    planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
+
+    with patch("rackscope.telemetry.planner.prom_client") as mock_client:
+        mock_client.query = AsyncMock(return_value=_prom_ok([]))
+        mock_client.record_planner_batch = lambda **_: None
+        snapshot = await planner.get_snapshot(topology, checks)
+
+    assert snapshot.node_states == {}
+    assert snapshot.chassis_states == {}
+    assert snapshot.rack_states == {}
+
+
+@pytest.mark.asyncio
+async def test_planner_prometheus_error_status():
+    """Test planner when Prometheus returns error status."""
+    topology = _make_topology("da01")
+    checks = _make_expand_check()
+    planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
+
+    with patch("rackscope.telemetry.planner.prom_client") as mock_client:
+        mock_client.query = AsyncMock(
+            return_value={"status": "error", "error": "query timeout"}
+        )
+        mock_client.record_planner_batch = lambda **_: None
+        snapshot = await planner.get_snapshot(topology, checks)
+
+    # Should handle error gracefully
+    assert snapshot.node_states.get("da01") == "UNKNOWN"
+
+
+@pytest.mark.asyncio
+async def test_expand_crit_threshold_downgrade_to_warn():
+    """Test expand_crit_threshold: fewer than threshold CRIT → WARN."""
+    topology = _make_topology("da01")
+    checks = _make_expand_check(
+        expand_discovery_expr='eseries_drive_status{instance=~"$instances"}',
+        expand_absent_state="OK",
+        expand_crit_threshold=3,  # Need 3+ CRIT to fire CRIT on parent
+    )
+    planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
+
+    # Discovery finds 5 slots; 2 fail (less than threshold of 3)
+    discovery_result = _prom_ok(
+        [
+            _metric("da01", "1", "optimal", "1"),
+            _metric("da01", "2", "optimal", "1"),
+            _metric("da01", "3", "optimal", "1"),
+            _metric("da01", "4", "optimal", "1"),
+            _metric("da01", "5", "optimal", "1"),
+        ]
+    )
+    main_result = _prom_ok(
+        [
+            _metric("da01", "2", "failed", "1"),
+            _metric("da01", "4", "failed", "1"),
+        ]
+    )
+
+    call_count = 0
+
+    async def mock_query(q, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return discovery_result
+        return main_result
+
+    with patch("rackscope.telemetry.planner.prom_client") as mock_client:
+        mock_client.query = mock_query
+        mock_client.record_planner_batch = lambda **_: None
+        snapshot = await planner.get_snapshot(topology, checks)
+
+    # 2 CRIT < 3 threshold → parent should be WARN
+    assert snapshot.node_states.get("da01") == "WARN"
+
+
+@pytest.mark.asyncio
+async def test_expand_crit_threshold_fires_crit_when_met():
+    """Test expand_crit_threshold: threshold met → CRIT."""
+    topology = _make_topology("da01")
+    checks = _make_expand_check(
+        expand_discovery_expr='eseries_drive_status{instance=~"$instances"}',
+        expand_absent_state="OK",
+        expand_crit_threshold=2,  # Need 2+ CRIT
+    )
+    planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
+
+    discovery_result = _prom_ok(
+        [
+            _metric("da01", "1", "optimal", "1"),
+            _metric("da01", "2", "optimal", "1"),
+            _metric("da01", "3", "optimal", "1"),
+        ]
+    )
+    main_result = _prom_ok(
+        [
+            _metric("da01", "1", "failed", "1"),
+            _metric("da01", "2", "failed", "1"),
+        ]
+    )
+
+    call_count = 0
+
+    async def mock_query(q, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return discovery_result
+        return main_result
+
+    with patch("rackscope.telemetry.planner.prom_client") as mock_client:
+        mock_client.query = mock_query
+        mock_client.record_planner_batch = lambda **_: None
+        snapshot = await planner.get_snapshot(topology, checks)
+
+    # 2 CRIT = threshold → parent should be CRIT
+    assert snapshot.node_states.get("da01") == "CRIT"
+
+
+@pytest.mark.asyncio
+async def test_planner_with_targets_by_check():
+    """Test planner with template-scoped targets (targets_by_check)."""
+
+    def _make_node_topology(instance: str = "compute01") -> Topology:
+        device = Device(
+            id="dev1",
+            name="Server",
+            template_id="server",
+            u_position=1,
+            instance=instance,
+        )
+        rack = Rack(id="rack01", name="Rack 01", devices=[device])
+        aisle = Aisle(id="aisle-a", name="Aisle A", racks=[rack])
+        room = Room(id="room1", name="Room 1", aisles=[aisle], standalone_racks=[])
+        site = Site(id="site1", name="Site 1", rooms=[room])
+        return Topology(sites=[site])
+
+    topology = _make_node_topology("compute01")
+
+    check = CheckDefinition(
+        id="node_up",
+        name="Node Up",
+        scope="node",
+        expr='up{instance=~"$instances"}',
+        output="numeric",
+        rules=[CheckRule(op="==", value=0, severity="CRIT")],
+    )
+    checks = ChecksLibrary(checks=[check])
+
+    # Provide scoped targets
+    targets_by_check = {"node_up": {"node": ["compute01"], "chassis": [], "rack": []}}
+
+    planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
+
+    with patch("rackscope.telemetry.planner.prom_client") as mock_client:
+        mock_client.query = AsyncMock(
+            return_value=_prom_ok([{"metric": {"instance": "compute01"}, "value": [0, "1"]}])
+        )
+        mock_client.record_planner_batch = lambda **_: None
+        snapshot = await planner.get_snapshot(topology, checks, targets_by_check)
+
+    assert snapshot.node_states.get("compute01") == "OK"
+
+
+@pytest.mark.asyncio
+async def test_planner_no_checks_for_target():
+    """Test planner when targets_by_check excludes a check."""
+    topology = _make_topology("da01")
+    checks = _make_expand_check()
+    targets_by_check = {}  # No targets for eseries_drive_status
+
+    planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
+
+    with patch("rackscope.telemetry.planner.prom_client") as mock_client:
+        mock_client.query = AsyncMock(return_value=_prom_ok([]))
+        mock_client.record_planner_batch = lambda **_: None
+        snapshot = await planner.get_snapshot(topology, checks, targets_by_check)
+
+    # Check was skipped due to no targets
+    assert "da01" not in snapshot.node_states or snapshot.node_states.get("da01") == "UNKNOWN"
+
+
 @pytest.mark.asyncio
 async def test_propagation_no_bad_nodes_parent_stays_unknown():
     """When no virtual nodes are found, parent instance stays UNKNOWN."""

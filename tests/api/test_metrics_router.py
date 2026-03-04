@@ -341,3 +341,204 @@ def test_query_metric_data_prometheus_error_returns_500(client):
         )
 
     assert response.status_code == 500
+
+
+def test_list_metrics_library_not_loaded():
+    """Test /api/metrics/library when library not loaded."""
+    from rackscope.api import app as app_module
+
+    # Temporarily unload library
+    original = app_module.METRICS_LIBRARY
+    app_module.METRICS_LIBRARY = None
+
+    try:
+        client = TestClient(app)
+        response = client.get("/api/metrics/library")
+        assert response.status_code == 503
+        assert "not loaded" in response.json()["detail"]
+    finally:
+        app_module.METRICS_LIBRARY = original
+
+
+def test_get_metric_definition_library_not_loaded():
+    """Test /api/metrics/library/{id} when library not loaded."""
+    from rackscope.api import app as app_module
+
+    original = app_module.METRICS_LIBRARY
+    app_module.METRICS_LIBRARY = None
+
+    try:
+        client = TestClient(app)
+        response = client.get("/api/metrics/library/node_temperature")
+        assert response.status_code == 503
+        assert "not loaded" in response.json()["detail"]
+    finally:
+        app_module.METRICS_LIBRARY = original
+
+
+def test_query_metric_data_library_not_loaded():
+    """Test /api/metrics/data when library not loaded."""
+    from rackscope.api import app as app_module
+
+    original = app_module.METRICS_LIBRARY
+    app_module.METRICS_LIBRARY = None
+
+    try:
+        client = TestClient(app)
+        response = client.get(
+            "/api/metrics/data",
+            params={
+                "metric_id": "node_temperature",
+                "target_id": "compute001",
+                "time_range": "1h",
+            },
+        )
+        assert response.status_code == 503
+        assert "not loaded" in response.json()["detail"]
+    finally:
+        app_module.METRICS_LIBRARY = original
+
+
+def test_list_categories_library_not_loaded():
+    """Test /api/metrics/categories when library not loaded."""
+    from rackscope.api import app as app_module
+
+    original = app_module.METRICS_LIBRARY
+    app_module.METRICS_LIBRARY = None
+
+    try:
+        client = TestClient(app)
+        response = client.get("/api/metrics/categories")
+        assert response.status_code == 503
+        assert "not loaded" in response.json()["detail"]
+    finally:
+        app_module.METRICS_LIBRARY = original
+
+
+def test_list_tags_library_not_loaded():
+    """Test /api/metrics/tags when library not loaded."""
+    from rackscope.api import app as app_module
+
+    original = app_module.METRICS_LIBRARY
+    app_module.METRICS_LIBRARY = None
+
+    try:
+        client = TestClient(app)
+        response = client.get("/api/metrics/tags")
+        assert response.status_code == 503
+        assert "not loaded" in response.json()["detail"]
+    finally:
+        app_module.METRICS_LIBRARY = original
+
+
+def test_list_library_files_no_config():
+    """Test /api/metrics/library/files with no app config."""
+    client = TestClient(app)
+    response = client.get("/api/metrics/library/files")
+    assert response.status_code == 200
+    # Without config, should return empty list
+    data = response.json()
+    assert "files" in data
+
+
+def test_list_metrics_files_no_config():
+    """Test /api/metrics/files with no app config."""
+    client = TestClient(app)
+    response = client.get("/api/metrics/files")
+    assert response.status_code == 200
+    # Without config, should return empty list
+    data = response.json()
+    assert "files" in data
+
+
+def test_get_library_metric_file_no_config():
+    """Test /api/metrics/library/files/{name} with no app config."""
+    from unittest.mock import patch
+    with patch("rackscope.api.app.APP_CONFIG", None):
+        client = TestClient(app)
+        response = client.get("/api/metrics/library/files/test.yaml")
+    assert response.status_code == 503
+    assert "not loaded" in response.json()["detail"]
+
+
+def test_put_library_metric_file_no_config():
+    """Test /api/metrics/library/files/{name} PUT with no app config."""
+    from unittest.mock import patch
+    with patch("rackscope.api.app.APP_CONFIG", None):
+        client = TestClient(app)
+        response = client.put(
+            "/api/metrics/library/files/test.yaml", json={"content": "metrics: []"}
+        )
+    assert response.status_code == 503
+    assert "not loaded" in response.json()["detail"]
+
+
+def test_put_library_metric_file_invalid_yaml():
+    """Test /api/metrics/library/files/{name} PUT with invalid YAML."""
+    from rackscope.api import app as app_module
+    from rackscope.model.loader import load_app_config
+    import os
+
+    # Need app_config for this endpoint
+    config_path = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
+    app_module.APP_CONFIG = load_app_config(config_path)
+    client = TestClient(app)
+
+    response = client.put(
+        "/api/metrics/library/files/test.yaml", json={"content": "invalid: yaml: content: ["}
+    )
+    assert response.status_code == 400
+    assert "Invalid YAML" in response.json()["detail"]
+
+
+def test_delete_library_metric_file_no_config():
+    """Test /api/metrics/library/files/{name} DELETE with no app config."""
+    from rackscope.api import app as app_module
+
+    # Temporarily clear app config
+    original = app_module.APP_CONFIG
+    app_module.APP_CONFIG = None
+
+    try:
+        client = TestClient(app)
+        response = client.delete("/api/metrics/library/files/test.yaml")
+        assert response.status_code == 503
+        assert "not loaded" in response.json()["detail"]
+    finally:
+        app_module.APP_CONFIG = original
+
+
+def test_delete_library_metric_file_not_found():
+    """Test /api/metrics/library/files/{name} DELETE when file doesn't exist."""
+    from rackscope.api import app as app_module
+    from rackscope.model.loader import load_app_config
+    import os
+
+    # Need app_config for this endpoint
+    config_path = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
+    app_module.APP_CONFIG = load_app_config(config_path)
+    client = TestClient(app)
+
+    response = client.delete("/api/metrics/library/files/nonexistent.yaml")
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"]
+
+
+def test_query_metric_data_integer_time_range(client):
+    """Test /api/metrics/data with integer time_range (seconds)."""
+    with patch(
+        "rackscope.telemetry.prometheus.client.query_range",
+        new=AsyncMock(return_value=_RANGE_MOCK_RESULT),
+    ):
+        response = client.get(
+            "/api/metrics/data",
+            params={
+                "metric_id": "node_temperature",
+                "target_id": "compute001",
+                "time_range": "3600",  # Raw seconds
+            },
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["time_range"] == "3600"

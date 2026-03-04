@@ -365,3 +365,193 @@ def test_collect_check_targets_sorted_output():
 
     # Output should be sorted
     assert result["node_check"]["node"] == ["node01", "node02", "node03"]
+
+
+def test_collect_check_targets_rack_component_checks():
+    """Test collecting targets from rack components with checks."""
+    from rackscope.model.catalog import RackComponentTemplate, RackComponentRef, RackInfrastructure
+
+    device = Device(
+        id="device1",
+        name="Test Device",
+        template_id="compute",
+        u_position=1,
+        instance="node01",
+    )
+    rack = Rack(
+        id="rack01",
+        name="Rack 01",
+        template_id="rack_with_pdu",
+        devices=[device],
+    )
+    aisle = Aisle(id="aisle-a", name="Aisle A", racks=[rack])
+    room = Room(id="room1", name="Room 1", aisles=[aisle], standalone_racks=[])
+    site = Site(id="site1", name="Site 1", rooms=[room])
+    topology = Topology(sites=[site])
+
+    compute_template = DeviceTemplate(
+        id="compute",
+        name="Compute",
+        type="server",
+        u_height=2,
+        layout=LayoutConfig(type="grid", rows=1, cols=1, matrix=[[1]]),
+        checks=[],
+    )
+
+    pdu_template = RackComponentTemplate(
+        id="pdu",
+        name="PDU",
+        type="pdu",
+        location="rear",
+        u_height=2,
+        checks=["pdu_power_check"],
+    )
+
+    rack_template = RackTemplate(
+        id="rack_with_pdu",
+        name="Rack with PDU",
+        u_height=42,
+        infrastructure=RackInfrastructure(
+            rack_components=[
+                RackComponentRef(template_id="pdu", instance="pdu01", position="left")
+            ]
+        ),
+    )
+
+    catalog = Catalog(
+        device_templates=[compute_template],
+        rack_templates=[rack_template],
+        rack_component_templates=[pdu_template],
+    )
+
+    checks = ChecksLibrary(
+        checks=[CheckDefinition(id="pdu_power_check", name="PDU Power", scope="rack", expr="...")]
+    )
+
+    result = collect_check_targets(topology, catalog, checks)
+
+    # PDU check should target rack01
+    assert "pdu_power_check" in result
+    assert result["pdu_power_check"]["rack"] == ["rack01"]
+
+
+def test_collect_check_targets_rack_component_no_checks():
+    """Test that rack components without checks are ignored."""
+    from rackscope.model.catalog import RackComponentTemplate, RackComponentRef, RackInfrastructure
+
+    device = Device(
+        id="device1",
+        name="Test Device",
+        template_id="compute",
+        u_position=1,
+        instance="node01",
+    )
+    rack = Rack(
+        id="rack01",
+        name="Rack 01",
+        template_id="rack_with_component",
+        devices=[device],
+    )
+    aisle = Aisle(id="aisle-a", name="Aisle A", racks=[rack])
+    room = Room(id="room1", name="Room 1", aisles=[aisle], standalone_racks=[])
+    site = Site(id="site1", name="Site 1", rooms=[room])
+    topology = Topology(sites=[site])
+
+    compute_template = DeviceTemplate(
+        id="compute",
+        name="Compute",
+        type="server",
+        u_height=2,
+        layout=LayoutConfig(type="grid", rows=1, cols=1, matrix=[[1]]),
+        checks=[],
+    )
+
+    component_template = RackComponentTemplate(
+        id="component",
+        name="Component",
+        type="pdu",
+        location="rear",
+        u_height=1,
+        checks=[],  # Empty checks list
+    )
+
+    rack_template = RackTemplate(
+        id="rack_with_component",
+        name="Rack with Component",
+        u_height=42,
+        infrastructure=RackInfrastructure(
+            rack_components=[
+                RackComponentRef(template_id="component", instance="comp01", position="left")
+            ]
+        ),
+    )
+
+    catalog = Catalog(
+        device_templates=[compute_template],
+        rack_templates=[rack_template],
+        rack_component_templates=[component_template],
+    )
+
+    checks = ChecksLibrary(checks=[])
+
+    result = collect_check_targets(topology, catalog, checks)
+
+    # No checks should be collected
+    assert result == {}
+
+
+def test_collect_check_targets_rack_component_template_not_found():
+    """Test that missing rack component templates are handled gracefully."""
+    from rackscope.model.catalog import RackComponentRef, RackInfrastructure
+
+    device = Device(
+        id="device1",
+        name="Test Device",
+        template_id="compute",
+        u_position=1,
+        instance="node01",
+    )
+    rack = Rack(
+        id="rack01",
+        name="Rack 01",
+        template_id="rack_with_missing_component",
+        devices=[device],
+    )
+    aisle = Aisle(id="aisle-a", name="Aisle A", racks=[rack])
+    room = Room(id="room1", name="Room 1", aisles=[aisle], standalone_racks=[])
+    site = Site(id="site1", name="Site 1", rooms=[room])
+    topology = Topology(sites=[site])
+
+    compute_template = DeviceTemplate(
+        id="compute",
+        name="Compute",
+        type="server",
+        u_height=2,
+        layout=LayoutConfig(type="grid", rows=1, cols=1, matrix=[[1]]),
+        checks=[],
+    )
+
+    rack_template = RackTemplate(
+        id="rack_with_missing_component",
+        name="Rack with Missing Component",
+        u_height=42,
+        infrastructure=RackInfrastructure(
+            rack_components=[
+                RackComponentRef(
+                    template_id="nonexistent_component", instance="comp01", position="left"
+                )
+            ]
+        ),
+    )
+
+    catalog = Catalog(
+        device_templates=[compute_template],
+        rack_templates=[rack_template],
+    )
+
+    checks = ChecksLibrary(checks=[])
+
+    result = collect_check_targets(topology, catalog, checks)
+
+    # Should handle missing template gracefully
+    assert result == {}

@@ -715,3 +715,221 @@ class TestCollectRackDevicesMetrics:
 
         assert all_metrics == {}
         mock_prom_client.query.assert_not_called()
+
+
+# ── Tests for resolve_metric_query and library integration ──────────────────
+
+
+@pytest.mark.asyncio
+class TestMetricsLibraryIntegration:
+    """Test metrics library integration with collect functions."""
+
+    async def test_collect_component_metrics_with_library(
+        self,
+        rack_with_pdu,
+        pdu_component_ref,
+        catalog_with_templates,
+        mock_prom_client,
+    ):
+        """Test collecting component metrics using metrics library."""
+        from rackscope.model.loader import load_metrics_library
+
+        library = load_metrics_library("config/metrics/library")
+
+        # Mock Prometheus responses
+        mock_prom_client.query.side_effect = [
+            {"status": "success", "data": {"result": [{"value": [0, "1234.5"]}]}},
+            {"status": "success", "data": {"result": [{"value": [0, "5.2"]}]}},
+            {"status": "success", "data": {"result": [{"value": [0, "1300.0"]}]}},
+        ]
+
+        metrics = await collect_component_metrics(
+            rack=rack_with_pdu,
+            component_ref=pdu_component_ref,
+            catalog=catalog_with_templates,
+            prom_client=mock_prom_client,
+            library=library,
+        )
+
+        # Should have collected all metrics
+        assert len(metrics) == 3
+        assert mock_prom_client.query.call_count == 3
+
+    async def test_collect_device_metrics_with_library(
+        self,
+        device_with_instances,
+        server_template,
+        mock_prom_client,
+    ):
+        """Test collecting device metrics using metrics library."""
+        from rackscope.model.loader import load_metrics_library
+
+        library = load_metrics_library("config/metrics/library")
+
+        # Mock Prometheus responses
+        mock_prom_client.query.side_effect = [
+            {
+                "status": "success",
+                "data": {
+                    "result": [
+                        {"metric": {"instance": "compute01"}, "value": [0, "65.0"]},
+                        {"metric": {"instance": "compute02"}, "value": [0, "70.0"]},
+                    ]
+                },
+            },
+            {
+                "status": "success",
+                "data": {
+                    "result": [
+                        {"metric": {"instance": "compute01"}, "value": [0, "250.0"]},
+                        {"metric": {"instance": "compute02"}, "value": [0, "300.0"]},
+                    ]
+                },
+            },
+        ]
+
+        metrics = await collect_device_metrics(
+            device=device_with_instances,
+            rack_id="rack01",
+            template=server_template,
+            prom_client=mock_prom_client,
+            library=library,
+        )
+
+        # Should have collected metrics for both instances
+        assert "compute01" in metrics
+        assert "compute02" in metrics
+
+
+@pytest.mark.asyncio
+class TestMetricQueryBuilding:
+    """Test edge cases in metric query building."""
+
+    async def test_collect_component_metrics_empty_result(
+        self,
+        rack_with_pdu,
+        pdu_component_ref,
+        catalog_with_templates,
+        mock_prom_client,
+    ):
+        """Test collecting component metrics when Prometheus returns empty result."""
+        # Mock empty Prometheus responses
+        mock_prom_client.query.side_effect = [
+            {"status": "success", "data": {"result": []}},
+            {"status": "success", "data": {"result": []}},
+            {"status": "success", "data": {"result": []}},
+        ]
+
+        metrics = await collect_component_metrics(
+            rack=rack_with_pdu,
+            component_ref=pdu_component_ref,
+            catalog=catalog_with_templates,
+            prom_client=mock_prom_client,
+        )
+
+        # Should return empty dict when no data
+        assert metrics == {}
+
+    async def test_collect_device_metrics_using_node_id_label(
+        self,
+        device_with_instances,
+        server_template,
+        mock_prom_client,
+    ):
+        """Test device metrics collection when exporter uses node_id instead of instance."""
+        # Mock response with node_id label instead of instance
+        mock_prom_client.query.side_effect = [
+            {
+                "status": "success",
+                "data": {
+                    "result": [
+                        {"metric": {"node_id": "compute01"}, "value": [0, "65.0"]},
+                        {"metric": {"node_id": "compute02"}, "value": [0, "70.0"]},
+                    ]
+                },
+            },
+            {
+                "status": "success",
+                "data": {
+                    "result": [
+                        {"metric": {"node_id": "compute01"}, "value": [0, "250.0"]},
+                        {"metric": {"node_id": "compute02"}, "value": [0, "300.0"]},
+                    ]
+                },
+            },
+        ]
+
+        metrics = await collect_device_metrics(
+            device=device_with_instances,
+            rack_id="rack01",
+            template=server_template,
+            prom_client=mock_prom_client,
+        )
+
+        # Should handle node_id label
+        assert "compute01" in metrics
+        assert "compute02" in metrics
+
+    async def test_collect_device_metrics_missing_instance_label(
+        self,
+        device_with_instances,
+        server_template,
+        mock_prom_client,
+    ):
+        """Test device metrics collection when result has no instance/node_id label."""
+        # Mock response with no instance or node_id label
+        mock_prom_client.query.side_effect = [
+            {
+                "status": "success",
+                "data": {
+                    "result": [
+                        {"metric": {}, "value": [0, "65.0"]},  # No instance label
+                    ]
+                },
+            },
+            {"status": "success", "data": {"result": []}},
+        ]
+
+        metrics = await collect_device_metrics(
+            device=device_with_instances,
+            rack_id="rack01",
+            template=server_template,
+            prom_client=mock_prom_client,
+        )
+
+        # Should skip metrics without instance labels
+        assert metrics == {}
+
+
+class TestParsePrometheusResultEdgeCases:
+    """Test edge cases in Prometheus result parsing."""
+
+    def test_parse_result_not_dict(self):
+        """Test parsing when response is not a dict."""
+        from rackscope.services.metrics_service import parse_prometheus_result
+
+        result = parse_prometheus_result("not a dict")
+        assert result is None
+
+    def test_parse_result_no_data_key(self):
+        """Test parsing when response has no data key."""
+        from rackscope.services.metrics_service import parse_prometheus_result
+
+        response = {"status": "success"}
+        result = parse_prometheus_result(response)
+        assert result is None
+
+    def test_parse_result_malformed_value(self):
+        """Test parsing when value has unexpected format."""
+        from rackscope.services.metrics_service import parse_prometheus_result
+
+        response = {
+            "status": "success",
+            "data": {
+                "result": [
+                    {"metric": {}, "value": "not a list"},  # Invalid format
+                ]
+            },
+        }
+        result = parse_prometheus_result(response)
+        assert result is None
