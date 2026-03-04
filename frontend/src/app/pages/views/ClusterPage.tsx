@@ -833,11 +833,16 @@ export const ClusterPage = () => {
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
   }, []);
 
+  const [nudge, setNudge] = useState<'left' | 'right' | null>(null);
+
   const scrollBy = useCallback((direction: 'left' | 'right') => {
     const el = scrollRef.current;
     if (!el) return;
     const step = displayConfig.rackWidth + 20;
     el.scrollBy({ left: direction === 'right' ? step : -step, behavior: 'smooth' });
+    // Nudge: briefly push racks in the scroll direction, then spring back
+    setNudge(direction);
+    setTimeout(() => setNudge(null), 280);
   }, [displayConfig.rackWidth]);
 
   // ── Container size tracking for wrap-auto ──────────────────────────────────
@@ -1049,7 +1054,7 @@ export const ClusterPage = () => {
 
   // ── Shared rack list render ───────────────────────────────────────────────
 
-  const renderRacks = (wrapHeight?: (entry: RackEntry) => number) =>
+  const renderRacks = (wrapHeight?: (entry: RackEntry) => number, snap = false) =>
     rackIds.map((rackId, idx) => {
       const entry = rackEntries[rackId] ?? {
         rack: null,
@@ -1058,7 +1063,28 @@ export const ClusterPage = () => {
         loading: true,
         error: false,
       };
-      return (
+      const card = (
+        <RackCard
+          entry={entry}
+          rackId={rackId}
+          displayConfig={displayConfig}
+          wrapHeight={wrapHeight ? wrapHeight(entry) : undefined}
+          editMode={editMode}
+          isDragging={dragSrcIdx.current === idx}
+          isDragOver={dragOverIdx === idx}
+          onRemove={() => removeRack(rackId)}
+          onDragStart={() => handleDragStart(idx)}
+          onDragEnd={handleDragEnd}
+          onDragOver={(e) => handleDragOver(e, idx)}
+          onDrop={(e) => handleDrop(e, idx)}
+        />
+      );
+      // In scroll mode, wrap each card for snap alignment
+      return snap ? (
+        <div key={rackId} className="shrink-0 snap-start">
+          {card}
+        </div>
+      ) : (
         <RackCard
           key={rackId}
           entry={entry}
@@ -1230,13 +1256,19 @@ export const ClusterPage = () => {
               <ChevronLeft className="h-6 w-6 text-white drop-shadow-lg" />
             </button>
 
-            {/* Rack row — scrolls horizontally, no native scrollbar */}
+            {/* Rack row — scrolls horizontally, snap-x, no native scrollbar */}
             <div
               ref={scrollRef}
               onScroll={updateScrollArrows}
-              className="flex h-full w-full items-center overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex h-full w-full items-center snap-x snap-proximity overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              <div className="flex min-h-0 gap-5 p-5">{renderRacks(() => scrollCardHeight)}</div>
+              <div
+                className={`flex min-h-0 gap-5 p-5 transition-transform duration-[280ms] ease-out ${
+                  nudge === 'right' ? '-translate-x-3' : nudge === 'left' ? 'translate-x-3' : ''
+                }`}
+              >
+                {renderRacks(() => scrollCardHeight, true)}
+              </div>
             </div>
 
             {/* Right arrow */}
