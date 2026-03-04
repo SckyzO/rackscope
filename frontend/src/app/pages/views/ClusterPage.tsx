@@ -833,17 +833,36 @@ export const ClusterPage = () => {
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
   }, []);
 
-  const [nudge, setNudge] = useState<'left' | 'right' | null>(null);
+  // Slide animation: 'sliding' = CSS transform in progress, 'reset' = instant snap back
+  const [slideState, setSlideState] = useState<'idle' | 'sliding' | 'reset'>('idle');
+  const [slideDir, setSlideDir] = useState<'right' | 'left'>('right');
+  const slideStep = displayConfig.rackWidth + 20;
 
   const scrollBy = useCallback((direction: 'left' | 'right') => {
     const el = scrollRef.current;
-    if (!el) return;
-    const step = displayConfig.rackWidth + 20;
-    el.scrollBy({ left: direction === 'right' ? step : -step, behavior: 'smooth' });
-    // Nudge: briefly push racks in the scroll direction, then spring back
-    setNudge(direction);
-    setTimeout(() => setNudge(null), 280);
-  }, [displayConfig.rackWidth]);
+    if (!el || slideState !== 'idle') return;
+
+    setSlideDir(direction);
+    setSlideState('sliding');
+
+    setTimeout(() => {
+      // Instantly jump the scroll by one step (no animation — the CSS did the visual work)
+      if (el) {
+        el.style.scrollBehavior = 'auto';
+        el.scrollLeft += direction === 'right' ? slideStep : -slideStep;
+        el.style.scrollBehavior = '';
+      }
+      // Reset transform without animation
+      setSlideState('reset');
+      // Two RAF: ensure the DOM paints the reset before going idle
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          setSlideState('idle');
+          updateScrollArrows();
+        })
+      );
+    }, 300);
+  }, [slideState, slideStep, updateScrollArrows]);
 
   // ── Container size tracking for wrap-auto ──────────────────────────────────
 
@@ -1248,7 +1267,7 @@ export const ClusterPage = () => {
               onClick={() => scrollBy('left')}
               aria-label="Scroll left"
               className={`absolute left-0 top-0 z-10 flex h-full w-12 items-center justify-center transition-all duration-200 ${
-                canScrollLeft
+                canScrollLeft && slideState === 'idle'
                   ? 'bg-gradient-to-r from-black/50 to-transparent opacity-100 hover:from-black/70 cursor-pointer'
                   : 'pointer-events-none opacity-0'
               }`}
@@ -1263,9 +1282,17 @@ export const ClusterPage = () => {
               className="flex h-full w-full items-center snap-x snap-proximity overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               <div
-                className={`flex min-h-0 gap-5 p-5 transition-transform duration-[280ms] ease-out ${
-                  nudge === 'right' ? '-translate-x-3' : nudge === 'left' ? 'translate-x-3' : ''
-                }`}
+                className="flex min-h-0 gap-5 p-5"
+                style={{
+                  transform:
+                    slideState === 'sliding'
+                      ? `translateX(${slideDir === 'right' ? -slideStep : slideStep}px)`
+                      : 'translateX(0)',
+                  transition:
+                    slideState === 'sliding'
+                      ? 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)'
+                      : 'none',
+                }}
               >
                 {renderRacks(() => scrollCardHeight, true)}
               </div>
@@ -1276,7 +1303,7 @@ export const ClusterPage = () => {
               onClick={() => scrollBy('right')}
               aria-label="Scroll right"
               className={`absolute right-0 top-0 z-10 flex h-full w-12 items-center justify-center transition-all duration-200 ${
-                canScrollRight
+                canScrollRight && slideState === 'idle'
                   ? 'bg-gradient-to-l from-black/50 to-transparent opacity-100 hover:from-black/70 cursor-pointer'
                   : 'pointer-events-none opacity-0'
               }`}
