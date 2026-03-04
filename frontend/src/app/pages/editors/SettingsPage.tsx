@@ -148,16 +148,6 @@ export const SettingsPage = () => {
     }
   };
 
-  // Auto-save feature flag toggles that affect global UX immediately.
-  // These don't need an explicit Save click — they write to app.yaml on toggle.
-  const prevPlaylist = useRef(draft?.features?.playlist);
-  useEffect(() => {
-    if (!draft) return;
-    if (draft.features.playlist === prevPlaylist.current) return;
-    prevPlaylist.current = draft.features.playlist;
-    void handleSave();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft?.features?.playlist]);
 
   // ── Tab modal actions ──────────────────────────────────────────────────────
   const tabModalSaveAndGo = async () => {
