@@ -116,3 +116,103 @@ def test_check_for_duration_defaults_none_when_absent():
         "rules": [{"op": "==", "value": 0, "severity": "CRIT"}],
     })
     assert c.for_duration is None
+
+
+def test_telemetry_config_invalid_job_regex():
+    """Test that invalid regex in job_regex raises validation error."""
+    from rackscope.model.config import TelemetryConfig
+
+    with pytest.raises(ValidationError) as exc_info:
+        TelemetryConfig(job_regex="[invalid(regex")
+
+    errors = exc_info.value.errors()
+    assert any("job_regex" in str(e) for e in errors)
+
+
+def test_telemetry_config_basic_auth_password_without_user():
+    """Test that basic_auth_password without user raises validation error."""
+    from rackscope.model.config import TelemetryConfig
+
+    with pytest.raises(ValidationError) as exc_info:
+        TelemetryConfig(basic_auth_password="secret")
+
+    errors = exc_info.value.errors()
+    assert any("basic_auth_user" in str(e) for e in errors)
+
+
+def test_telemetry_config_tls_key_without_cert():
+    """Test that tls_key_file without tls_cert_file raises validation error."""
+    from rackscope.model.config import TelemetryConfig
+
+    with pytest.raises(ValidationError) as exc_info:
+        TelemetryConfig(tls_key_file="/path/to/key.pem")
+
+    errors = exc_info.value.errors()
+    assert any("tls_cert_file" in str(e) for e in errors)
+
+
+def test_telemetry_config_empty_strings_to_none():
+    """Test that empty strings are converted to None for optional fields."""
+    from rackscope.model.config import TelemetryConfig
+
+    config = TelemetryConfig(
+        prometheus_url="",
+        basic_auth_user="",
+        tls_cert_file="",
+        tls_ca_file="",
+    )
+
+    assert config.prometheus_url is None
+    assert config.basic_auth_user is None
+    assert config.tls_cert_file is None
+    assert config.tls_ca_file is None
+
+
+def test_telemetry_config_empty_password_to_none():
+    """Test that empty basic_auth_password is converted to None."""
+    from rackscope.model.config import TelemetryConfig
+
+    config = TelemetryConfig(
+        basic_auth_user="user",
+        basic_auth_password="",
+    )
+
+    assert config.basic_auth_password is None
+
+
+def test_telemetry_config_empty_tls_key_to_none():
+    """Test that empty tls_key_file is converted to None."""
+    from rackscope.model.config import TelemetryConfig
+
+    config = TelemetryConfig(
+        tls_cert_file="/path/to/cert.pem",
+        tls_key_file="",
+    )
+
+    assert config.tls_key_file is None
+
+
+def test_telemetry_config_valid_basic_auth():
+    """Test that valid basic auth user and password are accepted."""
+    from rackscope.model.config import TelemetryConfig
+
+    config = TelemetryConfig(
+        basic_auth_user="myuser",
+        basic_auth_password="mypassword",
+    )
+
+    assert config.basic_auth_user == "myuser"
+    assert config.basic_auth_password == "mypassword"
+
+
+def test_telemetry_config_valid_tls_cert_and_key():
+    """Test that valid TLS cert and key are accepted."""
+    from rackscope.model.config import TelemetryConfig
+
+    config = TelemetryConfig(
+        tls_cert_file="/path/to/cert.pem",
+        tls_key_file="/path/to/key.pem",
+    )
+
+    assert config.tls_cert_file == "/path/to/cert.pem"
+    assert config.tls_key_file == "/path/to/key.pem"

@@ -86,15 +86,28 @@ def test_get_rack_state():
 
 # ── Wizard disable endpoint ────────────────────────────────────────────────────
 
-def test_wizard_disable_endpoint_exists():
-    """POST /api/setup/wizard/disable is reachable and returns wizard=false."""
+@pytest.fixture()
+def _protect_app_yaml():
+    path = "config/app.yaml"
+    try:
+        with open(path) as f:
+            original = f.read()
+    except FileNotFoundError:
+        original = None
+    yield
+    if original is not None:
+        with open(path, "w") as f:
+            f.write(original)
+
+
+def test_wizard_disable_endpoint_exists(_protect_app_yaml):
+    """POST /api/setup/wizard/disable is reachable — app.yaml restored after."""
     resp = client.post("/api/setup/wizard/disable")
-    # May return 200 or 500 depending on config state, but must not 404
     assert resp.status_code != 404
 
 
-def test_wizard_disable_returns_json():
-    """Response body contains wizard field."""
+def test_wizard_disable_returns_json(_protect_app_yaml):
+    """Response body contains wizard field — app.yaml restored after."""
     resp = client.post("/api/setup/wizard/disable")
     data = resp.json()
     assert "wizard" in data

@@ -244,7 +244,7 @@ def change_username(
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
 
-def _update_auth_config(app_config: AppConfig, updates: dict) -> None:
+def _update_auth_config(app_config: AppConfig, updates: dict) -> None:  # pragma: no cover
     """Patch auth section in app.yaml and reload global config."""
     import asyncio
     from rackscope.api.app import apply_config

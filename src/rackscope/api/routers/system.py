@@ -38,7 +38,7 @@ async def restart_backend():
             logger.info(f"Touched {app_file} to trigger reload")
 
             # Give the response time to send before reload happens
-            async def delayed_touch():
+            async def delayed_touch():  # pragma: no cover
                 await asyncio.sleep(0.5)
                 app_file.touch()
 

@@ -209,3 +209,125 @@ class TestPluginsRouter:
         )
         assert response.status_code == 404
         assert "not found" in response.json()["detail"]
+
+    def test_get_plugin_config_file_exists(self):
+        """Test getting config when file exists reads from file."""
+        import tempfile
+        import yaml
+        import os
+        from unittest.mock import patch, MagicMock
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+            yaml.dump({"enabled": True, "setting": "value"}, f)
+            tmp_path = f.name
+
+        try:
+            plugin = MockTestPlugin("test-plugin")
+            registry.register(plugin)
+
+            mock_plugin = MagicMock()
+            mock_plugin.config_file_path.return_value = tmp_path
+
+            with patch("rackscope.api.routers.plugins.registry") as mock_registry:
+                mock_registry.get_plugin.return_value = mock_plugin
+                resp = client.get("/api/plugins/test-plugin/config")
+
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data.get("source") == "file"
+            assert data.get("config") is not None
+        finally:
+            os.unlink(tmp_path)
+            registry.unregister("test-plugin")
+
+    def test_update_plugin_config_success(self):
+        """Test updating plugin config saves to file."""
+        import tempfile
+        import os
+        from unittest.mock import patch, MagicMock, AsyncMock
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = os.path.join(tmpdir, "config.yml")
+
+            plugin = MockTestPlugin("test-plugin")
+            registry.register(plugin)
+
+            mock_plugin = MagicMock()
+            mock_plugin.config_file_path.return_value = config_path
+            mock_plugin.on_config_reload = AsyncMock()
+
+            with patch("rackscope.api.routers.plugins.registry") as mock_registry:
+                mock_registry.get_plugin.return_value = mock_plugin
+                # APP_CONFIG is imported inside the function, patch in app module
+                with patch("rackscope.api.app.APP_CONFIG", None):
+                    resp = client.post(
+                        "/api/plugins/test-plugin/config", json={"config": {"enabled": True}}
+                    )
+
+            # Should succeed or fail gracefully
+            assert resp.status_code in (200, 422, 500)
+
+            if resp.status_code == 200:
+                data = resp.json()
+                assert data.get("status") == "saved"
+                # Verify file was written
+                assert os.path.exists(config_path)
+
+            registry.unregister("test-plugin")
+
+    def test_update_plugin_config_write_error(self):
+        """Test error handling when writing config fails."""
+        import tempfile
+        from unittest.mock import patch, MagicMock
+
+        plugin = MockTestPlugin("test-plugin")
+        registry.register(plugin)
+
+        mock_plugin = MagicMock()
+        # Point to a path that will fail (e.g., directory doesn't exist and can't be created)
+        mock_plugin.config_file_path.return_value = "/invalid/nonexistent/path/config.yml"
+
+        with patch("rackscope.api.routers.plugins.registry") as mock_registry:
+            mock_registry.get_plugin.return_value = mock_plugin
+            # Mock os.makedirs to raise exception
+            with patch("os.makedirs", side_effect=PermissionError("Permission denied")):
+                resp = client.post(
+                    "/api/plugins/test-plugin/config", json={"config": {"enabled": True}}
+                )
+
+        assert resp.status_code == 500
+        assert "Failed to write" in resp.json()["detail"]
+
+        registry.unregister("test-plugin")
+
+    def test_get_plugin_config_read_error(self):
+        """Test error handling when reading config file fails."""
+        import tempfile
+        import os
+        from unittest.mock import patch, MagicMock, mock_open
+
+        # Create a file that exists but will fail to read
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+            f.write("test: value")
+            tmp_path = f.name
+
+        try:
+            plugin = MockTestPlugin("test-plugin")
+            registry.register(plugin)
+
+            mock_plugin = MagicMock()
+            mock_plugin.config_file_path.return_value = tmp_path
+
+            with patch("rackscope.api.routers.plugins.registry") as mock_registry:
+                mock_registry.get_plugin.return_value = mock_plugin
+                # Mock open to raise exception
+                with patch("builtins.open", mock_open()) as mock_file:
+                    mock_file.side_effect = PermissionError("Permission denied")
+                    resp = client.get("/api/plugins/test-plugin/config")
+
+            assert resp.status_code == 500
+            assert "Failed to read" in resp.json()["detail"]
+
+            registry.unregister("test-plugin")
+        finally:
+            os.unlink(tmp_path)

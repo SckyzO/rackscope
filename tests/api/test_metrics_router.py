@@ -542,3 +542,77 @@ def test_query_metric_data_integer_time_range(client):
     assert response.status_code == 200
     data = response.json()
     assert data["time_range"] == "3600"
+
+
+def test_list_library_files_no_config_override():
+    """Test /api/metrics/library/files when no config available."""
+    from rackscope.api.dependencies import get_app_config_optional
+
+    original_overrides = app.dependency_overrides.copy()
+
+    def override_app_config_to_none():
+        return None
+
+    app.dependency_overrides[get_app_config_optional] = override_app_config_to_none
+
+    try:
+        from fastapi.testclient import TestClient
+
+        test_client = TestClient(app)
+        response = test_client.get("/api/metrics/library/files")
+        assert response.status_code == 200
+        assert response.json()["files"] == []
+    finally:
+        app.dependency_overrides = original_overrides
+
+
+def test_list_library_files_nonexistent_directory_override():
+    """Test /api/metrics/library/files when directory doesn't exist."""
+    from rackscope.api.dependencies import get_app_config_optional
+    from rackscope.model.config import AppConfig, PathsConfig
+
+    original_overrides = app.dependency_overrides.copy()
+
+    def override_app_config_nonexistent():
+        return AppConfig(
+            paths=PathsConfig(
+                topology="config/topology",
+                templates="config/templates",
+                checks="config/checks",
+                metrics="/nonexistent/metrics/path",
+            )
+        )
+
+    app.dependency_overrides[get_app_config_optional] = override_app_config_nonexistent
+
+    try:
+        from fastapi.testclient import TestClient
+
+        test_client = TestClient(app)
+        response = test_client.get("/api/metrics/library/files")
+        assert response.status_code == 200
+        assert response.json()["files"] == []
+    finally:
+        app.dependency_overrides = original_overrides
+
+
+def test_list_metrics_files_no_config_override():
+    """Test /api/metrics/files when no config available."""
+    from rackscope.api.dependencies import get_app_config_optional
+
+    original_overrides = app.dependency_overrides.copy()
+
+    def override_app_config_to_none():
+        return None
+
+    app.dependency_overrides[get_app_config_optional] = override_app_config_to_none
+
+    try:
+        from fastapi.testclient import TestClient
+
+        test_client = TestClient(app)
+        response = test_client.get("/api/metrics/files")
+        assert response.status_code == 200
+        assert response.json()["files"] == []
+    finally:
+        app.dependency_overrides = original_overrides

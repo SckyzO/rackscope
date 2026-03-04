@@ -1,10 +1,26 @@
 """Tests for Config Router."""
 
+import pytest
 from fastapi.testclient import TestClient
 
 from rackscope.api.app import app
 
 client = TestClient(app)
+
+
+@pytest.fixture()
+def protect_app_yaml():
+    """Snapshot app.yaml before the test and restore it after, preventing test pollution."""
+    path = "config/app.yaml"
+    try:
+        with open(path) as f:
+            original = f.read()
+    except FileNotFoundError:
+        original = None
+    yield
+    if original is not None:
+        with open(path, "w") as f:
+            f.write(original)
 
 
 def test_get_config():
@@ -38,18 +54,12 @@ def test_get_env():
         assert key in data
 
 
-def test_wizard_disable():
-    """Test POST /api/setup/wizard/disable returns wizard status."""
+def test_wizard_disable(protect_app_yaml):
+    """Test POST /api/setup/wizard/disable — app.yaml restored after."""
     response = client.post("/api/setup/wizard/disable")
-
-    # May return 200 or 500 depending on config state in test env
-    # but should not be 404
     assert response.status_code in (200, 500)
-
     data = response.json()
     assert "wizard" in data
-
-    # Response should contain wizard status (boolean)
     assert isinstance(data["wizard"], bool)
 
 
@@ -99,8 +109,8 @@ def test_get_env_all_keys_present():
         assert key in data
 
 
-def test_put_config_with_minimal_data():
-    """Test PUT /api/config with minimal valid config structure."""
+def test_put_config_with_minimal_data(protect_app_yaml):
+    """Test PUT /api/config — app.yaml restored after."""
     minimal_config = {
         "paths": {
             "topology": "config/topology",
@@ -111,28 +121,18 @@ def test_put_config_with_minimal_data():
             "prometheus_url": "http://prometheus:9090",
             "identity_label": "instance",
         },
-        "auth": {
-            "enabled": False,
-        },
+        "auth": {"enabled": False},
         "features": {},
     }
-
     response = client.put("/api/config", json=minimal_config)
-    # May succeed or fail depending on test env, but should not crash
     assert response.status_code in (200, 422, 500)
 
 
-def test_put_config_preserves_auth_credentials():
-    """Test PUT /api/config preserves auth credentials when not provided."""
-    # First get current config
+def test_put_config_preserves_auth_credentials(protect_app_yaml):
+    """Test PUT /api/config — app.yaml restored after."""
     response = client.get("/api/config")
     if response.status_code != 200:
-        # Skip test if config not available
         return
-
     current_config = response.json()
-
-    # Try to update with empty auth (should preserve existing)
     response = client.put("/api/config", json=current_config)
-    # May succeed or fail depending on test env
     assert response.status_code in (200, 422, 500)

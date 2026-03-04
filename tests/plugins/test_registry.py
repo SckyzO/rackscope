@@ -271,3 +271,137 @@ class TestPluginRegistry:
         # Should still get sections from good plugin
         assert len(sections) == 1
         assert sections[0].id == "good-plugin-section"
+
+    @pytest.mark.asyncio
+    async def test_shutdown_clears_initialized_flag(self):
+        """After shutdown, is_initialized returns False."""
+        registry = PluginRegistry()
+        plugin = MockPlugin("test-plugin")
+
+        registry.register(plugin)
+
+        app = FastAPI()
+        await registry.initialize(app)
+        assert registry.is_initialized()
+
+        await registry.shutdown()
+        assert not registry.is_initialized()
+
+    @pytest.mark.asyncio
+    async def test_plugin_routes_registration_error_continues(self):
+        """Test plugin route registration error doesn't stop other plugins."""
+
+        class FailingRoutesPlugin(MockPlugin):
+            def register_routes(self, app: FastAPI) -> None:
+                raise Exception("Routes registration failed")
+
+        registry = PluginRegistry()
+        failing_plugin = FailingRoutesPlugin("failing-plugin")
+        good_plugin = MockPlugin("good-plugin")
+
+        registry.register(failing_plugin)
+        registry.register(good_plugin)
+
+        app = FastAPI()
+        await registry.initialize(app)
+
+        # Good plugin should still be initialized
+        assert good_plugin.routes_registered
+
+    @pytest.mark.asyncio
+    async def test_plugin_shutdown_error_continues(self):
+        """Test plugin shutdown error doesn't stop other plugins."""
+
+        class FailingShutdownPlugin(MockPlugin):
+            async def on_shutdown(self) -> None:
+                raise Exception("Shutdown failed")
+
+        registry = PluginRegistry()
+        failing_plugin = FailingShutdownPlugin("failing-plugin")
+        good_plugin = MockPlugin("good-plugin")
+
+        registry.register(failing_plugin)
+        registry.register(good_plugin)
+
+        app = FastAPI()
+        await registry.initialize(app)
+        await registry.shutdown()
+
+        # Good plugin should still be shut down
+        assert good_plugin.shutdown_called
+
+    @pytest.mark.asyncio
+    async def test_reload_plugins(self):
+        """Test reloading plugins with new config."""
+        from rackscope.model.config import AppConfig, PathsConfig
+        from unittest.mock import AsyncMock
+
+        registry = PluginRegistry()
+
+        class ReloadablePlugin(MockPlugin):
+            def __init__(self, plugin_id: str):
+                super().__init__(plugin_id)
+                self.reload_called = False
+                self.reload_config = None
+
+            async def on_config_reload(self, app_config):
+                self.reload_called = True
+                self.reload_config = app_config
+
+        plugin1 = ReloadablePlugin("plugin1")
+        plugin2 = ReloadablePlugin("plugin2")
+
+        registry.register(plugin1)
+        registry.register(plugin2)
+
+        app_config = AppConfig(
+            paths=PathsConfig(
+                topology="config/topology",
+                templates="config/templates",
+                checks="config/checks",
+            )
+        )
+
+        await registry.reload_plugins(app_config)
+
+        assert plugin1.reload_called
+        assert plugin2.reload_called
+        assert plugin1.reload_config == app_config
+        assert plugin2.reload_config == app_config
+
+    @pytest.mark.asyncio
+    async def test_reload_plugins_error_continues(self):
+        """Test reload error on one plugin doesn't stop others."""
+        from rackscope.model.config import AppConfig, PathsConfig
+
+        class FailingReloadPlugin(MockPlugin):
+            async def on_config_reload(self, app_config):
+                raise Exception("Reload failed")
+
+        class SuccessReloadPlugin(MockPlugin):
+            def __init__(self, plugin_id: str):
+                super().__init__(plugin_id)
+                self.reload_called = False
+
+            async def on_config_reload(self, app_config):
+                self.reload_called = True
+
+        registry = PluginRegistry()
+        failing_plugin = FailingReloadPlugin("failing-plugin")
+        good_plugin = SuccessReloadPlugin("good-plugin")
+
+        registry.register(failing_plugin)
+        registry.register(good_plugin)
+
+        app_config = AppConfig(
+            paths=PathsConfig(
+                topology="config/topology",
+                templates="config/templates",
+                checks="config/checks",
+            )
+        )
+
+        await registry.reload_plugins(app_config)
+
+        # Good plugin should still be reloaded
+        assert good_plugin.reload_called
