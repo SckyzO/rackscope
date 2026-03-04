@@ -23,6 +23,8 @@ import {
   HelpCircle,
   Server,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   GripVertical,
   Plus,
   Check,
@@ -819,6 +821,25 @@ export const ClusterPage = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerDims, setContainerDims] = useState({ w: 0, h: 0 });
 
+  // ── Scroll nav arrows (scroll mode only) ──────────────────────────────────
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  const scrollBy = useCallback((direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const step = displayConfig.rackWidth + 20;
+    el.scrollBy({ left: direction === 'right' ? step : -step, behavior: 'smooth' });
+  }, [displayConfig.rackWidth]);
+
   // ── Container size tracking for wrap-auto ──────────────────────────────────
 
   useEffect(() => {
@@ -831,6 +852,13 @@ export const ClusterPage = () => {
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
+
+  // Recompute arrow visibility after rack list or layout changes
+  useEffect(() => {
+    // Small delay — DOM needs to settle after racks render/resize
+    const t = setTimeout(updateScrollArrows, 60);
+    return () => clearTimeout(t);
+  }, [rackIds, displayConfig.layout, displayConfig.rackWidth, updateScrollArrows]);
 
   // ── Load topology for picker ──────────────────────────────────────────────
 
@@ -1187,9 +1215,42 @@ export const ClusterPage = () => {
             </button>
           </div>
         ) : displayConfig.layout === 'scroll' ? (
-          /* Scroll — single horizontal row, capped height to avoid distortion at 2K+ */
-          <div className="flex h-full items-center overflow-x-auto overflow-y-hidden">
-            <div className="flex min-h-0 gap-5 p-5">{renderRacks(() => scrollCardHeight)}</div>
+          /* Scroll — single horizontal row with overlay navigation arrows */
+          <div className="relative flex h-full items-center overflow-hidden">
+            {/* Left arrow */}
+            <button
+              onClick={() => scrollBy('left')}
+              aria-label="Scroll left"
+              className={`absolute left-0 top-0 z-10 flex h-full w-12 items-center justify-center transition-all duration-200 ${
+                canScrollLeft
+                  ? 'bg-gradient-to-r from-black/50 to-transparent opacity-100 hover:from-black/70 cursor-pointer'
+                  : 'pointer-events-none opacity-0'
+              }`}
+            >
+              <ChevronLeft className="h-6 w-6 text-white drop-shadow-lg" />
+            </button>
+
+            {/* Rack row — scrolls horizontally, no native scrollbar */}
+            <div
+              ref={scrollRef}
+              onScroll={updateScrollArrows}
+              className="flex h-full w-full items-center overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              <div className="flex min-h-0 gap-5 p-5">{renderRacks(() => scrollCardHeight)}</div>
+            </div>
+
+            {/* Right arrow */}
+            <button
+              onClick={() => scrollBy('right')}
+              aria-label="Scroll right"
+              className={`absolute right-0 top-0 z-10 flex h-full w-12 items-center justify-center transition-all duration-200 ${
+                canScrollRight
+                  ? 'bg-gradient-to-l from-black/50 to-transparent opacity-100 hover:from-black/70 cursor-pointer'
+                  : 'pointer-events-none opacity-0'
+              }`}
+            >
+              <ChevronRight className="h-6 w-6 text-white drop-shadow-lg" />
+            </button>
           </div>
         ) : displayConfig.layout === 'wrap' ? (
           /* Wrap + scroll — multi-row, vertical scroll, capped card height */
