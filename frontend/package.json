@@ -1,7 +1,15 @@
 {
-  "name": "frontend",
+  "name": "rackscope",
+  "description": "Prometheus-first physical infrastructure monitoring dashboard for datacenters and HPC environments",
+  "version": "1.0.0-beta",
+  "license": "AGPL-3.0-or-later",
+  "author": "Thomas Bourcey <sckyzo@gmail.com> (https://github.com/SckyzO)",
+  "homepage": "https://rackscope.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SckyzO/rackscope"
+  },
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

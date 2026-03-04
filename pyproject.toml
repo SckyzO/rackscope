@@ -1,11 +1,16 @@
 [project]
 name = "rackscope"
-version = "0.0.0"
-description = "Rack & Server Monitoring Dashboard (Prometheus-first physical views)"
+version = "1.0.0b1"
+description = "Prometheus-first physical infrastructure monitoring dashboard for datacenters and HPC environments"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "AGPL-3.0-or-later"}
-authors = [{name = "rackscope contributors"}]
+authors = [{name = "Thomas Bourcey", email = "sckyzo@gmail.com"}]
+
+[project.urls]
+Homepage = "https://rackscope.dev"
+Repository = "https://github.com/SckyzO/rackscope"
+Issues = "https://github.com/SckyzO/rackscope/issues"
 dependencies = [
   "pydantic>=2.12.5",
   "pyyaml>=6.0.3",
