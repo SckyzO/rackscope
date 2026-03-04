@@ -789,7 +789,11 @@ export const DashboardPage = () => {
       </div>
 
       {/* ── Grid — powered by react-grid-layout ─────────────────────────────── */}
-      <div ref={gridContainerRef} className={editMode && pickerOpen ? 'pr-[420px]' : ''}>
+      {/* [&_.react-resizable-handle]:hidden hides RGL's resize handles outside edit mode */}
+      <div
+        ref={gridContainerRef}
+        className={`${editMode && pickerOpen ? 'pr-[420px]' : ''} ${editMode ? '' : '[&_.react-resizable-handle]:hidden'}`}
+      >
         {loading ? (
           /* Loading skeleton */
           <div className="grid grid-cols-12 gap-5" style={{ gridAutoRows: `${ROW_PX}px` }}>

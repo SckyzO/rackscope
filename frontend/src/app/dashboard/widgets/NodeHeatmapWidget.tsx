@@ -4,6 +4,7 @@ import { HC } from '../constants';
 import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
 import type { ActiveAlert } from '../../../types';
+import { HUDTooltip } from '../../../../components/HUDTooltip';
 
 // ── Widget config ──────────────────────────────────────────────────────────
 const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
@@ -76,10 +77,12 @@ export const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
                       key={a.node_id}
                       className="h-5 w-5 cursor-default rounded-sm"
                       style={{ backgroundColor: HC[a.state] ?? HC.UNKNOWN }}
-                      onMouseEnter={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        setTooltip({ alert: a, x: rect.left + rect.width / 2, y: rect.top });
-                      }}
+                      onMouseEnter={(e) =>
+                        setTooltip({ alert: a, x: e.clientX, y: e.clientY })
+                      }
+                      onMouseMove={(e) =>
+                        setTooltip((prev) => prev && { ...prev, x: e.clientX, y: e.clientY })
+                      }
                       onMouseLeave={() => setTooltip(null)}
                     />
                   ))}
@@ -89,43 +92,23 @@ export const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
         </div>
       )}
 
-      {/* Tooltip — fixed so it escapes overflow:hidden/auto containers */}
+      {/* HUDTooltip — uses the system NOC tooltip with all 6 configurable styles */}
       {tooltip && (
-        <div
-          className="pointer-events-none fixed z-[200]"
-          style={{
-            left: tooltip.x,
-            top: tooltip.y - 8,
-            transform: 'translateX(-50%) translateY(-100%)',
+        <HUDTooltip
+          title={tooltip.alert.node_id}
+          subtitle={`${tooltip.alert.rack_name} · ${tooltip.alert.room_name}`}
+          status={tooltip.alert.state}
+          checkSummary={{
+            ok: tooltip.alert.checks.filter((c) => c.severity === 'OK').length,
+            warn: tooltip.alert.checks.filter((c) => c.severity === 'WARN').length,
+            crit: tooltip.alert.checks.filter((c) => c.severity === 'CRIT').length,
           }}
-        >
-          <div className="rounded-xl bg-gray-900 px-3 py-2 shadow-2xl dark:bg-gray-800">
-            <p className="font-mono text-sm font-bold text-white">{tooltip.alert.node_id}</p>
-            <p className="mt-0.5 text-xs text-gray-400">
-              {tooltip.alert.rack_name} · {tooltip.alert.room_name}
-            </p>
-            {tooltip.alert.checks.length > 0 && (
-              <p className="mt-1 font-mono text-[10px] text-gray-500">
-                {tooltip.alert.checks[0].id}
-                {tooltip.alert.checks.length > 1 ? ` +${tooltip.alert.checks.length - 1}` : ''}
-              </p>
-            )}
-            <p
-              className="mt-1 text-xs font-bold"
-              style={{ color: HC[tooltip.alert.state] ?? HC.UNKNOWN }}
-            >
-              {tooltip.alert.state}
-            </p>
-          </div>
-          <div
-            className="mx-auto h-0 w-0"
-            style={{
-              borderLeft: '5px solid transparent',
-              borderRight: '5px solid transparent',
-              borderTop: '5px solid #111827',
-            }}
-          />
-        </div>
+          reasons={tooltip.alert.checks
+            .filter((c) => c.severity === 'CRIT' || c.severity === 'WARN')
+            .slice(0, 4)
+            .map((c) => ({ label: c.name || c.id, severity: c.severity }))}
+          mousePos={{ x: tooltip.x, y: tooltip.y }}
+        />
       )}
     </div>
   );
