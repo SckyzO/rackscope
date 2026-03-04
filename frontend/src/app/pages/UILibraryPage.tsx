@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ChevronRight, Search, X, LayoutTemplate, ArrowRight } from 'lucide-react';
 import { usePageTitle } from '../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from './templates/EmptyPage';
@@ -367,8 +367,8 @@ export const UILibraryPage = () => {
       </div>
 
       {/* ── TemplateDefaultPage banner ── */}
-      <button
-        onClick={() => navigate('/templates/default')}
+      <Link
+        to="/templates/default"
         className="group flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-brand-200 bg-brand-50 px-5 py-4 text-left transition-all hover:border-brand-300 hover:bg-brand-100/60 dark:border-brand-700/40 dark:bg-brand-500/10 dark:hover:bg-brand-500/15"
       >
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500/15 dark:bg-brand-500/20">
@@ -383,7 +383,7 @@ export const UILibraryPage = () => {
           </p>
         </div>
         <ArrowRight className="h-4 w-4 shrink-0 text-brand-400 transition-transform group-hover:translate-x-0.5 dark:text-brand-500" />
-      </button>
+      </Link>
 
       {/* ── Category filters ── */}
       <div className="flex flex-wrap gap-2">
