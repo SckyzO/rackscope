@@ -4,12 +4,18 @@ SHELL := /bin/bash
 COMPOSE_DEV := docker-compose.dev.yml
 COMPOSE_PROD := docker-compose.prod.yml
 
-.PHONY: up down restart logs build lint test test-v test-k test-file clean coverage typecheck complexity quality ci shell-backend shell-frontend watch-logs
+.PHONY: up down restart logs build lint test test-v test-k test-file clean coverage typecheck complexity quality ci shell-backend shell-frontend watch-logs traefik-logs
 .PHONY: up-prod down-prod logs-prod build-prod
 .PHONY: docs docs-build docs-logs
 .PHONY: security security-backend security-frontend security-deps
 
 # Development Stack Management (default)
+# Access points after `make up`:
+#   http://localhost       → Rackscope UI
+#   http://localhost/api/docs → FastAPI Swagger UI
+#   http://localhost:8080  → Traefik dashboard
+#   http://localhost:9090  → Prometheus
+#   http://localhost:3001  → Docusaurus docs  (make docs)
 up:
 	docker compose -f $(COMPOSE_DEV) up -d
 
@@ -118,6 +124,9 @@ shell-frontend:
 
 watch-logs:
 	docker compose -f $(COMPOSE_DEV) logs -f backend frontend
+
+traefik-logs:
+	docker compose -f $(COMPOSE_DEV) logs -f traefik
 
 # Documentation site (Docusaurus — runs in Docker)
 docs:

@@ -11,7 +11,7 @@ export default defineConfig({
   server: {
     host: true, // Needed for Docker exposure
     port: 5173,
-    allowedHosts: ['frontend'],
+    allowedHosts: ['frontend', 'localhost'],
     proxy: {
       '/api': {
         target: 'http://backend:8000',

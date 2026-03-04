@@ -1,4 +1,24 @@
 services:
+  # ── Reverse proxy ─────────────────────────────────────────────────────────
+  # Entrypoints:
+  #   http://localhost       → React app (frontend)
+  #   http://localhost/api   → FastAPI backend (REST + Swagger at /api/docs)
+  #   http://localhost:8080  → Traefik dashboard (dev only)
+  traefik:
+    image: traefik:v3.3
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--log.level=WARN"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
   backend:
     build:
       context: .
@@ -7,8 +27,6 @@ services:
         UID: "${UID:-1000}"
         GID: "${GID:-1000}"
     user: "${UID:-1000}:${GID:-1000}"
-    ports:
-      - "8000:8000"
     volumes:
       - ./src:/app/src
       - ./config:/app/config
@@ -19,18 +37,26 @@ services:
     environment:
       - RACKSCOPE_APP_CONFIG=/app/config/app.yaml
     command: uvicorn rackscope.api.app:app --host 0.0.0.0 --port 8000 --reload
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    ports:
-      - "5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
 
   playwright:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy
