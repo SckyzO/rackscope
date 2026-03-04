@@ -45,31 +45,26 @@ export const PrometheusWidget = ({ data }: { data: DashboardData }) => {
   const { promConnected, promStats, promNextSec } = data;
 
   return (
-    <div className="flex h-full flex-col gap-3 p-4">
-      {/* Connection badge */}
-      <div className="flex items-center gap-2">
-        <span className="relative flex h-2 w-2 shrink-0">
-          {promConnected && (
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
-          )}
-          <span
-            className={`relative inline-flex h-2 w-2 rounded-full ${
-              promConnected ? 'bg-emerald-500' : 'bg-red-500'
-            }`}
-          />
-        </span>
-        <span
-          className={`text-xs font-semibold ${
-            promConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
-          }`}
-        >
-          {promConnected ? 'Connected' : 'Disconnected'}
+    <div className="flex h-full flex-col gap-1.5 p-4">
+      {/* Status row — same style as other stats, with live dot */}
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-gray-400 dark:text-gray-500">Status</span>
+        <span className="flex items-center gap-1.5">
+          <span className="relative flex h-1.5 w-1.5 shrink-0">
+            {promConnected && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
+            )}
+            <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${promConnected ? 'bg-emerald-500' : 'bg-red-500'}`} />
+          </span>
+          <span className={`font-mono text-xs font-medium ${promConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+            {promConnected ? 'Connected' : 'Disconnected'}
+          </span>
         </span>
       </div>
 
       {/* Stats */}
       {promStats ? (
-        <div className="flex flex-col gap-1.5">
+        <div className="mt-1 flex flex-col gap-1.5">
           <Stat
             label="Last latency"
             value={promStats.last_ms ? `${Math.round(promStats.last_ms)} ms` : '—'}
@@ -98,8 +93,8 @@ export const PrometheusWidget = ({ data }: { data: DashboardData }) => {
           )}
         </div>
       ) : (
-        <p className="text-[11px] text-gray-400 dark:text-gray-500">
-          {promConnected ? 'Fetching stats…' : 'Prometheus unreachable'}
+        <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
+          {promConnected ? 'Fetching stats…' : 'No stats available'}
         </p>
       )}
     </div>
