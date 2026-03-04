@@ -833,8 +833,8 @@ export const ClusterPage = () => {
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
   }, []);
 
-  // Slide animation: 'sliding' = CSS transform in progress, 'reset' = instant snap back
-  const [slideState, setSlideState] = useState<'idle' | 'sliding' | 'reset'>('idle');
+  // Slide animation: 'sliding' = CSS transform active, 'idle' = no transform
+  const [slideState, setSlideState] = useState<'idle' | 'sliding'>('idle');
   const [slideDir, setSlideDir] = useState<'right' | 'left'>('right');
   const slideStep = displayConfig.rackWidth + 20;
 
@@ -846,21 +846,17 @@ export const ClusterPage = () => {
     setSlideState('sliding');
 
     setTimeout(() => {
-      // Instantly jump the scroll by one step (no animation — the CSS did the visual work)
-      if (el) {
-        el.style.scrollBehavior = 'auto';
-        el.scrollLeft += direction === 'right' ? slideStep : -slideStep;
-        el.style.scrollBehavior = '';
-      }
-      // Reset transform without animation
-      setSlideState('reset');
-      // Two RAF: ensure the DOM paints the reset before going idle
-      requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
-          setSlideState('idle');
-          updateScrollArrows();
-        })
-      );
+      // Scroll jump + transform reset in one rAF — both applied in the same paint frame,
+      // preventing Firefox from rendering an intermediate state between them.
+      requestAnimationFrame(() => {
+        if (el) {
+          el.style.scrollBehavior = 'auto';
+          el.scrollLeft += direction === 'right' ? slideStep : -slideStep;
+          el.style.scrollBehavior = '';
+        }
+        setSlideState('idle');
+        updateScrollArrows();
+      });
     }, 300);
   }, [slideState, slideStep, updateScrollArrows]);
 
@@ -1283,16 +1279,14 @@ export const ClusterPage = () => {
             >
               <div
                 className="flex min-h-0 gap-5 p-5"
-                style={{
-                  transform:
-                    slideState === 'sliding'
-                      ? `translateX(${slideDir === 'right' ? -slideStep : slideStep}px)`
-                      : 'translateX(0)',
-                  transition:
-                    slideState === 'sliding'
-                      ? 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)'
-                      : 'none',
-                }}
+                style={
+                  slideState === 'sliding'
+                    ? {
+                        transform: `translateX(${slideDir === 'right' ? -slideStep : slideStep}px)`,
+                        transition: 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+                      }
+                    : undefined
+                }
               >
                 {renderRacks(() => scrollCardHeight, true)}
               </div>
