@@ -16,49 +16,94 @@ const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
   showTitle: true,
 };
 
-// ── Component ──────────────────────────────────────────────────────────────
-export const PrometheusWidget = ({ data }: { data: DashboardData }) => (
-  <div className="flex h-full flex-col p-5">
-    <div className="mb-4 flex items-center">
-      <span
-        className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${data.promConnected ? 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400'}`}
-      >
-        <span
-          className={`h-1.5 w-1.5 rounded-full ${data.promConnected ? 'animate-pulse bg-green-500' : 'bg-red-500'}`}
-        />
-        {data.promConnected ? 'Connected' : 'Disconnected'}
-      </span>
-    </div>
-    {data.promStats ? (
-      <div className="space-y-2">
-        {[
-          {
-            label: 'Last latency',
-            value: data.promStats.last_ms ? `${Math.round(data.promStats.last_ms)} ms` : '—',
-          },
-          {
-            label: 'Avg latency',
-            value: data.promStats.avg_ms ? `${Math.round(data.promStats.avg_ms)} ms` : '—',
-          },
-          {
-            label: 'Next scrape',
-            value: data.promNextSec > 0 ? `${data.promNextSec}s` : 'now',
-          },
-          {
-            label: 'Heartbeat',
-            value: data.promStats.heartbeat_seconds ? `${data.promStats.heartbeat_seconds}s` : '—',
-          },
-        ].map(({ label, value }) => (
-          <div key={label} className="flex items-center justify-between text-xs">
-            <span className="text-gray-500 dark:text-gray-400">{label}</span>
-            <span className="font-mono font-medium text-gray-800 dark:text-gray-200">{value}</span>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <p className="text-xs text-gray-400">Checking connection...</p>
-    )}
+// ── Latency color thresholds ──────────────────────────────────────────────
+const latencyColor = (ms: number | undefined): string => {
+  if (!ms) return 'text-gray-400 dark:text-gray-500';
+  if (ms < 100) return 'text-emerald-500 dark:text-emerald-400';
+  if (ms < 500) return 'text-amber-500 dark:text-amber-400';
+  return 'text-red-500 dark:text-red-400';
+};
+
+// ── Stat row ──────────────────────────────────────────────────────────────
+const Stat = ({
+  label,
+  value,
+  valueClass = 'text-gray-800 dark:text-gray-200',
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+}) => (
+  <div className="flex items-center justify-between">
+    <span className="text-[11px] text-gray-400 dark:text-gray-500">{label}</span>
+    <span className={`font-mono text-xs font-medium tabular-nums ${valueClass}`}>{value}</span>
   </div>
 );
+
+// ── Component ──────────────────────────────────────────────────────────────
+export const PrometheusWidget = ({ data }: { data: DashboardData }) => {
+  const { promConnected, promStats, promNextSec } = data;
+
+  return (
+    <div className="flex h-full flex-col gap-3 p-4">
+      {/* Connection badge */}
+      <div className="flex items-center gap-2">
+        <span className="relative flex h-2 w-2 shrink-0">
+          {promConnected && (
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
+          )}
+          <span
+            className={`relative inline-flex h-2 w-2 rounded-full ${
+              promConnected ? 'bg-emerald-500' : 'bg-red-500'
+            }`}
+          />
+        </span>
+        <span
+          className={`text-xs font-semibold ${
+            promConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+          }`}
+        >
+          {promConnected ? 'Connected' : 'Disconnected'}
+        </span>
+      </div>
+
+      {/* Stats */}
+      {promStats ? (
+        <div className="flex flex-col gap-1.5">
+          <Stat
+            label="Last latency"
+            value={promStats.last_ms ? `${Math.round(promStats.last_ms)} ms` : '—'}
+            valueClass={latencyColor(promStats.last_ms)}
+          />
+          <Stat
+            label="Avg latency"
+            value={promStats.avg_ms ? `${Math.round(promStats.avg_ms)} ms` : '—'}
+            valueClass={latencyColor(promStats.avg_ms)}
+          />
+          <Stat
+            label="Next scrape"
+            value={promNextSec > 0 ? `${promNextSec}s` : 'now'}
+          />
+          {promStats.heartbeat_seconds && (
+            <Stat
+              label="Heartbeat"
+              value={`${promStats.heartbeat_seconds}s`}
+            />
+          )}
+          {promStats.query_count !== undefined && (
+            <Stat
+              label="Queries"
+              value={String(promStats.query_count)}
+            />
+          )}
+        </div>
+      ) : (
+        <p className="text-[11px] text-gray-400 dark:text-gray-500">
+          {promConnected ? 'Fetching stats…' : 'Prometheus unreachable'}
+        </p>
+      )}
+    </div>
+  );
+};
 
 registerWidget({ ...WIDGET_META, component: PrometheusWidget });

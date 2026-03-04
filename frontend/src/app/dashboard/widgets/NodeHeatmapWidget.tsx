@@ -4,7 +4,7 @@ import { HC } from '../constants';
 import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
 import type { ActiveAlert } from '../../../types';
-import { HUDTooltip } from '../../../../components/HUDTooltip';
+import { HUDTooltip } from '../../../components/HUDTooltip';
 
 // ── Widget config ──────────────────────────────────────────────────────────
 const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
