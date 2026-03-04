@@ -1,3 +1,4 @@
+import { useRef, useEffect, useState } from 'react';
 import { Bell, CheckCircle, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { AlertRow } from '../primitives';
 import { registerWidget, type WidgetRegistration } from '../registry';
@@ -17,6 +18,9 @@ const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
   showTitle: true,
 };
 
+// Approximate height of one AlertRow (py-2.5 + text = ~44px)
+const ALERT_ROW_H = 44;
+
 // ── Component ──────────────────────────────────────────────────────────────
 export const ActiveAlertsWidget = ({
   data,
@@ -27,6 +31,29 @@ export const ActiveAlertsWidget = ({
 }) => {
   const critCount = data.alerts.filter((a) => a.state === 'CRIT').length;
   const warnCount = data.alerts.filter((a) => a.state === 'WARN').length;
+
+  // Auto mode: measure body div height to compute rows that fit
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [autoRows, setAutoRows] = useState(5);
+  const isAuto = data.alertLimit === 0;
+
+  useEffect(() => {
+    if (!isAuto) return;
+    const el = bodyRef.current;
+    if (!el) return;
+    const obs = new ResizeObserver(([entry]) => {
+      setAutoRows(Math.max(1, Math.floor(entry.contentRect.height / ALERT_ROW_H)));
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [isAuto]);
+
+  // In auto mode the widget receives all filteredAlerts and slices itself
+  const effectiveLimit = isAuto ? autoRows : Infinity;
+  const displayAlerts = isAuto
+    ? data.filteredAlerts.slice(0, effectiveLimit)
+    : data.filteredAlerts;
+  const autoHasMore = isAuto && data.filteredAlerts.length > effectiveLimit;
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -108,6 +135,7 @@ export const ActiveAlertsWidget = ({
           }}
           className="ml-auto h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
         >
+          <option value={0}>Auto</option>
           {[5, 10, 20, 50].map((n) => (
             <option key={n} value={n}>
               {n} rows
@@ -127,14 +155,17 @@ export const ActiveAlertsWidget = ({
         </div>
       ) : (
         <>
-          <div className="flex-1 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800">
-            {data.filteredAlerts.length === 0 ? (
+          <div
+            ref={bodyRef}
+            className="flex-1 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800"
+          >
+            {displayAlerts.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8">
                 <CheckCircle className="h-7 w-7 text-green-400" />
                 <p className="text-sm text-gray-400">No alerts match the filters</p>
               </div>
             ) : (
-              data.filteredAlerts.map((alert, i) => (
+              displayAlerts.map((alert, i) => (
                 <AlertRow
                   key={i}
                   alert={alert}
@@ -144,8 +175,8 @@ export const ActiveAlertsWidget = ({
             )}
           </div>
 
-          {/* Pagination footer */}
-          {data.filteredAlertsAll.length > data.alertLimit && (
+          {/* Pagination — hidden in auto mode (widget fills itself) */}
+          {!isAuto && data.filteredAlertsAll.length > data.alertLimit && (
             <div className="flex shrink-0 items-center justify-between border-t border-gray-100 px-4 py-2.5 dark:border-gray-800">
               <button
                 onClick={() => data.setAlertPage(Math.max(0, data.safeAlertPage - 1))}
@@ -171,13 +202,15 @@ export const ActiveAlertsWidget = ({
             </div>
           )}
 
-          {/* View all link */}
+          {/* View all — in auto mode shows "+N more" if content overflows */}
           <div className="shrink-0 border-t border-gray-100 px-4 py-2 dark:border-gray-800">
             <button
               onClick={() => navigate('/notifications')}
               className="text-brand-500 hover:text-brand-600 text-xs font-medium transition-colors"
             >
-              View all →
+              {autoHasMore
+                ? `+${data.filteredAlerts.length - effectiveLimit} more — View all →`
+                : 'View all →'}
             </button>
           </div>
         </>

@@ -587,12 +587,14 @@ export const DashboardPage = () => {
     .filter((a) => alertStateFilter === 'all' || a.state === alertStateFilter)
     .filter((a) => alertRoomFilter === 'all' || a.room_id === alertRoomFilter)
     .sort((a, b) => (a.state === 'CRIT' ? -1 : 1) - (b.state === 'CRIT' ? -1 : 1));
-  const totalAlertPages = Math.max(1, Math.ceil(filteredAlertsAll.length / alertLimit));
+  // alertLimit === 0 means 'auto' — widget measures its own height and slices internally
+  const totalAlertPages =
+    alertLimit === 0 ? 1 : Math.max(1, Math.ceil(filteredAlertsAll.length / alertLimit));
   const safeAlertPage = Math.min(alertPage, totalAlertPages - 1);
-  const filteredAlerts = filteredAlertsAll.slice(
-    safeAlertPage * alertLimit,
-    (safeAlertPage + 1) * alertLimit
-  );
+  const filteredAlerts =
+    alertLimit === 0
+      ? filteredAlertsAll
+      : filteredAlertsAll.slice(safeAlertPage * alertLimit, (safeAlertPage + 1) * alertLimit);
 
   // ── Prometheus countdown ──────────────────────────────────────────────────
   const promConnected = Boolean(promStats?.last_ts);
@@ -619,7 +621,10 @@ export const DashboardPage = () => {
     allRooms,
     donutSlices,
     alertLimit,
-    setAlertLimit,
+    setAlertLimit: (n: number) => {
+      setAlertLimit(n);
+      localStorage.setItem('rackscope.dash.alert-limit', String(n));
+    },
     alertPage,
     setAlertPage,
     alertStateFilter,
