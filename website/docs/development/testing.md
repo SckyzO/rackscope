@@ -10,13 +10,38 @@ Rackscope uses **pytest** for backend testing. All tests run inside Docker conta
 
 ## Running Tests
 
-### All tests
+### All tests (quiet)
 
 ```bash
 make test
 ```
 
-Runs `pytest` inside the `backend` container. The stack must be running (`make up`).
+Runs `pytest -q` inside the `backend` container. The stack must be running (`make up`).
+
+### Verbose output
+
+```bash
+make test-v
+```
+
+Shows each test name as it runs — useful for debugging specific failures.
+
+### Filter by keyword
+
+```bash
+make test-k K=planner
+make test-k K=auth
+make test-k K=for_duration
+```
+
+Runs only tests whose name or file matches the keyword.
+
+### Specific file or directory
+
+```bash
+make test-file F=tests/test_model.py
+make test-file F=tests/api/
+```
 
 ### With coverage report
 
@@ -28,58 +53,70 @@ Generates:
 - Terminal coverage summary
 - HTML report at `htmlcov/index.html` (open in browser)
 
-### Specific file or test
+### Full CI pipeline
 
 ```bash
-# Specific file
-docker compose -f docker-compose.dev.yml exec backend pytest tests/test_api.py -v
-
-# Specific function
-docker compose -f docker-compose.dev.yml exec backend pytest tests/test_api.py::test_healthz -v
-
-# With debug output
-docker compose -f docker-compose.dev.yml exec backend pytest -v -s
+make ci
 ```
 
-### All quality checks (lint + typecheck + tests + coverage)
+Runs the complete pre-release pipeline: `quality` (lint + typecheck + complexity + coverage) + `security` (bandit + npm audit + pip-audit).
+
+### All quality checks
 
 ```bash
 make quality
 ```
 
+Runs lint + typecheck + complexity + coverage in sequence.
+
+---
+
 ## Test Structure
 
 ```
 tests/
-├── test_api.py              # Smoke / integration tests (API endpoints)
-├── test_model.py            # Pydantic model validation
-├── test_planner.py          # TelemetryPlanner unit tests (including expand_by_label)
-├── test_topology_service.py # Topology service tests
-├── api/                     # Router-level tests (7 files)
-│   ├── test_topology.py
-│   ├── test_catalog.py
-│   ├── test_checks.py
-│   ├── test_telemetry.py
-│   ├── test_simulator.py
-│   ├── test_slurm.py
-│   └── test_metrics.py
-├── services/                # Service-level tests (4 files)
+├── test_api.py                     # Smoke / integration tests
+├── test_model.py                   # Pydantic model validation (CheckDefinition, Domain)
+├── test_planner.py                 # TelemetryPlanner (expand_by_label, for_duration)
+├── test_planner_for_duration_extended.py  # for_duration debounce — all scopes
+├── test_topology_service.py        # Topology service
+├── test_loader.py                  # YAML loader (error paths, segmented topology)
+├── test_dependencies.py            # FastAPI dependency injection
+├── test_exceptions.py              # HTTP error handlers (422, generic)
+├── test_middleware.py              # Auth + logging middleware
+├── test_prometheus_client.py       # PrometheusClient (cache, query, errors)
+├── api/
+│   ├── test_topology_router.py     # Topology CRUD endpoints
+│   ├── test_topology_router_extended.py  # Extended CRUD (rooms, aisles, devices)
+│   ├── test_catalog_router.py      # Device/rack template management
+│   ├── test_checks_router.py       # Checks library + test-query endpoint
+│   ├── test_config_router.py       # GET/PUT /api/config, wizard/disable
+│   ├── test_auth_router.py         # Login, JWT helpers, change-password/username
+│   ├── test_metrics_router.py      # Metrics library and data endpoints
+│   ├── test_simulator_router.py    # Simulator plugin endpoints
+│   ├── test_slurm_router.py        # Slurm plugin endpoints
+│   ├── test_system_router.py       # System status and restart
+│   └── test_telemetry_router.py    # Telemetry and health check endpoints
+├── model/
+│   └── test_metrics.py             # MetricDefinition model
+├── services/
 │   ├── test_topology_service.py
 │   ├── test_telemetry_service.py
 │   ├── test_instance_service.py
-│   └── test_metrics_service.py
-├── model/                   # Model tests
-│   └── test_metrics.py
-├── utils/                   # Utility tests
-│   ├── test_aggregation.py
-│   └── test_validation.py
-└── plugins/                 # Plugin system tests
-    ├── test_base.py         # RackscopePlugin base class
-    ├── test_registry.py     # PluginRegistry lifecycle
-    └── test_plugins_router.py  # /api/plugins endpoints
+│   ├── test_metrics_service.py
+│   └── test_slurm_service.py
+├── plugins/
+│   ├── test_base.py                # RackscopePlugin base class
+│   ├── test_registry.py            # PluginRegistry lifecycle (shutdown, errors)
+│   └── test_plugins_router.py      # /api/plugins endpoints + config file I/O
+└── utils/
+    ├── test_aggregation.py
+    └── test_validation.py
 ```
 
-**Current metrics**: 362 tests passing, ~66% coverage.
+**Current metrics**: **683 tests passing, 90% coverage**.
+
+---
 
 ## Writing Tests
 
@@ -91,58 +128,104 @@ from rackscope.api.app import app
 
 client = TestClient(app)
 
-def test_healthz():
-    response = client.get("/healthz")
-    assert response.status_code == 200
-
 def test_get_sites():
     response = client.get("/api/sites")
     assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
+    assert isinstance(response.json(), list)
 ```
 
 ### Model validation tests
 
 ```python
-from rackscope.model.domain import Device
+from pydantic import ValidationError
+from rackscope.model.checks import CheckDefinition
+import pytest
 
-def test_device_instance_field():
-    """instance field accepts str, list, and dict."""
-    # String nodeset
-    d = Device(id="d1", name="Node 1", template_id="tpl", u_position=1, height=1, instance="compute[001-004]")
-    assert d.instance == "compute[001-004]"
+def test_check_for_duration_valid():
+    c = CheckDefinition.model_validate({
+        "id": "node_up", "name": "Node Up", "scope": "node",
+        "kind": "server", "expr": 'up{instance=~"$instances"}',
+        "output": "bool", "for": "5m",
+        "rules": [{"op": "==", "value": 0, "severity": "CRIT"}],
+    })
+    assert c.for_duration == "5m"
 
-    # List
-    d2 = Device(id="d2", name="Node 2", template_id="tpl", u_position=1, height=1, instance=["n1", "n2"])
-    assert d2.instance == ["n1", "n2"]
+def test_check_invalid_for_duration():
+    with pytest.raises(ValidationError):
+        CheckDefinition.model_validate({..., "for": "5minutes"})  # invalid format
 ```
 
-### Planner tests with mocked Prometheus
+### Async tests with mocked Prometheus
 
 ```python
+import pytest
 from unittest.mock import AsyncMock, patch
-from rackscope.telemetry.planner import TelemetryPlanner
 
-async def test_planner_snapshot(topology, checks_library, catalog):
-    with patch("rackscope.telemetry.prometheus.PrometheusClient.query") as mock_query:
-        mock_query.return_value = [{"metric": {"instance": "compute001"}, "value": [0, "1"]}]
-        planner = TelemetryPlanner(prom_url="http://localhost:9090")
-        snapshot = await planner.get_snapshot(topology, checks_library, {})
-        assert "compute001" in snapshot.node_states
+@pytest.mark.asyncio
+async def test_planner_crit(basic_topology, catalog):
+    checks = _make_for_check(for_duration=None)  # immediate
+    planner = TelemetryPlanner(config=PlannerConfig(...))
+
+    with patch("rackscope.telemetry.planner.prom_client") as mock_prom:
+        mock_prom.query = AsyncMock(return_value=[
+            {"metric": {"instance": "compute001"}, "value": [0, "0"]}
+        ])
+        snapshot = await planner.get_snapshot(basic_topology, checks, targets)
+
+    assert snapshot.node_states.get("compute001") == "CRIT"
 ```
+
+### Protecting config files in tests
+
+> **Important**: Tests that call write endpoints (`PUT /api/config`, `POST /api/setup/wizard/disable`) must use the `protect_app_yaml` fixture to prevent corrupting `config/app.yaml`.
+
+```python
+import pytest
+
+@pytest.fixture()
+def protect_app_yaml():
+    """Snapshot app.yaml before the test and restore it after."""
+    path = "config/app.yaml"
+    with open(path) as f:
+        original = f.read()
+    yield
+    with open(path, "w") as f:
+        f.write(original)
+
+def test_wizard_disable(protect_app_yaml):
+    resp = client.post("/api/setup/wizard/disable")
+    assert resp.status_code in (200, 500)
+```
+
+Without this fixture, running the test suite will overwrite your Prometheus URL, paths, and feature flags in `config/app.yaml`.
+
+---
 
 ## Coverage Goals
 
 | Scope | Target | Current |
 |---|---|---|
-| Overall | ≥ 70% | ~66% |
-| `api/` routers | ≥ 80% | tracked |
-| `model/` | ≥ 90% | tracked |
-| `services/` | ≥ 70% | tracked |
-| `plugins/` | ≥ 60% | tracked |
+| **Overall** | ≥ 85% | **90%** ✅ |
+| `api/` routers | ≥ 80% | ~85% ✅ |
+| `model/` | ≥ 90% | ~97% ✅ |
+| `services/` | ≥ 80% | ~90% ✅ |
+| `plugins/` | ≥ 75% | ~88% ✅ |
+| `telemetry/` | ≥ 80% | ~88% ✅ |
 
-Run `make coverage` to see current per-module coverage.
+Run `make coverage` to see current per-module breakdown.
+
+### What is not covered (and why)
+
+Some lines carry `# pragma: no cover` intentionally:
+
+| Pattern | Reason |
+|---|---|
+| `if __name__ == "__main__"` | CLI entry point — only reachable via direct execution |
+| `_update_auth_config()` body | File I/O + asyncio event loop — untestable without full filesystem fixture |
+| `delayed_touch()` in system router | Background async task — untestable in unit context |
+| `nodes` field fallback in instance_service | Dead code — `instance` field always takes priority |
+
+---
 
 ## Type Checking
 
