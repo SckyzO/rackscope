@@ -104,7 +104,7 @@ class SimulatorPlugin(RackscopePlugin):
 
         self.config = self._load_config(APP_CONFIG)
         logger.info(
-            f"Simulator plugin started (scenario={self.config.scenario}, "
+            f"Simulator plugin started (mode={self.config.incident_mode}, "
             f"interval={self.config.update_interval_seconds}s)"
         )
 
@@ -112,7 +112,7 @@ class SimulatorPlugin(RackscopePlugin):
         """Reload configuration after a config file change."""
         self.config = self._load_config(app_config)
         logger.info(
-            f"Simulator plugin configuration reloaded (scenario={self.config.scenario}, "
+            f"Simulator plugin configuration reloaded (mode={self.config.incident_mode}, "
             f"enabled={self.config.enabled})"
         )
 
@@ -146,7 +146,6 @@ class SimulatorPlugin(RackscopePlugin):
                 "running": running,
                 "endpoint": sim_metrics_url,
                 "update_interval": cfg.update_interval_seconds,
-                "scenario": cfg.scenario,
                 "incident_mode": cfg.incident_mode,
                 "changes_per_hour": cfg.changes_per_hour,
                 "overrides_count": len(self._load_overrides(None)),
@@ -273,33 +272,6 @@ class SimulatorPlugin(RackscopePlugin):
         ):
             """Get all active simulator overrides."""
             return {"overrides": self._load_overrides(app_config)}
-
-        @self._router.get("/scenarios")
-        def get_simulator_scenarios():
-            """Get available simulator scenarios."""
-            sim_path = Path("config/plugins/simulator/scenarios/scenarios.yaml")
-            if not sim_path.exists():
-                return {"scenarios": []}
-            try:
-                data = yaml.safe_load(sim_path.read_text()) or {}
-            except yaml.YAMLError as exc:
-                logger.warning(f"Failed to load simulator scenarios: {exc}")
-                return {"scenarios": []}
-            scenarios = data.get("scenarios") if isinstance(data, dict) else {}
-            if not isinstance(scenarios, dict):
-                return {"scenarios": []}
-            payload = []
-            for name in sorted(scenarios.keys()):
-                entry = scenarios.get(name) if isinstance(scenarios.get(name), dict) else {}
-                payload.append(
-                    {
-                        "name": name,
-                        "description": entry.get("description")
-                        if isinstance(entry, dict)
-                        else None,
-                    }
-                )
-            return {"scenarios": payload}
 
         @self._router.post("/overrides")
         def add_simulator_override(

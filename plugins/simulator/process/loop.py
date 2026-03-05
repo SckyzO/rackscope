@@ -16,7 +16,7 @@ import time
 from pathlib import Path
 
 import plugins.simulator.process.metrics as _m
-from plugins.simulator.process.config import apply_scenario, load_simulator_config
+from plugins.simulator.process.config import load_simulator_config
 from plugins.simulator.process.metrics import (
     SLURM_STATUS_LEVELS,
     build_metric_registry,
@@ -436,7 +436,7 @@ def simulate():
         print(f"Using fallback metrics only ({len(_m.SUPPORTED_METRICS)} metrics)")
 
     # Load initial config
-    sim_cfg = apply_scenario(load_simulator_config())
+    sim_cfg = load_simulator_config()
     update_interval = sim_cfg.get("update_interval_seconds", sim_cfg.get("update_interval", 20))
     profiles = sim_cfg.get("profiles", {})
     seed = sim_cfg.get("seed")
@@ -503,7 +503,7 @@ def simulate():
 
     while True:
         # Reload config every tick — picks up scenario changes live
-        _new_cfg = apply_scenario(load_simulator_config())
+        _new_cfg = load_simulator_config()
         profiles = _new_cfg.get("profiles", {})
         seed = _new_cfg.get("seed")
         incident_mode = _new_cfg.get("incident_mode", "full_ok")

@@ -49,7 +49,6 @@ class SimulatorPluginConfig(BaseModel):
     enabled: bool = Field(default=True)
     update_interval_seconds: int = Field(default=20, ge=1)
     seed: Optional[int] = Field(default=None)
-    scenario: Optional[str] = Field(default=None)
     incident_mode: IncidentMode = Field(default=IncidentMode.LIGHT)
     changes_per_hour: int = Field(default=2, ge=1)
     custom_incidents: CustomIncidents = Field(default_factory=CustomIncidents)

@@ -1,7 +1,7 @@
 """Simulator configuration loading.
 
-Reads app.yaml (plugins.simulator or legacy simulator key) and merges
-with scenarios.yaml to produce the effective simulation configuration.
+Reads plugin.yaml (base config) and app.yaml (operator overrides) and merges
+them to produce the effective simulation configuration.
 """
 
 import os
@@ -9,7 +9,7 @@ import os
 import yaml
 
 SIMULATOR_CONFIG_PATH = os.getenv(
-    "SIMULATOR_CONFIG", "/app/config/plugins/simulator/scenarios/scenarios.yaml"
+    "SIMULATOR_CONFIG", "/app/config/plugins/simulator/config/plugin.yaml"
 )
 APP_CONFIG_PATH = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
 
@@ -24,7 +24,7 @@ def load_yaml(path):
 
 
 def load_simulator_config():
-    """Load and merge simulator configuration from scenarios.yaml + app.yaml."""
+    """Load simulator configuration from plugin.yaml, overridden by app.yaml."""
     sim_cfg = load_yaml(SIMULATOR_CONFIG_PATH) or {}
     app_cfg = load_yaml(APP_CONFIG_PATH) or {}
 
@@ -39,25 +39,4 @@ def load_simulator_config():
 
     if isinstance(app_sim, dict):
         sim_cfg = {**sim_cfg, **app_sim}
-    return sim_cfg
-
-
-def apply_scenario(sim_cfg):
-    """Merge the active scenario's settings into the base config."""
-    scenario_name = sim_cfg.get("scenario")
-    scenarios = sim_cfg.get("scenarios", {})
-    if scenario_name and isinstance(scenarios, dict) and scenario_name in scenarios:
-        scenario_cfg = scenarios.get(scenario_name) or {}
-        if isinstance(scenario_cfg, dict):
-            merged = dict(sim_cfg)
-            for key in [
-                "incident_mode",
-                "changes_per_hour",
-                "profiles",
-                "seed",
-                "update_interval_seconds",
-            ]:
-                if key in scenario_cfg:
-                    merged[key] = scenario_cfg[key]
-            return merged
     return sim_cfg

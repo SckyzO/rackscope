@@ -54,58 +54,6 @@ def override_app_config(config):
     return _get_app_config_optional
 
 
-def test_get_simulator_scenarios_success(tmp_path):
-    """Test getting simulator scenarios."""
-    # Create YAML content
-    yaml_content = yaml.safe_dump(
-        {
-            "scenarios": {
-                "normal": {"description": "Normal operation"},
-                "crisis": {"description": "Multiple failures"},
-            }
-        }
-    )
-
-    # Mock Path methods
-    with pytest.MonkeyPatch.context() as m:
-        m.setattr(Path, "exists", lambda self: True)
-        m.setattr(Path, "read_text", lambda self: yaml_content)
-
-        response = client.get("/api/simulator/scenarios")
-
-    assert response.status_code == 200
-    data = response.json()
-    assert "scenarios" in data
-    assert len(data["scenarios"]) == 2
-    assert any(s["name"] == "normal" for s in data["scenarios"])
-    assert any(s["name"] == "crisis" for s in data["scenarios"])
-
-
-def test_get_simulator_scenarios_no_file():
-    """Test getting scenarios when file doesn't exist."""
-    with pytest.MonkeyPatch.context() as m:
-        m.setattr(Path, "exists", lambda self: False)
-
-        response = client.get("/api/simulator/scenarios")
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["scenarios"] == []
-
-
-def test_get_simulator_scenarios_invalid_yaml(tmp_path):
-    """Test getting scenarios with invalid YAML."""
-    with pytest.MonkeyPatch.context() as m:
-        m.setattr(Path, "exists", lambda self: True)
-        m.setattr(Path, "read_text", lambda self: "{ invalid yaml ][")
-
-        response = client.get("/api/simulator/scenarios")
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["scenarios"] == []
-
-
 def test_get_simulator_overrides_success(mock_app_config_with_simulator):
     """Test getting simulator overrides."""
     app.dependency_overrides[get_app_config_optional] = override_app_config(
@@ -664,7 +612,8 @@ def test_get_simulator_status_running():
     assert data["running"] is True
     assert "endpoint" in data
     assert "update_interval" in data
-    assert "scenario" in data
+    assert "incident_mode" in data
+    assert "changes_per_hour" in data
 
 
 def test_simulator_plugin_config_loading():
@@ -828,20 +777,6 @@ def test_load_overrides_invalid_yaml(tmp_path):
 
     overrides = plugin._load_overrides(config)
     assert overrides == []
-
-
-def test_get_scenarios_invalid_data_structure():
-    """Test getting scenarios with invalid data structure."""
-    with pytest.MonkeyPatch.context() as m:
-        m.setattr(Path, "exists", lambda self: True)
-        # Return a list instead of dict with scenarios key
-        m.setattr(Path, "read_text", lambda self: yaml.safe_dump([1, 2, 3]))
-
-        response = client.get("/api/simulator/scenarios")
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["scenarios"] == []
 
 
 def test_post_scenarios_change_scenario():
