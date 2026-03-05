@@ -648,7 +648,14 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
                     icon={Globe}
                     primary
                     hasLink
-                    onLinkClick={() => navigate(`/views/site/${site.id}`)}
+                    onLinkClick={() => {
+                      navigate(`/views/site/${site.id}`);
+                      setExpandedSites((prev) => {
+                        const next = new Set(prev);
+                        next.add(site.id);
+                        return next;
+                      });
+                    }}
                     isActive={location.pathname === `/views/site/${site.id}`}
                     collapsed={collapsed}
                     navigate={navigate}
