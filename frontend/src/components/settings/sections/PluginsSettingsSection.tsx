@@ -445,12 +445,11 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             {simulatorSettingsOpen && (
               <div className="space-y-4 border-t border-gray-100 pt-4 dark:border-gray-800">
                 {/* Timing */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <p className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Update Interval
-                      <TooltipHelp text="How often the simulator generates a new set of metrics." />
-                    </p>
+                <FormRows>
+                  <FormRow
+                    label="Update Interval"
+                    tooltip="How often the simulator generates a new set of metrics."
+                  >
                     <StepperInput
                       value={parseInt(sim.update_interval_seconds, 10) || 20}
                       onChange={(v) => updateSimulator('update_interval_seconds', String(v))}
@@ -458,16 +457,22 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                       max={3600}
                       step={5}
                       unit="s"
+                      className="w-28"
                     />
-                  </div>
-                  <FormField
+                  </FormRow>
+                  <FormRow
                     label="Random Seed"
                     tooltip="Pin a seed for reproducible simulation. Leave empty for random output."
-                    value={sim.seed}
-                    onChange={(v) => updateSimulator('seed', v)}
-                    placeholder="empty = random"
-                  />
-                </div>
+                  >
+                    <input
+                      type="text"
+                      value={sim.seed}
+                      onChange={(e) => updateSimulator('seed', e.target.value)}
+                      placeholder="empty = random"
+                      className="focus:border-brand-500 w-36 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    />
+                  </FormRow>
+                </FormRows>
 
                 {/* Incident settings */}
                 <FormRows>
@@ -506,11 +511,11 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
                 {/* Custom incident counts */}
                 {sim.incident_mode === 'custom' && (
-                  <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
+                    <p className="mb-3 text-xs font-semibold text-gray-500 dark:text-gray-400">
                       Custom counts
                     </p>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                    <FormRows>
                       {(
                         [
                           {
@@ -535,37 +540,37 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                           },
                         ] as const
                       ).map(({ label, field, tooltip }) => (
-                        <div key={field} className="space-y-2">
-                          <p className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {label}
-                            <TooltipHelp text={tooltip} />
-                          </p>
+                        <FormRow key={field} label={label} tooltip={tooltip}>
                           <StepperInput
                             value={parseInt(sim.custom_incidents[field], 10) || 0}
                             onChange={(v) => updateCustomIncident(field, v)}
                             min={0}
                             className="w-28"
                           />
-                        </div>
+                        </FormRow>
                       ))}
-                    </div>
+                    </FormRows>
                   </div>
                 )}
 
                 {/* Paths + TTL */}
-                <div className="grid grid-cols-[1fr_180px] gap-4">
-                  <FormField
+                <FormRows>
+                  <FormRow
                     label="Overrides Path"
                     tooltip="YAML file where runtime metric overrides are persisted across restarts."
-                    value={sim.overrides_path}
-                    onChange={(v) => updateSimulator('overrides_path', v)}
-                    placeholder="config/plugins/simulator/overrides/overrides.yaml"
-                  />
-                  <div className="space-y-2">
-                    <p className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Default TTL
-                      <TooltipHelp text="Lifetime of overrides in seconds. Set to 0 for permanent overrides." />
-                    </p>
+                  >
+                    <input
+                      type="text"
+                      value={sim.overrides_path}
+                      onChange={(e) => updateSimulator('overrides_path', e.target.value)}
+                      placeholder="config/plugins/simulator/overrides/overrides.yaml"
+                      className="focus:border-brand-500 w-80 rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    />
+                  </FormRow>
+                  <FormRow
+                    label="Default TTL"
+                    tooltip="Lifetime of overrides in seconds. Set to 0 for permanent overrides."
+                  >
                     <StepperInput
                       value={parseInt(sim.default_ttl_seconds, 10) || 120}
                       onChange={(v) => updateSimulator('default_ttl_seconds', String(v))}
@@ -573,24 +578,26 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                       max={86400}
                       step={60}
                       unit="s"
+                      className="w-28"
                     />
-                  </div>
-                </div>
+                  </FormRow>
+                </FormRows>
 
                 {/* Metrics catalog */}
-                <div className="space-y-2">
-                  <p className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Metrics Catalog
-                    <TooltipHelp text="Primary YAML catalog defining which Prometheus metrics the simulator generates." />
-                  </p>
-                  <SelectInput
-                    value={sim.metrics_catalog_path ?? ''}
-                    onChange={(v) => updateSimulator('metrics_catalog_path', v)}
-                    placeholder={metricsFilesLoading ? 'Loading…' : '— Select a metrics file —'}
-                    options={metricsFiles.map((f) => ({ value: f.path, label: f.name }))}
-                    className="w-full"
-                  />
-                </div>
+                <FormRows>
+                  <FormRow
+                    label="Metrics Catalog"
+                    tooltip="Primary YAML catalog defining which Prometheus metrics the simulator generates."
+                  >
+                    <SelectInput
+                      value={sim.metrics_catalog_path ?? ''}
+                      onChange={(v) => updateSimulator('metrics_catalog_path', v)}
+                      placeholder={metricsFilesLoading ? 'Loading…' : '— Select a file —'}
+                      options={metricsFiles.map((f) => ({ value: f.path, label: f.name }))}
+                      className="w-72"
+                    />
+                  </FormRow>
+                </FormRows>
 
                 {/* Additional catalogs */}
                 <div className="space-y-2">
