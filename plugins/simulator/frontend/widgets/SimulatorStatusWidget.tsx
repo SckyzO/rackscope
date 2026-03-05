@@ -8,7 +8,7 @@ import { api } from '@src/services/api';
 const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
   type: 'simulator-status',
   title: 'Simulator',
-  description: 'Running state, active scenario and overrides count',
+  description: 'Running state, incident mode and overrides count',
   group: 'Overview',
   icon: FlaskConical,
   defaultW: 4,
@@ -19,12 +19,34 @@ const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
   requiresPlugin: 'simulator',
 };
 
+// ── Incident mode pill ──────────────────────────────────────────────────────
+const MODE_COLORS: Record<string, string> = {
+  full_ok: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400',
+  light:   'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+  medium:  'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400',
+  heavy:   'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400',
+  chaos:   'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
+  custom:  'bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400',
+};
+
+const ModePill = ({ mode }: { mode: string }) => (
+  <span
+    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+      MODE_COLORS[mode] ?? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+    }`}
+  >
+    {mode ?? '—'}
+  </span>
+);
+
 // ── Component ──────────────────────────────────────────────────────────────
 type SimulatorStatus = {
   running: boolean;
   endpoint: string;
   update_interval: number;
   scenario: string | null;
+  incident_mode: string | null;
+  changes_per_hour: number | null;
   overrides_count: number;
 };
 
@@ -66,11 +88,17 @@ export const SimulatorStatusWidget = ({ navigate }: { navigate: WidgetProps['nav
               </span>
             </div>
 
-            {/* Scenario */}
+            {/* Incident mode */}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Scenario</span>
-              <span className="max-w-[140px] truncate text-xs font-medium text-gray-800 dark:text-gray-200">
-                {status.scenario ?? '—'}
+              <span className="text-xs text-gray-500 dark:text-gray-400">Incident mode</span>
+              <ModePill mode={status.incident_mode ?? 'full_ok'} />
+            </div>
+
+            {/* Changes per hour */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-500 dark:text-gray-400">Changes / hour</span>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                {status.changes_per_hour != null ? `${status.changes_per_hour}/h` : '—'}
               </span>
             </div>
 

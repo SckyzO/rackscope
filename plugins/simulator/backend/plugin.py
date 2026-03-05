@@ -147,6 +147,8 @@ class SimulatorPlugin(RackscopePlugin):
                 "endpoint": sim_metrics_url,
                 "update_interval": cfg.update_interval_seconds,
                 "scenario": cfg.scenario,
+                "incident_mode": cfg.incident_mode,
+                "changes_per_hour": cfg.changes_per_hour,
                 "overrides_count": len(self._load_overrides(None)),
             }
 
