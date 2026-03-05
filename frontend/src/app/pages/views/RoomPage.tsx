@@ -400,7 +400,7 @@ const RackCell = ({
 
   // ── Cells ─────────────────────────────────────────────────────────────────
   if (rackStyle === 'cells') {
-    const totalCells = 14;
+    const totalCells = 18;
     const filledCells = Math.round((occupancy / 100) * totalCells);
     return (
       <div
@@ -414,14 +414,14 @@ const RackCell = ({
           onClick={onClick}
           className={`relative overflow-hidden rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
           style={{
-            width: 52,
-            height: 96,
+            width: 72,
+            height: 130,
             backgroundColor: `${color}06`,
             borderColor: `${color}55`,
           }}
         >
           <div
-            className="absolute inset-1"
+            className="absolute inset-1.5"
             style={{ display: 'grid', gridTemplateRows: `repeat(${totalCells}, 1fr)`, gap: 3 }}
           >
             {Array.from({ length: totalCells }).map((_, i) => {
@@ -444,10 +444,11 @@ const RackCell = ({
           <p
             className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
             style={{
-              width: 52,
+              width: 72,
               overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
             }}
           >
             {rack.name}
@@ -1495,7 +1496,6 @@ export const RoomPage = () => {
     if (roomId) saveRoomSettings(roomId, settings);
   }, [roomId, settings]);
 
-
   const [viewport, setViewport] = useState({ zoom: 1, panX: 0, panY: 0 });
   const { zoom, panX, panY } = viewport;
   const [isDragging, setIsDragging] = useState(false);
@@ -1784,14 +1784,18 @@ export const RoomPage = () => {
           {/* Zoom controls */}
           <ZoomBar
             zoom={zoom}
-            onZoomOut={() => setViewport((v) => {
-              const newZoom = Math.max(0.15, Math.round((v.zoom - 0.05) * 100) / 100);
-              return { ...v, zoom: newZoom, ...clampPan(v.panX, v.panY, newZoom) };
-            })}
-            onZoomIn={() => setViewport((v) => {
-              const newZoom = Math.min(3, Math.round((v.zoom + 0.05) * 100) / 100);
-              return { ...v, zoom: newZoom, ...clampPan(v.panX, v.panY, newZoom) };
-            })}
+            onZoomOut={() =>
+              setViewport((v) => {
+                const newZoom = Math.max(0.15, Math.round((v.zoom - 0.05) * 100) / 100);
+                return { ...v, zoom: newZoom, ...clampPan(v.panX, v.panY, newZoom) };
+              })
+            }
+            onZoomIn={() =>
+              setViewport((v) => {
+                const newZoom = Math.min(3, Math.round((v.zoom + 0.05) * 100) / 100);
+                return { ...v, zoom: newZoom, ...clampPan(v.panX, v.panY, newZoom) };
+              })
+            }
             onFit={fitToCanvas}
             onReset={resetToDefault}
           />
