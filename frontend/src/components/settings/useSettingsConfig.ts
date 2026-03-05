@@ -84,15 +84,13 @@ export type ConfigDraft = {
       update_interval_seconds: string;
       seed: string;
       scenario: string;
-      scale_factor: string;
-      incident_rates: {
-        node_micro_failure: string;
-        rack_macro_failure: string;
-        aisle_cooling_failure: string;
-      };
-      incident_durations: {
-        rack: string;
-        aisle: string;
+      incident_mode: string;
+      changes_per_hour: string;
+      custom_incidents: {
+        devices_crit: string;
+        devices_warn: string;
+        racks_crit: string;
+        aisles_hot: string;
       };
       overrides_path: string;
       default_ttl_seconds: string;
@@ -209,29 +207,22 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       enabled: config.plugins?.simulator?.enabled ?? false,
       update_interval_seconds: String(config.plugins?.simulator?.update_interval_seconds ?? 20),
       seed: String(config.plugins?.simulator?.seed ?? ''),
-      scenario: config.plugins?.simulator?.scenario || 'full-ok',
-      scale_factor: String(config.plugins?.simulator?.scale_factor ?? 1.0),
-      incident_rates: {
-        node_micro_failure: String(
-          config.plugins?.simulator?.incident_rates?.node_micro_failure ?? 0.001
-        ),
-        rack_macro_failure: String(
-          config.plugins?.simulator?.incident_rates?.rack_macro_failure ?? 0.01
-        ),
-        aisle_cooling_failure: String(
-          config.plugins?.simulator?.incident_rates?.aisle_cooling_failure ?? 0.005
-        ),
-      },
-      incident_durations: {
-        rack: String(config.plugins?.simulator?.incident_durations?.rack ?? 3),
-        aisle: String(config.plugins?.simulator?.incident_durations?.aisle ?? 5),
+      scenario: config.plugins?.simulator?.scenario || '',
+      incident_mode: config.plugins?.simulator?.incident_mode || 'light',
+      changes_per_hour: String(config.plugins?.simulator?.changes_per_hour ?? 2),
+      custom_incidents: {
+        devices_crit: String(config.plugins?.simulator?.custom_incidents?.devices_crit ?? 0),
+        devices_warn: String(config.plugins?.simulator?.custom_incidents?.devices_warn ?? 0),
+        racks_crit: String(config.plugins?.simulator?.custom_incidents?.racks_crit ?? 0),
+        aisles_hot: String(config.plugins?.simulator?.custom_incidents?.aisles_hot ?? 0),
       },
       overrides_path:
-        config.plugins?.simulator?.overrides_path || 'config/plugins/simulator/overrides.yaml',
+        config.plugins?.simulator?.overrides_path ||
+        'config/plugins/simulator/overrides/overrides.yaml',
       default_ttl_seconds: String(config.plugins?.simulator?.default_ttl_seconds ?? 120),
       metrics_catalog_path:
         config.plugins?.simulator?.metrics_catalog_path ||
-        'config/plugins/simulator/metrics_full.yaml',
+        'config/plugins/simulator/metrics/metrics_full.yaml',
       metrics_catalogs: config.plugins?.simulator?.metrics_catalogs || [],
     },
     slurm: {
@@ -367,19 +358,14 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
       enabled: draft.plugins.simulator.enabled,
       update_interval_seconds: parseInt(draft.plugins.simulator.update_interval_seconds, 10) || 20,
       seed: draft.plugins.simulator.seed ? parseInt(draft.plugins.simulator.seed, 10) : null,
-      scenario: draft.plugins.simulator.scenario,
-      scale_factor: parseFloat(draft.plugins.simulator.scale_factor) || 1.0,
-      incident_rates: {
-        node_micro_failure:
-          parseFloat(draft.plugins.simulator.incident_rates.node_micro_failure) || 0.001,
-        rack_macro_failure:
-          parseFloat(draft.plugins.simulator.incident_rates.rack_macro_failure) || 0.01,
-        aisle_cooling_failure:
-          parseFloat(draft.plugins.simulator.incident_rates.aisle_cooling_failure) || 0.005,
-      },
-      incident_durations: {
-        rack: parseInt(draft.plugins.simulator.incident_durations.rack, 10) || 3,
-        aisle: parseInt(draft.plugins.simulator.incident_durations.aisle, 10) || 5,
+      scenario: draft.plugins.simulator.scenario || null,
+      incident_mode: draft.plugins.simulator.incident_mode || 'light',
+      changes_per_hour: parseInt(draft.plugins.simulator.changes_per_hour, 10) || 2,
+      custom_incidents: {
+        devices_crit: parseInt(draft.plugins.simulator.custom_incidents.devices_crit, 10) || 0,
+        devices_warn: parseInt(draft.plugins.simulator.custom_incidents.devices_warn, 10) || 0,
+        racks_crit: parseInt(draft.plugins.simulator.custom_incidents.racks_crit, 10) || 0,
+        aisles_hot: parseInt(draft.plugins.simulator.custom_incidents.aisles_hot, 10) || 0,
       },
       overrides_path: draft.plugins.simulator.overrides_path,
       default_ttl_seconds: parseInt(draft.plugins.simulator.default_ttl_seconds, 10) || 120,

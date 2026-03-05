@@ -289,9 +289,18 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
     }
   };
 
+  const MODE_DEFAULTS: Record<string, number> = {
+    full_ok: 1,
+    light: 2,
+    medium: 4,
+    heavy: 4,
+    chaos: 3,
+    custom: 2,
+  };
+
   const updateSimulator = (
     field: string,
-    value: string | boolean | Record<string, string> | Array<unknown>
+    value: string | boolean | number | Record<string, string | number> | Array<unknown>
   ) => {
     setDraft((prev) => {
       if (!prev) return prev;
@@ -302,6 +311,25 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           simulator: {
             ...prev.plugins.simulator,
             [field]: value,
+          },
+        },
+      };
+    });
+  };
+
+  const updateCustomIncident = (field: string, value: string) => {
+    setDraft((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        plugins: {
+          ...prev.plugins,
+          simulator: {
+            ...prev.plugins.simulator,
+            custom_incidents: {
+              ...prev.plugins.simulator.custom_incidents,
+              [field]: value,
+            },
           },
         },
       };
@@ -539,83 +567,76 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 )}
               </div>
 
+              {/* Incident Mode */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                  Incident Mode
+                </label>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Controls the failure pattern injected by the simulator.
+                </p>
+                <select
+                  value={draft.plugins.simulator.incident_mode}
+                  onChange={(e) => {
+                    const mode = e.target.value;
+                    updateSimulator('incident_mode', mode);
+                    updateSimulator('changes_per_hour', String(MODE_DEFAULTS[mode] ?? 2));
+                  }}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                >
+                  <option value="full_ok">full_ok — No incidents</option>
+                  <option value="light">light — 1-3 critical, 1-5 warning</option>
+                  <option value="medium">medium — 1-3 critical, 5-10 warning, 1 rack</option>
+                  <option value="heavy">
+                    heavy — 5-10 critical, 10-20 warning, 2 racks, 1 aisle
+                  </option>
+                  <option value="chaos">chaos — 15% critical, 25% warning</option>
+                  <option value="custom">custom — exact counts</option>
+                </select>
+              </div>
+
+              {/* Changes per hour */}
               <FormField
-                label="Scale Factor"
-                value={draft.plugins.simulator.scale_factor}
-                onChange={(value) => updateSimulator('scale_factor', value)}
+                label="Changes / hour"
+                value={draft.plugins.simulator.changes_per_hour}
+                onChange={(value) => updateSimulator('changes_per_hour', value)}
                 type="number"
               />
 
-              {/* Incident Rates */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                  Incident Rates (0.0 - 1.0)
-                </label>
-                <FormField
-                  label="Node Micro Failure"
-                  value={draft.plugins.simulator.incident_rates.node_micro_failure}
-                  onChange={(value) =>
-                    updateSimulator('incident_rates', {
-                      ...draft.plugins.simulator.incident_rates,
-                      node_micro_failure: value,
-                    })
-                  }
-                  type="number"
-                />
-                <FormField
-                  label="Rack Macro Failure"
-                  value={draft.plugins.simulator.incident_rates.rack_macro_failure}
-                  onChange={(value) =>
-                    updateSimulator('incident_rates', {
-                      ...draft.plugins.simulator.incident_rates,
-                      rack_macro_failure: value,
-                    })
-                  }
-                  type="number"
-                />
-                <FormField
-                  label="Aisle Cooling Failure"
-                  value={draft.plugins.simulator.incident_rates.aisle_cooling_failure}
-                  onChange={(value) =>
-                    updateSimulator('incident_rates', {
-                      ...draft.plugins.simulator.incident_rates,
-                      aisle_cooling_failure: value,
-                    })
-                  }
-                  type="number"
-                />
-              </div>
-
-              {/* Incident Durations */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                  Incident Durations (seconds)
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    label="Rack"
-                    value={draft.plugins.simulator.incident_durations.rack}
-                    onChange={(value) =>
-                      updateSimulator('incident_durations', {
-                        ...draft.plugins.simulator.incident_durations,
-                        rack: value,
-                      })
-                    }
-                    type="number"
-                  />
-                  <FormField
-                    label="Aisle"
-                    value={draft.plugins.simulator.incident_durations.aisle}
-                    onChange={(value) =>
-                      updateSimulator('incident_durations', {
-                        ...draft.plugins.simulator.incident_durations,
-                        aisle: value,
-                      })
-                    }
-                    type="number"
-                  />
+              {/* Custom incident counts — visible only in custom mode */}
+              {draft.plugins.simulator.incident_mode === 'custom' && (
+                <div className="space-y-2 border-l-2 border-amber-200 pl-4 dark:border-amber-800">
+                  <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+                    Custom Incident Counts
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      label="Devices Critical"
+                      value={draft.plugins.simulator.custom_incidents.devices_crit}
+                      onChange={(value) => updateCustomIncident('devices_crit', value)}
+                      type="number"
+                    />
+                    <FormField
+                      label="Devices Warning"
+                      value={draft.plugins.simulator.custom_incidents.devices_warn}
+                      onChange={(value) => updateCustomIncident('devices_warn', value)}
+                      type="number"
+                    />
+                    <FormField
+                      label="Racks Critical"
+                      value={draft.plugins.simulator.custom_incidents.racks_crit}
+                      onChange={(value) => updateCustomIncident('racks_crit', value)}
+                      type="number"
+                    />
+                    <FormField
+                      label="Aisles Hot"
+                      value={draft.plugins.simulator.custom_incidents.aisles_hot}
+                      onChange={(value) => updateCustomIncident('aisles_hot', value)}
+                      type="number"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <FormField
                 label="Overrides Path"
