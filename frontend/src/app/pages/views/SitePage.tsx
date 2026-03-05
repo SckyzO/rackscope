@@ -1,13 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  Building2,
-  SlidersHorizontal,
-  LayoutGrid,
-  List,
-  ChevronRight,
-  ExternalLink,
-} from 'lucide-react';
+import { Building2, SlidersHorizontal, LayoutGrid, List, ChevronRight } from 'lucide-react';
 import { Tooltip } from '../../components/ui/Tooltip';
 import { api } from '../../../services/api';
 import type { Site, Room, RoomState } from '../../../types';
@@ -22,7 +15,6 @@ import {
   PageHeader,
   PageBreadcrumb,
   SectionCard,
-  SimpleRow,
   LoadingState,
   EmptyState,
   ErrorState,
@@ -204,46 +196,67 @@ const RoomDetailPanel = ({
   const totalRacks = roomRackCount(room);
 
   return (
-    <SectionCard title={room.name} icon={Building2}>
-      {/* Health badge */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-500 dark:text-gray-400">Overall health</span>
-        <StatusBadge status={health} size="md" />
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      {/* ── Header: room name · badge · View Room button on same line ── */}
+      <div className="flex items-center justify-between gap-4 border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+        <div className="min-w-0">
+          <h3 className="truncate text-base font-semibold text-gray-900 dark:text-white">
+            {room.name}
+          </h3>
+          <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+            {totalRacks} rack{totalRacks !== 1 ? 's' : ''}
+            {room.aisles.length > 0 &&
+              ` · ${room.aisles.length} aisle${room.aisles.length !== 1 ? 's' : ''}`}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <StatusBadge status={health} size="sm" />
+          <button
+            onClick={onNavigate}
+            className="bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+          >
+            View Room
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
-      {/* Mini rack grid — larger in detail view */}
-      <div className="rounded-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/50">
-        <MiniRackGrid room={room} roomState={roomState} size={rackSize} />
+      {/* ── Rack grid ── */}
+      <div className="px-5 py-4">
+        <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/40">
+          <MiniRackGrid room={room} roomState={roomState} size={rackSize} />
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="divide-y divide-gray-100 dark:divide-gray-800">
-        <SimpleRow label="Total racks" value={totalRacks} />
-        <SimpleRow label="Aisles" value={room.aisles.length} />
-        {room.standalone_racks.length > 0 && (
-          <SimpleRow label="Standalone racks" value={room.standalone_racks.length} />
-        )}
-        {counts.crit > 0 && (
-          <SimpleRow
-            label="CRIT"
-            value={<span className="font-bold text-red-500">{counts.crit}</span>}
-          />
-        )}
-        {counts.warn > 0 && (
-          <SimpleRow
-            label="WARN"
-            value={<span className="font-bold text-amber-500">{counts.warn}</span>}
-          />
-        )}
-        <SimpleRow
-          label="OK"
-          value={<span className="text-green-600 dark:text-green-400">{counts.ok}</span>}
-        />
+      {/* ── Alert counts — 3-column stat grid ── */}
+      <div className="mx-5 mb-4 overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
+        <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-gray-800">
+          {[
+            {
+              label: 'CRIT',
+              value: counts.crit,
+              color: counts.crit > 0 ? 'text-red-500' : 'text-gray-300 dark:text-gray-700',
+            },
+            {
+              label: 'WARN',
+              value: counts.warn,
+              color: counts.warn > 0 ? 'text-amber-500' : 'text-gray-300 dark:text-gray-700',
+            },
+            { label: 'OK', value: counts.ok, color: 'text-green-500' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="flex flex-col items-center py-3">
+              <span className={`text-xl font-bold ${color}`}>{value}</span>
+              <span className="mt-0.5 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Aisle list */}
+      {/* ── Aisle tags ── */}
       {room.aisles.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 px-5 pb-4">
           {room.aisles.map((a) => (
             <span
               key={a.id}
@@ -254,16 +267,7 @@ const RoomDetailPanel = ({
           ))}
         </div>
       )}
-
-      {/* Navigate */}
-      <button
-        onClick={onNavigate}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-      >
-        View room
-        <ChevronRight className="h-4 w-4" />
-      </button>
-    </SectionCard>
+    </div>
   );
 };
 
@@ -439,42 +443,33 @@ export const SitePage = () => {
       {/* ── List + Detail view ── */}
       {layout === 'list' && site.rooms.length > 0 && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
-          {/* Room list */}
+          {/* Room list — clean selection-only, no navigate button */}
           <SectionCard title="Rooms">
-            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            <div className="space-y-0.5">
               {site.rooms.map((room) => {
                 const health = computeRoomHealth(roomStates[room.id] ?? null);
                 const isSelected = selectedRoomId === room.id;
                 return (
-                  <div
+                  <button
                     key={room.id}
-                    className={`flex items-center gap-2 py-2 ${isSelected ? 'bg-brand-50 dark:bg-brand-500/10 -mx-1 rounded-xl px-1' : ''}`}
+                    onClick={() => setSelectedRoomId(room.id)}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all ${
+                      isSelected
+                        ? 'bg-brand-50 ring-brand-200 dark:bg-brand-500/10 dark:ring-brand-500/20 ring-1 ring-inset'
+                        : 'hover:bg-gray-50 dark:hover:bg-white/5'
+                    }`}
                   >
-                    {/* Selectable area */}
-                    <button
-                      onClick={() => setSelectedRoomId(room.id)}
-                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                    >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
-                        <Building2 className="h-4 w-4 text-gray-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">
-                          {room.name}
-                        </p>
-                        <p className="text-xs text-gray-400">{roomRackCount(room)} racks</p>
-                      </div>
-                      <StatusBadge status={health} size="sm" />
-                    </button>
-                    {/* Navigate button */}
-                    <button
-                      onClick={() => navigate(`/views/room/${room.id}`)}
-                      className="bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20 flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors"
-                    >
-                      View Room
-                      <ExternalLink className="h-3 w-3" />
-                    </button>
-                  </div>
+                    <HealthDot status={health} pulse={health === 'CRIT'} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                        {room.name}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        {roomRackCount(room)} racks
+                      </p>
+                    </div>
+                    {isSelected && <ChevronRight className="text-brand-500 h-4 w-4 shrink-0" />}
+                  </button>
                 );
               })}
             </div>
