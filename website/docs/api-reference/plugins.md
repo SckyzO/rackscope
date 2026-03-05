@@ -144,6 +144,39 @@ Returns `503` if the simulator control server is unreachable.
 
 ---
 
+### POST /api/simulator/incidents
+
+Triggers a simulated incident stored as an override. Currently supports `rack_down`; `aisle_cooling` is reserved but not yet implemented.
+
+```http
+POST /api/simulator/incidents
+Content-Type: application/json
+```
+
+**Request body**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `type` | string | yes | `"rack_down"` (aisle_cooling reserved) |
+| `target_id` | string | yes | Rack ID to bring down |
+| `duration` | integer | no | Duration in seconds (default: `300`). `0` = permanent. |
+
+**Response**
+
+```json
+{
+  "status": "triggered",
+  "incident_type": "rack_down",
+  "target_id": "r01-01",
+  "duration": 300,
+  "expires_at": 1770000000
+}
+```
+
+The incident is stored as a `rack_down` override and expires after `duration` seconds. Use `DELETE /api/simulator/overrides` to clear immediately.
+
+---
+
 ### GET /api/simulator/overrides
 
 Returns all currently active metric overrides.
@@ -457,6 +490,107 @@ GET /api/slurm/nodes?room_id=dc1-r001
 | `aisle_id` | string or null | Topology aisle ID |
 | `rack_id` | string or null | Topology rack ID |
 | `device_id` | string or null | Topology device ID |
+
+---
+
+### GET /api/slurm/mapping
+
+Returns current node name → topology instance mapping entries.
+
+```http
+GET /api/slurm/mapping
+```
+
+**Response**
+
+```json
+{
+  "mapping_path": "config/plugins/slurm/node_mapping.yaml",
+  "entries": [
+    {"node": "n*", "instance": "compute*"},
+    {"node": "gpu001", "instance": "gpu001"}
+  ]
+}
+```
+
+---
+
+### POST /api/slurm/mapping
+
+Saves node mapping entries to the configured YAML file. Used by the node mapping editor in Settings → Plugins → Slurm.
+
+```http
+POST /api/slurm/mapping
+Content-Type: application/json
+```
+
+**Request body**
+
+```json
+{
+  "entries": [
+    {"node": "n*", "instance": "compute*"}
+  ]
+}
+```
+
+Returns `400` if `mapping_path` is not configured.
+
+---
+
+### GET /api/slurm/metrics/catalog
+
+Returns all loaded Slurm metric definitions and the list of available catalog files.
+
+```http
+GET /api/slurm/metrics/catalog
+```
+
+**Response**
+
+```json
+{
+  "metrics": [...],
+  "loaded_files": [{"id": "slurm", "path": "...", "enabled": true}],
+  "available_files": [{"name": "metrics_slurm.yaml", "path": "..."}]
+}
+```
+
+---
+
+### POST /api/slurm/metrics/catalog/config
+
+Updates which Slurm metric catalog files are active (persisted to plugin config).
+
+```http
+POST /api/slurm/metrics/catalog/config
+Content-Type: application/json
+```
+
+**Request body**
+
+```json
+{
+  "metrics_catalogs": [
+    {"id": "slurm", "path": "config/plugins/slurm/metrics/metrics_slurm.yaml", "enabled": true}
+  ]
+}
+```
+
+---
+
+### GET /api/slurm/metrics/data
+
+Queries Prometheus for a specific Slurm metric from the loaded catalog.
+
+```http
+GET /api/slurm/metrics/data?metric_id=slurm_node_status&scope=all
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `metric_id` | string | Metric ID from the Slurm metrics catalog |
+| `scope` | string | Optional scope filter |
 
 ---
 

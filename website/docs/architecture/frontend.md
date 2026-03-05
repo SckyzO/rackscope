@@ -82,11 +82,12 @@ All routes at `/` root (no prefix):
 // Key routes
 /                           → DashboardPage
 /views/worldmap             → WorldMapPage
+/views/site/:siteId         → SitePage
 /views/room/:roomId         → RoomPage
 /views/rack/:rackId         → RackPage
 /views/device/:rackId/:deviceId → DevicePage
 /slurm/overview             → SlurmOverviewPage
-/slurm/wallboard/:roomId    → SlurmWallboardPage
+/slurm/wallboard            → SlurmWallboardPage
 /editors/topology           → DatacenterEditorPage
 /editors/rack               → RackEditorPage
 /editors/settings           → SettingsPage

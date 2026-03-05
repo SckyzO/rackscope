@@ -6,6 +6,25 @@ sidebar_position: 2
 
 # Views
 
+## Datacenter View
+
+**URL**: `/views/site/:siteId`
+
+Site-level overview showing all rooms with live rack health states.
+
+**Features:**
+- **Grid view** — room cards with a mini rack grid (colored squares per rack), health badge, CRIT/WARN counts and ring highlight on critical rooms
+- **List + Detail view** — compact room list on the left, detail panel on the right with rack grid, alert counts, and aisle tags
+- **Config drawer** (`⚙` button) — toggle Grid/List, adjust rack square size (Small/Medium)
+- Color legend (OK/WARN/CRIT/UNKNOWN) inline below the KPI bar
+- **KPI bar** — total racks, total rooms, CRIT count, WARN count
+- Auto-refresh with interval selector
+- Clicking a room navigates to the [Room View](#room-view)
+
+**Navigation:** World Map → click "View datacenter" in the site panel · Sidebar → click the site name in the Infrastructure tree.
+
+---
+
 ## World Map
 
 **URL**: `/views/worldmap`

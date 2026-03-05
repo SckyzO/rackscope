@@ -10,18 +10,11 @@ The Slurm plugin provides HPC-specific views mapping workload manager states to 
 
 ## Views
 
-### Wallboard V1 (per-room)
+### Wallboard
 
-**URL**: `/slurm/wallboard/:roomId`
+**URL**: `/slurm/wallboard`
 
-Compact aisle view mapping Slurm node states to the physical rack layout.
-Ideal for NOC displays. Two view modes: compact dots and detailed slot grid.
-
-### Wall V2 (multi-room)
-
-**URL**: `/slurm/wall`
-
-**New in v1.1** — Multi-room wallboard with 3 display modes and a Configure panel.
+Multi-room wallboard mapping Slurm node states to the physical rack layout. Ideal for NOC displays.
 
 #### Display modes (Configure → View)
 

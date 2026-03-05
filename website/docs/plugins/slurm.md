@@ -34,8 +34,7 @@ Contributes a **Workload** section (order=50) to the sidebar:
 - Nodes (`/slurm/nodes`)
 - Alerts (`/slurm/alerts`)
 - Partitions (`/slurm/partitions`)
-- Wallboard per-room
-- Wall V2 (`/slurm/wall`) — multi-room view with selectable display modes
+- Wallboard (`/slurm/wallboard`) — multi-room view with selectable display modes and Configure panel
 
 ## Configuration
 

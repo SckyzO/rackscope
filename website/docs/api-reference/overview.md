@@ -67,6 +67,7 @@ curl http://localhost:8000/api/rooms \
 | `POST` | `/api/auth/login` | Validate credentials and receive a JWT |
 | `GET` | `/api/auth/me` | Return the currently authenticated user |
 | `POST` | `/api/auth/change-password` | Update password (writes new bcrypt hash to `app.yaml`) |
+| `POST` | `/api/auth/change-username` | Update username (requires current password for verification) |
 
 ## Response Format
 
