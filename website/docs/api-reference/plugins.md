@@ -93,7 +93,7 @@ The Simulator plugin generates realistic Prometheus metrics for testing without 
 
 ### GET /api/simulator/status
 
-Returns the current simulator status, including the active scenario and number of active overrides.
+Returns the current simulator status, including the active incident mode and number of active overrides.
 
 ```http
 GET /api/simulator/status
@@ -106,7 +106,8 @@ GET /api/simulator/status
   "running": true,
   "endpoint": "http://simulator:9000",
   "update_interval": 20,
-  "scenario": "demo-stable",
+  "incident_mode": "light",
+  "changes_per_hour": 2,
   "overrides_count": 2
 }
 ```
@@ -116,33 +117,30 @@ GET /api/simulator/status
 | `running` | boolean | Whether the simulator process is reachable |
 | `endpoint` | string | Simulator scrape endpoint used by Prometheus |
 | `update_interval` | integer | Metric refresh interval in seconds |
-| `scenario` | string | Currently active scenario name |
+| `incident_mode` | string | Active incident mode (`full_ok` / `light` / `medium` / `heavy` / `chaos` / `custom`) |
+| `changes_per_hour` | integer | How many times per hour incidents are reshuffled |
 | `overrides_count` | integer | Number of active metric overrides |
 
 ---
 
-### GET /api/simulator/scenarios
+### POST /api/simulator/restart
 
-Returns all available scenarios. Scenarios define the baseline behavior of the simulated environment (failure rate, seed, topology coverage).
+Sends a restart signal to the simulator container via its internal control
+server (port 9001). Docker restarts the container automatically
+(`restart: unless-stopped`). Use this after changing `overrides_path` or
+`metrics_catalog_path` which are not hot-reloaded.
 
 ```http
-GET /api/simulator/scenarios
+POST /api/simulator/restart
 ```
 
 **Response**
 
 ```json
-{
-  "scenarios": [
-    {"name": "demo-stable", "description": "Stable demo with minor variations"},
-    {"name": "demo-small", "description": "Small topology with a few failures"},
-    {"name": "full-ok", "description": "All nodes healthy — baseline testing"},
-    {"name": "random-demo-small", "description": "Random failures, different seed each run"}
-  ]
-}
+{"status": "restarting"}
 ```
 
-The active scenario is set via `simulator.scenario` in `config/app.yaml` or through the Settings UI.
+Returns `503` if the simulator control server is unreachable.
 
 ---
 
@@ -482,7 +480,7 @@ The full `AppConfig` object. See [Configuration Reference](/docs/admin-guide) fo
 
 ### PUT /api/config
 
-Updates the application configuration and persists the changes to `config/app.yaml`. Triggers a config reload and syncs dependent plugin configurations (simulator scenario, Slurm settings, etc.).
+Updates the application configuration and persists the changes to `config/app.yaml`. Triggers a config reload and syncs dependent plugin configurations (simulator incident mode, Slurm settings, etc.).
 
 ```http
 PUT /api/config
@@ -496,7 +494,7 @@ The full `AppConfig` object. Sensitive fields such as `password_hash` and `secre
 **Notes**
 
 - Prometheus URL and credential changes take effect on the next query.
-- Simulator scenario changes apply to the next metrics generation cycle.
+- Simulator `incident_mode` and `changes_per_hour` are hot-reloaded on the next tick (~20 s). Path changes (`overrides_path`, `metrics_catalog_path`) require a `POST /api/simulator/restart`.
 - Slurm label and status map changes apply to the next state fetch.
 
 ---

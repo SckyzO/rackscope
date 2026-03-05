@@ -27,7 +27,6 @@ A `RackscopePlugin` subclass that:
 
 - Registers the `/api/simulator/*` routes on the FastAPI application
 - Reads and writes `overrides.yaml` in response to API calls
-- Reads `scenarios.yaml` to enumerate available scenarios
 - Checks whether the simulator service is reachable at `simulator:9000`
 - Contributes a "Simulator" menu section (order=200) when enabled
 - Supports hot configuration reload via `on_config_reload()`
@@ -43,7 +42,7 @@ The process is split into focused modules:
 | Module | Responsibility |
 |---|---|
 | `main.py` | Entry point — starts HTTP server + calls `simulate()` |
-| `config.py` | Load `app.yaml` + `scenarios.yaml`, apply active scenario |
+| `config.py` | Load `plugin.yaml` + `app.yaml` override, return merged config dict |
 | `topology.py` | Parse topology YAML, expand nodeset patterns |
 | `metrics.py` | Prometheus Gauge registry, fallback metric definitions |
 | `labels.py` | Template label resolution (`$instance`, `$rack_id`, …) |
@@ -98,8 +97,8 @@ The dedicated plugin config file takes precedence over `app.yaml` values:
 # config/plugins/simulator/config/plugin.yaml
 update_interval_seconds: 20
 seed: null
-scenario: demo-stable
-scale_factor: 1
+incident_mode: light
+changes_per_hour: 2
 ```
 
 To disable the plugin at runtime without restarting: set `enabled: false`
@@ -119,40 +118,48 @@ All fields are defined in
 |---|---|---|---|
 | `enabled` | bool | `true` | Whether the plugin is active. Controls menu visibility and API behavior. |
 | `update_interval_seconds` | int (1–3600) | `20` | Simulator tick interval in seconds. Lower values produce more responsive demos but increase CPU usage. |
-| `seed` | int or null | `null` | Random seed for deterministic metric generation. `null` uses wall-clock entropy (different values each run). Set an integer for reproducible demos. |
-| `scenario` | string or null | `null` | Active scenario name. Must match a key in `scenarios.yaml`. `null` uses the global `incident_rates` and `profiles` without scenario overrides. |
-| `scale_factor` | float (≥ 0.0) | `1.0` | Global multiplier applied to all incident rates. `0.0` completely disables all incidents. `2.0` doubles all incident probabilities. |
+| `seed` | int or null | `null` | Random seed for deterministic metric generation. `null` uses wall-clock entropy. Set an integer for reproducible demos. |
+| `incident_mode` | string | `light` | Failure pattern. One of `full_ok`, `light`, `medium`, `heavy`, `chaos`, `custom`. See below. |
+| `changes_per_hour` | int (≥ 1) | `2` | How many times per hour the set of failing devices is reshuffled. Ignored in `full_ok` mode. |
 
-### `incident_rates`
+### `incident_mode`
 
-Controls the per-tick probability of each incident type. Values are
-floating-point probabilities between 0.0 and 1.0. Applied after
-`scale_factor` multiplication.
+The `incident_mode` field selects a named failure preset. On each reshuffle
+cycle (`3600 / changes_per_hour / update_interval_seconds` ticks), the simulator
+draws a new random set of victims within the configured bounds.
+
+| Mode | Nodes CRIT | Nodes WARN | Racks CRIT | Aisles hot |
+|---|---|---|---|---|
+| `full_ok` | 0 | 0 | 0 | 0 |
+| `light` | 1–3 | 1–5 | 0 | 0 |
+| `medium` | 1–3 | 5–10 | 1 | 0 |
+| `heavy` | 5–10 | 10–20 | 2 | 1 |
+| `chaos` | 15 % of nodes | 25 % of nodes | 20 % of racks | 25 % of aisles |
+| `custom` | see `custom_incidents` | see `custom_incidents` | see `custom_incidents` | see `custom_incidents` |
+
+CRIT nodes get `up=0` (Slurm: `down`). WARN nodes get `health_status=1` (Slurm: `drain`).
+Nodes in a CRIT rack are all brought down. Nodes in a hot aisle receive a +12 °C
+temperature boost.
+
+### `custom_incidents`
+
+Used only when `incident_mode: custom`. Specifies exact counts.
 
 | Field | Type | Default | Description |
 |---|---|---|---|
-| `node_micro_failure` | float (0.0–1.0) | `0.001` | Probability per tick that a single random node goes down. At default 20s interval: ~1 event per 5.5 hours. |
-| `rack_macro_failure` | float (0.0–1.0) | `0.01` | Probability per tick that an entire rack loses power. At default interval: ~1 event per 33 minutes. |
-| `aisle_cooling_failure` | float (0.0–1.0) | `0.005` | Probability per tick that a cooling failure affects an entire aisle. At default interval: ~1 event per 66 minutes. |
-
-Example disabling all rack-level incidents while keeping node failures:
+| `devices_crit` | int (≥ 0) | `0` | Number of nodes forced to `up=0`. |
+| `devices_warn` | int (≥ 0) | `0` | Number of nodes forced to `health_status=1`. |
+| `racks_crit` | int (≥ 0) | `0` | Number of racks brought fully down. |
+| `aisles_hot` | int (≥ 0) | `0` | Number of aisles with a +12 °C temperature boost. |
 
 ```yaml
-incident_rates:
-  node_micro_failure: 0.002
-  rack_macro_failure: 0.0
-  aisle_cooling_failure: 0.0
+incident_mode: custom
+custom_incidents:
+  devices_crit: 5
+  devices_warn: 10
+  racks_crit: 1
+  aisles_hot: 0
 ```
-
-### `incident_durations`
-
-Controls how long an incident persists before automatic recovery.
-Values are in **seconds** (not ticks).
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `rack` | int (≥ 1) | `300` | Duration of a rack macro-failure in seconds. Default: 5 minutes — realistic PDU reset / power restore time. |
-| `aisle` | int (≥ 1) | `600` | Duration of an aisle cooling failure in seconds. Default: 10 minutes — cooling unit restart + temperature stabilization. |
 
 ### Paths
 
@@ -198,23 +205,30 @@ metrics_catalogs:
 # config/plugins/simulator/config/plugin.yaml
 update_interval_seconds: 20
 seed: null
-scenario: demo-stable
-scale_factor: 1
 
-incident_rates:
-  node_micro_failure: 0.001
-  rack_macro_failure: 0.01
-  aisle_cooling_failure: 0.005
+incident_mode: light
+changes_per_hour: 2
 
-incident_durations:
-  rack: 300    # seconds — PDU reset / power restore (5 min)
-  aisle: 600   # seconds — cooling unit restart + stabilization (10 min)
+custom_incidents:
+  devices_crit: 0
+  devices_warn: 0
+  racks_crit: 0
+  aisles_hot: 0
 
 overrides_path: config/plugins/simulator/overrides/overrides.yaml
 default_ttl_seconds: 120
 
 metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
 metrics_catalogs: []
+
+# Process-only fields (ignored by the Pydantic backend model)
+profiles:
+  compute: { base_temp: 24.0, temp_range: 8.0, base_power: 200.0, power_var: 200.0, load_min: 40.0, load_max: 80.0 }
+  gpu:     { base_temp: 28.0, temp_range: 25.0, base_power: 250.0, power_var: 500.0, load_min: 5.0, load_max: 100.0 }
+  service: { base_temp: 21.0, temp_range: 3.0, base_power: 100.0, power_var: 20.0, load_min: 2.0, load_max: 8.0 }
+  network: { base_temp: 32.0, temp_range: 4.0, base_power: 120.0, power_var: 10.0, load_min: 15.0, load_max: 15.0 }
+slurm_random_statuses: { drain: 1, down: 1, maint: 1 }
+slurm_random_match: [compute*, visu*]
 ```
 
 ---
@@ -237,7 +251,8 @@ reachable.
   "running": true,
   "endpoint": "http://simulator:9000/metrics",
   "update_interval": 20,
-  "scenario": "demo-stable",
+  "incident_mode": "light",
+  "changes_per_hour": 2,
   "overrides_count": 2
 }
 ```
@@ -247,29 +262,25 @@ reachable.
 | `running` | `true` if the simulator responded with HTTP 200 within 1 second. |
 | `endpoint` | The Prometheus metrics URL the simulator is serving. |
 | `update_interval` | Current tick interval in seconds. |
-| `scenario` | Active scenario name, or `null` if none. |
+| `incident_mode` | Active incident mode (`full_ok`, `light`, `medium`, `heavy`, `chaos`, `custom`). |
+| `changes_per_hour` | How many times per hour incidents are reshuffled. |
 | `overrides_count` | Number of overrides currently loaded from `overrides.yaml`. |
 
-### GET `/api/simulator/scenarios`
+### POST `/api/simulator/restart`
 
-Lists all scenarios defined in `scenarios.yaml`.
+Sends a restart signal to the simulator container via its internal control
+server (port 9001). The process exits cleanly and Docker restarts it
+automatically (`restart: unless-stopped`). Config changes that require a
+restart (e.g. `overrides_path`, `metrics_catalog_path`) are picked up
+after the container comes back up.
 
 **Response**:
 
 ```json
-{
-  "scenarios": [
-    {"name": "demo-stable", "description": "Stable baseline with few incidents."},
-    {"name": "full-ok",     "description": "No incidents. Low temps and load for a fully green demo."},
-    {"name": "random-demo-small", "description": "Mostly OK, rare warning/critical incidents."},
-    {"name": "random-1-critical", "description": "Occasional single critical node incident."},
-    {"name": "random-1-rack-down", "description": "Occasional rack down incident (affects all nodes in a rack)."},
-    {"name": "random-demo-high", "description": "High churn demo with frequent warning/critical incidents."}
-  ]
-}
+{"status": "restarting"}
 ```
 
-Scenarios are returned in alphabetical order.
+Returns `503` if the simulator control server is unreachable.
 
 ### GET `/api/simulator/overrides`
 
@@ -622,7 +633,7 @@ environment variables, set by Docker Compose:
 |---|---|---|
 | `TOPOLOGY_FILE` | `/app/config/topology` | Path to topology root directory or file |
 | `TEMPLATES_PATH` | `/app/config/templates` | Path to templates directory |
-| `SIMULATOR_CONFIG` | `/app/config/plugins/simulator/scenarios/scenarios.yaml` | Path to scenarios + behavioral profiles |
+| `SIMULATOR_CONFIG` | `/app/config/plugins/simulator/config/plugin.yaml` | Path to the plugin config file (base config + behavioral profiles) |
 | `SIMULATOR_APP_CONFIG` | `/app/config/app.yaml` | Path to app.yaml (read for legacy config compat) |
 | `METRICS_LIBRARY` | `/app/config/metrics/library` | Path to display metrics library (used to determine node/rack scope) |
 
@@ -673,18 +684,23 @@ seconds with default settings).
 
 ### Reload Semantics
 
-`plugin.yaml` is reloaded on **every simulator tick**. This covers:
+`plugin.yaml` (and `app.yaml` overlay) is reloaded on **every simulator tick**. This covers:
 
-- Scenario changes
-- Scale factor adjustments
-- Incident rate tuning
+- `incident_mode` / `changes_per_hour` changes — effective within one tick (~20 s)
+- `seed` changes
 
-`overrides.yaml` is also reloaded on every tick so newly added overrides
-take effect without waiting for a config reload.
+The following fields are read **once at startup** and require a container
+restart to take effect:
 
-`scenarios.yaml` is **not** hot-reloaded by the simulator process. Changes
-require a container restart (`docker compose -f docker-compose.dev.yml
-restart simulator`).
+- `overrides_path`
+- `metrics_catalog_path` / `metrics_catalogs`
+
+Use the **Restart** button in Settings → Plugins → Simulator, or run:
+```bash
+docker compose -f docker-compose.dev.yml restart simulator
+```
+
+`overrides.yaml` is reloaded on every tick; new overrides take effect without any restart.
 
 ## Dashboard Widget
 
@@ -692,8 +708,8 @@ When the Simulator plugin is enabled, a **Simulator Status** widget is available
 
 | Widget type | Group | Description |
 |---|---|---|
-| `simulator-status` | Overview | Running state, active scenario, override count, update interval |
+| `simulator-status` | Overview | Running state, incident mode, changes/hour, override count, update interval |
 
 The widget is hidden automatically when the plugin is disabled (`requiresPlugin: 'simulator'`). It lives in `plugins/simulator/frontend/widgets/SimulatorStatusWidget.tsx`.
 
-Clicking **Settings ↗** in the widget header navigates to **Settings → Plugins** where you can change the scenario and manage overrides.
+Clicking **Settings ↗** in the widget footer navigates to **Settings → Plugins** where you can change the incident mode and manage overrides.
