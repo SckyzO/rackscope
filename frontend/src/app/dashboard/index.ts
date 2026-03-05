@@ -26,8 +26,8 @@ import './widgets/DeviceTypesWidget';
 import './widgets/StatsRowWidget';
 
 // Plugin widgets — self-register via their index files
-import '../plugins/slurm/widgets';
-import '../plugins/simulator/widgets';
+import '@plugins/slurm/frontend/widgets';
+import '@plugins/simulator/frontend/widgets';
 
 export { registerWidget, getWidget, getAllWidgets } from './registry';
 export type { WidgetRegistration, WidgetGroup } from './registry';

@@ -22,7 +22,12 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Path aliases — keep in sync with vite.config.ts resolve.alias */
+    "paths": {
+      "@plugins/*": ["../plugins/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "../plugins/simulator/frontend", "../plugins/slurm/frontend"]
 }
