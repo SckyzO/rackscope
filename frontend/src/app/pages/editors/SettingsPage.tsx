@@ -24,6 +24,7 @@ import { PlannerSettingsSection } from '../../../components/settings/sections/Pl
 import { PluginsSettingsSection } from '../../../components/settings/sections/PluginsSettingsSection';
 import { SecuritySettingsSection } from '../../../components/settings/sections/SecuritySettingsSection';
 import { ViewsSettingsSection } from '../../../components/settings/sections/ViewsSettingsSection';
+import { TooltipSettingsSection } from '../../../components/settings/sections/TooltipSettingsSection';
 import { NotificationsSettingsSection } from './NotificationsSettingsSection';
 import { SeverityLabelsSettingsSection } from './SeverityLabelsSettingsSection';
 import { usePageTitle } from '../../contexts/PageTitleContext';
@@ -147,7 +148,6 @@ export const SettingsPage = () => {
       setSaveError(true);
     }
   };
-
 
   // ── Tab modal actions ──────────────────────────────────────────────────────
   const tabModalSaveAndGo = async () => {
@@ -273,6 +273,7 @@ export const SettingsPage = () => {
               <div className="space-y-6">
                 <AppearanceSettingsSection />
                 <SeverityLabelsSettingsSection />
+                <TooltipSettingsSection />
               </div>
             )}
             {activeTab === 'telemetry' && (

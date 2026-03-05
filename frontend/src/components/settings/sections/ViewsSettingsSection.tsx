@@ -1,18 +1,5 @@
 import { useState } from 'react';
-import {
-  Globe,
-  LayoutDashboard,
-  MonitorPlay,
-  ArrowRight,
-  RotateCcw,
-  Check,
-  MousePointerClick,
-  Eye,
-  Server,
-} from 'lucide-react';
-import { useTooltipSettings, TOOLTIP_STYLES } from '../../../hooks/useTooltipSettings';
-import { FormToggle } from '../common/FormToggle';
-import { HUDTooltip } from '../../HUDTooltip';
+import { Globe, LayoutDashboard, MonitorPlay, ArrowRight, RotateCcw, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ConfigDraft } from '../useSettingsConfig';
 import { TooltipHelp } from '../../../app/components/ui/Tooltip';
@@ -76,161 +63,6 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean
     />
   </button>
 );
-
-// ── Sample data for the live preview button ────────────────────────────────────
-
-const PREVIEW_SAMPLES = [
-  {
-    title: 'COMPUTE031',
-    subtitle: 'Node',
-    status: 'CRIT' as const,
-    enclosure: 'BullSequana X410 · 1U Twin CPU',
-    icon: Server,
-    checkSummary: { ok: 3, warn: 1, crit: 1 },
-    details: [{ label: 'Location', value: 'RACK U08 · S1', italic: true }],
-    reasons: [
-      { label: 'IPMI temperature high', severity: 'CRIT' as const },
-      { label: 'IPMI fan speed state', severity: 'WARN' as const },
-    ],
-    metrics: { temp: 47.2, tempWarn: 38, tempCrit: 45, power: 312, powerMax: 350 },
-  },
-  {
-    title: 'COMPUTE125',
-    subtitle: 'Node',
-    status: 'WARN' as const,
-    enclosure: 'BullSequana X410 · 1U Twin CPU',
-    icon: Server,
-    checkSummary: { ok: 4, warn: 1, crit: 0 },
-    details: [{ label: 'Location', value: 'RACK U14 · S2', italic: true }],
-    reasons: [{ label: 'IPMI temperature high', severity: 'WARN' as const }],
-    metrics: { temp: 39.8, tempWarn: 38, tempCrit: 45, power: 285, powerMax: 350 },
-  },
-  {
-    title: 'COMPUTE042',
-    subtitle: 'Node',
-    status: 'OK' as const,
-    enclosure: 'BullSequana X410 · 1U Twin CPU',
-    icon: Server,
-    checkSummary: { ok: 5, warn: 0, crit: 0 },
-    details: [{ label: 'Location', value: 'RACK U12 · S1', italic: true }],
-    reasons: [],
-    metrics: { temp: 27.4, tempWarn: 38, tempCrit: 45, power: 167, powerMax: 350 },
-  },
-];
-
-const TooltipPreviewButton = () => {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [sampleIdx, setSampleIdx] = useState(0);
-  const [visible, setVisible] = useState(false);
-
-  const sample = PREVIEW_SAMPLES[sampleIdx];
-  const statusLabels = ['CRIT', 'WARN', 'OK'];
-
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <div>
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Live preview</div>
-        <div className="mt-0.5 text-[11px] text-gray-500">
-          Hover to see the selected style with sample data
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        {/* Status cycle buttons */}
-        {statusLabels.map((s, i) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setSampleIdx(i)}
-            className={`rounded-lg px-2 py-1 text-[10px] font-bold tracking-wide uppercase transition-all ${
-              sampleIdx === i
-                ? s === 'CRIT'
-                  ? 'bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400'
-                  : s === 'WARN'
-                    ? 'bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400'
-                    : 'bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400'
-                : 'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700'
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-        {/* Preview trigger button */}
-        <button
-          type="button"
-          onMouseEnter={(e) => {
-            setMousePos({ x: e.clientX, y: e.clientY });
-            setVisible(true);
-          }}
-          onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
-          onMouseLeave={() => setVisible(false)}
-          className="border-brand-200 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20 flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors"
-        >
-          <Eye className="h-3.5 w-3.5" />
-          Try it
-        </button>
-      </div>
-      {visible && <HUDTooltip {...sample} mousePos={mousePos} />}
-    </div>
-  );
-};
-
-const TooltipStyleSection = () => {
-  const { style, aura, setStyle, setAura } = useTooltipSettings();
-  const sorted = [...TOOLTIP_STYLES].sort((a, b) => a.label.localeCompare(b.label));
-  return (
-    <SectionCard
-      title="Tooltip style"
-      desc="Applies to all tooltips across Rackscope (nodes, devices, racks, PDUs…)"
-      icon={MousePointerClick}
-      iconColor="text-brand-500"
-      iconBg="bg-brand-50 dark:bg-brand-500/10"
-    >
-      {/* Style list — alphabetical */}
-      <div className="flex flex-col gap-2">
-        {sorted.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => setStyle(s.id)}
-            className={`flex items-center justify-between rounded-xl border-2 px-3.5 py-3 text-left transition-all ${
-              style === s.id
-                ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
-                : 'border-transparent bg-gray-100 hover:border-gray-300 dark:bg-gray-800/50 dark:hover:border-gray-600'
-            }`}
-          >
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-                {s.label}
-                {s.id === 'tinted' && (
-                  <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[9px] font-bold text-gray-500 uppercase dark:bg-gray-700 dark:text-gray-400">
-                    default
-                  </span>
-                )}
-              </div>
-              <div className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">{s.desc}</div>
-            </div>
-            {style === s.id && <Check className="text-brand-500 h-4 w-4 shrink-0" />}
-          </button>
-        ))}
-      </div>
-
-      {/* Try it */}
-      <div className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-800">
-        <TooltipPreviewButton />
-      </div>
-
-      {/* Aura toggle */}
-      <div className="mt-3 border-t border-gray-100 pt-4 dark:border-gray-800">
-        <FormToggle
-          label="Color aura"
-          description="Glow shadow around the tooltip matching the alert severity (amber for WARN, red for CRIT)"
-          checked={aura}
-          onChange={setAura}
-        />
-      </div>
-    </SectionCard>
-  );
-};
 
 export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
   const f = draft.features;
@@ -435,9 +267,6 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
           </Link>
         )}
       </SectionCard>
-
-      {/* ── Tooltip Style ── */}
-      <TooltipStyleSection />
 
       {/* ── Dashboard Reset ── */}
       <DashboardResetCard />
