@@ -14,7 +14,6 @@ import {
   LayoutDashboard,
   LayoutGrid,
   Network,
-  MapPin,
   GitBranch,
   Server,
   Layers,
@@ -808,12 +807,11 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
             <NavItem to="/slurm/nodes" icon={List} label="Nodes" collapsed={collapsed} />
             <NavItem to="/slurm/alerts" icon={AlertTriangle} label="Alerts" collapsed={collapsed} />
             <NavItem
-              to="/slurm/wallboard/room-a"
-              icon={MapPin}
+              to="/slurm/wallboard"
+              icon={LayoutGrid}
               label="Wallboard"
               collapsed={collapsed}
             />
-            <NavItem to="/slurm/wall" icon={LayoutGrid} label="Wall v2" collapsed={collapsed} />
           </>
         )}
 

@@ -658,8 +658,8 @@ const GridCard = ({
 };
 
 // Main page
-export const SlurmWallV2Page = () => {
-  usePageTitle('Slurm Wall');
+export const SlurmWallboardPage = () => {
+  usePageTitle('Slurm Wallboard');
   const navigate = useNavigate();
   const [cfg, setCfg] = useState<WallConfig>(loadCfg);
   const [configOpen, setConfigOpen] = useState(false);

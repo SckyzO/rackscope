@@ -106,11 +106,10 @@ export const PLAYLIST_REGISTRY: RegistryCategory[] = [
         route: '/slurm/overview',
       },
       {
-        id: 'slurm-wallboard-{id}',
-        title: 'Wallboard: {name}',
-        iconName: 'MapPin',
-        route: '/slurm/wallboard/{id}',
-        dynamic: 'rooms',
+        id: 'slurm-wallboard',
+        title: 'Wallboard',
+        iconName: 'LayoutGrid',
+        route: '/slurm/wallboard',
         requiresPlugin: 'slurm',
       },
       {
