@@ -14,9 +14,9 @@ from pathlib import Path
 from plugins.simulator.process.topology import _expand_patterns
 
 # ── Module-level state (mutated by simulate() in loop.py) ─────────────────
-METRICS: dict = {}           # name → prometheus_client.Gauge
-METRICS_DEFS: dict = {}      # name → normalized definition dict
-SUPPORTED_METRICS: dict = {} # name → scope string ("node" or "rack")
+METRICS: dict = {}  # name → prometheus_client.Gauge
+METRICS_DEFS: dict = {}  # name → normalized definition dict
+SUPPORTED_METRICS: dict = {}  # name → scope string ("node" or "rack")
 
 BASE_LABELS = {
     "node": ["site_id", "room_id", "rack_id", "chassis_id", "node_id", "instance", "job"],

@@ -40,7 +40,13 @@ TEMPLATES_PATH = os.getenv("TEMPLATES_PATH", "/app/config/templates")
 METRICS_LIBRARY_PATH = os.getenv("METRICS_LIBRARY", "/app/config/metrics/library")
 
 # ── Mutable simulation state ───────────────────────────────────────────────
-active_incidents: dict = {"aisles": {}, "racks": {}}
+_incident_state: dict = {
+    "nodes_crit": set(),
+    "nodes_warn": set(),
+    "racks_crit": set(),
+    "aisles_hot": set(),
+    "last_roll_tick": 0,
+}
 pdu_energy_state: dict = {}
 
 # Counter states for monotonically increasing metrics
@@ -51,6 +57,111 @@ node_network_rx_bytes: dict = {}
 node_network_tx_bytes: dict = {}
 switch_port_rx_bytes: dict = {}
 switch_port_tx_bytes: dict = {}
+
+
+# ── Incident presets ──────────────────────────────────────────────────────
+
+INCIDENT_PRESETS: dict = {
+    "full_ok": {"crit": (0, 0),   "warn": (0, 0),    "racks": 0, "aisles": 0, "cph_default": 1},
+    "light":   {"crit": (1, 3),   "warn": (1, 5),    "racks": 0, "aisles": 0, "cph_default": 2},
+    "medium":  {"crit": (1, 3),   "warn": (5, 10),   "racks": 1, "aisles": 0, "cph_default": 4},
+    "heavy":   {"crit": (5, 10),  "warn": (10, 20),  "racks": 2, "aisles": 1, "cph_default": 4},
+    "chaos":   {
+        "crit_pct": 0.15, "warn_pct": 0.25, "racks_pct": 0.20, "aisles_pct": 0.25,
+        "cph_default": 3,
+    },
+}
+
+
+def _get_cycle_ticks(changes_per_hour: int, update_interval: int) -> int:
+    """Return how many ticks pass between incident reshuffles."""
+    return max(1, int(3600 / max(1, changes_per_hour) / max(1, update_interval)))
+
+
+def _roll_incidents(targets, sim_cfg, all_rack_ids, all_aisle_ids) -> dict:
+    """Compute a fresh incident state.  Called on cycle boundaries.
+
+    Returns a dict with four sets: nodes_crit, nodes_warn, racks_crit, aisles_hot.
+    """
+    mode = sim_cfg.get("incident_mode", "full_ok")
+    all_node_ids = [t["node_id"] for t in targets if t.get("node_id")]
+
+    if mode == "full_ok":
+        return {"nodes_crit": set(), "nodes_warn": set(), "racks_crit": set(), "aisles_hot": set()}
+
+    nodes_crit: set = set()
+    nodes_warn: set = set()
+    racks_crit: set = set()
+    aisles_hot: set = set()
+
+    if mode == "chaos":
+        n_nodes = len(all_node_ids)
+        n_crit = int(n_nodes * INCIDENT_PRESETS["chaos"]["crit_pct"])
+        n_warn = int(n_nodes * INCIDENT_PRESETS["chaos"]["warn_pct"])
+        n_racks_crit = int(len(all_rack_ids) * INCIDENT_PRESETS["chaos"]["racks_pct"])
+        n_aisles_hot = int(len(all_aisle_ids) * INCIDENT_PRESETS["chaos"]["aisles_pct"])
+
+        shuffled = all_node_ids.copy()
+        random.shuffle(shuffled)
+        nodes_crit = set(shuffled[:n_crit])
+        nodes_warn = set(n for n in shuffled[n_crit:] if n not in nodes_crit)
+        nodes_warn = set(list(nodes_warn)[:n_warn])
+
+        rack_list = list(all_rack_ids)
+        random.shuffle(rack_list)
+        racks_crit = set(rack_list[:n_racks_crit])
+
+        aisle_list = list(all_aisle_ids)
+        random.shuffle(aisle_list)
+        aisles_hot = set(aisle_list[:n_aisles_hot])
+
+    elif mode == "custom":
+        custom = sim_cfg.get("custom_incidents") or {}
+        n_crit = int(custom.get("devices_crit", 0))
+        n_warn = int(custom.get("devices_warn", 0))
+        n_racks_crit = int(custom.get("racks_crit", 0))
+        n_aisles_hot = int(custom.get("aisles_hot", 0))
+
+        shuffled = all_node_ids.copy()
+        random.shuffle(shuffled)
+        nodes_crit = set(shuffled[:n_crit])
+        nodes_warn = set(shuffled[n_crit: n_crit + n_warn])
+
+        rack_list = list(all_rack_ids)
+        random.shuffle(rack_list)
+        racks_crit = set(rack_list[:n_racks_crit])
+
+        aisle_list = list(all_aisle_ids)
+        random.shuffle(aisle_list)
+        aisles_hot = set(aisle_list[:n_aisles_hot])
+
+    else:
+        # Preset modes: light, medium, heavy
+        preset = INCIDENT_PRESETS.get(mode, INCIDENT_PRESETS["light"])
+        n_crit = random.randint(*preset.get("crit", (0, 0)))
+        n_warn = random.randint(*preset.get("warn", (0, 0)))
+        n_racks_crit = preset.get("racks", 0)
+        n_aisles_hot = preset.get("aisles", 0)
+
+        shuffled = all_node_ids.copy()
+        random.shuffle(shuffled)
+        nodes_crit = set(shuffled[:n_crit])
+        nodes_warn = set(shuffled[n_crit: n_crit + n_warn])
+
+        rack_list = list(all_rack_ids)
+        random.shuffle(rack_list)
+        racks_crit = set(rack_list[:n_racks_crit])
+
+        aisle_list = list(all_aisle_ids)
+        random.shuffle(aisle_list)
+        aisles_hot = set(aisle_list[:n_aisles_hot])
+
+    return {
+        "nodes_crit": nodes_crit,
+        "nodes_warn": nodes_warn,
+        "racks_crit": racks_crit,
+        "aisles_hot": aisles_hot,
+    }
 
 
 # ── Testable helper functions ──────────────────────────────────────────────
@@ -88,39 +199,34 @@ def _apply_overrides(targets, overrides):
                 target["metrics"][metric] = value
 
 
-def _apply_failures(targets, sim_cfg, elapsed=0):
-    """Mark targets as down based on micro-failure incident rates.
+def _apply_failures(targets, incident_state):
+    """Mark targets as down/warn based on a pre-computed incident state.
 
-    Targets with a matching random draw get their "up" metric forced to 0.
-    Each target must have a "metrics" dict with an "up" key.
+    Each target must have "node_id", "rack_id", and a "metrics" dict.
 
     Args:
-        targets:   list of target dicts (mutated in-place)
-        sim_cfg:   simulator config dict (incident_rates, scale_factor)
-        elapsed:   elapsed seconds since last incident reset (unused for
-                   micro-failures, reserved for future macro-incident logic)
+        targets:        list of target dicts (mutated in-place)
+        incident_state: dict with sets nodes_crit, nodes_warn, racks_crit
     """
-    rates = sim_cfg.get("incident_rates") or {}
-    scale = float(sim_cfg.get("scale_factor", 1.0))
-    node_rate = min(1.0, rates.get("node_micro_failure", 0.0) * scale)
-
-    if node_rate <= 0:
-        return
+    nodes_crit = incident_state.get("nodes_crit", set())
+    nodes_warn = incident_state.get("nodes_warn", set())
+    racks_crit = incident_state.get("racks_crit", set())
 
     for target in targets:
         if "metrics" not in target:
             continue
-        if random.random() < node_rate:
+        nid = target.get("node_id", "")
+        rid = target.get("rack_id", "")
+        if nid in nodes_crit or rid in racks_crit:
             target["metrics"]["up"] = 0.0
+        elif nid in nodes_warn:
+            target["metrics"]["node_health_status"] = 1.0
 
 
 def _generate_node_metrics(
     target,
     profiles,
-    rates,
-    scale_factor,
-    active_aisle_incidents,
-    active_rack_incidents,
+    incident_state,
     overrides_by_instance,
     overrides_by_rack,
     tick,
@@ -163,8 +269,14 @@ def _generate_node_metrics(
     else:
         load = random.uniform(load_min, load_max)
 
-    temp_boost = 12.0 if aid in active_aisle_incidents else 0
-    is_down = rid in active_rack_incidents
+    nodes_crit = incident_state.get("nodes_crit", set())
+    nodes_warn = incident_state.get("nodes_warn", set())
+    racks_crit = incident_state.get("racks_crit", set())
+    aisles_hot = incident_state.get("aisles_hot", set())
+
+    temp_boost = 12.0 if aid in aisles_hot else 0
+    is_down = (target["node_id"] in nodes_crit) or (rid in racks_crit)
+    is_warn = (target["node_id"] in nodes_warn) and not is_down
 
     rack_overrides = overrides_by_rack.get(rid, [])
     for override in rack_overrides:
@@ -172,6 +284,7 @@ def _generate_node_metrics(
             try:
                 if float(override.get("value", 0)) > 0:
                     is_down = True
+                    is_warn = False
             except (TypeError, ValueError):
                 continue
 
@@ -188,14 +301,10 @@ def _generate_node_metrics(
     )
     final_load = load if not is_down else 0
 
-    node_rate = min(1.0, rates.get("node_micro_failure", 0.001) * scale_factor)
-    if not is_down and random.random() < node_rate:
-        temp += 25.0
-
     status = 0
     if is_down or temp > 45:
         status = 2
-    elif temp > 38:
+    elif temp > 38 or is_warn:
         status = 1
     up_val = 0 if is_down else 1
 
@@ -234,7 +343,7 @@ def _generate_node_metrics(
     }
 
 
-def _generate_rack_metrics(rack_id, rack_info, active_incidents_state, overrides_by_rack, tick):
+def _generate_rack_metrics(rack_id, rack_info, incident_state, overrides_by_rack, tick):
     """Compute rack-level cooling and PDU metric values.
 
     Returns a dict:
@@ -245,8 +354,8 @@ def _generate_rack_metrics(rack_id, rack_info, active_incidents_state, overrides
     """
     info = rack_info[rack_id]
     aisle_id = info.get("aisle_id")
-    is_rack_down = rack_id in active_incidents_state["racks"]
-    is_aisle_hot = aisle_id in active_incidents_state["aisles"]
+    is_rack_down = rack_id in incident_state.get("racks_crit", set())
+    is_aisle_hot = aisle_id in incident_state.get("aisles_hot", set())
 
     rack_overrides = overrides_by_rack.get(rack_id, [])
     for override in rack_overrides:
@@ -329,11 +438,8 @@ def simulate():
     # Load initial config
     sim_cfg = apply_scenario(load_simulator_config())
     update_interval = sim_cfg.get("update_interval_seconds", sim_cfg.get("update_interval", 20))
-    rates = sim_cfg.get("incident_rates", {})
-    durations = sim_cfg.get("incident_durations", {"rack": 300, "aisle": 600})
     profiles = sim_cfg.get("profiles", {})
     seed = sim_cfg.get("seed")
-    scale_factor = sim_cfg.get("scale_factor", 1.0)
     slurm_random_statuses = (
         sim_cfg.get("slurm_random_statuses", {}) if isinstance(sim_cfg, dict) else {}
     )
@@ -398,11 +504,10 @@ def simulate():
     while True:
         # Reload config every tick — picks up scenario changes live
         _new_cfg = apply_scenario(load_simulator_config())
-        rates = _new_cfg.get("incident_rates", {})
-        durations = _new_cfg.get("incident_durations", {"rack": 300, "aisle": 600})
         profiles = _new_cfg.get("profiles", {})
         seed = _new_cfg.get("seed")
-        scale_factor = _new_cfg.get("scale_factor", 1.0)
+        incident_mode = _new_cfg.get("incident_mode", "full_ok")
+        changes_per_hour = int(_new_cfg.get("changes_per_hour", 2))
         slurm_random_statuses = (
             _new_cfg.get("slurm_random_statuses", {}) if isinstance(_new_cfg, dict) else {}
         )
@@ -469,33 +574,21 @@ def simulate():
                 continue
             overrides_by_instance.setdefault(inst, []).append(item)
 
-        # ── Macro Incidents ──────────────────────────────────────────────
-        aisle_duration_s = durations.get("aisle", 600)
-        rack_duration_s = durations.get("rack", 300)
-
-        for aisle in set(t["aisle_id"] for t in targets):
-            aisle_rate = min(1.0, rates.get("aisle_cooling_failure", 0.005) * scale_factor)
-            if aisle not in active_incidents["aisles"] and random.random() < aisle_rate:
-                print(f"!!! Incident: Aisle {aisle} cooling failure ({aisle_duration_s}s)")
-                active_incidents["aisles"][aisle] = tick
-            elif (
-                aisle in active_incidents["aisles"]
-                and (tick - active_incidents["aisles"][aisle]) * update_interval >= aisle_duration_s
-            ):
-                print(f"--- Incident resolved: Aisle {aisle} cooling restored")
-                del active_incidents["aisles"][aisle]
-
-        for rack in set(t["rack_id"] for t in targets):
-            rack_rate = min(1.0, rates.get("rack_macro_failure", 0.01) * scale_factor)
-            if rack not in active_incidents["racks"] and random.random() < rack_rate:
-                print(f"!!! Incident: Rack {rack} power issue ({rack_duration_s}s)")
-                active_incidents["racks"][rack] = tick
-            elif (
-                rack in active_incidents["racks"]
-                and (tick - active_incidents["racks"][rack]) * update_interval >= rack_duration_s
-            ):
-                print(f"--- Incident resolved: Rack {rack} power restored")
-                del active_incidents["racks"][rack]
+        # ── Scheduled Incident Rolling ────────────────────────────────────
+        cycle_ticks = _get_cycle_ticks(changes_per_hour, update_interval)
+        if tick == 1 or tick % cycle_ticks == 0:
+            all_rack_ids = set(t["rack_id"] for t in targets)
+            all_aisle_ids = set(t["aisle_id"] for t in targets)
+            new_state = _roll_incidents(targets, _new_cfg, all_rack_ids, all_aisle_ids)
+            _incident_state.update(new_state)
+            _incident_state["last_roll_tick"] = tick
+            print(
+                f"[incidents] mode={incident_mode} | "
+                f"crit={len(_incident_state['nodes_crit'])} "
+                f"warn={len(_incident_state['nodes_warn'])} "
+                f"racks={len(_incident_state['racks_crit'])} "
+                f"aisles={len(_incident_state['aisles_hot'])}"
+            )
 
         # ── Per-target node loop ─────────────────────────────────────────
         for target in targets:
@@ -555,10 +648,7 @@ def simulate():
             node_vals = _generate_node_metrics(
                 target,
                 profiles,
-                rates,
-                scale_factor,
-                active_incidents["aisles"],
-                active_incidents["racks"],
+                _incident_state,
                 overrides_by_instance,
                 overrides_by_rack,
                 tick,
@@ -944,7 +1034,7 @@ def simulate():
                 continue
 
             rack_data = _generate_rack_metrics(
-                rack_id, rack_info, active_incidents, overrides_by_rack, tick
+                rack_id, rack_info, _incident_state, overrides_by_rack, tick
             )
             c = rack_data["cooling"]
             bl = c["base_labels"]
