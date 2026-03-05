@@ -26,8 +26,10 @@
 
     /* Path aliases — keep in sync with vite.config.ts resolve.alias */
     "paths": {
-      "@plugins/*": ["../plugins/*"]
+      "@plugins/*": ["plugins/*"],
+      "@app/*": ["src/app/*"],
+      "@src/*": ["src/*"]
     }
   },
-  "include": ["src", "../plugins/simulator/frontend", "../plugins/slurm/frontend"]
+  "include": ["src", "plugins/simulator/frontend", "plugins/slurm/frontend"]
 }

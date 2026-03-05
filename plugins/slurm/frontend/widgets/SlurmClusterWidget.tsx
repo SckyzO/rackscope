@@ -1,7 +1,7 @@
 import { Activity } from 'lucide-react';
-import { STATUS_COLOR } from '../../../dashboard/constants';
-import { registerWidget, type WidgetRegistration } from '../../../dashboard/registry';
-import type { DashboardData, WidgetProps } from '../../../dashboard/types';
+import { STATUS_COLOR } from '@app/dashboard/constants';
+import { registerWidget, type WidgetRegistration } from '@app/dashboard/registry';
+import type { DashboardData, WidgetProps } from '@app/dashboard/types';
 
 // ── Widget config ──────────────────────────────────────────────────────────
 const WIDGET_META: Omit<WidgetRegistration, 'component'> = {

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { FlaskConical, ExternalLink } from 'lucide-react';
-import { registerWidget, type WidgetRegistration } from '../../../dashboard/registry';
-import type { WidgetProps } from '../../../dashboard/types';
-import { api } from '../../../../services/api';
+import { registerWidget, type WidgetRegistration } from '@app/dashboard/registry';
+import type { WidgetProps } from '@app/dashboard/types';
+import { api } from '@src/services/api';
 
 // ── Widget config ──────────────────────────────────────────────────────────
 const WIDGET_META: Omit<WidgetRegistration, 'component'> = {

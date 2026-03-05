@@ -8,8 +8,12 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      // @plugins points to the top-level plugins/ directory (sibling of frontend/)
-      '@plugins': path.resolve(__dirname, '../plugins'),
+      // @plugins → /app/plugins (mounted via docker-compose volume)
+      '@plugins': path.resolve(__dirname, 'plugins'),
+      // @app → /app/src/app  (used by plugin widgets to import dashboard/*)
+      '@app': path.resolve(__dirname, 'src/app'),
+      // @src → /app/src      (used by plugin widgets to import services/*)
+      '@src': path.resolve(__dirname, 'src'),
     },
   },
   optimizeDeps: {

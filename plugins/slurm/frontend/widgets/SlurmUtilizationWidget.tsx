@@ -1,6 +1,6 @@
 import { Activity } from 'lucide-react';
-import { registerWidget, type WidgetRegistration } from '../../../dashboard/registry';
-import type { DashboardData } from '../../../dashboard/types';
+import { registerWidget, type WidgetRegistration } from '@app/dashboard/registry';
+import type { DashboardData } from '@app/dashboard/types';
 
 // ── Widget config ──────────────────────────────────────────────────────────
 const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
