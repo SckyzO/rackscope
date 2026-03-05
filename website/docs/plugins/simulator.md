@@ -8,7 +8,7 @@ sidebar_position: 2
 
 The Simulator plugin provides demo mode, failure injection, and interactive
 override capabilities for testing and presentations. It bridges the backend
-API with the standalone simulator process (`tools/simulator/main.py`) that
+API with the standalone simulator process (`plugins/simulator/process/`) that
 exposes Prometheus metrics on port 9000.
 
 **Plugin ID**: `simulator`
@@ -21,7 +21,7 @@ exposes Prometheus metrics on port 9000.
 
 The Simulator plugin consists of two distinct components:
 
-### Backend Plugin (`src/rackscope/plugins/simulator/plugin.py`)
+### Backend Plugin (`plugins/simulator/backend/plugin.py`)
 
 A `RackscopePlugin` subclass that:
 
@@ -35,9 +35,20 @@ A `RackscopePlugin` subclass that:
 The backend plugin does **not** generate any metrics. It is a control
 plane only.
 
-### Simulator Process (`tools/simulator/main.py`)
+### Simulator Process (`plugins/simulator/process/`)
 
-A standalone Python process that runs in its own Docker container:
+A standalone Python process that runs in its own Docker container.
+The process is split into focused modules:
+
+| Module | Responsibility |
+|---|---|
+| `main.py` | Entry point — starts HTTP server + calls `simulate()` |
+| `config.py` | Load `app.yaml` + `scenarios.yaml`, apply active scenario |
+| `topology.py` | Parse topology YAML, expand nodeset patterns |
+| `metrics.py` | Prometheus Gauge registry, fallback metric definitions |
+| `labels.py` | Template label resolution (`$instance`, `$rack_id`, …) |
+| `overrides.py` | Load time-filtered overrides from YAML |
+| `loop.py` | Main simulation loop + `_apply_failures` / `_apply_overrides` helpers |
 
 - Reads the topology to discover all instances and racks
 - Loads `plugin.yaml` on every tick (hot-reload)
@@ -100,7 +111,7 @@ disappears and the API routes return appropriate errors.
 ## Configuration Reference
 
 All fields are defined in
-`src/rackscope/plugins/simulator/config.py` (`SimulatorPluginConfig`).
+`plugins/simulator/backend/config.py` (`SimulatorPluginConfig`).
 
 ### Top-Level Fields
 
@@ -683,6 +694,6 @@ When the Simulator plugin is enabled, a **Simulator Status** widget is available
 |---|---|---|
 | `simulator-status` | Overview | Running state, active scenario, override count, update interval |
 
-The widget is hidden automatically when the plugin is disabled (`requiresPlugin: 'simulator'`). It lives in `frontend/src/app/plugins/simulator/widgets/SimulatorStatusWidget.tsx`.
+The widget is hidden automatically when the plugin is disabled (`requiresPlugin: 'simulator'`). It lives in `plugins/simulator/frontend/widgets/SimulatorStatusWidget.tsx`.
 
 Clicking **Settings ↗** in the widget header navigates to **Settings → Plugins** where you can change the scenario and manage overrides.

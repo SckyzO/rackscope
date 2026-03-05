@@ -8,9 +8,33 @@ sidebar_position: 4
 
 This guide explains how to create a custom Rackscope plugin.
 
+## Plugin Directory Layout
+
+Each plugin lives in a self-contained directory under `plugins/`:
+
+```
+plugins/
+└── {name}/
+    ├── __init__.py
+    ├── backend/                  # Python code (FastAPI plugin)
+    │   ├── __init__.py           # Exports the plugin class
+    │   ├── plugin.py             # Plugin class (RackscopePlugin subclass)
+    │   └── config.py             # Pydantic config model
+    ├── frontend/                 # React/TypeScript code
+    │   └── widgets/              # Dashboard widgets (optional)
+    │       ├── index.ts          # Side-effect imports
+    │       └── MyWidget.tsx
+    └── process/                  # Standalone service (optional)
+        ├── Dockerfile
+        └── ...
+```
+
+The framework code (`base.py`, `registry.py`) stays in
+`src/rackscope/plugins/` and is unchanged.
+
 ## 1. Create the Plugin Class
 
-Create `src/rackscope/plugins/{name}/plugin.py`:
+Create `plugins/{name}/backend/plugin.py`:
 
 ```python
 from fastapi import FastAPI
@@ -75,7 +99,7 @@ async def on_config_reload(self, app_config: AppConfig) -> None:
 
 ## 2. Create the Router
 
-Create `src/rackscope/plugins/{name}/router.py`:
+Create `plugins/{name}/backend/router.py`:
 
 ```python
 from fastapi import APIRouter, Depends
@@ -96,10 +120,17 @@ async def get_status(
 
 ## 3. Register the Plugin
 
+Create `plugins/{name}/backend/__init__.py` to export the class:
+
+```python
+from plugins.my_plugin.backend.plugin import MyPlugin
+__all__ = ["MyPlugin"]
+```
+
 In `src/rackscope/api/app.py`, add to the lifespan:
 
 ```python
-from rackscope.plugins.my_plugin.plugin import MyPlugin
+from plugins.my_plugin.backend import MyPlugin
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -119,7 +150,7 @@ Plugins should load their config from a dedicated file: `config/plugins/{plugin_
 **Step 1: Create a config model**
 
 ```python
-# src/rackscope/plugins/myplugin/config.py
+# plugins/myplugin/backend/config.py
 from pydantic import BaseModel
 
 class MyPluginConfig(BaseModel):
@@ -135,7 +166,7 @@ Load config from three sources in priority order (highest to lowest):
 ```python
 import os, yaml
 from rackscope.model.config import AppConfig
-from rackscope.plugins.myplugin.config import MyPluginConfig
+from plugins.myplugin.backend.config import MyPluginConfig
 
 def _load_config(self, app_config=None) -> MyPluginConfig:
     raw: dict = {}
@@ -208,8 +239,8 @@ def test_plugin_routes():
 ```
 
 Real-world plugin implementations:
-- **Slurm plugin**: `src/rackscope/plugins/slurm/plugin.py` — 8 API endpoints, metrics catalog, node mapping
-- **Simulator plugin**: `src/rackscope/plugins/simulator/plugin.py` — 6 API endpoints, overrides, scenario management
+- **Slurm plugin**: `plugins/slurm/backend/plugin.py` — 8 API endpoints, metrics catalog, node mapping
+- **Simulator plugin**: `plugins/simulator/backend/plugin.py` — 6 API endpoints, overrides, scenario management
 
 ## Plugin Base Class Reference
 

@@ -46,13 +46,7 @@ src/rackscope/
 │   └── slurm_service.py    # Slurm state resolution (SlurmConfigLike Protocol)
 ├── plugins/
 │   ├── base.py             # RackscopePlugin ABC + MenuSection/MenuItem
-│   ├── registry.py         # PluginRegistry
-│   ├── simulator/
-│   │   ├── plugin.py       # SimulatorPlugin
-│   │   └── config.py       # SimulatorPluginConfig
-│   └── slurm/
-│       ├── plugin.py       # SlurmPlugin
-│       └── config.py       # SlurmPluginConfig
+│   └── registry.py         # PluginRegistry
 └── utils/
     ├── aggregation.py
     └── validation.py

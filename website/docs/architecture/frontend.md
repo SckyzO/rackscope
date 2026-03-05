@@ -36,6 +36,44 @@ frontend/src/
     └── api.ts                  # API client with caching
 ```
 
+## Plugin Widgets
+
+Dashboard widgets that belong to a plugin live in the top-level
+`plugins/` directory alongside the backend and process code:
+
+```
+plugins/
+├── simulator/
+│   └── frontend/widgets/
+│       ├── index.ts                 # Side-effect imports (triggers registerWidget)
+│       └── SimulatorStatusWidget.tsx
+└── slurm/
+    └── frontend/widgets/
+        ├── index.ts
+        ├── SlurmClusterWidget.tsx
+        ├── SlurmNodesWidget.tsx
+        └── SlurmUtilizationWidget.tsx
+```
+
+These are imported via the `@plugins` Vite/TypeScript alias:
+
+```typescript
+// frontend/src/app/dashboard/index.ts
+import '@plugins/simulator/frontend/widgets';
+import '@plugins/slurm/frontend/widgets';
+```
+
+The alias is defined in `frontend/vite.config.ts`:
+
+```typescript
+resolve: {
+  alias: { '@plugins': path.resolve(__dirname, '../plugins') },
+},
+```
+
+Each widget calls `registerWidget({ ..., requiresPlugin: 'simulator' })`
+so the dashboard picker hides it when the plugin is disabled.
+
 ## Routing
 
 All routes at `/` root (no prefix):
