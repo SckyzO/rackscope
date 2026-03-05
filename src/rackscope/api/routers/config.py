@@ -134,11 +134,19 @@ async def update_app_config(
 
     # Sync simulator plugin config to its dedicated file so that
     # SimulatorPlugin._load_config() picks up the new settings immediately.
-    # (config/plugins/simulator/config.yml has priority over app.yaml)
+    # plugin.yaml has priority over app.yaml for the backend plugin.
     sim_plugin_cfg = payload.plugins.get("simulator") if payload.plugins else None
     if sim_plugin_cfg:
-        sim_cfg_path = Path("config/plugins/simulator/config.yml")
+        sim_cfg_path = Path("config/plugins/simulator/config/plugin.yaml")
         sim_cfg_path.parent.mkdir(parents=True, exist_ok=True)
+        # Read existing plugin.yaml to preserve process-only fields
+        # (profiles, slurm_random_statuses, etc.) that are not exposed in the UI.
+        existing: dict = {}
+        if sim_cfg_path.exists():
+            try:
+                existing = yaml.safe_load(sim_cfg_path.read_text()) or {}
+            except yaml.YAMLError:
+                existing = {}
         sim_data = (
             sim_plugin_cfg.model_dump()
             if hasattr(sim_plugin_cfg, "model_dump")
@@ -146,10 +154,11 @@ async def update_app_config(
         )
         # Strip the 'enabled' flag — the dedicated file must not own it
         sim_data.pop("enabled", None)
+        # Merge: process-only keys from existing file, UI settings on top
+        merged = {**existing, **sim_data}
         with sim_cfg_path.open("w") as f:
-            f.write("# Simulator Plugin Configuration\n")
-            f.write("# app.yaml only controls: plugins.simulator.enabled (true/false)\n\n")
-            yaml.safe_dump(sim_data, f, sort_keys=False)
+            f.write("# Simulator Plugin Configuration — managed by Settings UI\n\n")
+            yaml.safe_dump(merged, f, sort_keys=False)
 
     await apply_config(payload)
     return payload
