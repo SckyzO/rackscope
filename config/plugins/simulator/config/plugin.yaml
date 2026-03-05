@@ -1,34 +1,69 @@
 # Simulator Plugin Configuration
-# Main plugin settings — loaded on startup and on each tick (hot-reload).
-# app.yaml only controls: plugins.simulator.enabled (true/false)
+# Single source of truth for both the backend plugin and the simulator process.
 
 update_interval_seconds: 20
 seed: null
-scenario: null
 
 # Incident mode: full_ok | light | medium | heavy | chaos | custom
 incident_mode: light
 
-# How often (per hour) incidents are reshuffled. Ignored in full_ok mode.
+# How many times per hour incidents are reshuffled. Ignored in full_ok mode.
 changes_per_hour: 2
 
-# Custom incident counts — only used when incident_mode: custom
+# Custom incident counts — only active when incident_mode: custom
 custom_incidents:
   devices_crit: 0
   devices_warn: 0
   racks_crit: 0
   aisles_hot: 0
 
-# Paths relative to the project root
+# Paths
 overrides_path: config/plugins/simulator/overrides/overrides.yaml
 default_ttl_seconds: 120
-
-# Primary metrics catalog used to generate Prometheus metrics.
-# This file defines WHAT the simulator generates, not what the UI displays.
 metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
-
-# Additional catalogs merged on top of the primary (later = higher priority)
 metrics_catalogs:
   - id: slurm
     path: config/plugins/simulator/metrics/metrics_slurm.yaml
     enabled: true
+
+# ── Process-only config (ignored by Pydantic backend model) ──────────────
+
+# Behavioural profiles — temperature, power and load envelopes per node type
+profiles:
+  compute:
+    base_temp: 24.0
+    temp_range: 8.0
+    base_power: 200.0
+    power_var: 200.0
+    load_min: 40.0
+    load_max: 80.0
+  gpu:
+    base_temp: 28.0
+    temp_range: 25.0
+    base_power: 250.0
+    power_var: 500.0
+    load_min: 5.0
+    load_max: 100.0
+  service:
+    base_temp: 21.0
+    temp_range: 3.0
+    base_power: 100.0
+    power_var: 20.0
+    load_min: 2.0
+    load_max: 8.0
+  network:
+    base_temp: 32.0
+    temp_range: 4.0
+    base_power: 120.0
+    power_var: 10.0
+    load_min: 15.0
+    load_max: 15.0
+
+# Slurm wallboard helpers — forces a few random nodes into specific statuses
+slurm_random_statuses:
+  drain: 1
+  down: 1
+  maint: 1
+slurm_random_match:
+  - compute*
+  - visu*
