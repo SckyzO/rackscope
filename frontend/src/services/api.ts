@@ -696,6 +696,9 @@ export const api = {
     // Not cached — used to detect live running state (e.g. to grey out settings).
     return apiFetch('/api/simulator/status').then((r) => r.json());
   },
+  restartSimulator: async (): Promise<{ status: string }> => {
+    return apiFetch('/api/simulator/restart', { method: 'POST' }).then((r) => r.json());
+  },
   getSimulatorOverrides: async (): Promise<{ overrides: SimulatorOverride[] }> => {
     return fetchWithCache('/api/simulator/overrides', 'simulator.overrides');
   },

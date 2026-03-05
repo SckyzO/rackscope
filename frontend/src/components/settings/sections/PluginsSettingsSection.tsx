@@ -10,6 +10,7 @@ import {
   X,
   GripVertical,
   Save,
+  AlertTriangle,
 } from 'lucide-react';
 import { FormSection } from '../common/FormSection';
 import { FormField } from '../common/FormField';
@@ -231,6 +232,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
   const [overrides, setOverrides] = useState<SimulatorOverride[]>([]);
   const [simulatorRunning, setSimulatorRunning] = useState(false);
+  const [restarting, setRestarting] = useState(false);
   const [showAddOverride, setShowAddOverride] = useState(false);
   const [newOverride, setNewOverride] = useState({ instance: '', metric: 'up', value: '0' });
 
@@ -259,6 +261,33 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   useEffect(() => {
     loadSimulatorData();
   }, [loadSimulatorData]);
+
+  const handleRestartSimulator = async () => {
+    setRestarting(true);
+    try {
+      await api.restartSimulator();
+      // Poll until the simulator comes back up (max 30s)
+      const poll = setInterval(async () => {
+        try {
+          const status = await api.getSimulatorStatus();
+          if (status?.running) {
+            clearInterval(poll);
+            setRestarting(false);
+            loadSimulatorData();
+          }
+        } catch {
+          /* still restarting */
+        }
+      }, 1500);
+      setTimeout(() => {
+        clearInterval(poll);
+        setRestarting(false);
+        loadSimulatorData();
+      }, 30000);
+    } catch {
+      setRestarting(false);
+    }
+  };
 
   const toggleRibbon = (value: boolean) => {
     localStorage.setItem('rackscope.demo.ribbon', value ? 'visible' : 'hidden');
@@ -394,9 +423,20 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
       >
         {/* Running-state banner */}
         {simulatorRunning ? (
-          <AlertBanner variant="warning">
-            Simulator is running. Config changes take effect on next container restart.
-          </AlertBanner>
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+            <p className="flex-1 text-sm font-medium text-amber-700 dark:text-amber-400">
+              {restarting ? 'Restarting simulator…' : 'Config changes take effect on next restart.'}
+            </p>
+            <button
+              onClick={handleRestartSimulator}
+              disabled={restarting}
+              className="flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-amber-600 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3 w-3 ${restarting ? 'animate-spin' : ''}`} />
+              {restarting ? 'Restarting…' : 'Restart'}
+            </button>
+          </div>
         ) : (
           <AlertBanner variant="info">
             Start the stack with{' '}

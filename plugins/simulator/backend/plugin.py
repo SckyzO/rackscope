@@ -202,6 +202,27 @@ class SimulatorPlugin(RackscopePlugin):
                 ]
             }
 
+        @self._router.post("/restart")
+        async def restart_simulator():
+            """Restart the simulator container via its control server (port 9001)."""
+            import urllib.parse
+            import httpx
+
+            sim_base = os.getenv("SIMULATOR_URL", "http://simulator:9000")
+            parsed = urllib.parse.urlparse(sim_base)
+            control_url = f"{parsed.scheme}://{parsed.hostname}:9001/restart"
+
+            try:
+                async with httpx.AsyncClient() as http_client:
+                    response = await http_client.post(control_url, timeout=3.0)
+                    if response.status_code == 200:
+                        return {"status": "restarting"}
+                    raise HTTPException(status_code=502, detail="Simulator returned unexpected status")
+            except httpx.RequestError as exc:
+                raise HTTPException(
+                    status_code=503, detail=f"Could not reach simulator control server: {exc}"
+                )
+
         @self._router.post("/incidents")
         async def trigger_incident(
             payload: dict,
