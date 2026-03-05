@@ -61,7 +61,7 @@ services:
 
   simulator:
     build:
-      context: ./tools/simulator
+      context: ./plugins/simulator/process
     restart: unless-stopped
     ports:
       - "9000:9000"
@@ -93,4 +93,4 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./tools/simulator/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./plugins/simulator/process/prometheus.yml:/etc/prometheus/prometheus.yml:ro
