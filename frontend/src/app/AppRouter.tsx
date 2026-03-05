@@ -60,12 +60,12 @@ import { NotificationsFullPage } from './pages/NotificationsFullPage';
 
 // Monitoring Views (connected to real API)
 import { WorldMapPage } from './pages/views/WorldMapPage';
+import { SitePage } from './pages/views/SitePage';
 import { RoomPage } from './pages/views/RoomPage';
 import { ClusterPage } from './pages/views/ClusterPage';
 
 import { DevicePage } from './pages/views/DevicePage';
 import { RackPage } from './pages/views/RackPage';
-
 
 // Slurm live views
 import { SlurmOverviewPage } from './pages/slurm/SlurmOverviewPage';
@@ -189,11 +189,11 @@ const AppRoutes = () => (
 
       {/* ── Monitoring Views (live data) ── */}
       <Route path="views/worldmap" element={<WorldMapPage />} />
+      <Route path="views/site/:siteId" element={<SitePage />} />
       <Route path="views/cluster" element={<ClusterPage />} />
       <Route path="views/room/:roomId" element={<RoomPage />} />
       <Route path="views/rack/:rackId" element={<RackPage />} />
       <Route path="views/device/:rackId/:deviceId" element={<DevicePage />} />
-
 
       {/* ── Slurm live views ── */}
       <Route path="slurm/overview" element={<SlurmOverviewPage />} />

@@ -111,6 +111,16 @@ const SitePanel = ({
               {site.location.address}
             </div>
           )}
+          {/* Datacenter overview link */}
+          <button
+            onClick={() => navigate(`/views/site/${site.id}`)}
+            className="mt-2 flex items-center gap-1 text-xs font-medium text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <Building2 className="h-3 w-3" />
+            View datacenter
+            <ChevronRight className="h-3 w-3" />
+          </button>
+
           {/* Rooms list */}
           {site.rooms.length > 0 && (
             <div className={`${compact ? 'mt-2.5' : 'mt-3'} space-y-1.5`}>
