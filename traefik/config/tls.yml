@@ -1,0 +1,12 @@
+# Traefik dynamic TLS configuration
+# Loaded automatically by the file provider (watch=true).
+# Cert is generated locally with: make cert
+tls:
+  certificates:
+    - certFile: /certs/cert.pem
+      keyFile: /certs/key.pem
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/cert.pem
+        keyFile: /certs/key.pem

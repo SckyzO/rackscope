@@ -1,22 +1,36 @@
 services:
   # ── Reverse proxy ─────────────────────────────────────────────────────────
   # Entrypoints:
-  #   http://localhost       → React app (frontend)
-  #   http://localhost/api   → FastAPI backend (REST + Swagger at /api/docs)
+  #   https://localhost      → React app (frontend)
+  #   https://localhost/api  → FastAPI backend (REST + Swagger at /api/docs)
+  #   http://localhost       → redirects to HTTPS
   #   http://localhost:8080  → Traefik dashboard (dev only)
+  #
+  # First run: generate the self-signed cert with `make cert`
   traefik:
     image: traefik:v3.3
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      # File provider for TLS dynamic config (cert + key paths)
+      - "--providers.file.directory=/traefik-config"
+      - "--providers.file.watch=true"
+      # HTTP entrypoint — redirects to HTTPS
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # HTTPS entrypoint
+      - "--entrypoints.websecure.address=:443"
       - "--log.level=WARN"
     ports:
       - "80:80"
+      - "443:443"
       - "8080:8080"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/config:/traefik-config:ro
+      - ./traefik/certs:/certs:ro
     restart: unless-stopped
 
   backend:
@@ -40,7 +54,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=PathPrefix(`/api`)"
-      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls=true"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
 
   frontend:
@@ -55,7 +70,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls=true"
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
 
   playwright:
