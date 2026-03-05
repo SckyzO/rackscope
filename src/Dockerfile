@@ -23,11 +23,12 @@ RUN pip install --no-cache-dir -e '.[dev]'
 
 # Copy source code
 COPY src/ src/
+COPY plugins/ plugins/
 COPY config/ config/
 
 # Environment variables
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app/src
+ENV PYTHONPATH=/app/src:/app
 
 # Ensure app files are owned by the non-root user
 RUN chown -R appuser:appuser /app

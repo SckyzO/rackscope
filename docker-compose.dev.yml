@@ -29,6 +29,7 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - ./src:/app/src
+      - ./plugins:/app/plugins
       - ./config:/app/config
       - ./tests:/app/tests
       - ./tools:/app/tools

@@ -51,41 +51,41 @@ class TestGetFallbackSupportedMetrics:
 
     def test_has_node_scope_entries(self):
         result = get_fallback_supported_metrics()
-        node_metrics = [k for k, v in result.items() if v.get("scope") == "node"]
+        node_metrics = [k for k, v in result.items() if v == "node"]
         assert len(node_metrics) > 0
 
     def test_has_rack_scope_entries(self):
         result = get_fallback_supported_metrics()
-        rack_metrics = [k for k, v in result.items() if v.get("scope") == "rack"]
+        rack_metrics = [k for k, v in result.items() if v == "rack"]
         assert len(rack_metrics) > 0
 
-    def test_each_entry_has_scope(self):
+    def test_each_entry_has_valid_scope(self):
         result = get_fallback_supported_metrics()
-        for name, meta in result.items():
-            assert "scope" in meta, f"Missing scope for metric: {name}"
+        for name, scope in result.items():
+            assert scope in ("node", "rack"), f"Invalid scope '{scope}' for metric: {name}"
 
 
 class TestNormalizeMetricDefs:
-    def test_already_normalized_passthrough(self):
-        defs = {
-            "up": {
-                "scope": "node",
-                "labels": {"instance": "$instance"},
-                "help": "Node up",
-                "inst_exact": set(),
-                "inst_wild": [],
-                "rack_exact": set(),
-                "rack_wild": [],
-                "labels_only": False,
-                "include_base_labels": True,
-            }
-        }
+    def test_basic_normalization(self):
+        # normalize_metric_defs takes a LIST of metric catalog items
+        defs = [{"name": "up", "scope": "node", "labels": {}, "help": "Node up"}]
         result = normalize_metric_defs(defs)
         assert "up" in result
         assert result["up"]["scope"] == "node"
 
-    def test_empty_defs(self):
-        assert normalize_metric_defs({}) == {}
+    def test_empty_list(self):
+        assert normalize_metric_defs([]) == {}
 
-    def test_none_defs(self):
+    def test_none_returns_empty(self):
         assert normalize_metric_defs(None) == {}
+
+    def test_item_without_name_skipped(self):
+        defs = [{"scope": "node", "help": "No name"}]
+        result = normalize_metric_defs(defs)
+        assert result == {}
+
+    def test_item_without_scope_skipped(self):
+        # scope must come from item or SUPPORTED_METRICS; if neither, skip
+        defs = [{"name": "unknown_metric_xyz", "help": "no scope"}]
+        result = normalize_metric_defs(defs)
+        assert "unknown_metric_xyz" not in result
