@@ -263,6 +263,10 @@ export interface RackNodeState {
 
 export interface RackState {
   state?: string;
+  /** Node health counts returned by GET /api/rooms/{id}/state */
+  node_total?: number;
+  node_crit?: number;
+  node_warn?: number;
   checks?: AlertCheck[];
   alerts?: AlertCheck[];
   metrics?: {

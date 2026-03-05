@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Building2, SlidersHorizontal, LayoutGrid, List, ChevronRight } from 'lucide-react';
-import { Tooltip } from '../../components/ui/Tooltip';
+import { Building2, SlidersHorizontal, LayoutGrid, List, ChevronRight, Server } from 'lucide-react';
+import { HUDTooltipCard } from '../../../components/HUDTooltip';
+import { useTooltipSettings } from '../../../hooks/useTooltipSettings';
 import { api } from '../../../services/api';
 import type { Site, Room, RoomState } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
@@ -94,25 +96,87 @@ const MiniRackGrid = ({
   roomState: RoomState | null;
   size: RackSize;
 }) => {
+  const { style, aura } = useTooltipSettings();
+  const [hovered, setHovered] = useState<{ id: string; x: number; y: number } | null>(null);
+
+  // rack id → rack name map built from room topology
+  const rackNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    room.aisles.forEach((a) =>
+      a.racks.forEach((r) => {
+        map[r.id] = r.name;
+      })
+    );
+    room.standalone_racks.forEach((r) => {
+      map[r.id] = r.name;
+    });
+    return map;
+  }, [room]);
+
   const rackIds = getRoomRackIds(room);
   const visible = rackIds.slice(0, MAX_RACKS);
   const overflow = rackIds.length - MAX_RACKS;
   const sq = size === 'sm' ? 'h-2 w-2' : 'h-3 w-3';
 
+  const showBelow = (hovered?.y ?? 0) < 400;
+
   return (
     <div className="flex flex-wrap gap-0.5">
       {visible.map((id) => {
         const raw = roomState?.racks?.[id];
-        const state = raw ? (typeof raw === 'string' ? raw : (raw.state ?? 'UNKNOWN')) : 'UNKNOWN';
+        const rack = raw && typeof raw !== 'string' ? raw : null;
+        const state = rack?.state ?? (typeof raw === 'string' ? raw : 'UNKNOWN');
         return (
-          <Tooltip key={id} content={`${id} · ${state}`} variant="dark">
-            <div className={`${sq} rounded-sm ${RACK_COLOR[state] ?? RACK_COLOR.UNKNOWN}`} />
-          </Tooltip>
+          <div
+            key={id}
+            className={`${sq} cursor-default rounded-sm ${RACK_COLOR[state] ?? RACK_COLOR.UNKNOWN}`}
+            onMouseEnter={(e) => setHovered({ id, x: e.clientX, y: e.clientY })}
+            onMouseMove={(e) =>
+              setHovered((h) => (h?.id === id ? { id, x: e.clientX, y: e.clientY } : h))
+            }
+            onMouseLeave={() => setHovered(null)}
+          />
         );
       })}
       {overflow > 0 && (
         <span className="self-center text-[9px] text-gray-400 dark:text-gray-500">+{overflow}</span>
       )}
+
+      {hovered &&
+        (() => {
+          const raw = roomState?.racks?.[hovered.id];
+          const rack = raw && typeof raw !== 'string' ? raw : null;
+          const state = rack?.state ?? (typeof raw === 'string' ? raw : 'UNKNOWN');
+          const nodeCrit = rack?.node_crit ?? 0;
+          const nodeWarn = rack?.node_warn ?? 0;
+          const nodeTotal = rack?.node_total ?? 0;
+          const nodeOk = Math.max(0, nodeTotal - nodeCrit - nodeWarn);
+          return createPortal(
+            <div
+              style={{
+                position: 'fixed',
+                top: showBelow ? hovered.y + 12 : hovered.y - 12,
+                left: hovered.x,
+                transform: showBelow ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+                zIndex: 9999,
+                pointerEvents: 'none',
+              }}
+            >
+              <div className="w-64">
+                <HUDTooltipCard
+                  style={style}
+                  aura={aura}
+                  title={rackNames[hovered.id] ?? hovered.id}
+                  subtitle="Rack"
+                  status={state as HealthStatus}
+                  icon={Server}
+                  checkSummary={{ ok: nodeOk, warn: nodeWarn, crit: nodeCrit }}
+                />
+              </div>
+            </div>,
+            document.body
+          );
+        })()}
     </div>
   );
 };
