@@ -335,9 +335,17 @@ The backend uses a **plugin architecture** to separate core functionality from o
 - Dynamic menu ordering (Workload=50, Simulator=200)
 
 **Adding a New Plugin:**
-1. Create `src/rackscope/plugins/{name}/plugin.py` implementing `RackscopePlugin`
-2. Register in `api/app.py` lifespan: `registry.register(YourPlugin())`
-3. Plugin routes and menu sections are auto-registered during `initialize()`
+1. Create `plugins/{name}/backend/plugin.py` implementing `RackscopePlugin`
+2. Register in `api/app.py` lifespan using a **conditional import** — NEVER a top-level import:
+   ```python
+   if _plugin_enabled("your-plugin"):
+       from plugins.your_plugin.backend import YourPlugin
+       plugin_registry.register(YourPlugin())
+   ```
+3. Enable in `app.yaml`: `plugins.your-plugin.enabled: true`
+4. Plugin routes and menu sections are auto-registered during `initialize()`
+
+**⚠️ NEVER use a top-level import for a plugin** (`from plugins.X import ...` at module level in `app.py`). This would load the plugin unconditionally regardless of config, defeating the autonomous plugin architecture. Use deferred imports inside the `if _plugin_enabled(...)` block.
 
 ### Frontend (React / TypeScript / Vite)
 

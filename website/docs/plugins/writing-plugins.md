@@ -127,25 +127,60 @@ from plugins.my_plugin.backend.plugin import MyPlugin
 __all__ = ["MyPlugin"]
 ```
 
-In `src/rackscope/api/app.py`, add to the lifespan:
+In `src/rackscope/api/app.py`, add a **conditional** registration block inside `lifespan()`, after `APP_CONFIG` is loaded:
 
 ```python
-from plugins.my_plugin.backend import MyPlugin
+if _plugin_enabled("my-plugin"):   # same id as plugin_id property
+    try:
+        from plugins.my_plugin.backend import MyPlugin
+        plugin_registry.register(MyPlugin())
+        logger.info("Registered My Plugin")
+    except Exception as e:
+        logger.error(f"Failed to register My Plugin: {e}", exc_info=True)
+else:
+    logger.info("My Plugin disabled — skipping registration")
+```
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    registry = PluginRegistry()
-    registry.register(SimulatorPlugin())
-    registry.register(SlurmPlugin())
-    registry.register(MyPlugin())   # ← add here
-    await registry.initialize(app)
-    yield
-    await registry.shutdown()
+:::info Why conditional imports?
+The `_plugin_enabled()` helper returns `True` only when `plugins.my-plugin.enabled: true` is set in `app.yaml`. This means:
+
+- **Disabled plugin** → module not imported, no routes mounted, zero memory/CPU overhead, nothing exposed in the API
+- **Enabled plugin** → identical behaviour to a static import
+
+This makes plugins truly autonomous: a production deployment without the plugin's container can set `enabled: false` and have no trace of the plugin in the running process.
+
+**Never use a top-level import** (`from plugins.X import ...` at module level in `app.py`) for a plugin — this loads the code unconditionally regardless of configuration.
+:::
+
+The `_plugin_enabled()` helper is already defined in `app.py`:
+
+```python
+def _plugin_enabled(plugin_id: str) -> bool:
+    """True only if plugins.<id>.enabled: true in app.yaml."""
+    if not APP_CONFIG or not APP_CONFIG.plugins:
+        return False
+    cfg = APP_CONFIG.plugins.get(plugin_id, {})
+    return bool(cfg.get("enabled", False)) if isinstance(cfg, dict) else False
 ```
 
 ## 4. Plugin Configuration
 
-Plugins should load their config from a dedicated file: `config/plugins/{plugin_id}/config.yml`.
+### The `enabled` flag
+
+The **only** `app.yaml` key that controls whether a plugin is loaded is `plugins.<id>.enabled`. Everything else lives in the plugin's own config file.
+
+```yaml
+# config/app.yaml
+plugins:
+  my-plugin:
+    enabled: true   # false = plugin not loaded at all
+```
+
+When `enabled: false` (or the key is absent), `_plugin_enabled()` returns `False` and the plugin is never instantiated. Set `enabled: false` in production for any plugin whose companion service (container, external API) is not available.
+
+### Dedicated config file
+
+Plugins should load their settings from a dedicated file: `config/plugins/{plugin_id}/config/plugin.yaml`.
 
 **Step 1: Create a config model**
 
@@ -216,27 +251,43 @@ def register_menu_sections(self) -> list[MenuSection]:
 
 ## 5. Testing Plugins
 
-Use `pytest` with `TestClient` to test plugin routes. Reference the existing tests in `tests/plugins/`:
+Because plugins are conditionally registered at runtime, tests must **manually register** the plugin and mount its routes on the shared `app` instance. This makes tests independent of `app.yaml` configuration.
 
 ```python
-# tests/plugins/test_my_plugin.py
+# tests/api/test_my_plugin.py
 from fastapi.testclient import TestClient
 from rackscope.api.app import app
+from rackscope.plugins.registry import registry
+from plugins.my_plugin.backend import MyPlugin
+
+# Register once per test session (idempotent guard)
+if not registry.get_plugin("my-plugin"):
+    _plugin = MyPlugin()
+    registry.register(_plugin)
+    _plugin.register_routes(app)
 
 client = TestClient(app)
 
-def test_plugin_registered():
-    """Plugin appears in /api/plugins list."""
-    response = client.get("/api/plugins")
-    assert response.status_code == 200
-    plugin_ids = [p["id"] for p in response.json()]
-    assert "myplugin" in plugin_ids
-
-def test_plugin_routes():
-    """Plugin routes are accessible."""
+def test_plugin_status():
+    """Plugin status endpoint is reachable."""
     response = client.get("/api/myplugin/status")
-    assert response.status_code in (200, 503)  # 503 if plugin is disabled
+    assert response.status_code == 200
+
+def test_plugin_in_registry():
+    """Plugin is correctly registered."""
+    plugin = registry.get_plugin("my-plugin")
+    assert plugin is not None
+    assert plugin.plugin_id == "my-plugin"
 ```
+
+:::tip Contract tests
+Add a dedicated `tests/my_plugin/test_contracts.py` file that verifies:
+- New config fields **exist** on the config model
+- Old/removed config fields **do not exist**
+- API response shapes match the documented schema
+
+This prevents silent regressions when config models are refactored. See `tests/simulator/test_contracts.py` for a reference implementation.
+:::
 
 Real-world plugin implementations:
 - **Slurm plugin**: `plugins/slurm/backend/plugin.py` — 8 API endpoints, metrics catalog, node mapping
