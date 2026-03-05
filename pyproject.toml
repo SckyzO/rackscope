@@ -6,11 +6,6 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "AGPL-3.0-or-later"}
 authors = [{name = "Thomas Bourcey", email = "sckyzo@gmail.com"}]
-
-[project.urls]
-Homepage = "https://rackscope.dev"
-Repository = "https://github.com/SckyzO/rackscope"
-Issues = "https://github.com/SckyzO/rackscope/issues"
 dependencies = [
   "pydantic>=2.12.5",
   "pyyaml>=6.0.3",
@@ -20,6 +15,11 @@ dependencies = [
   "python-jose[cryptography]>=3.3.0",
   "bcrypt>=4.0.0",
 ]
+
+[project.urls]
+Homepage = "https://rackscope.dev"
+Repository = "https://github.com/SckyzO/rackscope"
+Issues = "https://github.com/SckyzO/rackscope/issues"
 
 [project.optional-dependencies]
 dev = [
