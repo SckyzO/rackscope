@@ -71,20 +71,18 @@ class TestApplyScenario:
         result = apply_scenario(cfg)
         assert result["update_interval_seconds"] == 5
 
-    def test_scenario_sets_incident_rates(self):
+    def test_scenario_sets_incident_mode(self):
         cfg = {
-            "scenario": "failures",
-            "scenarios": {"failures": {"incident_rates": {"node_micro_failure": 0.5}}},
+            "scenario": "chaos",
+            "scenarios": {"chaos": {"incident_mode": "chaos", "seed": 99}},
         }
         result = apply_scenario(cfg)
-        assert result["incident_rates"]["node_micro_failure"] == 0.5
+        assert result["incident_mode"] == "chaos"
 
-    def test_scenario_without_incident_rates_clears_parent_rates(self):
-        """When scenario has no incident_rates, parent rates are cleared."""
+    def test_scenario_sets_changes_per_hour(self):
         cfg = {
-            "scenario": "clean",
-            "incident_rates": {"node_micro_failure": 0.9},
-            "scenarios": {"clean": {"update_interval_seconds": 10}},
+            "scenario": "heavy",
+            "scenarios": {"heavy": {"incident_mode": "heavy", "changes_per_hour": 4}},
         }
         result = apply_scenario(cfg)
-        assert result["incident_rates"] == {}
+        assert result["changes_per_hour"] == 4

@@ -50,20 +50,14 @@ def apply_scenario(sim_cfg):
         scenario_cfg = scenarios.get(scenario_name) or {}
         if isinstance(scenario_cfg, dict):
             merged = dict(sim_cfg)
-            # Scenario should be authoritative — do not inherit random rates unless
-            # explicitly set by the scenario.
-            if "incident_rates" not in scenario_cfg:
-                merged["incident_rates"] = {}
             for key in [
-                "incident_rates",
-                "incident_durations",
+                "incident_mode",
+                "changes_per_hour",
                 "profiles",
                 "seed",
                 "update_interval_seconds",
             ]:
                 if key in scenario_cfg:
                     merged[key] = scenario_cfg[key]
-            if "scale_factor" in scenario_cfg:
-                merged["scale_factor"] = scenario_cfg["scale_factor"]
             return merged
     return sim_cfg

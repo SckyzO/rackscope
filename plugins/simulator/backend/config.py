@@ -2,28 +2,30 @@
 Simulator Plugin Configuration
 """
 
+from enum import Enum
 from typing import Optional, List
+
 from pydantic import BaseModel, Field
 
 
-class IncidentRates(BaseModel):
-    """Incident rate configuration."""
+class IncidentMode(str, Enum):
+    """Controls the failure pattern injected by the simulator."""
 
-    node_micro_failure: float = Field(default=0.001, ge=0, le=1)
-    rack_macro_failure: float = Field(default=0.01, ge=0, le=1)
-    aisle_cooling_failure: float = Field(default=0.005, ge=0, le=1)
+    FULL_OK = "full_ok"
+    LIGHT = "light"
+    MEDIUM = "medium"
+    HEAVY = "heavy"
+    CHAOS = "chaos"
+    CUSTOM = "custom"
 
 
-class IncidentDurations(BaseModel):
-    """Incident duration configuration in SECONDS.
+class CustomIncidents(BaseModel):
+    """Absolute incident counts used when incident_mode == 'custom'."""
 
-    At update_interval=20s:
-      rack=300  → 5 minutes (realistic for PDU reset / power restore)
-      aisle=600 → 10 minutes (cooling unit restart + temperature stabilization)
-    """
-
-    rack: int = Field(default=300, ge=1, description="Rack macro-failure duration in seconds")
-    aisle: int = Field(default=600, ge=1, description="Aisle cooling failure duration in seconds")
+    devices_crit: int = Field(default=0, ge=0)
+    devices_warn: int = Field(default=0, ge=0)
+    racks_crit: int = Field(default=0, ge=0)
+    aisles_hot: int = Field(default=0, ge=0)
 
 
 class SimulatorMetricsCatalog(BaseModel):
@@ -48,9 +50,9 @@ class SimulatorPluginConfig(BaseModel):
     update_interval_seconds: int = Field(default=20, ge=1)
     seed: Optional[int] = Field(default=None)
     scenario: Optional[str] = Field(default=None)
-    scale_factor: float = Field(default=1.0, ge=0.0)
-    incident_rates: IncidentRates = Field(default_factory=IncidentRates)
-    incident_durations: IncidentDurations = Field(default_factory=IncidentDurations)
+    incident_mode: IncidentMode = Field(default=IncidentMode.LIGHT)
+    changes_per_hour: int = Field(default=2, ge=1)
+    custom_incidents: CustomIncidents = Field(default_factory=CustomIncidents)
 
     # Paths use the new folder layout as defaults
     overrides_path: str = Field(
