@@ -365,8 +365,8 @@ export const WorldMapPage = () => {
       geoSites.map((s) => ({
         id: s.id,
         name: s.name,
-        lat: s.location!.lat,
-        lon: s.location!.lon,
+        lat: s.location?.lat ?? 0,
+        lon: s.location?.lon ?? 0,
         roomCount: s.rooms.length,
       })),
     [geoSites]

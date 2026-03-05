@@ -286,80 +286,80 @@ const ConfigPanel = ({
     <Drawer open={open} onClose={onClose} width={320}>
       <DrawerHeader title="Display settings" onClose={onClose} icon={SlidersHorizontal} />
       <div className="flex-1 overflow-y-auto p-5">
-          <SLbl>View</SLbl>
-          <OptBtns
-            opts={[
-              {
-                val: 'compact' as WallView,
-                label: '· Compact dots',
-                desc: 'Colored dot per node — fast status scan',
-              },
-              {
-                val: 'rack' as WallView,
-                label: '⊞ Rack physical',
-                desc: 'Full rack elevation with Slurm colors',
-              },
-              {
-                val: 'columns' as WallView,
-                label: '≡ Slot grid',
-                desc: 'Physical slot grid, exact U positions',
-              },
-            ]}
-            cur={cfg.view}
-            onChange={(v) => set('view', v)}
-          />
-          <SLbl>Layout</SLbl>
-          <OptBtns
-            opts={[
-              {
-                val: 'scroll' as WallLayout,
-                label: '→ Horizontal scroll',
-                desc: 'Single row, fills full height',
-              },
-              {
-                val: 'wrap' as WallLayout,
-                label: '⊞ Wrap + scroll',
-                desc: 'Multiple rows, vertical scroll',
-              },
-              {
-                val: 'wrap-auto' as WallLayout,
-                label: '⊡ Wrap + autosize',
-                desc: 'Fits all racks in viewport',
-              },
-            ]}
-            cur={cfg.layout}
-            onChange={(v) => set('layout', v)}
-          />
-          <SLbl>Card size</SLbl>
-          <SegBtns
-            opts={[
-              { label: 'S', val: 'sm' as CardSize },
-              { label: 'M', val: 'md' as CardSize },
-              { label: 'L', val: 'lg' as CardSize },
-            ]}
-            cur={cfg.cardSize}
-            onChange={(v) => set('cardSize', v)}
-          />
-          {cfg.layout === 'wrap-auto' && (
-            <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-600">
-              In auto-size mode, card height is calculated to fit all racks in the viewport.
-            </p>
-          )}
-          <SLbl>Grouping</SLbl>
-          <OptBtns
-            opts={[
-              { val: true as boolean, label: 'By aisle', desc: 'Sections per room and aisle' },
-              {
-                val: false as boolean,
-                label: 'All flat',
-                desc: 'All racks in one continuous list',
-              },
-            ]}
-            cur={cfg.groupByAisle}
-            onChange={(v) => set('groupByAisle', v)}
-          />
-        </div>
-      </Drawer>
+        <SLbl>View</SLbl>
+        <OptBtns
+          opts={[
+            {
+              val: 'compact' as WallView,
+              label: '· Compact dots',
+              desc: 'Colored dot per node — fast status scan',
+            },
+            {
+              val: 'rack' as WallView,
+              label: '⊞ Rack physical',
+              desc: 'Full rack elevation with Slurm colors',
+            },
+            {
+              val: 'columns' as WallView,
+              label: '≡ Slot grid',
+              desc: 'Physical slot grid, exact U positions',
+            },
+          ]}
+          cur={cfg.view}
+          onChange={(v) => set('view', v)}
+        />
+        <SLbl>Layout</SLbl>
+        <OptBtns
+          opts={[
+            {
+              val: 'scroll' as WallLayout,
+              label: '→ Horizontal scroll',
+              desc: 'Single row, fills full height',
+            },
+            {
+              val: 'wrap' as WallLayout,
+              label: '⊞ Wrap + scroll',
+              desc: 'Multiple rows, vertical scroll',
+            },
+            {
+              val: 'wrap-auto' as WallLayout,
+              label: '⊡ Wrap + autosize',
+              desc: 'Fits all racks in viewport',
+            },
+          ]}
+          cur={cfg.layout}
+          onChange={(v) => set('layout', v)}
+        />
+        <SLbl>Card size</SLbl>
+        <SegBtns
+          opts={[
+            { label: 'S', val: 'sm' as CardSize },
+            { label: 'M', val: 'md' as CardSize },
+            { label: 'L', val: 'lg' as CardSize },
+          ]}
+          cur={cfg.cardSize}
+          onChange={(v) => set('cardSize', v)}
+        />
+        {cfg.layout === 'wrap-auto' && (
+          <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-600">
+            In auto-size mode, card height is calculated to fit all racks in the viewport.
+          </p>
+        )}
+        <SLbl>Grouping</SLbl>
+        <OptBtns
+          opts={[
+            { val: true as boolean, label: 'By aisle', desc: 'Sections per room and aisle' },
+            {
+              val: false as boolean,
+              label: 'All flat',
+              desc: 'All racks in one continuous list',
+            },
+          ]}
+          cur={cfg.groupByAisle}
+          onChange={(v) => set('groupByAisle', v)}
+        />
+      </div>
+    </Drawer>
   );
 };
 
@@ -729,7 +729,7 @@ export const SlurmWallV2Page = () => {
         );
         const lm: Record<string, Room> = {};
         roomList.forEach((r, i) => {
-          if (lays[i]) lm[r.id] = lays[i]!;
+          if (lays[i]) lm[r.id] = lays[i] as Room;
         });
         setLayouts(lm);
       }
@@ -770,7 +770,7 @@ export const SlurmWallV2Page = () => {
           if (!has) continue;
           const key = cfg.groupByAisle ? `${room.name} \u203a ${aisle.name}` : '_all';
           if (!map.has(key)) map.set(key, []);
-          map.get(key)!.push({ rack, roomName: room.name, aisleName: aisle.name });
+          map.get(key)?.push({ rack, roomName: room.name, aisleName: aisle.name });
         }
       }
     }

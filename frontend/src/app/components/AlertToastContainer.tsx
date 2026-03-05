@@ -131,7 +131,9 @@ export const AlertToastContainer = () => {
               ? soundSettings.warnSound
               : null;
         if (preset) {
-          playSound(preset, soundSettings.volume / 100).catch(() => {});
+          playSound(preset, soundSettings.volume / 100).catch(() => {
+            /* ignore playback errors */
+          });
         }
       }
     } catch {

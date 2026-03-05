@@ -9,7 +9,7 @@ const makeId = (a: ActiveAlert) => `${a.rack_id}-${a.device_id}-${a.node_id}`;
 export const useSoundAlerts = (alerts: ActiveAlert[]) => {
   const prevIdsRef = useRef<Set<string>>(new Set());
   const initialRef = useRef(true);
-  const playingRef = useRef(false);       // true while a sound is playing
+  const playingRef = useRef(false); // true while a sound is playing
   const lastPlayedRef = useRef<number>(0); // timestamp of last sound
 
   useEffect(() => {
@@ -63,7 +63,9 @@ export const useSoundAlerts = (alerts: ActiveAlert[]) => {
     playingRef.current = true;
     lastPlayedRef.current = Date.now();
     playSound(preset, vol)
-      .catch(() => {})
+      .catch(() => {
+        /* ignore playback errors */
+      })
       .finally(() => {
         playingRef.current = false;
       });

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 /**
  * TemplateDefaultPage — Visual showcase of ALL shared components
  *
@@ -152,13 +153,22 @@ export const TemplateDefaultPage = () => {
       />
 
       {/* ── 1. Page Actions ── */}
-      <SectionCard title="1 · Page Actions" desc="components/PageActionButton + components/RefreshButton">
+      <SectionCard
+        title="1 · Page Actions"
+        desc="components/PageActionButton + components/RefreshButton"
+      >
         <div className="space-y-4">
           <Row label="All button variants">
             <PageActionButton icon={SlidersHorizontal}>outline (default)</PageActionButton>
-            <PageActionButton icon={Plus} variant="primary">primary</PageActionButton>
-            <PageActionButton icon={Pencil} variant="brand-outline">brand-outline</PageActionButton>
-            <PageActionButton icon={Trash2} variant="danger-outline">danger-outline</PageActionButton>
+            <PageActionButton icon={Plus} variant="primary">
+              primary
+            </PageActionButton>
+            <PageActionButton icon={Pencil} variant="brand-outline">
+              brand-outline
+            </PageActionButton>
+            <PageActionButton icon={Trash2} variant="danger-outline">
+              danger-outline
+            </PageActionButton>
           </Row>
           <Row label="Icon-only (same height — pixel-perfect check)">
             <PageActionIconButton icon={SlidersHorizontal} title="Configure" />
@@ -166,11 +176,17 @@ export const TemplateDefaultPage = () => {
             <PageActionIconButton icon={Plus} title="Add" variant="primary" />
             {/* Alignment check */}
             <PageActionButton icon={SlidersHorizontal}>Configure</PageActionButton>
-            <PageActionButton icon={Plus} variant="primary">New</PageActionButton>
+            <PageActionButton icon={Plus} variant="primary">
+              New
+            </PageActionButton>
           </Row>
           <Row label="Disabled state">
-            <PageActionButton icon={SlidersHorizontal} disabled>Configure</PageActionButton>
-            <PageActionButton icon={Plus} variant="primary" disabled>New</PageActionButton>
+            <PageActionButton icon={SlidersHorizontal} disabled>
+              Configure
+            </PageActionButton>
+            <PageActionButton icon={Plus} variant="primary" disabled>
+              New
+            </PageActionButton>
             <PageActionIconButton icon={SlidersHorizontal} title="Configure" disabled />
           </Row>
           <Row label="RefreshButton (split button — try the dropdown)">
@@ -225,7 +241,10 @@ export const TemplateDefaultPage = () => {
               {(['top', 'right', 'bottom', 'left'] as const).map((pos) => (
                 <div key={pos} className="flex items-center gap-1.5">
                   <span className="text-xs text-gray-400">{pos}</span>
-                  <TooltipHelp text={`Tooltip position: ${pos}. Prometheus scrape interval in seconds.`} position={pos} />
+                  <TooltipHelp
+                    text={`Tooltip position: ${pos}. Prometheus scrape interval in seconds.`}
+                    position={pos}
+                  />
                 </div>
               ))}
             </div>
@@ -233,13 +252,19 @@ export const TemplateDefaultPage = () => {
           <Row label="Variants dark / white / brand">
             <div className="flex items-center gap-6">
               <Tooltip content="Dark tooltip (default)" variant="dark">
-                <button className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300">Dark</button>
+                <button className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300">
+                  Dark
+                </button>
               </Tooltip>
               <Tooltip content="White tooltip with border" variant="white">
-                <button className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300">White</button>
+                <button className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300">
+                  White
+                </button>
               </Tooltip>
               <Tooltip content="Brand-colored tooltip" variant="brand">
-                <button className="bg-brand-500 rounded-lg px-3 py-1.5 text-xs font-medium text-white">Brand</button>
+                <button className="bg-brand-500 rounded-lg px-3 py-1.5 text-xs font-medium text-white">
+                  Brand
+                </button>
               </Tooltip>
             </div>
           </Row>
@@ -247,7 +272,10 @@ export const TemplateDefaultPage = () => {
       </SectionCard>
 
       {/* ── 3. UI Primitives ── */}
-      <SectionCard title="3 · UI Primitives" desc="ui/Spinner · ui/SectionLabel · ui/IconBox · ui/AlertBanner · ui/SelectInput">
+      <SectionCard
+        title="3 · UI Primitives"
+        desc="ui/Spinner · ui/SectionLabel · ui/IconBox · ui/AlertBanner · ui/SelectInput"
+      >
         <div className="space-y-4">
           <Row label="Spinner — sizes sm / md / lg / xl">
             <Spinner size="sm" />
@@ -264,15 +292,23 @@ export const TemplateDefaultPage = () => {
             <IconBox icon={Activity} size="lg" />
             <IconBox icon={Bell} bg="bg-brand-50 dark:bg-brand-500/10" color="text-brand-500" />
             <IconBox icon={Trash2} bg="bg-red-50 dark:bg-red-500/10" color="text-red-500" />
-            <IconBox icon={LayoutDashboard} bg="bg-green-50 dark:bg-green-500/10" color="text-green-500" />
+            <IconBox
+              icon={LayoutDashboard}
+              bg="bg-green-50 dark:bg-green-500/10"
+              color="text-green-500"
+            />
           </Row>
           <div className="space-y-2">
             <p className="text-xs text-gray-400 dark:text-gray-500">AlertBanner — all variants</p>
             <div className="space-y-2">
               <AlertBanner variant="success">Settings saved successfully.</AlertBanner>
               <AlertBanner variant="error">Failed to connect to Prometheus.</AlertBanner>
-              <AlertBanner variant="warning">Simulator is running with overrides active.</AlertBanner>
-              <AlertBanner variant="info">Changes will take effect on next scrape cycle.</AlertBanner>
+              <AlertBanner variant="warning">
+                Simulator is running with overrides active.
+              </AlertBanner>
+              <AlertBanner variant="info">
+                Changes will take effect on next scrape cycle.
+              </AlertBanner>
             </div>
           </div>
           <Row label="SelectInput">
@@ -308,7 +344,10 @@ export const TemplateDefaultPage = () => {
             <Dropdown
               value=""
               onChange={() => {}}
-              options={[{ value: 'all', label: 'All rooms' }, { value: 'dc1', label: 'DC1 / Room A' }]}
+              options={[
+                { value: 'all', label: 'All rooms' },
+                { value: 'dc1', label: 'DC1 / Room A' },
+              ]}
               placeholder="All rooms"
             />
           </Row>
@@ -316,7 +355,10 @@ export const TemplateDefaultPage = () => {
       </SectionCard>
 
       {/* ── 4. Forms ── */}
-      <SectionCard title="4 · Forms" desc="forms/SearchInput · forms/SegmentedControl · forms/FilterPills · forms/ToggleSwitch · forms/NumberInput · forms/StepperInput">
+      <SectionCard
+        title="4 · Forms"
+        desc="forms/SearchInput · forms/SegmentedControl · forms/FilterPills · forms/ToggleSwitch · forms/NumberInput · forms/StepperInput"
+      >
         <div className="space-y-4">
           <Row label="SearchInput">
             <SearchInput
@@ -360,21 +402,49 @@ export const TemplateDefaultPage = () => {
             />
           </Row>
           <Row label="ToggleSwitch — with label / without / disabled">
-            <ToggleSwitch checked={toggle1} onChange={() => setToggle1((v) => !v)} label="Enable feature" />
+            <ToggleSwitch
+              checked={toggle1}
+              onChange={() => setToggle1((v) => !v)}
+              label="Enable feature"
+            />
             <ToggleSwitch checked={toggle2} onChange={() => setToggle2((v) => !v)} />
             <ToggleSwitch checked={true} onChange={() => {}} disabled label="Disabled on" />
             <ToggleSwitch checked={false} onChange={() => {}} disabled label="Disabled off" />
           </Row>
           <Row label="StepperInput — ↑/↓ inside field (settings style)">
-            <StepperInput value={numVal} onChange={setNumVal} min={5} max={3600} step={5} unit="s" className="w-28" />
+            <StepperInput
+              value={numVal}
+              onChange={setNumVal}
+              min={5}
+              max={3600}
+              step={5}
+              unit="s"
+              className="w-28"
+            />
             <StepperInput value={numZoom} onChange={setNumZoom} min={1} max={18} className="w-20" />
-            <StepperInput value={numVal} onChange={setNumVal} min={0} max={100} step={10} unit="%" className="w-24" />
+            <StepperInput
+              value={numVal}
+              onChange={setNumVal}
+              min={0}
+              max={100}
+              step={10}
+              unit="%"
+              className="w-24"
+            />
             <StepperInput value={60} onChange={() => {}} disabled unit="s" className="w-28" />
           </Row>
           <Row label="NumberInput — − / + buttons outside, unit suffix">
             <NumberInput value={numVal} onChange={setNumVal} min={1} max={3600} step={1} unit="s" />
             <NumberInput value={numZoom} onChange={setNumZoom} min={1} max={18} step={1} />
-            <NumberInput value={numVal} onChange={setNumVal} min={0} max={100} step={5} unit="%" width="w-16" />
+            <NumberInput
+              value={numVal}
+              onChange={setNumVal}
+              min={0}
+              max={100}
+              step={5}
+              unit="%"
+              width="w-16"
+            />
             <NumberInput value={42} onChange={() => {}} disabled unit="ms" />
           </Row>
           <Row label="ZoomBar — inline zoom control for canvas/map views">
@@ -393,7 +463,12 @@ export const TemplateDefaultPage = () => {
       <SectionCard title="5 · Data" desc="data/KpiCard">
         <Row label="KpiCard — standalone + grid">
           <KpiCard label="Total Racks" value="48" sub="across 3 sites" />
-          <KpiCard label="CRIT Alerts" value="3" sub="2 escalated" className="border-red-200 dark:border-red-900/40" />
+          <KpiCard
+            label="CRIT Alerts"
+            value="3"
+            sub="2 escalated"
+            className="border-red-200 dark:border-red-900/40"
+          />
           <KpiCard label="Health Score" value="94%" />
           <KpiCard label="Nodes Online" value="1 204" sub="of 1 248 total" />
         </Row>
@@ -474,11 +549,16 @@ export const TemplateDefaultPage = () => {
       </SectionCard>
 
       {/* ── 6. Layout ── */}
-      <SectionCard title="6 · Layout" desc="layout/Tabs · layout/Drawer · layout/Modal · layout/DrawerHeader · layout/Backdrop">
+      <SectionCard
+        title="6 · Layout"
+        desc="layout/Tabs · layout/Drawer · layout/Modal · layout/DrawerHeader · layout/Backdrop"
+      >
         <div className="space-y-4">
           {/* Tabs */}
           <div className="space-y-1.5">
-            <p className="text-xs text-gray-400 dark:text-gray-500">Tabs — text / icon+text / with badge</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Tabs — text / icon+text / with badge
+            </p>
             <Tabs
               tabs={[
                 { id: 'overview', label: 'Overview' },
@@ -509,7 +589,10 @@ export const TemplateDefaultPage = () => {
       </SectionCard>
 
       {/* ── 7. Feedback ── */}
-      <SectionCard title="7 · Feedback" desc="feedback/LoadingState · feedback/EmptyState · feedback/ErrorState">
+      <SectionCard
+        title="7 · Feedback"
+        desc="feedback/LoadingState · feedback/EmptyState · feedback/ErrorState"
+      >
         <div className="grid grid-cols-3 gap-4">
           <div className="rounded-xl border border-gray-200 dark:border-gray-800">
             <LoadingState message="Loading racks…" />
@@ -522,10 +605,7 @@ export const TemplateDefaultPage = () => {
             />
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-gray-800">
-            <ErrorState
-              message="Failed to fetch data."
-              onRetry={() => {}}
-            />
+            <ErrorState message="Failed to fetch data." onRetry={() => {}} />
           </div>
         </div>
       </SectionCard>
@@ -537,7 +617,10 @@ export const TemplateDefaultPage = () => {
         message="You have unsaved changes. What would you like to do?"
         onStay={() => setConfirmOpen(false)}
         onDiscard={() => setConfirmOpen(false)}
-        onSave={() => { simulateSave(); setConfirmOpen(false); }}
+        onSave={() => {
+          simulateSave();
+          setConfirmOpen(false);
+        }}
         saving={saveState === 'saving'}
       />
 
@@ -549,11 +632,19 @@ export const TemplateDefaultPage = () => {
           description="This is the standard drawer"
           onClose={() => setDrawerOpen(false)}
         />
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="flex-1 space-y-4 overflow-y-auto p-5">
           <SectionLabel>Section A</SectionLabel>
           <div className="space-y-2">
-            <ToggleSwitch checked={toggle1} onChange={() => setToggle1((v) => !v)} label="Option 1" />
-            <ToggleSwitch checked={toggle2} onChange={() => setToggle2((v) => !v)} label="Option 2" />
+            <ToggleSwitch
+              checked={toggle1}
+              onChange={() => setToggle1((v) => !v)}
+              label="Option 1"
+            />
+            <ToggleSwitch
+              checked={toggle2}
+              onChange={() => setToggle2((v) => !v)}
+              label="Option 2"
+            />
           </div>
           <SectionLabel>Section B</SectionLabel>
           <SelectInput
@@ -579,10 +670,14 @@ export const TemplateDefaultPage = () => {
       {/* ── Modal ── */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} maxWidth={480}>
         <ModalHeader title="Modal Example" onClose={() => setModalOpen(false)} />
-        <div className="p-6 space-y-4">
+        <div className="space-y-4 p-6">
           <AlertBanner variant="warning">This action cannot be undone.</AlertBanner>
           <SearchInput value={search} onChange={setSearch} placeholder="Search…" />
-          <ToggleSwitch checked={toggle1} onChange={() => setToggle1((v) => !v)} label="Enable option" />
+          <ToggleSwitch
+            checked={toggle1}
+            onChange={() => setToggle1((v) => !v)}
+            label="Enable option"
+          />
         </div>
         <ModalFooter>
           <PageActionButton onClick={() => setModalOpen(false)}>Cancel</PageActionButton>
