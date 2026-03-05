@@ -4,19 +4,20 @@
 
 update_interval_seconds: 20
 seed: null
-scenario: demo-stable
-scale_factor: 1
+scenario: null
 
-incident_rates:
-  node_micro_failure: 0.001    # ~1 in 1000 ticks → ~1 event every 5.5h
-  rack_macro_failure: 0.01     # ~1 in 100 ticks  → ~1 event every 33min
-  aisle_cooling_failure: 0.005 # ~1 in 200 ticks  → ~1 event every 67min
+# Incident mode: full_ok | light | medium | heavy | chaos | custom
+incident_mode: light
 
-# Durations in SECONDS (not ticks).
-# At default update_interval=20s: rack=5min, aisle=10min
-incident_durations:
-  rack: 300     # 5 minutes — realistic PDU reset / power restore time
-  aisle: 600    # 10 minutes — cooling unit restart + temperature stabilization
+# How often (per hour) incidents are reshuffled. Ignored in full_ok mode.
+changes_per_hour: 2
+
+# Custom incident counts — only used when incident_mode: custom
+custom_incidents:
+  devices_crit: 0
+  devices_warn: 0
+  racks_crit: 0
+  aisles_hot: 0
 
 # Paths relative to the project root
 overrides_path: config/plugins/simulator/overrides/overrides.yaml
@@ -27,7 +28,6 @@ default_ttl_seconds: 120
 metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
 
 # Additional catalogs merged on top of the primary (later = higher priority)
-# Example: add metrics_slurm.yaml when Slurm integration is active
 metrics_catalogs:
   - id: slurm
     path: config/plugins/simulator/metrics/metrics_slurm.yaml

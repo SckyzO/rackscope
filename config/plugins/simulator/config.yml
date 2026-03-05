@@ -3,15 +3,14 @@
 
 update_interval_seconds: 20
 seed: null
-scenario: demo-stable
-scale_factor: 1.0
-incident_rates:
-  node_micro_failure: 0.001
-  rack_macro_failure: 0.01
-  aisle_cooling_failure: 0.005
-incident_durations:
-  rack: 300
-  aisle: 600
+scenario: null
+incident_mode: light
+changes_per_hour: 2
+custom_incidents:
+  devices_crit: 0
+  devices_warn: 0
+  racks_crit: 0
+  aisles_hot: 0
 overrides_path: config/plugins/simulator/overrides/overrides.yaml
 default_ttl_seconds: 120
 metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml

@@ -1,21 +1,16 @@
-# Rackscope Simulator Configuration
+# Rackscope Simulator — Scenarios
+# Each scenario is applied on top of the base config (plugin.yaml).
+# Only the keys listed below are merged by apply_scenario():
+#   incident_mode, changes_per_hour, seed, update_interval_seconds, profiles
 
-# Simulation timing
-update_interval: 20
+# Base simulation timing
+update_interval_seconds: 20
 
-# Probability of incidents (0.0 to 1.0)
-incident_rates:
-  node_micro_failure: 0.001   # Random single node failure
-  rack_macro_failure: 0.01    # Power issue on a whole rack
-  aisle_cooling_failure: 0.005 # Cooling issue on a whole aisle
+# Default incident mode (overridden per scenario)
+incident_mode: light
+changes_per_hour: 2
 
-# Duration of incidents in SECONDS (not ticks).
-# At update_interval=20s: rack=300s=5min, aisle=600s=10min
-incident_durations:
-  rack: 300     # 5 minutes — realistic PDU reset / power restore time
-  aisle: 600    # 10 minutes — cooling unit restart + temperature stabilization
-
-# Behavioral Profiles
+# Behavioural profiles (temp, power, load per node type)
 profiles:
   compute:
     base_temp: 24.0
@@ -31,7 +26,7 @@ profiles:
     power_var: 500.0
     load_min: 5.0
     load_max: 100.0
-  service: # login, mngt
+  service:
     base_temp: 21.0
     temp_range: 3.0
     base_power: 100.0
@@ -46,16 +41,12 @@ profiles:
     load_min: 15.0
     load_max: 15.0
 
-# Scenarios (optional overrides)
+# Scenarios (override incident_mode and other keys)
 scenarios:
   full-ok:
     description: "No incidents. Low temps and load for a fully green demo."
+    incident_mode: full_ok
     seed: 1
-    scale_factor: 0.0
-    incident_rates:
-      node_micro_failure: 0.0
-      rack_macro_failure: 0.0
-      aisle_cooling_failure: 0.0
     profiles:
       compute:
         base_temp: 20.0
@@ -85,45 +76,26 @@ scenarios:
         power_var: 20.0
         load_min: 5.0
         load_max: 15.0
-  random-1-critical:
-    description: "Occasional single critical node incident."
-    seed: 11
-    scale_factor: 0.05
-    incident_rates:
-      node_micro_failure: 0.01
-      rack_macro_failure: 0.0
-      aisle_cooling_failure: 0.0
-  random-1-rack-down:
-    description: "Occasional rack down incident (affects all nodes in a rack)."
-    seed: 12
-    scale_factor: 0.1
-    incident_rates:
-      node_micro_failure: 0.0
-      rack_macro_failure: 0.02
-      aisle_cooling_failure: 0.0
-    incident_durations:
-      rack: 300   # 5 minutes
-  random-demo-small:
-    description: "Mostly OK, rare warning/critical incidents."
+  light:
+    description: "Mostly OK with a few random warning/critical incidents."
+    incident_mode: light
+    changes_per_hour: 2
     seed: 42
-    scale_factor: 1.0
-    incident_rates:
-      node_micro_failure: 0.001
-      rack_macro_failure: 0.0
-      aisle_cooling_failure: 0.004
-  random-demo-high:
-    description: "High churn demo with frequent warning/critical incidents."
+  medium:
+    description: "Moderate failures — a few critical nodes and one rack down."
+    incident_mode: medium
+    changes_per_hour: 4
     seed: 99
-    scale_factor: 1.0
-    incident_rates:
-      node_micro_failure: 0.10
-      rack_macro_failure: 0.05
-      aisle_cooling_failure: 0.20
-  demo-stable:
-    description: "Stable baseline with few incidents."
-    update_interval_seconds: 20
+  heavy:
+    description: "Many failures — several critical nodes, two racks, one hot aisle."
+    incident_mode: heavy
+    changes_per_hour: 4
     seed: 7
-    scale_factor: 0.5
+  chaos:
+    description: "~15% critical, ~25% warning. High churn."
+    incident_mode: chaos
+    changes_per_hour: 3
+    seed: null
 
 # Slurm wallboard helpers (optional)
 # Forces a few random nodes into specific Slurm statuses every tick.
