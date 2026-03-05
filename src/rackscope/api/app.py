@@ -36,8 +36,7 @@ from rackscope.model.loader import (
 from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
 from rackscope.plugins.registry import registry as plugin_registry
-from plugins.simulator.backend import SimulatorPlugin
-from plugins.slurm.backend import SlurmPlugin
+# Plugin imports are deferred — see _plugin_enabled() in lifespan()
 from rackscope.api.routers import (
     config,
     catalog,
@@ -189,20 +188,34 @@ async def lifespan(app: FastAPI):
 
     PROMETHEUS_HEARTBEAT = asyncio.create_task(_heartbeat())
 
-    # Register plugins
-    try:
-        simulator_plugin = SimulatorPlugin()
-        plugin_registry.register(simulator_plugin)
-        logger.info("Registered Simulator plugin")
-    except Exception as e:
-        logger.error(f"Failed to register Simulator plugin: {e}", exc_info=True)
+    # Register plugins — conditional on plugins.<id>.enabled in app.yaml.
+    # Only load a plugin if it is explicitly enabled; this keeps production
+    # deployments lean and prevents unused routes from being mounted.
+    def _plugin_enabled(plugin_id: str) -> bool:
+        if not APP_CONFIG or not APP_CONFIG.plugins:
+            return False
+        cfg = APP_CONFIG.plugins.get(plugin_id, {})
+        return bool(cfg.get("enabled", False)) if isinstance(cfg, dict) else False
 
-    try:
-        slurm_plugin = SlurmPlugin()
-        plugin_registry.register(slurm_plugin)
-        logger.info("Registered Slurm plugin")
-    except Exception as e:
-        logger.error(f"Failed to register Slurm plugin: {e}", exc_info=True)
+    if _plugin_enabled("simulator"):
+        try:
+            from plugins.simulator.backend import SimulatorPlugin
+            plugin_registry.register(SimulatorPlugin())
+            logger.info("Registered Simulator plugin")
+        except Exception as e:
+            logger.error(f"Failed to register Simulator plugin: {e}", exc_info=True)
+    else:
+        logger.info("Simulator plugin disabled — skipping registration")
+
+    if _plugin_enabled("slurm"):
+        try:
+            from plugins.slurm.backend import SlurmPlugin
+            plugin_registry.register(SlurmPlugin())
+            logger.info("Registered Slurm plugin")
+        except Exception as e:
+            logger.error(f"Failed to register Slurm plugin: {e}", exc_info=True)
+    else:
+        logger.info("Slurm plugin disabled — skipping registration")
 
     # Initialize plugin system
     try:
