@@ -5,8 +5,6 @@ Tests cover: extract_base_metric_name, normalize_metric_defs,
 get_fallback_supported_metrics.
 """
 
-import pytest
-
 from plugins.simulator.process.metrics import (
     extract_base_metric_name,
     get_fallback_supported_metrics,

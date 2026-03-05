@@ -4,10 +4,6 @@ Unit tests for plugins.simulator.process.config module.
 Tests cover: load_simulator_config, apply_scenario.
 """
 
-import tempfile
-from pathlib import Path
-
-import pytest
 import yaml
 
 from plugins.simulator.process.config import apply_scenario, load_simulator_config
@@ -70,9 +66,7 @@ class TestApplyScenario:
         cfg = {
             "scenario": "fast",
             "update_interval_seconds": 30,
-            "scenarios": {
-                "fast": {"update_interval_seconds": 5}
-            },
+            "scenarios": {"fast": {"update_interval_seconds": 5}},
         }
         result = apply_scenario(cfg)
         assert result["update_interval_seconds"] == 5
@@ -80,11 +74,7 @@ class TestApplyScenario:
     def test_scenario_sets_incident_rates(self):
         cfg = {
             "scenario": "failures",
-            "scenarios": {
-                "failures": {
-                    "incident_rates": {"node_micro_failure": 0.5}
-                }
-            },
+            "scenarios": {"failures": {"incident_rates": {"node_micro_failure": 0.5}}},
         }
         result = apply_scenario(cfg)
         assert result["incident_rates"]["node_micro_failure"] == 0.5

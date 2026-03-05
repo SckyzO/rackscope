@@ -1,5 +1,5 @@
 # Backend Dockerfile
-FROM python:3.12-slim
+FROM python:3.12.13-slim-bookworm
 
 WORKDIR /app
 
@@ -14,16 +14,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project definition
+# Copy project definition and all package sources first so that
+# the editable install can register both rackscope and plugins packages.
 COPY pyproject.toml .
-
-# Install dependencies
-# We install '.[dev]' to include testing tools inside the container
-RUN pip install --no-cache-dir -e '.[dev]'
-
-# Copy source code
 COPY src/ src/
 COPY plugins/ plugins/
+
+# Install dependencies (editable, with dev tools).
+# plugins/ must exist before this step so setuptools discovers the package.
+RUN pip install --no-cache-dir -e '.[dev]'
+
+# Copy config last (changes most often — keeps pip install layer cached)
 COPY config/ config/
 
 # Environment variables

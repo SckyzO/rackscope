@@ -5,8 +5,6 @@ Tests cover: _apply_failures, _apply_overrides, and the helper sub-functions
 of simulate() that can be tested in isolation.
 """
 
-import time
-
 from plugins.simulator.process.loop import _apply_failures, _apply_overrides
 
 

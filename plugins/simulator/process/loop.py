@@ -18,7 +18,6 @@ from pathlib import Path
 import plugins.simulator.process.metrics as _m
 from plugins.simulator.process.config import apply_scenario, load_simulator_config
 from plugins.simulator.process.metrics import (
-    BASE_LABELS,
     SLURM_STATUS_LEVELS,
     build_metric_registry,
     get_fallback_supported_metrics,
@@ -159,9 +158,7 @@ def _generate_node_metrics(
         load = load_min + ((math.sin(tick / 10.0) + 1) / 2.0 * (load_max - load_min))
     elif prof_name == "gpu":
         load = (
-            random.uniform(load_min, load_max)
-            if random.random() > 0.7
-            else random.uniform(5, 15)
+            random.uniform(load_min, load_max) if random.random() > 0.7 else random.uniform(5, 15)
         )
     else:
         load = random.uniform(load_min, load_max)
@@ -340,9 +337,7 @@ def simulate():
     slurm_random_statuses = (
         sim_cfg.get("slurm_random_statuses", {}) if isinstance(sim_cfg, dict) else {}
     )
-    slurm_random_match = (
-        sim_cfg.get("slurm_random_match", []) if isinstance(sim_cfg, dict) else []
-    )
+    slurm_random_match = sim_cfg.get("slurm_random_match", []) if isinstance(sim_cfg, dict) else []
     overrides_path = sim_cfg.get(
         "overrides_path", "/app/config/plugins/simulator/overrides/overrides.yaml"
     )
@@ -485,8 +480,7 @@ def simulate():
                 active_incidents["aisles"][aisle] = tick
             elif (
                 aisle in active_incidents["aisles"]
-                and (tick - active_incidents["aisles"][aisle]) * update_interval
-                >= aisle_duration_s
+                and (tick - active_incidents["aisles"][aisle]) * update_interval >= aisle_duration_s
             ):
                 print(f"--- Incident resolved: Aisle {aisle} cooling restored")
                 del active_incidents["aisles"][aisle]
@@ -507,7 +501,6 @@ def simulate():
         for target in targets:
             base_labels = build_base_labels(target)
             nid = target["node_id"].lower()
-            aid = target["aisle_id"]
             rid = target["rack_id"]
             is_storage = target.get("device_type") == "storage"
 
@@ -516,7 +509,9 @@ def simulate():
             if is_storage:
                 slot_count = target.get("slot_count", 60)
 
-                if metric_enabled("eseries_storage_system_status", "node", node_id=target["node_id"]):
+                if metric_enabled(
+                    "eseries_storage_system_status", "node", node_id=target["node_id"]
+                ):
                     controller_status = (
                         0 if random.random() > 0.02 else (1 if random.random() > 0.5 else 2)
                     )
@@ -608,17 +603,23 @@ def simulate():
             # Node Exporter: Memory
             if metric_enabled(
                 "node_memory_MemTotal_bytes", "node", node_id=target["node_id"]
-            ) or metric_enabled("node_memory_MemAvailable_bytes", "node", node_id=target["node_id"]):
-                mem_total_gb = (
-                    512 if prof_name == "gpu" else 256 if prof_name == "compute" else 64
-                )
+            ) or metric_enabled(
+                "node_memory_MemAvailable_bytes", "node", node_id=target["node_id"]
+            ):
+                mem_total_gb = 512 if prof_name == "gpu" else 256 if prof_name == "compute" else 64
                 mem_total_bytes = mem_total_gb * 1024 * 1024 * 1024
                 mem_used_percent = final_load * 0.8
                 mem_available_bytes = mem_total_bytes * (1.0 - mem_used_percent / 100.0)
                 if metric_enabled("node_memory_MemTotal_bytes", "node", node_id=target["node_id"]):
-                    set_metric_value("node_memory_MemTotal_bytes", base_labels, int(mem_total_bytes), {})
-                if metric_enabled("node_memory_MemAvailable_bytes", "node", node_id=target["node_id"]):
-                    set_metric_value("node_memory_MemAvailable_bytes", base_labels, int(mem_available_bytes), {})
+                    set_metric_value(
+                        "node_memory_MemTotal_bytes", base_labels, int(mem_total_bytes), {}
+                    )
+                if metric_enabled(
+                    "node_memory_MemAvailable_bytes", "node", node_id=target["node_id"]
+                ):
+                    set_metric_value(
+                        "node_memory_MemAvailable_bytes", base_labels, int(mem_available_bytes), {}
+                    )
 
             # Node Exporter: Filesystem
             if metric_enabled(
@@ -630,12 +631,16 @@ def simulate():
                 fs_avail_bytes = fs_size_bytes * (1.0 - fs_used_percent / 100.0)
                 if metric_enabled("node_filesystem_size_bytes", "node", node_id=target["node_id"]):
                     set_metric_value(
-                        "node_filesystem_size_bytes", base_labels, int(fs_size_bytes),
+                        "node_filesystem_size_bytes",
+                        base_labels,
+                        int(fs_size_bytes),
                         {"mountpoint": "/", "fstype": "ext4"},
                     )
                 if metric_enabled("node_filesystem_avail_bytes", "node", node_id=target["node_id"]):
                     set_metric_value(
-                        "node_filesystem_avail_bytes", base_labels, int(fs_avail_bytes),
+                        "node_filesystem_avail_bytes",
+                        base_labels,
+                        int(fs_avail_bytes),
                         {"mountpoint": "/", "fstype": "ext4"},
                     )
 
@@ -653,14 +658,25 @@ def simulate():
                 node_disk_read_bytes[disk_key] = new_read
                 node_disk_written_bytes[disk_key] = new_write
                 if metric_enabled("node_disk_read_bytes_total", "node", node_id=target["node_id"]):
-                    set_metric_value("node_disk_read_bytes_total", base_labels, int(new_read), {"device": "sda"})
-                if metric_enabled("node_disk_written_bytes_total", "node", node_id=target["node_id"]):
-                    set_metric_value("node_disk_written_bytes_total", base_labels, int(new_write), {"device": "sda"})
+                    set_metric_value(
+                        "node_disk_read_bytes_total", base_labels, int(new_read), {"device": "sda"}
+                    )
+                if metric_enabled(
+                    "node_disk_written_bytes_total", "node", node_id=target["node_id"]
+                ):
+                    set_metric_value(
+                        "node_disk_written_bytes_total",
+                        base_labels,
+                        int(new_write),
+                        {"device": "sda"},
+                    )
 
             # Node Exporter: Network counters
             if metric_enabled(
                 "node_network_receive_bytes_total", "node", node_id=target["node_id"]
-            ) or metric_enabled("node_network_transmit_bytes_total", "node", node_id=target["node_id"]):
+            ) or metric_enabled(
+                "node_network_transmit_bytes_total", "node", node_id=target["node_id"]
+            ):
                 net_key = nid
                 if prof_name == "network":
                     rx_rate_mb = 500 + random.uniform(-50, 50)
@@ -674,10 +690,24 @@ def simulate():
                 new_tx = prev_tx + tx_rate_mb * 1024 * 1024 * update_interval
                 node_network_rx_bytes[net_key] = new_rx
                 node_network_tx_bytes[net_key] = new_tx
-                if metric_enabled("node_network_receive_bytes_total", "node", node_id=target["node_id"]):
-                    set_metric_value("node_network_receive_bytes_total", base_labels, int(new_rx), {"device": "eth0"})
-                if metric_enabled("node_network_transmit_bytes_total", "node", node_id=target["node_id"]):
-                    set_metric_value("node_network_transmit_bytes_total", base_labels, int(new_tx), {"device": "eth0"})
+                if metric_enabled(
+                    "node_network_receive_bytes_total", "node", node_id=target["node_id"]
+                ):
+                    set_metric_value(
+                        "node_network_receive_bytes_total",
+                        base_labels,
+                        int(new_rx),
+                        {"device": "eth0"},
+                    )
+                if metric_enabled(
+                    "node_network_transmit_bytes_total", "node", node_id=target["node_id"]
+                ):
+                    set_metric_value(
+                        "node_network_transmit_bytes_total",
+                        base_labels,
+                        int(new_tx),
+                        {"device": "eth0"},
+                    )
 
             # Switch port metrics
             if prof_name == "network":
@@ -690,21 +720,46 @@ def simulate():
                     for port_idx in range(1, min(num_ports + 1, 9)):
                         port_key = f"{nid}-port{port_idx}"
                         port_status = 1 if not is_down and random.random() > 0.05 else 2
-                        if metric_enabled("switch_port_oper_status", "node", node_id=target["node_id"]):
-                            set_metric_value("switch_port_oper_status", base_labels, port_status, {"port": str(port_idx)})
+                        if metric_enabled(
+                            "switch_port_oper_status", "node", node_id=target["node_id"]
+                        ):
+                            set_metric_value(
+                                "switch_port_oper_status",
+                                base_labels,
+                                port_status,
+                                {"port": str(port_idx)},
+                            )
                         if port_status == 1:
                             port_rx_bytes = random.uniform(10, 200) * 1024 * 1024 * update_interval
                             port_tx_bytes = random.uniform(10, 200) * 1024 * 1024 * update_interval
-                            prev_port_rx = switch_port_rx_bytes.get(port_key, random.uniform(1e10, 1e11))
-                            prev_port_tx = switch_port_tx_bytes.get(port_key, random.uniform(1e10, 1e11))
+                            prev_port_rx = switch_port_rx_bytes.get(
+                                port_key, random.uniform(1e10, 1e11)
+                            )
+                            prev_port_tx = switch_port_tx_bytes.get(
+                                port_key, random.uniform(1e10, 1e11)
+                            )
                             new_port_rx = prev_port_rx + port_rx_bytes
                             new_port_tx = prev_port_tx + port_tx_bytes
                             switch_port_rx_bytes[port_key] = new_port_rx
                             switch_port_tx_bytes[port_key] = new_port_tx
-                            if metric_enabled("switch_port_in_octets", "node", node_id=target["node_id"]):
-                                set_metric_value("switch_port_in_octets", base_labels, int(new_port_rx), {"port": str(port_idx)})
-                            if metric_enabled("switch_port_out_octets", "node", node_id=target["node_id"]):
-                                set_metric_value("switch_port_out_octets", base_labels, int(new_port_tx), {"port": str(port_idx)})
+                            if metric_enabled(
+                                "switch_port_in_octets", "node", node_id=target["node_id"]
+                            ):
+                                set_metric_value(
+                                    "switch_port_in_octets",
+                                    base_labels,
+                                    int(new_port_rx),
+                                    {"port": str(port_idx)},
+                                )
+                            if metric_enabled(
+                                "switch_port_out_octets", "node", node_id=target["node_id"]
+                            ):
+                                set_metric_value(
+                                    "switch_port_out_octets",
+                                    base_labels,
+                                    int(new_port_tx),
+                                    {"port": str(port_idx)},
+                                )
 
             # Slurm node metrics
             slurm_status = forced_slurm_status.get(target["node_id"], "idle")
@@ -743,7 +798,11 @@ def simulate():
                             "slurm_node_status",
                             base_labels,
                             1 if status_name == slurm_status else 0,
-                            {"status": status_name, "partition": partition, "node_id": target["node_id"]},
+                            {
+                                "status": status_name,
+                                "partition": partition,
+                                "node_id": target["node_id"],
+                            },
                         )
                     for mname, val in [
                         ("slurm_node_cpu_alloc", node_cpu_alloc),
@@ -787,7 +846,8 @@ def simulate():
                     _slurm_agg["gpu_alloc"] += 4
             for part in partitions:
                 p = _slurm_agg["partitions"].setdefault(
-                    part, {"cpu_alloc": 0, "cpu_idle": 0, "cpu_total": 0, "jobs_run": 0, "jobs_pend": 0}
+                    part,
+                    {"cpu_alloc": 0, "cpu_idle": 0, "cpu_total": 0, "jobs_run": 0, "jobs_pend": 0},
                 )
                 p["cpu_total"] += node_cpu_total
                 p["cpu_alloc"] += node_cpu_alloc
@@ -812,11 +872,14 @@ def simulate():
             warn_value = 1 if status in (1, 2) else 0
             crit_value = 1 if status == 2 else 0
             if metric_enabled("eseries_exporter_collect_error", "node", node_id=target["node_id"]):
-                set_metric_value("eseries_exporter_collect_error", base_labels, warn_value, {"collector": "all"})
+                set_metric_value(
+                    "eseries_exporter_collect_error", base_labels, warn_value, {"collector": "all"}
+                )
             if metric_enabled("eseries_storage_system_status", "node", node_id=target["node_id"]):
                 for _es_label in ["optimal", "failed"]:
                     set_metric_value(
-                        "eseries_storage_system_status", base_labels,
+                        "eseries_storage_system_status",
+                        base_labels,
                         crit_value if _es_label == "failed" else 0,
                         {"status": _es_label},
                     )
@@ -849,7 +912,9 @@ def simulate():
 
             gpu_total = _ag.get("gpu_total", 0)
             if gpu_total > 0 and metric_enabled("slurm_gpus_utilization", "rack"):
-                set_metric_value("slurm_gpus_utilization", empty_labels, _ag.get("gpu_alloc", 0) / gpu_total, {})
+                set_metric_value(
+                    "slurm_gpus_utilization", empty_labels, _ag.get("gpu_alloc", 0) / gpu_total, {}
+                )
 
             for part, pdata in _ag.get("partitions", {}).items():
                 for mname, val in [
@@ -857,17 +922,25 @@ def simulate():
                     ("slurm_partition_cpus_idle", pdata.get("cpu_idle", 0)),
                     ("slurm_partition_cpus_total", pdata.get("cpu_total", 0)),
                     ("slurm_partition_jobs_running", pdata.get("jobs_run", 0)),
-                    ("slurm_partition_jobs_pending", max(0, int(pdata.get("jobs_run", 0) * random.uniform(0.1, 0.4)))),
+                    (
+                        "slurm_partition_jobs_pending",
+                        max(0, int(pdata.get("jobs_run", 0) * random.uniform(0.1, 0.4))),
+                    ),
                 ]:
                     if metric_enabled(mname, "rack"):
                         set_metric_value(mname, empty_labels, val, {"partition": part})
 
         # ── Per-rack cooling metrics (Sequana3) ──────────────────────────
         for rack_id, info in rack_info.items():
-            if not any(metric_enabled(m, "rack", rack_id=rack_id) for m in [
-                "sequana3_hyc_p_in_kpa", "sequana3_hyc_state_info",
-                "sequana3_hyc_leak_sensor_pump", "sequana3_hyc_tmp_pcb_cel",
-            ]):
+            if not any(
+                metric_enabled(m, "rack", rack_id=rack_id)
+                for m in [
+                    "sequana3_hyc_p_in_kpa",
+                    "sequana3_hyc_state_info",
+                    "sequana3_hyc_leak_sensor_pump",
+                    "sequana3_hyc_tmp_pcb_cel",
+                ]
+            ):
                 continue
 
             rack_data = _generate_rack_metrics(
@@ -890,11 +963,17 @@ def simulate():
 
         # ── Per-rack PDU metrics (Raritan) ───────────────────────────────
         for rack_id, info in rack_info.items():
-            if not any(metric_enabled(m, "rack", rack_id=rack_id) for m in [
-                "raritan_pdu_activepower_watt", "raritan_pdu_activeenergy_watthour_total",
-                "raritan_pdu_apparentpower_voltampere", "raritan_pdu_current_ampere",
-                "raritan_pdu_inletrating", "raritan_pdu_voltage_volt",
-            ]):
+            if not any(
+                metric_enabled(m, "rack", rack_id=rack_id)
+                for m in [
+                    "raritan_pdu_activepower_watt",
+                    "raritan_pdu_activeenergy_watthour_total",
+                    "raritan_pdu_apparentpower_voltampere",
+                    "raritan_pdu_current_ampere",
+                    "raritan_pdu_inletrating",
+                    "raritan_pdu_voltage_volt",
+                ]
+            ):
                 continue
 
             rack_overrides = overrides_by_rack.get(rack_id, [])
@@ -910,7 +989,12 @@ def simulate():
             for idx in range(1, 3):
                 pduid = str(idx)
                 pduname = f"pdu{idx}-{rack_id}"
-                inlet_ctx = {"pduid": pduid, "pduname": pduname, "inletid": "I1", "inletname": "inlet-A"}
+                inlet_ctx = {
+                    "pduid": pduid,
+                    "pduname": pduname,
+                    "inletid": "I1",
+                    "inletname": "inlet-A",
+                }
 
                 power_watt = random.uniform(1500, 4200)
                 apparent_va = power_watt * random.uniform(1.02, 1.08)
@@ -944,18 +1028,39 @@ def simulate():
 
                 if metric_enabled("raritan_pdu_voltage_volt", "rack", rack_id=rack_id):
                     voltage = 230.0 + random.uniform(-2.0, 2.0)
-                    set_metric_value("raritan_pdu_voltage_volt", base_labels, round(voltage, 1), inlet_ctx)
+                    set_metric_value(
+                        "raritan_pdu_voltage_volt", base_labels, round(voltage, 1), inlet_ctx
+                    )
 
                 for outlet_id in range(1, 4):
-                    outlet_ctx = {"pduid": pduid, "pduname": pduname, "outletid": str(outlet_id), "outletname": f"outlet-{outlet_id}"}
+                    outlet_ctx = {
+                        "pduid": pduid,
+                        "pduname": pduname,
+                        "outletid": str(outlet_id),
+                        "outletname": f"outlet-{outlet_id}",
+                    }
                     outlet_power = power_watt * random.uniform(0.05, 0.25)
                     outlet_energy_key = (rack_id, pduid, f"outlet-{outlet_id}")
-                    outlet_prev = pdu_energy_state.get(outlet_energy_key, random.uniform(50000, 200000))
+                    outlet_prev = pdu_energy_state.get(
+                        outlet_energy_key, random.uniform(50000, 200000)
+                    )
                     outlet_energy = outlet_prev + (outlet_power * (update_interval / 3600.0))
                     pdu_energy_state[outlet_energy_key] = outlet_energy
                     if metric_enabled("raritan_pdu_activepower_watt", "rack", rack_id=rack_id):
-                        set_metric_value("raritan_pdu_activepower_watt", base_labels, round(outlet_power, 1), outlet_ctx)
-                    if metric_enabled("raritan_pdu_activeenergy_watthour_total", "rack", rack_id=rack_id):
-                        set_metric_value("raritan_pdu_activeenergy_watthour_total", base_labels, round(outlet_energy, 1), outlet_ctx)
+                        set_metric_value(
+                            "raritan_pdu_activepower_watt",
+                            base_labels,
+                            round(outlet_power, 1),
+                            outlet_ctx,
+                        )
+                    if metric_enabled(
+                        "raritan_pdu_activeenergy_watthour_total", "rack", rack_id=rack_id
+                    ):
+                        set_metric_value(
+                            "raritan_pdu_activeenergy_watthour_total",
+                            base_labels,
+                            round(outlet_energy, 1),
+                            outlet_ctx,
+                        )
 
         time.sleep(update_interval)

@@ -7,7 +7,6 @@ patterns (e.g. compute[001-004]) into concrete instance lists.
 import fnmatch
 import os
 import re
-from pathlib import Path
 
 from plugins.simulator.process.config import load_yaml
 
@@ -130,9 +129,7 @@ def load_topology_data(path):
                     aisle_data = load_yaml(aisle_path) or {}
                     racks_out = []
                     for rack_ref in aisle_data.get("racks", []):
-                        rack_id = (
-                            rack_ref.get("id") if isinstance(rack_ref, dict) else rack_ref
-                        )
+                        rack_id = rack_ref.get("id") if isinstance(rack_ref, dict) else rack_ref
                         rack_path = os.path.join(
                             path,
                             "datacenters",
@@ -151,9 +148,7 @@ def load_topology_data(path):
                     )
                 standalone_out = []
                 for rack_ref in room_data.get("standalone_racks", []):
-                    rack_id = (
-                        rack_ref.get("id") if isinstance(rack_ref, dict) else rack_ref
-                    )
+                    rack_id = rack_ref.get("id") if isinstance(rack_ref, dict) else rack_ref
                     rack_path = os.path.join(
                         path,
                         "datacenters",
@@ -173,9 +168,7 @@ def load_topology_data(path):
                         "standalone_racks": standalone_out,
                     }
                 )
-            sites_out.append(
-                {"id": site_id, "name": site.get("name", site_id), "rooms": rooms_out}
-            )
+            sites_out.append({"id": site_id, "name": site.get("name", site_id), "rooms": rooms_out})
         return {"sites": sites_out}
     return load_yaml(path)
 
@@ -214,9 +207,7 @@ def load_topology_nodes(topo_data, device_templates=None):
                         matrix = disk_layout.get("matrix", [[]])
                         slot_count = sum(len(row) for row in matrix)
                         storage_type = template.get("storage_type", "generic")
-                        instance_name = (
-                            list(nodes_map.values())[0] if nodes_map else device["id"]
-                        )
+                        instance_name = list(nodes_map.values())[0] if nodes_map else device["id"]
                         targets.append(
                             {
                                 "site_id": site["id"],

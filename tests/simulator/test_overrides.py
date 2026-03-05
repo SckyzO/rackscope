@@ -23,11 +23,7 @@ class TestLoadOverrides:
 
     def test_valid_overrides_loaded(self, tmp_path):
         f = tmp_path / "overrides.yaml"
-        data = {
-            "overrides": [
-                {"instance": "compute001", "metric": "up", "value": 0}
-            ]
-        }
+        data = {"overrides": [{"instance": "compute001", "metric": "up", "value": 0}]}
         f.write_text(yaml.dump(data))
         result = load_overrides(str(f))
         assert len(result) == 1

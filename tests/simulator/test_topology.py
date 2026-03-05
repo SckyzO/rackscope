@@ -4,10 +4,6 @@ Unit tests for plugins.simulator.process.topology module.
 Tests cover: parse_nodeset, _expand_patterns, load_device_templates.
 """
 
-import os
-import tempfile
-
-import pytest
 import yaml
 
 from plugins.simulator.process.topology import (
