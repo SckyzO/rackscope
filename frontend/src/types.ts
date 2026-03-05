@@ -454,11 +454,6 @@ export interface AppConfig {
   };
 }
 
-export interface SimulatorScenario {
-  name: string;
-  description?: string | null;
-}
-
 export interface SimulatorOverride {
   id: string;
   instance?: string | null;

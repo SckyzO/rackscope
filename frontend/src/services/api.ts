@@ -28,7 +28,6 @@ import type {
   Rack,
   DeviceContext,
   AppConfig,
-  SimulatorScenario,
   ChecksLibrary,
   GlobalStats,
   PrometheusStats,
@@ -690,7 +689,8 @@ export const api = {
     running: boolean;
     endpoint: string;
     update_interval: number;
-    scenario: string | null;
+    incident_mode: string | null;
+    changes_per_hour: number | null;
     overrides_count: number;
   }> => {
     // Not cached — used to detect live running state (e.g. to grey out settings).
@@ -698,9 +698,6 @@ export const api = {
   },
   getSimulatorOverrides: async (): Promise<{ overrides: SimulatorOverride[] }> => {
     return fetchWithCache('/api/simulator/overrides', 'simulator.overrides');
-  },
-  getSimulatorScenarios: async (): Promise<{ scenarios: SimulatorScenario[] }> => {
-    return fetchWithCache('/api/simulator/scenarios', 'simulator.scenarios');
   },
   addSimulatorOverride: async (payload: {
     instance?: string;

@@ -83,7 +83,6 @@ export type ConfigDraft = {
       enabled: boolean;
       update_interval_seconds: string;
       seed: string;
-      scenario: string;
       incident_mode: string;
       changes_per_hour: string;
       custom_incidents: {
@@ -207,7 +206,6 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       enabled: config.plugins?.simulator?.enabled ?? false,
       update_interval_seconds: String(config.plugins?.simulator?.update_interval_seconds ?? 20),
       seed: String(config.plugins?.simulator?.seed ?? ''),
-      scenario: config.plugins?.simulator?.scenario || '',
       incident_mode: config.plugins?.simulator?.incident_mode || 'light',
       changes_per_hour: String(config.plugins?.simulator?.changes_per_hour ?? 2),
       custom_incidents: {
@@ -358,7 +356,6 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
       enabled: draft.plugins.simulator.enabled,
       update_interval_seconds: parseInt(draft.plugins.simulator.update_interval_seconds, 10) || 20,
       seed: draft.plugins.simulator.seed ? parseInt(draft.plugins.simulator.seed, 10) : null,
-      scenario: draft.plugins.simulator.scenario || null,
       incident_mode: draft.plugins.simulator.incident_mode || 'light',
       changes_per_hour: parseInt(draft.plugins.simulator.changes_per_hour, 10) || 2,
       custom_incidents: {
