@@ -400,8 +400,33 @@ const RackCell = ({
 
   // ── Cells ─────────────────────────────────────────────────────────────────
   if (rackStyle === 'cells') {
-    const totalCells = 18;
-    const filledCells = Math.round((occupancy / 100) * totalCells);
+    const CELL_W = 72;
+    const CELL_H = 170;
+    // 2U per cell: 42U → 21 cells, 48U → 24 cells — exact integer divisor for
+    // both common rack sizes so 2U and 4U devices map to whole cells with no rounding.
+    const U_PER_CELL = 2;
+    const rackU = rack.u_height || 42;
+    const TOTAL_CELLS = Math.round(rackU / U_PER_CELL);
+    const devices = rack.devices ?? [];
+
+    // Infer each device's U height from the gap to the next device (sorted ascending).
+    // Cap at 4U to avoid filling empty space between device groups (e.g. U28→U40 gap).
+    const MAX_INFERRED_U = 4;
+    const sorted = [...devices].sort((a, b) => a.u_position - b.u_position);
+    const deviceRanges = sorted.map((d, i) => {
+      const gap = i < sorted.length - 1 ? sorted[i + 1].u_position - d.u_position : 1;
+      const inferredH = Math.min(gap, MAX_INFERRED_U);
+      return { from: d.u_position, to: d.u_position + inferredH - 1 };
+    });
+
+    // Cell i (from top) covers U range: (TOTAL_CELLS-1-i)*U_PER_CELL+1 … (TOTAL_CELLS-i)*U_PER_CELL
+    // A cell is filled if any device range overlaps with it.
+    const cellFilled = Array.from({ length: TOTAL_CELLS }, (_, i) => {
+      const cellBottom = (TOTAL_CELLS - 1 - i) * U_PER_CELL + 1; // lowest U in this cell
+      const cellTop = (TOTAL_CELLS - i) * U_PER_CELL; // highest U in this cell
+      return deviceRanges.some((r) => r.from <= cellTop && r.to >= cellBottom);
+    });
+
     return (
       <div
         ref={wrapperRef}
@@ -414,39 +439,35 @@ const RackCell = ({
           onClick={onClick}
           className={`relative overflow-hidden rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
           style={{
-            width: 72,
-            height: 130,
+            width: CELL_W,
+            height: CELL_H,
             backgroundColor: `${color}06`,
             borderColor: `${color}55`,
           }}
         >
           <div
             className="absolute inset-1.5"
-            style={{ display: 'grid', gridTemplateRows: `repeat(${totalCells}, 1fr)`, gap: 3 }}
+            style={{ display: 'grid', gridTemplateRows: `repeat(${TOTAL_CELLS}, 1fr)`, gap: 3 }}
           >
-            {Array.from({ length: totalCells }).map((_, i) => {
-              const idx = totalCells - 1 - i;
-              const filled = idx < filledCells;
-              return (
-                <div
-                  key={i}
-                  className="rounded-sm"
-                  style={{
-                    backgroundColor: filled ? color : undefined,
-                    border: filled ? 'none' : `1px solid ${color}35`,
-                  }}
-                />
-              );
-            })}
+            {cellFilled.map((filled, i) => (
+              <div
+                key={i}
+                className="rounded-sm"
+                style={{
+                  backgroundColor: filled ? color : undefined,
+                  border: filled ? 'none' : `1px solid ${color}35`,
+                }}
+              />
+            ))}
           </div>
         </button>
         {showName && (
           <p
             className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
             style={{
-              width: 72,
+              width: CELL_W,
               overflow: 'hidden',
-              display: '-webkit-box',
+              display: '-webkit-box' as React.CSSProperties['display'],
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
             }}
