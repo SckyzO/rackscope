@@ -1,8 +1,11 @@
+import { createPortal } from 'react-dom';
 import { useRef, useState } from 'react';
-import { Check, Eye, EyeOff, MousePointerClick, Server } from 'lucide-react';
+import { Check, MousePointerClick, Server } from 'lucide-react';
 import { useTooltipSettings, TOOLTIP_STYLES } from '../../../hooks/useTooltipSettings';
+import type { TooltipStyle } from '../../../hooks/useTooltipSettings';
 import { FormToggle } from '../common/FormToggle';
-import { HUDTooltip } from '../../HUDTooltip';
+import { HUDTooltipCard } from '../../HUDTooltip';
+import { StatusPill } from '../../../app/components/ui/StatusPill';
 import { SectionCard } from '../../../app/pages/templates/EmptyPage';
 
 // ── Sample data ────────────────────────────────────────────────────────────
@@ -46,78 +49,46 @@ const PREVIEW_SAMPLES = [
   },
 ];
 
-// ── Live preview ───────────────────────────────────────────────────────────
-
-const SAMPLE_LABELS = ['CRIT', 'WARN', 'OK'] as const;
-const SAMPLE_COLORS: Record<string, string> = {
-  CRIT: 'bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400',
-  WARN: 'bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400',
-  OK: 'bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400',
+// Mirrors the internal STYLE_WIDTH constant in HUDTooltip.tsx
+const STYLE_WIDTH: Record<TooltipStyle, string> = {
+  compact: 'w-80',
+  glass: 'w-80',
+  terminal: 'w-72',
+  split: 'w-80',
+  tinted: 'w-80',
+  ultracompact: 'w-56',
 };
-const INACTIVE =
-  'bg-gray-100 text-gray-400 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700';
 
-const TooltipPreviewButton = () => {
-  const [sampleIdx, setSampleIdx] = useState(0);
-  const [pinned, setPinned] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
+// ── Portal preview ─────────────────────────────────────────────────────────
 
-  const sample = PREVIEW_SAMPLES[sampleIdx];
+interface PreviewState {
+  styleId: TooltipStyle;
+  sampleIdx: number;
+  mousePos: { x: number; y: number };
+}
 
-  const handleToggle = () => {
-    if (!pinned && btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      // Position tooltip above-left of the button so it doesn't fly off screen
-      setMousePos({ x: rect.left, y: rect.top - 10 });
-    }
-    setPinned((p) => !p);
-  };
+const TooltipPreview = ({ preview }: { preview: PreviewState }) => {
+  const { aura } = useTooltipSettings();
+  const sample = PREVIEW_SAMPLES[preview.sampleIdx];
+  const { x, y } = preview.mousePos;
+  const showBelow = y < 400;
 
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <div>
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Live preview</p>
-        <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
-          {pinned
-            ? 'Switch states while the tooltip stays visible'
-            : 'Click to pin the tooltip and inspect each state'}
-        </p>
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top: showBelow ? `${y + 12}px` : `${y - 12}px`,
+        left: `${x}px`,
+        transform: showBelow ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+        zIndex: 9999,
+        pointerEvents: 'none',
+      }}
+    >
+      <div className={STYLE_WIDTH[preview.styleId]}>
+        <HUDTooltipCard style={preview.styleId} aura={aura} {...sample} />
       </div>
-
-      <div className="flex items-center gap-2">
-        {/* State switcher */}
-        {SAMPLE_LABELS.map((s, i) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setSampleIdx(i)}
-            className={`rounded-lg px-2 py-1 text-[10px] font-bold tracking-wide uppercase transition-all ${
-              sampleIdx === i ? SAMPLE_COLORS[s] : INACTIVE
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-
-        {/* Toggle button */}
-        <button
-          ref={btnRef}
-          type="button"
-          onClick={handleToggle}
-          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
-            pinned
-              ? 'border-gray-200 bg-gray-100 text-gray-600 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300'
-              : 'border-brand-200 bg-brand-50 text-brand-600 hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20'
-          }`}
-        >
-          {pinned ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          {pinned ? 'Close' : 'Preview'}
-        </button>
-      </div>
-
-      {pinned && <HUDTooltip {...sample} mousePos={mousePos} />}
-    </div>
+    </div>,
+    document.body
   );
 };
 
@@ -125,7 +96,23 @@ const TooltipPreviewButton = () => {
 
 export const TooltipSettingsSection = () => {
   const { style, aura, setStyle, setAura } = useTooltipSettings();
+  const [preview, setPreview] = useState<PreviewState | null>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sorted = [...TOOLTIP_STYLES].sort((a, b) => a.label.localeCompare(b.label));
+
+  const showPreview = (styleId: TooltipStyle, sampleIdx: number, e: React.MouseEvent) => {
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    setPreview({ styleId, sampleIdx, mousePos: { x: e.clientX, y: e.clientY } });
+  };
+
+  const updatePos = (e: React.MouseEvent) => {
+    setPreview((p) => (p ? { ...p, mousePos: { x: e.clientX, y: e.clientY } } : null));
+  };
+
+  const hidePreview = () => {
+    // Small delay so moving between pills in the same card doesn't flash
+    hideTimer.current = setTimeout(() => setPreview(null), 60);
+  };
 
   return (
     <SectionCard
@@ -135,36 +122,43 @@ export const TooltipSettingsSection = () => {
       iconColor="text-brand-500"
       iconBg="bg-brand-50 dark:bg-brand-500/10"
     >
-      {/* 3-column grid */}
       <div className="grid grid-cols-3 gap-2">
         {sorted.map((s) => (
           <button
             key={s.id}
             type="button"
             onClick={() => setStyle(s.id)}
-            className={`flex flex-col gap-1 rounded-xl border-2 p-3 text-left transition-all ${
+            className={`flex flex-col gap-2 rounded-xl border-2 p-3 text-left transition-all ${
               style === s.id
                 ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
                 : 'border-transparent bg-gray-100 hover:border-gray-300 dark:bg-gray-800/50 dark:hover:border-gray-600'
             }`}
           >
+            {/* Label + active check */}
             <div className="flex items-start justify-between gap-1">
               <span className="text-sm font-semibold text-gray-900 dark:text-white">{s.label}</span>
               {style === s.id && <Check className="text-brand-500 mt-0.5 h-3.5 w-3.5 shrink-0" />}
             </div>
-            {s.id === 'tinted' && (
-              <span className="self-start rounded bg-gray-200 px-1.5 py-0.5 text-[9px] font-bold text-gray-500 uppercase dark:bg-gray-700 dark:text-gray-400">
-                default
-              </span>
-            )}
+
+            {/* Description */}
             <p className="text-[11px] text-gray-500 dark:text-gray-400">{s.desc}</p>
+
+            {/* Status pills — hover to preview that style */}
+            <div className="flex gap-1.5 pt-0.5">
+              {PREVIEW_SAMPLES.map((sample, idx) => (
+                <div
+                  key={idx}
+                  onMouseEnter={(e) => showPreview(s.id as TooltipStyle, idx, e)}
+                  onMouseMove={updatePos}
+                  onMouseLeave={hidePreview}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <StatusPill status={sample.status} size="sm" />
+                </div>
+              ))}
+            </div>
           </button>
         ))}
-      </div>
-
-      {/* Live preview */}
-      <div className="border-t border-gray-100 pt-4 dark:border-gray-800">
-        <TooltipPreviewButton />
       </div>
 
       {/* Aura toggle */}
@@ -176,6 +170,8 @@ export const TooltipSettingsSection = () => {
           onChange={setAura}
         />
       </div>
+
+      {preview && <TooltipPreview preview={preview} />}
     </SectionCard>
   );
 };
