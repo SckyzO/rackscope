@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Rackscope is a **Prometheus-first physical infrastructure monitoring dashboard** for data centers and HPC environments. It provides visual monitoring of the physical hierarchy (Site → Room → Aisle → Rack → Device → Instance) **without owning a CMDB or collecting metrics itself**.
 
-**Current Development Phase**: Phase 9 complete — documentation & cleanup, preparing v1.0 public release.
+**Current Development Phase**: v1.0-beta — all phases complete, production-ready. Actively being deployed against real infrastructure.
 
 ### Core Philosophy (NON-NEGOTIABLE)
 
@@ -402,9 +402,9 @@ The backend uses a **plugin architecture** to separate core functionality from o
   - Refresh: room/rack state refresh intervals (default: 60s+)
   - Cache: TTL for Prometheus queries (default: 60s)
   - Planner: cache TTL, max IDs per query, unknown state handling
-  - Features: demo, notifications, playlist, offline
+  - Features: notifications, playlist, offline
   - Slurm: metric, labels, status mapping, optional node mapping file
-  - Simulator: scenarios, overrides, metrics catalogs
+  - Simulator (optional plugin): incident mode, overrides, metrics catalogs
 
 #### Topology (Two Options)
 
@@ -447,27 +447,28 @@ config/topology/
   - Referenced by device/rack component templates via `metrics: [metric_id_list]`
 
 #### Other Files
-- `plugins/simulator/scenarios.yaml`: Simulator scenarios (demo-small, full-ok, etc.)
-- `plugins/simulator/overrides.yaml`: Runtime overrides for simulated metrics
-- `plugins/simulator/metrics_full.yaml`: Full metrics catalog for simulator
-- `plugins/simulator/metrics_slurm.yaml`: Slurm metrics catalog for simulator
+- `plugins/simulator/config/plugin.yaml`: Simulator plugin config (incident mode, changes/h, catalogs, profiles)
+- `plugins/simulator/overrides/overrides.yaml`: Runtime overrides for simulated metrics
+- `plugins/simulator/metrics/metrics_full.yaml`: Full metrics catalog for simulator
+- `plugins/simulator/metrics/metrics_slurm.yaml`: Slurm metrics catalog for simulator
 - `plugins/slurm/node_mapping.yaml`: Optional mapping from Slurm node names to topology instance names
 
 ### Simulator
 
-**Location**: `tools/simulator/`
+**Location**: `plugins/simulator/process/`
 
-A Python service that generates **realistic Prometheus metrics** for testing without real hardware.
+An **optional plugin** — a standalone Python service that generates realistic Prometheus metrics for testing without real hardware. Disabled in production via `plugins.simulator.enabled: false` in `app.yaml`.
 
 **Simulator hostname**: `simulator:9000` (Docker internal). From host: `http://localhost:9000`.
+**Control server**: `simulator:9001` — `POST /restart` to hot-restart the container.
 
 **Features:**
 - Reads topology to generate targets (instances, racks)
-- Configurable scenarios (demo-small, full-ok, random failures)
+- **Count-based incident system**: `incident_mode` (full_ok / light / medium / heavy / chaos / custom) + `changes_per_hour` reshuffle frequency — no more probabilistic rates
 - Multi-metric bundles (node, IPMI, storage, infrastructure, Slurm)
-- Deterministic seeding for repeatable demos
-- Failure injection controls (per metric + per scope)
+- Deterministic seeding via `seed` field
 - Runtime overrides via API (force node down, rack failure, temperature spike)
+- Restart button in Settings → Plugins → Simulator
 
 Prometheus scrapes the simulator, and the backend queries Prometheus exactly like production.
 
@@ -716,20 +717,31 @@ Target audience: NOC operators, N1/N2 sysadmins, MCO teams.
 | 8 | Performance Optimizations | ✅ COMPLETE |
 | 9 | Documentation & Cleanup | ✅ COMPLETE |
 
-**Current metrics** (post-Phase 9):
-- ✅ **362 tests passing**
+**Current metrics** (v1.0-beta):
+- ✅ **852 tests passing**
 - ✅ **0 mypy type errors**
-- ✅ All linters passing (ruff, eslint, stylelint, prettier)
+- ✅ **0 ESLint errors/warnings** (ruff, eslint, stylelint, prettier)
 - ✅ frontend/src/app/ (migration from cosmos/ complete)
+- ✅ Conditional plugin architecture (plugins only loaded when `enabled: true`)
+- ✅ Simulator: count-based incident system, restart button, contract tests
 
-### Next Features (post v1.0)
+### Recent additions (post-Phase 9)
 
-Planned improvements after v1.0 release:
+Key features added after Phase 9:
 
-- **TanStack Query migration**: Replace manual fetch + state management with server-state caching (staleTime, refetchInterval, optimistic updates)
-- **Backend performance**: Dict-indexed topology lookup (O(1) vs O(n) scan), service-level cache layer, PromQL query deduplication
+- **Datacenter view** (`/views/site/:siteId`): site-level overview with room cards, mini rack grid with HUDTooltip, List+Detail view, config drawer
+- **Simulator refactoring**: count-based incident modes replacing probabilistic rates; scenario system removed; single `plugin.yaml` config
+- **Conditional plugins**: plugins only registered/imported when `enabled: true` — production deployments with disabled plugins have zero overhead
+- **Settings UI redesign**: proper design system components (FormRow, ToggleSwitch, AlertBanner, StepperInput)
+- **Tooltip style** moved to Appearance tab with per-card preview (StatusPill hover → HUDTooltipCard)
+- **Slurm Wallboard**: V1 removed, V2 renamed to single `/slurm/wallboard` route
+
+### Next Features
+
+- **TanStack Query migration**: Replace manual fetch + state management with server-state caching
 - **Auth hardening**: RBAC roles, production-grade JWT, session management
 - **Import adapters**: NetBox, RacksDB, BlueBanquise importers
+- **Public website**: Docusaurus landing page + dedicated marketing site
 
 ### Standard Development Workflow
 
@@ -746,9 +758,13 @@ Planned improvements after v1.0 release:
 ## Testing
 
 Tests are located in `tests/` and use pytest:
-- `test_api.py`: API endpoint tests
-- `test_model.py`: Pydantic model validation tests
-- `test_planner.py`: Telemetry planner tests
+- `tests/api/`: API endpoint tests (topology, checks, simulator, slurm, config, auth…)
+- `tests/simulator/`: Simulator unit + integration tests (loop, config, labels, topology, contracts)
+- `tests/test_model.py`: Pydantic model validation
+- `tests/test_planner.py`: Telemetry planner
+
+**Contract tests** (`tests/simulator/test_contracts.py`, `tests/simulator/test_integration_modes.py`):
+After any model migration, add positive assertions (new field exists) and negative assertions (old field gone) to catch regressions immediately at `make test` time. See existing files for the pattern.
 
 Run tests with:
 ```bash
@@ -828,16 +844,18 @@ docker compose -f docker-compose.dev.yml exec backend pytest
 
 ### Working with the Simulator
 
-1. Enable demo mode in `config/app.yaml`:
+1. Enable in `config/app.yaml`:
    ```yaml
-   features:
-     demo: true
+   plugins:
+     simulator:
+       enabled: true
    ```
-2. Select a scenario:
+2. Set incident mode in `config/plugins/simulator/config/plugin.yaml`:
    ```yaml
-   simulator:
-     scenario: demo-small  # or full-ok, random-demo-small
+   incident_mode: light    # full_ok | light | medium | heavy | chaos | custom
+   changes_per_hour: 2
    ```
+   Or via Settings UI → Plugins → Simulator → Advanced.
 3. Add overrides via Settings UI or API:
    ```bash
    curl -X POST http://localhost:8000/api/simulator/overrides \
@@ -847,6 +865,11 @@ docker compose -f docker-compose.dev.yml exec backend pytest
 4. Clear overrides:
    ```bash
    curl -X DELETE http://localhost:8000/api/simulator/overrides
+   ```
+5. Restart the simulator container after config changes:
+   ```bash
+   curl -X POST http://localhost:8000/api/simulator/restart
+   # or via Settings UI → Plugins → Simulator → Restart button
    ```
 
 ## Environment Variables
@@ -864,7 +887,8 @@ docker compose -f docker-compose.dev.yml exec backend pytest
 - **Room Views**: Floor plan with racks (color-coded by health)
 - **Rack Views**: Front/rear views with devices and chassis grids
 - **Device Views**: Device detail with instance tabs
-- **Slurm Wallboard**: HPC-specific cluster overview (compact aisle views)
+- **Datacenter View**: Site-level room overview with mini rack grids (`/views/site/:siteId`)
+- **Slurm Wallboard**: HPC-specific cluster overview — multi-room, 3 display modes (`/slurm/wallboard`)
 - **Slurm Dashboards**: Cluster Overview, Partitions, Node List, Alerts
 - **Visual Editors**:
   - Topology Editor (`/editors/topology`)
@@ -1045,8 +1069,15 @@ Rackscope follows a phased development plan:
 - **Phase 9**: ✅ Documentation & Cleanup
   - Docusaurus 3 website (`website/`)
   - CLAUDE.md, README.md, CHANGELOG.md updated
-  - 0 mypy type errors
-  - 362 tests passing
+  - 0 mypy type errors, 362 tests passing
+- **v1.0-beta additions** (post-Phase 9):
+  - Simulator: count-based incident modes, restart button, contract tests, conditional plugin loading
+  - Datacenter view (`/views/site/:siteId`) with grid/list+detail, HUDTooltip on rack squares
+  - Slurm Wallboard: V1 removed, V2 unified as `/slurm/wallboard`
+  - Settings UI redesign: FormRow, ToggleSwitch, AlertBanner, StepperInput from design system
+  - Tooltip style in Appearance tab, per-card StatusPill preview
+  - All plugins conditionally loaded (`_plugin_enabled()` in `app.py`)
+  - 852 tests passing, 0 ESLint warnings
 
 ## Code Quality Tools
 
