@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Building2, SlidersHorizontal, LayoutGrid, List, ChevronRight } from 'lucide-react';
+import {
+  Building2,
+  SlidersHorizontal,
+  LayoutGrid,
+  List,
+  ChevronRight,
+  ExternalLink,
+} from 'lucide-react';
+import { Tooltip } from '../../components/ui/Tooltip';
 import { api } from '../../../services/api';
 import type { Site, Room, RoomState } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
@@ -14,7 +22,6 @@ import {
   PageHeader,
   PageBreadcrumb,
   SectionCard,
-  StatusRow,
   SimpleRow,
   LoadingState,
   EmptyState,
@@ -106,11 +113,9 @@ const MiniRackGrid = ({
         const raw = roomState?.racks?.[id];
         const state = raw ? (typeof raw === 'string' ? raw : (raw.state ?? 'UNKNOWN')) : 'UNKNOWN';
         return (
-          <div
-            key={id}
-            className={`${sq} rounded-sm ${RACK_COLOR[state] ?? RACK_COLOR.UNKNOWN}`}
-            title={`${id}: ${state}`}
-          />
+          <Tooltip key={id} content={`${id} · ${state}`} variant="dark">
+            <div className={`${sq} rounded-sm ${RACK_COLOR[state] ?? RACK_COLOR.UNKNOWN}`} />
+          </Tooltip>
         );
       })}
       {overflow > 0 && (
@@ -396,6 +401,18 @@ export const SitePage = () => {
         />
       </div>
 
+      {/* Rack color legend — inline below KPI bar */}
+      {site.rooms.length > 0 && (
+        <div className="flex items-center gap-4">
+          {(['OK', 'WARN', 'CRIT', 'UNKNOWN'] as const).map((s) => (
+            <div key={s} className="flex items-center gap-1.5">
+              <HealthDot status={s} />
+              <span className="text-[11px] text-gray-500 dark:text-gray-400">{s}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Empty state */}
       {site.rooms.length === 0 && (
         <EmptyState
@@ -427,22 +444,36 @@ export const SitePage = () => {
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
               {site.rooms.map((room) => {
                 const health = computeRoomHealth(roomStates[room.id] ?? null);
+                const isSelected = selectedRoomId === room.id;
                 return (
                   <div
                     key={room.id}
-                    className={
-                      selectedRoomId === room.id
-                        ? 'bg-brand-50 dark:bg-brand-500/10 -mx-1 rounded-xl px-1'
-                        : ''
-                    }
+                    className={`flex items-center gap-2 py-2 ${isSelected ? 'bg-brand-50 dark:bg-brand-500/10 -mx-1 rounded-xl px-1' : ''}`}
                   >
-                    <StatusRow
-                      icon={Building2}
-                      title={room.name}
-                      subtitle={`${roomRackCount(room)} racks`}
-                      status={health}
+                    {/* Selectable area */}
+                    <button
                       onClick={() => setSelectedRoomId(room.id)}
-                    />
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
+                        <Building2 className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                          {room.name}
+                        </p>
+                        <p className="text-xs text-gray-400">{roomRackCount(room)} racks</p>
+                      </div>
+                      <StatusBadge status={health} size="sm" />
+                    </button>
+                    {/* Navigate button */}
+                    <button
+                      onClick={() => navigate(`/views/room/${room.id}`)}
+                      className="bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20 flex shrink-0 items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors"
+                    >
+                      View Room
+                      <ExternalLink className="h-3 w-3" />
+                    </button>
                   </div>
                 );
               })}
@@ -482,14 +513,16 @@ export const SitePage = () => {
             <p className="text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
               Layout
             </p>
-            <SegmentedControl
-              value={layout}
-              onChange={(v) => applyLayout(v as Layout)}
-              options={[
-                { label: 'Grid', value: 'grid', icon: LayoutGrid },
-                { label: 'List + Detail', value: 'list', icon: List },
-              ]}
-            />
+            <div className="w-fit">
+              <SegmentedControl
+                value={layout}
+                onChange={(v) => applyLayout(v as Layout)}
+                options={[
+                  { label: 'Grid', value: 'grid', icon: LayoutGrid },
+                  { label: 'List + Detail', value: 'list', icon: List },
+                ]}
+              />
+            </div>
           </div>
 
           {/* Rack square size */}
@@ -497,14 +530,16 @@ export const SitePage = () => {
             <p className="text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
               Rack squares
             </p>
-            <SegmentedControl
-              value={rackSize}
-              onChange={(v) => applyRackSize(v as RackSize)}
-              options={[
-                { label: 'Small', value: 'sm' },
-                { label: 'Medium', value: 'md' },
-              ]}
-            />
+            <div className="w-fit">
+              <SegmentedControl
+                value={rackSize}
+                onChange={(v) => applyRackSize(v as RackSize)}
+                options={[
+                  { label: 'Small', value: 'sm' },
+                  { label: 'Medium', value: 'md' },
+                ]}
+              />
+            </div>
           </div>
 
           {/* Auto-refresh info */}
@@ -515,21 +550,6 @@ export const SitePage = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Use the refresh button in the header to set the interval.
             </p>
-          </div>
-
-          {/* Legend */}
-          <div className="space-y-2">
-            <p className="text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
-              Rack color legend
-            </p>
-            <div className="space-y-1.5">
-              {(['OK', 'WARN', 'CRIT', 'UNKNOWN'] as const).map((s) => (
-                <div key={s} className="flex items-center gap-2">
-                  <HealthDot status={s} />
-                  <span className="text-xs text-gray-600 dark:text-gray-400">{s}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </Drawer>
