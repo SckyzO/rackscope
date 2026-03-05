@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ChevronDown,
   ChevronRight,
-  Play,
   Trash2,
   Plus,
   RefreshCw,
@@ -12,15 +11,48 @@ import {
   GripVertical,
   Save,
 } from 'lucide-react';
+import { FormSection } from '../common/FormSection';
+import { FormField } from '../common/FormField';
+import { FormRow } from '../../../app/components/forms/FormRow';
+import { ToggleSwitch } from '../../../app/components/forms/ToggleSwitch';
+import { SelectInput } from '../../../app/components/ui/SelectInput';
+import { StepperInput } from '../../../app/components/forms/StepperInput';
+import { AlertBanner } from '../../../app/components/ui/AlertBanner';
 import { TooltipHelp } from '../../../app/components/ui/Tooltip';
 import { api } from '../../../services/api';
-import type { SimulatorScenario, SimulatorOverride } from '../../../types';
-import { FormField } from '../common/FormField';
-import { FormToggle } from '../common/FormToggle';
-import { FormSelect } from '../common/FormSelect';
+import type { SimulatorOverride } from '../../../types';
 import type { ConfigDraft } from '../useSettingsConfig';
 
-// ── Slurm Node Mapping Editor ─────────────────────────────────────────────────
+// ── Constants ──────────────────────────────────────────────────────────────
+
+const INCIDENT_MODE_OPTIONS = [
+  { value: 'full_ok', label: 'full_ok — No incidents' },
+  { value: 'light', label: 'light — 1–3 critical, 1–5 warning' },
+  { value: 'medium', label: 'medium — 1–3 critical, 5–10 warning, 1 rack' },
+  { value: 'heavy', label: 'heavy — 5–10 critical, 10–20 warning, 2 racks, 1 aisle' },
+  { value: 'chaos', label: 'chaos — 15% critical, 25% warning' },
+  { value: 'custom', label: 'custom — exact counts' },
+];
+
+const MODE_DEFAULTS: Record<string, number> = {
+  full_ok: 1,
+  light: 2,
+  medium: 4,
+  heavy: 4,
+  chaos: 3,
+  custom: 2,
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+/** Separator between FormRows inside a divide-y container */
+const FormRows = ({ children }: { children: React.ReactNode }) => (
+  <div className="divide-y divide-gray-100 rounded-xl border border-gray-200 px-4 dark:divide-gray-800 dark:border-gray-800">
+    {React.Children.map(children, (child) => (child ? <div className="py-3">{child}</div> : null))}
+  </div>
+);
+
+// ── Slurm Node Mapping Editor ──────────────────────────────────────────────
 
 interface MappingEntry {
   node: string;
@@ -75,7 +107,7 @@ const SlurmMappingEditor = ({ mappingPath }: { mappingPath?: string }) => {
       <button
         type="button"
         onClick={handleOpen}
-        className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 mt-1 flex items-center gap-1.5 text-xs font-medium"
+        className="text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 flex items-center gap-1.5 text-xs font-medium"
       >
         <Plus className="h-3.5 w-3.5" />
         Edit mappings
@@ -84,7 +116,7 @@ const SlurmMappingEditor = ({ mappingPath }: { mappingPath?: string }) => {
   }
 
   return (
-    <div className="mt-3 space-y-3 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+    <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[10px] font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
@@ -122,14 +154,14 @@ const SlurmMappingEditor = ({ mappingPath }: { mappingPath?: string }) => {
                 value={e.node}
                 onChange={(ev) => update(i, 'node', ev.target.value)}
                 placeholder="n* or n001"
-                className="rounded border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                className="rounded-lg border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
               />
               <div className="flex gap-1">
                 <input
                   value={e.instance}
                   onChange={(ev) => update(i, 'instance', ev.target.value)}
                   placeholder="compute* or compute001"
-                  className="flex-1 rounded border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                  className="flex-1 rounded-lg border border-gray-200 bg-white px-2 py-1 font-mono text-xs text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                 />
                 <button
                   type="button"
@@ -174,7 +206,7 @@ const SlurmMappingEditor = ({ mappingPath }: { mappingPath?: string }) => {
   );
 };
 
-// ── Main section ───────────────────────────────────────────────────────────────
+// ── Main section ───────────────────────────────────────────────────────────
 
 interface PluginsSettingsSectionProps {
   draft: ConfigDraft;
@@ -190,21 +222,17 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   const [roleInput, setRoleInput] = useState('');
   const roleInputRef = useRef<HTMLInputElement>(null);
 
-  // Demo ribbon visibility — localStorage preference, not saved to app.yaml
   const [ribbonVisible, setRibbonVisible] = useState(
     () => localStorage.getItem('rackscope.demo.ribbon') !== 'hidden'
   );
-  const ribbonVisibleRef = useRef(ribbonVisible);
-  ribbonVisibleRef.current = ribbonVisible;
-  const toggleRibbon = (value: boolean) => {
-    localStorage.setItem('rackscope.demo.ribbon', value ? 'visible' : 'hidden');
-    setRibbonVisible(value);
-    window.dispatchEvent(new Event('rackscope-demo-ribbon'));
-  };
 
-  // Metrics files for catalog path dropdown
   const [metricsFiles, setMetricsFiles] = useState<Array<{ name: string; path: string }>>([]);
   const [metricsFilesLoading, setMetricsFilesLoading] = useState(false);
+
+  const [overrides, setOverrides] = useState<SimulatorOverride[]>([]);
+  const [simulatorRunning, setSimulatorRunning] = useState(false);
+  const [showAddOverride, setShowAddOverride] = useState(false);
+  const [newOverride, setNewOverride] = useState({ instance: '', metric: 'up', value: '0' });
 
   useEffect(() => {
     setMetricsFilesLoading(true);
@@ -215,29 +243,13 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
       .finally(() => setMetricsFilesLoading(false));
   }, []);
 
-  // Simulator control panel state
-  const [scenarios, setScenarios] = useState<SimulatorScenario[]>([]);
-  const [overrides, setOverrides] = useState<SimulatorOverride[]>([]);
-  const [activeScenario, setActiveScenario] = useState('');
-  const [applying, setApplying] = useState(false);
-  const [showAddOverride, setShowAddOverride] = useState(false);
-  const [newOverride, setNewOverride] = useState({ instance: '', metric: 'up', value: '0' });
-
-  // Detect if the simulator container is currently responding.
-  // When running, the plugin settings are greyed with a restart warning.
-  const [simulatorRunning, setSimulatorRunning] = useState(false);
-
   const loadSimulatorData = useCallback(async () => {
     try {
-      const [scenariosData, overridesData, config, status] = await Promise.all([
-        api.getSimulatorScenarios(),
+      const [overridesData, status] = await Promise.all([
         api.getSimulatorOverrides(),
-        api.getConfig(),
         api.getSimulatorStatus().catch(() => ({ running: false })),
       ]);
-      setScenarios(scenariosData.scenarios ?? []);
       setOverrides(overridesData.overrides ?? []);
-      setActiveScenario(config.plugins?.simulator?.scenario ?? '');
       setSimulatorRunning(status?.running ?? false);
     } catch {
       /* ignore */
@@ -248,28 +260,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
     loadSimulatorData();
   }, [loadSimulatorData]);
 
-  const handleApplyScenario = async () => {
-    if (!draft.plugins.simulator.scenario || applying) return;
-    setApplying(true);
-    try {
-      const config = await api.getConfig();
-      await api.updateConfig({
-        ...config,
-        plugins: {
-          ...config.plugins,
-          simulator: { ...config.plugins.simulator, scenario: draft.plugins.simulator.scenario },
-        },
-      });
-      await api.restartBackend().catch(() => {
-        /* noop */
-      });
-      setActiveScenario(draft.plugins.simulator.scenario);
-      setTimeout(() => window.location.reload(), 2000);
-    } catch {
-      /* ignore */
-    } finally {
-      setApplying(false);
-    }
+  const toggleRibbon = (value: boolean) => {
+    localStorage.setItem('rackscope.demo.ribbon', value ? 'visible' : 'hidden');
+    setRibbonVisible(value);
+    window.dispatchEvent(new Event('rackscope-demo-ribbon'));
   };
 
   const handleAddOverride = async () => {
@@ -289,18 +283,9 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
     }
   };
 
-  const MODE_DEFAULTS: Record<string, number> = {
-    full_ok: 1,
-    light: 2,
-    medium: 4,
-    heavy: 4,
-    chaos: 3,
-    custom: 2,
-  };
-
   const updateSimulator = (
     field: string,
-    value: string | boolean | number | Record<string, string | number> | Array<unknown>
+    value: string | boolean | number | Record<string, unknown> | Array<unknown>
   ) => {
     setDraft((prev) => {
       if (!prev) return prev;
@@ -308,16 +293,13 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
         ...prev,
         plugins: {
           ...prev.plugins,
-          simulator: {
-            ...prev.plugins.simulator,
-            [field]: value,
-          },
+          simulator: { ...prev.plugins.simulator, [field]: value },
         },
       };
     });
   };
 
-  const updateCustomIncident = (field: string, value: string) => {
+  const updateCustomIncident = (field: string, value: number) => {
     setDraft((prev) => {
       if (!prev) return prev;
       return {
@@ -328,7 +310,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             ...prev.plugins.simulator,
             custom_incidents: {
               ...prev.plugins.simulator.custom_incidents,
-              [field]: value,
+              [field]: String(value),
             },
           },
         },
@@ -346,10 +328,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
         ...prev,
         plugins: {
           ...prev.plugins,
-          slurm: {
-            ...prev.plugins.slurm,
-            [field]: value,
-          },
+          slurm: { ...prev.plugins.slurm, [field]: value },
         },
       };
     });
@@ -364,10 +343,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           ...prev.plugins,
           slurm: {
             ...prev.plugins.slurm,
-            severity_colors: {
-              ...prev.plugins.slurm.severity_colors,
-              [severity]: color,
-            },
+            severity_colors: { ...prev.plugins.slurm.severity_colors, [severity]: color },
           },
         },
       };
@@ -377,506 +353,468 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   const moveSlurmStatus = (
     status: string,
     fromSeverity: 'ok' | 'warn' | 'crit' | 'info' | null,
-    toSeverity: 'ok' | 'warn' | 'crit' | 'info'
+    toSeverity: 'ok' | 'warn' | 'crit' | 'info' | null
   ) => {
     setDraft((prev) => {
       if (!prev) return prev;
-
       const newStatusMap = { ...prev.plugins.slurm.status_map };
-
-      // Remove from source severity if it exists
       if (fromSeverity) {
         newStatusMap[fromSeverity] = newStatusMap[fromSeverity].filter((s) => s !== status);
       }
-
-      // Add to target severity if not already there
-      if (!newStatusMap[toSeverity].includes(status)) {
+      if (toSeverity && !newStatusMap[toSeverity].includes(status)) {
         newStatusMap[toSeverity] = [...newStatusMap[toSeverity], status];
       }
-
       return {
         ...prev,
-        plugins: {
-          ...prev.plugins,
-          slurm: {
-            ...prev.plugins.slurm,
-            status_map: newStatusMap,
-          },
-        },
+        plugins: { ...prev.plugins, slurm: { ...prev.plugins.slurm, status_map: newStatusMap } },
       };
     });
   };
 
+  const sim = draft.plugins.simulator;
+
   return (
-    <div className="space-y-6">
-      {/* Global Warning */}
-      <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-4">
-        <h4 className="mb-2 font-mono text-xs font-bold tracking-wider text-orange-400 uppercase">
-          Backend Restart Required
-        </h4>
-        <p className="text-xs text-gray-600 dark:text-gray-300">
-          Enabling or disabling plugins requires a backend restart to take effect. Run{' '}
-          <code className="rounded bg-gray-800 px-2 py-1 font-mono text-xs text-gray-200">
-            make restart
-          </code>{' '}
-          or{' '}
-          <code className="rounded bg-gray-800 px-2 py-1 font-mono text-xs text-gray-200">
-            docker compose restart backend
-          </code>{' '}
-          after saving.
-        </p>
-      </div>
+    <div className="space-y-4">
+      {/* Global restart warning */}
+      <AlertBanner variant="warning">
+        Enabling or disabling plugins requires a backend restart — run{' '}
+        <code className="rounded bg-amber-900/20 px-1.5 py-0.5 font-mono text-xs">
+          make restart
+        </code>{' '}
+        after saving.
+      </AlertBanner>
 
-      {/* Simulator Plugin */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-        <div className="mb-4 flex items-start gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-500/10">
-            <FlaskConical className="h-4 w-4 text-amber-500" />
-          </div>
-          <div className="pt-0.5">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
-              Simulator Plugin
-            </h3>
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Metrics simulator for testing without real hardware
-            </p>
-          </div>
-        </div>
-
+      {/* ── Simulator Plugin ── */}
+      <FormSection
+        title="Simulator Plugin"
+        icon={FlaskConical}
+        iconColor="text-amber-500"
+        iconBg="bg-amber-50 dark:bg-amber-500/10"
+        description="Metrics simulator for testing without real hardware"
+      >
+        {/* Running-state banner */}
         {simulatorRunning ? (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2.5">
-            <FlaskConical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-            <p className="text-[11px] text-amber-700 dark:text-amber-400">
-              <strong>Simulator is currently running.</strong> Configuration changes will take
-              effect on next container restart — they won't interrupt the running simulator.
-            </p>
-          </div>
+          <AlertBanner variant="warning">
+            Simulator is running. Config changes take effect on next container restart.
+          </AlertBanner>
         ) : (
-          <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3">
-            <p className="text-xs text-gray-600 dark:text-gray-300">
-              <strong>Note:</strong> The simulator only works when using{' '}
-              <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">
-                docker-compose-dev.yaml
-              </code>
-              . Make sure to start the stack with{' '}
-              <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">
-                make up
-              </code>{' '}
-              or{' '}
-              <code className="rounded bg-gray-800 px-1.5 py-0.5 font-mono text-xs text-gray-200">
-                docker compose up -d
-              </code>
-              .
-            </p>
-          </div>
+          <AlertBanner variant="info">
+            Start the stack with{' '}
+            <code className="rounded bg-blue-900/20 px-1.5 py-0.5 font-mono text-xs">make up</code>{' '}
+            to run the simulator.
+          </AlertBanner>
         )}
 
-        <div>
-          <FormToggle
+        <FormRows>
+          <FormRow
             label="Enable Simulator"
             description="Activate simulator plugin for demo mode"
-            checked={draft.plugins.simulator.enabled}
-            onChange={(value) => updateSimulator('enabled', value)}
-          />
-
-          {draft.plugins.simulator.enabled && (
-            <div className="mt-3">
-              <FormToggle
-                label="Show DEMO ribbon"
-                description="Display the diagonal DEMO ribbon in the top-left corner of the UI"
-                checked={ribbonVisible}
-                onChange={toggleRibbon}
-              />
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setSimulatorSettingsOpen(!simulatorSettingsOpen)}
-            disabled={!draft.plugins.simulator.enabled}
-            className={`mt-4 flex items-center gap-2 text-sm font-medium transition ${
-              draft.plugins.simulator.enabled
-                ? 'cursor-pointer text-gray-500 dark:text-gray-400'
-                : 'cursor-not-allowed text-gray-400 opacity-50 dark:text-gray-500'
-            }`}
+            tooltip="When enabled, the simulator generates fake Prometheus metrics for testing without real hardware."
           >
-            {simulatorSettingsOpen ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-            Advanced Settings
-          </button>
+            <ToggleSwitch
+              checked={sim.enabled}
+              onChange={() => updateSimulator('enabled', !sim.enabled)}
+            />
+          </FormRow>
 
-          {simulatorSettingsOpen && draft.plugins.simulator.enabled && (
-            <div className="mt-4 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-              <FormField
-                label="Update Interval (seconds)"
-                value={draft.plugins.simulator.update_interval_seconds}
-                onChange={(value) => updateSimulator('update_interval_seconds', value)}
-                type="number"
-              />
-              <FormField
-                label="Random Seed (optional)"
-                value={draft.plugins.simulator.seed}
-                onChange={(value) => updateSimulator('seed', value)}
-                placeholder="Leave empty for random"
-              />
-              {/* Scenario — dropdown */}
-              <div className="space-y-1">
-                <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                  Scenario
-                  {activeScenario && (
-                    <span className="text-brand-500 ml-2 font-mono normal-case">
-                      (active: {activeScenario})
-                    </span>
-                  )}
-                </label>
-                <div className="flex gap-2">
-                  <select
-                    value={draft.plugins.simulator.scenario}
-                    onChange={(e) => updateSimulator('scenario', e.target.value)}
-                    className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                  >
-                    {scenarios.length === 0 && (
-                      <option value={draft.plugins.simulator.scenario}>
-                        {draft.plugins.simulator.scenario || 'Loading...'}
-                      </option>
-                    )}
-                    {scenarios.map((s) => (
-                      <option key={s.name} value={s.name}>
-                        {s.name} — {s.description}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={handleApplyScenario}
-                    disabled={draft.plugins.simulator.scenario === activeScenario || applying}
-                    className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white uppercase transition disabled:opacity-40"
-                  >
-                    {applying ? (
-                      <RefreshCw className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Play className="h-3 w-3" />
-                    )}
-                    {applying ? 'Applying...' : 'Apply'}
-                  </button>
-                </div>
-                {draft.plugins.simulator.scenario !== activeScenario && (
-                  <p className="text-xs text-yellow-500">Apply will restart the backend</p>
-                )}
-              </div>
+          {sim.enabled && (
+            <FormRow
+              label="Show DEMO ribbon"
+              description="Display the diagonal DEMO ribbon in the top-left corner"
+            >
+              <ToggleSwitch checked={ribbonVisible} onChange={() => toggleRibbon(!ribbonVisible)} />
+            </FormRow>
+          )}
+        </FormRows>
 
-              {/* Incident Mode */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                  Incident Mode
-                </label>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  Controls the failure pattern injected by the simulator.
-                </p>
-                <select
-                  value={draft.plugins.simulator.incident_mode}
-                  onChange={(e) => {
-                    const mode = e.target.value;
-                    updateSimulator('incident_mode', mode);
-                    updateSimulator('changes_per_hour', String(MODE_DEFAULTS[mode] ?? 2));
-                  }}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                >
-                  <option value="full_ok">full_ok — No incidents</option>
-                  <option value="light">light — 1-3 critical, 1-5 warning</option>
-                  <option value="medium">medium — 1-3 critical, 5-10 warning, 1 rack</option>
-                  <option value="heavy">
-                    heavy — 5-10 critical, 10-20 warning, 2 racks, 1 aisle
-                  </option>
-                  <option value="chaos">chaos — 15% critical, 25% warning</option>
-                  <option value="custom">custom — exact counts</option>
-                </select>
-              </div>
-
-              {/* Changes per hour */}
-              <FormField
-                label="Changes / hour"
-                value={draft.plugins.simulator.changes_per_hour}
-                onChange={(value) => updateSimulator('changes_per_hour', value)}
-                type="number"
-              />
-
-              {/* Custom incident counts — visible only in custom mode */}
-              {draft.plugins.simulator.incident_mode === 'custom' && (
-                <div className="space-y-2 border-l-2 border-amber-200 pl-4 dark:border-amber-800">
-                  <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                    Custom Incident Counts
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      label="Devices Critical"
-                      value={draft.plugins.simulator.custom_incidents.devices_crit}
-                      onChange={(value) => updateCustomIncident('devices_crit', value)}
-                      type="number"
-                    />
-                    <FormField
-                      label="Devices Warning"
-                      value={draft.plugins.simulator.custom_incidents.devices_warn}
-                      onChange={(value) => updateCustomIncident('devices_warn', value)}
-                      type="number"
-                    />
-                    <FormField
-                      label="Racks Critical"
-                      value={draft.plugins.simulator.custom_incidents.racks_crit}
-                      onChange={(value) => updateCustomIncident('racks_crit', value)}
-                      type="number"
-                    />
-                    <FormField
-                      label="Aisles Hot"
-                      value={draft.plugins.simulator.custom_incidents.aisles_hot}
-                      onChange={(value) => updateCustomIncident('aisles_hot', value)}
-                      type="number"
-                    />
-                  </div>
-                </div>
+        {sim.enabled && (
+          <>
+            <button
+              type="button"
+              onClick={() => setSimulatorSettingsOpen(!simulatorSettingsOpen)}
+              className="flex items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              {simulatorSettingsOpen ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
               )}
+              Advanced Settings
+            </button>
 
-              <FormField
-                label="Overrides Path"
-                value={draft.plugins.simulator.overrides_path}
-                onChange={(value) => updateSimulator('overrides_path', value)}
-                placeholder="config/plugins/simulator/overrides.yaml"
-              />
-              <FormField
-                label="Default TTL (seconds)"
-                value={draft.plugins.simulator.default_ttl_seconds}
-                onChange={(value) => updateSimulator('default_ttl_seconds', value)}
-                type="number"
-              />
-              <FormSelect
-                label="Metrics Catalog Path"
-                tooltip="YAML file used as the metrics catalog (files starting with metrics_)"
-                value={draft.plugins.simulator.metrics_catalog_path ?? ''}
-                onChange={(value) => updateSimulator('metrics_catalog_path', value)}
-                loading={metricsFilesLoading}
-                placeholder="— Select a metrics file —"
-                options={metricsFiles.map((f) => ({ value: f.path, label: f.name }))}
-              />
-
-              {/* Metrics Catalogs */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                  Metrics Catalogs (Multi-file support)
-                </label>
-                <div className="space-y-2">
-                  {draft.plugins.simulator.metrics_catalogs.map((catalog, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900"
-                    >
-                      <FormToggle
-                        label=""
-                        checked={catalog.enabled}
-                        onChange={(value) => {
-                          const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
-                          newCatalogs[index].enabled = value;
-                          updateSimulator('metrics_catalogs', newCatalogs);
-                        }}
-                      />
-                      <FormField
-                        label="ID"
-                        value={catalog.id}
-                        onChange={(value) => {
-                          const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
-                          newCatalogs[index].id = value;
-                          updateSimulator('metrics_catalogs', newCatalogs);
-                        }}
-                      />
-                      <FormField
-                        label="Path"
-                        value={catalog.path}
-                        onChange={(value) => {
-                          const newCatalogs = [...draft.plugins.simulator.metrics_catalogs];
-                          newCatalogs[index].path = value;
-                          updateSimulator('metrics_catalogs', newCatalogs);
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newCatalogs = draft.plugins.simulator.metrics_catalogs.filter(
-                            (_, i) => i !== index
-                          );
-                          updateSimulator('metrics_catalogs', newCatalogs);
-                        }}
-                        className="rounded bg-red-600 px-3 py-2 text-xs font-bold text-white uppercase hover:bg-red-700"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newCatalogs = [
-                        ...draft.plugins.simulator.metrics_catalogs,
-                        { id: '', path: '', enabled: true },
-                      ];
-                      updateSimulator('metrics_catalogs', newCatalogs);
-                    }}
-                    className="rounded bg-blue-600 px-4 py-2 text-xs font-bold text-white uppercase hover:bg-blue-700"
-                  >
-                    Add Catalog
-                  </button>
+            {simulatorSettingsOpen && (
+              <div className="space-y-4 border-t border-gray-100 pt-4 dark:border-gray-800">
+                {/* Timing */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Update Interval
+                      <TooltipHelp text="How often the simulator generates a new set of metrics." />
+                    </p>
+                    <StepperInput
+                      value={parseInt(sim.update_interval_seconds, 10) || 20}
+                      onChange={(v) => updateSimulator('update_interval_seconds', String(v))}
+                      min={5}
+                      max={3600}
+                      step={5}
+                      unit="s"
+                    />
+                  </div>
+                  <FormField
+                    label="Random Seed"
+                    tooltip="Pin a seed for reproducible simulation. Leave empty for random output."
+                    value={sim.seed}
+                    onChange={(v) => updateSimulator('seed', v)}
+                    placeholder="empty = random"
+                  />
                 </div>
-              </div>
 
-              {/* ── Metric Overrides ── */}
-              <div className="space-y-3 border-t border-gray-200 pt-4 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-mono text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
-                    Metric Overrides
-                  </h4>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={loadSimulatorData}
-                      className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1 text-xs text-gray-500 transition hover:border-gray-300 dark:border-gray-700 dark:text-gray-400"
-                    >
-                      <RefreshCw className="h-3 w-3" /> Refresh
-                    </button>
-                    {overrides.length > 0 && (
-                      <button
-                        onClick={() =>
-                          api
-                            .clearSimulatorOverrides()
-                            .then(loadSimulatorData)
-                            .catch(() => {
-                              /* noop */
-                            })
-                        }
-                        className="flex items-center gap-1.5 rounded-lg border border-red-500/50 px-2.5 py-1 text-xs text-red-400 transition hover:bg-red-500/10"
+                {/* Incident settings */}
+                <FormRows>
+                  <FormRow
+                    label="Incident Mode"
+                    description="Controls the failure pattern injected by the simulator"
+                    tooltip="full_ok has no failures. light/medium/heavy add increasingly more. chaos is percentage-based. custom uses exact counts."
+                  >
+                    <SelectInput
+                      value={sim.incident_mode}
+                      onChange={(mode) => {
+                        updateSimulator('incident_mode', mode);
+                        updateSimulator('changes_per_hour', String(MODE_DEFAULTS[mode] ?? 2));
+                      }}
+                      options={INCIDENT_MODE_OPTIONS}
+                      className="w-64"
+                    />
+                  </FormRow>
+
+                  <FormRow
+                    label="Changes / hour"
+                    description="How often the set of failing devices is reshuffled"
+                    tooltip="Ignored in full_ok mode. Lower values = more stable failures; higher values = more churn."
+                  >
+                    <StepperInput
+                      value={parseInt(sim.changes_per_hour, 10) || 2}
+                      onChange={(v) => updateSimulator('changes_per_hour', String(v))}
+                      min={1}
+                      max={60}
+                      unit="/h"
+                      disabled={sim.incident_mode === 'full_ok'}
+                      className="w-28"
+                    />
+                  </FormRow>
+                </FormRows>
+
+                {/* Custom incident counts */}
+                {sim.incident_mode === 'custom' && (
+                  <div className="space-y-3 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                      Custom counts
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                      {(
+                        [
+                          {
+                            label: 'Devices Critical',
+                            field: 'devices_crit',
+                            tooltip: 'Nodes forced to up=0, Slurm=down.',
+                          },
+                          {
+                            label: 'Devices Warning',
+                            field: 'devices_warn',
+                            tooltip: 'Nodes forced to health=1, Slurm=drain.',
+                          },
+                          {
+                            label: 'Racks Critical',
+                            field: 'racks_crit',
+                            tooltip: 'All nodes in these racks are marked down.',
+                          },
+                          {
+                            label: 'Aisles Hot',
+                            field: 'aisles_hot',
+                            tooltip: 'Racks in these aisles get a +12°C temperature boost.',
+                          },
+                        ] as const
+                      ).map(({ label, field, tooltip }) => (
+                        <div key={field} className="space-y-2">
+                          <p className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {label}
+                            <TooltipHelp text={tooltip} />
+                          </p>
+                          <StepperInput
+                            value={parseInt(sim.custom_incidents[field], 10) || 0}
+                            onChange={(v) => updateCustomIncident(field, v)}
+                            min={0}
+                            className="w-28"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Paths + TTL */}
+                <div className="grid grid-cols-[1fr_180px] gap-4">
+                  <FormField
+                    label="Overrides Path"
+                    tooltip="YAML file where runtime metric overrides are persisted across restarts."
+                    value={sim.overrides_path}
+                    onChange={(v) => updateSimulator('overrides_path', v)}
+                    placeholder="config/plugins/simulator/overrides/overrides.yaml"
+                  />
+                  <div className="space-y-2">
+                    <p className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Default TTL
+                      <TooltipHelp text="Lifetime of overrides in seconds. Set to 0 for permanent overrides." />
+                    </p>
+                    <StepperInput
+                      value={parseInt(sim.default_ttl_seconds, 10) || 120}
+                      onChange={(v) => updateSimulator('default_ttl_seconds', String(v))}
+                      min={0}
+                      max={86400}
+                      step={60}
+                      unit="s"
+                    />
+                  </div>
+                </div>
+
+                {/* Metrics catalog */}
+                <div className="space-y-2">
+                  <p className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Metrics Catalog
+                    <TooltipHelp text="Primary YAML catalog defining which Prometheus metrics the simulator generates." />
+                  </p>
+                  <SelectInput
+                    value={sim.metrics_catalog_path ?? ''}
+                    onChange={(v) => updateSimulator('metrics_catalog_path', v)}
+                    placeholder={metricsFilesLoading ? 'Loading…' : '— Select a metrics file —'}
+                    options={metricsFiles.map((f) => ({ value: f.path, label: f.name }))}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Additional catalogs */}
+                <div className="space-y-2">
+                  <p className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Additional Catalogs
+                    <TooltipHelp text="Extra metric catalogs merged on top of the primary. Last one wins on conflicts." />
+                  </p>
+                  <div className="space-y-2">
+                    {sim.metrics_catalogs.map((catalog, index) => (
+                      <div
+                        key={index}
+                        className="flex items-end gap-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900"
                       >
-                        <Trash2 className="h-3 w-3" /> Clear All
-                      </button>
-                    )}
+                        <ToggleSwitch
+                          checked={catalog.enabled}
+                          onChange={() => {
+                            const next = [...sim.metrics_catalogs];
+                            next[index] = { ...next[index], enabled: !catalog.enabled };
+                            updateSimulator('metrics_catalogs', next);
+                          }}
+                        />
+                        <FormField
+                          label="ID"
+                          value={catalog.id}
+                          onChange={(v) => {
+                            const next = [...sim.metrics_catalogs];
+                            next[index] = { ...next[index], id: v };
+                            updateSimulator('metrics_catalogs', next);
+                          }}
+                          className="flex-1"
+                        />
+                        <FormField
+                          label="Path"
+                          value={catalog.path}
+                          onChange={(v) => {
+                            const next = [...sim.metrics_catalogs];
+                            next[index] = { ...next[index], path: v };
+                            updateSimulator('metrics_catalogs', next);
+                          }}
+                          className="flex-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateSimulator(
+                              'metrics_catalogs',
+                              sim.metrics_catalogs.filter((_, i) => i !== index)
+                            )
+                          }
+                          className="mb-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
                     <button
-                      onClick={() => setShowAddOverride((p) => !p)}
-                      className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold text-white transition"
+                      type="button"
+                      onClick={() =>
+                        updateSimulator('metrics_catalogs', [
+                          ...sim.metrics_catalogs,
+                          { id: '', path: '', enabled: true },
+                        ])
+                      }
+                      className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     >
-                      <Plus className="h-3 w-3" /> Add
+                      <Plus className="h-3.5 w-3.5" />
+                      Add catalog
                     </button>
                   </div>
                 </div>
 
-                {showAddOverride && (
-                  <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50">
-                    <input
-                      type="text"
-                      value={newOverride.instance}
-                      onChange={(e) => setNewOverride((p) => ({ ...p, instance: e.target.value }))}
-                      placeholder="Instance (e.g. compute001)"
-                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={newOverride.metric}
-                        onChange={(e) => setNewOverride((p) => ({ ...p, metric: e.target.value }))}
-                        placeholder="Metric (e.g. up)"
-                        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                      />
-                      <input
-                        type="number"
-                        value={newOverride.value}
-                        onChange={(e) => setNewOverride((p) => ({ ...p, value: e.target.value }))}
-                        placeholder="Value"
-                        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                      />
-                    </div>
+                {/* Metric Overrides */}
+                <div className="space-y-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Metric Overrides
+                    </p>
                     <div className="flex gap-2">
                       <button
-                        onClick={handleAddOverride}
-                        className="flex-1 rounded-lg bg-green-500 py-1.5 text-xs font-bold text-white uppercase hover:bg-green-600"
+                        onClick={loadSimulatorData}
+                        className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1 text-xs text-gray-500 transition hover:border-gray-300 dark:border-gray-700 dark:text-gray-400"
                       >
-                        Add Override
+                        <RefreshCw className="h-3 w-3" /> Refresh
                       </button>
-                      <button
-                        onClick={() => setShowAddOverride(false)}
-                        className="flex-1 rounded-lg border border-gray-200 py-1.5 text-xs font-bold text-gray-500 uppercase dark:border-gray-700 dark:text-gray-400"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {overrides.length === 0 ? (
-                  <p className="text-center text-xs text-gray-400 dark:text-gray-500">
-                    No active overrides
-                  </p>
-                ) : (
-                  <div className="space-y-1.5">
-                    {overrides.map((ov) => (
-                      <div
-                        key={ov.id}
-                        className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/50"
-                      >
-                        <span className="font-mono text-xs">
-                          <span className="text-brand-500">{ov.instance ?? ov.rack_id}</span>
-                          <span className="mx-1.5 text-gray-400 dark:text-gray-500">→</span>
-                          <span className="text-amber-500">{ov.metric}</span>
-                          <span className="mx-1.5 text-gray-400 dark:text-gray-500">=</span>
-                          <span className="text-gray-800 dark:text-white/90">{ov.value}</span>
-                        </span>
+                      {overrides.length > 0 && (
                         <button
                           onClick={() =>
                             api
-                              .deleteSimulatorOverride(ov.id)
+                              .clearSimulatorOverrides()
                               .then(loadSimulatorData)
                               .catch(() => {
                                 /* noop */
                               })
                           }
-                          className="text-red-500 hover:text-red-400"
+                          className="flex items-center gap-1.5 rounded-lg border border-red-500/50 px-2.5 py-1 text-xs text-red-400 transition hover:bg-red-500/10"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3 w-3" /> Clear All
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setShowAddOverride((p) => !p)}
+                        className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold text-white transition"
+                      >
+                        <Plus className="h-3 w-3" /> Add
+                      </button>
+                    </div>
+                  </div>
+
+                  {showAddOverride && (
+                    <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50">
+                      <input
+                        type="text"
+                        value={newOverride.instance}
+                        onChange={(e) =>
+                          setNewOverride((p) => ({ ...p, instance: e.target.value }))
+                        }
+                        placeholder="Instance (e.g. compute001)"
+                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={newOverride.metric}
+                          onChange={(e) =>
+                            setNewOverride((p) => ({ ...p, metric: e.target.value }))
+                          }
+                          placeholder="Metric (e.g. up)"
+                          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                        />
+                        <input
+                          type="number"
+                          value={newOverride.value}
+                          onChange={(e) => setNewOverride((p) => ({ ...p, value: e.target.value }))}
+                          placeholder="Value"
+                          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAddOverride}
+                          className="flex-1 rounded-lg bg-green-500 py-1.5 text-xs font-bold text-white uppercase hover:bg-green-600"
+                        >
+                          Add Override
+                        </button>
+                        <button
+                          onClick={() => setShowAddOverride(false)}
+                          className="flex-1 rounded-lg border border-gray-200 py-1.5 text-xs font-bold text-gray-500 uppercase dark:border-gray-700 dark:text-gray-400"
+                        >
+                          Cancel
                         </button>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  )}
+
+                  {overrides.length === 0 ? (
+                    <p className="text-center text-xs text-gray-400 dark:text-gray-500">
+                      No active overrides
+                    </p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {overrides.map((ov) => (
+                        <div
+                          key={ov.id}
+                          className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/50"
+                        >
+                          <span className="font-mono text-xs">
+                            <span className="text-brand-500">{ov.instance ?? ov.rack_id}</span>
+                            <span className="mx-1.5 text-gray-400 dark:text-gray-500">→</span>
+                            <span className="text-amber-500">{ov.metric}</span>
+                            <span className="mx-1.5 text-gray-400 dark:text-gray-500">=</span>
+                            <span className="text-gray-800 dark:text-white/90">{ov.value}</span>
+                          </span>
+                          <button
+                            onClick={() =>
+                              api
+                                .deleteSimulatorOverride(ov.id)
+                                .then(loadSimulatorData)
+                                .catch(() => {
+                                  /* noop */
+                                })
+                            }
+                            className="text-red-500 hover:text-red-400"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
+            )}
+          </>
+        )}
+      </FormSection>
 
-      {/* Slurm Plugin */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-        <div className="mb-4 flex items-start gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/10">
-            <Cpu className="h-4 w-4 text-blue-500" />
-          </div>
-          <div className="pt-0.5">
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Slurm Plugin</h3>
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Workload manager integration for HPC clusters. Configuration file:
-              config/plugins/slurm/config.yml
-            </p>
-          </div>
-        </div>
-
-        <FormToggle
-          label="Enable Slurm Integration"
-          description="Activate Slurm plugin — enables HPC wallboard, node list, partitions and alerts views."
-          checked={draft.plugins.slurm.enabled}
-          onChange={(value) => updateSlurm('enabled', value)}
-        />
+      {/* ── Slurm Plugin ── */}
+      <FormSection
+        title="Slurm Plugin"
+        icon={Cpu}
+        iconColor="text-blue-500"
+        iconBg="bg-blue-50 dark:bg-blue-500/10"
+        description="Workload manager integration for HPC clusters"
+      >
+        <FormRows>
+          <FormRow
+            label="Enable Slurm Integration"
+            description="Enables HPC wallboard, node list, partitions and alerts views"
+            tooltip="Requires a Prometheus metric that exposes Slurm node statuses (e.g. slurm_node_status)."
+          >
+            <ToggleSwitch
+              checked={draft.plugins.slurm.enabled}
+              onChange={() => updateSlurm('enabled', !draft.plugins.slurm.enabled)}
+            />
+          </FormRow>
+        </FormRows>
 
         <button
           type="button"
           onClick={() => setSlurmSettingsOpen(!slurmSettingsOpen)}
           disabled={!draft.plugins.slurm.enabled}
-          className={`mt-4 flex items-center gap-2 text-sm font-medium transition ${
+          className={`flex items-center gap-2 text-sm font-medium transition ${
             draft.plugins.slurm.enabled
-              ? 'cursor-pointer text-gray-500 dark:text-gray-400'
+              ? 'cursor-pointer text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
               : 'cursor-not-allowed text-gray-400 opacity-50 dark:text-gray-500'
           }`}
         >
@@ -889,7 +827,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
         </button>
 
         {slurmSettingsOpen && draft.plugins.slurm.enabled && (
-          <div className="mt-4 space-y-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+          <div className="space-y-6 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
             {/* ── Prometheus Source ── */}
             <div className="space-y-3">
               <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase dark:text-gray-600">
@@ -958,7 +896,6 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                   Device roles
                   <TooltipHelp text="Only devices whose template role matches one of these values will appear in Slurm views. Leave empty to match all." />
                 </label>
-                {/* TagInput — same design as /ui/tag-input */}
                 <div
                   onClick={() => roleInputRef.current?.focus()}
                   className="focus-within:border-brand-500 flex min-h-[42px] flex-wrap items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 dark:border-gray-700"
@@ -1010,12 +947,19 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 </div>
               </div>
 
-              <FormToggle
-                label="Include unlabeled nodes"
-                description="Show devices that have no role defined in their template."
-                checked={draft.plugins.slurm.include_unlabeled}
-                onChange={(value) => updateSlurm('include_unlabeled', value)}
-              />
+              <FormRows>
+                <FormRow
+                  label="Include unlabeled nodes"
+                  description="Show devices that have no role defined in their template"
+                >
+                  <ToggleSwitch
+                    checked={draft.plugins.slurm.include_unlabeled}
+                    onChange={() =>
+                      updateSlurm('include_unlabeled', !draft.plugins.slurm.include_unlabeled)
+                    }
+                  />
+                </FormRow>
+              </FormRows>
 
               <div>
                 <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1030,7 +974,6 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 />
               </div>
 
-              {/* Mapping editor */}
               <SlurmMappingEditor mappingPath={draft.plugins.slurm.mapping_path} />
             </div>
 
@@ -1043,7 +986,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 {(['ok', 'warn', 'crit', 'info'] as const).map((sev) => (
                   <div
                     key={sev}
-                    className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900"
+                    className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900"
                   >
                     <input
                       type="color"
@@ -1083,7 +1026,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                   return (
                     <div
                       key={sev}
-                      className="flex flex-col gap-2 rounded-lg border-2 border-dashed p-3 transition"
+                      className="flex flex-col gap-2 rounded-xl border-2 border-dashed p-3 transition"
                       style={{ borderColor: color }}
                       onDragOver={(e) => {
                         e.preventDefault();
@@ -1129,7 +1072,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                             onDragEnd={(e) => {
                               e.currentTarget.style.opacity = '1';
                             }}
-                            className="group flex cursor-grab items-center gap-1.5 rounded border border-gray-200 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-900"
+                            className="group flex cursor-grab items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-900"
                             style={{ borderLeftWidth: 2, borderLeftColor: color }}
                           >
                             <GripVertical className="h-3 w-3 shrink-0 text-gray-300 dark:text-gray-600" />
@@ -1146,7 +1089,6 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                           </div>
                         ))}
                       </div>
-                      {/* Add new status to this zone */}
                       <form
                         onSubmit={(e) => {
                           e.preventDefault();
@@ -1183,7 +1125,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             </div>
           </div>
         )}
-      </div>
+      </FormSection>
     </div>
   );
 };
