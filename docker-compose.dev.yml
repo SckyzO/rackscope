@@ -4,33 +4,19 @@ services:
   #   https://localhost      → React app (frontend)
   #   https://localhost/api  → FastAPI backend (REST + Swagger at /api/docs)
   #   http://localhost       → redirects to HTTPS
-  #   http://localhost:8080  → Traefik dashboard (dev only)
   #
   # First run: generate the self-signed cert with `make cert`
-  traefik:
-    image: traefik:v3.3
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      # File provider for TLS dynamic config (cert + key paths)
-      - "--providers.file.directory=/traefik-config"
-      - "--providers.file.watch=true"
-      # HTTP entrypoint — redirects to HTTPS
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      # HTTPS entrypoint
-      - "--entrypoints.websecure.address=:443"
-      - "--log.level=WARN"
+  nginx:
+    image: nginx:alpine
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/config:/traefik-config:ro
-      - ./traefik/certs:/certs:ro
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - frontend
+      - backend
     restart: unless-stopped
 
   backend:
@@ -51,12 +37,6 @@ services:
     environment:
       - RACKSCOPE_APP_CONFIG=/app/config/app.yaml
     command: uvicorn rackscope.api.app:app --host 0.0.0.0 --port 8000 --reload
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=PathPrefix(`/api`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls=true"
-      - "traefik.http.services.backend.loadbalancer.server.port=8000"
 
   frontend:
     build:
@@ -67,12 +47,6 @@ services:
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls=true"
-      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
 
   playwright:
     image: mcr.microsoft.com/playwright:v1.58.2-jammy

@@ -50,5 +50,5 @@ website/node_modules/
 website/build/
 website/.docusaurus/
 
-# Traefik TLS certificates (generated locally via `make cert`)
-traefik/certs/*.pem
+# Nginx TLS certificates (generated locally via `make cert`)
+nginx/certs/*.pem

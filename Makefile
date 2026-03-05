@@ -4,7 +4,7 @@ SHELL := /bin/bash
 COMPOSE_DEV := docker-compose.dev.yml
 COMPOSE_PROD := docker-compose.prod.yml
 
-.PHONY: up down restart logs build lint test test-v test-k test-file clean coverage typecheck complexity quality ci shell-backend shell-frontend watch-logs traefik-logs cert
+.PHONY: up down restart logs build lint test test-v test-k test-file clean coverage typecheck complexity quality ci shell-backend shell-frontend watch-logs nginx-logs cert
 .PHONY: up-prod down-prod logs-prod build-prod
 .PHONY: docs docs-build docs-logs
 .PHONY: security security-backend security-frontend security-deps
@@ -12,9 +12,8 @@ COMPOSE_PROD := docker-compose.prod.yml
 # Development Stack Management (default)
 # First time: run `make cert` to generate the self-signed TLS certificate.
 # Access points after `make up`:
-#   https://localhost          → Rackscope UI  (browser warning: add exception)
+#   https://localhost          → Rackscope UI  (browser warning: add exception once)
 #   https://localhost/api/docs → FastAPI Swagger UI
-#   http://localhost:8080      → Traefik dashboard
 #   http://localhost:9090      → Prometheus
 #   http://localhost:3001      → Docusaurus docs  (make docs)
 up:
@@ -126,19 +125,19 @@ shell-frontend:
 watch-logs:
 	docker compose -f $(COMPOSE_DEV) logs -f backend frontend
 
-traefik-logs:
-	docker compose -f $(COMPOSE_DEV) logs -f traefik
+nginx-logs:
+	docker compose -f $(COMPOSE_DEV) logs -f nginx
 
 # Generate a self-signed TLS certificate for local HTTPS (valid 10 years)
 # Re-run to rotate the certificate. Certs are git-ignored.
 cert:
-	mkdir -p traefik/certs
+	mkdir -p nginx/certs
 	openssl req -x509 -nodes -days 3650 -newkey rsa:4096 \
-		-keyout traefik/certs/key.pem \
-		-out traefik/certs/cert.pem \
+		-keyout nginx/certs/key.pem \
+		-out nginx/certs/cert.pem \
 		-subj "/CN=localhost" \
 		-addext "subjectAltName=DNS:localhost,DNS:*.localhost,IP:127.0.0.1"
-	@echo "✅ Certificate generated in traefik/certs/"
+	@echo "✅ Certificate generated in nginx/certs/"
 	@echo "   Open https://localhost and add a browser exception for the self-signed cert."
 
 # Documentation site (Docusaurus — runs in Docker)
