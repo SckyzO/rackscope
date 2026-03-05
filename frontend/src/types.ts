@@ -403,10 +403,18 @@ export interface AppConfig {
     };
   };
   simulator?: {
+    enabled?: boolean;
     update_interval_seconds?: number;
     seed?: number | null;
-    scenario?: string | null;
-    scale_factor?: number;
+    incident_mode?: string;
+    changes_per_hour?: number;
+    custom_incidents?: {
+      devices_crit?: number;
+      devices_warn?: number;
+      racks_crit?: number;
+      aisles_hot?: number;
+    };
+    overrides_path?: string;
     default_ttl_seconds?: number;
     metrics_catalog_path?: string;
     metrics_catalogs?: Array<{
@@ -414,16 +422,6 @@ export interface AppConfig {
       path: string;
       enabled?: boolean;
     }>;
-    incident_rates?: {
-      node_micro_failure?: number;
-      rack_macro_failure?: number;
-      aisle_cooling_failure?: number;
-    };
-    incident_durations?: {
-      rack?: number;
-      aisle?: number;
-    };
-    overrides_path?: string;
   };
   slurm?: {
     metric?: string;

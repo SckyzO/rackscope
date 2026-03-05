@@ -67,32 +67,10 @@ def get_app_config(
         "simulator": {
             "update_interval_seconds": 20,
             "seed": None,
-            "scenario": None,
-            "scale_factor": 1.0,
             "default_ttl_seconds": 120,
-            "metrics_catalog_path": "config/simulator_metrics_full.yaml",
-            "metrics_catalogs": [
-                {
-                    "id": "core",
-                    "path": "config/simulator_metrics_full.yaml",
-                    "enabled": True,
-                },
-                {
-                    "id": "slurm",
-                    "path": "config/simulator_metrics_slurm.yaml",
-                    "enabled": True,
-                },
-            ],
-            "incident_rates": {
-                "node_micro_failure": 0.001,
-                "rack_macro_failure": 0.01,
-                "aisle_cooling_failure": 0.005,
-            },
-            "incident_durations": {
-                "rack": 3,
-                "aisle": 5,
-            },
-            "overrides_path": "config/simulator_overrides.yaml",
+            "overrides_path": "config/plugins/simulator/overrides/overrides.yaml",
+            "metrics_catalog_path": "config/plugins/simulator/metrics/metrics_full.yaml",
+            "metrics_catalogs": [],
         },
     }
 
