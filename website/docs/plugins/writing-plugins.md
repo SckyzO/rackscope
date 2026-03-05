@@ -240,7 +240,7 @@ def test_plugin_routes():
 
 Real-world plugin implementations:
 - **Slurm plugin**: `plugins/slurm/backend/plugin.py` — 8 API endpoints, metrics catalog, node mapping
-- **Simulator plugin**: `plugins/simulator/backend/plugin.py` — 6 API endpoints, overrides, scenario management
+- **Simulator plugin**: `plugins/simulator/backend/plugin.py` — 7 API endpoints, overrides, incident mode control, container restart
 
 ## Plugin Base Class Reference
 

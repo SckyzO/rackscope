@@ -31,7 +31,7 @@ generates and exposes** on `:9000`. It controls metric names, label sets,
 instance filtering, and how the simulator engine populates values (from
 behavioral profiles, incidents, and overrides).
 
-The catalog is read by `tools/simulator/main.py` on every tick. Changes to
+The catalog is read by `plugins/simulator/process/main.py` on every tick. Changes to
 it do not affect what the UI displays — only what Prometheus scrapes.
 
 The default catalog (`metrics_full.yaml`) produces 43 distinct metric
@@ -76,15 +76,13 @@ chart for it. Both must be configured independently.
 ```
 config/plugins/simulator/
 ├── config/
-│   └── plugin.yaml          ← main plugin config (hot-reloaded every tick)
+│   └── plugin.yaml          ← single config file (hot-reloaded every tick)
 ├── metrics/
 │   ├── metrics_full.yaml    ← primary catalog (all 43 metric families)
 │   ├── metrics_slurm.yaml   ← Slurm-only catalog (labels_only format)
 │   └── metrics_examples.yaml ← reference examples for custom catalogs
-├── overrides/
-│   └── overrides.yaml       ← runtime metric overrides (TTL-aware)
-└── scenarios/
-    └── scenarios.yaml       ← scenarios + behavioral profiles
+└── overrides/
+    └── overrides.yaml       ← runtime metric overrides (TTL-aware)
 ```
 
 ---
@@ -107,11 +105,13 @@ Every N seconds (update_interval_seconds, default: 20):
      Reads config/plugins/simulator/overrides/overrides.yaml.
      Overrides with expires_at in the past are silently skipped.
 
-  4. Apply incidents
-     On each tick, random incidents may fire based on configured rates:
-     - node_micro_failure: individual node goes down
-     - rack_macro_failure: entire rack loses power
-     - aisle_cooling_failure: aisle-wide temperature spike
+  4. Roll incidents (on cycle boundary)
+     Every `3600 / changes_per_hour / update_interval` ticks, a new random set
+     of victims is drawn from the topology according to the active incident_mode:
+     - nodes_crit  → up=0, Slurm=down
+     - nodes_warn  → health_status=1, Slurm=drain
+     - racks_crit  → all nodes in rack go down
+     - aisles_hot  → +12 °C temperature boost on all nodes in aisle
 
   5. Generate metrics
      For each discovered instance, compute gauge values based on the
@@ -141,7 +141,6 @@ self-contained.
 plugins:
   simulator:
     enabled: true
-    scenario: demo-stable
 ```
 
 When the simulator is active, a small **DEMO** ribbon appears in the top-left
@@ -153,13 +152,13 @@ hot-reloaded every tick):
 ```yaml
 update_interval_seconds: 20
 seed: null
-scenario: demo-stable
-scale_factor: 1
+incident_mode: light   # full_ok | light | medium | heavy | chaos | custom
+changes_per_hour: 2
 ```
 
 Alternatively, navigate to **Settings** in the UI, find the
-**Plugins — Simulator** section, and use the Enable toggle and scenario
-selector. Settings changes are written back to `app.yaml` immediately.
+**Plugins — Simulator** section, and use the Enable toggle and incident mode
+selector. Settings are written back to `plugin.yaml` and `app.yaml` immediately.
 
 :::tip Hot-reload
 `plugin.yaml` is re-read on every simulator tick. You can edit it while
@@ -169,46 +168,51 @@ the stack is running and the change will take effect within one tick
 
 ---
 
-## Scenarios
+## Incident Modes
 
-A scenario is a named configuration profile stored in
-`config/plugins/simulator/scenarios/scenarios.yaml`. When a scenario is
-active, its values override the global defaults in `plugin.yaml` for
-incident rates, behavioral profiles, seed, and scale factor.
+The `incident_mode` field selects a named failure preset. On each reshuffle
+cycle, the simulator draws a new random set of victims within the configured
+bounds. The reshuffle frequency is controlled by `changes_per_hour`.
 
-### Available Scenarios
+### Available Modes
 
-| Scenario | Description | Best for |
-|---|---|---|
-| `full-ok` | No incidents. Low temperatures and load. All nodes green. | Baseline demos, testing normal state, UI walkthroughs |
-| `demo-stable` | Default. Few incidents. `scale_factor: 0.5`, `seed: 7`. | Day-to-day development and standard demos |
-| `random-demo-small` | Occasional WARN/CRIT incidents. `scale_factor: 1.0`, `seed: 42`. | Reproducible failure demonstrations |
-| `random-1-critical` | Periodic single-node failures only. `scale_factor: 0.05`. | Testing health state propagation in isolation |
-| `random-1-rack-down` | Periodic whole-rack power outages. `scale_factor: 0.1`. | Testing rack-level aggregation and recovery |
-| `random-demo-high` | Chaos mode. Frequent WARN/CRIT everywhere. `scale_factor: 1.0`, `seed: 99`. | Stress-testing the dashboard under high incident load |
+| Mode | Nodes CRIT | Nodes WARN | Racks CRIT | Aisles hot | Best for |
+|---|---|---|---|---|---|
+| `full_ok` | 0 | 0 | 0 | 0 | Baseline demos, UI walkthroughs, testing normal state |
+| `light` | 1–3 | 1–5 | 0 | 0 | Day-to-day development, standard demos |
+| `medium` | 1–3 | 5–10 | 1 | 0 | Testing health aggregation, rack-level propagation |
+| `heavy` | 5–10 | 10–20 | 2 | 1 | Stress-testing the dashboard, aisle cooling scenarios |
+| `chaos` | 15 % | 25 % | 20 % | 25 % | Maximum churn, NOC operator training |
+| `custom` | configurable | configurable | configurable | configurable | Reproducible exact-count scenarios |
 
-### Changing the Active Scenario
+### Changing the Incident Mode
 
 **Via the Settings UI** (recommended):
 
-Navigate to Settings → Plugins → Simulator → Scenario and select from the
-dropdown. The change is saved to `app.yaml` immediately.
+Navigate to Settings → Plugins → Simulator → Advanced → **Incident Mode**
+and select from the dropdown. The change is hot-reloaded within one tick.
 
-**Via `plugin.yaml`**:
+**Via `plugin.yaml`** (hot-reloaded every tick):
 
 ```yaml
 # config/plugins/simulator/config/plugin.yaml
-scenario: random-demo-small
+incident_mode: heavy
+changes_per_hour: 4
 ```
 
-The simulator picks up the change on the next tick (within 20 seconds).
+### Custom Mode
 
-**Via `app.yaml`** (legacy):
+When `incident_mode: custom`, the simulator uses exact counts from
+`custom_incidents`:
 
 ```yaml
-plugins:
-  simulator:
-    scenario: full-ok
+incident_mode: custom
+changes_per_hour: 2
+custom_incidents:
+  devices_crit: 5
+  devices_warn: 10
+  racks_crit: 1
+  aisles_hot: 0
 ```
 
 ---
@@ -219,7 +223,7 @@ Behavioral profiles define the baseline characteristics of different node
 types. The simulator assigns each instance to a profile based on its name
 and then generates metric values by sampling from the profile's ranges.
 
-### Profile Definitions (from `scenarios.yaml`)
+### Profile Definitions (from `plugin.yaml`)
 
 | Profile | `base_temp` | `temp_range` | `base_power` | `power_var` | `load_min` | `load_max` |
 |---|---|---|---|---|---|---|
@@ -235,90 +239,53 @@ Profile assignment rules (evaluated in order, first match wins):
 - Instance name matches `sw-*`, `*isw*`, `*esw*` → `network`
 - Everything else → `compute`
 
-### Per-Scenario Profile Overrides
-
-Scenarios can redefine profile values. For example, `full-ok` lowers
-temperatures and load across all profiles:
-
-```yaml
-# config/plugins/simulator/scenarios/scenarios.yaml
-scenarios:
-  full-ok:
-    seed: 1
-    scale_factor: 0.0
-    profiles:
-      compute:
-        base_temp: 20.0
-        temp_range: 4.0
-        base_power: 140.0
-        power_var: 40.0
-        load_min: 5.0
-        load_max: 20.0
-```
+Profile values can be customized in `plugin.yaml` under the `profiles` key.
+These are process-only fields (not validated by the backend Pydantic model).
 
 ---
 
-## Incident Types
+## Incident Effects
 
-Incidents are random events that inject realistic failure states into the
-simulation. They are controlled by `incident_rates` (probability per tick)
-and `scale_factor` (global multiplier).
+Regardless of the active mode, all four incident types have the same
+observable effects:
 
-Setting `scale_factor: 0` disables all incidents regardless of the
-individual rates.
+### Critical nodes (`nodes_crit`)
 
-### Node Micro-Failure
-
-**Rate**: `node_micro_failure: 0.001` (1 in 1000 ticks, approximately once
-every 5.5 hours at the default 20-second interval)
-
-A single randomly chosen node experiences a transient failure:
+Nodes drawn into the CRIT set:
 
 - `up` set to `0`
-- Temperature spikes +25 °C before going down (emulates thermal runaway)
 - `node_health_status` set to `2` (CRIT)
 - Power drops to 50 W (standby/BMC-only draw)
-- The node recovers automatically on the next tick
-
-### Rack Macro-Failure
-
-**Rate**: `rack_macro_failure: 0.01` (1 in 100 ticks)
-**Duration**: `incident_durations.rack: 300` seconds (5 minutes — realistic PDU reset / power restore time)
-
-A whole rack loses power (simulates a PDU failure or breaker trip):
-
-- All nodes in the affected rack: `up=0`, `node_power_watts=50`
 - CPU load drops to 0
-- The rack recovers after 300 seconds and all nodes come back online
+- Slurm status: `down`
 
-### Aisle Cooling Failure
+### Warning nodes (`nodes_warn`)
 
-**Rate**: `aisle_cooling_failure: 0.005` (1 in 200 ticks)
-**Duration**: `incident_durations.aisle: 600` seconds (10 minutes — cooling unit restart + temperature stabilization)
+Nodes drawn into the WARN set:
 
-All nodes in a randomly chosen aisle receive a +12 °C temperature boost:
+- `up` remains `1`
+- `node_health_status` set to `1` (WARN)
+- Temperature, power and load unaffected
+- Slurm status: `drain`
 
-- Temperatures exceed WARN thresholds (typically 38 °C) on most nodes
+### Critical racks (`racks_crit`)
+
+All nodes in a CRIT rack receive the same treatment as nodes_crit above.
+Additionally, the rack cooling metrics (Sequana3) show:
+
+- Inlet pressure drops to ~160 kPa
+- Leak sensor reads ~1.2
+- Board temperature rises to ~95 °C
+- PMC power output drops to 0 W
+
+### Hot aisles (`aisles_hot`)
+
+All nodes in a hot aisle receive a +12 °C temperature boost:
+
+- Temperatures exceed WARN threshold (typically 38 °C) on most nodes
 - High-draw nodes (GPU) may exceed CRIT threshold (45 °C)
-- After 600 seconds the cooling unit is considered restarted and
-  temperatures return to normal
 - `up` is NOT affected — nodes remain reachable
-
-### Incident Rate Reference
-
-```yaml
-# config/plugins/simulator/config/plugin.yaml
-scale_factor: 1.0        # 0.0 = no incidents, 2.0 = double rate
-
-incident_rates:
-  node_micro_failure: 0.001    # Per-tick probability (0.0–1.0)
-  rack_macro_failure: 0.01
-  aisle_cooling_failure: 0.005
-
-incident_durations:
-  rack: 300    # seconds — PDU reset / power restore (5 min)
-  aisle: 600   # seconds — cooling unit restart + stabilization (10 min)
-```
+- Aisle cooling (Sequana3) shows reduced pressure and elevated leak sensor
 
 ---
 
@@ -519,11 +486,11 @@ When the Slurm plugin is enabled alongside the Simulator, the simulator
 injects random Slurm node status transitions every tick to populate
 the Slurm wallboard and dashboards with realistic data.
 
-The `slurm_random_statuses` block in `scenarios.yaml` controls how many
+The `slurm_random_statuses` block in `plugin.yaml` controls how many
 nodes are randomly placed into each non-idle state per tick:
 
 ```yaml
-# config/plugins/simulator/scenarios/scenarios.yaml
+# config/plugins/simulator/config/plugin.yaml
 slurm_random_statuses:
   drain: 1   # 1 random node set to drain each tick
   down: 1    # 1 random node set to down each tick
