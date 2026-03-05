@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from rackscope.plugins.base import RackscopePlugin, MenuSection, MenuItem
 from rackscope.services import slurm_service, topology_service
 from rackscope.model.config import AppConfig
-from .config import SlurmPluginConfig
+from plugins.slurm.backend.config import SlurmPluginConfig
 
 logger = logging.getLogger(__name__)
 

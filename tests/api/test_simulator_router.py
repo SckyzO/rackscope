@@ -14,8 +14,8 @@ from rackscope.api.app import app
 from rackscope.api.dependencies import get_app_config_optional
 from rackscope.model.config import AppConfig, PathsConfig, SimulatorConfig
 from rackscope.plugins.registry import registry
-from rackscope.plugins.simulator import SimulatorPlugin
-from rackscope.plugins.simulator.config import SimulatorPluginConfig
+from plugins.simulator.backend import SimulatorPlugin
+from plugins.simulator.backend.config import SimulatorPluginConfig
 
 # Register simulator plugin for tests
 if not registry.get_plugin("simulator"):

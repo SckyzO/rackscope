@@ -14,8 +14,8 @@ from rackscope.api.app import app
 from rackscope.model.config import AppConfig, PathsConfig, SlurmConfig
 from rackscope.model.domain import Aisle, Device, Rack, Room, Site, Topology
 from rackscope.plugins.registry import registry
-from rackscope.plugins.slurm import SlurmPlugin
-from rackscope.plugins.slurm.config import SlurmPluginConfig
+from plugins.slurm.backend import SlurmPlugin
+from plugins.slurm.backend.config import SlurmPluginConfig
 
 # Register Slurm plugin for tests
 if not registry.get_plugin("slurm"):

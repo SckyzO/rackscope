@@ -36,8 +36,8 @@ from rackscope.model.loader import (
 from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
 from rackscope.plugins.registry import registry as plugin_registry
-from rackscope.plugins.simulator import SimulatorPlugin
-from rackscope.plugins.slurm import SlurmPlugin
+from plugins.simulator.backend import SimulatorPlugin
+from plugins.slurm.backend import SlurmPlugin
 from rackscope.api.routers import (
     config,
     catalog,

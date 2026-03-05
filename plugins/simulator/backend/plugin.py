@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from rackscope.plugins.base import RackscopePlugin, MenuSection, MenuItem
 from rackscope.api.dependencies import get_app_config_optional
 from rackscope.model.config import AppConfig
-from .config import SimulatorPluginConfig
+from plugins.simulator.backend.config import SimulatorPluginConfig
 
 logger = logging.getLogger(__name__)
 
