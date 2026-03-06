@@ -8,8 +8,6 @@ sidebar_position: 9
 
 Authentication in Rackscope is **optional** and disabled by default.
 
-![Sign In page](/img/screenshots/signin.png)
-
 ## Default Behavior
 
 Out of the box, Rackscope does not require any login. All routes — including the editors and Settings page — are accessible without credentials. This is intentional for lab environments, air-gapped deployments, and initial setup.
@@ -37,18 +35,6 @@ When `auth.enabled` is set to `true`:
 - All API routes require a valid JWT token in the `Authorization: Bearer <token>` header.
 - The frontend redirects unauthenticated requests to `/login`.
 - The backend returns HTTP `401 Unauthorized` for requests without a valid token.
-
-## Sign In Flow
-
-1. Navigate to `/login` (or be redirected automatically if auth is enabled).
-2. Enter your **username** and **password**.
-3. Click **Sign In**.
-
-On success, the backend issues a signed JWT token. The frontend stores it in `localStorage` under the key `rackscope.auth.token` and attaches it to every subsequent API request via the `Authorization` header.
-
-You are then redirected to the page you were trying to access, or to the Dashboard if no redirect target was stored.
-
-If the credentials are incorrect, a validation error appears inline — no page reload occurs.
 
 ## Sign Up
 
