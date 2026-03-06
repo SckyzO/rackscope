@@ -85,6 +85,74 @@ GET /api/plugins/menu
 
 ---
 
+### GET /api/plugins/{plugin_id}
+
+Returns details about a specific plugin.
+
+```http
+GET /api/plugins/simulator
+```
+
+**Response**
+
+```json
+{"plugin_id": "simulator", "plugin_name": "Metrics Simulator", "enabled": true, "version": "1.0.0"}
+```
+
+Returns `404` if the plugin is not registered.
+
+---
+
+### GET /api/plugins/{plugin_id}/config
+
+Returns the full configuration for a specific plugin, read from its dedicated YAML file at
+`config/plugins/{plugin_id}/config.yml`.
+
+```http
+GET /api/plugins/simulator/config
+```
+
+**Response**
+
+```json
+{
+  "config": {
+    "incident_mode": "light",
+    "changes_per_hour": 2,
+    "update_interval_seconds": 20
+  },
+  "source": "file",
+  "path": "config/plugins/simulator/config/plugin.yaml"
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `config` | object | Full plugin configuration dict |
+| `source` | string | `"file"` if loaded from disk, `"defaults"` if no file found |
+| `path` | string | Filesystem path of the config file |
+
+---
+
+### POST /api/plugins/{plugin_id}/config
+
+Updates the configuration for a specific plugin. Writes the new config to the plugin's YAML file
+and hot-reloads it.
+
+```http
+POST /api/plugins/simulator/config
+Content-Type: application/json
+
+{"config": {"incident_mode": "heavy", "changes_per_hour": 4}}
+```
+
+**Notes**
+- For the Simulator plugin, `incident_mode` and `changes_per_hour` apply on the next tick (~20 s).
+- Path changes (`overrides_path`, `metrics_catalog_path`) require a `POST /api/simulator/restart`.
+- Returns the updated config object on success.
+
+---
+
 ## Simulator Plugin {#simulator}
 
 The Simulator plugin generates realistic Prometheus metrics for testing without real hardware. It is enabled by setting `plugins.simulator.enabled: true` in `config/app.yaml`. Prometheus scrapes the simulator and the backend queries Prometheus normally, making the demo environment behaviorally identical to production.
@@ -659,6 +727,27 @@ GET /api/env
 
 ---
 
+### GET /api/system/status
+
+Returns the current status of the backend process.
+
+```http
+GET /api/system/status
+```
+
+**Response**
+
+```json
+{"status": "running", "pid": 12345}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | string | Always `"running"` when the backend responds |
+| `pid` | integer | Backend process ID |
+
+---
+
 ### POST /api/system/restart
 
 Triggers a backend server restart. Only available when the backend is running in development mode with `uvicorn --reload`.
@@ -676,3 +765,95 @@ POST /api/system/restart
 :::warning
 This endpoint is intended for development use only. It requires the backend to be started with `uvicorn --reload`. It has no effect in production deployments.
 :::
+
+---
+
+## Authentication {#auth}
+
+These endpoints manage user credentials. They are available whether or not `auth.enabled` is
+`true` in `app.yaml` — credential updates always go through these endpoints.
+
+---
+
+### POST /api/auth/change-password
+
+Updates the user's password. Verifies the current password before applying the change, then
+writes the new bcrypt hash to `config/app.yaml` and hot-reloads the config.
+
+```http
+POST /api/auth/change-password
+Content-Type: application/json
+
+{
+  "current_password": "old-password",
+  "new_password": "new-secure-password"
+}
+```
+
+**Request body**
+
+| Field | Type | Description |
+|---|---|---|
+| `current_password` | string | The user's current password (verified against the stored bcrypt hash) |
+| `new_password` | string | The new password (validated against `auth.policy`) |
+
+**Response**
+
+```json
+{"ok": true}
+```
+
+**Errors**
+
+| Status | Reason |
+|---|---|
+| `401` | `current_password` does not match the stored hash |
+| `422` | `new_password` fails policy validation (too short, missing digit, etc.) |
+
+Password policy rules are configured under `auth.policy` in `app.yaml`:
+
+```yaml
+auth:
+  policy:
+    min_length: 6
+    max_length: 128
+    require_digit: false
+    require_symbol: false
+```
+
+---
+
+### POST /api/auth/change-username
+
+Updates the username. Requires the current password for verification. Writes the new username
+to `config/app.yaml` and hot-reloads the config.
+
+```http
+POST /api/auth/change-username
+Content-Type: application/json
+
+{
+  "new_username": "newname",
+  "password": "current-password"
+}
+```
+
+**Request body**
+
+| Field | Type | Description |
+|---|---|---|
+| `new_username` | string | The new username (must not be empty or whitespace-only) |
+| `password` | string | The current password (for verification) |
+
+**Response**
+
+```json
+{"ok": true, "username": "newname"}
+```
+
+**Errors**
+
+| Status | Reason |
+|---|---|
+| `401` | `password` does not match the stored hash |
+| `422` | `new_username` is empty or whitespace-only |

@@ -38,7 +38,7 @@ make logs         # Follow all service logs
 ```bash
 make lint         # ESLint + Stylelint + Prettier (frontend) + ruff (backend)
 make typecheck    # mypy on src/rackscope — target: 0 errors
-make test         # pytest — 362 tests
+make test         # pytest — 852+ tests
 make coverage     # pytest + coverage report (htmlcov/)
 make complexity   # radon cyclomatic complexity
 make quality      # lint + typecheck + complexity + coverage
@@ -93,7 +93,7 @@ curl http://localhost:8000/healthz
 
 # Run tests
 make test
-# Expected: 362 passed
+# Expected: 852+ passed
 
 # Interactive API docs
 open http://localhost:8000/docs

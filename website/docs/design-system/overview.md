@@ -70,6 +70,23 @@ export const MyPage = () => {
 
 ---
 
+## Settings — Appearance
+
+The **Settings > Appearance** tab is the primary place for operators to customize the visual experience.
+It surfaces all theme controls with live preview and links directly to the UI Library.
+
+### What you can configure
+
+- **Accent color** — controls interactive elements (buttons, active sidebar items, focused inputs). 5 options: Indigo (default), Violet, Emerald, Rose, Amber.
+- **Color palette** — full dark/light theme. Dark options: Void, Navy, Forest, Matrix. Light options: Slate, Warm, Cool, Solarized.
+- **Tooltip style** — controls how device health tooltips appear on hover in rack and room views. 6 styles: Tinted, Compact, Glass, Split, Terminal, Ultra-compact. A live preview card shows the selected style instantly.
+- **Severity label customization** — rename the default OK / WARN / CRIT / UNKNOWN labels per deployment.
+- **Open UI Library** link — shortcut to `/templates/default` for component reference.
+
+All changes apply immediately and are persisted in `localStorage` under the `rackscope.*` namespace. No page reload or backend restart is required.
+
+---
+
 ## Design principles
 
 1. **Dark mode first** — all components render correctly in dark mode (the default for NOC environments)

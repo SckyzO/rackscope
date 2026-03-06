@@ -184,22 +184,28 @@ before connecting live hardware, the **Simulator plugin** lets you start with si
 - You can experiment with health states, thresholds, overrides, and all UI features
 - A **DEMO** ribbon is displayed in the top-left corner of the UI while the simulator is active
 
-**Demo scenario options:**
+**Incident mode options:**
 
-| Scenario | Description |
+| Mode | Description |
 |---|---|
-| `demo-small` | Small topology with a few nodes in WARN/CRIT state — good for first-time exploration |
-| `full-ok` | All nodes healthy — useful for baseline visual testing |
-| `random-demo-small` | Random failures with a different seed each run |
+| `full_ok` | All nodes healthy — useful for baseline visual testing |
+| `light` | 1–3 critical, 1–5 warning devices |
+| `medium` | 1–3 critical, 5–10 warning, 1 rack in failure |
+| `heavy` | 5–10 critical, 10–20 warning, 2 racks, 1 hot aisle |
+| `chaos` | ~15% critical, ~25% warning — maximum failure density |
+
+The default mode is `light`. You can change the mode and the reshuffle frequency (`changes_per_hour`)
+at any time from **Settings > Plugins > Simulator**.
 
 :::info
-The wizard writes `plugins.simulator.enabled: true` and a `scenario` entry to `config/app.yaml`.
+The wizard writes `plugins.simulator.enabled: true` to `config/app.yaml` and sets the incident
+mode in `config/plugins/simulator/config/plugin.yaml`.
 You can disable it at any time from **Settings > Plugins**.
 :::
 
-> _[Screenshot placeholder: Simulator step with scenario picker]_
+> _[Screenshot placeholder: Simulator step with incident mode picker]_
 
-**Actions:** Toggle the simulator on or off, select a scenario, then click **Finish**.
+**Actions:** Toggle the simulator on or off, select an incident mode, then click **Finish**.
 
 ---
 

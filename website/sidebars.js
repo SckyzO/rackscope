@@ -20,6 +20,7 @@ const sidebars = {
     'user-guide/health-checks',
     'user-guide/topology-editor',
     'user-guide/dashboard',
+    'user-guide/playlist',
     'user-guide/login',
     'user-guide/notifications',
     'user-guide/ui-library',
@@ -61,11 +62,6 @@ const sidebars = {
 
   designSystem: [
     'design-system/overview',
-    'design-system/page-actions',
-    'design-system/forms',
-    'design-system/status',
-    'design-system/overlays',
-    'design-system/feedback',
   ],
 
   plugins: [

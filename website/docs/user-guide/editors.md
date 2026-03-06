@@ -44,6 +44,28 @@ Edit device and rack templates:
 - Rack component definitions
 - View YAML source with Monaco editor
 
+## Rack Template Editor
+
+**URL**: `/editors/rack-templates`
+
+Edit rack templates — the pre-built infrastructure definitions attached to racks (PDUs, HMC modules, rear components):
+
+- Create and edit `RackTemplate` definitions with rear and side-mounted components
+- Set rack component types (`pdu`, `switch`, `hmc`, `rmc`, `cooling`) and their u_height
+- Assign checks and metrics to rack-level components
+- View YAML source with Monaco editor
+
+Rack templates are referenced from topology YAML via `template_id`:
+
+```yaml
+# In a rack definition
+template_id: apc-standard-42u
+```
+
+Once a rack template is assigned, its infrastructure (power banks, cable management, HMC) appears automatically in the rear view of the Rack View.
+
+---
+
 ## Checks Editor
 
 **URL**: `/editors/checks`
