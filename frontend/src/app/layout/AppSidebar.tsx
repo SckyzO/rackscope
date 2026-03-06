@@ -542,9 +542,10 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
                 setMatrixActive(true);
               } else {
                 logoClickTimer.current = setTimeout(() => setLogoClickCount(0), 1500);
+                navigate('/');
               }
             }}
-            title="Rackscope"
+            title="Go to Dashboard"
           >
             {/* Rackscope logo — rack cabinet + monitoring pulse */}
             <svg
@@ -577,8 +578,9 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
               <circle cx="16" cy="15" r="1.25" fill="currentColor" />
             </svg>
           </div>
-          <div
-            className={`overflow-hidden transition-all duration-300 ${
+          <button
+            onClick={() => navigate('/')}
+            className={`min-w-0 overflow-hidden text-left transition-all duration-300 ${
               collapsed
                 ? 'max-w-0 opacity-0 group-hover:max-w-[200px] group-hover:opacity-100'
                 : 'max-w-[200px] opacity-100'
@@ -592,7 +594,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
                 {config.app.description}
               </p>
             )}
-          </div>
+          </button>
         </div>
       </div>
 
