@@ -11,6 +11,8 @@ import {
   Bell,
   Server,
   LayoutDashboard,
+  LayoutGrid,
+  Monitor,
 } from 'lucide-react';
 import type { RoomSummary } from '../../types';
 import type { Dashboard } from '../dashboard/types';
@@ -29,6 +31,8 @@ const ICON_MAP: Record<string, ElementType> = {
   Bell,
   Server,
   LayoutDashboard,
+  LayoutGrid,
+  Monitor,
 };
 
 export const getIcon = (name: string): ElementType => ICON_MAP[name] ?? BarChart2;
@@ -78,13 +82,6 @@ export const PLAYLIST_REGISTRY: RegistryCategory[] = [
     iconName: 'Server',
     pages: [
       {
-        id: 'worldmap',
-        title: 'World Map',
-        iconName: 'Globe',
-        route: '/views/worldmap',
-        requiresFeature: 'worldmap',
-      },
-      {
         id: 'room-{id}',
         title: 'Room: {name}',
         iconName: 'DoorOpen',
@@ -131,6 +128,19 @@ export const PLAYLIST_REGISTRY: RegistryCategory[] = [
     label: 'Monitoring',
     iconName: 'Bell',
     pages: [
+      {
+        id: 'worldmap',
+        title: 'World Map',
+        iconName: 'Globe',
+        route: '/views/worldmap',
+        requiresFeature: 'worldmap',
+      },
+      {
+        id: 'cluster-overview',
+        title: 'Cluster Overview',
+        iconName: 'Monitor',
+        route: '/views/cluster',
+      },
       {
         id: 'notifications',
         title: 'Notifications',

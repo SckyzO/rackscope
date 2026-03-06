@@ -81,6 +81,8 @@ const ICON_COMPONENTS: Record<string, ElementType> = {
   Bell: getIcon('Bell'),
   Server: getIcon('Server'),
   LayoutDashboard,
+  LayoutGrid: getIcon('LayoutGrid'),
+  Monitor: getIcon('Monitor'),
 };
 
 const RegistryIcon = ({ name, className }: { name: string; className?: string }) => {
@@ -345,52 +347,53 @@ export const PlaylistCenterPage = () => {
                     );
                   })}
                 </div>
+
+                {/* Custom dashboards — merged into Dashboard section */}
+                {cat.id === 'dashboard' && dashboards.length > 0 && (
+                  <div className="mt-3 space-y-1 border-t border-gray-100 pt-3 dark:border-gray-800">
+                    <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                      Custom Dashboards
+                    </p>
+                    {dashboards.map((d) => (
+                      <div
+                        key={d.id}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2"
+                      >
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800">
+                          <LayoutDashboard className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                            {d.name}
+                          </p>
+                          <p className="truncate font-mono text-[10px] text-gray-400 dark:text-gray-600">
+                            /dashboard/{d.id}
+                          </p>
+                        </div>
+                        <Link
+                          to={`/dashboard/${d.id}`}
+                          title="Open dashboard"
+                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
+                        <button
+                          onClick={() => toggleDashboardInPlaylist(d.id)}
+                          title={d.inPlaylist ? 'Remove from playlist' : 'Include in playlist'}
+                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors ${
+                            d.inPlaylist
+                              ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10'
+                              : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-400'
+                          }`}
+                        >
+                          <ListVideo className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </SectionCard>
             ))
-          )}
-
-          {/* Custom Dashboards section */}
-          {dashboards.length > 0 && (
-            <SectionCard title="Custom Dashboards" icon={LayoutDashboard}>
-              <div className="space-y-1.5">
-                {dashboards.map((d) => (
-                  <div
-                    key={d.id}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5"
-                  >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800">
-                      <LayoutDashboard className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">
-                        {d.name}
-                      </p>
-                      <p className="truncate font-mono text-[10px] text-gray-400 dark:text-gray-600">
-                        /dashboard/{d.id}
-                      </p>
-                    </div>
-                    <Link
-                      to={`/dashboard/${d.id}`}
-                      title="Open dashboard"
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </Link>
-                    <button
-                      onClick={() => toggleDashboardInPlaylist(d.id)}
-                      title={d.inPlaylist ? 'Remove from playlist' : 'Include in playlist'}
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors ${
-                        d.inPlaylist
-                          ? 'text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10'
-                          : 'text-gray-300 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-400'
-                      }`}
-                    >
-                      <ListVideo className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
           )}
         </div>
 
