@@ -1,35 +1,42 @@
 ---
 id: overview
-title: Design System Overview
+title: Design System
 sidebar_position: 1
 ---
 
-# Design System Overview
+# Design System
 
-Rackscope uses a shared component library located in `frontend/src/app/components/`. All pages should use these components instead of writing inline patterns.
+Rackscope uses a shared component library located in `frontend/src/app/components/`. All pages use these components to ensure visual consistency across the application.
 
-## Reference page
+## Live showcase
 
-Navigate to `/templates/default` in the app to see all components rendered with all variants and states.
+Navigate to **`/templates/default`** (or **UI Library** in the sidebar) to see every component rendered with all its variants and states — buttons, forms, status indicators, overlays, feedback states, and more.
+
+![UI Library — Component Showcase](/img/screenshots/2k-ui-library.png)
+
+The showcase page is the authoritative reference for any component: it shows real usage, all size variants, dark/light mode rendering, and interactive states.
+
+---
 
 ## Component categories
 
-| Category | Path | Components |
+| Category | Path | Key components |
 |---|---|---|
-| **Layout** | `components/layout/` | PageHeader, PageBreadcrumb, SectionCard, Drawer, DrawerHeader, Modal, Tabs, Backdrop, ConfirmationModal |
-| **Actions** | `components/` | PageActionButton, PageActionIconButton, RefreshButton, useAutoRefresh |
-| **Forms** | `components/forms/` | SearchInput, SegmentedControl, FilterPills, ToggleSwitch, NumberInput, StepperInput, FormRow |
-| **UI Primitives** | `components/ui/` | Spinner, SectionLabel, StatusPill, StatusDot, IconBox, AlertBanner, SelectInput, Tooltip, TooltipHelp, StatefulSaveButton, UnsavedIndicator |
-| **Data** | `components/data/` | KpiCard |
-| **Feedback** | `components/feedback/` | LoadingState, EmptyState, ErrorState |
+| **Layout** | `components/layout/` | `PageHeader`, `PageBreadcrumb`, `SectionCard`, `Drawer`, `DrawerHeader`, `Modal`, `Tabs`, `ConfirmationModal` |
+| **Actions** | `components/` | `PageActionButton`, `PageActionIconButton`, `RefreshButton`, `useAutoRefresh` |
+| **Forms** | `components/forms/` | `FormRow`, `SearchInput`, `SegmentedControl`, `FilterPills`, `ToggleSwitch`, `NumberInput`, `StepperInput` |
+| **UI Primitives** | `components/ui/` | `StatusPill`, `StatusDot`, `IconBox`, `AlertBanner`, `SelectInput`, `Tooltip`, `TooltipHelp`, `KpiCard`, `StatefulSaveButton` |
+| **Feedback** | `components/feedback/` | `LoadingState`, `EmptyState`, `ErrorState` |
 
-## Quick start — new page
+---
+
+## Quick-start — new page
 
 ```tsx
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import { PageActionButton } from '../../components/PageActionButton';
-import { usePageTitle } from '../../hooks/usePageTitle';
+import { PageActionIconButton } from '../../components/PageActionButton';
+import { usePageTitle } from '../../contexts/PageTitleContext';
 import { SlidersHorizontal } from 'lucide-react';
 
 export const MyPage = () => {
@@ -40,10 +47,12 @@ export const MyPage = () => {
     <div className="space-y-6">
       <PageHeader
         title="My Page"
-        breadcrumb={<PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'My Page' }]} />}
+        breadcrumb={
+          <PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'My Page' }]} />
+        }
         actions={
           <>
-            <PageActionButton icon={SlidersHorizontal}>Configure</PageActionButton>
+            <PageActionIconButton icon={SlidersHorizontal} title="Settings" onClick={openSettings} />
             <RefreshButton
               refreshing={loading}
               autoRefreshMs={autoRefreshMs}
@@ -59,42 +68,11 @@ export const MyPage = () => {
 };
 ```
 
+---
+
 ## Design principles
 
-1. **Consistency**: Use shared components instead of reinventing patterns
-2. **Dark mode first**: All components support dark mode as primary theme
-3. **Accessibility**: Components include ARIA attributes and keyboard navigation
-4. **Performance**: Components are optimized with React.memo where appropriate
-5. **Composability**: Components are designed to work together
-
-## Import paths
-
-All components are exported from their respective directories:
-
-```tsx
-// Layout
-import { PageHeader, SectionCard, Drawer } from '../../components/layout';
-
-// Actions
-import { PageActionButton, RefreshButton } from '../../components';
-
-// Forms
-import { SearchInput, SegmentedControl } from '../../components/forms';
-
-// UI
-import { StatusPill, Spinner, Tooltip } from '../../components/ui';
-
-// Feedback
-import { LoadingState, EmptyState } from '../../components/feedback';
-
-// Data
-import { KpiCard } from '../../components/data';
-```
-
-## Next steps
-
-- [Page Actions](./page-actions.md) - Buttons, refresh controls, auto-refresh
-- [Forms](./forms.md) - Input controls, filters, toggles
-- [Status](./status.md) - Pills, dots, labels, alerts
-- [Overlays](./overlays.md) - Drawers, modals, tabs
-- [Feedback](./feedback.md) - Loading, empty, error states
+1. **Dark mode first** — all components render correctly in dark mode (the default for NOC environments)
+2. **Consistency** — use shared components, never reinvent inline patterns
+3. **Composability** — components are designed to work together (`FormRow` + `ToggleSwitch`, `SectionCard` + `KpiCard`, etc.)
+4. **Accessibility** — ARIA attributes, keyboard navigation, focus states throughout

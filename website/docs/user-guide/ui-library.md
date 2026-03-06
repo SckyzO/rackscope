@@ -107,7 +107,7 @@ The UI Library page organizes all components into the following categories.
 
 ### Buttons
 
-![Buttons](/img/screenshots/ui-buttons.png)
+
 
 Buttons are available in three variants, four sizes, and multiple states:
 
@@ -118,7 +118,7 @@ Buttons are available in three variants, four sizes, and multiple states:
 
 ### Badges
 
-![Badges](/img/screenshots/ui-badges.png)
+
 
 Badges are compact labels used for status annotation, tag display, and category markers.
 
@@ -129,7 +129,7 @@ Badges are compact labels used for status annotation, tag display, and category 
 
 ### Alerts
 
-![Alerts](/img/screenshots/ui-alerts.png)
+
 
 Alert banners are used for inline feedback, form validation, and system notices.
 
@@ -141,7 +141,7 @@ Alert banners are used for inline feedback, form validation, and system notices.
 
 ### Forms
 
-![Forms](/img/screenshots/ui-forms.png)
+
 
 Form components are used in the Settings page, topology editors, and configuration dialogs.
 
@@ -154,7 +154,7 @@ Form components are used in the Settings page, topology editors, and configurati
 
 ### Modals
 
-![Modals](/img/screenshots/ui-modals.png)
+
 
 Modals are used for confirmations, destructive action warnings, and compact detail overlays.
 
@@ -166,9 +166,9 @@ Modals are used for confirmations, destructive action warnings, and compact deta
 
 ### Charts
 
-![Charts](/img/screenshots/ui-charts.png)
 
-Charts are rendered using Chart.js and are used throughout device detail pages and the Slurm dashboards.
+
+Charts are rendered using ApexCharts and are used throughout device detail pages and the Slurm dashboards.
 
 - **Bar chart**: Used for partition utilization and node state distributions
 - **Line chart**: Used for time-series metric history (temperature, power)

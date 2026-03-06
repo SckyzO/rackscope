@@ -57,8 +57,8 @@ YAML Config → Backend (FastAPI) → Prometheus ← Simulator (demo)
 
 ## Status
 
-- ✅ 362 tests passing
+- ✅ 852 tests passing
 - ✅ 0 mypy type errors
-- ✅ All linters passing (ruff, eslint, stylelint, prettier)
+- ✅ 0 ESLint warnings (ruff, eslint, stylelint, prettier)
 - ✅ 39 metric definitions in library
 - AGPL-3.0 License

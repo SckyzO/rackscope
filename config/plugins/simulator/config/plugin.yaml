@@ -1,34 +1,21 @@
-# Simulator Plugin Configuration
-# Single source of truth for both the backend plugin and the simulator process.
+# Simulator Plugin Configuration — managed by Settings UI
 
 update_interval_seconds: 20
 seed: null
-
-# Incident mode: full_ok | light | medium | heavy | chaos | custom
-incident_mode: light
-
-# How many times per hour incidents are reshuffled. Ignored in full_ok mode.
-changes_per_hour: 2
-
-# Custom incident counts — only active when incident_mode: custom
+incident_mode: heavy
+changes_per_hour: 4
 custom_incidents:
   devices_crit: 0
   devices_warn: 0
   racks_crit: 0
   aisles_hot: 0
-
-# Paths
 overrides_path: config/plugins/simulator/overrides/overrides.yaml
 default_ttl_seconds: 120
 metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
 metrics_catalogs:
-  - id: slurm
-    path: config/plugins/simulator/metrics/metrics_slurm.yaml
-    enabled: true
-
-# ── Process-only config (ignored by Pydantic backend model) ──────────────
-
-# Behavioural profiles — temperature, power and load envelopes per node type
+- id: slurm
+  path: config/plugins/simulator/metrics/metrics_slurm.yaml
+  enabled: true
 profiles:
   compute:
     base_temp: 24.0
@@ -58,12 +45,10 @@ profiles:
     power_var: 10.0
     load_min: 15.0
     load_max: 15.0
-
-# Slurm wallboard helpers — forces a few random nodes into specific statuses
 slurm_random_statuses:
   drain: 1
   down: 1
   maint: 1
 slurm_random_match:
-  - compute*
-  - visu*
+- compute*
+- visu*

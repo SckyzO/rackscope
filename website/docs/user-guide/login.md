@@ -36,24 +36,6 @@ When `auth.enabled` is set to `true`:
 - The frontend redirects unauthenticated requests to `/login`.
 - The backend returns HTTP `401 Unauthorized` for requests without a valid token.
 
-## Sign Up
-
-![Sign Up page](/img/screenshots/signup.png)
-
-Self-registration is available when `auth.allow_signup` is enabled in `app.yaml`:
-
-```yaml
-auth:
-  enabled: true
-  allow_signup: false  # Set to true to enable self-registration
-```
-
-When enabled, a **Create account** link appears on the Sign In page. The Sign Up form collects a username and password. New accounts are stored in `app.yaml` as bcrypt-hashed entries and take effect immediately without a restart.
-
-:::caution
-Enable `allow_signup` only in controlled environments. Any user who can reach the Rackscope URL will be able to create an account.
-:::
-
 ## Changing Your Password
 
 1. Click your username in the top-right corner of the header.

@@ -84,7 +84,7 @@ data model, not an afterthought.
 | Frontend | React 19, TypeScript, Tailwind CSS v4, React Router |
 | Icons | Lucide React |
 | Maps | Leaflet (world map and room floor plans) |
-| Charts | Chart.js |
+| Charts | ApexCharts |
 | Code editor | Monaco Editor (YAML editing) |
 | Backend | FastAPI, Python 3.12, Uvicorn |
 | Data validation | Pydantic v2 |
@@ -94,23 +94,6 @@ data model, not an afterthought.
 | Containerization | Docker, Docker Compose |
 
 ---
-
-## Version and Changelog
-
-The full changelog is maintained in the repository:
-
-- [CHANGELOG.md on GitHub](https://github.com/rackscope/rackscope/blob/main/CHANGELOG.md)
-
-Rackscope follows a phased development model. Major milestones:
-
-| Phase | Description | Status |
-|---|---|---|
-| Phase 0 | Foundations — name, decisions, view model | Done |
-| Phase 1–4 | Backend router split, DI, service layer, logging | Done |
-| Phase 5 | Test coverage (36% → 66%, 251 tests) | Done |
-| Phase 6 | Plugin architecture (SimulatorPlugin, SlurmPlugin) | Done |
-| Phase 6.5 | Metrics Library System | In progress |
-| Phase 7 | Frontend Rebuild (React + Tailwind CSS) | Planned |
 
 ---
 
