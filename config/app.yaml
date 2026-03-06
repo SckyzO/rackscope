@@ -37,13 +37,13 @@ features:
   notifications_max_visible: 10
   playlist: true
   offline: true
-  wizard: false
+  wizard: true
   worldmap: true
   dev_tools: true
 auth:
   enabled: false
   username: admin
-  password_hash: $2b$12$X91lqP3eT0gSs7rF9JdM0OtowhwbsugMYDDGySdrXscVmtggB4eCS
+  password_hash: $2b$12$ah2Ka7ZQjrvwmXQG4tPiuu5btZeDu8W3f4fWkwtma.DjviPFDpmpW
   secret_key: ''
   session_duration: 24h
   policy:
@@ -70,11 +70,11 @@ plugins:
     enabled: true
     update_interval_seconds: 20
     seed: null
-    incident_mode: heavy
-    changes_per_hour: 4
+    incident_mode: custom
+    changes_per_hour: 5
     custom_incidents:
-      devices_crit: 0
-      devices_warn: 0
+      devices_crit: 1
+      devices_warn: 2
       racks_crit: 0
       aisles_hot: 0
     overrides_path: config/plugins/simulator/overrides/overrides.yaml
@@ -101,7 +101,6 @@ plugins:
       - alloc
       - completing
       - comp
-      - idle
       - mixed
       - mix
       warn:
@@ -134,7 +133,8 @@ plugins:
       - unk
       - noresp
       - inval
-      info: []
+      info:
+      - idle
     severity_colors:
       ok: '#22c55e'
       warn: '#f59e0b'

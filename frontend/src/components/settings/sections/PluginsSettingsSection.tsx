@@ -461,6 +461,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             <FormRow
               label="Show DEMO ribbon"
               description="Display the diagonal DEMO ribbon in the top-left corner"
+              tooltip="Display a diagonal DEMO banner in the top-left corner while the simulator is active."
             >
               <ToggleSwitch checked={ribbonVisible} onChange={() => toggleRibbon(!ribbonVisible)} />
             </FormRow>
@@ -706,6 +707,106 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                       <Plus className="h-3.5 w-3.5" />
                       Add catalog
                     </button>
+                  </div>
+                </div>
+
+                {/* Slurm Node Failures */}
+                <div className="space-y-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+                  <p className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Slurm Node Failures
+                    <TooltipHelp text="Force specific Slurm statuses on random nodes each reshuffle cycle. Applied on top of the incident mode. Useful to simulate maintenance or drain states independently." />
+                  </p>
+
+                  {/* Status → count rows */}
+                  <div className="space-y-2">
+                    {Object.entries(sim.slurm_random_statuses).map(([statusName, count]) => (
+                      <div key={statusName} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={statusName}
+                          onChange={(e) => {
+                            const newVal = e.target.value.trim();
+                            if (!newVal || newVal === statusName) return;
+                            const entries = Object.entries(sim.slurm_random_statuses).filter(([k]) => k !== statusName);
+                            updateSimulator('slurm_random_statuses', Object.fromEntries([...entries, [newVal, count]]));
+                          }}
+                          className="w-28 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-mono text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                          placeholder="status"
+                        />
+                        <StepperInput
+                          value={parseInt(count, 10) || 0}
+                          onChange={(v) =>
+                            updateSimulator('slurm_random_statuses', { ...sim.slurm_random_statuses, [statusName]: String(v) })
+                          }
+                          min={0}
+                          max={500}
+                          step={1}
+                          unit="nodes"
+                          className="w-36"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = { ...sim.slurm_random_statuses };
+                            delete next[statusName];
+                            updateSimulator('slurm_random_statuses', next);
+                          }}
+                          className="text-gray-400 transition hover:text-red-500"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateSimulator('slurm_random_statuses', { ...sim.slurm_random_statuses, '': '1' })
+                      }
+                      className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Add status
+                    </button>
+                  </div>
+
+                  {/* Match patterns */}
+                  <div className="space-y-2">
+                    <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+                      Node patterns
+                      <TooltipHelp text="Only nodes matching these glob patterns are eligible for random Slurm status injection. Example: compute*, visu*" />
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {sim.slurm_random_match.map((pattern, idx) => (
+                        <div key={idx} className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-mono dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                          {pattern}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = sim.slurm_random_match.filter((_, i) => i !== idx);
+                              updateSimulator('slurm_random_match', next);
+                            }}
+                            className="ml-0.5 text-gray-400 hover:text-red-500"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                      <input
+                        type="text"
+                        placeholder="Add pattern…"
+                        className="w-28 rounded-full border border-dashed border-gray-300 bg-transparent px-2.5 py-1 font-mono text-xs dark:border-gray-600 dark:text-gray-400"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ',') {
+                            e.preventDefault();
+                            const val = (e.target as HTMLInputElement).value.trim();
+                            if (val && !sim.slurm_random_match.includes(val)) {
+                              updateSimulator('slurm_random_match', [...sim.slurm_random_match, val]);
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -998,6 +1099,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 <FormRow
                   label="Include unlabeled nodes"
                   description="Show devices that have no role defined in their template"
+                  tooltip="Include Slurm nodes with no matching entry in the node mapping file. When disabled, only explicitly mapped nodes appear in Slurm views."
                 >
                   <ToggleSwitch
                     checked={draft.plugins.slurm.include_unlabeled}
@@ -1026,8 +1128,9 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
             {/* ── Severity Colors ── */}
             <div className="space-y-3 border-t border-gray-200 pt-5 dark:border-gray-700">
-              <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+              <p className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-gray-400 uppercase dark:text-gray-600">
                 Severity Colors
+                <TooltipHelp text="Color swatches for OK/WARN/CRIT/INFO Slurm node state badges in all Slurm views." />
               </p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {(['ok', 'warn', 'crit', 'info'] as const).map((sev) => (
@@ -1060,8 +1163,9 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
             {/* ── Status Mapping ── */}
             <div className="space-y-3 border-t border-gray-200 pt-5 dark:border-gray-700">
               <div className="flex items-center gap-2">
-                <p className="text-[10px] font-bold tracking-wider text-gray-400 uppercase dark:text-gray-600">
+                <p className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-gray-400 uppercase dark:text-gray-600">
                   Status Mapping
+                  <TooltipHelp text="Map Slurm node status strings to Rackscope health states. Drag statuses between zones to configure." />
                 </p>
                 <span className="text-[10px] text-gray-400 dark:text-gray-600">
                   — drag to move between zones, click + to add

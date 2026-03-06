@@ -3,7 +3,7 @@ Simulator Plugin Configuration
 """
 
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from pydantic import BaseModel, Field
 
@@ -62,3 +62,13 @@ class SimulatorPluginConfig(BaseModel):
         default="config/plugins/simulator/metrics/metrics_full.yaml",
     )
     metrics_catalogs: List[SimulatorMetricsCatalog] = Field(default_factory=list)
+
+    # Slurm random status injection — forces specific statuses on random nodes each tick
+    slurm_random_statuses: Dict[str, int] = Field(
+        default_factory=lambda: {"drain": 1, "down": 1, "maint": 1},
+        description="Force N nodes to a given Slurm status each reshuffle cycle.",
+    )
+    slurm_random_match: List[str] = Field(
+        default_factory=lambda: ["compute*", "visu*"],
+        description="Glob patterns selecting nodes eligible for random Slurm status injection.",
+    )

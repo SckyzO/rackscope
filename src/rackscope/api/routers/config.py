@@ -138,6 +138,32 @@ async def update_app_config(
             f.write("# Simulator Plugin Configuration — managed by Settings UI\n\n")
             yaml.safe_dump(merged, f, sort_keys=False)
 
+    # Sync Slurm plugin config to its dedicated file so that
+    # SlurmPlugin._load_config() picks up the new settings immediately.
+    # config.yml has priority over app.yaml for the Slurm plugin.
+    slurm_plugin_cfg = payload.plugins.get("slurm") if payload.plugins else None
+    if slurm_plugin_cfg:
+        slurm_cfg_path = Path("config/plugins/slurm/config.yml")
+        slurm_cfg_path.parent.mkdir(parents=True, exist_ok=True)
+        existing_slurm: dict = {}
+        if slurm_cfg_path.exists():
+            try:
+                existing_slurm = yaml.safe_load(slurm_cfg_path.read_text()) or {}
+            except yaml.YAMLError:
+                existing_slurm = {}
+        slurm_data = (
+            slurm_plugin_cfg.model_dump()
+            if hasattr(slurm_plugin_cfg, "model_dump")
+            else dict(slurm_plugin_cfg)
+        )
+        # Strip the 'enabled' flag — it belongs to app.yaml only
+        slurm_data.pop("enabled", None)
+        # Merge: preserve any extra keys in config.yml, UI settings win on conflicts
+        merged_slurm = {**existing_slurm, **slurm_data}
+        with slurm_cfg_path.open("w") as f:
+            f.write("# Slurm Plugin Configuration — managed by Settings UI\n\n")
+            yaml.safe_dump(merged_slurm, f, sort_keys=False)
+
     await apply_config(payload)
     return payload
 

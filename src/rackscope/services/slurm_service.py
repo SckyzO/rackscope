@@ -81,6 +81,9 @@ def calculate_slurm_severity(status: str, has_star: bool, status_map: Any) -> st
         return "WARN"
     if status in status_map.ok:
         return "OK"
+    info_list = getattr(status_map, "info", []) or []
+    if status in info_list:
+        return "INFO"
     return "UNKNOWN"
 
 

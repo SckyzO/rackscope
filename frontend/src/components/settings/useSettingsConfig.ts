@@ -99,6 +99,8 @@ export type ConfigDraft = {
         path: string;
         enabled: boolean;
       }>;
+      slurm_random_statuses: Record<string, string>;
+      slurm_random_match: string[];
     };
     slurm: {
       enabled: boolean;
@@ -222,6 +224,11 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
         config.plugins?.simulator?.metrics_catalog_path ||
         'config/plugins/simulator/metrics/metrics_full.yaml',
       metrics_catalogs: config.plugins?.simulator?.metrics_catalogs || [],
+        slurm_random_statuses: Object.fromEntries(
+          Object.entries((config.plugins?.simulator?.slurm_random_statuses as Record<string, number>) || { drain: 1, down: 1, maint: 1 })
+            .map(([k, v]) => [k, String(v)])
+        ),
+        slurm_random_match: (config.plugins?.simulator?.slurm_random_match as string[]) || ['compute*', 'visu*'],
     },
     slurm: {
       enabled: config.plugins?.slurm?.enabled ?? false,
@@ -368,6 +375,12 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
       default_ttl_seconds: parseInt(draft.plugins.simulator.default_ttl_seconds, 10) || 120,
       metrics_catalog_path: draft.plugins.simulator.metrics_catalog_path,
       metrics_catalogs: draft.plugins.simulator.metrics_catalogs,
+      slurm_random_statuses: Object.fromEntries(
+        Object.entries(draft.plugins.simulator.slurm_random_statuses)
+          .map(([k, v]) => [k, parseInt(v, 10) || 0])
+          .filter(([, v]) => (v as number) > 0)
+      ),
+      slurm_random_match: draft.plugins.simulator.slurm_random_match,
     },
     slurm: {
       enabled: draft.plugins.slurm.enabled,
