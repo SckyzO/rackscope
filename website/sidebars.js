@@ -12,6 +12,8 @@ const sidebars = {
   userGuide: [
     'user-guide/overview',
     'user-guide/views',
+    'user-guide/room-view',
+    'user-guide/cluster-view',
     'user-guide/editors',
     'user-guide/slurm',
     'user-guide/simulator',

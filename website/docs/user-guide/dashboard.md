@@ -8,6 +8,8 @@ sidebar_position: 1
 
 The Rackscope dashboard is a fully customizable grid of widgets showing infrastructure health at a glance.
 
+![Dashboard](/img/views/screenshot-dashboard.png)
+
 ## Layout
 
 The dashboard uses a **12-column responsive grid** (react-grid-layout).

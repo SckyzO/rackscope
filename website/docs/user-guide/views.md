@@ -10,16 +10,18 @@ sidebar_position: 2
 
 **URL**: `/views/site/:siteId`
 
+![Datacenter View](/img/views/screenshot-datacenter.png)
+
 Site-level overview showing all rooms with live rack health states.
 
 **Features:**
 - **Grid view** — room cards with a mini rack grid (colored squares per rack), health badge, CRIT/WARN counts and ring highlight on critical rooms
-- **List + Detail view** — compact room list on the left, detail panel on the right with rack grid, alert counts, and aisle tags
+- **List + Detail view** — compact room list on the left, detail panel on the right with rack grid, alert counts, and aisle tags. The detail header shows the room name, health badge, and **View Room →** button on the same line
 - **Config drawer** (`⚙` button) — toggle Grid/List, adjust rack square size (Small/Medium)
 - Color legend (OK/WARN/CRIT/UNKNOWN) inline below the KPI bar
 - **KPI bar** — total racks, total rooms, CRIT count, WARN count
+- Hovering a rack square shows a **HUDTooltip** with rack name and node health counts
 - Auto-refresh with interval selector
-- Clicking a room navigates to the [Room View](#room-view)
 
 **Navigation:** World Map → click "View datacenter" in the site panel · Sidebar → click the site name in the Infrastructure tree.
 
@@ -55,17 +57,11 @@ Shows all sites on a world map with health status markers.
 
 **URL**: `/views/room/:roomId`
 
-Floor plan with all racks as a color-coded grid.
+![Room View — Standard style](/img/views/screenshot-style-standard.png)
 
-**Controls:**
-- **Zoom bar**: − / % / + / Fit / Reset — zoom and fit the floor plan
-- **Lock button**: Lock/unlock pan and zoom to prevent accidental navigation during monitoring
-- **Customize panel**: Toggle display options (grid, labels, legend, rack style, etc.)
+Floor plan with all racks grouped by aisle. Each rack is rendered as a visual card whose style and size are fully configurable.
 
-**Features:**
-- Hover a rack → `HUDTooltip` with rack name, occupancy, check summary
-- Click a rack → opens the rack detail panel
-- Detail panel: rack state, temperature, power, PDU metrics
+See **[Room View — detailed guide](room-view)** for the full reference: all 10 rack styles with screenshots, Customize panel options, navigation shortcuts, and the rack detail panel.
 
 ## Rack View
 
