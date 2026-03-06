@@ -79,6 +79,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3001:3001"
+    environment:
+      - DOCS_BASE_URL=/docs/
     volumes:
       - ./website/docs:/app/docs
       - ./website/src:/app/src
