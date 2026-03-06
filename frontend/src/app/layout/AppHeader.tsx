@@ -16,6 +16,7 @@ import {
   Play,
   Pause,
   X,
+  Settings,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import type { ActiveAlert } from '../../types';
@@ -376,6 +377,14 @@ export const AppHeader = ({
                         }`}
                       >
                         {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                      </button>
+                      {/* Notification settings shortcut */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setNotifOpen(false); navigate('/settings#notifications'); }}
+                        title="Notification settings"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+                      >
+                        <Settings className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
