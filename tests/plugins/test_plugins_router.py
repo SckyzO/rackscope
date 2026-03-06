@@ -277,7 +277,6 @@ class TestPluginsRouter:
 
     def test_update_plugin_config_write_error(self):
         """Test error handling when writing config fails."""
-        import tempfile
         from unittest.mock import patch, MagicMock
 
         plugin = MockTestPlugin("test-plugin")

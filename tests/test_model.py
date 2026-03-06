@@ -6,7 +6,7 @@ the YAML loader round-trips correctly.
 """
 
 from rackscope.model.domain import Topology, Site, Aisle, Rack
-from rackscope.model.checks import CheckDefinition, CheckRule
+from rackscope.model.checks import CheckDefinition
 from rackscope.model.loader import load_topology
 import pytest
 import yaml

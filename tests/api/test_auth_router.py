@@ -4,8 +4,6 @@ Tests for auth router — helper functions and API endpoints.
 Target coverage: 33% → 80%+
 """
 
-import os
-import time
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
@@ -15,8 +13,6 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from rackscope.api.app import app
-from rackscope.api.dependencies import get_app_config_optional
-from rackscope.api.routers import auth as auth_module
 from rackscope.api.routers.auth import (
     _decode_token,
     _hash_password,

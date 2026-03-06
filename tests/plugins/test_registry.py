@@ -334,7 +334,6 @@ class TestPluginRegistry:
     async def test_reload_plugins(self):
         """Test reloading plugins with new config."""
         from rackscope.model.config import AppConfig, PathsConfig
-        from unittest.mock import AsyncMock
 
         registry = PluginRegistry()
 

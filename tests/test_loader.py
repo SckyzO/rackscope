@@ -10,12 +10,9 @@ Covers error paths and edge cases in YAML loading:
 - Metrics library loading
 """
 
-import tempfile
-from pathlib import Path
 
 import pytest
 import yaml
-from pydantic import ValidationError
 
 from rackscope.model.loader import (
     load_topology,

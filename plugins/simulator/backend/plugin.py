@@ -205,10 +205,11 @@ class SimulatorPlugin(RackscopePlugin):
         @self._router.post("/restart")
         async def restart_simulator():
             """Restart the simulator container via its control server (port 9001)."""
+            import os as _os
             import urllib.parse
             import httpx
 
-            sim_base = os.getenv("SIMULATOR_URL", "http://simulator:9000")
+            sim_base = _os.getenv("SIMULATOR_URL", "http://simulator:9000")
             parsed = urllib.parse.urlparse(sim_base)
             control_url = f"{parsed.scheme}://{parsed.hostname}:9001/restart"
 

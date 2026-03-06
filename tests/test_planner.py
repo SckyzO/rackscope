@@ -8,6 +8,7 @@ and the CRIT threshold that downgrades parent severity to WARN when too few
 items fail.
 """
 
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -472,9 +473,6 @@ async def test_no_threshold_single_crit_makes_parent_crit():
 
 # ── for_duration debounce tests ───────────────────────────────────────────────
 
-import asyncio
-import time as _time
-
 
 def _make_for_check(check_id: str = "node_up", for_duration: str | None = None) -> ChecksLibrary:
     """Helper: create a simple bool check with optional for_duration."""
@@ -483,7 +481,7 @@ def _make_for_check(check_id: str = "node_up", for_duration: str | None = None) 
         name=check_id,
         scope="node",
         kind="server",
-        expr=f'up{{instance=~"$instances"}}',
+        expr='up{instance=~"$instances"}',
         output="bool",
         for_duration=for_duration,
         rules=[CheckRule(op="==", value=0, severity="CRIT")],
