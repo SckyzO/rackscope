@@ -97,6 +97,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
     <div className="space-y-4">
       <FormSection
         title="Prometheus Connection"
+        description="URL and credentials for your Prometheus instance."
         icon={Activity}
         iconColor="text-purple-500"
         iconBg="bg-purple-50 dark:bg-purple-500/10"
@@ -177,6 +178,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
 
       <FormSection
         title="Label Mapping"
+        description="Prometheus label names used to identify nodes, racks and chassis."
         icon={Tag}
         iconColor="text-blue-500"
         iconBg="bg-blue-50 dark:bg-blue-500/10"
@@ -213,6 +215,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
 
       <FormSection
         title="Authentication (Optional)"
+        description="Basic auth or bearer token for Prometheus instances requiring credentials."
         icon={KeyRound}
         iconColor="text-amber-500"
         iconBg="bg-amber-50 dark:bg-amber-500/10"
@@ -246,6 +249,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
 
       <FormSection
         title="TLS Configuration (Optional)"
+        description="Certificate verification and mutual TLS for secure Prometheus connections."
         icon={ShieldCheck}
         iconColor="text-green-500"
         iconBg="bg-green-50 dark:bg-green-500/10"

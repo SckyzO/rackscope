@@ -12,6 +12,7 @@ import {
   Loader2,
   Save,
   DatabaseZap,
+  AtSign,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
@@ -20,6 +21,7 @@ import { useAvatar, resizeAvatar } from '../../hooks/useAvatar';
 import { usePageTitle } from '../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from './templates/EmptyPage';
 import { TooltipHelp } from '../components/ui/Tooltip';
+import { AlertBanner } from '../components/ui/AlertBanner';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -463,16 +465,13 @@ const AccountSectionHeader = ({
   username: string;
   authEnabled: boolean;
 }) => (
-  <div className="mb-5 flex items-start gap-4">
+  <div className="mb-5 space-y-4">
     <AvatarSection username={username} />
     {!authEnabled && (
-      <div
-        className="ml-auto flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
-        title="Authentication is disabled in app.yaml. Enable it in Settings → Security to manage usernames and passwords."
-      >
-        <Lock className="h-3 w-3 shrink-0" />
-        Auth disabled
-      </div>
+      <AlertBanner variant="info">
+        Authentication is disabled — credentials changes are saved but not enforced.
+        Enable auth in <strong>Settings → Security</strong> to protect the UI with a password.
+      </AlertBanner>
     )}
   </div>
 );
@@ -538,7 +537,7 @@ const ClearCacheSection = () => {
 export const ProfilePage = () => {
   usePageTitle('Profile');
   const { user, authEnabled } = useAuth();
-  const displayName = authEnabled && user ? user.username : 'Admin';
+  const displayName = user?.username ?? 'Admin';
 
   return (
     <div className="mx-auto w-full max-w-[760px] space-y-6">
@@ -557,14 +556,17 @@ export const ProfilePage = () => {
           iconBg="bg-brand-50 dark:bg-brand-500/10"
         >
           <AccountSectionHeader username={displayName} authEnabled={authEnabled} />
+        </SectionCard>
 
-          {authEnabled ? (
-            <ChangeUsernameForm />
-          ) : (
-            <p className="text-sm text-gray-400 dark:text-gray-500">
-              Enable authentication in Settings to manage your username.
-            </p>
-          )}
+        {/* Change Username */}
+        <SectionCard
+          title="Change Username"
+          desc="Update the display name shown in the header and audit logs."
+          icon={AtSign}
+          iconColor="text-brand-500"
+          iconBg="bg-brand-50 dark:bg-brand-500/10"
+        >
+          <ChangeUsernameForm />
         </SectionCard>
 
         {/* Change Password */}

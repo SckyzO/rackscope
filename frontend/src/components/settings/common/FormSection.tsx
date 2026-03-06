@@ -29,13 +29,13 @@ export const FormSection = ({
       className={`rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 ${className}`}
     >
       {/* Header with optional icon */}
-      <div className="mb-5 flex items-start gap-3">
+      <div className="mb-5 flex items-center gap-3">
         {Icon && (
-          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
-            <Icon className={`h-4 w-4 ${iconColor}`} />
+          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
+            <Icon className={`h-5 w-5 ${iconColor}`} />
           </div>
         )}
-        <div className={Icon ? 'pt-0.5' : ''}>
+        <div>
           <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">{title}</h3>
           {description && (
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{description}</p>

@@ -28,6 +28,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
     <div className="space-y-4">
       <FormSection
         title="Application Info"
+        description="Name and description shown in the header and browser tab."
         icon={Info}
         iconColor="text-brand-500"
         iconBg="bg-brand-50 dark:bg-brand-500/10"
@@ -48,6 +49,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
 
       <FormSection
         title="Paths"
+        description="Filesystem paths to configuration directories (relative to project root)."
         icon={FolderOpen}
         iconColor="text-amber-500"
         iconBg="bg-amber-50 dark:bg-amber-500/10"
