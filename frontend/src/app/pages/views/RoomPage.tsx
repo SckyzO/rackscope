@@ -143,6 +143,7 @@ interface RackCellProps {
   showLabel: boolean;
   searchMatch: boolean;
   rackStyle: RackStyle;
+  catalog?: Record<string, DeviceTemplate>;
   onClick: () => void;
 }
 
@@ -156,6 +157,7 @@ const RackCell = ({
   showLabel,
   searchMatch,
   rackStyle,
+  catalog,
   onClick,
 }: RackCellProps) => {
   const color = HC[state] ?? HC.UNKNOWN;
@@ -174,9 +176,16 @@ const RackCell = ({
   const handleMouseLeave = () => setHovered(false);
 
   const deviceCount = rack.devices?.length ?? 0;
-  // Assumes average device height of 2U; rack is considered "full" at half
-  // the U-count worth of devices, giving a conservative occupancy estimate.
-  const occupancy = Math.min(100, (deviceCount / (rack.u_height / 2)) * 100);
+  // When catalog is available use exact sum of device u_heights; otherwise
+  // fall back to the 2U-per-device estimate.
+  const occupancy = Math.min(
+    100,
+    catalog && rack.devices?.length
+      ? (rack.devices.reduce((sum, d) => sum + (catalog[d.template_id]?.u_height ?? 2), 0) /
+          rack.u_height) *
+          100
+      : (deviceCount / (rack.u_height / 2)) * 100
+  );
 
   const checkSummary = nodeCounts
     ? {
@@ -409,14 +418,14 @@ const RackCell = ({
     const TOTAL_CELLS = Math.round(rackU / U_PER_CELL);
     const devices = rack.devices ?? [];
 
-    // Infer each device's U height from the gap to the next device (sorted ascending).
-    // Cap at 4U to avoid filling empty space between device groups (e.g. U28→U40 gap).
-    const MAX_INFERRED_U = 4;
+    // Build device ranges using exact u_height from catalog when available,
+    // falling back to gap-inferred height capped at 4U.
     const sorted = [...devices].sort((a, b) => a.u_position - b.u_position);
     const deviceRanges = sorted.map((d, i) => {
+      const exactH = catalog?.[d.template_id]?.u_height;
       const gap = i < sorted.length - 1 ? sorted[i + 1].u_position - d.u_position : 1;
-      const inferredH = Math.min(gap, MAX_INFERRED_U);
-      return { from: d.u_position, to: d.u_position + inferredH - 1 };
+      const h = exactH ?? Math.min(gap, 4);
+      return { from: d.u_position, to: d.u_position + h - 1 };
     });
 
     // Cell i (from top) covers U range: (TOTAL_CELLS-1-i)*U_PER_CELL+1 … (TOTAL_CELLS-i)*U_PER_CELL
@@ -797,6 +806,7 @@ interface AisleBandProps {
   onToggleCollapse: () => void;
   rackAlign: 'left' | 'right';
   rackStyle: RackStyle;
+  catalog?: Record<string, DeviceTemplate>;
 }
 
 const AISLE_GAP: Record<RackStyle, string> = {
@@ -827,6 +837,7 @@ const AisleBand = ({
   onToggleCollapse,
   rackAlign,
   rackStyle,
+  catalog,
 }: AisleBandProps) => {
   const critCount = aisle.racks.filter((r) => rackStates[r.id] === 'CRIT').length;
   const warnCount = aisle.racks.filter((r) => rackStates[r.id] === 'WARN').length;
@@ -900,6 +911,7 @@ const AisleBand = ({
                 showLabel={showRackLabels}
                 searchMatch={searchMatch}
                 rackStyle={rackStyle}
+                catalog={catalog}
                 onClick={() => onRackClick(rack, aisle)}
               />
             );
@@ -1501,6 +1513,7 @@ export const RoomPage = () => {
 
   const [room, setRoom] = useState<Room | null>(null);
   const [roomState, setRoomState] = useState<RoomState | null>(null);
+  const [catalog, setCatalog] = useState<Record<string, DeviceTemplate>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -1662,12 +1675,18 @@ export const RoomPage = () => {
       if (!silent) setLoading(true);
       else setRefreshing(true);
       try {
-        const [roomData, stateData] = await Promise.all([
+        const [roomData, stateData, catalogData] = await Promise.all([
           api.getRoomLayout(roomId),
           api.getRoomState(roomId),
+          api.getCatalog(),
         ]);
         setRoom(roomData as Room);
         setRoomState(stateData as RoomState);
+        const devCat: Record<string, DeviceTemplate> = {};
+        (catalogData?.device_templates ?? []).forEach((t: DeviceTemplate) => {
+          devCat[t.id] = t;
+        });
+        setCatalog(devCat);
       } catch {
         // ignore
       } finally {
@@ -2017,6 +2036,7 @@ export const RoomPage = () => {
                 rackAlign={settings.rackAlign}
                 rackStyle={settings.rackStyle}
                 showRackName={settings.showRackName}
+                catalog={catalog}
                 onToggleCollapse={() => {
                   setCollapsedAisles((prev) => {
                     const next = new Set(prev);
