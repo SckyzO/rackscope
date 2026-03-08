@@ -6,9 +6,9 @@ app:
   description: Datacenter Monitoring
 
 paths:
-  topology: topology
-  templates: templates
-  checks: checks/library
+  topology: config/topology
+  templates: config/templates
+  checks: config/checks/library
 
 refresh:
   room_state_seconds: 60

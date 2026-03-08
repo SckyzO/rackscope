@@ -37,8 +37,9 @@ rm -rf "$ROOT/config.bak"
 cp -r "$ROOT/config" "$ROOT/config.bak"
 
 echo "→ Loading example: $EXAMPLE"
-rm -rf "$ROOT/config"
-cp -r "$EXAMPLE_DIR" "$ROOT/config"
+# Keep the config/ directory itself (WSL2 Docker bind mount follows the inode)
+rm -rf "$ROOT/config"/*
+cp -r "$EXAMPLE_DIR"/. "$ROOT/config/"
 # Restore simulator overrides dir (needed at runtime)
 mkdir -p "$ROOT/config/plugins/simulator/overrides"
 touch "$ROOT/config/plugins/simulator/overrides/overrides.yaml"

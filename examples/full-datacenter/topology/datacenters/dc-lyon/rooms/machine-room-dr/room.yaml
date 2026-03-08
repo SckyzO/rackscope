@@ -1,12 +1,22 @@
 id: machine-room-dr
 name: DR Machine Room
 site_id: dc-lyon
-description: Disaster recovery — 40 compute nodes
+description: Disaster recovery — 80 compute nodes
 
 layout:
-  cols: 2
-  rows: 2
-  orientation: north
+  shape: rectangle
+  size:
+    width: 24
+    height: 16
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: north
+    label: DR Entrance
 
 aisles:
   - id: aisle-dr
+    name: DR Compute Aisle
