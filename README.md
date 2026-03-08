@@ -4,9 +4,10 @@
 
 **Prometheus-first physical infrastructure monitoring for data centers and HPC environments**
 
+[![CI](https://github.com/SckyzO/rackscope/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SckyzO/rackscope/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-1.0.0--beta-blue?style=flat-square)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-683%20passing-brightgreen?style=flat-square)](tests/)
-[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-852%20passing-brightgreen?style=flat-square)](STATUS.md)
+[![Coverage](https://img.shields.io/badge/coverage-89%25-brightgreen?style=flat-square)](STATUS.md)
 [![Python](https://img.shields.io/badge/python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white)](pyproject.toml)
 [![React](https://img.shields.io/badge/react-19-61DAFB?style=flat-square&logo=react&logoColor=black)](frontend/package.json)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-orange?style=flat-square)](LICENSE)
