@@ -30,14 +30,20 @@ export const StatsRowWidget = ({ data }: { data: DashboardData }) => (
         label: 'CRIT',
         value: data.critCount,
         color: '#ef4444',
-        sub: data.critCount === 0 ? 'All clear' : `${data.critCount} node${data.critCount > 1 ? 's' : ''}`,
+        sub:
+          data.critCount === 0
+            ? 'All clear'
+            : `${data.critCount} node${data.critCount > 1 ? 's' : ''}`,
       },
       {
         icon: AlertTriangle,
         label: 'WARN',
         value: data.warnCount,
         color: '#f59e0b',
-        sub: data.warnCount === 0 ? 'All clear' : `${data.warnCount} node${data.warnCount > 1 ? 's' : ''}`,
+        sub:
+          data.warnCount === 0
+            ? 'All clear'
+            : `${data.warnCount} node${data.warnCount > 1 ? 's' : ''}`,
       },
     ].map((item) => (
       <div

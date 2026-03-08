@@ -124,9 +124,7 @@ const YamlDrawer = ({ target, onClose }: YamlDrawerProps) => {
         <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-5 py-4">
           <div className="flex items-center gap-2.5">
             <FileCode className="h-4 w-4 text-gray-500" />
-            <h3 className="text-sm font-semibold text-white">
-              {'name' in target.data ? target.data.name : target.data.id}
-            </h3>
+            <h3 className="text-sm font-semibold text-white">{target.data.name}</h3>
             <span className="rounded-full bg-gray-800 px-2 py-0.5 font-mono text-[10px] text-gray-400">
               {target.type}
             </span>

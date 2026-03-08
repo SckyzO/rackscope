@@ -52,7 +52,7 @@ export const ZoomBar = ({
   maxZoom?: number;
 }) => (
   <div className="flex overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-    <ZoomBtn onClick={onZoomOut} title="Zoom out (−5%)" >
+    <ZoomBtn onClick={onZoomOut} title="Zoom out (−5%)">
       <Minus className="h-4 w-4" />
     </ZoomBtn>
     <span className="flex min-w-[3.5rem] items-center justify-center border-x border-gray-200 px-3 py-2 font-mono text-sm font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300">

@@ -74,10 +74,7 @@ export const Tooltip = ({
 
     {/* Tooltip box */}
     <div
-      className={`pointer-events-none absolute z-50 w-max ${maxWidth} rounded-lg px-3 py-2
-        text-xs font-normal normal-case leading-relaxed tracking-normal whitespace-normal
-        opacity-0 transition-opacity duration-150 group-hover:opacity-100
-        ${BOX_POS[position]} ${VARIANT_BOX[variant]}`}
+      className={`pointer-events-none absolute z-50 w-max ${maxWidth} rounded-lg px-3 py-2 text-xs leading-relaxed font-normal tracking-normal whitespace-normal normal-case opacity-0 transition-opacity duration-150 group-hover:opacity-100 ${BOX_POS[position]} ${VARIANT_BOX[variant]}`}
       role="tooltip"
     >
       {content}
@@ -102,9 +99,6 @@ export const TooltipHelp = ({
   variant?: TooltipVariant;
 }) => (
   <Tooltip content={text} position={position} variant={variant} maxWidth="max-w-[260px]">
-    <HelpCircle
-      className="h-3.5 w-3.5 cursor-help text-gray-400 transition-colors hover:text-gray-600
-        dark:text-gray-500 dark:hover:text-gray-300"
-    />
+    <HelpCircle className="h-3.5 w-3.5 cursor-help text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300" />
   </Tooltip>
 );

@@ -41,10 +41,7 @@ import {
 } from 'lucide-react';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import {
-  PageActionButton,
-  PageActionIconButton,
-} from '../../components/PageActionButton';
+import { PageActionButton, PageActionIconButton } from '../../components/PageActionButton';
 
 // ── Shared sub-components ─────────────────────────────────────────────────────
 
@@ -522,7 +519,6 @@ export const EmptyPage = () => {
 
   return (
     <div className="space-y-6">
-
       {/* ── Standard page header ──────────────────────────────────────────────
           Copy this pattern. Swap title, breadcrumb items and actions.
           For pages without refresh: remove <RefreshButton>.
@@ -578,9 +574,15 @@ export const EmptyPage = () => {
             <p className="text-xs text-gray-400 dark:text-gray-500">All variants</p>
             <div className="flex flex-wrap items-center gap-2">
               <PageActionButton icon={SlidersHorizontal}>outline (default)</PageActionButton>
-              <PageActionButton icon={Plus} variant="primary">primary</PageActionButton>
-              <PageActionButton icon={Pencil} variant="brand-outline">brand-outline</PageActionButton>
-              <PageActionButton icon={Trash2} variant="danger-outline">danger-outline</PageActionButton>
+              <PageActionButton icon={Plus} variant="primary">
+                primary
+              </PageActionButton>
+              <PageActionButton icon={Pencil} variant="brand-outline">
+                brand-outline
+              </PageActionButton>
+              <PageActionButton icon={Trash2} variant="danger-outline">
+                danger-outline
+              </PageActionButton>
             </div>
           </div>
 
@@ -594,15 +596,21 @@ export const EmptyPage = () => {
               <PageActionIconButton icon={Upload} title="Upload" variant="primary" />
               {/* Alignment check — these must all be the same height */}
               <PageActionButton icon={SlidersHorizontal}>Configure</PageActionButton>
-              <PageActionButton icon={Plus} variant="primary">New</PageActionButton>
+              <PageActionButton icon={Plus} variant="primary">
+                New
+              </PageActionButton>
             </div>
           </div>
 
           <div className="space-y-1.5">
             <p className="text-xs text-gray-400 dark:text-gray-500">Disabled state</p>
             <div className="flex items-center gap-2">
-              <PageActionButton icon={SlidersHorizontal} disabled>Configure</PageActionButton>
-              <PageActionButton icon={Plus} variant="primary" disabled>New</PageActionButton>
+              <PageActionButton icon={SlidersHorizontal} disabled>
+                Configure
+              </PageActionButton>
+              <PageActionButton icon={Plus} variant="primary" disabled>
+                New
+              </PageActionButton>
               <PageActionIconButton icon={SlidersHorizontal} title="Configure" disabled />
             </div>
           </div>
@@ -638,7 +646,6 @@ const { autoRefreshMs, onIntervalChange } = useAutoRefresh('my-page', loadData);
           </pre>
         </div>
       </SectionCard>
-
     </div>
   );
 };
@@ -647,7 +654,6 @@ const { autoRefreshMs, onIntervalChange } = useAutoRefresh('my-page', loadData);
 //
 // Route: /templates/showcase
 // Shows every building block. Do NOT copy — copy EmptyPage (templates/empty) instead.
-
 
 export const TemplatesShowcase = () => {
   usePageTitle('Design System');
@@ -661,7 +667,9 @@ export const TemplatesShowcase = () => {
         actions={
           <>
             <PageActionIconButton icon={SlidersHorizontal} title="Configure" />
-            <PageActionButton icon={Plus} variant="primary">New</PageActionButton>
+            <PageActionButton icon={Plus} variant="primary">
+              New
+            </PageActionButton>
           </>
         }
       />

@@ -1,4 +1,10 @@
-export type SoundPreset = 'soft-ping' | 'double-beep' | 'alert-tone' | 'alarm' | 'noc-chime' | 'siren';
+export type SoundPreset =
+  | 'soft-ping'
+  | 'double-beep'
+  | 'alert-tone'
+  | 'alarm'
+  | 'noc-chime'
+  | 'siren';
 
 export type SoundAlertSettings = {
   enabled: boolean;
@@ -12,9 +18,9 @@ export type SoundAlertSettings = {
 export const ALERT_POLL_OPTIONS = [
   { label: '15s', ms: 15_000 },
   { label: '30s', ms: 30_000 },
-  { label: '1m',  ms: 60_000 },
-  { label: '2m',  ms: 120_000 },
-  { label: '5m',  ms: 300_000 },
+  { label: '1m', ms: 60_000 },
+  { label: '2m', ms: 120_000 },
+  { label: '5m', ms: 300_000 },
   { label: '10m', ms: 600_000 },
   { label: '15m', ms: 900_000 },
   { label: '30m', ms: 1_800_000 },
@@ -35,7 +41,10 @@ export const SOUND_PRESETS: Record<SoundPreset, { name: string; description: str
   'alert-tone': { name: 'Alert tone', description: 'Rising tone — moderate urgency' },
   alarm: { name: 'Alarm', description: 'Rapid alternating tones — high urgency' },
   'noc-chime': { name: 'NOC chime', description: 'Three-note chime — professional NOC style' },
-  siren: { name: 'Siren', description: 'Fire truck two-tone siren (960/770Hz, 3 cycles) — maximum urgency' },
+  siren: {
+    name: 'Siren',
+    description: 'Fire truck two-tone siren (960/770Hz, 3 cycles) — maximum urgency',
+  },
 };
 
 // Plays a preset at given volume (0–1). Returns a Promise that resolves when done.

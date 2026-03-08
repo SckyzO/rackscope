@@ -111,7 +111,7 @@ export const Dropdown = ({
                 >
                   {Icon && <Icon className="h-4 w-4 shrink-0 text-gray-400" />}
                   <span className="flex-1 truncate">{opt.label}</span>
-                  {isSelected && <Check className="h-3.5 w-3.5 shrink-0 text-brand-500" />}
+                  {isSelected && <Check className="text-brand-500 h-3.5 w-3.5 shrink-0" />}
                 </button>
               );
             })}

@@ -31,7 +31,9 @@ export const StatusPill = ({
   const labels = useSeverityLabels();
   const pillCls = HEALTH_STATUS_PILL[status as HealthStatus] ?? HEALTH_STATUS_PILL.UNKNOWN;
   return (
-    <span className={`inline-flex items-center rounded-full font-bold ${SIZE[size]} ${pillCls} ${className}`}>
+    <span
+      className={`inline-flex items-center rounded-full font-bold ${SIZE[size]} ${pillCls} ${className}`}
+    >
       {labels[status as keyof typeof labels] ?? status}
     </span>
   );

@@ -24,8 +24,6 @@ export const ToggleSwitch = ({
         }`}
       />
     </button>
-    {label && (
-      <span className="text-sm text-gray-600 dark:text-gray-400">{label}</span>
-    )}
+    {label && <span className="text-sm text-gray-600 dark:text-gray-400">{label}</span>}
   </div>
 );

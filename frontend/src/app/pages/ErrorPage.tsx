@@ -21,16 +21,39 @@ const OverheatRack = () => {
     <div className="relative flex h-52 w-32 items-end justify-center">
       <div className="absolute bottom-0 left-1/2 h-0.5 w-48 -translate-x-1/2 rounded-full bg-gray-200 dark:bg-gray-800" />
       <svg viewBox="0 0 60 110" width="56" height="104">
-        <rect x="4" y="2" width="52" height="106" rx="3" fill="#374151" stroke="#4B5563" strokeWidth="1" />
+        <rect
+          x="4"
+          y="2"
+          width="52"
+          height="106"
+          rx="3"
+          fill="#374151"
+          stroke="#4B5563"
+          strokeWidth="1"
+        />
         <rect x="8" y="6" width="44" height="98" rx="1" fill="#1F2937" />
         {leds.map((i) => {
           const isRed = i < redAt;
           const color = isRed ? (blink ? '#ef4444' : '#dc2626') : '#6B7280';
           return (
             <g key={i}>
-              <rect x="10" y={10 + i * 10} width="40" height="8" rx="1" fill="#374151" stroke="#4B5563" strokeWidth="0.5" />
-              <circle cx="45" cy={14 + i * 10} r="2.5" fill={color}
-                style={isRed ? { filter: 'drop-shadow(0 0 3px #ef4444)' } : undefined} />
+              <rect
+                x="10"
+                y={10 + i * 10}
+                width="40"
+                height="8"
+                rx="1"
+                fill="#374151"
+                stroke="#4B5563"
+                strokeWidth="0.5"
+              />
+              <circle
+                cx="45"
+                cy={14 + i * 10}
+                r="2.5"
+                fill={color}
+                style={isRed ? { filter: 'drop-shadow(0 0 3px #ef4444)' } : undefined}
+              />
               <rect x="12" y={11 + i * 10} width="20" height="6" rx="0.5" fill="#111827" />
             </g>
           );
@@ -48,9 +71,16 @@ const OverheatRack = () => {
             }
           `}</style>
           {[0, 1, 2].map((i) => (
-            <div key={i} className="absolute rounded-full bg-red-500/20 blur-lg"
-              style={{ width: 28 + i * 8, height: 28 + i * 8, left: `${(i - 1) * 10}px`,
-                animation: `rs-heat ${0.8 + i * 0.2}s ease-in-out ${i * 150}ms infinite` }} />
+            <div
+              key={i}
+              className="absolute rounded-full bg-red-500/20 blur-lg"
+              style={{
+                width: 28 + i * 8,
+                height: 28 + i * 8,
+                left: `${(i - 1) * 10}px`,
+                animation: `rs-heat ${0.8 + i * 0.2}s ease-in-out ${i * 150}ms infinite`,
+              }}
+            />
           ))}
         </div>
       )}
@@ -79,38 +109,80 @@ const DisconnectedCable = () => {
       {/* Switch body */}
       <svg viewBox="0 0 120 70" width="140" height="80">
         {/* Main switch */}
-        <rect x="8" y="16" width="90" height="38" rx="4" fill="#374151" stroke="#4B5563" strokeWidth="1" />
+        <rect
+          x="8"
+          y="16"
+          width="90"
+          height="38"
+          rx="4"
+          fill="#374151"
+          stroke="#4B5563"
+          strokeWidth="1"
+        />
         <rect x="12" y="20" width="82" height="30" rx="2" fill="#1F2937" />
         {/* Ports */}
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <g key={i}>
-            <rect x={16 + i * 13} y="24" width="9" height="7" rx="1"
-              fill={i === 2 ? '#111827' : '#374151'} stroke="#4B5563" strokeWidth="0.5" />
-            <circle cx={20 + i * 13} cy="36" r="2"
+            <rect
+              x={16 + i * 13}
+              y="24"
+              width="9"
+              height="7"
+              rx="1"
+              fill={i === 2 ? '#111827' : '#374151'}
+              stroke="#4B5563"
+              strokeWidth="0.5"
+            />
+            <circle
+              cx={20 + i * 13}
+              cy="36"
+              r="2"
               fill={i === 2 ? '#6B7280' : '#10b981'}
-              style={i !== 2 ? { filter: 'drop-shadow(0 0 2px #10b981)' } : undefined} />
+              style={i !== 2 ? { filter: 'drop-shadow(0 0 2px #10b981)' } : undefined}
+            />
           </g>
         ))}
         {/* Labels */}
         <rect x="12" y="40" width="82" height="6" rx="1" fill="#111827" />
         {/* Cable plug — port 2 */}
-        <g style={{
-          transform: phase === 'connected' ? 'translateX(0)' : phase === 'pulling' ? 'translateX(6px)' : 'translateX(30px)',
-          transition: phase === 'pulling' ? 'transform 0.8s ease-in' : phase === 'out' ? 'transform 0.4s ease-out' : 'none',
-        }}>
+        <g
+          style={{
+            transform:
+              phase === 'connected'
+                ? 'translateX(0)'
+                : phase === 'pulling'
+                  ? 'translateX(6px)'
+                  : 'translateX(30px)',
+            transition:
+              phase === 'pulling'
+                ? 'transform 0.8s ease-in'
+                : phase === 'out'
+                  ? 'transform 0.4s ease-out'
+                  : 'none',
+          }}
+        >
           <rect x="100" y="25" width="14" height="5" rx="1" fill="#6B7280" />
           <rect x="112" y="26" width="3" height="3" rx="0.5" fill="#4B5563" />
         </g>
       </svg>
       {/* Dangling cable */}
       {(phase === 'out' || phase === 'dangling') && (
-        <div className="absolute right-0 top-1/2 -translate-y-1/2">
+        <div className="absolute top-1/2 right-0 -translate-y-1/2">
           <style>{`
             @keyframes rs-dangle { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
           `}</style>
-          <div style={{ animation: phase === 'dangling' ? 'rs-dangle 1.2s ease-in-out infinite' : 'none' }}>
+          <div
+            style={{
+              animation: phase === 'dangling' ? 'rs-dangle 1.2s ease-in-out infinite' : 'none',
+            }}
+          >
             <svg viewBox="0 0 12 32" width="12" height="32">
-              <path d="M6 0 C6 8 2 12 6 20 C8 26 6 32 6 32" stroke="#6B7280" strokeWidth="2" fill="none" />
+              <path
+                d="M6 0 C6 8 2 12 6 20 C8 26 6 32 6 32"
+                stroke="#6B7280"
+                strokeWidth="2"
+                fill="none"
+              />
               <rect x="2" y="28" width="8" height="4" rx="1" fill="#4B5563" />
             </svg>
           </div>
@@ -128,7 +200,9 @@ const PadlockSlam = () => {
   useEffect(() => {
     const t1 = setTimeout(() => setLocked(true), 600);
     const t2 = setTimeout(() => setLocked(false), 3000);
-    const t3 = setTimeout(() => { setLocked(false); }, 3400);
+    const t3 = setTimeout(() => {
+      setLocked(false);
+    }, 3400);
     return () => [t1, t2, t3].forEach(clearTimeout);
   }, []);
 
@@ -143,24 +217,47 @@ const PadlockSlam = () => {
     <div className="relative flex h-52 w-32 items-center justify-center">
       <svg viewBox="0 0 60 80" width="72" height="96">
         {/* Shackle */}
-        <g style={{
-          transform: locked ? 'translateY(0)' : 'translateY(-14px)',
-          transition: 'transform 0.3s cubic-bezier(0.25, 0, 0, 1.5)',
-        }}>
-          <path d="M 18 35 Q 18 10 30 10 Q 42 10 42 35" fill="none"
-            stroke={locked ? '#ef4444' : '#6B7280'} strokeWidth="7" strokeLinecap="round" />
+        <g
+          style={{
+            transform: locked ? 'translateY(0)' : 'translateY(-14px)',
+            transition: 'transform 0.3s cubic-bezier(0.25, 0, 0, 1.5)',
+          }}
+        >
+          <path
+            d="M 18 35 Q 18 10 30 10 Q 42 10 42 35"
+            fill="none"
+            stroke={locked ? '#ef4444' : '#6B7280'}
+            strokeWidth="7"
+            strokeLinecap="round"
+          />
         </g>
         {/* Body */}
-        <rect x="8" y="35" width="44" height="36" rx="6"
-          fill={locked ? '#374151' : '#1F2937'} stroke={locked ? '#ef4444' : '#4B5563'} strokeWidth="1.5" />
+        <rect
+          x="8"
+          y="35"
+          width="44"
+          height="36"
+          rx="6"
+          fill={locked ? '#374151' : '#1F2937'}
+          stroke={locked ? '#ef4444' : '#4B5563'}
+          strokeWidth="1.5"
+        />
         {/* Keyhole */}
         <circle cx="30" cy="50" r="6" fill={locked ? '#1F2937' : '#374151'} />
         <rect x="27" y="52" width="6" height="10" rx="1" fill={locked ? '#1F2937' : '#374151'} />
         {/* Glow when locked */}
         {locked && (
-          <rect x="8" y="35" width="44" height="36" rx="6" fill="none"
-            stroke="#ef4444" strokeWidth="1"
-            style={{ filter: 'drop-shadow(0 0 4px #ef4444)', opacity: 0.5 }} />
+          <rect
+            x="8"
+            y="35"
+            width="44"
+            height="36"
+            rx="6"
+            fill="none"
+            stroke="#ef4444"
+            strokeWidth="1"
+            style={{ filter: 'drop-shadow(0 0 4px #ef4444)', opacity: 0.5 }}
+          />
         )}
       </svg>
     </div>
@@ -171,24 +268,34 @@ const PadlockSlam = () => {
 
 type ErrorCode = 500 | 503 | 403 | 401;
 
-const ERROR_CONFIG: Record<ErrorCode, {
-  title: string;
-  subtitle: string;
-  description: string;
-  scene: React.ComponentType;
-  cta?: { label: string; icon: React.ElementType; href?: string; action?: 'back' | 'reload' | 'login' };
-}> = {
+const ERROR_CONFIG: Record<
+  ErrorCode,
+  {
+    title: string;
+    subtitle: string;
+    description: string;
+    scene: React.ComponentType;
+    cta?: {
+      label: string;
+      icon: React.ElementType;
+      href?: string;
+      action?: 'back' | 'reload' | 'login';
+    };
+  }
+> = {
   500: {
     title: '500',
     subtitle: 'Internal server error',
-    description: "Something caught fire in the datacenter. The team has been paged — try again in a moment.",
+    description:
+      'Something caught fire in the datacenter. The team has been paged — try again in a moment.',
     scene: OverheatRack,
     cta: { label: 'Reload', icon: RefreshCw, action: 'reload' },
   },
   503: {
     title: '503',
     subtitle: 'Service unavailable',
-    description: "The backend is unreachable. Check that `make up` is running or wait for the stack to come back.",
+    description:
+      'The backend is unreachable. Check that `make up` is running or wait for the stack to come back.',
     scene: DisconnectedCable,
     cta: { label: 'Reload', icon: RefreshCw, action: 'reload' },
   },
@@ -202,7 +309,7 @@ const ERROR_CONFIG: Record<ErrorCode, {
   401: {
     title: '401',
     subtitle: 'Authentication required',
-    description: "You need to sign in to access this page.",
+    description: 'You need to sign in to access this page.',
     scene: PadlockSlam,
     cta: { label: 'Sign In', icon: LogIn, action: 'login' },
   },
@@ -232,15 +339,11 @@ export const ErrorPage = ({ code }: { code?: ErrorCode }) => {
     <div className="flex min-h-[500px] flex-col items-center justify-center px-6 text-center">
       <Scene />
 
-      <p className="text-brand-100 dark:text-brand-500/20 mt-2 text-8xl font-black">
-        {cfg.title}
-      </p>
+      <p className="text-brand-100 dark:text-brand-500/20 mt-2 text-8xl font-black">{cfg.title}</p>
       <h1 className="-mt-4 text-2xl font-bold text-gray-900 capitalize dark:text-white">
         {cfg.subtitle}
       </h1>
-      <p className="mt-3 max-w-sm text-sm text-gray-500 dark:text-gray-400">
-        {cfg.description}
-      </p>
+      <p className="mt-3 max-w-sm text-sm text-gray-500 dark:text-gray-400">{cfg.description}</p>
 
       <div className="mt-8 flex gap-3">
         <a

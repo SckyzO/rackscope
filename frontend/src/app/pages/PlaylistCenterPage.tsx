@@ -187,7 +187,8 @@ export const PlaylistCenterPage = () => {
     try {
       const version = localStorage.getItem(DASHBOARDS_STORAGE_VERSION_KEY);
       const stored = localStorage.getItem(DASHBOARDS_STORAGE_KEY);
-      if (stored && version === DASHBOARDS_STORAGE_VERSION) return JSON.parse(stored) as Dashboard[];
+      if (stored && version === DASHBOARDS_STORAGE_VERSION)
+        return JSON.parse(stored) as Dashboard[];
     } catch {
       /* ignore */
     }
@@ -355,10 +356,7 @@ export const PlaylistCenterPage = () => {
                       Custom Dashboards
                     </p>
                     {dashboards.map((d) => (
-                      <div
-                        key={d.id}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2"
-                      >
+                      <div key={d.id} className="flex items-center gap-3 rounded-lg px-3 py-2">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800">
                           <LayoutDashboard className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
                         </div>

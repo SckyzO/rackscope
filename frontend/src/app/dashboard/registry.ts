@@ -1,13 +1,7 @@
 import type React from 'react';
 import type { WidgetType, WidgetConfig, DashboardData } from './types';
 
-export type WidgetGroup =
-  | 'Stats'
-  | 'Charts'
-  | 'Monitoring'
-  | 'Overview'
-  | 'Catalog'
-  | 'Legacy';
+export type WidgetGroup = 'Stats' | 'Charts' | 'Monitoring' | 'Overview' | 'Catalog' | 'Legacy';
 
 export type WidgetRegistration = {
   type: WidgetType;
@@ -34,7 +28,6 @@ export const registerWidget = (reg: WidgetRegistration): void => {
   _registry.set(reg.type, reg);
 };
 
-export const getWidget = (type: WidgetType): WidgetRegistration | undefined =>
-  _registry.get(type);
+export const getWidget = (type: WidgetType): WidgetRegistration | undefined => _registry.get(type);
 
 export const getAllWidgets = (): WidgetRegistration[] => [..._registry.values()];

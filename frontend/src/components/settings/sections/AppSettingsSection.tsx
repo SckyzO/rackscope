@@ -177,7 +177,6 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
           />
         </div>
       </FormSection>
-
     </div>
   );
 };

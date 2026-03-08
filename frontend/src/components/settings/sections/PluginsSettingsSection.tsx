@@ -298,8 +298,8 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   const handleAddOverride = async () => {
     try {
       await api.addSimulatorOverride({
-        instance: newOverride.instance || null,
-        rack_id: null,
+        instance: newOverride.instance || undefined,
+        rack_id: undefined,
         metric: newOverride.metric,
         value: parseFloat(newOverride.value),
         ttl_seconds: 0,
@@ -727,8 +727,13 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                           onChange={(e) => {
                             const newVal = e.target.value.trim();
                             if (!newVal || newVal === statusName) return;
-                            const entries = Object.entries(sim.slurm_random_statuses).filter(([k]) => k !== statusName);
-                            updateSimulator('slurm_random_statuses', Object.fromEntries([...entries, [newVal, count]]));
+                            const entries = Object.entries(sim.slurm_random_statuses).filter(
+                              ([k]) => k !== statusName
+                            );
+                            updateSimulator(
+                              'slurm_random_statuses',
+                              Object.fromEntries([...entries, [newVal, count]])
+                            );
                           }}
                           className="w-28 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-mono text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                           placeholder="status"
@@ -736,7 +741,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                         <StepperInput
                           value={parseInt(count, 10) || 0}
                           onChange={(v) =>
-                            updateSimulator('slurm_random_statuses', { ...sim.slurm_random_statuses, [statusName]: String(v) })
+                            updateSimulator('slurm_random_statuses', {
+                              ...sim.slurm_random_statuses,
+                              [statusName]: String(v),
+                            })
                           }
                           min={0}
                           max={500}
@@ -760,7 +768,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                     <button
                       type="button"
                       onClick={() =>
-                        updateSimulator('slurm_random_statuses', { ...sim.slurm_random_statuses, '': '1' })
+                        updateSimulator('slurm_random_statuses', {
+                          ...sim.slurm_random_statuses,
+                          '': '1',
+                        })
                       }
                       className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     >
@@ -777,7 +788,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {sim.slurm_random_match.map((pattern, idx) => (
-                        <div key={idx} className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-mono dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                        <div
+                          key={idx}
+                          className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 font-mono text-xs dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                        >
                           {pattern}
                           <button
                             type="button"
@@ -800,7 +814,10 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                             e.preventDefault();
                             const val = (e.target as HTMLInputElement).value.trim();
                             if (val && !sim.slurm_random_match.includes(val)) {
-                              updateSimulator('slurm_random_match', [...sim.slurm_random_match, val]);
+                              updateSimulator('slurm_random_match', [
+                                ...sim.slurm_random_match,
+                                val,
+                              ]);
                               (e.target as HTMLInputElement).value = '';
                             }
                           }

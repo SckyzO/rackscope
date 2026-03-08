@@ -77,9 +77,7 @@ export const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
                       key={a.node_id}
                       className="h-5 w-5 cursor-default rounded-sm"
                       style={{ backgroundColor: HC[a.state] ?? HC.UNKNOWN }}
-                      onMouseEnter={(e) =>
-                        setTooltip({ alert: a, x: e.clientX, y: e.clientY })
-                      }
+                      onMouseEnter={(e) => setTooltip({ alert: a, x: e.clientX, y: e.clientY })}
                       onMouseMove={(e) =>
                         setTooltip((prev) => prev && { ...prev, x: e.clientX, y: e.clientY })
                       }

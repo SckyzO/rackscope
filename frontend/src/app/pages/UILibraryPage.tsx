@@ -369,20 +369,21 @@ export const UILibraryPage = () => {
       {/* ── TemplateDefaultPage banner ── */}
       <Link
         to="/templates/default"
-        className="group flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-brand-200 bg-brand-50 px-5 py-4 text-left transition-all hover:border-brand-300 hover:bg-brand-100/60 dark:border-brand-700/40 dark:bg-brand-500/10 dark:hover:bg-brand-500/15"
+        className="group border-brand-200 bg-brand-50 hover:border-brand-300 hover:bg-brand-100/60 dark:border-brand-700/40 dark:bg-brand-500/10 dark:hover:bg-brand-500/15 flex w-full items-center gap-4 overflow-hidden rounded-2xl border px-5 py-4 text-left transition-all"
       >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500/15 dark:bg-brand-500/20">
-          <LayoutTemplate className="h-5 w-5 text-brand-500" />
+        <div className="bg-brand-500/15 dark:bg-brand-500/20 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+          <LayoutTemplate className="text-brand-500 h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-brand-700 dark:text-brand-300">
+          <p className="text-brand-700 dark:text-brand-300 text-sm font-semibold">
             Component Showcase
           </p>
-          <p className="mt-0.5 text-xs text-brand-600/70 dark:text-brand-400/70">
-            Visual reference for all 20 shared components — Spinner, StatusPill, Drawer, Modal, Tabs, KpiCard…
+          <p className="text-brand-600/70 dark:text-brand-400/70 mt-0.5 text-xs">
+            Visual reference for all 20 shared components — Spinner, StatusPill, Drawer, Modal,
+            Tabs, KpiCard…
           </p>
         </div>
-        <ArrowRight className="h-4 w-4 shrink-0 text-brand-400 transition-transform group-hover:translate-x-0.5 dark:text-brand-500" />
+        <ArrowRight className="text-brand-400 dark:text-brand-500 h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
       </Link>
 
       {/* ── Category filters ── */}

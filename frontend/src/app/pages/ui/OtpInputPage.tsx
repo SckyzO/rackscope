@@ -41,7 +41,9 @@ const OTP = ({
       {Array.from({ length }).map((_, i) => (
         <input
           key={i}
-          ref={(el) => (refs.current[i] = el as HTMLInputElement)}
+          ref={(el) => {
+            refs.current[i] = el as HTMLInputElement;
+          }}
           type="text"
           inputMode="numeric"
           maxLength={1}

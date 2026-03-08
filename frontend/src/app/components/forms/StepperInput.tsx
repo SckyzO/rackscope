@@ -50,10 +50,7 @@ export const StepperInput = ({
 
   return (
     <div
-      className={`flex h-9 overflow-hidden rounded-lg border border-gray-200 bg-white
-        dark:border-gray-700 dark:bg-gray-800
-        ${disabled ? 'opacity-50' : ''}
-        ${className}`}
+      className={`flex h-9 overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 ${disabled ? 'opacity-50' : ''} ${className}`}
     >
       {/* Text input — hides native spinners */}
       <input
@@ -67,19 +64,12 @@ export const StepperInput = ({
         min={min}
         max={max}
         step={step}
-        className="
-          h-full flex-1 bg-transparent pl-3 pr-1 text-sm font-medium
-          text-gray-700 focus:outline-none disabled:cursor-not-allowed
-          dark:text-gray-200
-          [appearance:textfield]
-          [&::-webkit-inner-spin-button]:appearance-none
-          [&::-webkit-outer-spin-button]:appearance-none
-        "
+        className="h-full flex-1 [appearance:textfield] bg-transparent pr-1 pl-3 text-sm font-medium text-gray-700 focus:outline-none disabled:cursor-not-allowed dark:text-gray-200 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
 
       {/* Unit suffix */}
       {unit && (
-        <span className="flex items-center pr-1.5 text-xs text-gray-400 dark:text-gray-500 select-none">
+        <span className="flex items-center pr-1.5 text-xs text-gray-400 select-none dark:text-gray-500">
           {unit}
         </span>
       )}
@@ -94,7 +84,10 @@ export const StepperInput = ({
           aria-label="Increase"
           className={arrowBtn}
         >
-          <ChevronUp className="h-3.5 w-3.5 font-bold text-gray-500 dark:text-gray-400" strokeWidth={2.5} />
+          <ChevronUp
+            className="h-3.5 w-3.5 font-bold text-gray-500 dark:text-gray-400"
+            strokeWidth={2.5}
+          />
         </button>
         <button
           type="button"
@@ -104,7 +97,10 @@ export const StepperInput = ({
           aria-label="Decrease"
           className={`border-t border-gray-200 dark:border-gray-700 ${arrowBtn}`}
         >
-          <ChevronDown className="h-3.5 w-3.5 font-bold text-gray-500 dark:text-gray-400" strokeWidth={2.5} />
+          <ChevronDown
+            className="h-3.5 w-3.5 font-bold text-gray-500 dark:text-gray-400"
+            strokeWidth={2.5}
+          />
         </button>
       </div>
     </div>

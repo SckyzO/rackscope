@@ -26,13 +26,7 @@ export const Modal = ({
   );
 };
 
-export const ModalHeader = ({
-  title,
-  onClose,
-}: {
-  title: string;
-  onClose?: () => void;
-}) => (
+export const ModalHeader = ({ title, onClose }: { title: string; onClose?: () => void }) => (
   <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-gray-800">
     <h3 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h3>
     {onClose && (

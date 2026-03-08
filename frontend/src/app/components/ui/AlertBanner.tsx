@@ -4,9 +4,16 @@ import type { ElementType } from 'react';
 
 export type AlertBannerVariant = 'success' | 'error' | 'warning' | 'info';
 
-const VARIANTS: Record<AlertBannerVariant, {
-  border: string; bg: string; icon: ElementType; iconCls: string; text: string;
-}> = {
+const VARIANTS: Record<
+  AlertBannerVariant,
+  {
+    border: string;
+    bg: string;
+    icon: ElementType;
+    iconCls: string;
+    text: string;
+  }
+> = {
   success: {
     border: 'border-green-200 dark:border-green-500/20',
     bg: 'bg-green-50 dark:bg-green-500/10',

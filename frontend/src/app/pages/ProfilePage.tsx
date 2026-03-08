@@ -469,8 +469,8 @@ const AccountSectionHeader = ({
     <AvatarSection username={username} />
     {!authEnabled && (
       <AlertBanner variant="info">
-        Authentication is disabled — credentials changes are saved but not enforced.
-        Enable auth in <strong>Settings → Security</strong> to protect the UI with a password.
+        Authentication is disabled — credentials changes are saved but not enforced. Enable auth in{' '}
+        <strong>Settings → Security</strong> to protect the UI with a password.
       </AlertBanner>
     )}
   </div>

@@ -86,7 +86,9 @@ export const AppHeader = ({
   const initial = displayName.charAt(0).toUpperCase();
   const { simulatorDown, plugins, features } = useAppConfigSafe();
   const maxVisible = features.notifications_max_visible ?? 10;
-  const [muted, setMuted] = useState(() => localStorage.getItem('rackscope.notifications.muted') === 'true');
+  const [muted, setMuted] = useState(
+    () => localStorage.getItem('rackscope.notifications.muted') === 'true'
+  );
   const [notifOpen, setNotifOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
@@ -368,7 +370,10 @@ export const AppHeader = ({
                       )}
                       {/* Mute toggle */}
                       <button
-                        onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleMute();
+                        }}
                         title={muted ? 'Unmute sound alerts' : 'Mute sound alerts'}
                         className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
                           muted
@@ -380,7 +385,11 @@ export const AppHeader = ({
                       </button>
                       {/* Notification settings shortcut */}
                       <button
-                        onClick={(e) => { e.stopPropagation(); setNotifOpen(false); navigate('/settings#notifications'); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setNotifOpen(false);
+                          navigate('/settings#notifications');
+                        }}
                         title="Notification settings"
                         className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
                       >
@@ -455,7 +464,10 @@ export const AppHeader = ({
                     )}
                     {alerts.length > maxVisible && (
                       <button
-                        onClick={() => { setNotifOpen(false); navigate('/notifications'); }}
+                        onClick={() => {
+                          setNotifOpen(false);
+                          navigate('/notifications');
+                        }}
                         className="text-brand-500 w-full px-4 py-2 text-center text-xs font-medium transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
                       >
                         +{alerts.length - maxVisible} more — View all {alerts.length} →

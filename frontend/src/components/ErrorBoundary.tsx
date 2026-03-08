@@ -20,9 +20,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center dark:bg-gray-950">
           <p className="text-brand-100 dark:text-brand-500/20 text-8xl font-black">500</p>
-          <h1 className="-mt-4 text-2xl font-bold text-gray-900 dark:text-white">
-            UI crashed
-          </h1>
+          <h1 className="-mt-4 text-2xl font-bold text-gray-900 dark:text-white">UI crashed</h1>
           <p className="mt-3 max-w-sm font-mono text-xs text-gray-400 dark:text-gray-600">
             {this.state.message}
           </p>

@@ -63,7 +63,9 @@ export const NumberInput = ({
         tabIndex={-1}
         aria-label="Decrease"
       >
-        <span className="text-base font-semibold leading-none text-gray-500 dark:text-gray-400">−</span>
+        <span className="text-base leading-none font-semibold text-gray-500 dark:text-gray-400">
+          −
+        </span>
       </button>
 
       {/* Input + optional unit */}
@@ -76,12 +78,9 @@ export const NumberInput = ({
           min={min}
           max={max}
           step={step}
-          className={`h-full border-0 bg-transparent text-center text-sm font-medium text-gray-700 focus:outline-none disabled:cursor-not-allowed dark:text-gray-200 ${width}
-            [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+          className={`h-full border-0 bg-transparent text-center text-sm font-medium text-gray-700 focus:outline-none disabled:cursor-not-allowed dark:text-gray-200 ${width} [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
         />
-        {unit && (
-          <span className="pr-1.5 text-xs text-gray-400 dark:text-gray-500">{unit}</span>
-        )}
+        {unit && <span className="pr-1.5 text-xs text-gray-400 dark:text-gray-500">{unit}</span>}
       </div>
 
       {/* Increment */}
@@ -93,7 +92,9 @@ export const NumberInput = ({
         tabIndex={-1}
         aria-label="Increase"
       >
-        <span className="text-base font-semibold leading-none text-gray-500 dark:text-gray-400">+</span>
+        <span className="text-base leading-none font-semibold text-gray-500 dark:text-gray-400">
+          +
+        </span>
       </button>
     </div>
   );

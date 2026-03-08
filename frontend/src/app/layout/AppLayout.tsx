@@ -127,7 +127,6 @@ const AppInnerLayout = () => {
     return () => clearTimeout(t);
   }, []);
 
-
   const { features } = useAppConfigSafe();
   const [isDark, setIsDark] = useState(() => {
     // Theme resolution: check new key first (theme-mode, shared with ThemeContext),

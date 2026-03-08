@@ -18,7 +18,10 @@ export function loadSeverityLabels(): Record<SeverityKey, string> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULT_SEVERITY_LABELS };
-    return { ...DEFAULT_SEVERITY_LABELS, ...(JSON.parse(raw) as Partial<Record<SeverityKey, string>>) };
+    return {
+      ...DEFAULT_SEVERITY_LABELS,
+      ...(JSON.parse(raw) as Partial<Record<SeverityKey, string>>),
+    };
   } catch {
     return { ...DEFAULT_SEVERITY_LABELS };
   }

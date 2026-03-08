@@ -150,7 +150,11 @@ const polarToXY = (cx: number, cy: number, r: number, angleDeg: number) => {
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 };
 
-export const SeverityDonut = ({ slices }: { slices: { label: string; count: number; color: string }[] }) => {
+export const SeverityDonut = ({
+  slices,
+}: {
+  slices: { label: string; count: number; color: string }[];
+}) => {
   const size = 140;
   const cx = size / 2;
   const cy = size / 2;
