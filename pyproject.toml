@@ -47,7 +47,7 @@ exclude = ["tests*"]
 # Ensure the top-level plugins/ package is importable during test collection.
 # Without this, pytest doesn't add the project root to sys.path and
 # `from plugins.simulator.backend import ...` fails even with PYTHONPATH set.
-pythonpath = ["."]
+pythonpath = [".", "src"]
 
 [tool.ruff]
 line-length = 100

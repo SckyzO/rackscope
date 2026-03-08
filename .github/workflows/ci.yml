@@ -17,6 +17,10 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: src:.
+      RACKSCOPE_CONFIG_DIR: config
+      RACKSCOPE_APP_CONFIG: config/app.yaml
     outputs:
       tests_passed: ${{ steps.tests.outputs.passed }}
       tests_failed: ${{ steps.tests.outputs.failed }}
@@ -48,7 +52,8 @@ jobs:
             2>&1 | tee test_output.txt || true
 
           PASSED=$(grep -oP '\d+ passed' test_output.txt | grep -oP '\d+' | head -1 || echo 0)
-          FAILED=$(grep -oP '\d+ failed' test_output.txt | grep -oP '\d+' | head -1 || echo 0)
+          FAILED=
+          FAILED="${FAILED:-0}"$(grep -oP '\d+ failed' test_output.txt | grep -oP '\d+' | head -1 || echo 0)
           COVERAGE=$(python3 -c "
           import json
           d = json.load(open('coverage.json'))
@@ -182,58 +187,7 @@ jobs:
           RUN_ID:         ${{ github.run_id }}
           REPO:           ${{ github.repository }}
           SERVER_URL:     ${{ github.server_url }}
-        run: |
-          python3 - <<'PYEOF'
-          import os, datetime
-
-          def icon(status):
-              return {'passing': '✅', 'warning': '⚠️', 'failing': '❌'}.get(status or '', '⬜')
-
-          now  = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
-          sha  = (os.environ.get('COMMIT_SHA') or '')[:7]
-          repo = os.environ.get('REPO', '')
-          srv  = os.environ.get('SERVER_URL', 'https://github.com')
-          rid  = os.environ.get('RUN_ID', '')
-          url  = f"{srv}/{repo}/actions/runs/{rid}"
-
-          t_ok = os.environ.get('TESTS_PASSED') or '?'
-          t_ko = os.environ.get('TESTS_FAILED') or '0'
-          cov  = os.environ.get('COVERAGE') or '?'
-
-          be_lint  = os.environ.get('BE_LINT') or 'unknown'
-          be_mypy  = os.environ.get('BE_MYPY') or 'unknown'
-          be_audit = os.environ.get('BE_AUDIT') or 'unknown'
-          be_av    = os.environ.get('BE_AUDIT_VULNS') or '0'
-
-          fe_lint  = os.environ.get('FE_LINT') or 'unknown'
-          fe_build = os.environ.get('FE_BUILD') or 'unknown'
-          fe_audit = os.environ.get('FE_AUDIT') or 'unknown'
-          fe_av    = os.environ.get('FE_AUDIT_VULNS') or '0'
-
-          tests_ok = t_ko == '0'
-
-          be_audit_detail = f"pip-audit · {be_av} vulns" if be_audit == 'warning' else "pip-audit · clean"
-          fe_audit_detail = f"npm audit · {fe_av} high/critical" if fe_audit == 'warning' else "npm audit · clean"
-
-          md = f"""# Rackscope — Status
-
-> Updated: {now} · Commit: [{sha}]({srv}/{repo}/commit/{os.environ.get('COMMIT_SHA','')}) · [View run]({url})
-
-## Summary
-
-| Check | Status | Detail |
-|---|---|---|
-| 🧪 **Tests** | {'✅' if tests_ok else '❌'} {t_ok} passed | {t_ko} failed · {cov}% coverage |
-| 🔍 **Python lint** | {icon(be_lint)} {be_lint} | ruff check + ruff format |
-| 📐 **Python types** | {icon(be_mypy)} {be_mypy} | mypy |
-| 🎨 **Frontend lint** | {icon(fe_lint)} {fe_lint} | eslint · prettier · stylelint |
-| 📦 **TypeScript** | {icon(fe_build)} {fe_build} | tsc -b |
-| 🔒 **Python security** | {icon(be_audit)} {be_audit} | {be_audit_detail} |
-| 🔒 **npm security** | {icon(fe_audit)} {fe_audit} | {fe_audit_detail} |
-"""
-          open('STATUS.md', 'w').write(md)
-          print("STATUS.md written")
-          PYEOF
+        run: python3 scripts/gen_status.py
 
       - name: Commit STATUS.md
         run: |
@@ -241,5 +195,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add STATUS.md
           git diff --staged --quiet \
-            && echo "STATUS.md unchanged, nothing to commit" \
+            && echo "STATUS.md unchanged" \
             || (git commit -m "ci: update STATUS.md [skip ci]" && git push)
