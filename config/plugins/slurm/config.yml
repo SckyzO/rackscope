@@ -1,60 +1,54 @@
-# Slurm Plugin Configuration
-# See PLUGINS.md for documentation
-# app.yaml only controls: plugins.slurm.enabled (true/false)
+# Slurm Plugin Configuration — managed by Settings UI
 
 metric: slurm_node_status
 label_node: node
 label_status: status
 label_partition: partition
 mapping_path: config/plugins/slurm/node_mapping.yaml
-
 roles:
-  - compute
-  - visu
-
+- compute
+- visu
 include_unlabeled: false
-
 status_map:
   ok:
-    - allocated
-    - alloc
-    - completing
-    - comp
-    - idle
-    - mixed
-    - mix
+  - allocated
+  - alloc
+  - completing
+  - comp
+  - idle
+  - mixed
+  - mix
   warn:
-    - maint
-    - planned
-    - plnd
-    - reserved
-    - resv
-    - blocked
-    - block
-    - power_down
-    - pow_dn
-    - power_up
-    - pow_up
-    - powering_up
-    - powered_down
-    - reboot_issued
-    - reboot_req
+  - maint
+  - planned
+  - plnd
+  - reserved
+  - resv
+  - blocked
+  - block
+  - power_down
+  - pow_dn
+  - power_up
+  - pow_up
+  - powering_up
+  - powered_down
+  - reboot_issued
+  - reboot_req
   crit:
-    - down
-    - drain
-    - drained
-    - draining
-    - drng
-    - fail
-    - failing
-    - failg
-    - error
-    - unknown
-    - unk
-    - noresp
-    - inval
+  - down
+  - drain
+  - drained
+  - draining
+  - drng
+  - fail
+  - failing
+  - failg
+  - error
+  - unknown
+  - unk
+  - noresp
+  - inval
   info: []
-
 severity_colors:
   ok: '#22c55e'
   warn: '#f59e0b'

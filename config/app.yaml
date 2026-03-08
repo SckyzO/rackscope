@@ -39,11 +39,11 @@ features:
   offline: true
   wizard: true
   worldmap: true
-  dev_tools: true
+  dev_tools: false
 auth:
   enabled: false
   username: admin
-  password_hash: $2b$12$ah2Ka7ZQjrvwmXQG4tPiuu5btZeDu8W3f4fWkwtma.DjviPFDpmpW
+  password_hash: $2b$12$X91lqP3eT0gSs7rF9JdM0OtowhwbsugMYDDGySdrXscVmtggB4eCS
   secret_key: ''
   session_duration: 24h
   policy:
@@ -84,6 +84,13 @@ plugins:
     - id: slurm
       path: config/plugins/simulator/metrics/metrics_slurm.yaml
       enabled: true
+    slurm_random_statuses:
+      drain: 1
+      down: 1
+      maint: 1
+    slurm_random_match:
+    - compute*
+    - visu*
   slurm:
     enabled: true
     metric: slurm_node_status
@@ -101,6 +108,7 @@ plugins:
       - alloc
       - completing
       - comp
+      - idle
       - mixed
       - mix
       warn:
@@ -133,8 +141,7 @@ plugins:
       - unk
       - noresp
       - inval
-      info:
-      - idle
+      info: []
     severity_colors:
       ok: '#22c55e'
       warn: '#f59e0b'
