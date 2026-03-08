@@ -1,0 +1,8 @@
+templates:
+  - id: generic-ib-switch-1u
+    name: "Generic InfiniBand Switch 1U"
+    type: switch
+    u_height: 1
+    checks:
+      - switch_up
+      - switch_port_err

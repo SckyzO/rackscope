@@ -1,9 +1,13 @@
 # Map Slurm node names to topology instance names
-# Syntax: slurm_pattern: topology_pattern
-# Wildcards supported: * and [range]
+# compute[001-480]  → standard compute (quad chassis)
+# hm[001-160]       → high-memory compute (twin chassis)
+# gpu[001-096]      → GPU nodes
+# dr-compute[001-80] → DR site compute
 
 mapping:
-  "c[001-028]": "compute[001-028]"
-  "g[001-002]": "gpu[001-002]"
-  "dr-c[001-008]": "dr-compute[001-008]"
-  "login[01-02]": "login[01-02]"
+  "c[001-480]":    "compute[001-480]"
+  "hm[001-160]":   "hm[001-160]"
+  "g[001-096]":    "gpu[001-096]"
+  "dr[001-080]":   "dr-compute[001-080]"
+  "login[01-04]":  "login[01-04]"
+  "visu[01-04]":   "visu[01-04]"

@@ -1,9 +1,0 @@
-id: aisle-compute
-name: Compute Aisle
-room_id: machine-room-a
-
-racks:
-  - rack-path: racks/rack-c01
-  - rack-path: racks/rack-c02
-  - rack-path: racks/rack-c03
-  - rack-path: racks/rack-c04

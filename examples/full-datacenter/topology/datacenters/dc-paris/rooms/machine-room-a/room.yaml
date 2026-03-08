@@ -1,14 +1,16 @@
 id: machine-room-a
-name: Machine Room A
+name: Machine Room A — Compute Floor
 site_id: dc-paris
-description: Primary compute and storage room
+description: Main HPC compute floor — standard compute, high-memory, GPU nodes
 
 layout:
-  cols: 3
-  rows: 4
+  cols: 4
+  rows: 6
   orientation: north
   door_side: south
 
 aisles:
-  - aisle-path: aisles/compute
-  - aisle-path: aisles/infra
+  - id: aisle-compute-std
+  - id: aisle-compute-hm
+  - id: aisle-gpu
+  - id: aisle-storage

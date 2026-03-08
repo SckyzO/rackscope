@@ -1,12 +1,12 @@
 id: machine-room-dr
 name: DR Machine Room
 site_id: dc-lyon
-description: Disaster recovery room — reduced capacity
+description: Disaster recovery — 40 compute nodes
 
 layout:
   cols: 2
-  rows: 3
+  rows: 2
   orientation: north
 
 aisles:
-  - aisle-path: aisles/dr
+  - id: aisle-dr

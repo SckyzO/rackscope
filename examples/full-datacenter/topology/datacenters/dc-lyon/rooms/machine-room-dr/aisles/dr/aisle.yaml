@@ -1,8 +1,0 @@
-id: aisle-dr
-name: DR Aisle
-room_id: machine-room-dr
-
-racks:
-  - rack-path: racks/rack-dr01
-  - rack-path: racks/rack-dr02
-  - rack-path: racks/rack-dr03

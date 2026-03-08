@@ -1,0 +1,10 @@
+id: aisle-compute-hm
+name: High-Memory Compute Aisle
+room_id: machine-room-a
+description: "4 racks × 40 nodes (2U twin-chassis, 2 nodes each) — hm001 to hm160"
+
+racks:
+  - id: rack-hm01
+  - id: rack-hm02
+  - id: rack-hm03
+  - id: rack-hm04

@@ -1,0 +1,9 @@
+id: aisle-storage
+name: Storage & Network Aisle
+room_id: machine-room-a
+
+racks:
+  - id: rack-sto01
+  - id: rack-sto02
+  - id: rack-net01
+  - id: rack-net02

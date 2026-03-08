@@ -8,7 +8,7 @@ Each example works out-of-the-box with the built-in simulator.
 | Example | Description | Nodes | Sites | Rooms |
 |---|---|---|---|---|
 | [`simple-room/`](simple-room/) | Single room, 4 racks, minimal setup | ~10 | 1 | 1 |
-| [`full-datacenter/`](full-datacenter/) | Two sites, four rooms, mixed compute/GPU/storage | ~50 | 2 | 4 |
+| [`full-datacenter/`](full-datacenter/) | 2 sites, 3 rooms, 480 compute + 160 HM + 96 GPU + 80 DR | **827** | 2 | 3 |
 | [`hpc-cluster/`](hpc-cluster/) | Real HPC cluster (Bullsequana X hardware) | ~80+ | 2 | 2 |
 
 ## Quick start

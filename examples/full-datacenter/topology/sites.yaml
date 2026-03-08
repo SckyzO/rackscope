@@ -1,7 +1,7 @@
 sites:
   - id: dc-paris
-    name: Paris Datacenter
-    description: Main datacenter — Île-de-France
+    name: Paris HPC Datacenter
+    description: Main HPC compute site — Île-de-France
     lat: 48.8566
     lon: 2.3522
     rooms_path: datacenters/dc-paris/rooms

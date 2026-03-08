@@ -1,7 +1,0 @@
-id: aisle-infra
-name: Infrastructure Aisle
-room_id: machine-room-a
-
-racks:
-  - rack-path: racks/rack-net01
-  - rack-path: racks/rack-sto01
