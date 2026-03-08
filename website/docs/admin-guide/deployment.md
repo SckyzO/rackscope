@@ -101,3 +101,100 @@ make logs                                    # All services
 docker compose -f docker-compose.dev.yml logs -f backend   # Backend only
 docker compose -f docker-compose.dev.yml logs --tail=100 frontend
 ```
+
+---
+
+## Docker Images (GHCR)
+
+Official images are published to the GitHub Container Registry automatically by CI.
+
+| Image | Tag | Description |
+|---|---|---|
+| `ghcr.io/sckyzO/rackscope-backend` | `latest` | Latest build from `main` |
+| `ghcr.io/sckyzO/rackscope-backend` | `1.0.0` | Tagged release |
+| `ghcr.io/sckyzO/rackscope-frontend` | `latest` | Latest build from `main` |
+| `ghcr.io/sckyzO/rackscope-frontend` | `1.0.0` | Tagged release |
+
+### Pull a specific version
+
+```bash
+docker pull ghcr.io/sckyzO/rackscope-backend:1.0.0
+docker pull ghcr.io/sckyzO/rackscope-frontend:1.0.0
+```
+
+### Deploy with docker compose
+
+```bash
+export RACKSCOPE_VERSION=1.0.0
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Leave `RACKSCOPE_VERSION` unset (or set to `latest`) to always pull the latest build from `main`.
+
+---
+
+## CI / CD
+
+Three GitHub Actions workflows manage the build and release lifecycle:
+
+### `ci.yml` — Quality checks
+
+Runs on every push and pull request to `main`:
+
+- Backend: pytest (852 tests), ruff lint, mypy, pip-audit
+- Frontend: eslint, prettier, stylelint, TypeScript build, npm audit
+- On push to `main`: generates and commits `STATUS.md` with current results
+
+### `docker.yml` — Continuous delivery
+
+Runs on push to `main` when source files change:
+
+- Builds `rackscope-backend:latest` from `src/Dockerfile`
+- Builds `rackscope-frontend:latest` from `frontend/Dockerfile.prod` (multi-stage: `npm run build` → nginx)
+- Pushes both images to GHCR
+
+### `release.yml` — Release on tag
+
+Triggered by pushing a version tag (e.g. `git tag v1.0.0 && git push --tags`):
+
+1. Builds versioned images (`1.0.0`, `1.0`, `latest`) and pushes to GHCR
+2. Creates a GitHub Release with:
+   - Changelog section for that version (from `CHANGELOG.md`)
+   - Docker pull instructions
+   - `docker-compose.prod.yml` as a downloadable asset
+
+### `security.yml` — Weekly audit
+
+Runs weekly (Monday 08:00 UTC) and on every push:
+
+- bandit (Python SAST)
+- pip-audit (Python CVEs)
+- npm audit (frontend CVEs)
+
+### `dependabot.yml` — Automatic dependency updates
+
+Opens PRs automatically when new versions are available for:
+
+- Python packages (`pyproject.toml`) — weekly, minor/patch only
+- npm packages (`frontend/package.json`) — weekly, minor/patch only
+- GitHub Actions — weekly
+
+Major version bumps are excluded and must be updated manually.
+
+---
+
+## Creating a release
+
+```bash
+# 1. Update CHANGELOG.md with the new version section
+# 2. Commit everything
+git add -A && git commit -m "chore: prepare v1.1.0"
+
+# 3. Tag and push — this triggers the release workflow
+git tag v1.1.0
+git push origin main --tags
+```
+
+GitHub Actions will:
+1. Build and push `rackscope-backend:1.1.0` and `rackscope-frontend:1.1.0` to GHCR
+2. Create a GitHub Release with the changelog and `docker-compose.prod.yml`

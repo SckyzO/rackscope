@@ -1,0 +1,162 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY: ghcr.io
+  REPO: sckyzO/rackscope
+
+jobs:
+  # ── Build and push versioned Docker images ────────────────────────────────
+  build-images:
+    name: Build & push images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      backend_image: ${{ steps.backend-meta.outputs.tags }}
+      frontend_image: ${{ steps.frontend-meta.outputs.tags }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building version: $VERSION"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── Backend ──
+      - name: Backend metadata
+        id: backend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.REPO }}-backend
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/Dockerfile
+          push: true
+          tags: ${{ steps.backend-meta.outputs.tags }}
+          labels: ${{ steps.backend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Frontend ──
+      - name: Frontend metadata
+        id: frontend-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.REPO }}-frontend
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile.prod
+          push: true
+          tags: ${{ steps.frontend-meta.outputs.tags }}
+          labels: ${{ steps.frontend-meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── Create GitHub Release ─────────────────────────────────────────────────
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build-images
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract changelog section
+        id: changelog
+        run: |
+          VERSION="${{ needs.build-images.outputs.version }}"
+          # Extract the section for this version from CHANGELOG.md
+          python3 - << PYEOF
+          import re, os
+          version = os.environ.get('VERSION', '')
+          content = open('CHANGELOG.md').read()
+          # Find the section for this version
+          pattern = rf'## \[{re.escape(version)}\].*?(?=\n## \[|\Z)'
+          match = re.search(pattern, content, re.DOTALL)
+          section = match.group(0).strip() if match else f'Release {version}'
+          open('release_notes.md', 'w').write(section)
+          print(f"Extracted changelog for {version}")
+          PYEOF
+        env:
+          VERSION: ${{ needs.build-images.outputs.version }}
+
+      - name: Append Docker install instructions
+        run: |
+          VERSION="${{ needs.build-images.outputs.version }}"
+          REGISTRY="${{ env.REGISTRY }}"
+          REPO="${{ env.REPO }}"
+          cat >> release_notes.md << NOTES
+
+          ---
+
+          ## Docker images
+
+          \`\`\`bash
+          # Backend
+          docker pull ${REGISTRY}/${REPO}-backend:${VERSION}
+
+          # Frontend
+          docker pull ${REGISTRY}/${REPO}-frontend:${VERSION}
+          \`\`\`
+
+          ## Quick start (docker compose)
+
+          Download \`docker-compose.prod.yml\` from the assets below, then:
+
+          \`\`\`bash
+          # Set image versions in your environment
+          export RACKSCOPE_VERSION=${VERSION}
+
+          docker compose -f docker-compose.prod.yml up -d
+          \`\`\`
+
+          See the [documentation](https://rackscope.dev) for full deployment instructions.
+          NOTES
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Rackscope v${{ needs.build-images.outputs.version }}"
+          body_path: release_notes.md
+          files: docker-compose.prod.yml
+          generate_release_notes: false
+          make_latest: true

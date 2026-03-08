@@ -1,0 +1,41 @@
+version: 2
+
+updates:
+  # ── Python (pyproject.toml) ───────────────────────────────────────────────
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels: [dependencies, python]
+    ignore:
+      # Major version bumps — review manually
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
+
+  # ── npm (frontend/package.json) ───────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels: [dependencies, javascript]
+    ignore:
+      # Major version bumps — review manually
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
+      # react-simple-maps peer dep workaround — update manually
+      - dependency-name: "react-simple-maps"
+
+  # ── GitHub Actions ────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    labels: [dependencies, github-actions]
