@@ -54,3 +54,6 @@ severity_colors:
   warn: '#f59e0b'
   crit: '#ef4444'
   info: '#3b82f6'
+metrics_catalog_dir: config/plugins/slurm/metrics
+metrics_catalogs:
+- metrics.yaml
