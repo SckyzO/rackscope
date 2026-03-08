@@ -14,6 +14,7 @@ import {
   type DarkTheme,
   type PaletteMeta,
 } from '../../../context/ThemeContext';
+import { TooltipHelp } from '../ui/Tooltip';
 
 // ── Palette preview card ───────────────────────────────────────────────────────
 
@@ -172,7 +173,10 @@ export const AppearanceSettingsSection = () => {
       <div className="space-y-6">
         {/* ── Accent color ─────────────────────────────────────────────── */}
         <div>
-          <SubLabel>Accent color</SubLabel>
+          <div className="flex items-center gap-1.5">
+            <SubLabel>Accent color</SubLabel>
+            <TooltipHelp text="Primary interactive color for buttons, active sidebar items, focused inputs and links. Applied immediately." />
+          </div>
           <div className="flex items-center gap-3">
             {ACCENTS.map((a) => (
               <AccentSwatch
@@ -188,7 +192,10 @@ export const AppearanceSettingsSection = () => {
 
         {/* ── Light themes ─────────────────────────────────────────────── */}
         <div>
-          <SubLabel>Light theme — default palette in light mode</SubLabel>
+          <div className="flex items-center gap-1.5">
+            <SubLabel>Light theme — default palette in light mode</SubLabel>
+            <TooltipHelp text="Color palette used when light mode is active." />
+          </div>
           <div className="grid grid-cols-4 gap-3">
             {LIGHT_THEMES.map((t) => (
               <PaletteCard
@@ -203,7 +210,10 @@ export const AppearanceSettingsSection = () => {
 
         {/* ── Dark themes ──────────────────────────────────────────────── */}
         <div>
-          <SubLabel>Dark theme — default palette in dark mode</SubLabel>
+          <div className="flex items-center gap-1.5">
+            <SubLabel>Dark theme — default palette in dark mode</SubLabel>
+            <TooltipHelp text="Color palette used when dark mode is active. Void (near-black) is recommended for NOC environments." />
+          </div>
           <div className="grid grid-cols-4 gap-3">
             {DARK_THEMES.map((t) => (
               <PaletteCard

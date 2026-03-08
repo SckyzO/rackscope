@@ -4,6 +4,7 @@ import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
 import { FormToggle } from '../common/FormToggle';
 import { StepperInput } from '../../../app/components/forms/StepperInput';
+import { TooltipHelp } from '../../../app/components/ui/Tooltip';
 import type { ConfigDraft } from '../useSettingsConfig';
 
 interface TelemetrySettingsSectionProps {
@@ -143,6 +144,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
           <div className="space-y-2">
             <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
               Heartbeat Interval (seconds)
+              <TooltipHelp text="How often the backend pings Prometheus with a lightweight query to measure connection latency." />
             </label>
             <StepperInput
               value={Number(draft.telemetry.prometheus_heartbeat_seconds)}
@@ -157,6 +159,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
           <div className="space-y-2">
             <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
               Latency Window (queries)
+              <TooltipHelp text="Number of recent heartbeat samples used to compute average Prometheus latency. Higher = smoother average." />
             </label>
             <StepperInput
               value={Number(draft.telemetry.prometheus_latency_window)}
@@ -171,6 +174,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
         <FormToggle
           label="Debug Stats"
           description="Enable telemetry debug statistics"
+          tooltip="Log detailed Prometheus query statistics (count, cache hits, latency) to the backend container logs. For performance troubleshooting only."
           checked={draft.telemetry.debug_stats}
           onChange={(value) => update('debug_stats', value)}
         />
@@ -223,6 +227,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
         <FormToggle
           label="Enable Authentication"
           description="Enable basic authentication for Prometheus"
+          tooltip="Send credentials with every Prometheus request. Enable only when your Prometheus instance requires authentication."
           checked={authEnabled}
           onChange={toggleAuth}
         />
@@ -257,6 +262,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
         <FormToggle
           label="TLS Verify"
           description="Verify server TLS certificates"
+          tooltip="Validate the Prometheus server TLS certificate against a trusted CA. Disable only for self-signed certs in development."
           checked={draft.telemetry.tls_verify}
           onChange={(value) => update('tls_verify', value)}
         />
@@ -272,6 +278,7 @@ export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> =
         <FormToggle
           label="Enable TLS Client Certificate"
           description="Use client certificate for mutual TLS authentication"
+          tooltip="Send a client certificate with every Prometheus request (mutual TLS). Required only when Prometheus enforces client identity verification."
           checked={tlsClientCertEnabled}
           onChange={toggleTlsClientCert}
         />

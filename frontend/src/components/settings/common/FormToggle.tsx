@@ -1,8 +1,10 @@
 import React from 'react';
+import { TooltipHelp } from '../../../app/components/ui/Tooltip';
 
 interface FormToggleProps {
   label: string;
   description?: string;
+  tooltip?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
@@ -12,6 +14,7 @@ interface FormToggleProps {
 export const FormToggle: React.FC<FormToggleProps> = ({
   label,
   description,
+  tooltip,
   checked,
   onChange,
   disabled = false,
@@ -21,10 +24,11 @@ export const FormToggle: React.FC<FormToggleProps> = ({
     <div className={`flex items-center justify-between ${className}`}>
       <div className="flex-1">
         <label
-          className="block text-xs font-bold tracking-wider uppercase"
+          className="flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase"
           style={{ color: 'var(--color-text-secondary)' }}
         >
           {label}
+          {tooltip && <TooltipHelp text={tooltip} />}
         </label>
         {description && (
           <p className="mt-1 text-xs" style={{ color: 'var(--color-text-muted)' }}>

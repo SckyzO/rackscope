@@ -3,6 +3,7 @@ import { Cpu } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
 import { StepperInput } from '../../../app/components/forms/StepperInput';
+import { TooltipHelp } from '../../../app/components/ui/Tooltip';
 import type { ConfigDraft } from '../useSettingsConfig';
 
 interface PlannerSettingsSectionProps {
@@ -46,6 +47,7 @@ export const PlannerSettingsSection: React.FC<PlannerSettingsSectionProps> = ({
         <div className="space-y-2">
           <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
             Cache TTL (seconds)
+            <TooltipHelp text="How long batched health check snapshots are cached before re-querying Prometheus. Increase for large topologies." />
           </label>
           <StepperInput
             value={Number(draft.planner.cache_ttl_seconds)}
@@ -60,6 +62,7 @@ export const PlannerSettingsSection: React.FC<PlannerSettingsSectionProps> = ({
         <div className="space-y-2">
           <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
             Max IDs per Query
+            <TooltipHelp text="Maximum number of node or rack IDs grouped into a single PromQL query. Reduce if Prometheus returns query-too-large errors." />
           </label>
           <StepperInput
             value={Number(draft.planner.max_ids_per_query)}

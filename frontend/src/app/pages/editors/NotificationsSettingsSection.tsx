@@ -32,6 +32,7 @@ const VISIBILITY_OPTIONS = [
 const SoundRow = ({
   label,
   description,
+  tooltip,
   soundKey,
   settings,
   update,
@@ -40,6 +41,7 @@ const SoundRow = ({
 }: {
   label: string;
   description: string | undefined;
+  tooltip?: string;
   soundKey: 'critSound' | 'warnSound';
   settings: SoundAlertSettings;
   update: <K extends keyof SoundAlertSettings>(key: K, value: SoundAlertSettings[K]) => void;
@@ -47,7 +49,7 @@ const SoundRow = ({
   preview: (preset: SoundPreset) => void;
 }) => (
   <div className="py-3">
-    <FormRow label={label} description={description}>
+    <FormRow label={label} description={description} tooltip={tooltip}>
       <div className="flex items-center gap-2">
         <SelectInput
           value={settings[soundKey]}
@@ -112,6 +114,7 @@ export const NotificationsSettingsSection = () => {
         <FormRow
           label="Enable sound alerts"
           description="Play a sound when new Critical or Warning alerts arrive — fires in sync with toast notifications"
+          tooltip="Play an audio alert when new CRIT or WARN notifications arrive. Requires browser audio permission."
         >
           <ToggleSwitch
             checked={settings.enabled}
@@ -140,6 +143,7 @@ export const NotificationsSettingsSection = () => {
                     ? SOUND_PRESETS[settings.critSound as SoundPreset]?.description
                     : 'No sound'
                 }
+                tooltip="Audio clip played for CRIT-level alerts."
                 soundKey="critSound"
                 settings={settings}
                 update={update}
@@ -153,6 +157,7 @@ export const NotificationsSettingsSection = () => {
                     ? SOUND_PRESETS[settings.warnSound as SoundPreset]?.description
                     : 'No sound'
                 }
+                tooltip="Audio clip played for WARN-level alerts. Can differ from the critical sound to distinguish severity by ear."
                 soundKey="warnSound"
                 settings={settings}
                 update={update}
@@ -161,7 +166,11 @@ export const NotificationsSettingsSection = () => {
               />
 
               <div className="py-3">
-                <FormRow label="Volume" description="Alert sound volume">
+                <FormRow
+                  label="Volume"
+                  description="Alert sound volume"
+                  tooltip="Alert sound volume (0–100), independent from system volume."
+                >
                   <StepperInput
                     value={settings.volume}
                     onChange={(v) => update('volume', v)}
@@ -186,6 +195,7 @@ export const NotificationsSettingsSection = () => {
                 <FormRow
                   label="Play when"
                   description="Control when sounds fire relative to tab focus"
+                  tooltip="Control when sounds fire: always, only when tab is focused, or only when tab is in background."
                 >
                   <SelectInput
                     value={settings.visibility}
@@ -225,7 +235,11 @@ export const NotificationsSettingsSection = () => {
         </div>
         <div className="divide-y divide-gray-100 px-4 dark:divide-gray-800">
           <div className="py-3">
-            <FormRow label="Position" description="Where toasts appear on screen">
+            <FormRow
+              label="Position"
+              description="Where toasts appear on screen"
+              tooltip="Screen corner where toast notifications appear. Top-right is standard."
+            >
               <SelectInput
                 value={draft.features.toast_position}
                 onChange={(v) => updateDraft('features', 'toast_position', v)}
@@ -237,7 +251,11 @@ export const NotificationsSettingsSection = () => {
             </FormRow>
           </div>
           <div className="py-3">
-            <FormRow label="Display duration" description="How long each toast stays visible">
+            <FormRow
+              label="Display duration"
+              description="How long each toast stays visible"
+              tooltip="Seconds each toast stays visible before auto-dismissing. Set to 0 to require manual dismissal."
+            >
               <StepperInput
                 value={Number(draft.features.toast_duration_seconds)}
                 onChange={(v) => updateDraft('features', 'toast_duration_seconds', String(v))}
@@ -250,7 +268,11 @@ export const NotificationsSettingsSection = () => {
             </FormRow>
           </div>
           <div className="py-3">
-            <FormRow label="Stack threshold" description="Max toasts shown simultaneously">
+            <FormRow
+              label="Stack threshold"
+              description="Max toasts shown simultaneously"
+              tooltip="Maximum toasts shown simultaneously. Older ones are dismissed when new ones exceed this limit."
+            >
               <StepperInput
                 value={Number(draft.features.toast_stack_threshold)}
                 onChange={(v) => updateDraft('features', 'toast_stack_threshold', String(v))}

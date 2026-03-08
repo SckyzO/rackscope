@@ -2,6 +2,7 @@ import React from 'react';
 import { Info, FolderOpen, RefreshCw, Database } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
+import { TooltipHelp } from '../../../app/components/ui/Tooltip';
 import { StepperInput } from '../../../app/components/forms/StepperInput';
 import type { ConfigDraft } from '../useSettingsConfig';
 
@@ -94,6 +95,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         <div className="space-y-2">
           <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
             Room State Refresh (seconds)
+            <TooltipHelp text="How often room health states are re-fetched from Prometheus. Lower = more responsive; higher = less load. Min 10s." />
           </label>
           <StepperInput
             value={Number(draft.refresh.room_state_seconds)}
@@ -108,6 +110,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         <div className="space-y-2">
           <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
             Rack State Refresh (seconds)
+            <TooltipHelp text="How often rack detail views re-fetch health states from Prometheus. Min 10s." />
           </label>
           <StepperInput
             value={Number(draft.refresh.rack_state_seconds)}
@@ -131,6 +134,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         <div className="space-y-2">
           <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
             Legacy TTL (seconds)
+            <TooltipHelp text="Generic cache TTL for queries not covered by the specific TTLs below. Kept for backward compatibility." />
           </label>
           <StepperInput
             value={Number(draft.cache.ttl_seconds)}
@@ -145,6 +149,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         <div className="space-y-2">
           <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
             Health Checks TTL (seconds)
+            <TooltipHelp text="How long health check results are cached. Failures appear within this window. Lower = more reactive, higher = less Prometheus load." />
           </label>
           <StepperInput
             value={Number(draft.cache.health_checks_ttl_seconds)}
@@ -159,6 +164,7 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
         <div className="space-y-2">
           <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
             Metrics TTL (seconds)
+            <TooltipHelp text="Cache lifetime for metric chart data (temperature, power, PDU). Charts don't need sub-minute refresh, so a longer value is fine." />
           </label>
           <StepperInput
             value={Number(draft.cache.metrics_ttl_seconds)}
