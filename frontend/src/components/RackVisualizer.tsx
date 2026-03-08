@@ -99,7 +99,10 @@ export const RackElevation = ({
       { component: InfrastructureComponent; height: number; hasCollision: boolean }
     >();
     faceInfra
-      .filter((c) => c.location === 'u-mount' && c.u_position)
+      .filter(
+        (c): c is typeof c & { u_position: number } =>
+          c.location === 'u-mount' && c.u_position !== undefined && c.u_position !== null
+      )
       .forEach((c) => {
         const height = c.u_height || 1;
         let hasCollision = false;
@@ -858,7 +861,8 @@ export const DeviceChassis = ({
                 );
               const nodeId = nodeMap[slotNum];
               const nodeHealth =
-                nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].state : 'UNKNOWN';
+                (nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].state : undefined) ??
+                'UNKNOWN';
               const nodeMetrics =
                 nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId] : undefined;
               return (

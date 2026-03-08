@@ -272,7 +272,8 @@ const MetricChartPreview = ({
                   offsetY: 5,
                   fontSize: '22px',
                   fontWeight: 700,
-                  formatter: (v: string) => `${Math.round((parseFloat(v) * maxVal) / 100)}${unit}`,
+                  formatter: (v: number | string) =>
+                    `${Math.round((parseFloat(String(v)) * maxVal) / 100)}${unit}`,
                 },
               },
             },
@@ -644,8 +645,8 @@ const ContextPanel = ({
   const usedInDevices = deviceTemplates.filter((t) => (t.metrics ?? []).includes(metric.id));
   const usedInRacks = rackTemplates.filter((t) => (t.metrics ?? []).includes(metric.id));
 
-  // ChartIcon is used in template usage section icon
-  const _ChartIcon =
+  // ChartIcon is computed for potential use in template usage sections
+  const ChartIcon =
     draft.chart_type === 'bar'
       ? BarChart2
       : draft.chart_type === 'gauge'
@@ -653,6 +654,7 @@ const ContextPanel = ({
         : draft.chart_type === 'area'
           ? Activity
           : LineChart;
+  void ChartIcon; // may be used in future chart type badges
 
   const warnNum = parseFloat(draft.threshold_warn);
   const critNum = parseFloat(draft.threshold_crit);
@@ -968,7 +970,8 @@ export const MetricsEditorPage = () => {
         api.getMetricsLibraryFiles(),
         api.getCatalog(),
       ]);
-      const ms: MetricDefinition[] = libRes.metrics ?? [];
+      const ms: MetricDefinition[] = ((libRes as { metrics?: unknown[] }).metrics ??
+        []) as MetricDefinition[];
       setMetrics(ms);
       // Build file map: id → filename (filename = id + .yaml by convention)
       const fm: Record<string, string> = {};
@@ -1017,14 +1020,15 @@ export const MetricsEditorPage = () => {
     setSelected(updated);
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
+  const handleDelete = async (target?: MetricDefinition) => {
+    const deleteTarget_ = target ?? deleteTarget;
+    if (!deleteTarget_) return;
     setDeleting(true);
     try {
-      const filename = fileMap[deleteTarget.id] ?? `${deleteTarget.id}.yaml`;
+      const filename = fileMap[deleteTarget_.id] ?? `${deleteTarget_.id}.yaml`;
       await api.deleteMetricFile(filename);
-      setMetrics((prev) => prev.filter((m) => m.id !== deleteTarget.id));
-      if (selected?.id === deleteTarget.id) setSelected(null);
+      setMetrics((prev) => prev.filter((m) => m.id !== deleteTarget_.id));
+      if (selected?.id === deleteTarget_.id) setSelected(null);
       setDeleteTarget(null);
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Delete failed');

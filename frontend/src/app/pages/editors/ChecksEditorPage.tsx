@@ -1446,7 +1446,7 @@ export const ChecksEditorPage = () => {
       ...selectedCheck,
       ...draftToCheck(previewDraft),
       rules: previewDraft.rules.map((r) => ({
-        op: r.op as CheckDefinition['rules'] extends Array<infer T> ? T['op'] : never,
+        op: r.op as '==' | '!=' | '>' | '>=' | '<' | '<=',
         value: isNaN(Number(r.value)) ? r.value : Number(r.value),
         severity: r.severity as 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN',
       })),
@@ -1468,11 +1468,7 @@ export const ChecksEditorPage = () => {
         }
         actions={
           !loading && !loadError ? (
-            <PageActionButton
-              variant="primary"
-              icon={Plus}
-              onClick={() => setShowNewModal(true)}
-            >
+            <PageActionButton variant="primary" icon={Plus} onClick={() => setShowNewModal(true)}>
               New Check
             </PageActionButton>
           ) : undefined

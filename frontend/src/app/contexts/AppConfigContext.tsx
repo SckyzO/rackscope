@@ -6,6 +6,7 @@ import type { AppConfig } from '../../types';
 // Feature flags with safe defaults (fail-open: show everything if config not loaded)
 interface AppFeatures {
   notifications: boolean;
+  notifications_max_visible: number;
   toast_duration_seconds: number;
   toast_position: string;
   toast_stack_threshold: number;
@@ -35,6 +36,7 @@ interface AppConfigContextType {
 
 const DEFAULT_FEATURES: AppFeatures = {
   notifications: true,
+  notifications_max_visible: 10,
   toast_duration_seconds: 15,
   toast_position: 'bottom-right',
   toast_stack_threshold: 5,
@@ -102,6 +104,7 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
   // Derive feature flags — default true for core features, false for opt-in
   const features: AppFeatures = {
     notifications: config?.features?.notifications !== false,
+    notifications_max_visible: Number(config?.features?.notifications_max_visible ?? 10),
     toast_duration_seconds: Number(config?.features?.toast_duration_seconds ?? 15),
     toast_position: (config?.features?.toast_position as string) || 'bottom-right',
     toast_stack_threshold: Number(config?.features?.toast_stack_threshold ?? 5),

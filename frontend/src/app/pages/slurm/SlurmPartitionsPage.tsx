@@ -67,7 +67,10 @@ export const SlurmPartitionsPage = () => {
   }, [load]);
 
   const handleQuietRefresh = useCallback(() => void load(), [load]);
-  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('slurm-partitions', handleQuietRefresh);
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh(
+    'slurm-partitions',
+    handleQuietRefresh
+  );
 
   const partEntries = Object.entries(data?.partitions ?? {});
 

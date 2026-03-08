@@ -24,8 +24,8 @@ const SOUND_OPTIONS = [
 ];
 
 const VISIBILITY_OPTIONS = [
-  { value: 'always',       label: 'Always' },
-  { value: 'hidden-only',  label: 'Tab in background only' },
+  { value: 'always', label: 'Always' },
+  { value: 'hidden-only', label: 'Tab in background only' },
   { value: 'visible-only', label: 'Tab in foreground only' },
 ];
 
@@ -108,7 +108,6 @@ export const NotificationsSettingsSection = () => {
 
   return (
     <div className="space-y-6">
-
       {/* ── 1. Sound alerts ───────────────────────────────────────────────── */}
       <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <FormRow
@@ -213,16 +212,18 @@ export const NotificationsSettingsSection = () => {
               <SectionLabel>Preview all sounds</SectionLabel>
             </div>
             <div className="flex flex-wrap gap-2">
-              {(Object.entries(SOUND_PRESETS) as [SoundPreset, { name: string }][]).map(([id, p]) => (
-                <PageActionButton
-                  key={id}
-                  icon={Play}
-                  onClick={() => preview(id)}
-                  disabled={previewing !== null}
-                >
-                  {previewing === id ? 'Playing…' : p.name}
-                </PageActionButton>
-              ))}
+              {(Object.entries(SOUND_PRESETS) as [SoundPreset, { name: string }][]).map(
+                ([id, p]) => (
+                  <PageActionButton
+                    key={id}
+                    icon={Play}
+                    onClick={() => preview(id)}
+                    disabled={previewing !== null}
+                  >
+                    {previewing === id ? 'Playing…' : p.name}
+                  </PageActionButton>
+                )
+              )}
             </div>
           </div>
         </>
@@ -285,7 +286,6 @@ export const NotificationsSettingsSection = () => {
           </div>
         </div>
       </div>
-
     </div>
   );
 };

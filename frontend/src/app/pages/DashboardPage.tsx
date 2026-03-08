@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import ReactGridLayout, { type Layout } from 'react-grid-layout';
+import ReactGridLayout from 'react-grid-layout/legacy';
+import { type Layout, type LayoutItem } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { useNavigate, useParams, Link } from 'react-router-dom';
@@ -56,7 +57,7 @@ import {
  * Convert WidgetConfig[] to the Layout[] shape expected by react-grid-layout.
  * The `i` field is the widget id — RGL uses it as the React key and for position tracking.
  */
-const toRglLayout = (widgets: WidgetConfig[]): Layout[] =>
+const toRglLayout = (widgets: WidgetConfig[]): LayoutItem[] =>
   widgets.map(({ id, x, y, w, h, minW, minH }) => ({
     i: id,
     x,
@@ -71,7 +72,7 @@ const toRglLayout = (widgets: WidgetConfig[]): Layout[] =>
  * Merge position updates from react-grid-layout back into the WidgetConfig array.
  * Called on every drag/resize; persists to localStorage via saveWidgets.
  */
-const applyRglLayout = (widgets: WidgetConfig[], newLayout: Layout[]): WidgetConfig[] => {
+const applyRglLayout = (widgets: WidgetConfig[], newLayout: Layout): WidgetConfig[] => {
   const pos = Object.fromEntries(newLayout.map((l) => [l.i, l]));
   return widgets.map((w) => {
     const l = pos[w.id];
@@ -127,8 +128,7 @@ const WidgetPicker = ({ widgets, onAdd, onReset, onClose, open }: WidgetPickerPr
   const { plugins } = useAppConfigSafe();
   const allDefs = getAllWidgets();
   const available = allDefs.filter(
-    (def) =>
-      !def.requiresPlugin || Boolean(plugins[def.requiresPlugin as keyof typeof plugins])
+    (def) => !def.requiresPlugin || Boolean(plugins[def.requiresPlugin as keyof typeof plugins])
   );
   const addedTypes = new Set(widgets.map((w) => w.type));
 
@@ -188,7 +188,9 @@ const WidgetPicker = ({ widgets, onAdd, onReset, onClose, open }: WidgetPickerPr
                     >
                       <div
                         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                          isAdded ? 'bg-gray-100 dark:bg-gray-800' : 'bg-brand-50 dark:bg-brand-500/10'
+                          isAdded
+                            ? 'bg-gray-100 dark:bg-gray-800'
+                            : 'bg-brand-50 dark:bg-brand-500/10'
                         }`}
                       >
                         <Icon
@@ -346,7 +348,7 @@ export const DashboardPage = () => {
   );
 
   const handleLayoutChange = useCallback(
-    (newLayout: Layout[]) => {
+    (newLayout: Layout) => {
       // Only capture layout changes when in edit mode. Changes are NOT persisted
       // to localStorage until the user explicitly clicks Save.
       if (!editMode) return;
@@ -753,19 +755,27 @@ export const DashboardPage = () => {
               >
                 Widgets
               </PageActionButton>
-              <PageActionButton icon={Undo2} onClick={() => {
-                setPendingLayout(null);
-                setEditMode(false);
-                setPickerOpen(false);
-              }} variant="outline">
+              <PageActionButton
+                icon={Undo2}
+                onClick={() => {
+                  setPendingLayout(null);
+                  setEditMode(false);
+                  setPickerOpen(false);
+                }}
+                variant="outline"
+              >
                 Discard
               </PageActionButton>
-              <PageActionButton icon={Check} onClick={() => {
-                saveWidgets(pendingLayout ?? widgets);
-                setPendingLayout(null);
-                setEditMode(false);
-                setPickerOpen(false);
-              }} variant="primary">
+              <PageActionButton
+                icon={Check}
+                onClick={() => {
+                  saveWidgets(pendingLayout ?? widgets);
+                  setPendingLayout(null);
+                  setEditMode(false);
+                  setPickerOpen(false);
+                }}
+                variant="primary"
+              >
                 Save
               </PageActionButton>
             </>
@@ -781,7 +791,11 @@ export const DashboardPage = () => {
               >
                 Edit layout
               </PageActionButton>
-              <PageActionIconButton icon={SlidersHorizontal} title="Dashboard settings" onClick={() => setSettingsOpen(true)} />
+              <PageActionIconButton
+                icon={SlidersHorizontal}
+                title="Dashboard settings"
+                onClick={() => setSettingsOpen(true)}
+              />
               <RefreshButton
                 refreshing={refreshing}
                 autoRefreshMs={autoRefreshMs}
@@ -811,7 +825,7 @@ export const DashboardPage = () => {
           </div>
         ) : (
           <ReactGridLayout
-            layout={toRglLayout(displayWidgets)}
+            layout={toRglLayout(displayWidgets) as Layout}
             onLayoutChange={handleLayoutChange}
             width={gridWidth}
             cols={12}
@@ -854,7 +868,12 @@ export const DashboardPage = () => {
 
                 {/* Widget content — pointer-events-none in edit mode so RGL handles all mouse events */}
                 <div className={`h-full ${editMode ? 'pointer-events-none select-none' : ''}`}>
-                  <WidgetContent widget={widget} data={dashboardData} navigate={navigate} titleAlign={titleAlign} />
+                  <WidgetContent
+                    widget={widget}
+                    data={dashboardData}
+                    navigate={navigate}
+                    titleAlign={titleAlign}
+                  />
                 </div>
               </div>
             ))}
@@ -895,10 +914,12 @@ export const DashboardPage = () => {
                   Widget title alignment
                 </label>
                 <div className="grid grid-cols-2 gap-1.5">
-                  {([
-                    { value: 'left' as const, icon: AlignLeft, label: 'Left' },
-                    { value: 'center' as const, icon: AlignCenter, label: 'Center' },
-                  ] as const).map(({ value, icon: Icon, label }) => (
+                  {(
+                    [
+                      { value: 'left' as const, icon: AlignLeft, label: 'Left' },
+                      { value: 'center' as const, icon: AlignCenter, label: 'Center' },
+                    ] as const
+                  ).map(({ value, icon: Icon, label }) => (
                     <button
                       key={value}
                       onClick={() => {

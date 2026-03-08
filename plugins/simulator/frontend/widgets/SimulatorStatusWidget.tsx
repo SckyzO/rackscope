@@ -22,11 +22,11 @@ const WIDGET_META: Omit<WidgetRegistration, 'component'> = {
 // ── Incident mode pill ──────────────────────────────────────────────────────
 const MODE_COLORS: Record<string, string> = {
   full_ok: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400',
-  light:   'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
-  medium:  'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400',
-  heavy:   'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400',
-  chaos:   'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
-  custom:  'bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400',
+  light: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
+  medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400',
+  heavy: 'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400',
+  chaos: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
+  custom: 'bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400',
 };
 
 const ModePill = ({ mode }: { mode: string }) => (
@@ -44,7 +44,7 @@ type SimulatorStatus = {
   running: boolean;
   endpoint: string;
   update_interval: number;
-  scenario: string | null;
+  scenario?: string | null;
   incident_mode: string | null;
   changes_per_hour: number | null;
   overrides_count: number;

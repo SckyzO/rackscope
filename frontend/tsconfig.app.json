@@ -25,6 +25,7 @@
     "noUncheckedSideEffectImports": true,
 
     /* Path aliases — keep in sync with vite.config.ts resolve.alias */
+    "baseUrl": ".",
     "paths": {
       "@plugins/*": ["plugins/*"],
       "@app/*": ["src/app/*"],

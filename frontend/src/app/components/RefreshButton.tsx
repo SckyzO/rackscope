@@ -33,7 +33,7 @@ export const REFRESH_OPTIONS = [
  * `pageKey` must be stable (e.g. 'room', 'rack', 'slurm-nodes').
  * The last-used interval is persisted in localStorage.
  */
-export const useAutoRefresh = (pageKey: string, onRefresh: () => void) => {
+export const useAutoRefresh = (pageKey: string, onRefresh: () => void | Promise<void>) => {
   const storageKey = `rackscope.refresh.${pageKey}`;
 
   const [autoRefreshMs, setAutoRefreshMs] = useState<number>(() => {
@@ -49,7 +49,7 @@ export const useAutoRefresh = (pageKey: string, onRefresh: () => void) => {
 
   useEffect(() => {
     if (autoRefreshMs === 0) return;
-    const timer = setInterval(() => onRefreshRef.current(), autoRefreshMs);
+    const timer = setInterval(() => void onRefreshRef.current(), autoRefreshMs);
     return () => clearInterval(timer);
   }, [autoRefreshMs]);
 
@@ -68,15 +68,20 @@ export const useAutoRefresh = (pageKey: string, onRefresh: () => void) => {
 
 export const RefreshButton = ({
   refreshing,
+  loading,
   autoRefreshMs,
   onRefresh,
   onIntervalChange,
 }: {
-  refreshing: boolean;
+  /** Whether the refresh is currently in progress */
+  refreshing?: boolean;
+  /** Alias for refreshing — accepted for backward compatibility */
+  loading?: boolean;
   autoRefreshMs: number;
-  onRefresh: () => void;
+  onRefresh: () => void | Promise<void>;
   onIntervalChange: (ms: number) => void;
 }) => {
+  const isRefreshing = refreshing ?? loading ?? false;
   const [dropOpen, setDropOpen] = useState(false);
   const currentLabel = REFRESH_OPTIONS.find((o) => o.ms === autoRefreshMs)?.label ?? '?';
   const isAutoActive = autoRefreshMs > 0;
@@ -87,11 +92,11 @@ export const RefreshButton = ({
     <div className="relative flex items-stretch rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
       {/* Left: manual trigger */}
       <button
-        onClick={onRefresh}
-        disabled={refreshing}
+        onClick={() => void onRefresh()}
+        disabled={isRefreshing}
         className="flex items-center gap-1.5 rounded-l-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-700"
       >
-        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
         <span>Refresh</span>
         {isAutoActive && (
           <span className="flex items-center gap-1 text-xs text-gray-400">

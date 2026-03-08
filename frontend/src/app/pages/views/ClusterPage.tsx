@@ -32,7 +32,7 @@ import {
   Pencil,
 } from 'lucide-react';
 import { api } from '../../../services/api';
-import type { Room, Rack, DeviceTemplate, RackState, RackNodeState } from '../../../types';
+import type { RoomSummary, Rack, DeviceTemplate, RackState, RackNodeState } from '../../../types';
 import { usePageTitle } from '../../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 import { RackElevation } from '../../../components/RackVisualizer';
@@ -482,120 +482,120 @@ const ConfigurePanel = ({
     <Drawer open={open} onClose={onClose} width={320}>
       <DrawerHeader title="Display settings" onClose={onClose} icon={SlidersHorizontal} />
       <div className="flex-1 overflow-y-auto p-5">
-          <SectionLabel>Card width</SectionLabel>
-          <SegmentBtns
-            options={[
-              { label: 'S', value: 280 },
-              { label: 'M', value: 360 },
-              { label: 'L', value: 440 },
-            ]}
-            current={displayConfig.rackWidth}
-            onChange={(v) => upd('rackWidth', v)}
-          />
+        <SectionLabel>Card width</SectionLabel>
+        <SegmentBtns
+          options={[
+            { label: 'S', value: 280 },
+            { label: 'M', value: 360 },
+            { label: 'L', value: 440 },
+          ]}
+          current={displayConfig.rackWidth}
+          onChange={(v) => upd('rackWidth', v)}
+        />
 
-          <SectionLabel>Rack height (U size)</SectionLabel>
-          <SegmentBtns
-            options={[
-              { label: 'Auto', value: 'auto' as const },
-              { label: 'S', value: 24 },
-              { label: 'M', value: 32 },
-              { label: 'L', value: 48 },
-            ]}
-            current={displayConfig.uSize}
-            onChange={(v) => upd('uSize', v)}
-          />
-          <p className="mt-1.5 text-[11px] text-gray-400 dark:text-gray-600">
-            Auto fills available height. S/M/L sets a fixed max U pixel size.
-          </p>
+        <SectionLabel>Rack height (U size)</SectionLabel>
+        <SegmentBtns
+          options={[
+            { label: 'Auto', value: 'auto' as const },
+            { label: 'S', value: 24 },
+            { label: 'M', value: 32 },
+            { label: 'L', value: 48 },
+          ]}
+          current={displayConfig.uSize}
+          onChange={(v) => upd('uSize', v)}
+        />
+        <p className="mt-1.5 text-[11px] text-gray-400 dark:text-gray-600">
+          Auto fills available height. S/M/L sets a fixed max U pixel size.
+        </p>
 
-          <SectionLabel>Layout</SectionLabel>
-          <div className="space-y-2">
-            {(
-              [
-                {
-                  value: 'scroll',
-                  label: '→ Horizontal scroll',
-                  desc: 'Single row, fills full height',
-                },
-                { value: 'wrap', label: '⊞ Wrap + scroll', desc: 'Multiple rows, vertical scroll' },
-                {
-                  value: 'wrap-auto',
-                  label: '⊡ Wrap + autosize',
-                  desc: 'Fits all racks in viewport, no scroll',
-                },
-              ] as const
-            ).map(({ value, label, desc }) => (
-              <button
-                key={value}
-                onClick={() => upd('layout', value)}
-                className={`flex w-full flex-col items-start rounded-lg border px-3 py-2.5 text-left transition-colors ${
-                  displayConfig.layout === value
-                    ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
-                    : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5'
-                }`}
+        <SectionLabel>Layout</SectionLabel>
+        <div className="space-y-2">
+          {(
+            [
+              {
+                value: 'scroll',
+                label: '→ Horizontal scroll',
+                desc: 'Single row, fills full height',
+              },
+              { value: 'wrap', label: '⊞ Wrap + scroll', desc: 'Multiple rows, vertical scroll' },
+              {
+                value: 'wrap-auto',
+                label: '⊡ Wrap + autosize',
+                desc: 'Fits all racks in viewport, no scroll',
+              },
+            ] as const
+          ).map(({ value, label, desc }) => (
+            <button
+              key={value}
+              onClick={() => upd('layout', value)}
+              className={`flex w-full flex-col items-start rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                displayConfig.layout === value
+                  ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
+                  : 'border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/5'
+              }`}
+            >
+              <span
+                className={`text-sm font-semibold ${displayConfig.layout === value ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
               >
-                <span
-                  className={`text-sm font-semibold ${displayConfig.layout === value ? 'text-brand-600 dark:text-brand-400' : 'text-gray-700 dark:text-gray-300'}`}
-                >
-                  {label}
-                </span>
-                <span className="text-[11px] text-gray-400 dark:text-gray-600">{desc}</span>
-              </button>
-            ))}
-          </div>
-
-          <SectionLabel>Metrics</SectionLabel>
-          <div className="mb-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-700/30 dark:bg-amber-500/5">
-            <Thermometer className="h-3.5 w-3.5 shrink-0 text-amber-400" />
-            <p className="text-[11px] text-amber-600 dark:text-amber-400">
-              Temperature &amp; power metrics — <span className="font-semibold">next feature</span>
-            </p>
-          </div>
-          <Toggle
-            label="Temperature"
-            checked={false}
-            onChange={() => {
-              /* noop */
-            }}
-            disabled
-          />
-          <Toggle
-            label="Power"
-            checked={false}
-            onChange={() => {
-              /* noop */
-            }}
-            disabled
-          />
-
-          <SectionLabel>Info bar position</SectionLabel>
-          <SegmentBtns
-            options={[
-              { label: '↑ Top', value: 'top' as const },
-              { label: '↓ Bottom', value: 'bottom' as const },
-            ]}
-            current={displayConfig.footerPosition}
-            onChange={(v) => upd('footerPosition', v)}
-          />
-
-          <SectionLabel>Card display</SectionLabel>
-          <Toggle
-            label="Device count"
-            checked={displayConfig.showDeviceCount}
-            onChange={() => upd('showDeviceCount', !displayConfig.showDeviceCount)}
-          />
-          <Toggle
-            label="Health badge"
-            checked={displayConfig.showHealthBadge}
-            onChange={() => upd('showHealthBadge', !displayConfig.showHealthBadge)}
-          />
-          <Toggle
-            label="Rack ID"
-            checked={displayConfig.showRackId}
-            onChange={() => upd('showRackId', !displayConfig.showRackId)}
-          />
+                {label}
+              </span>
+              <span className="text-[11px] text-gray-400 dark:text-gray-600">{desc}</span>
+            </button>
+          ))}
         </div>
-      </Drawer>
+
+        <SectionLabel>Metrics</SectionLabel>
+        <div className="mb-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-700/30 dark:bg-amber-500/5">
+          <Thermometer className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+          <p className="text-[11px] text-amber-600 dark:text-amber-400">
+            Temperature &amp; power metrics — <span className="font-semibold">next feature</span>
+          </p>
+        </div>
+        <Toggle
+          label="Temperature"
+          checked={false}
+          onChange={() => {
+            /* noop */
+          }}
+          disabled
+        />
+        <Toggle
+          label="Power"
+          checked={false}
+          onChange={() => {
+            /* noop */
+          }}
+          disabled
+        />
+
+        <SectionLabel>Info bar position</SectionLabel>
+        <SegmentBtns
+          options={[
+            { label: '↑ Top', value: 'top' as const },
+            { label: '↓ Bottom', value: 'bottom' as const },
+          ]}
+          current={displayConfig.footerPosition}
+          onChange={(v) => upd('footerPosition', v)}
+        />
+
+        <SectionLabel>Card display</SectionLabel>
+        <Toggle
+          label="Device count"
+          checked={displayConfig.showDeviceCount}
+          onChange={() => upd('showDeviceCount', !displayConfig.showDeviceCount)}
+        />
+        <Toggle
+          label="Health badge"
+          checked={displayConfig.showHealthBadge}
+          onChange={() => upd('showHealthBadge', !displayConfig.showHealthBadge)}
+        />
+        <Toggle
+          label="Rack ID"
+          checked={displayConfig.showRackId}
+          onChange={() => upd('showRackId', !displayConfig.showRackId)}
+        />
+      </div>
+    </Drawer>
   );
 };
 
@@ -838,27 +838,30 @@ export const ClusterPage = () => {
   const [slideDir, setSlideDir] = useState<'right' | 'left'>('right');
   const slideStep = displayConfig.rackWidth + 20;
 
-  const scrollBy = useCallback((direction: 'left' | 'right') => {
-    const el = scrollRef.current;
-    if (!el || slideState !== 'idle') return;
+  const scrollBy = useCallback(
+    (direction: 'left' | 'right') => {
+      const el = scrollRef.current;
+      if (!el || slideState !== 'idle') return;
 
-    setSlideDir(direction);
-    setSlideState('sliding');
+      setSlideDir(direction);
+      setSlideState('sliding');
 
-    setTimeout(() => {
-      // Scroll jump + transform reset in one rAF — both applied in the same paint frame,
-      // preventing Firefox from rendering an intermediate state between them.
-      requestAnimationFrame(() => {
-        if (el) {
-          el.style.scrollBehavior = 'auto';
-          el.scrollLeft += direction === 'right' ? slideStep : -slideStep;
-          el.style.scrollBehavior = '';
-        }
-        setSlideState('idle');
-        updateScrollArrows();
-      });
-    }, 300);
-  }, [slideState, slideStep, updateScrollArrows]);
+      setTimeout(() => {
+        // Scroll jump + transform reset in one rAF — both applied in the same paint frame,
+        // preventing Firefox from rendering an intermediate state between them.
+        requestAnimationFrame(() => {
+          if (el) {
+            el.style.scrollBehavior = 'auto';
+            el.scrollLeft += direction === 'right' ? slideStep : -slideStep;
+            el.style.scrollBehavior = '';
+          }
+          setSlideState('idle');
+          updateScrollArrows();
+        });
+      }, 300);
+    },
+    [slideState, slideStep, updateScrollArrows]
+  );
 
   // ── Container size tracking for wrap-auto ──────────────────────────────────
 
@@ -885,7 +888,7 @@ export const ClusterPage = () => {
   useEffect(() => {
     api
       .getRooms()
-      .then((rooms: Room[]) => {
+      .then((rooms: RoomSummary[]) => {
         const groups: AisleGroup[] = [];
         for (const room of rooms) {
           for (const aisle of room.aisles ?? []) {
@@ -1262,13 +1265,13 @@ export const ClusterPage = () => {
             <button
               onClick={() => scrollBy('left')}
               aria-label="Scroll left"
-              className={`group absolute left-0 top-0 z-10 flex h-full w-20 items-center justify-start pl-3 transition-all duration-200 ${
+              className={`group absolute top-0 left-0 z-10 flex h-full w-20 items-center justify-start pl-3 transition-all duration-200 ${
                 canScrollLeft && slideState === 'idle'
-                  ? 'bg-gradient-to-r from-black/60 to-transparent opacity-100 cursor-pointer'
+                  ? 'cursor-pointer bg-gradient-to-r from-black/60 to-transparent opacity-100'
                   : 'pointer-events-none opacity-0'
               }`}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20 backdrop-blur-sm transition-all duration-150 group-hover:bg-white/20 group-hover:ring-white/40 group-hover:scale-110">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20 backdrop-blur-sm transition-all duration-150 group-hover:scale-110 group-hover:bg-white/20 group-hover:ring-white/40">
                 <ChevronLeft className="h-5 w-5 text-white" strokeWidth={2.5} />
               </div>
             </button>
@@ -1277,7 +1280,7 @@ export const ClusterPage = () => {
             <div
               ref={scrollRef}
               onScroll={updateScrollArrows}
-              className="flex h-full w-full items-center snap-x snap-proximity overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex h-full w-full snap-x snap-proximity items-center overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               <div
                 className="flex min-h-0 gap-5 p-5"
@@ -1298,13 +1301,13 @@ export const ClusterPage = () => {
             <button
               onClick={() => scrollBy('right')}
               aria-label="Scroll right"
-              className={`group absolute right-0 top-0 z-10 flex h-full w-20 items-center justify-end pr-3 transition-all duration-200 ${
+              className={`group absolute top-0 right-0 z-10 flex h-full w-20 items-center justify-end pr-3 transition-all duration-200 ${
                 canScrollRight && slideState === 'idle'
-                  ? 'bg-gradient-to-l from-black/60 to-transparent opacity-100 cursor-pointer'
+                  ? 'cursor-pointer bg-gradient-to-l from-black/60 to-transparent opacity-100'
                   : 'pointer-events-none opacity-0'
               }`}
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20 backdrop-blur-sm transition-all duration-150 group-hover:bg-white/20 group-hover:ring-white/40 group-hover:scale-110">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20 backdrop-blur-sm transition-all duration-150 group-hover:scale-110 group-hover:bg-white/20 group-hover:ring-white/40">
                 <ChevronRight className="h-5 w-5 text-white" strokeWidth={2.5} />
               </div>
             </button>

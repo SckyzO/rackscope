@@ -54,9 +54,13 @@ export const PrometheusWidget = ({ data }: { data: DashboardData }) => {
             {promConnected && (
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
             )}
-            <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${promConnected ? 'bg-emerald-500' : 'bg-red-500'}`} />
+            <span
+              className={`relative inline-flex h-1.5 w-1.5 rounded-full ${promConnected ? 'bg-emerald-500' : 'bg-red-500'}`}
+            />
           </span>
-          <span className={`font-mono text-xs font-medium ${promConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+          <span
+            className={`font-mono text-xs font-medium ${promConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
+          >
             {promConnected ? 'Connected' : 'Disconnected'}
           </span>
         </span>
@@ -68,28 +72,16 @@ export const PrometheusWidget = ({ data }: { data: DashboardData }) => {
           <Stat
             label="Last latency"
             value={promStats.last_ms ? `${Math.round(promStats.last_ms)} ms` : '—'}
-            valueClass={latencyColor(promStats.last_ms)}
+            valueClass={latencyColor(promStats.last_ms ?? undefined)}
           />
           <Stat
             label="Avg latency"
             value={promStats.avg_ms ? `${Math.round(promStats.avg_ms)} ms` : '—'}
-            valueClass={latencyColor(promStats.avg_ms)}
+            valueClass={latencyColor(promStats.avg_ms ?? undefined)}
           />
-          <Stat
-            label="Next scrape"
-            value={promNextSec > 0 ? `${promNextSec}s` : 'now'}
-          />
+          <Stat label="Next scrape" value={promNextSec > 0 ? `${promNextSec}s` : 'now'} />
           {promStats.heartbeat_seconds && (
-            <Stat
-              label="Heartbeat"
-              value={`${promStats.heartbeat_seconds}s`}
-            />
-          )}
-          {promStats.query_count !== undefined && (
-            <Stat
-              label="Queries"
-              value={String(promStats.query_count)}
-            />
+            <Stat label="Heartbeat" value={`${promStats.heartbeat_seconds}s`} />
           )}
         </div>
       ) : (

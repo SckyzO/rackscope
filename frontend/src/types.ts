@@ -80,6 +80,7 @@ export interface RoomSummary {
   name: string;
   site_id: string;
   aisles?: AisleSummary[];
+  standalone_racks?: RackSummary[];
 }
 
 export interface DeviceContext {
@@ -172,6 +173,7 @@ export interface RackTemplate {
     rack_components?: RackComponentRef[];
   };
   checks?: string[];
+  metrics?: string[];
 }
 
 export interface Catalog {
@@ -284,6 +286,16 @@ export interface RackState {
         inlet_rating_amp?: number;
       }
     >;
+    pdu?: Record<
+      string,
+      {
+        activepower_watt?: number;
+        activeenergy_wh?: number;
+        apparentpower_va?: number;
+        current_amp?: number;
+        inlet_rating_amp?: number;
+      }
+    >;
   };
   nodes?: Record<string, RackNodeState>;
 }
@@ -355,6 +367,7 @@ export interface AppConfig {
     topology?: string;
     templates?: string;
     checks?: string;
+    metrics?: string;
   };
   refresh: {
     room_state_seconds: number;
@@ -362,6 +375,8 @@ export interface AppConfig {
   };
   cache: {
     ttl_seconds: number;
+    health_checks_ttl_seconds?: number;
+    metrics_ttl_seconds?: number;
   };
   telemetry: {
     prometheus_url?: string | null;
@@ -395,16 +410,64 @@ export interface AppConfig {
     offline?: boolean;
     worldmap?: boolean;
     dev_tools?: boolean;
+    wizard?: boolean;
   };
   playlist?: {
     interval_seconds?: number;
     views?: string[];
   };
   plugins?: {
-    [key: string]: {
+    simulator?: {
       enabled?: boolean;
-      [key: string]: unknown;
+      update_interval_seconds?: number;
+      seed?: number | null;
+      incident_mode?: string;
+      changes_per_hour?: number;
+      custom_incidents?: {
+        devices_crit?: number;
+        devices_warn?: number;
+        racks_crit?: number;
+        aisles_hot?: number;
+      };
+      overrides_path?: string;
+      default_ttl_seconds?: number;
+      metrics_catalog_path?: string;
+      metrics_catalogs?: Array<{
+        id: string;
+        path: string;
+        enabled?: boolean;
+      }>;
+      slurm_random_statuses?: Record<string, number>;
+      slurm_random_match?: string[];
     };
+    slurm?: {
+      enabled?: boolean;
+      metric?: string;
+      label_node?: string;
+      label_status?: string;
+      label_partition?: string;
+      roles?: string[];
+      include_unlabeled?: boolean;
+      mapping_path?: string | null;
+      status_map?: {
+        ok?: string[];
+        warn?: string[];
+        crit?: string[];
+        info?: string[];
+      };
+      severity_colors?: {
+        ok?: string;
+        warn?: string;
+        crit?: string;
+        info?: string;
+      };
+    };
+    [key: string]:
+      | {
+          enabled?: boolean;
+          [key: string]: unknown;
+        }
+      | undefined;
   };
   simulator?: {
     enabled?: boolean;

@@ -57,6 +57,8 @@ const STYLE_WIDTH: Record<TooltipStyle, string> = {
   split: 'w-80',
   tinted: 'w-80',
   ultracompact: 'w-56',
+  border: 'w-80',
+  notification: 'w-80',
 };
 
 // ── Portal preview ─────────────────────────────────────────────────────────

@@ -511,9 +511,7 @@ export const RackEditorPage = () => {
       name: placingForm.name.trim() || placing.template.name,
       template_id: placing.template.id,
       u_position: placing.u,
-      instance: placingForm.instance.trim() || null,
-      nodes: null,
-      labels: null,
+      instance: placingForm.instance.trim() || '',
     };
     setDraftDevices((prev) => [...prev, newDev]);
     setDirty(true);
@@ -556,7 +554,7 @@ export const RackEditorPage = () => {
       ...selectedDevice,
       name: editForm.name.trim() || selectedDevice.name,
       id: editForm.id.trim() || selectedDevice.id,
-      instance: editForm.instance.trim() || null,
+      instance: editForm.instance.trim() || '',
     };
     setDraftDevices((prev) => prev.map((d) => (d.id === selectedDevice.id ? updated : d)));
     setSelectedDevice(updated);
@@ -745,11 +743,7 @@ export const RackEditorPage = () => {
                   Edit YAML
                 </PageActionButton>
               )}
-              <PageActionButton
-                variant="primary"
-                icon={Plus}
-                onClick={() => setWizardOpen(true)}
-              >
+              <PageActionButton variant="primary" icon={Plus} onClick={() => setWizardOpen(true)}>
                 New Rack
               </PageActionButton>
               {dirty && (

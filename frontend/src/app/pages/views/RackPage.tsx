@@ -89,7 +89,7 @@ export const RackPage = () => {
     loadHealth,
   } = useRackData(rackId);
 
-  const handleQuietRefresh = useCallback(() => void loadHealth(true), [loadHealth]);
+  const handleQuietRefresh = useCallback(() => void loadHealth(), [loadHealth]);
   const { autoRefreshMs, onIntervalChange } = useAutoRefresh('rack', handleQuietRefresh);
 
   if (loading)

@@ -136,7 +136,7 @@ export const SlurmNodesPage = () => {
     [nodes]
   );
   const availableSevs = useMemo(() => {
-    const order = ['CRIT', 'WARN', 'OK', 'UNKNOWN'];
+    const order = ['CRIT', 'WARN', 'OK', 'UNKNOWN'] as const;
     const present = new Set(nodes.map((n) => n.severity));
     return order.filter((s) => present.has(s));
   }, [nodes]);

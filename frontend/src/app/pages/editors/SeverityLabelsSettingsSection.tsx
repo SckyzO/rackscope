@@ -41,7 +41,8 @@ export const SeverityLabelsSettingsSection = () => {
         <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
           <SectionLabel>Severity display labels</SectionLabel>
           <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-            These labels are display-only — they do not affect data, API responses, or YAML configuration.
+            These labels are display-only — they do not affect data, API responses, or YAML
+            configuration.
           </p>
         </div>
         <div className="divide-y divide-gray-100 px-4 dark:divide-gray-800">
@@ -70,12 +71,16 @@ export const SeverityLabelsSettingsSection = () => {
           <button
             onClick={save}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-              saved
-                ? 'bg-green-500 text-white'
-                : 'bg-brand-500 hover:bg-brand-600 text-white'
+              saved ? 'bg-green-500 text-white' : 'bg-brand-500 hover:bg-brand-600 text-white'
             }`}
           >
-            {saved ? <><Check className="h-3.5 w-3.5" /> Saved</> : 'Save labels'}
+            {saved ? (
+              <>
+                <Check className="h-3.5 w-3.5" /> Saved
+              </>
+            ) : (
+              'Save labels'
+            )}
           </button>
         </div>
       </div>

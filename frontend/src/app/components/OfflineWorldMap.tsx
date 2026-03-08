@@ -11,10 +11,10 @@
  */
 
 import { useState, useCallback } from 'react';
+// @ts-expect-error — react-simple-maps ships no TypeScript declaration file
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps';
 import { Plus, Minus } from 'lucide-react';
 // Bundled TopoJSON — no network request, works fully offline
-// @ts-expect-error — world-atlas ships plain JSON, no typings needed
 import worldAtlas from 'world-atlas/countries-110m.json';
 
 export type MapStyle = 'minimal' | 'noc' | 'flat' | 'retro' | 'midnight';
@@ -51,6 +51,7 @@ interface StylePreset {
   stroke: string;
   strokeWidth: number;
   hover: string;
+  background?: string;
   markerFill: string;
   markerStroke: string;
   markerPulse: string;
@@ -227,8 +228,8 @@ export const OfflineWorldMap = ({
           onMoveEnd={handleMoveEnd}
         >
           <Geographies geography={worldAtlas}>
-            {({ geographies }) =>
-              geographies.map((geo) => (
+            {({ geographies }: { geographies: { rsmKey: string }[] }) =>
+              geographies.map((geo: { rsmKey: string }) => (
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}

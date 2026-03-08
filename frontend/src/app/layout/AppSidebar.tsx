@@ -124,6 +124,7 @@ const TreeNode = ({
   collapsed: sidebarCollapsed,
   muted = false,
   primary = false,
+  navigate: _navigate,
 }: {
   label: string;
   expanded: boolean;
@@ -138,6 +139,8 @@ const TreeNode = ({
   muted?: boolean;
   /** Primary style — matches NavItem (World Map, Notifications) for site-level nodes */
   primary?: boolean;
+  /** Passed through from parent but not used directly; navigation is handled via onToggle/onLinkClick */
+  navigate?: (path: string) => void;
 }) => (
   <div>
     <div className="flex items-center">

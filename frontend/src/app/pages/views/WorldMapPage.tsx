@@ -475,6 +475,7 @@ export const WorldMapPage = () => {
               hSite
                 ? [
                     {
+                      label: '',
                       value: `${hSite.rooms.length} room${hSite.rooms.length !== 1 ? 's' : ''} · ${siteRackCount(hSite)} racks`,
                       italic: true,
                     },

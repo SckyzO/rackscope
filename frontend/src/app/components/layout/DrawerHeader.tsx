@@ -1,4 +1,4 @@
-import type { ElementType } from 'react';
+import type { ElementType, ReactNode } from 'react';
 import { X } from 'lucide-react';
 
 export const DrawerHeader = ({
@@ -6,11 +6,13 @@ export const DrawerHeader = ({
   icon: Icon,
   onClose,
   description,
+  children,
 }: {
   title: string;
   icon?: ElementType;
   onClose: () => void;
   description?: string;
+  children?: ReactNode;
 }) => (
   <div className="flex shrink-0 items-center justify-between border-b border-gray-200 p-5 dark:border-gray-800">
     <div className="flex items-center gap-2.5">
@@ -26,11 +28,14 @@ export const DrawerHeader = ({
         )}
       </div>
     </div>
-    <button
-      onClick={onClose}
-      className="text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-    >
-      <X className="h-5 w-5" />
-    </button>
+    <div className="flex items-center gap-2">
+      {children}
+      <button
+        onClick={onClose}
+        className="text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+      >
+        <X className="h-5 w-5" />
+      </button>
+    </div>
   </div>
 );

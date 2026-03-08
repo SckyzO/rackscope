@@ -14,7 +14,9 @@ export type TooltipStyle =
   | 'terminal' // Style 6 — monospace HPC style
   | 'notification' // Style 8 — notification card
   | 'tinted' // Style 9 — tinted header sections (default)
-  | 'ultracompact'; // Style 10 — 220px cluster view
+  | 'ultracompact' // Style 10 — 220px cluster view
+  | 'glass' // Glassmorphism + 2 metric cards
+  | 'split'; // Split layout — info left, arc right
 
 export interface TooltipStyleMeta {
   id: TooltipStyle;

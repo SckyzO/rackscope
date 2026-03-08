@@ -20,7 +20,7 @@ type TooltipPayload = {
   subtitle: string;
   status: string;
   details: { label: string; value: string; italic?: boolean }[];
-  reasons?: string[];
+  reasons?: { label: string; severity?: string }[];
   metrics?: { temp?: number; power?: number };
   mousePos: { x: number; y: number };
 };
@@ -61,9 +61,9 @@ type DeviceContext = {
     name: string;
     template_id: string;
     u_position: number;
-    instance?: unknown;
-    nodes?: unknown;
-    labels?: unknown;
+    instance?: Record<number, string> | string | string[] | null;
+    nodes?: Record<number, string> | string | string[] | null;
+    labels?: Record<string, string> | null;
   };
   template: DeviceTemplate | null;
   rack: { id: string; name: string };
@@ -121,7 +121,7 @@ export const DevicePage = () => {
       .getDeviceDetails(rackId, deviceId)
       .then((data) => {
         if (active) {
-          setCtx(data);
+          setCtx(data as DeviceContext);
           setLoading(false);
         }
       })
@@ -187,9 +187,9 @@ export const DevicePage = () => {
     name: device.name,
     template_id: device.template_id,
     u_position: device.u_position,
-    instance: device.instance ?? null,
-    nodes: device.nodes ?? null,
-    labels: null as Record<string, string> | null,
+    instance: (device.instance ?? '') as Record<number, string> | string | string[],
+    nodes: device.nodes as Record<number, string> | string | string[] | undefined,
+    labels: (device.labels ?? undefined) as Record<string, string> | undefined,
   };
 
   return (

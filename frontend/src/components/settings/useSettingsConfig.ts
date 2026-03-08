@@ -223,12 +223,23 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       metrics_catalog_path:
         config.plugins?.simulator?.metrics_catalog_path ||
         'config/plugins/simulator/metrics/metrics_full.yaml',
-      metrics_catalogs: config.plugins?.simulator?.metrics_catalogs || [],
-        slurm_random_statuses: Object.fromEntries(
-          Object.entries((config.plugins?.simulator?.slurm_random_statuses as Record<string, number>) || { drain: 1, down: 1, maint: 1 })
-            .map(([k, v]) => [k, String(v)])
-        ),
-        slurm_random_match: (config.plugins?.simulator?.slurm_random_match as string[]) || ['compute*', 'visu*'],
+      metrics_catalogs: (config.plugins?.simulator?.metrics_catalogs || []).map((c) => ({
+        ...c,
+        enabled: c.enabled ?? false,
+      })),
+      slurm_random_statuses: Object.fromEntries(
+        Object.entries(
+          (config.plugins?.simulator?.slurm_random_statuses as Record<string, number>) || {
+            drain: 1,
+            down: 1,
+            maint: 1,
+          }
+        ).map(([k, v]) => [k, String(v)])
+      ),
+      slurm_random_match: (config.plugins?.simulator?.slurm_random_match as string[]) || [
+        'compute*',
+        'visu*',
+      ],
     },
     slurm: {
       enabled: config.plugins?.slurm?.enabled ?? false,
@@ -285,7 +296,13 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
     description: draft.app.description,
   },
   map: {
-    default_view: draft.map.default_view,
+    default_view: draft.map.default_view as
+      | 'world'
+      | 'continent'
+      | 'country'
+      | 'city'
+      | null
+      | undefined,
     default_zoom: parseInt(draft.map.default_zoom, 10) || 4,
     min_zoom: parseInt(draft.map.min_zoom, 10) || 2,
     max_zoom: parseInt(draft.map.max_zoom, 10) || 7,

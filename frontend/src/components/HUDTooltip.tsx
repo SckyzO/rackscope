@@ -266,6 +266,10 @@ const _Footer = ({ details, checkSummary }: Pick<HUDTooltipProps, 'details' | 'c
   );
 };
 
+// Suppress noUnusedLocals — these components are reserved for future style variants
+void _PowerBar;
+void _Footer;
+
 // ── Shared alerts list ──────────────────────────────────────────────────────────
 
 const AlertList = ({ reasons }: { reasons: TooltipReason[] }) => (
@@ -320,7 +324,7 @@ const TintedCard = ({
   reasons,
   metrics,
   aura,
-}: HUDTooltipProps & { aura: boolean }) => {
+}: Omit<HUDTooltipProps, 'mousePos'> & { aura: boolean; mousePos?: { x: number; y: number } }) => {
   const st = resolveStatus(status);
   const tv = metrics?.temp;
   const tw = metrics?.tempWarn;
@@ -464,7 +468,7 @@ const CompactCard = ({
   reasons,
   metrics,
   aura,
-}: HUDTooltipProps & { aura: boolean }) => {
+}: Omit<HUDTooltipProps, 'mousePos'> & { aura: boolean; mousePos?: { x: number; y: number } }) => {
   const st = resolveStatus(status);
   const tv = metrics?.temp;
   const tw = metrics?.tempWarn;
@@ -582,7 +586,7 @@ const GlassCard = ({
   reasons,
   metrics,
   aura,
-}: HUDTooltipProps & { aura: boolean }) => {
+}: Omit<HUDTooltipProps, 'mousePos'> & { aura: boolean; mousePos?: { x: number; y: number } }) => {
   const st = resolveStatus(status);
   const tv = metrics?.temp;
   const tw = metrics?.tempWarn;
@@ -749,7 +753,7 @@ const SplitCard = ({
   reasons,
   metrics,
   aura,
-}: HUDTooltipProps & { aura: boolean }) => {
+}: Omit<HUDTooltipProps, 'mousePos'> & { aura: boolean; mousePos?: { x: number; y: number } }) => {
   const st = resolveStatus(status);
   const tv = metrics?.temp;
   const tw = metrics?.tempWarn;
@@ -855,7 +859,7 @@ const TerminalCard = ({
   reasons,
   metrics,
   aura,
-}: HUDTooltipProps & { aura: boolean }) => {
+}: Omit<HUDTooltipProps, 'mousePos'> & { aura: boolean; mousePos?: { x: number; y: number } }) => {
   const st = resolveStatus(status);
   const tv = metrics?.temp;
   const tw = metrics?.tempWarn;
@@ -998,7 +1002,7 @@ const UltraCompactCard = ({
   reasons,
   metrics,
   aura,
-}: HUDTooltipProps & { aura: boolean }) => {
+}: Omit<HUDTooltipProps, 'mousePos'> & { aura: boolean; mousePos?: { x: number; y: number } }) => {
   const st = resolveStatus(status);
   const tv = metrics?.temp;
   const tw = metrics?.tempWarn;
@@ -1087,9 +1091,10 @@ const UltraCompactCard = ({
 // Used both by HUDTooltip (portal) and by the settings visual picker
 // ══════════════════════════════════════════════════════════════════════════════
 
-interface CardProps extends HUDTooltipProps {
+interface CardProps extends Omit<HUDTooltipProps, 'mousePos'> {
   style: TooltipStyle;
   aura: boolean;
+  mousePos?: { x: number; y: number };
 }
 
 export const HUDTooltipCard = ({ style, aura, ...props }: CardProps) => {
@@ -1119,6 +1124,8 @@ const STYLE_WIDTH: Record<TooltipStyle, string> = {
   split: 'w-80',
   tinted: 'w-80',
   ultracompact: 'w-56',
+  border: 'w-80',
+  notification: 'w-80',
 };
 
 // ══════════════════════════════════════════════════════════════════════════════

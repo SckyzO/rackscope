@@ -718,7 +718,8 @@ export const SlurmWallboardPage = () => {
         setUnlabeled(appCfg.plugins.slurm.include_unlabeled);
       if (appCfg?.plugins?.slurm?.severity_colors)
         setSeverityColors({ ...SEV, ...appCfg.plugins.slurm.severity_colors });
-      if (appCfg?.plugins?.slurm?.status_map) setStatusMap(appCfg.plugins.slurm.status_map);
+      if (appCfg?.plugins?.slurm?.status_map)
+        setStatusMap(appCfg.plugins.slurm.status_map as Record<string, string[]>);
       const nm: Record<string, { severity: string; status: string; partitions: string[] }> = {};
       for (const n of slurm?.nodes ?? [])
         nm[n.node] = { severity: n.severity, status: n.status, partitions: n.partitions ?? [] };

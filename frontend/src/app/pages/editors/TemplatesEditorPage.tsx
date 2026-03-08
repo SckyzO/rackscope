@@ -20,6 +20,7 @@ import {
   ChevronDown,
   FileCode2,
   Search,
+  Trash2,
 } from 'lucide-react';
 import MonacoEditor from '@monaco-editor/react';
 import jsYaml from 'js-yaml';
@@ -1252,11 +1253,7 @@ export const TemplatesEditorPage = () => {
         }
         actions={
           !loading && !loadError ? (
-            <PageActionButton
-              variant="primary"
-              icon={Plus}
-              onClick={() => setShowNewModal(true)}
-            >
+            <PageActionButton variant="primary" icon={Plus} onClick={() => setShowNewModal(true)}>
               New Template
             </PageActionButton>
           ) : undefined

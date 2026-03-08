@@ -9,7 +9,7 @@ import type {
   InfrastructureComponent,
   RackState,
   RackNodeState,
-  Room,
+  RoomSummary,
 } from '../../../types';
 
 export type RoomContext = {
@@ -87,7 +87,7 @@ export function useRackData(rackId: string | undefined): RackData {
     if (!rack) return;
     api
       .getRooms()
-      .then((rooms: Room[]) => {
+      .then((rooms: RoomSummary[]) => {
         for (const room of rooms) {
           for (const aisle of room.aisles ?? []) {
             if (aisle.id === rack.aisle_id) {

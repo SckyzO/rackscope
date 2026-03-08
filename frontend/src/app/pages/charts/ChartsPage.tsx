@@ -155,6 +155,7 @@ const RealtimeChart = () => {
     chart: {
       ...baseChart(),
       type: 'line',
+      // @ts-expect-error — ApexCharts types don't expose `easing` in animations but it's a valid option
       animations: { enabled: true, easing: 'linear', dynamicAnimation: { speed: 1000 } },
     },
     theme: baseTheme(dark),
@@ -179,6 +180,7 @@ const RealtimeChart = () => {
           borderColor: '#f59e0b',
           label: {
             text: 'WARN 70%',
+            // @ts-expect-error — ApexCharts types don't expose `border` in AnnotationStyle but it's valid
             style: { color: '#f59e0b', background: 'transparent', border: 0 },
           },
         },
@@ -187,6 +189,7 @@ const RealtimeChart = () => {
           borderColor: '#ef4444',
           label: {
             text: 'CRIT 85%',
+            // @ts-expect-error — ApexCharts types don't expose `border` in AnnotationStyle but it's valid
             style: { color: '#ef4444', background: 'transparent', border: 0 },
           },
         },

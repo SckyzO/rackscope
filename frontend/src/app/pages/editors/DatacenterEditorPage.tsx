@@ -102,23 +102,23 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
 
       {/* Monaco Editor */}
       <div className="min-h-0 flex-1">
-          <MonacoEditor
-            height="100%"
-            defaultLanguage="yaml"
-            theme="vs-dark"
-            value={value}
-            onChange={handleChange}
-            options={{
-              fontSize: 13,
-              minimap: { enabled: false },
-              lineNumbers: 'on',
-              scrollBeyondLastLine: false,
-              wordWrap: 'on',
-              tabSize: 2,
-              renderLineHighlight: 'line',
-              padding: { top: 12, bottom: 12 },
-            }}
-          />
+        <MonacoEditor
+          height="100%"
+          defaultLanguage="yaml"
+          theme="vs-dark"
+          value={value}
+          onChange={handleChange}
+          options={{
+            fontSize: 13,
+            minimap: { enabled: false },
+            lineNumbers: 'on',
+            scrollBeyondLastLine: false,
+            wordWrap: 'on',
+            tabSize: 2,
+            renderLineHighlight: 'line',
+            padding: { top: 12, bottom: 12 },
+          }}
+        />
       </div>
 
       {/* Validation error */}
@@ -130,39 +130,39 @@ const YamlDrawer = ({ open, title, initialYaml, onSave, onClose }: YamlDrawerPro
 
       {/* Footer */}
       <div className="shrink-0 border-t border-gray-200 px-5 py-4 dark:border-gray-800">
-          {saveError && (
-            <div className="mb-3 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-400" />
-              <span className="text-xs text-red-400">{saveError}</span>
-            </div>
-          )}
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-gray-600">
-              {parseError ? '⚠ Fix YAML errors before saving' : isValid ? '✓ Valid YAML' : ''}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onClose}
-                className="rounded-xl border border-gray-700 px-4 py-2 text-sm text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => void handleSave()}
-                disabled={saving || !isValid}
-                title={parseError ? 'Cannot save: YAML is invalid' : 'Save changes'}
-                className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {saving ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : saved ? (
-                  <Check className="h-3.5 w-3.5" />
-                ) : null}
-                {saved ? 'Saved' : 'Save YAML'}
-              </button>
-            </div>
+        {saveError && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-400" />
+            <span className="text-xs text-red-400">{saveError}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-gray-600">
+            {parseError ? '⚠ Fix YAML errors before saving' : isValid ? '✓ Valid YAML' : ''}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="rounded-xl border border-gray-700 px-4 py-2 text-sm text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => void handleSave()}
+              disabled={saving || !isValid}
+              title={parseError ? 'Cannot save: YAML is invalid' : 'Save changes'}
+              className="bg-brand-500 hover:bg-brand-600 flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : saved ? (
+                <Check className="h-3.5 w-3.5" />
+              ) : null}
+              {saved ? 'Saved' : 'Save YAML'}
+            </button>
           </div>
         </div>
+      </div>
     </Drawer>
   );
 };

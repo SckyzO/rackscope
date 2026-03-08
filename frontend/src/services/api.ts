@@ -37,6 +37,9 @@ import type {
   RackState,
   SimulatorOverride,
   SlurmRoomNodes,
+  SlurmSummary,
+  SlurmPartitionSummary,
+  SlurmNodeEntry,
   PluginsMenuResponse,
 } from '../types';
 
@@ -64,7 +67,7 @@ const writeJSON = (key: string, value: unknown) => {
 
 const logClientError = (message: string, context?: string) => {
   const entry = { ts: Date.now(), message, context };
-  const current = readJSON(ERROR_KEY) || [];
+  const current = readJSON<{ ts: number; message: string; context?: string }[]>(ERROR_KEY) || [];
   const next = [entry, ...current].slice(0, 50);
   writeJSON(ERROR_KEY, next);
   // Also log to console for visibility.
@@ -75,7 +78,7 @@ const markSuccess = () => {
   writeJSON(META_KEY, { lastSuccess: Date.now() });
 };
 
-const readCache = (key: string) => readJSON(`${CACHE_PREFIX}${key}`);
+const readCache = (key: string) => readJSON<{ ts: number; data: unknown }>(`${CACHE_PREFIX}${key}`);
 const writeCache = (key: string, data: unknown) => {
   if (data === null) {
     localStorage.removeItem(`${CACHE_PREFIX}${key}`);
@@ -107,7 +110,7 @@ const apiFetch = (url: string, options?: RequestInit): Promise<Response> => {
  * On network/HTTP failure, returns the previously cached value if available,
  * so the UI degrades gracefully rather than showing empty states.
  */
-const fetchWithCache = async <T>(url: string, cacheKey: string): Promise<T> => {
+const fetchWithCache = async <T>(url: string, cacheKey: string, _ttl?: number): Promise<T> => {
   try {
     const res = await apiFetch(url);
     if (!res.ok) {
@@ -321,17 +324,26 @@ export const api = {
       `slurm.nodes.${roomId}`
     );
   },
-  getSlurmSummary: async (roomId?: string) => {
+  getSlurmSummary: async (roomId?: string): Promise<SlurmSummary> => {
     const params = roomId ? `?room_id=${encodeURIComponent(roomId)}` : '';
-    return fetchWithCache(`/api/slurm/summary${params}`, `slurm.summary.${roomId || 'all'}`);
+    return fetchWithCache<SlurmSummary>(
+      `/api/slurm/summary${params}`,
+      `slurm.summary.${roomId || 'all'}`
+    );
   },
-  getSlurmPartitions: async (roomId?: string) => {
+  getSlurmPartitions: async (roomId?: string): Promise<SlurmPartitionSummary> => {
     const params = roomId ? `?room_id=${encodeURIComponent(roomId)}` : '';
-    return fetchWithCache(`/api/slurm/partitions${params}`, `slurm.partitions.${roomId || 'all'}`);
+    return fetchWithCache<SlurmPartitionSummary>(
+      `/api/slurm/partitions${params}`,
+      `slurm.partitions.${roomId || 'all'}`
+    );
   },
   getSlurmNodes: async (roomId?: string) => {
     const params = roomId ? `?room_id=${encodeURIComponent(roomId)}` : '';
-    return fetchWithCache(`/api/slurm/nodes${params}`, `slurm.nodes.${roomId || 'all'}`);
+    return fetchWithCache<{ nodes: SlurmNodeEntry[] }>(
+      `/api/slurm/nodes${params}`,
+      `slurm.nodes.${roomId || 'all'}`
+    );
   },
   getSlurmMetricsCatalog: async () => {
     return fetch('/api/slurm/metrics/catalog').then((r) => r.json());
@@ -379,7 +391,10 @@ export const api = {
     if (params?.category) qs.set('category', params.category);
     if (params?.tag) qs.set('tag', params.tag);
     const url = `/api/metrics/library${qs.toString() ? `?${qs}` : ''}`;
-    return fetchWithCache(url, `metrics.library${params?.category ?? ''}${params?.tag ?? ''}`);
+    return fetchWithCache<{ metrics: unknown[] }>(
+      url,
+      `metrics.library${params?.category ?? ''}${params?.tag ?? ''}`
+    );
   },
   getMetricsLibraryFiles: async (): Promise<{ files: Array<{ name: string; path: string }> }> => {
     return fetchWithCache('/api/metrics/library/files', 'metrics.library.files');
@@ -405,11 +420,17 @@ export const api = {
   getChecks: async (): Promise<ChecksLibrary> => {
     return fetchWithCache('/api/checks', 'checks.library');
   },
-  getChecksFiles: async () => {
-    return fetchWithCache('/api/checks/files', 'checks.files');
+  getChecksFiles: async (): Promise<{ files: Array<{ name: string; path: string }> }> => {
+    return fetchWithCache<{ files: Array<{ name: string; path: string }> }>(
+      '/api/checks/files',
+      'checks.files'
+    );
   },
-  getChecksFile: async (name: string) => {
-    return fetchWithCache(`/api/checks/files/${encodeURIComponent(name)}`, `checks.file.${name}`);
+  getChecksFile: async (name: string): Promise<{ name: string; content: string }> => {
+    return fetchWithCache<{ name: string; content: string }>(
+      `/api/checks/files/${encodeURIComponent(name)}`,
+      `checks.file.${name}`
+    );
   },
   updateChecksFile: async (name: string, content: string) => {
     const res = await apiFetch(`/api/checks/files/${encodeURIComponent(name)}`, {
@@ -778,7 +799,7 @@ export const api = {
     }
   },
   getLastSuccessTs: () => {
-    const meta = readJSON(META_KEY);
+    const meta = readJSON<{ lastSuccess: number }>(META_KEY);
     return meta?.lastSuccess || null;
   },
   isStale: () => {
