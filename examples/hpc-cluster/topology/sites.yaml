@@ -1,0 +1,21 @@
+sites:
+- id: dc1
+  name: Main Datacenter
+  description: Primary production site
+  location:
+    lat: 48.8566
+    lon: 2.3522
+    address: Paris, FR
+  rooms:
+  - id: room-a
+    name: Room A
+- id: dc2
+  name: Secondary Datacenter
+  description: Secondary site
+  location:
+    lat: 52.52
+    lon: 13.405
+    address: Berlin, DE
+  rooms:
+  - id: room-b
+    name: Room B

@@ -1,0 +1,7 @@
+templates:
+  - id: simple-1u-server
+    name: "1U Server"
+    type: server
+    u_height: 1
+    checks:
+      - node_up

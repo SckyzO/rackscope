@@ -1,0 +1,20 @@
+rack_templates:
+- id: standard-42u-air
+  name: Standard 42U Air Cooled
+  u_height: 42
+  infrastructure:
+    rack_components:
+    - template_id: pdu-raritan-16u
+      side: left
+      u_position: 1
+    - template_id: pdu-raritan-16u
+      side: left
+      u_position: 17
+    - template_id: pdu-raritan-16u
+      side: right
+      u_position: 1
+    - template_id: pdu-raritan-16u
+      side: right
+      u_position: 17
+    rear_components: []
+  checks: []

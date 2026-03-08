@@ -1,0 +1,14 @@
+templates:
+  - id: simple-1u-switch
+    name: "1U Switch"
+    type: switch
+    u_height: 1
+    checks:
+      - switch_up
+
+  - id: simple-2u-storage
+    name: "2U Storage"
+    type: storage
+    u_height: 2
+    checks:
+      - node_up

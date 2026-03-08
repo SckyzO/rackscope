@@ -1,0 +1,14 @@
+id: machine-room-a
+name: Machine Room A
+site_id: dc-paris
+description: Primary compute and storage room
+
+layout:
+  cols: 3
+  rows: 4
+  orientation: north
+  door_side: south
+
+aisles:
+  - aisle-path: aisles/compute
+  - aisle-path: aisles/infra

@@ -1,0 +1,12 @@
+id: machine-room-dr
+name: DR Machine Room
+site_id: dc-lyon
+description: Disaster recovery room — reduced capacity
+
+layout:
+  cols: 2
+  rows: 3
+  orientation: north
+
+aisles:
+  - aisle-path: aisles/dr

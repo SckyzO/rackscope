@@ -1,0 +1,26 @@
+id: rack-sto01
+name: "Storage Rack"
+u_height: 42
+template_id: standard-42u-air
+
+devices:
+  - id: sto-head-01
+    name: storage-head-01
+    template_id: generic-1u-server
+    u_position: 1
+    face: front
+    instance: storage-head-01
+
+  - id: sto-jbod-01
+    name: jbod-01
+    template_id: generic-2u-jbod
+    u_position: 2
+    face: front
+    instance: jbod-01
+
+  - id: sto-jbod-02
+    name: jbod-02
+    template_id: generic-2u-jbod
+    u_position: 4
+    face: front
+    instance: jbod-02

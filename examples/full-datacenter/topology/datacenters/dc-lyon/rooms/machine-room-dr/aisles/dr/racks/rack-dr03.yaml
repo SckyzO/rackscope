@@ -1,0 +1,17 @@
+id: rack-dr03
+name: "DR Network & Storage"
+u_height: 42
+template_id: standard-42u-air
+devices:
+  - id: sw-dr-tor
+    name: dr-tor
+    template_id: generic-tor-switch-1u
+    u_position: 42
+    face: front
+    instance: dr-tor
+  - id: sto-dr-01
+    name: dr-jbod-01
+    template_id: generic-2u-jbod
+    u_position: 1
+    face: front
+    instance: dr-jbod-01

@@ -1,0 +1,7 @@
+id: aisle-admin
+name: Admin Aisle
+room_id: machine-room-b
+
+racks:
+  - rack-path: racks/rack-admin01
+  - rack-path: racks/rack-admin02

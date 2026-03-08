@@ -1,0 +1,38 @@
+# PDU checks — scope: rack. Uses raritan_pdu_* metrics from the Raritan PDU exporter.
+# Adjust current thresholds to match your breaker ratings (16A/20A single-phase typical).
+checks:
+  - id: pdu_power_present
+    name: PDU power present
+    for: null
+    scope: rack
+    kind: power
+    expr: sum by (rack_id) (raritan_pdu_activepower_watt{rack_id=~"$racks", inletid="I1"}) or on() vector(0)
+    output: numeric
+    rules:
+      - severity: WARN
+        op: ==
+        value: 0
+
+  - id: pdu_current_warn
+    name: PDU current high (warn)
+    for: "5m"
+    scope: rack
+    kind: power
+    expr: max by (rack_id) (raritan_pdu_current_ampere{rack_id=~"$racks", inletid="I1"})
+    output: numeric
+    rules:
+      - severity: WARN
+        op: ">"
+        value: 16
+
+  - id: pdu_current_crit
+    name: PDU current high (crit)
+    for: "1m"
+    scope: rack
+    kind: power
+    expr: max by (rack_id) (raritan_pdu_current_ampere{rack_id=~"$racks", inletid="I1"})
+    output: numeric
+    rules:
+      - severity: CRIT
+        op: ">"
+        value: 20

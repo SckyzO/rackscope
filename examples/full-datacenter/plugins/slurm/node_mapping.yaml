@@ -1,0 +1,9 @@
+# Map Slurm node names to topology instance names
+# Syntax: slurm_pattern: topology_pattern
+# Wildcards supported: * and [range]
+
+mapping:
+  "c[001-028]": "compute[001-028]"
+  "g[001-002]": "gpu[001-002]"
+  "dr-c[001-008]": "dr-compute[001-008]"
+  "login[01-02]": "login[01-02]"
