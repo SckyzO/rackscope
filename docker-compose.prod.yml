@@ -18,10 +18,11 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # rw: Settings UI writes config at runtime
+      # rw: Settings UI writes to config/ at runtime (app.yaml, plugin configs, overrides)
       - ./config:/app/config
-      # plugins must be present for the Slurm and Simulator plugins to load
-      - ./plugins:/app/plugins:ro
+      # plugins/ is already baked into the image (see src/Dockerfile).
+      # Uncomment only if you want to override or add custom plugins without rebuilding:
+      # - ./plugins:/app/plugins:ro
     environment:
       - RACKSCOPE_APP_CONFIG=/app/config/app.yaml
       - PYTHONPATH=/app/src:/app
