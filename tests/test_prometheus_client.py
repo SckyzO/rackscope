@@ -190,16 +190,12 @@ class TestQuery:
             "status": "success",
             "data": {
                 "resultType": "vector",
-                "result": [
-                    {"metric": {"instance": "node01"}, "value": [1234567890, "1"]}
-                ],
+                "result": [{"metric": {"instance": "node01"}, "value": [1234567890, "1"]}],
             },
         }
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(
-            client.client, "get", return_value=mock_response
-        ) as mock_get:
+        with patch.object(client.client, "get", return_value=mock_response) as mock_get:
             result = await client.query('up{job="node"}')
 
         assert isinstance(result, dict)
@@ -219,9 +215,7 @@ class TestQuery:
         }
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(
-            client.client, "get", return_value=mock_response
-        ) as mock_get:
+        with patch.object(client.client, "get", return_value=mock_response) as mock_get:
             # First call - cache miss
             result1 = await client.query("up")
             # Second call - cache hit
@@ -355,9 +349,7 @@ class TestQuery:
         mock_response.json.return_value = {"status": "success", "data": {"result": []}}
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(
-            client.client, "get", return_value=mock_response
-        ) as mock_get:
+        with patch.object(client.client, "get", return_value=mock_response) as mock_get:
             # First call
             await client.query("up")
             # Wait for cache to expire
@@ -441,9 +433,7 @@ class TestQueryRange:
         }
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(
-            client.client, "get", return_value=mock_response
-        ) as mock_get:
+        with patch.object(client.client, "get", return_value=mock_response) as mock_get:
             await client.query_range("up", start=1000.0, end=2000.0, step="5m")
 
         # Verify step was passed correctly
@@ -494,9 +484,7 @@ class TestPing:
         mock_response.json.return_value = {"status": "success", "data": {"result": []}}
         mock_response.raise_for_status = MagicMock()
 
-        with patch.object(
-            client.client, "get", return_value=mock_response
-        ) as mock_get:
+        with patch.object(client.client, "get", return_value=mock_response) as mock_get:
             await client.ping()
 
         mock_get.assert_called_once()
@@ -562,9 +550,7 @@ class TestRecordPlannerBatch:
     def test_record_planner_batch(self):
         """record_planner_batch should store batch info."""
         client = PrometheusClient("http://localhost:9090")
-        client.record_planner_batch(
-            total_ids=100, query_count=5, max_ids_per_query=20
-        )
+        client.record_planner_batch(total_ids=100, query_count=5, max_ids_per_query=20)
 
         assert client._last_batch["total_ids"] == 100
         assert client._last_batch["query_count"] == 5
@@ -577,9 +563,7 @@ class TestRecordPlannerBatch:
         client._debug_stats = True
 
         # Should not raise, logging is optional
-        client.record_planner_batch(
-            total_ids=100, query_count=5, max_ids_per_query=20
-        )
+        client.record_planner_batch(total_ids=100, query_count=5, max_ids_per_query=20)
         assert client._last_batch["total_ids"] == 100
 
 

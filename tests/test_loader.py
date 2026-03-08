@@ -10,7 +10,6 @@ Covers error paths and edge cases in YAML loading:
 - Metrics library loading
 """
 
-
 import pytest
 import yaml
 

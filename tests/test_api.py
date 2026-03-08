@@ -86,6 +86,7 @@ def test_get_rack_state():
 
 # ── Wizard disable endpoint ────────────────────────────────────────────────────
 
+
 @pytest.fixture()
 def _protect_app_yaml():
     path = "config/app.yaml"
@@ -115,7 +116,9 @@ def test_wizard_disable_returns_json(_protect_app_yaml):
 
 # ── Main entrypoint test ──────────────────────────────────────────────────────
 
+
 def test_main_entrypoint():
     """Test that __main__.py entrypoint runs without error."""
     from rackscope.__main__ import main
+
     main()  # should not raise

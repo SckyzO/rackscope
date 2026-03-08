@@ -223,5 +223,3 @@ def test_expand_device_instances_empty_string():
 # returns empty list at line 35. The code never reaches the nodes fallback.
 # This is a bug in the production code, but we can't fix it per the instructions.
 # These tests document the expected behavior if the bug were fixed.
-
-

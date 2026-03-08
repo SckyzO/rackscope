@@ -125,7 +125,9 @@ class SimulatorConfig(BaseModel):
 
     update_interval_seconds: int = Field(default=20, ge=1)
     seed: Optional[int] = None
-    overrides_path: str = Field(default="config/plugins/simulator/overrides/overrides.yaml", min_length=1)
+    overrides_path: str = Field(
+        default="config/plugins/simulator/overrides/overrides.yaml", min_length=1
+    )
     default_ttl_seconds: int = Field(default=120, ge=0)
     metrics_catalog_path: str = Field(
         default="config/plugins/simulator/metrics/metrics_full.yaml", min_length=1

@@ -62,12 +62,15 @@ switch_port_tx_bytes: dict = {}
 # ── Incident presets ──────────────────────────────────────────────────────
 
 INCIDENT_PRESETS: dict = {
-    "full_ok": {"crit": (0, 0),   "warn": (0, 0),    "racks": 0, "aisles": 0, "cph_default": 1},
-    "light":   {"crit": (1, 3),   "warn": (1, 5),    "racks": 0, "aisles": 0, "cph_default": 2},
-    "medium":  {"crit": (1, 3),   "warn": (5, 10),   "racks": 1, "aisles": 0, "cph_default": 4},
-    "heavy":   {"crit": (5, 10),  "warn": (10, 20),  "racks": 2, "aisles": 1, "cph_default": 4},
-    "chaos":   {
-        "crit_pct": 0.15, "warn_pct": 0.25, "racks_pct": 0.20, "aisles_pct": 0.25,
+    "full_ok": {"crit": (0, 0), "warn": (0, 0), "racks": 0, "aisles": 0, "cph_default": 1},
+    "light": {"crit": (1, 3), "warn": (1, 5), "racks": 0, "aisles": 0, "cph_default": 2},
+    "medium": {"crit": (1, 3), "warn": (5, 10), "racks": 1, "aisles": 0, "cph_default": 4},
+    "heavy": {"crit": (5, 10), "warn": (10, 20), "racks": 2, "aisles": 1, "cph_default": 4},
+    "chaos": {
+        "crit_pct": 0.15,
+        "warn_pct": 0.25,
+        "racks_pct": 0.20,
+        "aisles_pct": 0.25,
         "cph_default": 3,
     },
 }
@@ -125,7 +128,7 @@ def _roll_incidents(targets, sim_cfg, all_rack_ids, all_aisle_ids) -> dict:
         shuffled = all_node_ids.copy()
         random.shuffle(shuffled)
         nodes_crit = set(shuffled[:n_crit])
-        nodes_warn = set(shuffled[n_crit: n_crit + n_warn])
+        nodes_warn = set(shuffled[n_crit : n_crit + n_warn])
 
         rack_list = list(all_rack_ids)
         random.shuffle(rack_list)
@@ -146,7 +149,7 @@ def _roll_incidents(targets, sim_cfg, all_rack_ids, all_aisle_ids) -> dict:
         shuffled = all_node_ids.copy()
         random.shuffle(shuffled)
         nodes_crit = set(shuffled[:n_crit])
-        nodes_warn = set(shuffled[n_crit: n_crit + n_warn])
+        nodes_warn = set(shuffled[n_crit : n_crit + n_warn])
 
         rack_list = list(all_rack_ids)
         random.shuffle(rack_list)

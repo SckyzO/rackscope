@@ -477,7 +477,7 @@ async def test_test_query_success(mock_app_config):
 
         resp = client.post(
             "/api/checks/test",
-            json={"expr": "up{instance=~\"$instances\"}", "variables": {"instances": "compute001"}},
+            json={"expr": 'up{instance=~"$instances"}', "variables": {"instances": "compute001"}},
         )
 
     # Should succeed or fail based on actual implementation

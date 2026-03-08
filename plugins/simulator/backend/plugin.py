@@ -218,7 +218,9 @@ class SimulatorPlugin(RackscopePlugin):
                     response = await http_client.post(control_url, timeout=3.0)
                     if response.status_code == 200:
                         return {"status": "restarting"}
-                    raise HTTPException(status_code=502, detail="Simulator returned unexpected status")
+                    raise HTTPException(
+                        status_code=502, detail="Simulator returned unexpected status"
+                    )
             except httpx.RequestError as exc:
                 raise HTTPException(
                     status_code=503, detail=f"Could not reach simulator control server: {exc}"

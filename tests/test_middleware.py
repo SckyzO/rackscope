@@ -60,10 +60,7 @@ def test_auth_middleware_passes_when_disabled():
 def test_auth_middleware_with_invalid_bearer_token():
     """Test AuthMiddleware response with invalid Bearer token."""
     # Try to access protected endpoint with invalid token
-    response = client.get(
-        "/api/sites",
-        headers={"Authorization": "Bearer invalid.token.here"}
-    )
+    response = client.get("/api/sites", headers={"Authorization": "Bearer invalid.token.here"})
 
     # If auth is enabled, should return 401
     # If auth is disabled, should return 200/404
@@ -73,10 +70,7 @@ def test_auth_middleware_with_invalid_bearer_token():
 def test_auth_middleware_with_malformed_auth_header():
     """Test AuthMiddleware with malformed Authorization header."""
     # Try with non-Bearer auth
-    response = client.get(
-        "/api/sites",
-        headers={"Authorization": "Basic sometoken"}
-    )
+    response = client.get("/api/sites", headers={"Authorization": "Basic sometoken"})
 
     # Should either pass (auth disabled) or reject (auth enabled)
     assert response.status_code in (200, 401, 404, 500)
@@ -121,20 +115,20 @@ def test_middleware_preserves_request_state():
 
 def test_auth_middleware_with_empty_bearer_token():
     """Test AuthMiddleware with empty Bearer token."""
-    response = client.get(
-        "/api/sites",
-        headers={"Authorization": "Bearer "}
-    )
+    response = client.get("/api/sites", headers={"Authorization": "Bearer "})
 
     # Should handle empty token gracefully
     assert response.status_code in (200, 401, 404, 500)
 
 
-@pytest.mark.parametrize("method,path", [
-    ("GET", "/api/sites"),
-    ("POST", "/api/catalog/templates/validate"),
-    ("GET", "/api/config"),
-])
+@pytest.mark.parametrize(
+    "method,path",
+    [
+        ("GET", "/api/sites"),
+        ("POST", "/api/catalog/templates/validate"),
+        ("GET", "/api/config"),
+    ],
+)
 def test_middleware_chain_for_various_endpoints(method, path):
     """Test that middleware chain works for various HTTP methods and paths."""
     if method == "GET":

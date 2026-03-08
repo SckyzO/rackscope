@@ -47,7 +47,9 @@ def _make_topology_rack(rack_id: str = "rack01") -> Topology:
     return Topology(sites=[site])
 
 
-def _make_check_chassis(check_id: str = "chassis_temp", for_duration: str | None = None) -> ChecksLibrary:
+def _make_check_chassis(
+    check_id: str = "chassis_temp", for_duration: str | None = None
+) -> ChecksLibrary:
     """Helper: create a chassis-scoped check with optional for_duration."""
     check = CheckDefinition(
         id=check_id,
@@ -62,7 +64,9 @@ def _make_check_chassis(check_id: str = "chassis_temp", for_duration: str | None
     return ChecksLibrary(checks=[check])
 
 
-def _make_check_rack(check_id: str = "rack_power", for_duration: str | None = None) -> ChecksLibrary:
+def _make_check_rack(
+    check_id: str = "rack_power", for_duration: str | None = None
+) -> ChecksLibrary:
     """Helper: create a rack-scoped check with optional for_duration."""
     check = CheckDefinition(
         id=check_id,
@@ -116,9 +120,7 @@ async def test_for_duration_chassis_scope_fires_after_elapsed():
 
     with patch("rackscope.telemetry.planner.prom_client") as mock_client:
         mock_client.query = AsyncMock(
-            return_value=_prom_ok(
-                [{"metric": {"chassis_id": "blade01"}, "value": [0, "85"]}]
-            )
+            return_value=_prom_ok([{"metric": {"chassis_id": "blade01"}, "value": [0, "85"]}])
         )
         mock_client.record_planner_batch = lambda **_: None
 
@@ -147,9 +149,7 @@ async def test_for_duration_chassis_scope_clears_on_recovery():
     with patch("rackscope.telemetry.planner.prom_client") as mock_client:
         # First poll: failing
         mock_client.query = AsyncMock(
-            return_value=_prom_ok(
-                [{"metric": {"chassis_id": "blade01"}, "value": [0, "85"]}]
-            )
+            return_value=_prom_ok([{"metric": {"chassis_id": "blade01"}, "value": [0, "85"]}])
         )
         mock_client.record_planner_batch = lambda **_: None
         await planner.get_snapshot(topology, checks)
@@ -203,9 +203,7 @@ async def test_for_duration_rack_scope_fires_after_elapsed():
 
     with patch("rackscope.telemetry.planner.prom_client") as mock_client:
         mock_client.query = AsyncMock(
-            return_value=_prom_ok(
-                [{"metric": {"rack_id": "rack01"}, "value": [0, "16000"]}]
-            )
+            return_value=_prom_ok([{"metric": {"rack_id": "rack01"}, "value": [0, "16000"]}])
         )
         mock_client.record_planner_batch = lambda **_: None
 
@@ -234,9 +232,7 @@ async def test_for_duration_rack_scope_clears_on_recovery():
     with patch("rackscope.telemetry.planner.prom_client") as mock_client:
         # First poll: failing
         mock_client.query = AsyncMock(
-            return_value=_prom_ok(
-                [{"metric": {"rack_id": "rack01"}, "value": [0, "16000"]}]
-            )
+            return_value=_prom_ok([{"metric": {"rack_id": "rack01"}, "value": [0, "16000"]}])
         )
         mock_client.record_planner_batch = lambda **_: None
         await planner.get_snapshot(topology, checks)
@@ -283,9 +279,7 @@ async def test_for_duration_severity_change_resets_timer():
     with patch("rackscope.telemetry.planner.prom_client") as mock_client:
         # First poll: WARN (75°C)
         mock_client.query = AsyncMock(
-            return_value=_prom_ok(
-                [{"metric": {"chassis_id": "blade01"}, "value": [0, "75"]}]
-            )
+            return_value=_prom_ok([{"metric": {"chassis_id": "blade01"}, "value": [0, "75"]}])
         )
         mock_client.record_planner_batch = lambda **_: None
         await planner.get_snapshot(topology, checks)
@@ -298,9 +292,7 @@ async def test_for_duration_severity_change_resets_timer():
 
         # Second poll: CRIT (85°C) — severity changed → timer resets
         mock_client.query = AsyncMock(
-            return_value=_prom_ok(
-                [{"metric": {"chassis_id": "blade01"}, "value": [0, "85"]}]
-            )
+            return_value=_prom_ok([{"metric": {"chassis_id": "blade01"}, "value": [0, "85"]}])
         )
         await planner.get_snapshot(topology, checks)
         assert planner._pending_states["chassis_temp:blade01"] == "CRIT"

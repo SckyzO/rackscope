@@ -688,7 +688,13 @@ def test_update_rack_component_template_success(mock_app_config, temp_templates_
         yaml.safe_dump(
             {
                 "rack_component_templates": [
-                    {"id": "test_pdu", "name": "Old PDU", "type": "pdu", "location": "side", "u_height": 42}
+                    {
+                        "id": "test_pdu",
+                        "name": "Old PDU",
+                        "type": "pdu",
+                        "location": "side",
+                        "u_height": 42,
+                    }
                 ]
             }
         )

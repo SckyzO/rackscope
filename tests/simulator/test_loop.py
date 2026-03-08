@@ -32,10 +32,7 @@ def _state(**kwargs):
 
 
 def _make_targets(n=10):
-    return [
-        {"node_id": f"n{i}", "rack_id": f"r{i % 3}", "aisle_id": f"a{i % 2}"}
-        for i in range(n)
-    ]
+    return [{"node_id": f"n{i}", "rack_id": f"r{i % 3}", "aisle_id": f"a{i % 2}"} for i in range(n)]
 
 
 # ── TestApplyOverrides ─────────────────────────────────────────────────────
@@ -114,9 +111,21 @@ class TestApplyFailures:
 
     def test_multiple_incident_types_combined(self):
         targets = [
-            {"node_id": "n1", "rack_id": "rack-01", "metrics": {"up": 1.0, "node_health_status": 0.0}},
-            {"node_id": "n2", "rack_id": "rack-02", "metrics": {"up": 1.0, "node_health_status": 0.0}},
-            {"node_id": "n3", "rack_id": "rack-02", "metrics": {"up": 1.0, "node_health_status": 0.0}},
+            {
+                "node_id": "n1",
+                "rack_id": "rack-01",
+                "metrics": {"up": 1.0, "node_health_status": 0.0},
+            },
+            {
+                "node_id": "n2",
+                "rack_id": "rack-02",
+                "metrics": {"up": 1.0, "node_health_status": 0.0},
+            },
+            {
+                "node_id": "n3",
+                "rack_id": "rack-02",
+                "metrics": {"up": 1.0, "node_health_status": 0.0},
+            },
         ]
         _apply_failures(targets, _state(nodes_crit={"n1"}, nodes_warn={"n2"}))
         assert targets[0]["metrics"]["up"] == 0.0
@@ -248,7 +257,12 @@ class TestRollIncidents:
         aisle_ids = {"a0", "a1"}
         sim_cfg = {
             "incident_mode": "custom",
-            "custom_incidents": {"devices_crit": 5, "devices_warn": 3, "racks_crit": 2, "aisles_hot": 1},
+            "custom_incidents": {
+                "devices_crit": 5,
+                "devices_warn": 3,
+                "racks_crit": 2,
+                "aisles_hot": 1,
+            },
         }
         result = _roll_incidents(targets, sim_cfg, rack_ids, aisle_ids)
         assert len(result["nodes_crit"]) == 5
@@ -284,7 +298,12 @@ class TestRollIncidents:
         for mode in ("light", "medium", "heavy", "chaos", "custom"):
             sim_cfg = {
                 "incident_mode": mode,
-                "custom_incidents": {"devices_crit": 3, "devices_warn": 3, "racks_crit": 1, "aisles_hot": 1},
+                "custom_incidents": {
+                    "devices_crit": 3,
+                    "devices_warn": 3,
+                    "racks_crit": 1,
+                    "aisles_hot": 1,
+                },
             }
             result = _roll_incidents(targets, sim_cfg, rack_ids, aisle_ids)
             assert result["nodes_crit"].issubset(all_node_ids), f"mode={mode}: unknown crit node"
@@ -299,7 +318,12 @@ class TestRollIncidents:
         aisle_ids = {"a0"}
         sim_cfg = {
             "incident_mode": "custom",
-            "custom_incidents": {"devices_crit": 100, "devices_warn": 100, "racks_crit": 10, "aisles_hot": 10},
+            "custom_incidents": {
+                "devices_crit": 100,
+                "devices_warn": 100,
+                "racks_crit": 10,
+                "aisles_hot": 10,
+            },
         }
         result = _roll_incidents(targets, sim_cfg, rack_ids, aisle_ids)
         # Must not exceed available counts, and no crash
@@ -319,13 +343,23 @@ class TestRollIncidents:
     def test_empty_topology_returns_empty_sets(self):
         """Simulate with no nodes/racks/aisles — must not crash."""
         result = _roll_incidents([], {"incident_mode": "chaos"}, set(), set())
-        assert result == {"nodes_crit": set(), "nodes_warn": set(), "racks_crit": set(), "aisles_hot": set()}
+        assert result == {
+            "nodes_crit": set(),
+            "nodes_warn": set(),
+            "racks_crit": set(),
+            "aisles_hot": set(),
+        }
 
     def test_full_ok_ignores_custom_incidents(self):
         """full_ok always returns empty sets regardless of custom_incidents."""
         sim_cfg = {
             "incident_mode": "full_ok",
-            "custom_incidents": {"devices_crit": 99, "devices_warn": 99, "racks_crit": 99, "aisles_hot": 99},
+            "custom_incidents": {
+                "devices_crit": 99,
+                "devices_warn": 99,
+                "racks_crit": 99,
+                "aisles_hot": 99,
+            },
         }
         targets = _make_targets(20)
         result = _roll_incidents(targets, sim_cfg, {f"r{i}" for i in range(5)}, {"a0", "a1"})
@@ -392,9 +426,7 @@ class TestGenerateNodeMetrics:
 
     def test_warn_node_is_not_down(self):
         target = _target(node_id="compute001", rack_id="rack-01")
-        vals = self._call(
-            target, _state(nodes_warn={"compute001"}, racks_crit=set())
-        )
+        vals = self._call(target, _state(nodes_warn={"compute001"}, racks_crit=set()))
         assert vals["up_val"] == 1
 
     def test_rack_crit_overrides_node_warn(self):

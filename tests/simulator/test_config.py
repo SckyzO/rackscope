@@ -25,9 +25,7 @@ class TestLoadSimulatorConfig:
         import plugins.simulator.process.config as cfg_mod
 
         app_yaml = tmp_path / "app.yaml"
-        app_yaml.write_text(
-            yaml.dump({"plugins": {"simulator": {"incident_mode": "chaos"}}})
-        )
+        app_yaml.write_text(yaml.dump({"plugins": {"simulator": {"incident_mode": "chaos"}}}))
         base_yaml = tmp_path / "plugin.yaml"
         base_yaml.write_text(yaml.dump({"incident_mode": "light"}))
 

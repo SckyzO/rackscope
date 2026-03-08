@@ -338,9 +338,7 @@ class TestLogin:
     def test_login_auth_disabled_returns_400(self):
         """When auth is disabled, login should return 400."""
         # Test env has auth disabled by default
-        resp = client.post(
-            "/api/auth/login", json={"username": "admin", "password": "password"}
-        )
+        resp = client.post("/api/auth/login", json={"username": "admin", "password": "password"})
         assert resp.status_code == 400
         assert "not enabled" in resp.json()["detail"].lower()
 
@@ -354,7 +352,7 @@ class TestLogin:
             username="admin",
             password_hash=hashed,
             secret_key=SECRET,
-            session_duration="24h"
+            session_duration="24h",
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
@@ -377,7 +375,7 @@ class TestLogin:
             username="admin",
             password_hash=hashed,
             secret_key=SECRET,
-            session_duration="24h"
+            session_duration="24h",
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
@@ -395,15 +393,13 @@ class TestLogin:
             username="admin",
             password_hash="",  # not configured
             secret_key=SECRET,
-            session_duration="24h"
+            session_duration="24h",
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
 
         with patch("rackscope.api.app.APP_CONFIG", mock_config):
-            resp = client.post(
-                "/api/auth/login", json={"username": "admin", "password": "anypass"}
-            )
+            resp = client.post("/api/auth/login", json={"username": "admin", "password": "anypass"})
             assert resp.status_code == 401
             assert "no password configured" in resp.json()["detail"].lower()
 
@@ -417,15 +413,13 @@ class TestLogin:
             username="admin",
             password_hash=hashed,
             secret_key=SECRET,
-            session_duration="24h"
+            session_duration="24h",
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
 
         with patch("rackscope.api.app.APP_CONFIG", mock_config):
-            resp = client.post(
-                "/api/auth/login", json={"username": "admin", "password": password}
-            )
+            resp = client.post("/api/auth/login", json={"username": "admin", "password": password})
             assert resp.status_code == 200
             data = resp.json()
             assert "access_token" in data
@@ -443,15 +437,13 @@ class TestLogin:
             username="admin",
             password_hash=hashed,
             secret_key=SECRET,
-            session_duration="8h"
+            session_duration="8h",
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
 
         with patch("rackscope.api.app.APP_CONFIG", mock_config):
-            resp = client.post(
-                "/api/auth/login", json={"username": "admin", "password": password}
-            )
+            resp = client.post("/api/auth/login", json={"username": "admin", "password": password})
             assert resp.status_code == 200
             data = resp.json()
             assert data["expires_in"] == 8 * 3600
@@ -466,15 +458,13 @@ class TestLogin:
             username="admin",
             password_hash=hashed,
             secret_key=SECRET,
-            session_duration="unlimited"
+            session_duration="unlimited",
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
 
         with patch("rackscope.api.app.APP_CONFIG", mock_config):
-            resp = client.post(
-                "/api/auth/login", json={"username": "admin", "password": password}
-            )
+            resp = client.post("/api/auth/login", json={"username": "admin", "password": password})
             assert resp.status_code == 200
             data = resp.json()
             assert data["expires_in"] is None
@@ -525,7 +515,7 @@ class TestChangePassword:
         auth_config = AuthConfig(
             enabled=False,  # Disable auth for test
             password_hash=hashed,
-            policy=PasswordPolicyConfig()
+            policy=PasswordPolicyConfig(),
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
@@ -545,7 +535,7 @@ class TestChangePassword:
         auth_config = AuthConfig(
             enabled=False,  # Disable auth for test (no middleware check)
             password_hash=hashed,
-            policy=PasswordPolicyConfig(min_length=10)
+            policy=PasswordPolicyConfig(min_length=10),
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
@@ -562,7 +552,7 @@ class TestChangePassword:
         auth_config = AuthConfig(
             enabled=False,  # Disable auth for test
             password_hash="",  # not configured yet
-            policy=PasswordPolicyConfig()
+            policy=PasswordPolicyConfig(),
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
@@ -602,7 +592,7 @@ class TestChangeUsername:
 
         auth_config = AuthConfig(
             enabled=False,  # Disable auth for test
-            password_hash=hashed
+            password_hash=hashed,
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
@@ -621,7 +611,7 @@ class TestChangeUsername:
 
         auth_config = AuthConfig(
             enabled=False,  # Disable auth for test
-            password_hash=hashed
+            password_hash=hashed,
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
@@ -640,7 +630,7 @@ class TestChangeUsername:
 
         auth_config = AuthConfig(
             enabled=False,  # Disable auth for test
-            password_hash=hashed
+            password_hash=hashed,
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config

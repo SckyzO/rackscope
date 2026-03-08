@@ -36,6 +36,7 @@ from rackscope.model.loader import (
 from rackscope.telemetry.prometheus import client as prom_client
 from rackscope.telemetry.planner import TelemetryPlanner, PlannerConfig
 from rackscope.plugins.registry import registry as plugin_registry
+
 # Plugin imports are deferred — see _plugin_enabled() in lifespan()
 from rackscope.api.routers import (
     config,
@@ -200,6 +201,7 @@ async def lifespan(app: FastAPI):
     if _plugin_enabled("simulator"):
         try:
             from plugins.simulator.backend import SimulatorPlugin
+
             plugin_registry.register(SimulatorPlugin())
             logger.info("Registered Simulator plugin")
         except Exception as e:
@@ -210,6 +212,7 @@ async def lifespan(app: FastAPI):
     if _plugin_enabled("slurm"):
         try:
             from plugins.slurm.backend import SlurmPlugin
+
             plugin_registry.register(SlurmPlugin())
             logger.info("Registered Slurm plugin")
         except Exception as e:

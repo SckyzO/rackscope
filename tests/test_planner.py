@@ -227,9 +227,7 @@ async def test_planner_prometheus_error_status():
     planner = TelemetryPlanner(PlannerConfig(cache_ttl_seconds=0))
 
     with patch("rackscope.telemetry.planner.prom_client") as mock_client:
-        mock_client.query = AsyncMock(
-            return_value={"status": "error", "error": "query timeout"}
-        )
+        mock_client.query = AsyncMock(return_value={"status": "error", "error": "query timeout"})
         mock_client.record_planner_batch = lambda **_: None
         snapshot = await planner.get_snapshot(topology, checks)
 
@@ -541,9 +539,7 @@ async def test_for_duration_fires_after_elapsed():
 
     with patch("rackscope.telemetry.planner.prom_client") as mock_client:
         mock_client.query = AsyncMock(
-            return_value=_prom_ok(
-                [{"metric": {"instance": "compute001"}, "value": [0, "0"]}]
-            )
+            return_value=_prom_ok([{"metric": {"instance": "compute001"}, "value": [0, "0"]}])
         )
         mock_client.record_planner_batch = lambda **_: None
 
@@ -572,9 +568,7 @@ async def test_for_duration_clears_on_recovery():
     with patch("rackscope.telemetry.planner.prom_client") as mock_client:
         # First poll: failing
         mock_client.query = AsyncMock(
-            return_value=_prom_ok(
-                [{"metric": {"instance": "compute001"}, "value": [0, "0"]}]
-            )
+            return_value=_prom_ok([{"metric": {"instance": "compute001"}, "value": [0, "0"]}])
         )
         mock_client.record_planner_batch = lambda **_: None
         await planner.get_snapshot(topology, checks)

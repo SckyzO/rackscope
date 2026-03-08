@@ -412,9 +412,7 @@ def test_collect_check_targets_rack_component_checks():
         name="Rack with PDU",
         u_height=42,
         infrastructure=RackInfrastructure(
-            rack_components=[
-                RackComponentRef(template_id="pdu", instance="pdu01", position="left")
-            ]
+            rack_components=[RackComponentRef(template_id="pdu", instance="pdu01", position="left")]
         ),
     )
 

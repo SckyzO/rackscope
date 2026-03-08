@@ -33,11 +33,11 @@ SEVERITY_ORDER = {"OK": 0, "UNKNOWN": 1, "WARN": 2, "CRIT": 3}
 
 def _parse_duration(duration: str) -> float:
     """Parse Prometheus duration string to seconds. Returns 0.0 if invalid."""
-    match = re.match(r'^(\d+)([smhdwy])$', duration)
+    match = re.match(r"^(\d+)([smhdwy])$", duration)
     if not match:
         return 0.0
     value, unit = int(match.group(1)), match.group(2)
-    return float(value * {'s': 1, 'm': 60, 'h': 3600, 'd': 86400, 'w': 604800, 'y': 31536000}[unit])
+    return float(value * {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800, "y": 31536000}[unit])
 
 
 @dataclass
@@ -218,8 +218,14 @@ class TelemetryPlanner:
                         # First time seeing this failure — start timer, keep current state (no fire)
                         self._pending_states[pending_key] = severity
                         self._pending_since[pending_key] = now
-                        severity = node_states.get(key, "UNKNOWN") if effective_scope == "node" else (
-                            chassis_states.get(key, "UNKNOWN") if effective_scope == "chassis" else rack_states.get(key, "UNKNOWN")
+                        severity = (
+                            node_states.get(key, "UNKNOWN")
+                            if effective_scope == "node"
+                            else (
+                                chassis_states.get(key, "UNKNOWN")
+                                if effective_scope == "chassis"
+                                else rack_states.get(key, "UNKNOWN")
+                            )
                         )
                     elif self._pending_states[pending_key] == severity:
                         # Same severity still failing — check if duration elapsed
@@ -230,15 +236,27 @@ class TelemetryPlanner:
                             # severity remains as-is (WARN/CRIT) → fires
                         else:
                             # Still pending — hold previous state
-                            severity = node_states.get(key, "UNKNOWN") if effective_scope == "node" else (
-                                chassis_states.get(key, "UNKNOWN") if effective_scope == "chassis" else rack_states.get(key, "UNKNOWN")
+                            severity = (
+                                node_states.get(key, "UNKNOWN")
+                                if effective_scope == "node"
+                                else (
+                                    chassis_states.get(key, "UNKNOWN")
+                                    if effective_scope == "chassis"
+                                    else rack_states.get(key, "UNKNOWN")
+                                )
                             )
                     else:
                         # Severity changed — reset timer
                         self._pending_states[pending_key] = severity
                         self._pending_since[pending_key] = now
-                        severity = node_states.get(key, "UNKNOWN") if effective_scope == "node" else (
-                            chassis_states.get(key, "UNKNOWN") if effective_scope == "chassis" else rack_states.get(key, "UNKNOWN")
+                        severity = (
+                            node_states.get(key, "UNKNOWN")
+                            if effective_scope == "node"
+                            else (
+                                chassis_states.get(key, "UNKNOWN")
+                                if effective_scope == "chassis"
+                                else rack_states.get(key, "UNKNOWN")
+                            )
                         )
                 else:
                     # No for_duration or severity is OK/UNKNOWN — clear pending and fire immediately

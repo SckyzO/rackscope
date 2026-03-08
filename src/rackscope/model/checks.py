@@ -50,20 +50,18 @@ class CheckDefinition(BaseModel):
         ),
     )
     for_duration: Optional[str] = Field(
-        alias='for',
+        alias="for",
         default=None,
         description="Prometheus duration before alert fires (e.g. '5m'). null = immediate.",
     )
 
-    @field_validator('for_duration')
+    @field_validator("for_duration")
     @classmethod
     def _validate_for_duration(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
-        if not re.match(r'^\d+[smhdwy]$', v):
-            raise ValueError(
-                f"Invalid duration '{v}'. Use Prometheus format: 30s, 1m, 5m, 1h"
-            )
+        if not re.match(r"^\d+[smhdwy]$", v):
+            raise ValueError(f"Invalid duration '{v}'. Use Prometheus format: 30s, 1m, 5m, 1h")
         return v
 
 

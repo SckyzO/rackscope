@@ -110,10 +110,7 @@ def test_slurm_plugin_metrics_catalog_loading(tmp_path):
     # Test with empty directory
     catalog_dir = tmp_path / "metrics"
     catalog_dir.mkdir()
-    plugin.config = SlurmPluginConfig(
-        metrics_catalog_dir=str(catalog_dir),
-        metrics_catalogs=[]
-    )
+    plugin.config = SlurmPluginConfig(metrics_catalog_dir=str(catalog_dir), metrics_catalogs=[])
     metrics = plugin._load_metrics_catalog()
     assert metrics == []
 
@@ -722,10 +719,15 @@ def test_get_slurm_metric_data_success():
         }
     ]
 
-    with patch("rackscope.telemetry.prometheus.client.query", AsyncMock(return_value={
-        "status": "success",
-        "data": {"result": [{"metric": {"node": "n001"}, "value": [1234, "1"]}]},
-    })):
+    with patch(
+        "rackscope.telemetry.prometheus.client.query",
+        AsyncMock(
+            return_value={
+                "status": "success",
+                "data": {"result": [{"metric": {"node": "n001"}, "value": [1234, "1"]}]},
+            }
+        ),
+    ):
         response = client.get("/api/slurm/metrics/data?metric_id=slurm_nodes")
 
     assert response.status_code == 200
@@ -758,10 +760,15 @@ def test_get_slurm_metric_data_prometheus_error():
         {"id": "slurm_nodes", "name": "Slurm Nodes", "metric": "slurm_node_status"}
     ]
 
-    with patch("rackscope.telemetry.prometheus.client.query", AsyncMock(return_value={
-        "status": "error",
-        "error": "Query timeout",
-    })):
+    with patch(
+        "rackscope.telemetry.prometheus.client.query",
+        AsyncMock(
+            return_value={
+                "status": "error",
+                "error": "Query timeout",
+            }
+        ),
+    ):
         response = client.get("/api/slurm/metrics/data?metric_id=slurm_nodes")
 
     assert response.status_code == 200

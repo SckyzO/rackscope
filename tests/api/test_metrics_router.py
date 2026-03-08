@@ -454,6 +454,7 @@ def test_list_metrics_files_no_config():
 def test_get_library_metric_file_no_config():
     """Test /api/metrics/library/files/{name} with no app config."""
     from unittest.mock import patch
+
     with patch("rackscope.api.app.APP_CONFIG", None):
         client = TestClient(app)
         response = client.get("/api/metrics/library/files/test.yaml")
@@ -464,6 +465,7 @@ def test_get_library_metric_file_no_config():
 def test_put_library_metric_file_no_config():
     """Test /api/metrics/library/files/{name} PUT with no app config."""
     from unittest.mock import patch
+
     with patch("rackscope.api.app.APP_CONFIG", None):
         client = TestClient(app)
         response = client.put(

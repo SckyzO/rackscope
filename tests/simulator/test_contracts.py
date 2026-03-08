@@ -111,8 +111,8 @@ class TestSimulatorPluginConfigContract:
         cfg = SimulatorPluginConfig(
             **{
                 "incident_mode": "light",
-                "scenario": "full-ok",       # old field — must be ignored
-                "scale_factor": 0.5,          # old field — must be ignored
+                "scenario": "full-ok",  # old field — must be ignored
+                "scale_factor": 0.5,  # old field — must be ignored
                 "incident_rates": {"node_micro_failure": 0.001},  # old field
             }
         )

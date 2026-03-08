@@ -66,6 +66,7 @@ def test_load_topology(tmp_path):
 
 # ── CheckDefinition.for_duration ──────────────────────────────────────────────
 
+
 def _make_check(**kwargs):
     """Helper: build a minimal valid CheckDefinition via model_validate."""
     base = {
@@ -105,16 +106,18 @@ def test_check_for_duration_invalid_format():
 def test_check_for_duration_defaults_none_when_absent():
     """Omitting 'for' key defaults to None (for programmatic use).
     Production YAML files are validated by the loader, not the Pydantic model."""
-    c = CheckDefinition.model_validate({
-        "id": "test",
-        "name": "Test",
-        "scope": "node",
-        "kind": "server",
-        "expr": "up",
-        "output": "bool",
-        # 'for' key intentionally absent
-        "rules": [{"op": "==", "value": 0, "severity": "CRIT"}],
-    })
+    c = CheckDefinition.model_validate(
+        {
+            "id": "test",
+            "name": "Test",
+            "scope": "node",
+            "kind": "server",
+            "expr": "up",
+            "output": "bool",
+            # 'for' key intentionally absent
+            "rules": [{"op": "==", "value": 0, "severity": "CRIT"}],
+        }
+    )
     assert c.for_duration is None
 
 

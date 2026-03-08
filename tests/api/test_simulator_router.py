@@ -647,13 +647,14 @@ def test_simulator_plugin_menu_sections_enabled():
     assert plugin is not None
 
     # Create enabled config
-    with patch("rackscope.api.app.APP_CONFIG", AppConfig(
-        paths=PathsConfig(
-            topology="config/topology",
-            templates="config/templates",
-            checks="config/checks"
+    with patch(
+        "rackscope.api.app.APP_CONFIG",
+        AppConfig(
+            paths=PathsConfig(
+                topology="config/topology", templates="config/templates", checks="config/checks"
+            ),
         ),
-    )):
+    ):
         plugin.config = SimulatorPluginConfig(enabled=True)
         sections = plugin.register_menu_sections()
 
@@ -753,7 +754,10 @@ def test_add_simulator_override_rack_invalid_metric(mock_app_config_with_simulat
     )
 
     assert response.status_code == 400
-    assert "Unsupported metric" in response.json()["detail"] or "Unknown metric" in response.json()["detail"]
+    assert (
+        "Unsupported metric" in response.json()["detail"]
+        or "Unknown metric" in response.json()["detail"]
+    )
 
     app.dependency_overrides.clear()
 
@@ -765,9 +769,7 @@ def test_load_overrides_invalid_yaml(tmp_path):
 
     config = AppConfig(
         paths=PathsConfig(
-            topology="config/topology",
-            templates="config/templates",
-            checks="config/checks"
+            topology="config/topology", templates="config/templates", checks="config/checks"
         ),
         simulator=SimulatorConfig(overrides_path=str(tmp_path / "overrides.yaml")),
     )
