@@ -132,10 +132,10 @@ export default function Home() {
         flexWrap: 'wrap',
       }}>
         {[
-          { label: 'Tests', value: '362 passing' },
+          { label: 'Tests', value: '852+ passing' },
           { label: 'Type errors', value: '0 (mypy)' },
-          { label: 'Metrics', value: '39 defined' },
-          { label: 'License', value: 'MIT' },
+          { label: 'Checks', value: '7 families' },
+          { label: 'License', value: 'AGPL-3.0' },
         ].map(({ label, value }) => (
           <div key={label} style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#6a7aff' }}>{value}</div>

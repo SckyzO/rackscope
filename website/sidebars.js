@@ -67,29 +67,82 @@ const sidebars = {
   ],
 
   adminGuide: [
-    'admin-guide/deployment',
-    'admin-guide/topology-yaml',
-    'admin-guide/templates',
-    'admin-guide/prometheus',
-    'admin-guide/app-yaml',
-    'admin-guide/settings-ui',
-    'admin-guide/importers',
+    // ── Deployment & Operations ───────────────────────────────────────────────
+    {
+      type: 'category',
+      label: '🚀 Deployment',
+      collapsed: false,
+      items: [
+        'admin-guide/deployment',
+        'admin-guide/app-yaml',
+        'admin-guide/settings-ui',
+      ],
+    },
+
+    // ── Configuration ─────────────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: '📁 Configuration',
+      collapsed: false,
+      items: [
+        'admin-guide/topology-yaml',
+        'admin-guide/templates',
+        'admin-guide/prometheus',
+        'admin-guide/importers',
+      ],
+    },
   ],
 
   apiReference: [
     'api-reference/overview',
-    'api-reference/telemetry',
-    'api-reference/topology',
-    'api-reference/metrics',
-    'api-reference/plugins',
+
+    // ── Infrastructure ─────────────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: '🏗️ Infrastructure',
+      collapsed: false,
+      items: [
+        'api-reference/telemetry',
+        'api-reference/topology',
+      ],
+    },
+
+    // ── Data & Plugins ─────────────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: '🔌 Data & Plugins',
+      collapsed: false,
+      items: [
+        'api-reference/metrics',
+        'api-reference/plugins',
+      ],
+    },
   ],
 
   architecture: [
     'architecture/overview',
-    'architecture/data-model',
-    'architecture/backend',
-    'architecture/frontend',
-    'architecture/dashboard-widgets',
+
+    // ── Core ──────────────────────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: '⚙️ Core',
+      collapsed: false,
+      items: [
+        'architecture/data-model',
+        'architecture/backend',
+        'architecture/frontend',
+      ],
+    },
+
+    // ── Features ──────────────────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: '🧩 Features',
+      collapsed: false,
+      items: [
+        'architecture/dashboard-widgets',
+      ],
+    },
   ],
 
   development: [
