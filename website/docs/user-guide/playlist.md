@@ -10,7 +10,7 @@ The **Playlist** feature rotates the UI through a sequence of views automaticall
 for NOC screens and wallboards that need to cycle through multiple dashboards without operator
 interaction.
 
-![Playlist Center](/img/screenshots/playlist.png)
+![Playlist Center](/img/screenshots/rackscope-playlist.png)
 
 ---
 

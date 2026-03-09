@@ -8,7 +8,7 @@ sidebar_position: 7
 
 Rackscope provides a visual editor for managing your complete infrastructure topology without writing YAML files directly. Every change made through the editor is written back to the YAML configuration files on disk, keeping your configuration in sync and GitOps-friendly.
 
-![Topology Editor](/img/screenshots/topology-editor.png)
+![Topology Editor](/img/screenshots/rackscope-topology-editor.png)
 
 ---
 
@@ -226,7 +226,7 @@ Devices are the individual pieces of hardware installed in a rack. Each device o
 
 The **Rack Editor** provides a visual front/rear view of the rack with drag-and-drop device placement.
 
-![Rack Editor](/img/screenshots/rack-editor.png)
+![Rack Editor](/img/screenshots/rackscope-rack-editor.png)
 
 **URL**: `/editors/rack`
 
@@ -320,7 +320,7 @@ Device templates define the hardware characteristics of a device type: its physi
 
 The **Templates Editor** provides a YAML editor for device templates, rack templates, and rack component templates.
 
-![Templates Editor](/img/screenshots/templates-editor.png)
+![Templates Editor](/img/screenshots/rackscope-templates-editor.png)
 
 **URL**: `/editors/templates`
 

@@ -9,7 +9,7 @@ sidebar_position: 11
 Rackscope's frontend is built on a comprehensive design system inherited from TailAdmin,
 enhanced with infrastructure-monitoring-specific components.
 
-![UI Library](/img/screenshots/ui-library.png)
+![UI Library](/img/screenshots/rackscope-ui-library.png)
 
 The **live reference** for all components is available at **`/templates/default`** in every running
 Rackscope instance. It renders every component with the currently active theme — buttons, forms,

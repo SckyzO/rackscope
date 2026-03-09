@@ -10,7 +10,7 @@ sidebar_position: 2
 
 **URL**: `/views/site/:siteId`
 
-![Datacenter View](/img/views/screenshot-datacenter.png)
+![Datacenter View](/img/views/rackscope-datacenter-view.png)
 
 Site-level overview showing all rooms with live rack health states.
 
@@ -57,7 +57,7 @@ Shows all sites on a world map with health status markers.
 
 **URL**: `/views/room/:roomId`
 
-![Room View — Standard style](/img/views/screenshot-style-standard.png)
+![Room View — Standard style](/img/views/rackscope-room-style-standard.png)
 
 Floor plan with all racks grouped by aisle. Each rack is rendered as a visual card whose style and size are fully configurable.
 

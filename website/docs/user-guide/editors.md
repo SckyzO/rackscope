@@ -8,13 +8,13 @@ sidebar_position: 3
 
 Rackscope provides visual editors for all configuration. Changes are saved via the API and take effect immediately (no restart required for most changes).
 
-![Visual Editors - Settings](/img/screenshots/settings.png)
+![Visual Editors - Settings](/img/screenshots/rackscope-settings-simulator.png)
 
 ## Topology Editor
 
 **URL**: `/editors/topology`
 
-![Topology Editor](/img/screenshots/topology-editor.png)
+![Topology Editor](/img/screenshots/rackscope-topology-editor.png)
 
 Edit the physical infrastructure hierarchy:
 - Add/edit/delete sites, rooms, aisles, racks, devices
@@ -25,7 +25,7 @@ Edit the physical infrastructure hierarchy:
 
 **URL**: `/editors/rack`
 
-![Rack Editor](/img/screenshots/rack-editor.png)
+![Rack Editor](/img/screenshots/rackscope-rack-editor.png)
 
 Edit rack layouts:
 - Add/move/remove devices
@@ -37,7 +37,7 @@ Edit rack layouts:
 
 **URL**: `/editors/templates`
 
-![Templates Editor](/img/screenshots/templates-editor.png)
+![Templates Editor](/img/screenshots/rackscope-templates-editor.png)
 
 Edit device and rack templates:
 - Device dimensions, layout, checks, metrics
@@ -70,7 +70,7 @@ Once a rack template is assigned, its infrastructure (power banks, cable managem
 
 **URL**: `/editors/checks`
 
-![Checks Editor](/img/screenshots/checks-editor.png)
+![Checks Editor](/img/screenshots/rackscope-checks-editor.png)
 
 Edit health check definitions:
 - PromQL expressions

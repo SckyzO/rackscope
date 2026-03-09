@@ -8,7 +8,7 @@ sidebar_position: 1
 
 Rackscope provides several views and tools for monitoring physical infrastructure.
 
-![Rackscope Overview](/img/screenshots/dashboard-overview.png)
+![Rackscope Overview](/img/screenshots/rackscope-dashboard-overview.png)
 
 ## Navigation
 

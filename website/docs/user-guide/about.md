@@ -9,7 +9,7 @@ sidebar_position: 13
 Rackscope is an open-source, Prometheus-first physical infrastructure monitoring dashboard
 built for data centers and HPC environments.
 
-![About page](/img/screenshots/about.png)
+![About page](/img/screenshots/rackscope-about.png)
 
 ---
 

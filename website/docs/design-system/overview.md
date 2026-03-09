@@ -12,7 +12,7 @@ Rackscope uses a shared component library located in `frontend/src/app/component
 
 Navigate to **`/templates/default`** (or **UI Library** in the sidebar) to see every component rendered with all its variants and states — buttons, forms, status indicators, overlays, feedback states, and more.
 
-![UI Library — Component Showcase](/img/screenshots/2k-ui-library.png)
+![UI Library — Component Showcase](/img/screenshots/rackscope-ui-library-2k.png)
 
 The showcase page is the authoritative reference for any component: it shows real usage, all size variants, dark/light mode rendering, and interactive states.
 

@@ -10,7 +10,7 @@ sidebar_position: 3
 
 The Room View is the primary monitoring view. It displays all racks in a room grouped by aisle, with real-time health state from Prometheus. Each rack is represented by a visual cell whose style, size, and density are fully configurable.
 
-![Room View — Standard style](/img/views/screenshot-style-standard.png)
+![Room View — Standard style](/img/views/rackscope-room-style-standard.png)
 
 ---
 
@@ -67,7 +67,7 @@ Open the **Customize** panel (top-right button) to change the rack display style
 
 Large rack cards showing a colored occupancy fill from the bottom + status dot. Best for getting an overview with the full rack name visible.
 
-![Standard style](/img/views/screenshot-style-standard.png)
+![Standard style](/img/views/rackscope-room-style-standard.png)
 
 ---
 
@@ -75,7 +75,7 @@ Large rack cards showing a colored occupancy fill from the bottom + status dot. 
 
 Small square cards with a status dot. Maximum number of racks visible on screen without scrolling. Ideal for very large rooms.
 
-![Compact style](/img/views/screenshot-style-compact.png)
+![Compact style](/img/views/rackscope-room-style-compact.png)
 
 ---
 
@@ -83,7 +83,7 @@ Small square cards with a status dot. Maximum number of racks visible on screen 
 
 Minimal — a tiny colored square per rack. Highest density. No name shown by default. Best for NOC wallboards with many rooms visible at once.
 
-![Dot style](/img/views/screenshot-style-dot.png)
+![Dot style](/img/views/rackscope-room-style-dot.png)
 
 ---
 
@@ -91,7 +91,7 @@ Minimal — a tiny colored square per rack. Highest density. No name shown by de
 
 Frosted-glass effect cards with a subtle gradient and a status dot at the bottom. Visually distinctive for dark-mode NOC displays.
 
-![Glass style](/img/views/screenshot-style-glass.png)
+![Glass style](/img/views/rackscope-room-style-glass.png)
 
 ---
 
@@ -112,7 +112,7 @@ Each rack is rendered as a grid of **2U cells** that map directly to the physica
 
 **42U rack → 21 cells · 48U rack → 24 cells** (2U per cell, common divisor for both standard rack sizes).
 
-![Cells style](/img/views/screenshot-style-cells.png)
+![Cells style](/img/views/rackscope-room-style-cells.png)
 
 ---
 
@@ -120,7 +120,7 @@ Each rack is rendered as a grid of **2U cells** that map directly to the physica
 
 A 4×8 pixel grid (32 dots) per rack. Dots fill from the bottom based on exact rack occupancy. Compact and visually striking.
 
-![Pixel style](/img/views/screenshot-style-pixel.png)
+![Pixel style](/img/views/rackscope-room-style-pixel.png)
 
 ---
 
@@ -128,7 +128,7 @@ A 4×8 pixel grid (32 dots) per rack. Dots fill from the bottom based on exact r
 
 Tall vertical gauge cards showing the exact occupancy percentage and a filled bar. Best for capacity planning dashboards.
 
-![Gauge style](/img/views/screenshot-style-gauge.png)
+![Gauge style](/img/views/rackscope-room-style-gauge.png)
 
 ---
 
@@ -136,7 +136,7 @@ Tall vertical gauge cards showing the exact occupancy percentage and a filled ba
 
 A rugged, high-contrast style with thick borders and filled occupancy strip. Optimized for industrial displays and harsh lighting environments.
 
-![Industrial style](/img/views/screenshot-style-industrial.png)
+![Industrial style](/img/views/rackscope-room-style-industrial.png)
 
 ---
 
@@ -144,7 +144,7 @@ A rugged, high-contrast style with thick borders and filled occupancy strip. Opt
 
 Wider cards that show a compact node grid — each node represented as a small colored square matching its health state. Best for compute-heavy rooms where node-level visibility matters.
 
-![Node style](/img/views/screenshot-style-node.png)
+![Node style](/img/views/rackscope-room-style-node.png)
 
 ---
 

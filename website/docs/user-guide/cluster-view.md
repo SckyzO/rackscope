@@ -14,7 +14,7 @@ The Cluster Overview must be enabled in **Settings → Views → Pages & Navigat
 
 The Cluster Overview is a free-form canvas where you manually curate a cross-room rack selection. Unlike the Room View (which shows all racks in a room), this view shows only the racks you explicitly add — making it ideal for NOC wallboards, per-team dashboards, or custom capacity views.
 
-![Cluster Overview](/img/views/screenshot-cluster.png)
+![Cluster Overview](/img/views/rackscope-cluster-overview.png)
 
 ---
 

@@ -12,7 +12,7 @@ Prometheus scrapes it on its normal schedule; the backend queries Prometheus
 exactly as in production — the simulator is completely transparent to the
 rest of the stack.
 
-![Simulator Settings](/img/screenshots/settings.png)
+![Simulator Settings](/img/screenshots/rackscope-settings-simulator.png)
 
 ---
 

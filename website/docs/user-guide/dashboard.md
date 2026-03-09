@@ -8,7 +8,7 @@ sidebar_position: 1
 
 The Rackscope dashboard is a fully customizable grid of widgets showing infrastructure health at a glance.
 
-![Dashboard](/img/views/screenshot-dashboard.png)
+![Dashboard](/img/views/rackscope-dashboard-room.png)
 
 ## Layout
 

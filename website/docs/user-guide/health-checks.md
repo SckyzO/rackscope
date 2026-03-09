@@ -8,7 +8,7 @@ sidebar_position: 6
 
 Health checks are the core of Rackscope's monitoring system. They define PromQL queries that are evaluated against Prometheus data to determine the health state (OK / WARN / CRIT / UNKNOWN) of every device and rack in your infrastructure.
 
-![Checks Editor](/img/screenshots/checks-editor.png)
+![Checks Editor](/img/screenshots/rackscope-checks-editor.png)
 
 Rackscope does **not** collect metrics itself. Every check is a live PromQL query sent to your Prometheus instance. The check system is entirely configuration-driven: checks are defined in YAML, bound to hardware templates, and evaluated in batches by the Telemetry Planner to avoid query explosion.
 
