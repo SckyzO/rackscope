@@ -38,5 +38,16 @@ def load_simulator_config():
             app_sim = app_cfg["simulator"]
 
     if isinstance(app_sim, dict):
-        sim_cfg = {**sim_cfg, **app_sim}
+        # Only let app.yaml override keys that are NOT already owned by plugin.yaml.
+        # plugin.yaml is the single source of truth for simulator behaviour
+        # (incident_mode, changes_per_hour, etc.).  app.yaml should only carry
+        # the 'enabled' flag and optional path overrides.
+        PLUGIN_YAML_OWNED = {
+            "incident_mode", "changes_per_hour", "custom_incidents",
+            "slurm_random_statuses", "slurm_random_match",
+            "update_interval_seconds", "seed", "profiles",
+            "metrics_catalogs",
+        }
+        safe_overrides = {k: v for k, v in app_sim.items() if k not in PLUGIN_YAML_OWNED}
+        sim_cfg = {**sim_cfg, **safe_overrides}
     return sim_cfg

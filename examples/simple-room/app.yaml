@@ -3,9 +3,9 @@ app:
   description: My Lab
 
 paths:
-  topology: topology
-  templates: templates
-  checks: checks/library
+  topology: config/topology
+  templates: config/templates
+  checks: config/checks/library
 
 telemetry:
   prometheus_url: http://prometheus:9090
@@ -22,7 +22,7 @@ auth:
   password_hash: ""
 
 plugins:
+  # Only 'enabled' here — all simulator behaviour lives in
+  # config/plugins/simulator/config/plugin.yaml
   simulator:
     enabled: true
-    incident_mode: light
-    changes_per_hour: 2

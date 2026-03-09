@@ -1,0 +1,114 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Rackscope — app.yaml Reference
+#
+# Copy this file to config/app.yaml and adjust for your environment.
+# Every key is shown with its default value and a brief description.
+#
+# IMPORTANT: simulator and slurm behaviour (incident modes, checks, catalogs)
+# live in their dedicated files:
+#   config/plugins/simulator/config/plugin.yaml
+#   config/plugins/slurm/config.yml
+# app.yaml should only carry 'enabled: true/false' for each plugin.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Application identity ──────────────────────────────────────────────────────
+app:
+  name: Rackscope                   # Shown in header and browser tab
+  description: Datacenter Monitoring # Subtitle shown below the name
+
+# ── Config file paths (relative to backend working directory /app) ────────────
+paths:
+  topology: config/topology          # Segmented topology root directory
+  templates: config/templates        # Device + rack + rack_component templates
+  checks: config/checks/library      # Health checks library (YAML files)
+  metrics: config/metrics/library    # Metrics library (optional)
+
+# ── State refresh intervals ───────────────────────────────────────────────────
+refresh:
+  room_state_seconds: 60             # How often room health states are re-fetched
+  rack_state_seconds: 60             # How often rack detail states are re-fetched
+
+# ── Prometheus query cache ────────────────────────────────────────────────────
+cache:
+  ttl_seconds: 60                    # Generic fallback TTL
+  health_checks_ttl_seconds: 30      # Health check results cache (shorter = more reactive)
+  metrics_ttl_seconds: 120           # Metric chart data cache (temperature, power, PDU)
+
+# ── Prometheus connection ─────────────────────────────────────────────────────
+telemetry:
+  prometheus_url: http://prometheus:9090  # Must be reachable from the backend container
+  identity_label: instance           # Label used to identify node instances
+  rack_label: rack_id                # Label identifying rack IDs
+  chassis_label: chassis_id          # Label identifying chassis units
+  job_regex: "node|rackscope-simulator"  # Regex filter on the 'job' label
+  prometheus_heartbeat_seconds: 30   # Heartbeat ping interval (latency display)
+  prometheus_latency_window: 20      # Samples used for average latency
+  debug_stats: false                 # Log query stats to container logs
+
+  # Optional: basic auth for Prometheus
+  # basic_auth_user: ""
+  # basic_auth_password: ""
+
+  # Optional: TLS
+  # tls_verify: true
+  # tls_ca_file: null
+  # tls_cert_file: null
+  # tls_key_file: null
+
+# ── Query planner ─────────────────────────────────────────────────────────────
+planner:
+  unknown_state: UNKNOWN             # State when no Prometheus data returned
+  cache_ttl_seconds: 60              # Snapshot cache TTL
+  max_ids_per_query: 300             # Max node IDs per PromQL batch query
+
+# ── Feature flags ─────────────────────────────────────────────────────────────
+features:
+  notifications: true                # Notification bell in header
+  notifications_max_visible: 10      # Max notifications in the panel
+  playlist: true                     # NOC playlist rotation mode (/playlist)
+  offline: true                      # Offline banner when Prometheus unreachable
+  wizard: false                      # Setup wizard on first launch
+  worldmap: true                     # World Map view (/views/worldmap)
+  dev_tools: false                   # UI Library / dev pages (disable in prod)
+
+# ── Authentication (optional) ─────────────────────────────────────────────────
+auth:
+  enabled: false                     # Set to true to require login
+  username: admin
+  password_hash: ""                  # bcrypt hash — set via Profile page or:
+                                     # python3 -c "import bcrypt; print(bcrypt.hashpw(b'pw', bcrypt.gensalt()).decode())"
+  secret_key: ""                     # JWT signing key (auto-generated if empty, not persistent across restarts)
+  session_duration: 24h              # Token lifetime: 8h | 24h | unlimited
+  policy:
+    min_length: 6
+    max_length: 128
+    require_digit: false
+    require_symbol: false
+
+# ── World Map defaults ────────────────────────────────────────────────────────
+map:
+  default_view: world
+  default_zoom: 2
+  min_zoom: 2
+  max_zoom: 7
+  zoom_controls: true
+  center:
+    lat: 20.0
+    lon: 0.0
+
+# ── Playlist (NOC screen rotation) ───────────────────────────────────────────
+playlist:
+  interval_seconds: 30
+  views:
+    - /views/worldmap
+    - /slurm/overview
+
+# ── Plugins ───────────────────────────────────────────────────────────────────
+# Only 'enabled' should be set here.
+# All plugin behaviour lives in config/plugins/{name}/config.yml (or plugin.yaml).
+plugins:
+  simulator:
+    enabled: false                   # Demo mode — generates fake Prometheus metrics
+
+  slurm:
+    enabled: false                   # HPC workload manager integration

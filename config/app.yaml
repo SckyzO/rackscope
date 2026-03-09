@@ -24,6 +24,4 @@ auth:
 plugins:
   simulator:
     enabled: true
-    incident_mode: light
-    changes_per_hour: 2
     metrics_catalog_path: /app/config/plugins/simulator/metrics/metrics_full.yaml

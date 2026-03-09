@@ -46,7 +46,6 @@ auth:
 plugins:
   simulator:
     enabled: true
-    incident_mode: light
-    changes_per_hour: 2
+    # Behaviour settings live in config/plugins/simulator/config/plugin.yaml
   slurm:
     enabled: false

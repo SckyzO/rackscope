@@ -90,9 +90,10 @@ export const NotificationsFullPage = () => {
         api.getSlurmNodes().catch(() => null),
       ]);
       setInfraAlerts(infraData?.alerts ?? []);
-      if (slurmData !== null) {
+      // Only enable Slurm if the response is valid (not a 404 served from stale cache)
+      if (slurmData !== null && Array.isArray(slurmData?.nodes)) {
         setSlurmEnabled(true);
-        const nodes: SlurmNodeEntry[] = slurmData?.nodes ?? [];
+        const nodes: SlurmNodeEntry[] = slurmData.nodes;
         setSlurmAlerts(nodes.filter((n) => n.severity === 'CRIT' || n.severity === 'WARN'));
       }
     } catch {
