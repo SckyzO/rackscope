@@ -6,13 +6,13 @@
 
 [![CI](https://github.com/SckyzO/rackscope/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SckyzO/rackscope/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-1.0.0--beta-blue?style=flat-square)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-852%20passing-brightgreen?style=flat-square)](STATUS.md)
+[![Tests](https://img.shields.io/badge/tests-852%2B%20passing-brightgreen?style=flat-square)](STATUS.md)
 [![Coverage](https://img.shields.io/badge/coverage-89%25-brightgreen?style=flat-square)](STATUS.md)
 [![Python](https://img.shields.io/badge/python-3.12%2B-3776AB?style=flat-square&logo=python&logoColor=white)](pyproject.toml)
 [![React](https://img.shields.io/badge/react-19-61DAFB?style=flat-square&logo=react&logoColor=black)](frontend/package.json)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-orange?style=flat-square)](LICENSE)
 
-[📚 Documentation](https://rackscope.dev) · [🐛 Issues](https://github.com/SckyzO/rackscope/issues) · [🚀 Quick Start](#-quick-start)
+[🌐 rackscope.dev](https://rackscope.dev) · [📚 Documentation](https://rackscope.dev) · [🐛 Issues](https://github.com/SckyzO/rackscope/issues) · [🚀 Quick Start](#-quick-start)
 
 </div>
 
@@ -20,36 +20,71 @@
 
 ## What is Rackscope?
 
-Rackscope is a **visualization layer** for your existing Prometheus monitoring stack. It renders your physical infrastructure — servers, racks, rooms, data centers — as interactive views with live health states, without owning a CMDB or collecting metrics itself.
+**You know something is broken. You don't know where.**
 
-> **It is NOT** a Prometheus replacement, a Grafana plugin, or a CMDB.
-> It **complements** your existing stack with physical views your NOC operators can actually use.
+Your Prometheus tells you a node is down. Your Grafana shows the metric. But neither tells you which rack, which aisle, which room — and that's what actually matters when someone needs to go fix it.
+
+Rackscope is the **physical visualization layer** between your metrics and your infrastructure. It takes your existing Prometheus data and anchors it to a real physical location, letting you drill down from a global alert to the exact device in a few clicks.
 
 ```
-                     ┌─────────────────────────────────────┐
-                     │  YAML Topology  (config/)           │
-                     │  Sites · Rooms · Racks · Devices    │
-                     └───────────────┬─────────────────────┘
-                                     │
-                          ┌──────────▼──────────┐
-                          │   Backend  :8000    │   FastAPI · Python 3.12
-                          │  Query planner      │   Batched PromQL queries
-                          │  Health engine      │   Plugin system
-                          └──────────┬──────────┘
-                                     │  PromQL
-                          ┌──────────▼──────────┐
-                          │   Prometheus :9090  │
-                          └──────────┬──────────┘
-                                     │  scrapes
-                          ┌──────────▼──────────┐
-                          │  Your infrastructure │  or the built-in Simulator
-                          └─────────────────────┘
-                                     ▲
-                          ┌──────────┴──────────┐
-                          │   Frontend  :5173   │   React 19 · Tailwind v4
-                          │  Physical views     │   Dark mode · NOC-ready
-                          └─────────────────────┘
+Global view        All sites — health summary, world map, active alerts
+  └── Datacenter   Site-level overview — rooms, rack count, health status
+        └── Room   Floor plan — aisle layout, rack grid, 10 display styles
+              └── Aisle   Row of racks — aggregate severity per aisle
+                    └── Rack    Front/rear elevation — device placement
+                          └── Device     Chassis or unit — instances, checks
+                                └── Instance   Single node — live health state
 ```
+
+Navigate from the top to the bottom. Every alert is anchored to a physical location.
+
+### Not a replacement — the missing layer
+
+```
+Grafana             Rackscope               Supervision (Nagios/Zabbix)
+────────────        ─────────────────       ────────────────────────────
+Metrics &     →     Physical context  →     Full alerting, ITSM,
+dashboards          of your alerts          what to do next
+
+"cpu is 95%"   →    "Rack C04, Aisle 2,  →  "Ticket #4821 opened"
+                     Machine Room A"
+```
+
+Rackscope doesn't replace your monitoring stack. It adds the one thing it was missing: **where**.
+
+### Any metric. Any team.
+
+Because Rackscope runs every health check as a live PromQL query, anything that reaches Prometheus becomes a visible check — no configuration beyond a YAML rule.
+
+| Hardware teams | Software teams |
+|---|---|
+| Server / rack down (`ipmi_up`, `node_up`) | Service availability (`up{job="myapp"}`) |
+| Temperature & cooling (`ipmi_temperature`) | Critical app alerts (any custom metric) |
+| PDU load & power (`pdu_total_load_watts`) | Slurm node states (`slurm_node_status`) |
+| InfiniBand / network (`ib_port_state`) | Job queue depth, partition health |
+| Storage health (`eseries_drive_status`) | Any Prometheus exporter |
+
+### Zero database. CMDB-agnostic.
+
+All configuration lives in YAML files. Commit them to Git, diff them in pull requests, generate them from any script.
+
+```bash
+# Generate from NetBox, RacksDB, or any script
+python generate_topology.py --from-netbox > config/topology/sites.yaml
+
+# Or use the API directly
+curl -X POST /api/topology/sites -d '{"id":"dc-paris","name":"Paris DC"}'
+```
+
+No CMDB required. No vendor lock-in. If your tools can write a file, Rackscope can read it.
+
+---
+
+## 📸 Overview
+
+![Rackscope Dashboard](website/static/img/screenshots/rackscope-dashboard-overview.png)
+
+*Analytics dashboard — live health states, active alerts, world map, Prometheus stats*
 
 ---
 
@@ -57,7 +92,8 @@ Rackscope is a **visualization layer** for your existing Prometheus monitoring s
 
 ### 🗺️ Physical Views
 - **World Map** — sites across the globe with live health markers
-- **Room View** — floor plan with rack grid, zoom controls, 6 tooltip styles
+- **Datacenter View** — site overview with room cards and mini rack grids
+- **Room View** — floor plan with rack grid, zoom controls, 10 display styles
 - **Rack View** — front/rear elevation with template-driven device placement
 - **Device View** — instance-level drill-down with live metrics and check results
 - **Cluster Overview** — wallboard for small clusters, drag-and-drop rack ordering
@@ -65,7 +101,7 @@ Rackscope is a **visualization layer** for your existing Prometheus monitoring s
 ### 📊 Dashboard
 - Drag-and-drop widget grid with 20+ widgets
 - Deep-linkable dashboard URLs (`/dashboard/:id`)
-- Per-user layout, widget title alignment, dark/light mode
+- Per-user layout, dark/light mode, NOC-ready
 
 ### 🏥 Health Checks
 - PromQL-based checks with severity rules (OK / Warning / Critical)
@@ -77,6 +113,7 @@ Rackscope is a **visualization layer** for your existing Prometheus monitoring s
 - Node state monitoring with configurable status mapping
 - Wallboard, partitions, alerts, and nodes list views
 - Node mapping with wildcard patterns
+- Native Slurm metrics plugin
 
 ### 🔔 NOC Features
 - **Sound alerts** — 6 configurable presets including fire truck siren, mute toggle
@@ -86,6 +123,7 @@ Rackscope is a **visualization layer** for your existing Prometheus monitoring s
 ### ⚙️ Configuration & Editors
 - All config in YAML — GitOps-friendly, no database required
 - Visual editors: topology, rack, templates, checks, metrics, settings
+- Bundled examples: `simple-room` (10 nodes) and `full-datacenter` (855 nodes HPC cluster)
 
 ---
 
@@ -107,7 +145,14 @@ make up
 | 🔬 **Simulator** | http://localhost:9000 | Demo metrics |
 | 📚 **Docs** | http://localhost:3001 | Documentation site |
 
-The stack starts with a demo topology and simulated metrics — explore immediately, no hardware required.
+The stack starts with the `full-datacenter` example (855 simulated nodes) — explore immediately, no hardware required.
+
+Try the bundled examples:
+
+```bash
+./scripts/use-example.sh simple-room       # 1 room, 4 racks, ~10 nodes
+./scripts/use-example.sh full-datacenter   # 2 sites, 855-node HPC cluster
+```
 
 ---
 
@@ -117,16 +162,21 @@ The stack starts with a demo topology and simulated metrics — explore immediat
 rackscope/
 ├── config/                  # All configuration (YAML, GitOps-friendly)
 │   ├── app.yaml             # Central config: Prometheus URL, features, plugins
+│   ├── app.yaml.reference   # Fully annotated reference — copy to start fresh
 │   ├── topology/            # Infrastructure: sites, rooms, racks, devices
 │   ├── templates/           # Hardware templates (devices, racks, components)
 │   ├── checks/library/      # Health check definitions (PromQL + rules)
 │   ├── metrics/library/     # Metric definitions (display config, thresholds)
 │   └── plugins/             # Per-plugin config (slurm, simulator)
+├── examples/                # Ready-to-use example configurations
+│   ├── simple-room/         # Minimal lab — 4 racks, ~10 nodes
+│   └── full-datacenter/     # HPC cluster — 855 nodes, 2 sites, 22 racks
 ├── src/rackscope/           # Backend (FastAPI / Python 3.12)
 ├── frontend/src/            # Frontend (React 19 / TypeScript / Tailwind v4)
-├── tools/simulator/         # Demo metrics generator
+├── plugins/                 # Plugin system (simulator, slurm)
 ├── website/                 # Documentation site (Docusaurus 3)
-└── tests/                   # Backend test suite (683 tests, 90% coverage)
+├── scripts/                 # Utilities (use-example.sh, gen_status.py)
+└── tests/                   # Backend test suite (852+ tests, 89% coverage)
 ```
 
 ---
@@ -156,11 +206,13 @@ make logs         # Follow all logs
 
 # Quality
 make lint         # ruff + eslint + stylelint + prettier
-make test         # pytest (683 tests)
-make test-v       # Verbose — shows each test name
-make test-k K=x   # Filter by keyword  (e.g. K=planner, K=auth)
+make test         # pytest (852+ tests)
 make typecheck    # mypy — 0 errors
 make coverage     # Coverage report → htmlcov/
+make complexity   # radon cyclomatic complexity
+make quality      # lint + typecheck + complexity + coverage
+
+# Security
 make security     # bandit + npm audit + pip-audit
 make ci           # Full pipeline: quality + security
 
@@ -172,14 +224,14 @@ make docs         # Docusaurus → http://localhost:3001
 
 ## 📚 Documentation
 
-Full documentation at **https://rackscope.dev** (or `make docs` locally):
+Full documentation at **[rackscope.dev](https://rackscope.dev)** (or `make docs` locally):
 
 - [Getting Started](https://rackscope.dev/getting-started/quick-start)
+- [Example Configurations](https://rackscope.dev/getting-started/examples)
 - [Configuration Reference](https://rackscope.dev/admin-guide/app-yaml)
 - [Topology YAML](https://rackscope.dev/admin-guide/topology-yaml)
 - [Health Checks](https://rackscope.dev/user-guide/health-checks)
 - [Plugin Development](https://rackscope.dev/plugins/writing-plugins)
-- [Design System](https://rackscope.dev/design-system/overview)
 
 ---
 
