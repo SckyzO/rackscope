@@ -243,6 +243,19 @@ Bug reports and feature requests → [GitHub Issues](https://github.com/SckyzO/r
 
 ---
 
+## ☕ Support
+
+Rackscope is free and open-source. If it saves you time or brings value to your team, consider supporting its development:
+
+<div align="center">
+
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-support%20the%20project-FF5E5B?style=flat-square&logo=ko-fi&logoColor=white)](https://ko-fi.com/sckyzo)
+[![PayPal](https://img.shields.io/badge/PayPal-donate-003087?style=flat-square&logo=paypal&logoColor=white)](https://www.paypal.me/sckyzo)
+
+</div>
+
+---
+
 ## 📄 License
 
 [AGPL-3.0-or-later](LICENSE) — Thomas Bourcey ([@SckyzO](https://github.com/SckyzO))
