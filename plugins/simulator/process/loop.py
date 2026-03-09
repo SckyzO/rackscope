@@ -35,7 +35,23 @@ from plugins.simulator.process.topology import (
     load_topology_nodes,
 )
 
-TOPOLOGY_PATH = os.getenv("TOPOLOGY_FILE", "/app/config/topology")
+# Read topology path from app.yaml if available, fall back to env var
+def _resolve_topology_path():
+    import yaml as _yaml
+    app_cfg_path = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
+    try:
+        cfg = _yaml.safe_load(open(app_cfg_path)) or {}
+        topo = cfg.get("paths", {}).get("topology")
+        if topo:
+            # If relative path, make it absolute from /app
+            if not topo.startswith("/"):
+                topo = f"/app/{topo}"
+            return topo
+    except Exception:
+        pass
+    return os.getenv("TOPOLOGY_FILE", "/app/config/topology")
+
+TOPOLOGY_PATH = _resolve_topology_path()
 TEMPLATES_PATH = os.getenv("TEMPLATES_PATH", "/app/config/templates")
 METRICS_LIBRARY_PATH = os.getenv("METRICS_LIBRARY", "/app/config/metrics/library")
 
