@@ -355,57 +355,86 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Inverted pyramid */}
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
-            {[
-              { level:'Global',   w:'100%', desc:'All sites — health summary, world map, active alerts',             icon:'🌍' },
-              { level:'Datacenter', w:'87%', desc:'Site-level overview — rooms, live status, drill-down',           icon:'🏢' },
-              { level:'Room',     w:'74%',  desc:'Floor plan — aisle layout, rack grid, health heatmap',            icon:'🗺️' },
-              { level:'Aisle',    w:'61%',  desc:'Row of racks — aisle state, cooling zones',                       icon:'🔲' },
-              { level:'Rack',     w:'48%',  desc:'Front/rear elevation — device placement, U occupancy',            icon:'🖥️' },
-              { level:'Device',   w:'35%',  desc:'Chassis or unit — instances, checks, metrics',                    icon:'⚡' },
-              { level:'Instance', w:'22%',  desc:'Single node — health state, check results, live metrics',         icon:'🔬' },
-            ].map(({ level, w, desc, icon }, i) => (
-              <div key={level} style={{
-                width:w, maxWidth:800,
-                display:'flex', alignItems:'center', gap:0,
-                position:'relative',
-              }}>
-                <div style={{
-                  flex:1, padding:'11px 18px',
-                  background: i === 0 ? `linear-gradient(90deg, ${T.indigoMd}, ${T.indigoLo})` :
-                               i === 6 ? T.dark4 : T.dark3,
-                  border:`1px solid ${i === 0 ? T.indigoBorder : T.border}`,
-                  borderRadius:8,
-                  display:'flex', alignItems:'center', gap:12,
-                  transition:'border-color 0.2s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.borderColor=T.indigoBorder}
-                onMouseLeave={e => e.currentTarget.style.borderColor = i===0 ? T.indigoBorder : T.border}
-                >
-                  <span style={{ fontSize:'1rem', flexShrink:0 }}>{icon}</span>
-                  <div style={{ flex:1, display:'flex', alignItems:'baseline', gap:12, flexWrap:'wrap' }}>
-                    <span style={{
-                      fontWeight:700, fontSize:'0.85rem',
-                      color: i === 0 ? T.textHi : T.textMid,
-                      minWidth:80,
-                      fontFamily:"'JetBrains Mono',monospace",
-                      letterSpacing:'0.02em',
-                    }}>{level}</span>
-                    <span style={{ fontSize:'0.8rem', color:T.textLo, lineHeight:1.4 }}>{desc}</span>
+          {/* Inverted pyramid — hover managed via React state */}
+          {(() => {
+            const LEVELS = [
+              { level:'Global',      w:800, desc:'All sites — health summary, world map, active alerts',                tooltip:'The entry point. See every site at a glance, active alert count, and global health status.', icon:'🌍' },
+              { level:'Datacenter',  w:700, desc:'Site-level overview — rooms, live status, drill-down',                tooltip:'One card per datacenter. Rooms, rack count, and health badge — click to enter.',          icon:'🏢' },
+              { level:'Room',        w:606, desc:'Floor plan — aisle layout, rack grid, health heatmap',                tooltip:'Interactive floor plan. 10 rack styles — from color cells to thermal heatmaps.',          icon:'🗺️' },
+              { level:'Aisle',       w:510, desc:'Row of racks — aisle state, cooling zones',                           tooltip:'Racks grouped by aisle. Aggregate severity badge. Ideal for NOC wallboard mode.',         icon:'🔲' },
+              { level:'Rack',        w:415, desc:'Front/rear elevation — device placement, U occupancy',                tooltip:'Front and rear views. Drag-and-drop editor. Template-driven device placement.',            icon:'🖥️' },
+              { level:'Device',      w:320, desc:'Chassis or unit — instances, checks, live metrics',                   tooltip:'Each device has instances (nodes), health checks, and optional metric charts.',           icon:'⚡' },
+              { level:'Instance',    w:225, desc:'Single node — health state, check results',                           tooltip:'The leaf level. One check result per PromQL expression. OK / WARN / CRIT / UNKNOWN.',    icon:'🔬' },
+            ];
+            const [hov, setHov] = React.useState(-1);
+            return (
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+                {LEVELS.map(({ level, w, desc, tooltip, icon }, i) => (
+                  <div key={level} style={{ width:'100%', maxWidth:w, position:'relative' }}
+                    onMouseEnter={() => setHov(i)}
+                    onMouseLeave={() => setHov(-1)}
+                  >
+                    <div style={{
+                      padding:'11px 18px',
+                      background: hov === i
+                        ? (i === 0 ? `linear-gradient(90deg, rgba(70,95,255,0.35), rgba(70,95,255,0.15))` : 'rgba(70,95,255,0.1)')
+                        : (i === 0 ? `linear-gradient(90deg, ${T.indigoMd}, ${T.indigoLo})` : i === 6 ? T.dark4 : T.dark3),
+                      border:`1px solid ${hov === i || i === 0 ? T.indigoBorder : T.border}`,
+                      borderLeft: hov === i ? `3px solid ${T.indigo}` : `1px solid ${hov === i || i === 0 ? T.indigoBorder : T.border}`,
+                      borderRadius:8,
+                      display:'flex', alignItems:'center', gap:12,
+                      transition:'all 0.18s',
+                      transform: hov === i ? 'translateX(3px)' : 'translateX(0)',
+                      cursor:'default',
+                      boxShadow: hov === i ? `0 4px 24px rgba(70,95,255,0.15)` : 'none',
+                    }}>
+                      <span style={{ fontSize:'1rem', flexShrink:0 }}>{icon}</span>
+                      <div style={{ flex:1, display:'flex', alignItems:'center', gap:12, flexWrap:'wrap', minWidth:0 }}>
+                        <span style={{
+                          fontWeight:700, fontSize:'0.85rem',
+                          color: i === 0 || hov === i ? T.textHi : T.textMid,
+                          flexShrink:0,
+                          fontFamily:"'JetBrains Mono',monospace",
+                          letterSpacing:'0.02em',
+                          transition:'color 0.18s',
+                        }}>{level}</span>
+                        <span style={{ fontSize:'0.8rem', color: hov === i ? T.textMid : T.textLo, lineHeight:1.4, transition:'color 0.18s' }}>{desc}</span>
+                      </div>
+                      {i === 0 && (
+                        <span style={{
+                          fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem',
+                          color:T.indigo, background:T.indigoLo,
+                          border:`1px solid ${T.indigoBorder}`,
+                          borderRadius:4, padding:'2px 8px', flexShrink:0,
+                        }}>start here</span>
+                      )}
+                    </div>
+                    {/* Tooltip */}
+                    {hov === i && (
+                      <div style={{
+                        position:'absolute', left:'calc(100% + 12px)', top:'50%',
+                        transform:'translateY(-50%)',
+                        width:220, padding:'10px 14px',
+                        background:T.dark4, border:`1px solid ${T.indigoBorder}`,
+                        borderRadius:8, zIndex:10,
+                        boxShadow:`0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${T.indigoBorder}`,
+                        pointerEvents:'none',
+                      }}>
+                        <div style={{ fontSize:'0.75rem', color:T.textMid, lineHeight:1.55 }}>{tooltip}</div>
+                        {/* Arrow */}
+                        <div style={{
+                          position:'absolute', left:-6, top:'50%', transform:'translateY(-50%)',
+                          width:10, height:10, background:T.dark4,
+                          border:`1px solid ${T.indigoBorder}`, borderRight:'none', borderTop:'none',
+                          transform:'translateY(-50%) rotate(45deg)',
+                        }} />
+                      </div>
+                    )}
                   </div>
-                  {i === 0 && (
-                    <span style={{
-                      fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem',
-                      color:T.indigo, background:T.indigoLo,
-                      border:`1px solid ${T.indigoBorder}`,
-                      borderRadius:4, padding:'2px 8px', flexShrink:0,
-                    }}>start here</span>
-                  )}
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -500,16 +529,17 @@ export default function Home() {
 
           {/* CMDB-agnostic note */}
           <div style={{
-            marginTop:24, padding:'16px 24px',
+            marginTop:24, padding:'16px 20px',
             background:T.dark3, border:`1px solid ${T.border}`,
             borderRadius:10,
-            display:'flex', alignItems:'center', gap:16, flexWrap:'wrap',
           }}>
-            <span style={{ fontSize:'1.1rem', flexShrink:0 }}>⚡</span>
-            <p style={{ margin:0, fontSize:'0.875rem', color:T.textMid, lineHeight:1.6 }}>
-              <strong style={{ color:T.textHi }}>CMDB-agnostic.</strong>{' '}
-              Generate your YAML topology from NetBox, RacksDB, any script, or use the API directly. No vendor lock-in — if your tools can write a file, Rackscope can read it.
-            </p>
+            <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+              <span style={{ fontSize:'1rem', flexShrink:0, marginTop:'2px' }}>⚡</span>
+              <div style={{ fontSize:'0.875rem', color:T.textMid, lineHeight:1.65 }}>
+                <strong style={{ color:T.textHi }}>CMDB-agnostic.</strong>
+                {'  '} Generate your YAML topology from NetBox, RacksDB, any script, or use the API directly. No vendor lock-in — if your tools can write a file, Rackscope can read it.
+              </div>
+            </div>
           </div>
         </div>
       </div>
