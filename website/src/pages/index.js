@@ -340,38 +340,281 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── BUILT FOR ────────────────────────────────────────────────────── */}
-      <div style={{ background:T.dark2, padding:'72px 24px', borderBottom:`1px solid ${T.border}` }}>
-        <div style={{ maxWidth:860, margin:'0 auto' }}>
-          <div style={{ textAlign:'center', marginBottom:40 }}>
+      {/* ── BLOC 1 : ZOOM IN ─────────────────────────────────────────────── */}
+      <div style={{ background:T.dark2, padding:'80px 24px', borderBottom:`1px solid ${T.border}` }}>
+        <div style={{ maxWidth:900, margin:'0 auto' }}>
+          <div style={{ textAlign:'center', marginBottom:56 }}>
             <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:T.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
-              Who uses it
+              Physical drill-down
             </div>
-            <h2 style={{ fontSize:'clamp(1.4rem,2.5vw,1.8rem)', fontWeight:800, letterSpacing:'-0.03em', color:T.textHi, margin:0 }}>
-              Built for operators who need answers fast
+            <h2 style={{ fontSize:'clamp(1.5rem,3vw,2rem)', fontWeight:800, letterSpacing:'-0.03em', color:T.textHi, margin:'0 0 12px' }}>
+              Zoom in. All the way.
             </h2>
+            <p style={{ color:T.textLo, fontSize:'0.95rem', margin:0, maxWidth:480, marginInline:'auto' }}>
+              Every alert is anchored to a physical location. Navigate from the global view to the exact device in three clicks.
+            </p>
           </div>
-          <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
+
+          {/* Inverted pyramid */}
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
             {[
-              { label:'NOC Operators',   sub:'Physical drill-down from site to node in three clicks. Dark mode first-class.' },
-              { label:'N1/N2 Sysadmins', sub:'Know which cabinet, which aisle, which room — not a metric ID or hostname.' },
-              { label:'HPC Teams',       sub:'Slurm integration, high-density chassis, liquid cooling, InfiniBand.' },
-            ].map(({ label, sub }) => (
-              <div key={label} style={{
-                display:'flex', alignItems:'flex-start', gap:12,
-                padding:'18px 22px', background:T.dark3,
-                border:`1px solid ${T.border}`, borderRadius:10, flex:'1 1 200px',
+              { level:'Global',   w:'100%', desc:'All sites — health summary, world map, active alerts',             icon:'🌍' },
+              { level:'Datacenter', w:'87%', desc:'Site-level overview — rooms, live status, drill-down',           icon:'🏢' },
+              { level:'Room',     w:'74%',  desc:'Floor plan — aisle layout, rack grid, health heatmap',            icon:'🗺️' },
+              { level:'Aisle',    w:'61%',  desc:'Row of racks — aisle state, cooling zones',                       icon:'🔲' },
+              { level:'Rack',     w:'48%',  desc:'Front/rear elevation — device placement, U occupancy',            icon:'🖥️' },
+              { level:'Device',   w:'35%',  desc:'Chassis or unit — instances, checks, metrics',                    icon:'⚡' },
+              { level:'Instance', w:'22%',  desc:'Single node — health state, check results, live metrics',         icon:'🔬' },
+            ].map(({ level, w, desc, icon }, i) => (
+              <div key={level} style={{
+                width:w, maxWidth:800,
+                display:'flex', alignItems:'center', gap:0,
+                position:'relative',
               }}>
-                <div style={{ width:8, height:8, borderRadius:'50%', background:T.indigo, marginTop:6, flexShrink:0, boxShadow:`0 0 8px ${T.indigo}` }} />
-                <div>
-                  <div style={{ fontWeight:700, color:T.textHi, fontSize:'0.95rem', marginBottom:3 }}>{label}</div>
-                  <div style={{ color:T.textLo, fontSize:'0.82rem', lineHeight:1.5 }}>{sub}</div>
+                <div style={{
+                  flex:1, padding:'11px 18px',
+                  background: i === 0 ? `linear-gradient(90deg, ${T.indigoMd}, ${T.indigoLo})` :
+                               i === 6 ? T.dark4 : T.dark3,
+                  border:`1px solid ${i === 0 ? T.indigoBorder : T.border}`,
+                  borderRadius:8,
+                  display:'flex', alignItems:'center', gap:12,
+                  transition:'border-color 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor=T.indigoBorder}
+                onMouseLeave={e => e.currentTarget.style.borderColor = i===0 ? T.indigoBorder : T.border}
+                >
+                  <span style={{ fontSize:'1rem', flexShrink:0 }}>{icon}</span>
+                  <div style={{ flex:1, display:'flex', alignItems:'baseline', gap:12, flexWrap:'wrap' }}>
+                    <span style={{
+                      fontWeight:700, fontSize:'0.85rem',
+                      color: i === 0 ? T.textHi : T.textMid,
+                      minWidth:80,
+                      fontFamily:"'JetBrains Mono',monospace",
+                      letterSpacing:'0.02em',
+                    }}>{level}</span>
+                    <span style={{ fontSize:'0.8rem', color:T.textLo, lineHeight:1.4 }}>{desc}</span>
+                  </div>
+                  {i === 0 && (
+                    <span style={{
+                      fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem',
+                      color:T.indigo, background:T.indigoLo,
+                      border:`1px solid ${T.indigoBorder}`,
+                      borderRadius:4, padding:'2px 8px', flexShrink:0,
+                    }}>start here</span>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
+
+      {/* ── BLOC 2 : ANY METRIC ANY TEAM ────────────────────────────────── */}
+      <div style={{ background:T.dark1, padding:'80px 24px', borderBottom:`1px solid ${T.border}` }}>
+        <div style={{ maxWidth:1100, margin:'0 auto' }}>
+          <div style={{ textAlign:'center', marginBottom:48 }}>
+            <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:T.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
+              Universal by design
+            </div>
+            <h2 style={{ fontSize:'clamp(1.5rem,3vw,2rem)', fontWeight:800, letterSpacing:'-0.03em', color:T.textHi, margin:'0 0 12px' }}>
+              Any metric. Any team.
+            </h2>
+            <p style={{ color:T.textLo, fontSize:'0.95rem', margin:0, maxWidth:520, marginInline:'auto' }}>
+              If it reaches Prometheus, Rackscope can show it as a health check. Hardware, software, custom — no distinction.
+            </p>
+          </div>
+
+          <div style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', gap:24, alignItems:'start' }}>
+            {/* Hardware */}
+            <div style={{ padding:'28px', background:T.dark3, border:`1px solid ${T.border}`, borderRadius:12 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
+                <span style={{ fontSize:'1.4rem' }}>🔩</span>
+                <div>
+                  <div style={{ fontWeight:700, color:T.textHi, fontSize:'1rem' }}>Hardware teams</div>
+                  <div style={{ color:T.textLo, fontSize:'0.8rem' }}>Physical infrastructure</div>
+                </div>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {[
+                  ['Server / rack down', 'ipmi_up, node_up'],
+                  ['Temperature & cooling', 'ipmi_temperature'],
+                  ['PDU load & power', 'pdu_total_load_watts'],
+                  ['InfiniBand / network', 'ib_port_state'],
+                  ['Storage health', 'eseries_drive_status'],
+                  ['Liquid cooling leaks', 'sequana3_leak_sensor'],
+                ].map(([label, tag]) => (
+                  <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <div style={{ width:5, height:5, borderRadius:'50%', background:T.indigo, flexShrink:0 }} />
+                      <span style={{ fontSize:'0.85rem', color:T.textMid }}>{label}</span>
+                    </div>
+                    <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color:T.textLo, background:T.dark4, padding:'2px 7px', borderRadius:4, flexShrink:0 }}>{tag}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Center divider */}
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12, paddingTop:32 }}>
+              <div style={{ width:1, flex:1, background:T.border }} />
+              <div style={{
+                width:48, height:48, borderRadius:'50%',
+                background:T.indigoLo, border:`2px solid ${T.indigoBorder}`,
+                display:'flex', alignItems:'center', justifyContent:'center',
+                fontFamily:"'JetBrains Mono',monospace", fontSize:'0.65rem',
+                color:T.indigo, fontWeight:700, letterSpacing:'0.05em',
+                textAlign:'center', lineHeight:1.3, flexShrink:0,
+              }}>Prom<br/>QL</div>
+              <div style={{ width:1, flex:1, background:T.border }} />
+            </div>
+
+            {/* Software */}
+            <div style={{ padding:'28px', background:T.dark3, border:`1px solid ${T.border}`, borderRadius:12 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
+                <span style={{ fontSize:'1.4rem' }}>💻</span>
+                <div>
+                  <div style={{ fontWeight:700, color:T.textHi, fontSize:'1rem' }}>Software teams</div>
+                  <div style={{ color:T.textLo, fontSize:'0.8rem' }}>Services & applications</div>
+                </div>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {[
+                  ['Service availability', 'up{job="myapp"}'],
+                  ['Critical app alerts', 'custom_error_rate'],
+                  ['Slurm node states', 'slurm_node_status'],
+                  ['Job queue depth', 'slurm_jobs_pending'],
+                  ['Any custom exporter', 'any_metric{...}'],
+                  ['Plugin system', 'extensible'],
+                ].map(([label, tag]) => (
+                  <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <div style={{ width:5, height:5, borderRadius:'50%', background:'#22c55e', flexShrink:0 }} />
+                      <span style={{ fontSize:'0.85rem', color:T.textMid }}>{label}</span>
+                    </div>
+                    <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color:T.textLo, background:T.dark4, padding:'2px 7px', borderRadius:4, flexShrink:0 }}>{tag}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* CMDB-agnostic note */}
+          <div style={{
+            marginTop:24, padding:'16px 24px',
+            background:T.dark3, border:`1px solid ${T.border}`,
+            borderRadius:10,
+            display:'flex', alignItems:'center', gap:16, flexWrap:'wrap',
+          }}>
+            <span style={{ fontSize:'1.1rem', flexShrink:0 }}>⚡</span>
+            <p style={{ margin:0, fontSize:'0.875rem', color:T.textMid, lineHeight:1.6 }}>
+              <strong style={{ color:T.textHi }}>CMDB-agnostic.</strong>{' '}
+              Generate your YAML topology from NetBox, RacksDB, any script, or use the API directly. No vendor lock-in — if your tools can write a file, Rackscope can read it.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── BLOC 3 : THE MISSING LAYER ───────────────────────────────────── */}
+      <div style={{ background:T.dark2, padding:'80px 24px', borderBottom:`1px solid ${T.border}` }}>
+        <div style={{ maxWidth:900, margin:'0 auto' }}>
+          <div style={{ textAlign:'center', marginBottom:52 }}>
+            <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:T.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
+              Positioning
+            </div>
+            <h2 style={{ fontSize:'clamp(1.5rem,3vw,2rem)', fontWeight:800, letterSpacing:'-0.03em', color:T.textHi, margin:'0 0 12px' }}>
+              The physical layer that was missing.
+            </h2>
+            <p style={{ color:T.textLo, fontSize:'0.95rem', margin:0, maxWidth:500, marginInline:'auto' }}>
+              Rackscope doesn't replace your monitoring stack. It adds the one thing it's missing: physical context.
+            </p>
+          </div>
+
+          {/* Bridge diagram */}
+          <div style={{ display:'flex', alignItems:'stretch', gap:0 }}>
+            {/* Grafana */}
+            <div style={{
+              flex:1, padding:'24px 20px',
+              background:T.dark3, border:`1px solid ${T.border}`,
+              borderRadius:'10px 0 0 10px',
+              display:'flex', flexDirection:'column', gap:8,
+            }}>
+              <div style={{ fontSize:'1.3rem' }}>📊</div>
+              <div style={{ fontWeight:700, color:T.textMid, fontSize:'0.9rem' }}>Grafana</div>
+              <div style={{ fontSize:'0.8rem', color:T.textLo, lineHeight:1.5 }}>Metrics & dashboards. Charts, panels, time series. Excellent at <em>what</em> is happening.</div>
+              <div style={{
+                marginTop:'auto', padding:'6px 10px',
+                background:'rgba(255,255,255,0.04)', borderRadius:6,
+                fontSize:'0.75rem', color:T.textLo, fontStyle:'italic',
+              }}>
+                "cpu_usage is 95%"
+              </div>
+            </div>
+
+            {/* Arrow */}
+            <div style={{ display:'flex', alignItems:'center', padding:'0 4px', background:T.dark2, zIndex:1 }}>
+              <div style={{ color:T.textLo, fontSize:'1.2rem', lineHeight:1 }}>→</div>
+            </div>
+
+            {/* Rackscope — highlighted */}
+            <div style={{
+              flex:'1.4', padding:'24px 24px',
+              background: `linear-gradient(135deg, ${T.dark3}, ${T.dark4})`,
+              border:`2px solid ${T.indigoBorder}`,
+              display:'flex', flexDirection:'column', gap:8,
+              position:'relative', zIndex:2,
+              boxShadow:`0 0 40px ${T.indigoLo}`,
+            }}>
+              <div style={{
+                position:'absolute', top:-11, left:'50%', transform:'translateX(-50%)',
+                background:T.indigo, color:'#fff',
+                fontSize:'0.68rem', fontWeight:700, letterSpacing:'0.08em',
+                padding:'3px 12px', borderRadius:999,
+                fontFamily:"'JetBrains Mono',monospace",
+              }}>RACKSCOPE</div>
+              <div style={{ fontSize:'1.3rem' }}>🔭</div>
+              <div style={{ fontWeight:700, color:T.textHi, fontSize:'0.9rem' }}>Physical context</div>
+              <div style={{ fontSize:'0.8rem', color:T.textMid, lineHeight:1.5 }}>Bridges metrics to physical location. Answers <em>where</em> — which rack, which aisle, which room.</div>
+              <div style={{
+                marginTop:'auto', padding:'6px 10px',
+                background:T.indigoLo, border:`1px solid ${T.indigoBorder}`,
+                borderRadius:6, fontSize:'0.75rem', color:T.indigo, fontStyle:'italic',
+              }}>
+                "Rack C04, Aisle 2, Machine Room A"
+              </div>
+            </div>
+
+            {/* Arrow */}
+            <div style={{ display:'flex', alignItems:'center', padding:'0 4px', background:T.dark2, zIndex:1 }}>
+              <div style={{ color:T.textLo, fontSize:'1.2rem', lineHeight:1 }}>→</div>
+            </div>
+
+            {/* Supervision */}
+            <div style={{
+              flex:1, padding:'24px 20px',
+              background:T.dark3, border:`1px solid ${T.border}`,
+              borderRadius:'0 10px 10px 0',
+              display:'flex', flexDirection:'column', gap:8,
+            }}>
+              <div style={{ fontSize:'1.3rem' }}>🚨</div>
+              <div style={{ fontWeight:700, color:T.textMid, fontSize:'0.9rem' }}>Supervision</div>
+              <div style={{ fontSize:'0.8rem', color:T.textLo, lineHeight:1.5 }}>Full monitoring & alerting. Nagios, Zabbix, PagerDuty. Handles <em>what to do</em>.</div>
+              <div style={{
+                marginTop:'auto', padding:'6px 10px',
+                background:'rgba(255,255,255,0.04)', borderRadius:6,
+                fontSize:'0.75rem', color:T.textLo, fontStyle:'italic',
+              }}>
+                "Ticket #4821 opened"
+              </div>
+            </div>
+          </div>
+
+          <p style={{ textAlign:'center', marginTop:24, color:T.textLo, fontSize:'0.85rem', fontStyle:'italic' }}>
+            Not a replacement. The physical layer that was missing between your metrics and your process.
+          </p>
+        </div>
+      </div>
+
+      {/* ── HOW IT WORKS ─────────────────────────────────────────────────── */}
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────────────── */}
       <div style={{ background:T.dark1, padding:'80px 24px', borderBottom:`1px solid ${T.border}` }}>
