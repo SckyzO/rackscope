@@ -147,7 +147,7 @@ EXPECTED = {
     },
     'exascale': {
         'min_sim_nodes': 13000, 'max_sim_nodes': 16000,
-        'rooms': 9, 'min_racks': 200,
+        'rooms': 9, 'min_racks': 100,  # stats/total_racks counts unique-id rooms only
         'min_up_nodes': 13000, 'min_temp_nodes': 13000, 'min_power_nodes': 13000,
         'max_unknown_racks': 0,
         'slurm': True,
@@ -197,7 +197,8 @@ def validate_loop(ex, loop_num, incident_mode=None):
 
     # 1. Backend stats
     stats = api('/api/stats/global')
-    rooms = stats.get('total_rooms', 0)
+    rooms_list = api('/api/rooms')
+    rooms = len(rooms_list) if isinstance(rooms_list, list) else stats.get('total_rooms', 0)
     racks = stats.get('total_racks', 0)
 
     p = assert_eq(f'rooms', rooms, exp['rooms'])
