@@ -17,6 +17,8 @@ metrics:
     instances:
       - compute*
       - visu*
+      - gpu*
+      - hm*
     labels_only: true
     labels:
       node: $node_id
@@ -29,6 +31,8 @@ metrics:
     instances:
       - compute*
       - visu*
+      - gpu*
+      - hm*
     labels_only: true
     labels:
       node: $node_id
@@ -40,6 +44,8 @@ metrics:
     instances:
       - compute*
       - visu*
+      - gpu*
+      - hm*
     labels_only: true
     labels:
       node: $node_id
@@ -52,6 +58,8 @@ metrics:
     instances:
       - compute*
       - visu*
+      - gpu*
+      - hm*
     labels_only: true
     labels:
       node: $node_id
@@ -63,6 +71,8 @@ metrics:
     instances:
       - compute*
       - visu*
+      - gpu*
+      - hm*
     labels_only: true
     labels:
       node: $node_id

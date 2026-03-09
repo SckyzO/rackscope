@@ -719,12 +719,12 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
                   {/* Status → count rows */}
                   <div className="space-y-2">
-                    {Object.entries(sim.slurm_random_statuses).map(([statusName, count]) => (
-                      <div key={statusName} className="flex items-center gap-2">
+                    {Object.entries(sim.slurm_random_statuses).map(([statusName, count], idx) => (
+                      <div key={idx} className="flex items-center gap-2">
                         <input
                           type="text"
-                          value={statusName}
-                          onChange={(e) => {
+                          defaultValue={statusName}
+                          onBlur={(e) => {
                             const newVal = e.target.value.trim();
                             if (!newVal || newVal === statusName) return;
                             const entries = Object.entries(sim.slurm_random_statuses).filter(
@@ -735,6 +735,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                               Object.fromEntries([...entries, [newVal, count]])
                             );
                           }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
                           className="w-28 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-mono text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                           placeholder="status"
                         />

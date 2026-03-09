@@ -1,47 +1,24 @@
-# Simulator Plugin Configuration — managed by Settings UI
-
 update_interval_seconds: 20
-seed: null
-incident_mode: custom
-changes_per_hour: 2
+seed: 42
+incident_mode: heavy
+changes_per_hour: 4
 custom_incidents:
-  devices_crit: 1
-  devices_warn: 2
+  devices_crit: 0
+  devices_warn: 0
   racks_crit: 0
   aisles_hot: 0
-overrides_path: config/plugins/simulator/overrides/overrides.yaml
+overrides_path: plugins/simulator/overrides/overrides.yaml
 default_ttl_seconds: 120
-metrics_catalog_path: /app/config/plugins/simulator/metrics/metrics_full.yaml
+metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
 metrics_catalogs:
-  - id: slurm
-    path: config/plugins/simulator/metrics/metrics_slurm.yaml
-    enabled: false
+- id: slurm
+  path: /app/config/plugins/simulator/metrics/metrics_slurm.yaml
+  enabled: true
 slurm_random_statuses:
-  drain: 0
-  down: 0
+  drain: 1
+  down: 1
   maint: 0
 slurm_random_match:
-  - server*
-  - compute*
-profiles:
-  compute:
-    base_temp: 24.0
-    temp_range: 8.0
-    base_power: 200.0
-    power_var: 200.0
-    load_min: 40.0
-    load_max: 80.0
-  service:
-    base_temp: 21.0
-    temp_range: 3.0
-    base_power: 100.0
-    power_var: 20.0
-    load_min: 2.0
-    load_max: 8.0
-  network:
-    base_temp: 32.0
-    temp_range: 4.0
-    base_power: 120.0
-    power_var: 10.0
-    load_min: 15.0
-    load_max: 15.0
+- compute*
+- gpu*
+- hm*

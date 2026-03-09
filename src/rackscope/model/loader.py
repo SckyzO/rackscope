@@ -122,6 +122,42 @@ def load_topology(path: Union[str, Path]) -> Topology:
         raise InvalidFormatError(f"Validation failed for {path}:\n{e}")
 
 
+def _check_duplicate_ids(topology: "Topology") -> None:
+    """Log warnings for duplicate rack/room IDs across sites.
+
+    Duplicate IDs break direct-link routes (/views/rack/:id, /api/racks/:id)
+    because the first match wins. This does not raise — topology still loads —
+    but operators should use unique IDs across sites.
+    """
+    from collections import Counter
+
+    rack_ids: list[str] = []
+    room_ids: list[str] = []
+
+    for site in topology.sites:
+        for room in site.rooms:
+            room_ids.append(room.id)
+            for aisle in room.aisles:
+                for rack in aisle.racks:
+                    rack_ids.append(rack.id)
+            for rack in room.standalone_racks:
+                rack_ids.append(rack.id)
+
+    dup_racks = [rid for rid, n in Counter(rack_ids).items() if n > 1]
+    dup_rooms = [rid for rid, n in Counter(room_ids).items() if n > 1]
+
+    if dup_racks:
+        logger.warning(
+            "Duplicate rack IDs detected — /views/rack/:id will resolve to first match: %s",
+            dup_racks,
+        )
+    if dup_rooms:
+        logger.warning(
+            "Duplicate room IDs detected across sites — consider prefixing with site ID: %s",
+            dup_rooms,
+        )
+
+
 def load_segmented_topology(base_dir: Path) -> Topology:
     """Load topology from segmented files (sites/rooms/aisles/racks)."""
     sites_path = base_dir / "sites.yaml"
@@ -217,9 +253,14 @@ def load_segmented_topology(base_dir: Path) -> Topology:
         )
 
     try:
-        return Topology.model_validate({"sites": sites_out})
+        topo = Topology.model_validate({"sites": sites_out})
     except ValidationError as e:
         raise InvalidFormatError(f"Validation failed for segmented topology {base_dir}:\n{e}")
+
+    # Warn on duplicate IDs — same rack/room ID in multiple sites causes broken
+    # /views/rack/:id and /api/racks/:id routes (first match wins, others unreachable)
+    _check_duplicate_ids(topo)
+    return topo
 
 
 def _load_rack_ref(

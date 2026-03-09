@@ -129,14 +129,23 @@ class SimulatorPlugin(RackscopePlugin):
             sim_base = os.getenv("SIMULATOR_URL", "http://simulator:9000")
             sim_metrics_url = f"{sim_base}/metrics"
 
-            # Check if simulator is running
+            # Check if simulator is running via TCP socket check on port 9000.
+            # HTTP GET on /metrics takes 10+ seconds with large topologies (26k+ metrics)
+            # because the Prometheus Python client generates all metrics before sending.
+            # A TCP connect is near-instant and sufficient to confirm the server is up.
             running = False
             try:
-                import httpx
+                import asyncio
+                from urllib.parse import urlparse
 
-                async with httpx.AsyncClient() as http_client:
-                    response = await http_client.get(sim_metrics_url, timeout=1.0)
-                    running = response.status_code == 200
+                parsed = urlparse(sim_base)
+                host = parsed.hostname or "simulator"
+                port = parsed.port or 9000
+                # Try TCP connect with 2s timeout
+                _, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=2.0)
+                writer.close()
+                await writer.wait_closed()
+                running = True
             except Exception:
                 running = False
 
