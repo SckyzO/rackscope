@@ -85,7 +85,7 @@ GET /api/plugins/menu
 
 ---
 
-### GET /api/plugins/{plugin_id}
+### GET /api/plugins/\{plugin\_id\}
 
 Returns details about a specific plugin.
 
@@ -103,10 +103,10 @@ Returns `404` if the plugin is not registered.
 
 ---
 
-### GET /api/plugins/{plugin_id}/config
+### GET /api/plugins/\{plugin\_id\}/config
 
 Returns the full configuration for a specific plugin, read from its dedicated YAML file at
-`config/plugins/{plugin_id}/config.yml`.
+`config/plugins/<plugin_id>/config.yml`.
 
 ```http
 GET /api/plugins/simulator/config
@@ -134,7 +134,7 @@ GET /api/plugins/simulator/config
 
 ---
 
-### POST /api/plugins/{plugin_id}/config
+### POST /api/plugins/\{plugin\_id\}/config
 
 Updates the configuration for a specific plugin. Writes the new config to the plugin's YAML file
 and hot-reloads it.

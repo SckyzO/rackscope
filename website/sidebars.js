@@ -12,22 +12,58 @@ const sidebars = {
 
   userGuide: [
     'user-guide/overview',
-    'user-guide/views',
-    'user-guide/room-view',
-    'user-guide/cluster-view',
-    'user-guide/editors',
-    'user-guide/slurm',
-    'user-guide/simulator',
-    'user-guide/health-checks',
-    'user-guide/topology-editor',
-    'user-guide/dashboard',
-    'user-guide/playlist',
-    'user-guide/login',
-    'user-guide/notifications',
-    'user-guide/ui-library',
-    'user-guide/wizard',
-    'user-guide/error-pages',
-    'user-guide/about',
+
+    // ── Views ────────────────────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: '📊 Views',
+      collapsed: false,
+      items: [
+        'user-guide/views',
+        'user-guide/room-view',
+        'user-guide/cluster-view',
+      ],
+    },
+
+    // ── Editors ──────────────────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: '🛠️ Editors',
+      collapsed: false,
+      items: [
+        'user-guide/editors',
+        'user-guide/topology-editor',
+        'user-guide/dashboard',
+      ],
+    },
+
+    // ── Plugins & Features ───────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: '🔌 Plugins & Features',
+      collapsed: false,
+      items: [
+        'user-guide/health-checks',
+        'user-guide/slurm',
+        'user-guide/simulator',
+        'user-guide/playlist',
+        'user-guide/notifications',
+      ],
+    },
+
+    // ── Interface ────────────────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: '⚙️ Interface',
+      collapsed: true,
+      items: [
+        'user-guide/ui-library',
+        'user-guide/login',
+        'user-guide/wizard',
+        'user-guide/error-pages',
+        'user-guide/about',
+      ],
+    },
   ],
 
   adminGuide: [
