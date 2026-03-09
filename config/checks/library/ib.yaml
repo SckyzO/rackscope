@@ -1,3 +1,0 @@
-# InfiniBand checks — placeholder, not yet implemented.
-# Add checks here once an IB exporter is in use (e.g. infiniband_exporter).
-checks: []
