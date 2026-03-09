@@ -33,8 +33,9 @@ class TestLoadSimulatorConfig:
         monkeypatch.setattr(cfg_mod, "APP_CONFIG_PATH", str(app_yaml))
 
         result = load_simulator_config()
-        # app.yaml overrides the base config
-        assert result.get("incident_mode") == "chaos"
+        # app.yaml must NOT override behavioural keys like incident_mode —
+        # plugin.yaml is the single source of truth for simulator behaviour.
+        assert result.get("incident_mode") == "light"
 
     def test_reads_from_base_config_when_app_yaml_absent(self, tmp_path, monkeypatch):
         """Base config values are returned when app.yaml has no simulator section."""
@@ -53,7 +54,8 @@ class TestLoadSimulatorConfig:
         assert result.get("changes_per_hour") == 4
 
     def test_legacy_simulator_key_in_app_yaml(self, tmp_path, monkeypatch):
-        """Legacy simulator.incident_mode key in app.yaml is picked up."""
+        """Legacy simulator key in app.yaml: behavioural keys are NOT picked up.
+        Only non-behavioural keys (e.g. enabled, paths) come through."""
         import plugins.simulator.process.config as cfg_mod
 
         app_yaml = tmp_path / "app.yaml"
@@ -65,4 +67,5 @@ class TestLoadSimulatorConfig:
         monkeypatch.setattr(cfg_mod, "APP_CONFIG_PATH", str(app_yaml))
 
         result = load_simulator_config()
-        assert result.get("incident_mode") == "medium"
+        # incident_mode is a plugin.yaml-owned key; legacy app.yaml entry is ignored
+        assert result.get("incident_mode") is None

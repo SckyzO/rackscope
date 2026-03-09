@@ -43,9 +43,14 @@ def load_simulator_config():
         # (incident_mode, changes_per_hour, etc.).  app.yaml should only carry
         # the 'enabled' flag and optional path overrides.
         PLUGIN_YAML_OWNED = {
-            "incident_mode", "changes_per_hour", "custom_incidents",
-            "slurm_random_statuses", "slurm_random_match",
-            "update_interval_seconds", "seed", "profiles",
+            "incident_mode",
+            "changes_per_hour",
+            "custom_incidents",
+            "slurm_random_statuses",
+            "slurm_random_match",
+            "update_interval_seconds",
+            "seed",
+            "profiles",
             "metrics_catalogs",
         }
         safe_overrides = {k: v for k, v in app_sim.items() if k not in PLUGIN_YAML_OWNED}

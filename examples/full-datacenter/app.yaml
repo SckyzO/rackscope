@@ -9,6 +9,7 @@ paths:
   topology: config/topology
   templates: config/templates
   checks: config/checks/library
+  metrics: config/metrics/library
 
 refresh:
   room_state_seconds: 60

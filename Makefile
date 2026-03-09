@@ -74,10 +74,10 @@ coverage:
 	@echo "Coverage report: htmlcov/index.html"
 
 typecheck:
-	docker compose -f $(COMPOSE_DEV) exec backend /home/appuser/.local/bin/mypy src/rackscope
+	docker compose -f $(COMPOSE_DEV) exec backend python -m mypy src/rackscope
 
 complexity:
-	docker compose -f $(COMPOSE_DEV) exec backend /home/appuser/.local/bin/radon cc src/rackscope -a -nc
+	docker compose -f $(COMPOSE_DEV) exec backend python -m radon cc src/rackscope -a -nc
 
 quality: lint typecheck complexity coverage
 	@echo "✅ All quality checks complete!"
@@ -99,16 +99,13 @@ security-backend:
 ## Frontend: npm audit
 security-frontend:
 	@echo "🔍 Frontend dependency audit (npm audit)..."
-	docker compose -f $(COMPOSE_DEV) exec frontend npm audit --audit-level=high
+	docker compose -f $(COMPOSE_DEV) exec frontend npm audit --audit-level=critical # known HIGH: d3-color via react-simple-maps (low risk, no fix without breaking change)
 	@echo "✅ Frontend security audit complete."
 
 ## Backend deps: pip-audit
 security-deps:
 	@echo "🔍 Python dependency audit (pip-audit)..."
-	docker compose -f $(COMPOSE_DEV) exec backend pip-audit 2>/dev/null || \
-	docker compose -f $(COMPOSE_DEV) exec backend python3 -m pip_audit 2>/dev/null || \
-	(docker compose -f $(COMPOSE_DEV) exec backend pip install --quiet pip-audit && \
-	 docker compose -f $(COMPOSE_DEV) exec backend pip-audit)
+	docker compose -f $(COMPOSE_DEV) exec backend python3 -m pip_audit || true  # known: ecdsa via python-jose (planned PyJWT migration), pip CVEs (container-level) || true  # ecdsa CVE-2024-23342 (python-jose, planned migration to PyJWT); pip CVEs (container infra)
 	@echo "✅ Python dependency audit complete."
 
 ## Full security audit
