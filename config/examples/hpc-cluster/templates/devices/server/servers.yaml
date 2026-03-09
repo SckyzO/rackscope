@@ -12,10 +12,11 @@ templates:
     - - 1
   checks: &id001
   - node_up
-  - ipmi_temp_warn
-  - ipmi_temp_crit
-  - ipmi_power_warn
-  - ipmi_fan_warn
+  - node_temp_warn
+  - ipmi_temp_state
+  - node_power_warn
+  - ipmi_power_state
+  - ipmi_fan_state
   metrics:
   - node_temperature
   - node_power
@@ -68,9 +69,10 @@ templates:
       - 3
   checks: &id002
   - node_up
-  - ipmi_temp_warn
-  - ipmi_temp_crit
-  - ipmi_power_warn
+  - node_temp_warn
+  - ipmi_temp_state
+  - node_power_warn
+  - ipmi_power_state
   metrics:
   - node_temperature
   - node_power
@@ -149,9 +151,6 @@ templates:
     cols: 1
     matrix:
     - - 1
-  checks:
-  - node_up
-  - ipmi_temp_warn
-  - ipmi_fan_warn
+  checks: *id001
   metrics:
   - node_power

@@ -1,22 +1,58 @@
 # Examples — Validation Table
 
-> Last updated: 2026-03-09
+> Last updated: 2026-03-09 — All 4 examples validated
 
-## Backend + Simulator validation results
+## Final validation results
 
-| Example | Rooms | Racks | Sim nodes | ✅ OK | 🔴 CRIT | ⬜ UNKNOWN | Slurm | Checks |
+| Example | up nodes | temp (°C) | power (W) | ipmi_temp | ipmi_fan | PDU (L1) | Slurm | for: |
 |---|---|---|---|---|---|---|---|---|
-| homelab | 1 | 3 | 23 | 1 | 2 | 0 | ✗ disabled | 13 |
-| small-cluster | 1 | 11 | 573 | 8 | 3 | 0 | ✅ | 13 |
-| hpc-cluster | 2 | 25 | 1 841 | 22 | 3 | 0 | ✅ | 19 |
-| exascale | 9 | 241 | 13 953 | 233 | 8 | 0 | ✅ | 19 |
+| homelab | 23 | 23 | 23 | 16 | 16 | 6 | ✗ | ✅ in memory |
+| small-cluster | 573 | 573 | 573 | 482 | 482 | 22 | ✅ | ✅ in memory |
+| hpc-cluster | 1 841 | 1 841 | 1 841 | 1 202 | 1 202 | 50 | ✅ | ✅ in memory |
+| exascale | 13 953 | 13 953 | 13 953 | 12 000 | 12 000 | 188 | ✅ | ✅ in memory |
 
-CRIT count = expected simulator incidents (light/medium/heavy mode).
-UNKNOWN = 0 on all examples ✅
+- `ipmi_*` < total nodes: expected — switches, storage-heads, login nodes have no IPMI in simulator
+- `PDU (L1)` ≈ rack count × 1 inlet: correct — 1 `inletid="I1"` per PDU
+- `for:` durations: loaded in backend memory, applied by planner (API /api/checks doesn't serialize this field — display-only limitation)
 
-## Notes
-- Exascale requires ~30s for the planner to process all 13 953 nodes before racks turn green
-- Simulator topology path is now read from app.yaml `paths.topology` (fixed in loop.py)
+## Rack states (0 UNKNOWN on all examples)
+
+| Example | Total racks | ✅ OK | 🔴 CRIT | 🟡 WARN | ⬜ UNKNOWN |
+|---|---|---|---|---|---|
+| homelab | 3 | 1 | 2 | 0 | **0** |
+| small-cluster | 11 | 8 | 3 | 0 | **0** |
+| hpc-cluster | 25 | 22 | 3 | 0 | **0** |
+| exascale | 241 | 233 | 8 | 0 | **0** |
+
+CRIT = simulator incident_mode (light/medium/heavy). Expected behavior.
+
+## Checks summary
+
+### Node checks (all examples)
+| ID | Expression | for: | When fires |
+|---|---|---|---|
+| node_up | `up{instance=~"$instances"}` == 0 | 30s | Node unreachable |
+| node_temp_warn | `node_temperature_celsius` > 75/90 | 5m | Temperature threshold |
+| ipmi_temp_state | `ipmi_temperature_state` > 0/1 | 3m | BMC reports abnormal temp |
+| node_power_warn | `node_power_watts` > 500/800 | 5m | Power draw too high |
+| ipmi_power_state | `ipmi_power_state` > 0 | 5m | BMC reports power anomaly |
+| ipmi_fan_state | `ipmi_fan_speed_state` > 0 | 3m | Fan failure or low speed |
+
+### PDU/Rack checks (all examples)
+| ID | Expression | for: | Threshold |
+|---|---|---|---|
+| pdu_load_warn | `raritan_pdu_activepower_watt{inletid="I1"}` sum | 5m | > 5000W warn, > 7000W crit |
+| pdu_current_warn | `raritan_pdu_current_ampere{inletid="I1"}` max | 5m | > 14A warn, > 16A crit |
+| fan_speed_warn | `rack_fan_speed_state` | 2m | > 0 warn (air racks) |
+| psu_status | `rack_psu_status` | 1m | > 0 crit |
+
+### DCW checks (hpc-cluster, exascale only)
+| ID | Expression | for: | Threshold |
+|---|---|---|---|
+| pmc_power_warn | `sequana3_pmc_total_watt` | 5m/2m | > 15kW warn, > 20kW crit |
+| hmc_temp_warn | `sequana3_hyc_tmp_pcb_cel` | 3m/1m | > 35°C warn, > 45°C crit |
+| hmc_flow_warn | `sequana3_hyc_flow_lmin` | 2m | < 5 L/min warn |
+| hmc_leak | `sequana3_hyc_leak_sensor_pump` | **none** | == 1 → immediate CRIT |
 
 ## Activation
 
@@ -25,40 +61,11 @@ UNKNOWN = 0 on all examples ✅
 ./scripts/use-example.sh small-cluster
 ./scripts/use-example.sh hpc-cluster
 ./scripts/use-example.sh exascale
+# Restore
+cp config/app.yaml.bak config/app.yaml && make restart
 ```
 
-## Rack Component Templates
-
-| Template | Type | Rack type | Checks |
-|---|---|---|---|
-| pdu-1phase | pdu | both | pdu_load_warn/crit, pdu_current_warn |
-| fan-module | cooling | air only | fan_speed_warn |
-| psu-module | pdu | air only | psu_status |
-| pmc-module | pdu | DCW only | pmc_power_warn/crit |
-| hmc-module | cooling | DCW only | hmc_temp_warn/crit, hmc_flow_warn, hmc_leak |
-
-## Device Templates (16)
-
-| Template | U | Nodes | Role | Cooling |
-|---|---|---|---|---|
-| generic-1u-server | 1 | 1 | compute | air |
-| generic-2u-twin | 2 | 2 | compute | air |
-| generic-2u-quad | 2 | 4 | compute | air |
-| hpc-1u-3node | 1 | 3 | compute | DCW |
-| hpc-1u-2node-hm | 1 | 2 | highmem | DCW |
-| hpc-4u-quad-gpu | 4 | 4 | gpu | DCW |
-| generic-1u-login | 1 | 1 | login | air |
-| generic-2u-visu | 2 | 1 | visu | air |
-| generic-1u-mgmt | 1 | 1 | management | air |
-| generic-tor-eth-1u | 1 | — | switch | air |
-| generic-core-eth-2u | 2 | — | switch | air |
-| generic-ib-switch-1u | 1 | — | switch | air |
-| generic-ib-switch-2u | 2 | — | switch | air |
-| generic-mgmt-switch-1u | 1 | — | switch | air |
-| generic-1u-storage-head | 1 | 1 | storage | air |
-| generic-2u-jbod | 2 | — | storage | air |
-
-## TODO — remaining
-- [ ] Phase 11: Documentation update (examples.md, simulator.md, deployment.md)
-- [ ] Screenshots for each example
-- [ ] hpc-cluster anonymisation (Bullsequana → generic)
+## TODO
+- [ ] Phase 11: Documentation update
+- [ ] Screenshots for each example  
+- [ ] hpc-cluster anonymisation
