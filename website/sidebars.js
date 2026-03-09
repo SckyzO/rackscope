@@ -7,6 +7,7 @@ const sidebars = {
     'getting-started/quick-start',
     'getting-started/installation',
     'getting-started/configuration',
+    'getting-started/examples',
   ],
 
   userGuide: [

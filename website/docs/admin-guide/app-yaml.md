@@ -384,12 +384,21 @@ plugins:
 | Simulator | `simulator.enabled` | boolean | `false` | Activate the SimulatorPlugin for demo/testing mode |
 | Slurm | `slurm.enabled` | boolean | `true` | Activate the SlurmPlugin for HPC workload manager integration |
 
+:::warning app.yaml must only carry `enabled`
+**Never put simulator behaviour settings in `app.yaml`** (incident_mode, changes_per_hour, slurm_random_statuses, etc.). The simulator process merges `plugin.yaml` with `app.yaml`, and `app.yaml` wins on conflicts — so any `incident_mode` in `app.yaml` silently overrides the value you set in the Settings UI.
+
+Rule: `app.yaml` → `enabled: true/false` only. Everything else → dedicated file.
+:::
+
 :::note Plugin configuration files
 Each plugin's detailed settings are managed in dedicated configuration files:
-- Simulator: `config/plugins/simulator/config.yml`
-- Slurm: `config/plugins/slurm/config.yml`
 
-See [Plugins](/plugins/overview) for detailed plugin configuration reference.
+| Plugin | File | Managed by |
+|---|---|---|
+| Simulator | `config/plugins/simulator/config/plugin.yaml` | Settings UI → Plugins → Simulator |
+| Slurm | `config/plugins/slurm/config.yml` | Settings UI → Plugins → Slurm |
+
+See [Plugins](/plugins/overview) for the full configuration reference.
 :::
 
 
@@ -495,3 +504,17 @@ plugins:
   slurm:
     enabled: true
 ```
+
+---
+
+## Reference file
+
+A fully annotated reference file is included in the repository at `config/app.yaml.reference`. It documents every key with its default value, type, and description — useful as a starting point when setting up a new deployment.
+
+```bash
+# Start from the reference
+cp config/app.yaml.reference config/app.yaml
+# Then edit for your environment
+```
+
+The reference file always reflects the current schema. It is kept in sync with this page.

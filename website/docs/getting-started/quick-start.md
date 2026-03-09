@@ -51,8 +51,27 @@ The stack starts with a demo topology and simulated metrics — no hardware requ
 - **Slurm** (`/slurm/overview`) — HPC cluster status (simulator enabled)
 - **API docs** — http://localhost:8000/docs (Swagger UI)
 
+## Try the bundled examples
+
+Rackscope ships with ready-to-use example configurations. Switch between them with a single command:
+
+```bash
+# Minimal lab — 1 room, 4 racks, ~10 nodes
+./scripts/use-example.sh simple-room
+
+# Full HPC datacenter — 2 sites, 855 nodes, GPU + high-memory aisles
+./scripts/use-example.sh full-datacenter
+```
+
+Each example works immediately with the built-in simulator. Your current config is automatically backed up to `config.bak/`.
+
+See [Example Configurations](/getting-started/examples) for the full list and details.
+
+---
+
 ## Next steps
 
+- [Example Configurations](/getting-started/examples) — bundled ready-to-use topologies
 - [Configuration](/getting-started/configuration) — connect to your Prometheus and define your topology
 - [User Guide](/user-guide/overview) — all views and features
 - [Admin Guide](/admin-guide/topology-yaml) — YAML schema reference

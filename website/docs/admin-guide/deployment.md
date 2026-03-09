@@ -21,13 +21,38 @@ Services:
 ## Production Stack
 
 ```bash
+export RACKSCOPE_VERSION=latest  # or a specific version tag e.g. 1.0.0
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-Production differences:
-- Frontend served as static build (no HMR)
-- Simulator excluded (set `plugins.simulator.enabled: false`)
-- Optimized container sizes
+The production stack uses pre-built images from GHCR. Key differences from dev:
+
+| Aspect | Dev | Prod |
+|---|---|---|
+| Frontend | Vite dev server (HMR, hot reload) | `npm run build` → nginx static files |
+| Backend | `uvicorn --reload` | `uvicorn` (no reload) |
+| Images | Built locally | Pulled from `ghcr.io/sckyzO/rackscope-*` |
+| Simulator | Included (disable in `app.yaml`) | Optional |
+
+### Frontend production build
+
+The frontend uses a **multi-stage Docker build** (`frontend/Dockerfile.prod`):
+
+1. **Stage `builder`** — Node.js 22, runs `npm run build` (TypeScript → Vite → `dist/`)
+2. **Stage `production`** — nginx 1.27 Alpine, serves `dist/` as static files
+
+The nginx config (`frontend/nginx.prod.conf`) handles:
+- SPA routing (all unknown routes → `index.html`)
+- `/api/` proxied to the backend container
+- Long-term caching for Vite-hashed static assets
+
+### Config directory
+
+The backend mounts `./config` as a **read-write** volume (`./config:/app/config`). This is intentional — the Settings UI writes to `app.yaml`, `plugin.yaml`, and `config.yml` at runtime.
+
+:::caution
+Do not use `:ro` (read-only) for the config mount in production. The Settings UI will fail silently when trying to save changes.
+:::
 
 ## Environment Variables
 
@@ -136,6 +161,23 @@ Leave `RACKSCOPE_VERSION` unset (or set to `latest`) to always pull the latest b
 ## CI / CD
 
 Three GitHub Actions workflows manage the build and release lifecycle:
+
+### `STATUS.md` — Live quality dashboard
+
+`STATUS.md` at the repository root is automatically generated and committed by the CI after every push to `main`. It gives an at-a-glance view of the current project health:
+
+```markdown
+| Check              | Status | Detail                        |
+|--------------------|--------|-------------------------------|
+| 🧪 Tests           | ✅ 852 | 0 failed · 89% coverage       |
+| 🔍 Python lint     | ✅     | ruff check + format           |
+| 📦 TypeScript      | ✅     | tsc -b clean                  |
+| 🔒 npm security    | ⚠️     | d3-color via react-simple-maps|
+```
+
+The file is updated by the `update-status` CI job (runs even when other jobs fail, so it always reflects the true state).
+
+---
 
 ### `ci.yml` — Quality checks
 
