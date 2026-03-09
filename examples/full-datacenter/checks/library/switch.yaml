@@ -3,7 +3,7 @@ checks:
     name: "Switch Up"
     kind: switch
     scope: node
-    expr: 'up{job=~"snmp.*", instance=~"$instances"}'
+    expr: 'up{instance=~"$instances"}'
     output: bool
     rules:
       - op: "=="
