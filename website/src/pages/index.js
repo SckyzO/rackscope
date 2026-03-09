@@ -373,52 +373,155 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── QUICK START ──────────────────────────────────────────────────── */}
-      <div style={{ background:T.dark1, padding:'72px 24px 80px' }}>
-        <div style={{ maxWidth:680, margin:'0 auto', textAlign:'center' }}>
-          <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:T.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
-            Quick Start
-          </div>
-          <h2 style={{ fontSize:'clamp(1.4rem,2.5vw,1.8rem)', fontWeight:800, letterSpacing:'-0.03em', color:T.textHi, margin:'0 0 12px' }}>
-            Running in 3 commands
-          </h2>
-          <p style={{ color:T.textLo, fontSize:'0.9rem', marginBottom:32 }}>
-            No local Python or Node.js required — everything runs in containers.
-          </p>
-          <div style={{ background:T.dark3, border:`1px solid ${T.borderMd}`, borderRadius:10, overflow:'hidden', textAlign:'left', marginBottom:28 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', borderBottom:`1px solid ${T.border}`, background:T.dark4 }}>
-              {['#ff5f56','#ffbd2e','#27c93f'].map(c => (
-                <div key={c} style={{ width:10, height:10, borderRadius:'50%', background:c, opacity:0.7 }} />
-              ))}
-              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:T.textLo, marginLeft:8 }}>terminal</span>
+      {/* ── HOW IT WORKS ─────────────────────────────────────────────────── */}
+      <div style={{ background:T.dark1, padding:'80px 24px', borderBottom:`1px solid ${T.border}` }}>
+        <div style={{ maxWidth:1100, margin:'0 auto' }}>
+
+          {/* Header */}
+          <div style={{ textAlign:'center', marginBottom:64 }}>
+            <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:T.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
+              How it works
             </div>
-            <div style={{ padding:'20px' }}>
-              {[
-                ['$','git clone',' https://github.com/SckyzO/rackscope.git', null],
-                ['$','cd',' rackscope', null],
-                ['$','make up','','  # → http://localhost:5173'],
-              ].map(([p,cmd,arg,cmt],i) => (
-                <div key={i} style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.87rem', lineHeight:1.9, display:'flex', flexWrap:'wrap', gap:'0 4px' }}>
-                  <span style={{ color:T.textLo, userSelect:'none' }}>{p}</span>
-                  <span style={{ color:T.indigo, fontWeight:600 }}>{cmd}</span>
-                  <span style={{ color:T.textHi }}>{arg}</span>
-                  {cmt && <span style={{ color:T.textLo, opacity:0.5 }}>{cmt}</span>}
+            <h2 style={{ fontSize:'clamp(1.5rem,3vw,2rem)', fontWeight:800, letterSpacing:'-0.03em', color:T.textHi, margin:'0 0 12px' }}>
+              From Prometheus to physical view
+            </h2>
+            <p style={{ color:T.textLo, fontSize:'0.95rem', margin:0, maxWidth:520, marginInline:'auto' }}>
+              Four steps — from your existing infrastructure to a live physical view.
+              No agent, no database, no lock-in.
+            </p>
+          </div>
+
+          {/* 4 steps */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:2, marginBottom:64, position:'relative' }}>
+            {[
+              {
+                num:'01', icon:'📄',
+                title:'Define your topology',
+                desc:'Write YAML files describing your physical infrastructure — sites, rooms, aisles, racks, devices. Or generate them from NetBox, RacksDB, any script, or the API.',
+                tag:'topology.yaml',
+              },
+              {
+                num:'02', icon:'📡',
+                title:'Connect Prometheus',
+                desc:"One URL. Point Rackscope at your existing Prometheus instance. That's it. No collector to deploy, no agent to install, nothing to change in your stack.",
+                tag:'prometheus_url:',
+              },
+              {
+                num:'03', icon:'🔗',
+                title:'Map your checks',
+                desc:'Any metric with the right labels becomes a visible health check. IPMI temperature, PDU load, software service status, Slurm node state — anything Prometheus scrapes.',
+                tag:'expr: up{...}',
+              },
+              {
+                num:'04', icon:'🔭',
+                title:'See your infrastructure',
+                desc:"Launch and navigate from global to instance level. When something is CRIT, you know exactly which rack, which aisle, which room — not just a hostname in an alert.",
+                tag:'make up',
+              },
+            ].map(({ num, icon, title, desc, tag }, i) => (
+              <div key={num} style={{
+                padding:'28px 24px',
+                background:T.dark3,
+                borderRadius: i===0 ? '10px 0 0 10px' : i===3 ? '0 10px 10px 0' : 0,
+                border:`1px solid ${T.border}`,
+                borderLeft: i>0 ? 'none' : `1px solid ${T.border}`,
+                position:'relative',
+                display:'flex', flexDirection:'column', gap:12,
+              }}>
+                {/* Step number */}
+                <div style={{
+                  fontFamily:"'JetBrains Mono',monospace",
+                  fontSize:'0.68rem', fontWeight:700,
+                  color:T.textLo, letterSpacing:'0.1em',
+                }}>
+                  {num}
                 </div>
-              ))}
-            </div>
+                {/* Icon + title */}
+                <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+                  <span style={{ fontSize:'1.3rem', flexShrink:0, marginTop:1 }}>{icon}</span>
+                  <h3 style={{ margin:0, fontSize:'0.95rem', fontWeight:700, color:T.textHi, letterSpacing:'-0.01em', lineHeight:1.3 }}>{title}</h3>
+                </div>
+                {/* Description */}
+                <p style={{ margin:0, fontSize:'0.85rem', lineHeight:1.65, color:T.textMid, flex:1 }}>{desc}</p>
+                {/* Tag */}
+                <div style={{
+                  fontFamily:"'JetBrains Mono',monospace",
+                  fontSize:'0.72rem', color:T.indigo,
+                  background:T.indigoLo, border:`1px solid ${T.indigoBorder}`,
+                  borderRadius:5, padding:'3px 10px', display:'inline-block',
+                  alignSelf:'flex-start',
+                }}>{tag}</div>
+                {/* Connector arrow (except last) */}
+                {i < 3 && (
+                  <div style={{
+                    position:'absolute', right:-12, top:'50%',
+                    transform:'translateY(-50%)',
+                    width:24, height:24,
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    background:T.dark2, border:`1px solid ${T.border}`,
+                    borderRadius:'50%', zIndex:1,
+                    color:T.textLo, fontSize:'0.75rem',
+                  }}>→</div>
+                )}
+              </div>
+            ))}
           </div>
-          <Link to="/getting-started/quick-start" className="rs-qsl" style={{
-            display:'inline-flex', alignItems:'center', gap:8,
-            padding:'11px 28px', background:T.indigoLo,
-            color:T.indigo, border:`1px solid ${T.indigoBorder}`,
-            borderRadius:8, fontWeight:700, fontSize:'0.95rem',
-            textDecoration:'none', letterSpacing:'-0.01em',
-            transition:'background 0.15s',
-          }}>
-            View full guide →
-          </Link>
+
+          {/* Doc cards */}
+          <div style={{ textAlign:'center', marginBottom:32 }}>
+            <p style={{ color:T.textLo, fontSize:'0.9rem', margin:0 }}>
+              The documentation covers everything in detail. Start where it makes sense for you.
+            </p>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:14 }}>
+            {[
+              {
+                icon:'🚀', label:'Quick Start', sub:'Up in 5 minutes',
+                desc:'Clone, configure, launch. Full step-by-step with prerequisites.',
+                to:'/getting-started/quick-start',
+              },
+              {
+                icon:'📦', label:'Examples', sub:'Ready-made topologies',
+                desc:'From a simple 4-rack lab to an 855-node HPC cluster. Load in one command.',
+                to:'/getting-started/examples',
+              },
+              {
+                icon:'⚙️', label:'Admin Guide', sub:'Production deployment',
+                desc:'Docker images, GHCR, nginx, config reference, app.yaml explained.',
+                to:'/admin-guide/deployment',
+              },
+              {
+                icon:'🔌', label:'API Reference', sub:'Automate & integrate',
+                desc:'Generate topology from scripts, push checks, query health states.',
+                to:'/api-reference/overview',
+              },
+            ].map(({ icon, label, sub, desc, to }) => (
+              <Link key={label} to={to}
+                style={{
+                  display:'flex', flexDirection:'column', gap:8,
+                  padding:'20px 20px 16px',
+                  background:T.dark3, border:`1px solid ${T.border}`,
+                  borderRadius:10, textDecoration:'none',
+                  transition:'border-color 0.2s, transform 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor=T.indigoBorder; e.currentTarget.style.transform='translateY(-2px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor=T.border; e.currentTarget.style.transform='translateY(0)'; }}
+              >
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  <span style={{ fontSize:'1.2rem' }}>{icon}</span>
+                  <div>
+                    <div style={{ fontWeight:700, color:T.textHi, fontSize:'0.9rem' }}>{label}</div>
+                    <div style={{ color:T.indigo, fontSize:'0.75rem', fontFamily:"'JetBrains Mono',monospace" }}>{sub}</div>
+                  </div>
+                </div>
+                <p style={{ margin:0, fontSize:'0.82rem', lineHeight:1.55, color:T.textMid }}>{desc}</p>
+                <div style={{ color:T.indigo, fontSize:'0.8rem', fontWeight:600, marginTop:'auto' }}>Read →</div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
+
 
       {/* ── PAGE FOOTER ──────────────────────────────────────────────────── */}
       <div style={{
