@@ -251,9 +251,9 @@ export default function Home() {
           </p>
 
           <p className="rs-a3" style={{ fontSize:'1rem', color:T.textLo, lineHeight:1.75, maxWidth:580, margin:'0 auto 36px' }}>
-            A visualization layer for data centers and HPC environments.
-            Powered entirely by live PromQL queries — no internal time-series database,
-            no agents, no CMDB ownership. Your Prometheus, your topology, your rules.
+            When an alert fires, monitoring tools indicate what is wrong — but rarely where the problem is located in the physical infrastructure.
+            Rackscope provides that physical context, mapping every metric to its exact location:
+            site, datacenter, room, aisle, rack, device, instance.
           </p>
 
           <div className="rs-a4" style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap', marginBottom:40 }}>
@@ -321,9 +321,9 @@ export default function Home() {
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:20 }}>
             {[
-              { icon:'📄', title:'Zero Database', delay:'0.1s', desc:'Configuration lives in YAML files. GitOps-friendly, version-controlled, diff-friendly. Commit your topology to Git and roll back with git revert.' },
-              { icon:'📡', title:'Prometheus-Only', delay:'0.2s', desc:'Every health state comes from a live PromQL query against your existing Prometheus. No agents, no collectors. Zero additional telemetry infrastructure.' },
-              { icon:'🏗️', title:'Physical Hierarchy', delay:'0.3s', desc:'Site → Room → Aisle → Rack → Device → Instance. Health states aggregate upward — a failing node makes its rack CRIT, which makes its room CRIT.' },
+              { icon:'📄', title:'Zero Database', delay:'0.1s', desc:'All configuration is stored in YAML files — GitOps-compatible, version-controlled, and diff-friendly. Commit your infrastructure topology to Git and roll back with a single command.' },
+              { icon:'📡', title:'Prometheus-Only', delay:'0.2s', desc:'Every health state derives from a live PromQL query against your existing Prometheus instance. No agents, no collectors, no additional telemetry infrastructure to operate.' },
+              { icon:'🏗️', title:'Physical Hierarchy', delay:'0.3s', desc:'Site → Room → Aisle → Rack → Device → Instance. Health states propagate upward — a failing node elevates its rack to CRIT, which propagates to the room level.' },
             ].map(({ icon, title, desc, delay }) => (
               <div key={title} className="rs-philocard" style={{
                 animationDelay:delay, padding:'28px 28px 24px',
@@ -351,7 +351,7 @@ export default function Home() {
               Zoom in. All the way.
             </h2>
             <p style={{ color:T.textLo, fontSize:'0.95rem', margin:0, maxWidth:480, marginInline:'auto' }}>
-              Every alert is anchored to a physical location. Navigate from the global view to the exact device in three clicks.
+              Every alert is anchored to a precise physical location. Navigate progressively from a global overview to the exact device — at each level, only the relevant information is displayed.
             </p>
           </div>
 
@@ -449,7 +449,7 @@ export default function Home() {
               Any metric. Any team.
             </h2>
             <p style={{ color:T.textLo, fontSize:'0.95rem', margin:0, maxWidth:520, marginInline:'auto' }}>
-              If it reaches Prometheus, Rackscope can show it as a health check. Hardware, software, custom — no distinction.
+              Any metric exposed in Prometheus can become a visible health check in Rackscope — whether it originates from hardware, software, network infrastructure, or HPC workloads.
             </p>
           </div>
 
@@ -555,7 +555,7 @@ export default function Home() {
               The physical layer that was missing.
             </h2>
             <p style={{ color:T.textLo, fontSize:'0.95rem', margin:0, maxWidth:500, marginInline:'auto' }}>
-              Rackscope doesn't replace your monitoring stack. It adds the one thing it's missing: physical context.
+              Rackscope does not replace existing tools. It fills the gap between metrics dashboards and supervision platforms — adding the physical location of every alert to the monitoring chain.
             </p>
           </div>
 
@@ -570,7 +570,7 @@ export default function Home() {
             }}>
               <div style={{ fontSize:'1.3rem' }}>📊</div>
               <div style={{ fontWeight:700, color:T.textMid, fontSize:'0.9rem' }}>Grafana</div>
-              <div style={{ fontSize:'0.8rem', color:T.textLo, lineHeight:1.5 }}>Metrics & dashboards. Charts, panels, time series. Excellent at <em>what</em> is happening.</div>
+              <div style={{ fontSize:'0.8rem', color:T.textLo, lineHeight:1.5 }}>Metrics & dashboards. Charts, panels, time series. Indicates <em>what</em> is happening.</div>
               <div style={{
                 marginTop:'auto', padding:'6px 10px',
                 background:'rgba(255,255,255,0.04)', borderRadius:6,
@@ -627,7 +627,7 @@ export default function Home() {
             }}>
               <div style={{ fontSize:'1.3rem' }}>🚨</div>
               <div style={{ fontWeight:700, color:T.textMid, fontSize:'0.9rem' }}>Supervision</div>
-              <div style={{ fontSize:'0.8rem', color:T.textLo, lineHeight:1.5 }}>Full monitoring & alerting. Nagios, Zabbix, PagerDuty. Handles <em>what to do</em>.</div>
+              <div style={{ fontSize:'0.8rem', color:T.textLo, lineHeight:1.5 }}>Full monitoring & alerting. Nagios, Zabbix, PagerDuty. Determines <em>what action to take</em>.</div>
               <div style={{
                 marginTop:'auto', padding:'6px 10px',
                 background:'rgba(255,255,255,0.04)', borderRadius:6,
@@ -639,7 +639,7 @@ export default function Home() {
           </div>
 
           <p style={{ textAlign:'center', marginTop:24, color:T.textLo, fontSize:'0.85rem', fontStyle:'italic' }}>
-            Not a replacement. The physical layer that was missing between your metrics and your process.
+            Not a replacement. The intermediate layer that was missing between your metrics dashboards and your supervision platform.
           </p>
         </div>
       </div>
@@ -660,7 +660,7 @@ export default function Home() {
             </h2>
             <p style={{ color:T.textLo, fontSize:'0.95rem', margin:0, maxWidth:520, marginInline:'auto' }}>
               Four steps — from your existing infrastructure to a live physical view.
-              No agent, no database, no lock-in.
+              No agent to deploy, no database to provision.
             </p>
           </div>
 
@@ -676,7 +676,7 @@ export default function Home() {
               {
                 num:'02', icon:'📡',
                 title:'Connect Prometheus',
-                desc:"One URL. Point Rackscope at your existing Prometheus instance. That's it. No collector to deploy, no agent to install, nothing to change in your stack.",
+                desc:"One URL. Point Rackscope at your existing Prometheus instance. No collector to deploy, no agent to install, nothing to change in your stack.",
                 tag:'prometheus_url:',
               },
               {

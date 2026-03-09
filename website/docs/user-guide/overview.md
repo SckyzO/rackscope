@@ -6,9 +6,15 @@ sidebar_position: 1
 
 # User Guide Overview
 
-Rackscope provides several views and tools for monitoring physical infrastructure.
+Rackscope provides a set of physical views and management tools for monitoring data center and HPC infrastructure through Prometheus metrics.
 
 ![Rackscope Overview](/img/screenshots/rackscope-dashboard-overview.png)
+
+## The drill-down approach
+
+Rackscope is organized around a progressive drill-down model. The operator starts from a global overview — all sites, active alerts, aggregate health — and navigates progressively toward finer levels of detail: datacenter, room, aisle, rack, device, and finally the individual instance.
+
+At each level, health states aggregate upward from child entities. A single failing node elevates its rack to CRIT, which propagates to the room level. This makes it immediately apparent where in the physical infrastructure an issue is located, without having to cross-reference multiple tools.
 
 ## Navigation
 
