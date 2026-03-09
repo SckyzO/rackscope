@@ -20,41 +20,71 @@
 
 ## What is Rackscope?
 
-**You know something is broken. You don't know where.**
+Rackscope is a **physical visualization layer** for teams operating data centers and HPC clusters.
 
-Your Prometheus tells you a node is down. Your Grafana shows the metric. But neither tells you which rack, which aisle, which room — and that's what actually matters when someone needs to go fix it.
+When an alert fires, monitoring tools typically tell you *what* is wrong — but rarely *where* in the physical infrastructure the problem is located. Rackscope provides that physical context, bridging metrics and alerts to the actual topology of your infrastructure.
 
-Rackscope is the **physical visualization layer** between your metrics and your infrastructure. It takes your existing Prometheus data and anchors it to a real physical location, letting you drill down from a global alert to the exact device in a few clicks.
+### Infrastructure navigation by level
+
+Rackscope follows an inverted-pyramid approach. You start from a global view of the entire infrastructure — overall health, active alerts, visibility across all sites — then progressively drill down into finer levels of detail:
 
 ```
-Global view        All sites — health summary, world map, active alerts
-  └── Datacenter   Site-level overview — rooms, rack count, health status
-        └── Room   Floor plan — aisle layout, rack grid, 10 display styles
-              └── Aisle   Row of racks — aggregate severity per aisle
+Global        All sites — health summary, world map, active alerts
+  └── Datacenter    Site-level overview — rooms, rack count, status
+        └── Room    Floor plan — aisle layout, rack grid, display styles
+              └── Aisle    Row of racks — aggregate severity per aisle
                     └── Rack    Front/rear elevation — device placement
-                          └── Device     Chassis or unit — instances, checks
-                                └── Instance   Single node — live health state
+                          └── Device    Chassis or unit — instances, checks
+                                └── Instance    Single node — live health state
 ```
 
-Navigate from the top to the bottom. Every alert is anchored to a physical location.
+At each level, only the relevant information is displayed. This approach makes it possible to move very quickly from a global view to the precise identification of a problem — for example: a cluster in critical state → a specific rack → a precise server in a given room.
 
-### Not a replacement — the missing layer
+### Native integration with Prometheus
+
+Rackscope relies entirely on Prometheus for metrics collection. Any metric exposed in Prometheus can become a visible check in the interface, whether it comes from:
+
+- **Hardware** — IPMI, PDU, racks, sensors
+- **Software** — services, applications, custom exporters
+- **Network or storage infrastructure**
+- **HPC environments** — Slurm, job schedulers
+
+In practice: if a metric is collected by Prometheus, Rackscope can display it in its physical context.
+
+### A complementary tool, not a replacement
+
+Rackscope does not seek to replace existing tools such as Grafana, Nagios, Icinga, or Zabbix. It positions itself as an **intermediate layer** between:
 
 ```
-Grafana             Rackscope               Supervision (Nagios/Zabbix)
-────────────        ─────────────────       ────────────────────────────
-Metrics &     →     Physical context  →     Full alerting, ITSM,
-dashboards          of your alerts          what to do next
-
-"cpu is 95%"   →    "Rack C04, Aisle 2,  →  "Ticket #4821 opened"
-                     Machine Room A"
+Grafana / dashboards        Rackscope              Supervision (Nagios/Zabbix)
+────────────────────   →    ─────────────    →     ─────────────────────────────
+Show the metrics            Physical context        Manage alerts and incidents
+"cpu_usage is 95%"          "Rack C04, Aisle 2,     "Ticket #4821 opened"
+                             Machine Room A"
 ```
 
-Rackscope doesn't replace your monitoring stack. It adds the one thing it was missing: **where**.
+Rackscope adds the one element that was missing: the **physical location** of the problem within the infrastructure.
 
-### Any metric. Any team.
+### Simple, declarative configuration
 
-Because Rackscope runs every health check as a live PromQL query, anything that reaches Prometheus becomes a visible check — no configuration beyond a YAML rule.
+The infrastructure described by Rackscope relies solely on YAML files. This approach enables configuration that is simple, human-readable, easily versioned, and fully compatible with a GitOps workflow.
+
+The tool is **CMDB-agnostic** and can be populated in several ways:
+
+```bash
+# Automatic generation via scripts
+python generate_topology.py --from-netbox > config/topology/sites.yaml
+
+# Export from a CMDB (NetBox, RacksDB, etc.)
+# Or use the API directly
+curl -X POST /api/topology/sites -d '{"id":"dc-paris","name":"Paris DC"}'
+```
+
+No database required. No vendor lock-in. If your tools can write a file, Rackscope can read it.
+
+### Extensible architecture
+
+Rackscope includes a native plugin system for extending its capabilities. A plugin already provides Slurm integration, enabling visualization of node and partition states from the associated metrics. The architecture remains open to support additional plugins as needed.
 
 | Hardware teams | Software teams |
 |---|---|
@@ -63,20 +93,6 @@ Because Rackscope runs every health check as a live PromQL query, anything that 
 | PDU load & power (`pdu_total_load_watts`) | Slurm node states (`slurm_node_status`) |
 | InfiniBand / network (`ib_port_state`) | Job queue depth, partition health |
 | Storage health (`eseries_drive_status`) | Any Prometheus exporter |
-
-### Zero database. CMDB-agnostic.
-
-All configuration lives in YAML files. Commit them to Git, diff them in pull requests, generate them from any script.
-
-```bash
-# Generate from NetBox, RacksDB, or any script
-python generate_topology.py --from-netbox > config/topology/sites.yaml
-
-# Or use the API directly
-curl -X POST /api/topology/sites -d '{"id":"dc-paris","name":"Paris DC"}'
-```
-
-No CMDB required. No vendor lock-in. If your tools can write a file, Rackscope can read it.
 
 ---
 
