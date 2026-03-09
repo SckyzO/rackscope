@@ -109,3 +109,9 @@ devices:
   u_position: 42
   face: front
   instance: tor-rack-par-gpu000
+- id: sw-ib-rack-par-gpu000
+  name: ib-rack-par-gpu000
+  template_id: generic-ib-switch-1u
+  u_position: 41
+  face: front
+  instance: ib-rack-par-gpu000

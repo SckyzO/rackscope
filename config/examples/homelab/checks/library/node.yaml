@@ -5,7 +5,6 @@ checks:
   scope: node
   expr: up{instance=~"$instances"}
   output: bool
-  for: 30s
   rules:
   - op: ==
     value: 0

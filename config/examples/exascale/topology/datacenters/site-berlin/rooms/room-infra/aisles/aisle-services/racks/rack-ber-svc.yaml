@@ -1,23 +1,129 @@
 id: rack-ber-svc
-name: Services Rack
+name: Services Rack — site-berlin
 u_height: 42
 template_id: rack-42u-air
 devices:
-- id: login-01
-  name: login-site-01
+- id: login-ber01
+  name: login-ber-01
   template_id: generic-1u-login
   u_position: 1
   face: front
-  instance: login-site-01
-- id: login-02
-  name: login-site-02
+  instance: login-ber-01
+- id: login-ber02
+  name: login-ber-02
   template_id: generic-1u-login
   u_position: 2
   face: front
-  instance: login-site-02
-- id: mgmt-01
-  name: mgmt-site-01
-  template_id: generic-1u-mgmt
-  u_position: 40
+  instance: login-ber-02
+- id: login-ber03
+  name: login-ber-03
+  template_id: generic-1u-login
+  u_position: 3
   face: front
-  instance: mgmt-site-01
+  instance: login-ber-03
+- id: login-ber04
+  name: login-ber-04
+  template_id: generic-1u-login
+  u_position: 4
+  face: front
+  instance: login-ber-04
+- id: login-ber05
+  name: login-ber-05
+  template_id: generic-1u-login
+  u_position: 5
+  face: front
+  instance: login-ber-05
+- id: login-ber06
+  name: login-ber-06
+  template_id: generic-1u-login
+  u_position: 6
+  face: front
+  instance: login-ber-06
+- id: login-ber07
+  name: login-ber-07
+  template_id: generic-1u-login
+  u_position: 7
+  face: front
+  instance: login-ber-07
+- id: login-ber08
+  name: login-ber-08
+  template_id: generic-1u-login
+  u_position: 8
+  face: front
+  instance: login-ber-08
+- id: visu-ber01
+  name: visu-ber-01
+  template_id: generic-2u-visu
+  u_position: 9
+  face: front
+  instance:
+    1: visu-ber-01
+- id: visu-ber02
+  name: visu-ber-02
+  template_id: generic-2u-visu
+  u_position: 11
+  face: front
+  instance:
+    1: visu-ber-02
+- id: visu-ber03
+  name: visu-ber-03
+  template_id: generic-2u-visu
+  u_position: 13
+  face: front
+  instance:
+    1: visu-ber-03
+- id: visu-ber04
+  name: visu-ber-04
+  template_id: generic-2u-visu
+  u_position: 15
+  face: front
+  instance:
+    1: visu-ber-04
+- id: mgmt-ber01
+  name: mgmt-ber-01
+  template_id: generic-1u-mgmt
+  u_position: 17
+  face: front
+  instance: mgmt-ber-01
+- id: mgmt-ber02
+  name: mgmt-ber-02
+  template_id: generic-1u-mgmt
+  u_position: 18
+  face: front
+  instance: mgmt-ber-02
+- id: mgmt-ber03
+  name: mgmt-ber-03
+  template_id: generic-1u-mgmt
+  u_position: 19
+  face: front
+  instance: mgmt-ber-03
+- id: mgmt-ber04
+  name: mgmt-ber-04
+  template_id: generic-1u-mgmt
+  u_position: 20
+  face: front
+  instance: mgmt-ber-04
+- id: mgmt-ber05
+  name: mgmt-ber-05
+  template_id: generic-1u-mgmt
+  u_position: 21
+  face: front
+  instance: mgmt-ber-05
+- id: mgmt-ber06
+  name: mgmt-ber-06
+  template_id: generic-1u-mgmt
+  u_position: 22
+  face: front
+  instance: mgmt-ber-06
+- id: sw-eth-svc-ber
+  name: tor-svc-ber
+  template_id: generic-tor-eth-1u
+  u_position: 42
+  face: front
+  instance: tor-svc-ber
+- id: sw-ib-svc-ber
+  name: ib-svc-ber
+  template_id: generic-ib-switch-1u
+  u_position: 41
+  face: front
+  instance: ib-svc-ber

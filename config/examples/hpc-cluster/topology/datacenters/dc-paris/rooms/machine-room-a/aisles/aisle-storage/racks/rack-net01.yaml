@@ -15,21 +15,57 @@ devices:
   u_position: 3
   face: front
   instance: core-sw-02
+- id: sw-core-03
+  name: core-sw-03
+  template_id: generic-core-eth-2u
+  u_position: 5
+  face: front
+  instance: core-sw-03
 - id: sw-ib-l1-01
   name: ib-l1-01
   template_id: generic-ib-switch-1u
-  u_position: 5
+  u_position: 7
   face: front
   instance: ib-l1-01
 - id: sw-ib-l1-02
   name: ib-l1-02
   template_id: generic-ib-switch-1u
-  u_position: 6
+  u_position: 8
   face: front
   instance: ib-l1-02
+- id: sw-ib-l1-03
+  name: ib-l1-03
+  template_id: generic-ib-switch-1u
+  u_position: 9
+  face: front
+  instance: ib-l1-03
+- id: sw-ib-l1-04
+  name: ib-l1-04
+  template_id: generic-ib-switch-1u
+  u_position: 10
+  face: front
+  instance: ib-l1-04
 - id: sw-ib-l2-01
   name: ib-l2-01
   template_id: generic-ib-switch-2u
-  u_position: 7
+  u_position: 11
   face: front
   instance: ib-l2-01
+- id: sw-ib-l2-02
+  name: ib-l2-02
+  template_id: generic-ib-switch-2u
+  u_position: 13
+  face: front
+  instance: ib-l2-02
+- id: sw-mgmt-01
+  name: sw-mgmt-01
+  template_id: generic-mgmt-switch-1u
+  u_position: 15
+  face: front
+  instance: sw-mgmt-01
+- id: sw-mgmt-02
+  name: sw-mgmt-02
+  template_id: generic-mgmt-switch-1u
+  u_position: 16
+  face: front
+  instance: sw-mgmt-02

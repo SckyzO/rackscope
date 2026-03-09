@@ -99,3 +99,9 @@ devices:
   u_position: 42
   face: front
   instance: tor-rack-gpu02
+- id: sw-ib-rack-gpu02
+  name: ib-rack-gpu02
+  template_id: generic-ib-switch-1u
+  u_position: 41
+  face: front
+  instance: ib-rack-gpu02

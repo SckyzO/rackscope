@@ -329,3 +329,9 @@ devices:
   u_position: 42
   face: front
   instance: tor-rack-hm01
+- id: sw-ib-rack-hm01
+  name: ib-rack-hm01
+  template_id: generic-ib-switch-1u
+  u_position: 41
+  face: front
+  instance: ib-rack-hm01
