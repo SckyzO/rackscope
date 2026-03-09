@@ -1,0 +1,22 @@
+id: room-compute-b
+name: Compute Room B
+site_id: site-paris
+description: Compute Room B — Paris — Site Principal
+layout:
+  shape: rectangle
+  size:
+    width: 48
+    height: 36
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+- id: aisle-compute-4
+  name: Aisle Compute 4
+- id: aisle-compute-5
+  name: Aisle Compute 5

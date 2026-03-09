@@ -1,0 +1,24 @@
+update_interval_seconds: 20
+seed: null
+incident_mode: heavy
+changes_per_hour: 4
+custom_incidents:
+  devices_crit: 0
+  devices_warn: 0
+  racks_crit: 0
+  aisles_hot: 0
+overrides_path: config/examples/exascale/plugins/simulator/overrides/overrides.yaml
+default_ttl_seconds: 120
+metrics_catalog_path: /app/config/plugins/simulator/metrics/metrics_full.yaml
+metrics_catalogs:
+- id: slurm
+  path: /app/config/plugins/simulator/metrics/metrics_slurm.yaml
+  enabled: true
+slurm_random_statuses:
+  drain: 1
+  down: 1
+  maint: 0
+slurm_random_match:
+- compute*
+- hm*
+- gpu*

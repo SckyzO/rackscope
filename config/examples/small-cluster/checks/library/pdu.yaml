@@ -1,0 +1,54 @@
+checks:
+- id: pdu_load_warn
+  name: PDU Load Warning
+  kind: pdu
+  scope: rack
+  expr: pdu_total_load_watts{rack_id=~"$racks"}
+  output: numeric
+  rules:
+  - op: '>'
+    value: 5000
+    severity: WARN
+- id: pdu_load_crit
+  name: PDU Load Critical
+  kind: pdu
+  scope: rack
+  expr: pdu_total_load_watts{rack_id=~"$racks"}
+  output: numeric
+  rules:
+  - op: '>'
+    value: 7000
+    severity: CRIT
+- id: pdu_current_warn
+  name: PDU Current Warning
+  kind: pdu
+  scope: rack
+  expr: pdu_outlet_current_amperes{rack_id=~"$racks"}
+  output: numeric
+  rules:
+  - op: '>'
+    value: 14
+    severity: WARN
+  - op: '>'
+    value: 16
+    severity: CRIT
+- id: fan_speed_warn
+  name: Rack Fan Speed Low
+  kind: cooling
+  scope: rack
+  expr: rack_fan_speed_rpm{rack_id=~"$racks"}
+  output: numeric
+  rules:
+  - op: <
+    value: 1000
+    severity: WARN
+- id: psu_status
+  name: PSU Status
+  kind: pdu
+  scope: rack
+  expr: rack_psu_status{rack_id=~"$racks"}
+  output: bool
+  rules:
+  - op: ==
+    value: 0
+    severity: CRIT

@@ -1,0 +1,111 @@
+id: rack-tou-gpu014
+name: GPU Rack rack-tou-gpu014
+u_height: 42
+template_id: rack-42u-dcw
+devices:
+- id: ggpu014-01
+  name: gpu561-gpu564
+  template_id: hpc-4u-quad-gpu
+  u_position: 1
+  face: front
+  instance:
+    1: gpu561
+    2: gpu562
+    3: gpu563
+    4: gpu564
+- id: ggpu014-05
+  name: gpu565-gpu568
+  template_id: hpc-4u-quad-gpu
+  u_position: 5
+  face: front
+  instance:
+    1: gpu565
+    2: gpu566
+    3: gpu567
+    4: gpu568
+- id: ggpu014-09
+  name: gpu569-gpu572
+  template_id: hpc-4u-quad-gpu
+  u_position: 9
+  face: front
+  instance:
+    1: gpu569
+    2: gpu570
+    3: gpu571
+    4: gpu572
+- id: ggpu014-13
+  name: gpu573-gpu576
+  template_id: hpc-4u-quad-gpu
+  u_position: 13
+  face: front
+  instance:
+    1: gpu573
+    2: gpu574
+    3: gpu575
+    4: gpu576
+- id: ggpu014-17
+  name: gpu577-gpu580
+  template_id: hpc-4u-quad-gpu
+  u_position: 17
+  face: front
+  instance:
+    1: gpu577
+    2: gpu578
+    3: gpu579
+    4: gpu580
+- id: ggpu014-21
+  name: gpu581-gpu584
+  template_id: hpc-4u-quad-gpu
+  u_position: 21
+  face: front
+  instance:
+    1: gpu581
+    2: gpu582
+    3: gpu583
+    4: gpu584
+- id: ggpu014-25
+  name: gpu585-gpu588
+  template_id: hpc-4u-quad-gpu
+  u_position: 25
+  face: front
+  instance:
+    1: gpu585
+    2: gpu586
+    3: gpu587
+    4: gpu588
+- id: ggpu014-29
+  name: gpu589-gpu592
+  template_id: hpc-4u-quad-gpu
+  u_position: 29
+  face: front
+  instance:
+    1: gpu589
+    2: gpu590
+    3: gpu591
+    4: gpu592
+- id: ggpu014-33
+  name: gpu593-gpu596
+  template_id: hpc-4u-quad-gpu
+  u_position: 33
+  face: front
+  instance:
+    1: gpu593
+    2: gpu594
+    3: gpu595
+    4: gpu596
+- id: ggpu014-37
+  name: gpu597-gpu600
+  template_id: hpc-4u-quad-gpu
+  u_position: 37
+  face: front
+  instance:
+    1: gpu597
+    2: gpu598
+    3: gpu599
+    4: gpu600
+- id: tor-rack-tou-gpu014
+  name: tor-rack-tou-gpu014
+  template_id: generic-tor-eth-1u
+  u_position: 42
+  face: front
+  instance: tor-rack-tou-gpu014

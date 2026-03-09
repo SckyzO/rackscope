@@ -1,0 +1,22 @@
+id: room-gpu-hm
+name: GPU & HM Room
+site_id: site-toulouse
+description: GPU & HM Room — Toulouse — Site Secondaire
+layout:
+  shape: rectangle
+  size:
+    width: 36
+    height: 36
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+- id: aisle-gpu
+  name: Aisle Gpu
+- id: aisle-hm
+  name: Aisle Hm

@@ -1,0 +1,111 @@
+id: rack-gpu03
+name: GPU Rack GPU03
+u_height: 42
+template_id: rack-42u-dcw
+devices:
+- id: ggpu03-01
+  name: gpu081-gpu084
+  template_id: hpc-4u-quad-gpu
+  u_position: 1
+  face: front
+  instance:
+    1: gpu081
+    2: gpu082
+    3: gpu083
+    4: gpu084
+- id: ggpu03-05
+  name: gpu085-gpu088
+  template_id: hpc-4u-quad-gpu
+  u_position: 5
+  face: front
+  instance:
+    1: gpu085
+    2: gpu086
+    3: gpu087
+    4: gpu088
+- id: ggpu03-09
+  name: gpu089-gpu092
+  template_id: hpc-4u-quad-gpu
+  u_position: 9
+  face: front
+  instance:
+    1: gpu089
+    2: gpu090
+    3: gpu091
+    4: gpu092
+- id: ggpu03-13
+  name: gpu093-gpu096
+  template_id: hpc-4u-quad-gpu
+  u_position: 13
+  face: front
+  instance:
+    1: gpu093
+    2: gpu094
+    3: gpu095
+    4: gpu096
+- id: ggpu03-17
+  name: gpu097-gpu100
+  template_id: hpc-4u-quad-gpu
+  u_position: 17
+  face: front
+  instance:
+    1: gpu097
+    2: gpu098
+    3: gpu099
+    4: gpu100
+- id: ggpu03-21
+  name: gpu101-gpu104
+  template_id: hpc-4u-quad-gpu
+  u_position: 21
+  face: front
+  instance:
+    1: gpu101
+    2: gpu102
+    3: gpu103
+    4: gpu104
+- id: ggpu03-25
+  name: gpu105-gpu108
+  template_id: hpc-4u-quad-gpu
+  u_position: 25
+  face: front
+  instance:
+    1: gpu105
+    2: gpu106
+    3: gpu107
+    4: gpu108
+- id: ggpu03-29
+  name: gpu109-gpu112
+  template_id: hpc-4u-quad-gpu
+  u_position: 29
+  face: front
+  instance:
+    1: gpu109
+    2: gpu110
+    3: gpu111
+    4: gpu112
+- id: ggpu03-33
+  name: gpu113-gpu116
+  template_id: hpc-4u-quad-gpu
+  u_position: 33
+  face: front
+  instance:
+    1: gpu113
+    2: gpu114
+    3: gpu115
+    4: gpu116
+- id: ggpu03-37
+  name: gpu117-gpu120
+  template_id: hpc-4u-quad-gpu
+  u_position: 37
+  face: front
+  instance:
+    1: gpu117
+    2: gpu118
+    3: gpu119
+    4: gpu120
+- id: tor-rack-gpu03
+  name: tor-rack-gpu03
+  template_id: generic-tor-eth-1u
+  u_position: 42
+  face: front
+  instance: tor-rack-gpu03

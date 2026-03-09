@@ -1,0 +1,61 @@
+checks:
+- id: pmc_power_warn
+  name: PMC Power Warning
+  kind: pdu
+  scope: rack
+  expr: pmc_total_power_watts{rack_id=~"$racks"}
+  output: numeric
+  rules:
+  - op: '>'
+    value: 15000
+    severity: WARN
+- id: pmc_power_crit
+  name: PMC Power Critical
+  kind: pdu
+  scope: rack
+  expr: pmc_total_power_watts{rack_id=~"$racks"}
+  output: numeric
+  rules:
+  - op: '>'
+    value: 20000
+    severity: CRIT
+- id: hmc_temp_warn
+  name: HMC Coolant Temperature Warning
+  kind: cooling
+  scope: rack
+  expr: hmc_coolant_temperature_celsius{rack_id=~"$racks"}
+  output: numeric
+  rules:
+  - op: '>'
+    value: 35
+    severity: WARN
+- id: hmc_temp_crit
+  name: HMC Coolant Temperature Critical
+  kind: cooling
+  scope: rack
+  expr: hmc_coolant_temperature_celsius{rack_id=~"$racks"}
+  output: numeric
+  rules:
+  - op: '>'
+    value: 45
+    severity: CRIT
+- id: hmc_flow_warn
+  name: HMC Coolant Flow Low
+  kind: cooling
+  scope: rack
+  expr: hmc_coolant_flow_lpm{rack_id=~"$racks"}
+  output: numeric
+  rules:
+  - op: <
+    value: 5
+    severity: WARN
+- id: hmc_leak
+  name: HMC Leak Detected
+  kind: cooling
+  scope: rack
+  expr: hmc_leak_detected{rack_id=~"$racks"}
+  output: bool
+  rules:
+  - op: ==
+    value: 1
+    severity: CRIT

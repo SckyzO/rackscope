@@ -1,0 +1,23 @@
+id: rack-net01
+name: Network Rack 01
+u_height: 42
+template_id: rack-42u-air
+devices:
+- id: sw-core
+  name: core-sw-01
+  template_id: generic-core-eth-2u
+  u_position: 1
+  face: front
+  instance: core-sw-01
+- id: sw-ib-01
+  name: ib-l1-01
+  template_id: generic-ib-switch-1u
+  u_position: 3
+  face: front
+  instance: ib-l1-01
+- id: sw-ib-02
+  name: ib-l1-02
+  template_id: generic-ib-switch-1u
+  u_position: 4
+  face: front
+  instance: ib-l1-02

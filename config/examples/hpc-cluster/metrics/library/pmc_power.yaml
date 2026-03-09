@@ -1,0 +1,14 @@
+metrics:
+- id: pmc_power
+  name: PMC Total Power (DCW)
+  description: Total power from PMC module
+  expr: pmc_total_power_watts{rack_id="$rack_id"}
+  display:
+    unit: W
+    chart_type: line
+    color: '#a855f7'
+  category: power
+  tags:
+  - pmc
+  - dcw
+  - power

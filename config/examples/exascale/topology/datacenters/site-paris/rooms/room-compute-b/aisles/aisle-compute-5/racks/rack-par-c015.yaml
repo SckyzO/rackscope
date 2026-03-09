@@ -1,0 +1,371 @@
+id: rack-par-c015
+name: Compute Rack rack-par-c015
+u_height: 42
+template_id: rack-42u-dcw
+devices:
+- id: cc015-01
+  name: compute5041-compute5043
+  template_id: hpc-1u-3node
+  u_position: 1
+  face: front
+  instance:
+    1: compute5041
+    2: compute5042
+    3: compute5043
+- id: cc015-02
+  name: compute5044-compute5046
+  template_id: hpc-1u-3node
+  u_position: 2
+  face: front
+  instance:
+    1: compute5044
+    2: compute5045
+    3: compute5046
+- id: cc015-03
+  name: compute5047-compute5049
+  template_id: hpc-1u-3node
+  u_position: 3
+  face: front
+  instance:
+    1: compute5047
+    2: compute5048
+    3: compute5049
+- id: cc015-04
+  name: compute5050-compute5052
+  template_id: hpc-1u-3node
+  u_position: 4
+  face: front
+  instance:
+    1: compute5050
+    2: compute5051
+    3: compute5052
+- id: cc015-05
+  name: compute5053-compute5055
+  template_id: hpc-1u-3node
+  u_position: 5
+  face: front
+  instance:
+    1: compute5053
+    2: compute5054
+    3: compute5055
+- id: cc015-06
+  name: compute5056-compute5058
+  template_id: hpc-1u-3node
+  u_position: 6
+  face: front
+  instance:
+    1: compute5056
+    2: compute5057
+    3: compute5058
+- id: cc015-07
+  name: compute5059-compute5061
+  template_id: hpc-1u-3node
+  u_position: 7
+  face: front
+  instance:
+    1: compute5059
+    2: compute5060
+    3: compute5061
+- id: cc015-08
+  name: compute5062-compute5064
+  template_id: hpc-1u-3node
+  u_position: 8
+  face: front
+  instance:
+    1: compute5062
+    2: compute5063
+    3: compute5064
+- id: cc015-09
+  name: compute5065-compute5067
+  template_id: hpc-1u-3node
+  u_position: 9
+  face: front
+  instance:
+    1: compute5065
+    2: compute5066
+    3: compute5067
+- id: cc015-10
+  name: compute5068-compute5070
+  template_id: hpc-1u-3node
+  u_position: 10
+  face: front
+  instance:
+    1: compute5068
+    2: compute5069
+    3: compute5070
+- id: cc015-11
+  name: compute5071-compute5073
+  template_id: hpc-1u-3node
+  u_position: 11
+  face: front
+  instance:
+    1: compute5071
+    2: compute5072
+    3: compute5073
+- id: cc015-12
+  name: compute5074-compute5076
+  template_id: hpc-1u-3node
+  u_position: 12
+  face: front
+  instance:
+    1: compute5074
+    2: compute5075
+    3: compute5076
+- id: cc015-13
+  name: compute5077-compute5079
+  template_id: hpc-1u-3node
+  u_position: 13
+  face: front
+  instance:
+    1: compute5077
+    2: compute5078
+    3: compute5079
+- id: cc015-14
+  name: compute5080-compute5082
+  template_id: hpc-1u-3node
+  u_position: 14
+  face: front
+  instance:
+    1: compute5080
+    2: compute5081
+    3: compute5082
+- id: cc015-15
+  name: compute5083-compute5085
+  template_id: hpc-1u-3node
+  u_position: 15
+  face: front
+  instance:
+    1: compute5083
+    2: compute5084
+    3: compute5085
+- id: cc015-16
+  name: compute5086-compute5088
+  template_id: hpc-1u-3node
+  u_position: 16
+  face: front
+  instance:
+    1: compute5086
+    2: compute5087
+    3: compute5088
+- id: cc015-17
+  name: compute5089-compute5091
+  template_id: hpc-1u-3node
+  u_position: 17
+  face: front
+  instance:
+    1: compute5089
+    2: compute5090
+    3: compute5091
+- id: cc015-18
+  name: compute5092-compute5094
+  template_id: hpc-1u-3node
+  u_position: 18
+  face: front
+  instance:
+    1: compute5092
+    2: compute5093
+    3: compute5094
+- id: cc015-19
+  name: compute5095-compute5097
+  template_id: hpc-1u-3node
+  u_position: 19
+  face: front
+  instance:
+    1: compute5095
+    2: compute5096
+    3: compute5097
+- id: cc015-20
+  name: compute5098-compute5100
+  template_id: hpc-1u-3node
+  u_position: 20
+  face: front
+  instance:
+    1: compute5098
+    2: compute5099
+    3: compute5100
+- id: cc015-21
+  name: compute5101-compute5103
+  template_id: hpc-1u-3node
+  u_position: 21
+  face: front
+  instance:
+    1: compute5101
+    2: compute5102
+    3: compute5103
+- id: cc015-22
+  name: compute5104-compute5106
+  template_id: hpc-1u-3node
+  u_position: 22
+  face: front
+  instance:
+    1: compute5104
+    2: compute5105
+    3: compute5106
+- id: cc015-23
+  name: compute5107-compute5109
+  template_id: hpc-1u-3node
+  u_position: 23
+  face: front
+  instance:
+    1: compute5107
+    2: compute5108
+    3: compute5109
+- id: cc015-24
+  name: compute5110-compute5112
+  template_id: hpc-1u-3node
+  u_position: 24
+  face: front
+  instance:
+    1: compute5110
+    2: compute5111
+    3: compute5112
+- id: cc015-25
+  name: compute5113-compute5115
+  template_id: hpc-1u-3node
+  u_position: 25
+  face: front
+  instance:
+    1: compute5113
+    2: compute5114
+    3: compute5115
+- id: cc015-26
+  name: compute5116-compute5118
+  template_id: hpc-1u-3node
+  u_position: 26
+  face: front
+  instance:
+    1: compute5116
+    2: compute5117
+    3: compute5118
+- id: cc015-27
+  name: compute5119-compute5121
+  template_id: hpc-1u-3node
+  u_position: 27
+  face: front
+  instance:
+    1: compute5119
+    2: compute5120
+    3: compute5121
+- id: cc015-28
+  name: compute5122-compute5124
+  template_id: hpc-1u-3node
+  u_position: 28
+  face: front
+  instance:
+    1: compute5122
+    2: compute5123
+    3: compute5124
+- id: cc015-29
+  name: compute5125-compute5127
+  template_id: hpc-1u-3node
+  u_position: 29
+  face: front
+  instance:
+    1: compute5125
+    2: compute5126
+    3: compute5127
+- id: cc015-30
+  name: compute5128-compute5130
+  template_id: hpc-1u-3node
+  u_position: 30
+  face: front
+  instance:
+    1: compute5128
+    2: compute5129
+    3: compute5130
+- id: cc015-31
+  name: compute5131-compute5133
+  template_id: hpc-1u-3node
+  u_position: 31
+  face: front
+  instance:
+    1: compute5131
+    2: compute5132
+    3: compute5133
+- id: cc015-32
+  name: compute5134-compute5136
+  template_id: hpc-1u-3node
+  u_position: 32
+  face: front
+  instance:
+    1: compute5134
+    2: compute5135
+    3: compute5136
+- id: cc015-33
+  name: compute5137-compute5139
+  template_id: hpc-1u-3node
+  u_position: 33
+  face: front
+  instance:
+    1: compute5137
+    2: compute5138
+    3: compute5139
+- id: cc015-34
+  name: compute5140-compute5142
+  template_id: hpc-1u-3node
+  u_position: 34
+  face: front
+  instance:
+    1: compute5140
+    2: compute5141
+    3: compute5142
+- id: cc015-35
+  name: compute5143-compute5145
+  template_id: hpc-1u-3node
+  u_position: 35
+  face: front
+  instance:
+    1: compute5143
+    2: compute5144
+    3: compute5145
+- id: cc015-36
+  name: compute5146-compute5148
+  template_id: hpc-1u-3node
+  u_position: 36
+  face: front
+  instance:
+    1: compute5146
+    2: compute5147
+    3: compute5148
+- id: cc015-37
+  name: compute5149-compute5151
+  template_id: hpc-1u-3node
+  u_position: 37
+  face: front
+  instance:
+    1: compute5149
+    2: compute5150
+    3: compute5151
+- id: cc015-38
+  name: compute5152-compute5154
+  template_id: hpc-1u-3node
+  u_position: 38
+  face: front
+  instance:
+    1: compute5152
+    2: compute5153
+    3: compute5154
+- id: cc015-39
+  name: compute5155-compute5157
+  template_id: hpc-1u-3node
+  u_position: 39
+  face: front
+  instance:
+    1: compute5155
+    2: compute5156
+    3: compute5157
+- id: cc015-40
+  name: compute5158-compute5160
+  template_id: hpc-1u-3node
+  u_position: 40
+  face: front
+  instance:
+    1: compute5158
+    2: compute5159
+    3: compute5160
+- id: tor-rack-par-c015
+  name: tor-rack-par-c015
+  template_id: generic-tor-eth-1u
+  u_position: 42
+  face: front
+  instance: tor-rack-par-c015

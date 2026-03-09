@@ -1,0 +1,23 @@
+id: rack-storage
+name: Storage Rack
+u_height: 42
+template_id: rack-42u-air
+devices:
+- id: sto-head-01
+  name: storage-head-01
+  template_id: generic-1u-storage-head
+  u_position: 1
+  face: front
+  instance: storage-head-01
+- id: sto-head-02
+  name: storage-head-02
+  template_id: generic-1u-storage-head
+  u_position: 2
+  face: front
+  instance: storage-head-02
+- id: sw-stor
+  name: tor-storage
+  template_id: generic-tor-eth-1u
+  u_position: 42
+  face: front
+  instance: tor-storage

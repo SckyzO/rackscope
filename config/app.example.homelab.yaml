@@ -1,0 +1,76 @@
+# Rackscope — app.yaml for example: homelab
+# Generated from app.yaml.reference
+# To activate: cp config/app.example.homelab.yaml config/app.yaml && make restart
+
+app:
+  name: Rackscope
+  description: homelab example
+
+paths:
+  topology: config/examples/homelab/topology
+  templates: config/examples/homelab/templates
+  checks: config/examples/homelab/checks/library
+  metrics: config/examples/homelab/metrics/library
+
+refresh:
+  room_state_seconds: 60
+  rack_state_seconds: 60
+
+cache:
+  ttl_seconds: 60
+  health_checks_ttl_seconds: 30
+  metrics_ttl_seconds: 120
+
+telemetry:
+  prometheus_url: http://prometheus:9090
+  identity_label: instance
+  rack_label: rack_id
+  chassis_label: chassis_id
+  job_regex: node|rackscope-simulator
+  prometheus_heartbeat_seconds: 30
+  prometheus_latency_window: 20
+  debug_stats: false
+
+planner:
+  unknown_state: UNKNOWN
+  cache_ttl_seconds: 60
+  max_ids_per_query: 300
+
+features:
+  notifications: true
+  notifications_max_visible: 10
+  playlist: true
+  offline: true
+  wizard: false
+  worldmap: true
+  dev_tools: false
+
+auth:
+  enabled: false
+  username: admin
+  password_hash: ""
+  secret_key: ""
+  session_duration: 24h
+  policy:
+    min_length: 6
+    max_length: 128
+    require_digit: false
+    require_symbol: false
+
+map:
+  default_view: world
+  default_zoom: 2
+  min_zoom: 2
+  max_zoom: 7
+  zoom_controls: true
+  center:
+    lat: 46.0
+    lon: 2.3
+
+plugins:
+  # Only 'enabled' here — behaviour in config/examples/homelab/plugins/
+  simulator:
+    enabled: true
+    metrics_catalog_path: /app/config/plugins/simulator/metrics/metrics_full.yaml
+  slurm:
+    enabled: false

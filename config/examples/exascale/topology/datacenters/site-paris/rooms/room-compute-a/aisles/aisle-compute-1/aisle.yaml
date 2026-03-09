@@ -1,0 +1,14 @@
+id: aisle-compute-1
+name: Aisle Compute 1
+room_id: room-compute-a
+racks:
+- id: rack-par-c000
+- id: rack-par-c001
+- id: rack-par-c002
+- id: rack-par-c003
+- id: rack-par-c004
+- id: rack-par-c005
+- id: rack-par-c006
+- id: rack-par-c007
+- id: rack-par-c008
+- id: rack-par-c009

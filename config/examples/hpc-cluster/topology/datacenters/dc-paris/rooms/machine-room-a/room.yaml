@@ -1,0 +1,26 @@
+id: machine-room-a
+name: Machine Room A — Compute Floor
+site_id: dc-paris
+description: Primary compute floor
+layout:
+  shape: rectangle
+  size:
+    width: 48
+    height: 48
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+- id: aisle-compute-std
+  name: Aisle Compute Std
+- id: aisle-compute-hm
+  name: Aisle Compute Hm
+- id: aisle-gpu
+  name: Aisle Gpu
+- id: aisle-storage
+  name: Aisle Storage

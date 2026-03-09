@@ -1,0 +1,5 @@
+id: aisle-services
+name: Aisle Services
+room_id: room-infra
+racks:
+- id: rack-ber-svc

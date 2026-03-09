@@ -1,11 +1,11 @@
 #!/bin/bash
 # Switch the active config to one of the bundled examples.
-# Usage: ./scripts/use-example.sh [full-datacenter|simple-room|hpc-cluster]
+# Usage: ./scripts/use-example.sh [homelab|small-cluster|hpc-cluster|exascale|full-datacenter|simple-room]
 #
-# This script:
-#   1. Backs up the current config/ to config.bak/
-#   2. Copies the selected example into config/
-#   3. Restarts the backend and simulator
+# For config/examples/* — uses app.example.XXX.yaml + config/examples/XXX/
+# For examples/*        — legacy approach (copies into config/)
+#
+# This script NEVER deletes config/ to avoid breaking Docker bind mounts.
 
 set -euo pipefail
 
@@ -16,40 +16,87 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 if [[ -z "$EXAMPLE" ]]; then
   echo "Usage: $0 <example>"
   echo ""
-  echo "Available examples:"
+  echo "Built-in examples (config/examples/ — recommended):"
+  for d in "$ROOT/config/examples"/*/; do
+    name="$(basename "$d")"
+    echo "  $name"
+  done
+  echo ""
+  echo "Legacy examples (examples/ — copies into config/):"
   for d in "$ROOT/examples"/*/; do
     name="$(basename "$d")"
-    desc=""
-    [[ -f "$d/README.md" ]] && desc=" — $(head -2 "$d/README.md" | tail -1 | sed 's/^# //')"
-    echo "  $name$desc"
+    [[ -f "$d/README.md" ]] && echo "  $name" || true
   done
   exit 1
 fi
 
-EXAMPLE_DIR="$ROOT/examples/$EXAMPLE"
-if [[ ! -d "$EXAMPLE_DIR" ]]; then
-  echo "Error: example '$EXAMPLE' not found in examples/"
-  exit 1
+APP_YAML="$ROOT/config/app.example.${EXAMPLE}.yaml"
+
+# ── New style: config/examples/XXX ───────────────────────────────────────────
+if [[ -f "$APP_YAML" ]]; then
+  echo "→ Activating example: $EXAMPLE (config/examples/$EXAMPLE/)"
+  echo "→ Backing up current config/app.yaml to config/app.yaml.bak"
+  cp "$ROOT/config/app.yaml" "$ROOT/config/app.yaml.bak" 2>/dev/null || true
+  cp "$APP_YAML" "$ROOT/config/app.yaml"
+
+  # Ensure simulator overrides dir exists
+  mkdir -p "$ROOT/config/examples/$EXAMPLE/plugins/simulator/overrides"
+  touch "$ROOT/config/examples/$EXAMPLE/plugins/simulator/overrides/overrides.yaml"
+
+  # Copy simulator metrics catalog if not present in example
+  if [[ ! -d "$ROOT/config/examples/$EXAMPLE/plugins/simulator/metrics" ]]; then
+    mkdir -p "$ROOT/config/examples/$EXAMPLE/plugins/simulator/metrics"
+    cp "$ROOT/config/plugins/simulator/metrics/"*.yaml \
+       "$ROOT/config/examples/$EXAMPLE/plugins/simulator/metrics/" 2>/dev/null || true
+  fi
+
+  echo "→ Restarting backend and simulator..."
+  docker compose -f "$ROOT/docker-compose.dev.yml" restart backend simulator 2>/dev/null || true
+
+  echo ""
+  echo "✓ Active example: $EXAMPLE"
+  echo "  Open https://localhost — the UI will reflect the new topology."
+  echo ""
+  echo "  To restore previous config:"
+  echo "    cp config/app.yaml.bak config/app.yaml && make restart"
+  exit 0
 fi
 
-echo "→ Backing up current config/ to config.bak/"
-rm -rf "$ROOT/config.bak"
-cp -r "$ROOT/config" "$ROOT/config.bak"
+# ── Legacy style: examples/XXX ───────────────────────────────────────────────
+LEGACY_DIR="$ROOT/examples/$EXAMPLE"
+if [[ -d "$LEGACY_DIR" ]]; then
+  echo "→ [Legacy] Activating example: $EXAMPLE (examples/$EXAMPLE/)"
+  echo "→ Replacing contents of config/ (directory preserved for Docker bind mount)"
+  echo "→ Backing up current config/ to config.bak/"
+  rm -rf "$ROOT/config.bak"
+  cp -r "$ROOT/config" "$ROOT/config.bak"
 
-echo "→ Loading example: $EXAMPLE"
-# Keep the config/ directory itself (WSL2 Docker bind mount follows the inode)
-rm -rf "$ROOT/config"/*
-cp -r "$EXAMPLE_DIR"/. "$ROOT/config/"
-# Restore simulator overrides dir (needed at runtime)
-mkdir -p "$ROOT/config/plugins/simulator/overrides"
-touch "$ROOT/config/plugins/simulator/overrides/overrides.yaml"
+  rm -rf "$ROOT/config"/*
+  cp -r "$LEGACY_DIR/." "$ROOT/config/"
+  mkdir -p "$ROOT/config/plugins/simulator/overrides"
+  touch "$ROOT/config/plugins/simulator/overrides/overrides.yaml"
 
-echo "→ Restarting backend and simulator..."
-docker compose -f "$ROOT/docker-compose.dev.yml" restart backend simulator 2>/dev/null || true
+  # Fix paths in app.yaml
+  python3 -c "
+content = open('$ROOT/config/app.yaml').read()
+for old, new in [
+  ('topology: topology',    'topology: config/topology'),
+  ('templates: templates',  'templates: config/templates'),
+  ('checks: checks/library','checks: config/checks/library'),
+]:
+    content = content.replace(old, new)
+open('$ROOT/config/app.yaml', 'w').write(content)
+"
 
-echo ""
-echo "✓ Active example: $EXAMPLE"
-echo "  Open http://localhost:5173 — the UI will reflect the new topology."
-echo ""
-echo "  To restore your previous config:"
-echo "    cp -r config.bak config && make restart"
+  echo "→ Restarting backend and simulator..."
+  docker compose -f "$ROOT/docker-compose.dev.yml" restart backend simulator 2>/dev/null || true
+
+  echo ""
+  echo "✓ Active example (legacy): $EXAMPLE"
+  echo "  To restore: cp -r config.bak/* config/ && make restart"
+  exit 0
+fi
+
+echo "Error: example '$EXAMPLE' not found."
+echo "Run '$0' without arguments to list available examples."
+exit 1

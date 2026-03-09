@@ -1,0 +1,23 @@
+id: rack-tou-svc
+name: Services Rack
+u_height: 42
+template_id: rack-42u-air
+devices:
+- id: login-01
+  name: login-site-01
+  template_id: generic-1u-login
+  u_position: 1
+  face: front
+  instance: login-site-01
+- id: login-02
+  name: login-site-02
+  template_id: generic-1u-login
+  u_position: 2
+  face: front
+  instance: login-site-02
+- id: mgmt-01
+  name: mgmt-site-01
+  template_id: generic-1u-mgmt
+  u_position: 40
+  face: front
+  instance: mgmt-site-01

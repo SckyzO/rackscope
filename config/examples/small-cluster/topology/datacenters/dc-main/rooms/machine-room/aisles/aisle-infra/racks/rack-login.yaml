@@ -1,0 +1,49 @@
+id: rack-login
+name: Login & Visu Rack
+u_height: 42
+template_id: rack-42u-air
+devices:
+- id: login-01
+  name: login01
+  template_id: generic-1u-login
+  u_position: 1
+  face: front
+  instance: login01
+- id: login-02
+  name: login02
+  template_id: generic-1u-login
+  u_position: 2
+  face: front
+  instance: login02
+- id: visu-01
+  name: visu01
+  template_id: generic-2u-visu
+  u_position: 3
+  face: front
+  instance:
+    1: visu001
+- id: visu-02
+  name: visu02
+  template_id: generic-2u-visu
+  u_position: 5
+  face: front
+  instance:
+    1: visu002
+- id: mgmt-01
+  name: mgmt01
+  template_id: generic-1u-mgmt
+  u_position: 40
+  face: front
+  instance: mgmt01
+- id: mgmt-02
+  name: mgmt02
+  template_id: generic-1u-mgmt
+  u_position: 41
+  face: front
+  instance: mgmt02
+- id: sw-tor
+  name: tor-services
+  template_id: generic-tor-eth-1u
+  u_position: 42
+  face: front
+  instance: tor-services

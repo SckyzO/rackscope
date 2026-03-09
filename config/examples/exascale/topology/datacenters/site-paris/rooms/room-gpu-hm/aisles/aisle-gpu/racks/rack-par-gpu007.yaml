@@ -1,0 +1,111 @@
+id: rack-par-gpu007
+name: GPU Rack rack-par-gpu007
+u_height: 42
+template_id: rack-42u-dcw
+devices:
+- id: ggpu007-01
+  name: gpu281-gpu284
+  template_id: hpc-4u-quad-gpu
+  u_position: 1
+  face: front
+  instance:
+    1: gpu281
+    2: gpu282
+    3: gpu283
+    4: gpu284
+- id: ggpu007-05
+  name: gpu285-gpu288
+  template_id: hpc-4u-quad-gpu
+  u_position: 5
+  face: front
+  instance:
+    1: gpu285
+    2: gpu286
+    3: gpu287
+    4: gpu288
+- id: ggpu007-09
+  name: gpu289-gpu292
+  template_id: hpc-4u-quad-gpu
+  u_position: 9
+  face: front
+  instance:
+    1: gpu289
+    2: gpu290
+    3: gpu291
+    4: gpu292
+- id: ggpu007-13
+  name: gpu293-gpu296
+  template_id: hpc-4u-quad-gpu
+  u_position: 13
+  face: front
+  instance:
+    1: gpu293
+    2: gpu294
+    3: gpu295
+    4: gpu296
+- id: ggpu007-17
+  name: gpu297-gpu300
+  template_id: hpc-4u-quad-gpu
+  u_position: 17
+  face: front
+  instance:
+    1: gpu297
+    2: gpu298
+    3: gpu299
+    4: gpu300
+- id: ggpu007-21
+  name: gpu301-gpu304
+  template_id: hpc-4u-quad-gpu
+  u_position: 21
+  face: front
+  instance:
+    1: gpu301
+    2: gpu302
+    3: gpu303
+    4: gpu304
+- id: ggpu007-25
+  name: gpu305-gpu308
+  template_id: hpc-4u-quad-gpu
+  u_position: 25
+  face: front
+  instance:
+    1: gpu305
+    2: gpu306
+    3: gpu307
+    4: gpu308
+- id: ggpu007-29
+  name: gpu309-gpu312
+  template_id: hpc-4u-quad-gpu
+  u_position: 29
+  face: front
+  instance:
+    1: gpu309
+    2: gpu310
+    3: gpu311
+    4: gpu312
+- id: ggpu007-33
+  name: gpu313-gpu316
+  template_id: hpc-4u-quad-gpu
+  u_position: 33
+  face: front
+  instance:
+    1: gpu313
+    2: gpu314
+    3: gpu315
+    4: gpu316
+- id: ggpu007-37
+  name: gpu317-gpu320
+  template_id: hpc-4u-quad-gpu
+  u_position: 37
+  face: front
+  instance:
+    1: gpu317
+    2: gpu318
+    3: gpu319
+    4: gpu320
+- id: tor-rack-par-gpu007
+  name: tor-rack-par-gpu007
+  template_id: generic-tor-eth-1u
+  u_position: 42
+  face: front
+  instance: tor-rack-par-gpu007
