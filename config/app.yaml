@@ -1,151 +1,29 @@
 app:
   name: Rackscope
-  description: Datacenter Monitoring
+  description: My Lab
+
 paths:
   topology: config/topology
   templates: config/templates
   checks: config/checks/library
-  metrics: config/metrics/library
-refresh:
-  room_state_seconds: 60
-  rack_state_seconds: 60
-cache:
-  ttl_seconds: 60
-  health_checks_ttl_seconds: 30
-  metrics_ttl_seconds: 120
+
 telemetry:
   prometheus_url: http://prometheus:9090
   identity_label: instance
-  rack_label: rack_id
-  chassis_label: chassis_id
-  job_regex: node|rackscope-simulator
-  prometheus_heartbeat_seconds: 30
-  prometheus_latency_window: 20
-  debug_stats: false
-  basic_auth_user: null
-  basic_auth_password: null
-  tls_verify: false
-  tls_ca_file: null
-  tls_cert_file: null
-  tls_key_file: null
-planner:
-  unknown_state: UNKNOWN
-  cache_ttl_seconds: 60
-  max_ids_per_query: 300
+  job_regex: ".*"
+
 features:
-  notifications: true
-  notifications_max_visible: 10
-  playlist: true
-  offline: true
-  wizard: true
-  worldmap: true
-  dev_tools: false
+  wizard: false
+  worldmap: false
+
 auth:
   enabled: false
   username: admin
-  password_hash: $2b$12$X91lqP3eT0gSs7rF9JdM0OtowhwbsugMYDDGySdrXscVmtggB4eCS
-  secret_key: ''
-  session_duration: 24h
-  policy:
-    min_length: 6
-    max_length: 128
-    require_digit: false
-    require_symbol: false
-map:
-  default_view: world
-  default_zoom: 2
-  min_zoom: 2
-  max_zoom: 7
-  zoom_controls: true
-  center:
-    lat: 20.0
-    lon: 0.0
-playlist:
-  interval_seconds: 30
-  views:
-  - /views/worldmap
-  - /slurm/overview
+  password_hash: ""
+
 plugins:
   simulator:
     enabled: true
-    update_interval_seconds: 20
-    seed: null
-    incident_mode: custom
-    changes_per_hour: 5
-    custom_incidents:
-      devices_crit: 1
-      devices_warn: 2
-      racks_crit: 0
-      aisles_hot: 0
-    overrides_path: config/plugins/simulator/overrides/overrides.yaml
-    default_ttl_seconds: 120
-    metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
-    metrics_catalogs:
-    - id: slurm
-      path: config/plugins/simulator/metrics/metrics_slurm.yaml
-      enabled: true
-    slurm_random_statuses:
-      drain: 1
-      down: 1
-      maint: 1
-    slurm_random_match:
-    - compute*
-    - visu*
-  slurm:
-    enabled: true
-    metric: slurm_node_status
-    label_node: node
-    label_status: status
-    label_partition: partition
-    mapping_path: config/plugins/slurm/node_mapping.yaml
-    roles:
-    - compute
-    - visu
-    include_unlabeled: false
-    status_map:
-      ok:
-      - allocated
-      - alloc
-      - completing
-      - comp
-      - idle
-      - mixed
-      - mix
-      warn:
-      - maint
-      - planned
-      - plnd
-      - reserved
-      - resv
-      - blocked
-      - block
-      - power_down
-      - pow_dn
-      - power_up
-      - pow_up
-      - powering_up
-      - powered_down
-      - reboot_issued
-      - reboot_req
-      crit:
-      - down
-      - drain
-      - drained
-      - draining
-      - drng
-      - fail
-      - failing
-      - failg
-      - error
-      - unknown
-      - unk
-      - noresp
-      - inval
-      info: []
-    severity_colors:
-      ok: '#22c55e'
-      warn: '#f59e0b'
-      crit: '#ef4444'
-      info: '#3b82f6'
-simulator: null
-slurm: null
+    incident_mode: light
+    changes_per_hour: 2
+    metrics_catalog_path: /app/config/plugins/simulator/metrics/metrics_full.yaml

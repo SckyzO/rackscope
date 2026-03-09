@@ -1,0 +1,8 @@
+id: main-aisle
+name: Server Aisle
+
+racks:
+  - id: rack-01
+  - id: rack-02
+  - id: rack-03
+  - id: rack-04

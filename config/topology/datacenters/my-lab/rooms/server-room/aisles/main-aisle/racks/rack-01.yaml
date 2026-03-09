@@ -1,0 +1,11 @@
+id: rack-01
+name: Compute Rack 01
+u_height: 42
+template_id: simple-42u
+devices:
+- id: srv-rack01-01
+  name: server[001-004]
+  template_id: simple-1u-server
+  u_position: 1
+  face: front
+  instance: server[001-004]

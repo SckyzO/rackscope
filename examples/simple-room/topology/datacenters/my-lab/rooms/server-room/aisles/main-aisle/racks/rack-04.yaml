@@ -1,0 +1,17 @@
+id: rack-04
+name: Management Rack
+u_height: 42
+template_id: simple-42u
+devices:
+- id: srv-mgmt
+  name: mgmt
+  template_id: simple-1u-server
+  u_position: 1
+  face: front
+  instance: mgmt
+- id: srv-login
+  name: login
+  template_id: simple-1u-server
+  u_position: 2
+  face: front
+  instance: login
