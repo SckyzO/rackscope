@@ -215,7 +215,7 @@ def test_auth_middleware_enabled_invalid_jwt():
 def test_auth_middleware_valid_jwt():
     """With auth enabled, valid JWT allows access."""
     from unittest.mock import patch, MagicMock
-    from jose import jwt
+    import jwt
 
     secret = "test-secret-key-for-jwt"
     mock_config = MagicMock()

@@ -255,9 +255,9 @@ class TestMakeAndDecodeToken:
 
     def test_token_missing_sub_raises(self):
         """Token without 'sub' claim should raise."""
-        import jose.jwt as jwt
+        import jwt as _pyjwt
 
-        token = jwt.encode({}, SECRET, algorithm="HS256")
+        token = _pyjwt.encode({}, SECRET, algorithm="HS256")
         with pytest.raises(HTTPException) as exc:
             _decode_token(token, SECRET)
         assert exc.value.status_code == 401

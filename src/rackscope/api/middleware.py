@@ -12,7 +12,8 @@ import logging
 from typing import Callable
 
 from fastapi import Request, Response
-from jose import jwt as _jwt, JWTError as _JWTError  # type: ignore[import-untyped]
+import jwt as _jwt
+from jwt.exceptions import InvalidTokenError as _JWTError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 

@@ -22,7 +22,8 @@ COPY plugins/ plugins/
 
 # Install dependencies (editable, with dev tools).
 # plugins/ must exist before this step so setuptools discovers the package.
-RUN pip install --no-cache-dir -e '.[dev]'
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -e '.[dev]'
 
 # Copy config last (changes most often — keeps pip install layer cached)
 COPY config/ config/
