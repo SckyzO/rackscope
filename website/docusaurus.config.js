@@ -25,6 +25,10 @@ const config = {
     locales: ['en'],
   },
 
+  // cosmos-docusaurus-theme: CSS-only theme plugin (Void/Slate palette, Outfit font,
+  // full Infima coverage). Rackscope-specific overrides stay in custom.css.
+  themes: ['cosmos-docusaurus-theme'],
+
   presets: [
     [
       'classic',
@@ -37,6 +41,7 @@ const config = {
         },
         blog: false,
         theme: {
+          // Only Rackscope-specific overrides — base theme handled by cosmos-docusaurus-theme
           customCss: './src/css/custom.css',
         },
       }),
