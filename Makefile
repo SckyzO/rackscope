@@ -1,22 +1,26 @@
 SHELL := /bin/bash
 
 # Docker Compose files
-COMPOSE_DEV := docker-compose.dev.yml
+COMPOSE_DEV  := docker-compose.dev.yml
 COMPOSE_PROD := docker-compose.prod.yml
 
-.PHONY: up down restart logs build lint test test-v test-k test-file clean coverage typecheck complexity quality ci shell-backend shell-frontend watch-logs nginx-logs cert
-.PHONY: up-prod down-prod logs-prod build-prod
+.PHONY: up down restart logs build
+.PHONY: up-prod down-prod restart-prod logs-prod build-prod
+.PHONY: use use-homelab use-small-cluster use-hpc-cluster use-exascale which-config
+.PHONY: use-prod use-prod-homelab use-prod-small-cluster use-prod-hpc-cluster use-prod-exascale
+.PHONY: lint test test-v test-k test-file clean coverage typecheck complexity quality ci
+.PHONY: shell-backend shell-frontend watch-logs nginx-logs cert
 .PHONY: docs docs-build docs-logs
 .PHONY: security security-backend security-frontend security-deps
-.PHONY: use use-homelab use-small-cluster use-hpc-cluster use-exascale which-config
 
-# Development Stack Management (default)
+# ── Development ──────────────────────────────────────────────────────────────
 # First time: run `make cert` to generate the self-signed TLS certificate.
-# Access points after `make up`:
-#   https://localhost          → Rackscope UI  (browser warning: add exception once)
-#   https://localhost/api/docs → FastAPI Swagger UI
+# Access points:
+#   https://localhost          → Rackscope UI
+#   https://localhost/api/docs → Swagger UI
 #   http://localhost:9090      → Prometheus
-#   http://localhost:3001      → Docusaurus docs  (make docs)
+#   http://localhost:3001      → Docusaurus docs (make docs)
+
 up:
 	docker compose -f $(COMPOSE_DEV) up -d
 
@@ -32,12 +36,19 @@ logs:
 build:
 	docker compose -f $(COMPOSE_DEV) build
 
-# Production Stack Management
+# ── Production ───────────────────────────────────────────────────────────────
+# Requires pre-built images from GHCR.
+# Set RACKSCOPE_VERSION to pin a release (default: latest).
+# Example: RACKSCOPE_VERSION=1.2.0 make up-prod
+
 up-prod:
 	docker compose -f $(COMPOSE_PROD) up -d
 
 down-prod:
 	docker compose -f $(COMPOSE_PROD) down
+
+restart-prod:
+	docker compose -f $(COMPOSE_PROD) restart
 
 logs-prod:
 	docker compose -f $(COMPOSE_PROD) logs -f
@@ -153,35 +164,49 @@ docs-logs:
 # Switch between named configurations without touching app.yaml.
 # The active config is stored in .env (gitignored, read by Docker Compose).
 #
-# Usage:
-#   make use EXAMPLE=homelab        # switch + restart
+# Dev usage:
+#   make use EXAMPLE=homelab        # switch + restart dev stack
 #   make use-exascale               # shorthand
+#
+# Prod usage:
+#   make use-prod EXAMPLE=homelab   # switch + restart prod stack
+#   make use-prod-exascale          # shorthand
+#
+# Other:
 #   make which-config               # show active config
-#   make up                         # uses active config (default: app.yaml)
+#   make up / make up-prod          # start with active config (default: app.yaml)
 
-use:
+_check-example:
 ifndef EXAMPLE
 	$(error Usage: make use EXAMPLE=<name>  — available: homelab, small-cluster, hpc-cluster, exascale)
 endif
 	@if [ ! -f config/app.example.$(EXAMPLE).yaml ]; then \
 		echo "❌ config/app.example.$(EXAMPLE).yaml not found"; exit 1; \
 	fi
+
+use: _check-example
 	@echo "APP_CONFIG=app.example.$(EXAMPLE).yaml" > .env
-	@echo "→ Switching to: $(EXAMPLE)"
+	@echo "→ [dev] Switching to: $(EXAMPLE)"
 	docker compose -f $(COMPOSE_DEV) restart backend simulator
-	@echo "✅ Rackscope running with: $(EXAMPLE)"
+	@echo "✅ Dev stack running with: $(EXAMPLE)"
 
-use-homelab:
-	$(MAKE) use EXAMPLE=homelab
+use-prod: _check-example
+	@echo "APP_CONFIG=app.example.$(EXAMPLE).yaml" > .env
+	@echo "→ [prod] Switching to: $(EXAMPLE)"
+	docker compose -f $(COMPOSE_PROD) restart backend
+	@echo "✅ Prod stack running with: $(EXAMPLE)"
 
-use-small-cluster:
-	$(MAKE) use EXAMPLE=small-cluster
+# Dev shorthands
+use-homelab:       ; $(MAKE) use EXAMPLE=homelab
+use-small-cluster: ; $(MAKE) use EXAMPLE=small-cluster
+use-hpc-cluster:   ; $(MAKE) use EXAMPLE=hpc-cluster
+use-exascale:      ; $(MAKE) use EXAMPLE=exascale
 
-use-hpc-cluster:
-	$(MAKE) use EXAMPLE=hpc-cluster
-
-use-exascale:
-	$(MAKE) use EXAMPLE=exascale
+# Prod shorthands
+use-prod-homelab:       ; $(MAKE) use-prod EXAMPLE=homelab
+use-prod-small-cluster: ; $(MAKE) use-prod EXAMPLE=small-cluster
+use-prod-hpc-cluster:   ; $(MAKE) use-prod EXAMPLE=hpc-cluster
+use-prod-exascale:      ; $(MAKE) use-prod EXAMPLE=exascale
 
 which-config:
 	@if [ -f .env ] && grep -q "APP_CONFIG" .env; then \

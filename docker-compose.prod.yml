@@ -24,7 +24,7 @@ services:
       # Uncomment only if you want to override or add custom plugins without rebuilding:
       # - ./plugins:/app/plugins:ro
     environment:
-      - RACKSCOPE_APP_CONFIG=/app/config/app.yaml
+      - RACKSCOPE_APP_CONFIG=/app/config/${APP_CONFIG:-app.yaml}
       - PYTHONPATH=/app/src:/app
     command: uvicorn rackscope.api.app:app --host 0.0.0.0 --port 8000
     healthcheck:
