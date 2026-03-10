@@ -67,6 +67,7 @@ _incident_state: dict = {
     "last_roll_tick": 0,
 }
 pdu_energy_state: dict = {}
+_alloc_cache: dict = {"cache_key": None, "set": set()}
 
 # Counter states for monotonically increasing metrics
 node_cpu_idle_seconds: dict = {}
@@ -440,6 +441,24 @@ def _generate_rack_metrics(rack_id, rack_info, incident_state, overrides_by_rack
     }
 
 
+def _get_alloc_set(targets: list, forced_slurm_status: dict, slurm_alloc_percent: int) -> set:
+    """Return the set of nodes to put in 'allocated' state.
+    Result is cached and only recomputed when inputs change."""
+    forced_keys = frozenset(forced_slurm_status.keys())
+    cache_key = (id(targets), len(targets), forced_keys, slurm_alloc_percent)
+    if _alloc_cache["cache_key"] == cache_key:
+        return _alloc_cache["set"]
+    eligible = sorted(
+        nid for nid in (t["node_id"] for t in targets if t.get("node_id"))
+        if nid not in forced_slurm_status
+    )
+    n_alloc = int(len(eligible) * max(0, min(100, slurm_alloc_percent)) / 100)
+    alloc_set = set(eligible[:n_alloc])
+    _alloc_cache["cache_key"] = cache_key
+    _alloc_cache["set"] = alloc_set
+    return alloc_set
+
+
 # ── Main simulation loop ───────────────────────────────────────────────────
 
 
@@ -574,13 +593,7 @@ def simulate():
         # Build a deterministic set of nodes to place in "allocated" state.
         # Nodes already assigned a forced status are excluded.
         # Sorted alphabetically for stability across ticks; no randomness here.
-        _alloc_eligible = sorted(
-            nid
-            for nid in [t["node_id"] for t in targets if t.get("node_id")]
-            if nid not in forced_slurm_status
-        )
-        _n_alloc = int(len(_alloc_eligible) * max(0, min(100, slurm_alloc_percent)) / 100)
-        _alloc_set: set = set(_alloc_eligible[:_n_alloc])
+        _alloc_set = _get_alloc_set(targets, forced_slurm_status, slurm_alloc_percent)
 
         rack_info = {}
         for target in targets:

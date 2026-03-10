@@ -124,6 +124,19 @@ async def apply_config(app_config: AppConfig) -> None:
             max_ids_per_query=APP_CONFIG.planner.max_ids_per_query,
         )
     )
+    if app_config.auth.enabled:
+        if not app_config.auth.password_hash:
+            logger.warning(
+                "Auth is enabled but no password_hash is configured. "
+                "Set auth.password_hash in app.yaml (generate via Settings UI). "
+                "Falling back to authentication disabled for safety."
+            )
+        if not app_config.auth.secret_key:
+            logger.warning(
+                "Auth is enabled but no secret_key is configured. "
+                "JWT tokens will use a runtime-generated secret (invalidated on restart). "
+                "Set auth.secret_key in app.yaml for persistent sessions."
+            )
     # Reload plugins with new configuration
     await plugin_registry.reload_plugins(app_config)
     logger.info("Configuration applied successfully")

@@ -117,7 +117,7 @@ security-frontend:
 ## Backend deps: pip-audit
 security-deps:
 	@echo "🔍 Python dependency audit (pip-audit)..."
-	docker compose -f $(COMPOSE_DEV) exec backend python3 -m pip_audit || true  # known: ecdsa via python-jose (planned PyJWT migration), pip CVEs (container-level) || true  # ecdsa CVE-2024-23342 (python-jose, planned migration to PyJWT); pip CVEs (container infra)
+	docker compose -f $(COMPOSE_DEV) exec backend python3 -m pip_audit || true  # PyJWT migration complete — python-jose/ecdsa removed; || true for pip CVEs (container infra, low risk)
 	@echo "✅ Python dependency audit complete."
 
 ## Full security audit

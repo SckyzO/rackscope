@@ -81,7 +81,7 @@ class TelemetryPlanner:
         # Concurrent callers that arrive while a recompute is in progress will
         # wait for it to finish and then return the freshly computed snapshot,
         # rather than each triggering their own full recompute.
-        self._refresh_lock: asyncio.Lock = asyncio.Lock()
+        self._refresh_lock: Optional[asyncio.Lock] = None
         # Pending state: key = f"{check_id}:{instance_id}", value = severity string
         self._pending_states: Dict[str, str] = {}
         # When pending started: key = f"{check_id}:{instance_id}", value = monotonic timestamp
@@ -118,6 +118,8 @@ class TelemetryPlanner:
         # Others that arrive while the lock is held will block here, then
         # re-check the cache once released — returning the fresh snapshot
         # without triggering a second full recomputation.
+        if self._refresh_lock is None:
+            self._refresh_lock = asyncio.Lock()
         async with self._refresh_lock:
             # Re-check inside the lock: another coroutine may have finished
             # recomputing while we were waiting.
@@ -135,6 +137,21 @@ class TelemetryPlanner:
     ) -> PlannerSnapshot:
         """Internal: run the full Prometheus query cycle and update the snapshot."""
         now = time.monotonic()
+
+        # Purge pending states for instances no longer in topology (prevents unbounded growth).
+        # Also evict any entry pending for more than 24h (safety net).
+        if self._pending_states:
+            node_ids_set, chassis_ids_set, rack_ids_set, _ = _collect_topology_ids(topology)
+            valid_keys: set[str] = set()
+            for check in checks.checks:
+                scope_ids = {"node": node_ids_set, "chassis": chassis_ids_set, "rack": rack_ids_set}.get(check.scope, set())
+                for id_ in scope_ids:
+                    valid_keys.add(f"{check.id}:{id_}")
+            stale = [k for k in self._pending_states if k not in valid_keys or (now - self._pending_since.get(k, now)) > 86400]
+            for k in stale:
+                self._pending_states.pop(k, None)
+                self._pending_since.pop(k, None)
+
         node_ids, chassis_ids, rack_ids, rack_nodes = _collect_topology_ids(topology)
         queries = _build_queries(
             checks.checks,

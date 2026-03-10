@@ -38,7 +38,8 @@ class PrometheusClient:
         self._metrics_cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}  # Cache for metrics
         self._cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}  # Generic cache (backward compat)
         self._in_flight: Dict[str, asyncio.Task] = {}
-        self._lock = asyncio.Lock()
+        self._lock: Optional[asyncio.Lock] = None
+        self._last_cache_cleanup: float = 0.0
         self._latency_samples: deque[float] = deque(maxlen=20)
         self._last_latency_ms: float | None = None
         self._last_query_ts: float | None = None
@@ -113,6 +114,14 @@ class PrometheusClient:
             cache = self._cache
             ttl = self.cache_ttl
 
+        # Periodic cache eviction every 5 minutes
+        _now_ts = time.time()
+        if _now_ts - self._last_cache_cleanup > 300:
+            self._evict_expired_cache()
+            self._last_cache_cleanup = _now_ts
+
+        if self._lock is None:
+            self._lock = asyncio.Lock()
         async with self._lock:
             cached = cache.get(query)
             if cached and (now - cached[0]) < ttl:
@@ -126,6 +135,8 @@ class PrometheusClient:
 
         if task is not None:
             result = await task
+            if self._lock is None:
+                self._lock = asyncio.Lock()
             async with self._lock:
                 if self._in_flight.get(query) is task:
                     self._in_flight.pop(query, None)
@@ -193,6 +204,18 @@ class PrometheusClient:
     async def ping(self) -> None:
         """Force a Prometheus call to refresh latency stats."""
         await self._fetch_query("vector(1)")
+
+    def _evict_expired_cache(self) -> None:
+        """Remove expired entries from all caches to prevent unbounded growth."""
+        now = time.monotonic()
+        for cache, ttl in [
+            (self._health_cache, self.health_checks_ttl),
+            (self._metrics_cache, self.metrics_ttl),
+            (self._cache, self.cache_ttl),
+        ]:
+            expired = [k for k, (ts, _) in cache.items() if (now - ts) >= ttl]
+            for k in expired:
+                cache.pop(k, None)
 
     def get_latency_stats(self) -> Dict[str, Any]:
         """Return rolling latency statistics for the last N queries."""
