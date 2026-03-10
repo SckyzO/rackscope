@@ -229,11 +229,14 @@ def list_config_profiles() -> dict:
             if not app_yaml.exists():
                 continue
             rel_path = f"{category}/{entry.name}/app.yaml"
-            profiles.append({
-                "name": entry.name,
-                "type": category[:-1],  # "profile" or "example"
-                "path": rel_path,
-                "active": active_cfg.endswith(rel_path) or active_cfg.endswith(f"config/{rel_path}"),
-            })
+            profiles.append(
+                {
+                    "name": entry.name,
+                    "type": category[:-1],  # "profile" or "example"
+                    "path": rel_path,
+                    "active": active_cfg.endswith(rel_path)
+                    or active_cfg.endswith(f"config/{rel_path}"),
+                }
+            )
 
     return {"profiles": profiles, "active": active_cfg}
