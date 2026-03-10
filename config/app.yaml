@@ -1,11 +1,11 @@
 app:
   name: Rackscope
-  description: exascale example
+  description: Paris + Lyon datacenters
 paths:
-  topology: config/examples/exascale/topology
-  templates: config/examples/exascale/templates
-  checks: config/examples/exascale/checks/library
-  metrics: config/examples/exascale/metrics/library
+  topology: config/topology
+  templates: config/templates
+  checks: config/checks/library
+  metrics: config/metrics/library
 refresh:
   room_state_seconds: 60
   rack_state_seconds: 60
@@ -108,7 +108,6 @@ plugins:
       - alloc
       - completing
       - mixed
-      - idle
       warn:
       - drain
       - draining
@@ -120,7 +119,8 @@ plugins:
       - fail
       - error
       - unknown
-      info: []
+      info:
+      - idle
     severity_colors:
       ok: '#22c55e'
       warn: '#f59e0b'

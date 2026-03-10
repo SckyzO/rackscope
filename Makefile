@@ -8,6 +8,7 @@ COMPOSE_PROD := docker-compose.prod.yml
 .PHONY: up-prod down-prod logs-prod build-prod
 .PHONY: docs docs-build docs-logs
 .PHONY: security security-backend security-frontend security-deps
+.PHONY: use use-homelab use-small-cluster use-hpc-cluster use-exascale which-config
 
 # Development Stack Management (default)
 # First time: run `make cert` to generate the self-signed TLS certificate.
@@ -147,6 +148,47 @@ docs-build:
 
 docs-logs:
 	docker compose -f $(COMPOSE_DEV) logs -f docs
+
+# ── Config Profiles ─────────────────────────────────────────────────────────
+# Switch between named configurations without touching app.yaml.
+# The active config is stored in .env (gitignored, read by Docker Compose).
+#
+# Usage:
+#   make use EXAMPLE=homelab        # switch + restart
+#   make use-exascale               # shorthand
+#   make which-config               # show active config
+#   make up                         # uses active config (default: app.yaml)
+
+use:
+ifndef EXAMPLE
+	$(error Usage: make use EXAMPLE=<name>  — available: homelab, small-cluster, hpc-cluster, exascale)
+endif
+	@if [ ! -f config/app.example.$(EXAMPLE).yaml ]; then \
+		echo "❌ config/app.example.$(EXAMPLE).yaml not found"; exit 1; \
+	fi
+	@echo "APP_CONFIG=app.example.$(EXAMPLE).yaml" > .env
+	@echo "→ Switching to: $(EXAMPLE)"
+	docker compose -f $(COMPOSE_DEV) restart backend simulator
+	@echo "✅ Rackscope running with: $(EXAMPLE)"
+
+use-homelab:
+	$(MAKE) use EXAMPLE=homelab
+
+use-small-cluster:
+	$(MAKE) use EXAMPLE=small-cluster
+
+use-hpc-cluster:
+	$(MAKE) use EXAMPLE=hpc-cluster
+
+use-exascale:
+	$(MAKE) use EXAMPLE=exascale
+
+which-config:
+	@if [ -f .env ] && grep -q "APP_CONFIG" .env; then \
+		echo "Active config: $$(grep APP_CONFIG .env | cut -d= -f2)"; \
+	else \
+		echo "Active config: app.yaml (default)"; \
+	fi
 
 # Cleanup
 clean:
