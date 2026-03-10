@@ -147,7 +147,7 @@ export const StadeToulousainOverlay = ({ onClose }: { onClose: () => void }) => 
     const rafId = requestAnimationFrame(() => setVisible(true));
 
     const start = Date.now();
-    const DURATION = 15000;
+    const DURATION = 60000;
     timerRef.current = setInterval(() => {
       const elapsed = Date.now() - start;
       const pct = Math.max(0, 100 - (elapsed / DURATION) * 100);
@@ -306,7 +306,13 @@ export const StadeToulousainOverlay = ({ onClose }: { onClose: () => void }) => 
           {/* Header */}
           <p
             className="mb-1 text-center font-bold"
-            style={{ color: '#E63228', fontFamily: 'Georgia, serif', fontSize: '0.95rem' }}
+            style={{
+              color: '#E63228',
+              fontFamily: "'Impact', 'Arial Black', 'Anton', sans-serif",
+              fontSize: '1.1rem',
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase' as const,
+            }}
           >
             {t.alert}
           </p>
