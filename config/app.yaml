@@ -1,52 +1,130 @@
-# Rackscope — app.yaml (full-datacenter example)
-# 2 sites, 4 rooms, mixed compute/GPU/storage/network
-
 app:
   name: Rackscope
-  description: Datacenter Monitoring
-
+  description: exascale example
 paths:
-  topology: config/topology
-  templates: config/templates
-  checks: config/checks/library
-  metrics: config/metrics/library
-
+  topology: config/examples/exascale/topology
+  templates: config/examples/exascale/templates
+  checks: config/examples/exascale/checks/library
+  metrics: config/examples/exascale/metrics/library
 refresh:
   room_state_seconds: 60
   rack_state_seconds: 60
-
 cache:
   ttl_seconds: 60
-  health_checks_ttl_seconds: 30
+  health_checks_ttl_seconds: 60
   metrics_ttl_seconds: 120
-
 telemetry:
   prometheus_url: http://prometheus:9090
   identity_label: instance
   rack_label: rack_id
-  job_regex: "node|rackscope-simulator"
-
+  chassis_label: chassis_id
+  job_regex: node|rackscope-simulator
+  prometheus_heartbeat_seconds: 30
+  prometheus_latency_window: 20
+  debug_stats: false
+  basic_auth_user: null
+  basic_auth_password: null
+  tls_verify: true
+  tls_ca_file: null
+  tls_cert_file: null
+  tls_key_file: null
 planner:
   unknown_state: UNKNOWN
   cache_ttl_seconds: 60
   max_ids_per_query: 300
-
 features:
   notifications: true
+  notifications_max_visible: 10
   playlist: true
   offline: true
-  wizard: false
+  wizard: true
   worldmap: true
-
+  dev_tools: false
 auth:
   enabled: false
   username: admin
-  password_hash: ""
+  password_hash: ''
+  secret_key: ''
   session_duration: 24h
-
+  policy:
+    min_length: 6
+    max_length: 128
+    require_digit: false
+    require_symbol: false
+map:
+  default_view: world
+  default_zoom: 2
+  min_zoom: 2
+  max_zoom: 7
+  zoom_controls: true
+  center:
+    lat: 46.0
+    lon: 2.3
+playlist:
+  interval_seconds: 30
+  views:
+  - /views/worldmap
+  - /slurm/overview
 plugins:
   simulator:
     enabled: true
-    # Behaviour settings live in config/plugins/simulator/config/plugin.yaml
+    update_interval_seconds: 20
+    seed: 42
+    incident_mode: heavy
+    changes_per_hour: 4
+    custom_incidents:
+      devices_crit: 0
+      devices_warn: 0
+      racks_crit: 0
+      aisles_hot: 0
+    overrides_path: plugins/simulator/overrides/overrides.yaml
+    default_ttl_seconds: 120
+    metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
+    metrics_catalogs:
+    - id: slurm
+      path: /app/config/plugins/simulator/metrics/metrics_slurm.yaml
+      enabled: true
+    slurm_random_statuses:
+      drain: 1
+      down: 1
+    slurm_random_match:
+    - compute*
+    - gpu*
+    - hm*
   slurm:
-    enabled: false
+    enabled: true
+    metric: slurm_node_status
+    label_node: node
+    label_status: status
+    label_partition: partition
+    mapping_path: plugins/slurm/node_mapping.yaml
+    roles:
+    - compute
+    - gpu
+    include_unlabeled: false
+    status_map:
+      ok:
+      - allocated
+      - alloc
+      - completing
+      - mixed
+      - idle
+      warn:
+      - drain
+      - draining
+      - drained
+      - maint
+      - reserved
+      crit:
+      - down
+      - fail
+      - error
+      - unknown
+      info: []
+    severity_colors:
+      ok: '#22c55e'
+      warn: '#f59e0b'
+      crit: '#ef4444'
+      info: '#3b82f6'
+simulator: null
+slurm: null

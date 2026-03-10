@@ -45,6 +45,9 @@ Retro = warm parchment. Midnight = ultra-dark, minimal borders.
 | Default TTL | Default lifetime for new overrides (seconds, 0 = permanent) |
 | Metrics catalog | Primary Prometheus metric generation catalog — requires restart |
 | Additional catalogs | Extra catalogs merged on top (toggle per catalog) |
+| **Allocation ratio** | % of eligible Slurm nodes in `allocated` state (0–100 %, step 5). Default: 80 %. |
+| **Slurm Node Failures** | Force N nodes to drain/down/maint per reshuffle cycle |
+| Node patterns | Glob patterns for nodes eligible for allocation ratio and forced status injection |
 
 **Incident modes at a glance**:
 
@@ -93,7 +96,7 @@ Each entry maps a Slurm node name (or wildcard pattern) to a topology instance n
 
 Changes take effect on the next Prometheus scrape cycle (no restart required).
 
-See [Slurm node mapping](../user-guide/slurm#node-mapping) for the full YAML reference.
+See [Slurm node mapping](../user-guide/slurm#node-mapping-optional) for the full YAML reference.
 
 ## Topology Editor
 

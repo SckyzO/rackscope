@@ -676,7 +676,7 @@ GET /api/config
 
 **Response**
 
-The full `AppConfig` object. See [Configuration Reference](/docs/admin-guide) for the complete schema.
+The full `AppConfig` object. See [Configuration Reference](/docs/admin-guide/app-yaml) for the complete schema.
 
 ---
 

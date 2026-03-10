@@ -401,13 +401,13 @@ def test_delete_simulator_override_not_found(mock_app_config_with_simulator):
 
 def test_get_simulator_status_not_running():
     """Test getting simulator status when simulator is unreachable."""
-    from unittest.mock import AsyncMock, patch
+    from unittest.mock import patch
 
-    import httpx
-
+    # The running check uses asyncio.open_connection (TCP probe).
+    # Simulate a connection failure by raising OSError.
     with patch(
-        "httpx.AsyncClient.get",
-        new=AsyncMock(side_effect=httpx.ConnectError("connection refused")),
+        "asyncio.open_connection",
+        side_effect=OSError("connection refused"),
     ):
         response = client.get("/api/simulator/status")
 

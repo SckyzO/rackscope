@@ -321,7 +321,7 @@ curl -X DELETE "http://localhost:8000/api/metrics/library/files/my_metric.yaml"
 Query live time-series metric data from Prometheus. This is the primary endpoint consumed by frontend charts.
 
 :::caution Performance
-Each call to this endpoint issues one or more range queries against Prometheus. Avoid calling it in tight loops or for many instances simultaneously — prefer batching or using the [Telemetry Planner](/docs/architecture/planner) for health state queries instead.
+Each call to this endpoint issues one or more range queries against Prometheus. Avoid calling it in tight loops or for many instances simultaneously — prefer batching or using the [Telemetry Planner](/docs/architecture/backend#telemetry-planner) for health state queries instead.
 :::
 
 ### Query Parameters

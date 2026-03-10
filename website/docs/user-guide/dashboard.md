@@ -52,7 +52,7 @@ This is useful for:
 
 Each dashboard tab shows a **ListVideo** icon. When lit (amber), the dashboard is included in playlist rotation accessible at `/dashboard/<id>`.
 
-Configure playlist rotation in the [Playlist Center](/playlist).
+Configure playlist rotation in the [Playlist Center](/user-guide/playlist).
 
 ## Widget Catalog
 
@@ -92,6 +92,7 @@ Configure playlist rotation in the [Playlist Center](/playlist).
 | World Map | Interactive site map with health markers |
 | Site Map | Site status overview |
 | Prometheus | Prometheus connection status, scrape stats, latency |
+| Container Stats | Memory and CPU usage for backend, simulator, and Prometheus processes |
 
 ### Slurm (requires Slurm plugin)
 
@@ -128,7 +129,7 @@ The Widget Library panel lists all available widgets grouped by category. It onl
 | **Stats** | Stat Card, Alert Count, Scrape Latency, Slurm Nodes* |
 | **Charts** | Health Gauge, Severity Donut, Rack Utilization, Slurm Utilization* |
 | **Monitoring** | Active Alerts, Recent CRIT, Node Heatmap, World Map |
-| **Overview** | Infrastructure (rooms list), Site Map, Prometheus, Slurm Cluster*, Simulator Status** |
+| **Overview** | Infrastructure (rooms list), Site Map, Prometheus, Container Stats, Slurm Cluster*, Simulator Status** |
 | **Catalog** | Catalog & Checks, Check Summary, Device Types |
 
 \* Requires Slurm plugin — hidden when disabled.

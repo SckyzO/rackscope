@@ -227,6 +227,7 @@ profiles:
   gpu:     { base_temp: 28.0, temp_range: 25.0, base_power: 250.0, power_var: 500.0, load_min: 5.0, load_max: 100.0 }
   service: { base_temp: 21.0, temp_range: 3.0, base_power: 100.0, power_var: 20.0, load_min: 2.0, load_max: 8.0 }
   network: { base_temp: 32.0, temp_range: 4.0, base_power: 120.0, power_var: 10.0, load_min: 15.0, load_max: 15.0 }
+slurm_alloc_percent: 80
 slurm_random_statuses: { drain: 1, down: 1, maint: 1 }
 slurm_random_match: [compute*, visu*]
 ```
@@ -552,6 +553,28 @@ Applied to all instances matching `compute*` and `visu*`:
 | `slurm_gpus_idle` | Idle GPUs |
 | `slurm_gpus_total` | Total GPUs |
 | `slurm_gpus_utilization` | GPU utilization (0–100) |
+
+### Slurm allocation behaviour
+
+The simulator controls the proportion of nodes in each Slurm state via two config fields:
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| `slurm_alloc_percent` | int (0–100) | `80` | Percentage of eligible nodes placed in `allocated` state. Remaining nodes become `idle`. Reflects a typical busy HPC cluster where 80% of capacity is in use. |
+| `slurm_random_statuses` | `{status: count}` | `{drain:1, down:1}` | Force N nodes to a specific status each reshuffle cycle (drain, down, maint, …). Applied before the alloc ratio, so forced nodes are excluded from the ratio calculation. |
+| `slurm_random_match` | list of globs | `[compute*, visu*]` | Node patterns eligible for both forced statuses and allocation ratio. |
+
+**Status priority** (highest to lowest):
+
+1. `slurm_random_statuses` forced assignment
+2. Hardware incident (`up=0` → `down`, `health_status=1` → `drain`)
+3. `slurm_alloc_percent` ratio → `allocated` or `idle`
+
+The allocated set is determined **deterministically** (alphabetical sort, first N%) — no randomness between ticks, so the Slurm state is stable within a cycle.
+
+Configure via **Settings → Plugins → Simulator → Slurm → Allocation ratio**.
+
+---
 
 ### Enabling the Slurm catalog
 

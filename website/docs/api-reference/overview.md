@@ -120,7 +120,57 @@ States propagate upward through the hierarchy: **Node → Device → Rack → Ro
 | [Simulator](./plugins#simulator) | `/api/simulator/` | Demo mode control and metric overrides |
 | [Slurm](./plugins#slurm) | `/api/slurm/` | HPC workload manager states |
 | Config | `/api/config` | Application configuration read/write |
-| System | `/api/system/` | Backend management (status, restart) |
+| System | `/api/system/` | Backend management (status, restart, process metrics) |
+
+## System endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/system/status` | Liveness probe — returns `{ "status": "running", "pid": ... }` |
+| `POST` | `/api/system/restart` | Trigger a uvicorn reload (dev mode only) |
+| `GET` | `/api/system/process-stats` | Memory and CPU usage for backend, simulator and Prometheus |
+
+### `GET /api/system/process-stats`
+
+Returns live process metrics for the three core services. The backend reads its own stats from `/proc/self/`; simulator and Prometheus stats are fetched asynchronously.
+
+```bash
+curl http://localhost:8000/api/system/process-stats
+```
+
+```json
+{
+  "backend": {
+    "memory_bytes": 108482560,
+    "cpu_seconds": 2.53,
+    "available": true
+  },
+  "simulator": {
+    "memory_bytes": 820785152,
+    "cpu_seconds": 875.96,
+    "available": true
+  },
+  "prometheus": {
+    "memory_bytes": 3788701696,
+    "cpu_seconds": 1085.25,
+    "available": true
+  }
+}
+```
+
+Each service block contains:
+
+| Field | Type | Description |
+|---|---|---|
+| `memory_bytes` | `number \| null` | Resident set size in bytes (`null` if unavailable) |
+| `cpu_seconds` | `number \| null` | Total CPU time in seconds since process start |
+| `available` | `boolean` | Whether the service was reachable |
+
+:::note
+Simulator metrics are queried via the Prometheus API (not the `/metrics` endpoint directly) to avoid timeouts on large topologies. If the simulator is not enabled, `available` will be `false`.
+:::
+
+---
 
 ## Quick Start
 
