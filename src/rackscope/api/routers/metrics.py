@@ -4,6 +4,7 @@ Metrics Router
 Endpoints for metrics library management and data querying.
 """
 
+import os
 import time
 from pathlib import Path
 from typing import Optional, Annotated
@@ -249,10 +250,13 @@ async def list_metrics_files(
         return {"files": []}
 
     metrics_path = Path(app_config.paths.metrics)
-    # Search in: library path, its parent (config/metrics/), and the simulator
-    # plugin directory where the actual catalog files live (metrics_full.yaml, etc.)
-    # New layout: simulator catalogs are in config/plugins/simulator/metrics/
-    sim_catalogs_dir = Path("config/plugins/simulator/metrics")
+    # Search in: library path, its parent, and the simulator plugin metrics directory.
+    # Resolve simulator catalogs relative to the active profile first, then fall back
+    # to the global config/plugins/simulator/metrics/ directory.
+    app_cfg_dir = Path(os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")).parent
+    profile_sim_dir = app_cfg_dir / "plugins/simulator/metrics"
+    global_sim_dir = Path("config/plugins/simulator/metrics")
+    sim_catalogs_dir = profile_sim_dir if profile_sim_dir.exists() else global_sim_dir
     search_dirs = [metrics_path, metrics_path.parent, sim_catalogs_dir]
 
     files = []

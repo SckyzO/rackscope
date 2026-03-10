@@ -98,7 +98,11 @@ class SlurmPluginConfig(BaseModel):
     include_unlabeled: bool = Field(default=False, description="Include devices without role label")
     mapping_path: Optional[str] = Field(
         default="config/plugins/slurm/node_mapping.yaml",
-        description="Path to Slurm node to instance mapping file",
+        description=(
+            "Path to Slurm node → instance mapping file (relative to /app or absolute). "
+            "For profiles: set this to the full path, e.g. "
+            "'config/examples/hpc-cluster/plugins/slurm/node_mapping.yaml'."
+        ),
     )
     # Metrics catalog — list of YAML files in config/plugins/slurm/metrics/
     # Each file defines metric queries shown in dashboards and tooltips.

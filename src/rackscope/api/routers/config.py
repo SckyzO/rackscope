@@ -110,12 +110,28 @@ async def update_app_config(
     with config_path.open("w") as f:
         yaml.safe_dump(payload.model_dump(), f, sort_keys=False)
 
+    # Plugin config files are resolved relative to the active profile's directory
+    # (= config_path.parent) so that each profile keeps its own plugin state.
+    # Fallback to the global config/plugins/ directory when the profile doesn't
+    # have a dedicated plugins/ sub-directory yet (e.g. minimal profiles).
+    profile_dir = config_path.parent
+
+    def _plugin_cfg_path(rel: str) -> Path:
+        """Return profile-scoped path if it exists or can be created, else global."""
+        profile_p = profile_dir / rel
+        global_p = Path(rel)
+        # Use profile-scoped path if its parent already exists or the profile has a
+        # plugins/ directory (indicating an intentional profile structure).
+        if (profile_dir / "plugins").exists() or profile_p.exists():
+            return profile_p
+        return global_p
+
     # Sync simulator plugin config to its dedicated file so that
     # SimulatorPlugin._load_config() picks up the new settings immediately.
     # plugin.yaml has priority over app.yaml for the backend plugin.
     sim_plugin_cfg = payload.plugins.get("simulator") if payload.plugins else None
     if sim_plugin_cfg:
-        sim_cfg_path = Path("config/plugins/simulator/config/plugin.yaml")
+        sim_cfg_path = _plugin_cfg_path("plugins/simulator/config/plugin.yaml")
         sim_cfg_path.parent.mkdir(parents=True, exist_ok=True)
         # Read existing plugin.yaml to preserve process-only fields
         # (profiles, slurm_random_statuses, etc.) that are not exposed in the UI.
@@ -143,7 +159,7 @@ async def update_app_config(
     # config.yml has priority over app.yaml for the Slurm plugin.
     slurm_plugin_cfg = payload.plugins.get("slurm") if payload.plugins else None
     if slurm_plugin_cfg:
-        slurm_cfg_path = Path("config/plugins/slurm/config.yml")
+        slurm_cfg_path = _plugin_cfg_path("plugins/slurm/config.yml")
         slurm_cfg_path.parent.mkdir(parents=True, exist_ok=True)
         existing_slurm: dict = {}
         if slurm_cfg_path.exists():

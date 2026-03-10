@@ -57,31 +57,31 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
       >
         <FormField
           label="Topology Path"
-          tooltip="Path to the topology YAML files (sites, rooms, racks). Relative to the project root."
+          tooltip="Path to the topology YAML files. For profiles: use a relative path like 'topology' (resolved from the app.yaml directory). For global config: use a full path like 'config/examples/hpc-cluster/topology'."
           value={draft.paths.topology}
           onChange={(value) => update('paths', 'topology', value)}
-          placeholder="config/topology"
+          placeholder="topology  (or config/examples/hpc-cluster/topology)"
         />
         <FormField
           label="Templates Path"
-          tooltip="Directory containing device and rack template YAML files."
+          tooltip="Directory containing device and rack template YAML files. For profiles: relative path like 'templates'. For global: full path."
           value={draft.paths.templates}
           onChange={(value) => update('paths', 'templates', value)}
-          placeholder="config/templates"
+          placeholder="templates  (or config/examples/hpc-cluster/templates)"
         />
         <FormField
           label="Checks Path"
-          tooltip="Directory containing health check library YAML files."
+          tooltip="Directory containing health check library YAML files. For profiles: relative path like 'checks/library'. For global: full path."
           value={draft.paths.checks}
           onChange={(value) => update('paths', 'checks', value)}
-          placeholder="config/checks"
+          placeholder="checks/library  (or config/examples/hpc-cluster/checks/library)"
         />
         <FormField
           label="Metrics Path"
-          tooltip="Directory containing metrics library YAML files."
+          tooltip="Directory containing metrics library YAML files. For profiles: relative path like 'metrics/library'. For global: full path."
           value={draft.paths.metrics}
           onChange={(value) => update('paths', 'metrics', value)}
-          placeholder="config/metrics/library"
+          placeholder="metrics/library  (or config/examples/hpc-cluster/metrics/library)"
         />
       </FormSection>
 
