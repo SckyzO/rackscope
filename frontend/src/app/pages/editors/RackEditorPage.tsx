@@ -30,11 +30,11 @@ import {
 } from 'lucide-react';
 import MonacoEditor from '@monaco-editor/react';
 import * as jsYaml from 'js-yaml';
-import { api } from '../../../services/api';
-import type { Rack, Device, DeviceTemplate, RackTemplate } from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { api } from '@src/services/api';
+import type { Rack, Device, DeviceTemplate, RackTemplate } from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
-import { PageActionButton } from '../../components/PageActionButton';
+import { PageActionButton } from '@app/components/PageActionButton';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

@@ -9,9 +9,9 @@ import {
   AlertTriangle,
   HelpCircle,
 } from 'lucide-react';
-import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import { DeviceChassis } from '../../../components/RackVisualizer';
-import { HUDTooltip } from '../../../components/HUDTooltip';
+import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
+import { DeviceChassis } from '@src/components/RackVisualizer';
+import { HUDTooltip } from '@src/components/HUDTooltip';
 
 // Mirrors HUDTooltip's internal prop shape — not exported from RackVisualizer,
 // so redeclared here to keep TypeScript strict without importing internals.
@@ -24,8 +24,8 @@ type TooltipPayload = {
   metrics?: { temp?: number; power?: number };
   mousePos: { x: number; y: number };
 };
-import { api } from '../../../services/api';
-import type { RackState, DeviceTemplate } from '../../../types';
+import { api } from '@src/services/api';
+import type { RackState, DeviceTemplate } from '@src/types';
 
 const HC: Record<string, string> = {
   OK: '#10b981',

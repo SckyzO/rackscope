@@ -14,19 +14,19 @@ import {
   ArrowLeft,
   Save,
 } from 'lucide-react';
-import { api } from '../../../services/api';
-import type { Site, Room, RackTemplate } from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { api } from '@src/services/api';
+import type { Site, Room, RackTemplate } from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from '../templates/EmptyPage';
-import { PageActionButton } from '../../components/PageActionButton';
-import { Drawer } from '../../components/layout/Drawer';
-import { DrawerHeader } from '../../components/layout/DrawerHeader';
+import { PageActionButton } from '@app/components/PageActionButton';
+import { Drawer } from '@app/components/layout/Drawer';
+import { DrawerHeader } from '@app/components/layout/DrawerHeader';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type ViewLevel = 'sites' | 'rooms' | 'room-editor';
 
-import { RoomEditorCanvas } from '../../components/datacenter/RoomEditorCanvas';
-import { DatacenterWizard } from '../../components/datacenter/DatacenterWizard';
+import { RoomEditorCanvas } from '@app/components/datacenter/RoomEditorCanvas';
+import { DatacenterWizard } from '@app/components/datacenter/DatacenterWizard';
 
 // ── YamlDrawer ────────────────────────────────────────────────────────────────
 

@@ -11,16 +11,16 @@ import {
   Server,
   DoorOpen,
 } from 'lucide-react';
-import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import { SegmentedControl } from '../../components/forms/SegmentedControl';
-import { api } from '../../../services/api';
-import type { Site, ActiveAlert } from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
-import { useAppConfigSafe } from '../../contexts/AppConfigContext';
-import { OfflineWorldMap } from '../../components/OfflineWorldMap';
-import type { SiteMarker } from '../../components/OfflineWorldMap';
+import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
+import { SegmentedControl } from '@app/components/forms/SegmentedControl';
+import { api } from '@src/services/api';
+import type { Site, ActiveAlert } from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
+import { useAppConfigSafe } from '@app/contexts/AppConfigContext';
+import { OfflineWorldMap } from '@app/components/OfflineWorldMap';
+import type { SiteMarker } from '@app/components/OfflineWorldMap';
 import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from '../templates/EmptyPage';
-import { HUDTooltip } from '../../../components/HUDTooltip';
+import { HUDTooltip } from '@src/components/HUDTooltip';
 
 // ── Layout & height persistence ────────────────────────────────────────────────
 

@@ -62,8 +62,8 @@ const snapToPreset = (v: number): number => {
 
 const selectCls =
   'focus:border-brand-400 h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-600 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 cursor-pointer';
-import { api } from '../../services/api';
-import type { RoomSummary } from '../../types';
+import { api } from '@src/services/api';
+import type { RoomSummary } from '@src/types';
 
 // ── RegistryIcon — renders an icon by name, avoids "component created during render" lint rule ──
 

@@ -6,9 +6,9 @@ import {
   loadSeverityLabels,
   saveSeverityLabels,
   type SeverityKey,
-} from '../../lib/severityLabels';
-import { SectionLabel } from '../../components/ui/SectionLabel';
-import { StatusPill } from '../../components/ui/StatusPill';
+} from '@app/lib/severityLabels';
+import { SectionLabel } from '@app/components/ui/SectionLabel';
+import { StatusPill } from '@app/components/ui/StatusPill';
 
 const INPUT_CLS =
   'focus:border-brand-500 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200';

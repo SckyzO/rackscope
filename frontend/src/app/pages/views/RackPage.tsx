@@ -12,11 +12,11 @@ import {
   Building2,
   Pencil,
 } from 'lucide-react';
-import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import { PageActionButton } from '../../components/PageActionButton';
-import { RackElevation } from '../../../components/RackVisualizer';
+import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
+import { PageActionButton } from '@app/components/PageActionButton';
+import { RackElevation } from '@src/components/RackVisualizer';
 import { useRackData } from './useRackData';
-import type { Device, InfrastructureComponent, RackNodeState } from '../../../types';
+import type { Device, InfrastructureComponent, RackNodeState } from '@src/types';
 
 const HC: Record<string, string> = {
   OK: '#10b981',

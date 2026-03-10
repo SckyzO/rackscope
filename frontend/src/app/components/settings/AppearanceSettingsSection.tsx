@@ -13,7 +13,7 @@ import {
   type LightTheme,
   type DarkTheme,
   type PaletteMeta,
-} from '../../../context/ThemeContext';
+} from '@src/context/ThemeContext';
 import { TooltipHelp } from '../ui/Tooltip';
 
 // ── Palette preview card ───────────────────────────────────────────────────────

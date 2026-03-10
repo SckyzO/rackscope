@@ -1,5 +1,5 @@
 import { CheckCircle, Mail, Send, FileText, Trash2, AlertCircle } from 'lucide-react';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const items = [

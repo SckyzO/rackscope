@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Globe, LayoutDashboard, MonitorPlay, ArrowRight, RotateCcw, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ConfigDraft } from '../useSettingsConfig';
-import { TooltipHelp } from '../../../app/components/ui/Tooltip';
-import { StepperInput } from '../../../app/components/forms/StepperInput';
-import { SectionCard } from '../../../app/pages/templates/EmptyPage';
+import { TooltipHelp } from '@app/components/ui/Tooltip';
+import { StepperInput } from '@app/components/forms/StepperInput';
+import { SectionCard } from '@app/pages/templates/EmptyPage';
 import { FormSelect } from '../common/FormSelect';
 
 // Dashboard localStorage keys (mirrors DashboardPage constants)

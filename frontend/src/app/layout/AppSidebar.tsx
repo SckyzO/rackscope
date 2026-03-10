@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
-import { api } from '../../services/api';
+import { api } from '@src/services/api';
 import type { ComponentType } from 'react';
-import type { RoomSummary, Site, AisleSummary, RackSummary } from '../../types';
+import type { RoomSummary, Site, AisleSummary, RackSummary } from '@src/types';
 import {
   BarChart2,
   Globe,

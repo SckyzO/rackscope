@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Globe } from 'lucide-react';
-import { OfflineWorldMap } from '../../components/OfflineWorldMap';
-import type { SiteMarker, MapStyle } from '../../components/OfflineWorldMap';
-import { useAppConfigSafe } from '../../contexts/AppConfigContext';
+import { OfflineWorldMap } from '@app/components/OfflineWorldMap';
+import type { SiteMarker, MapStyle } from '@app/components/OfflineWorldMap';
+import { useAppConfigSafe } from '@app/contexts/AppConfigContext';
 import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData, WidgetProps } from '../types';
 

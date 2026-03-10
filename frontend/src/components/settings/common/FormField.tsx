@@ -1,5 +1,5 @@
 import React from 'react';
-import { TooltipHelp } from '../../../app/components/ui/Tooltip';
+import { TooltipHelp } from '@app/components/ui/Tooltip';
 
 interface FormFieldProps {
   label: string;

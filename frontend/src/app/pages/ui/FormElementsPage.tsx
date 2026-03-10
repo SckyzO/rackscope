@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Phone, Link as LinkIcon, Upload } from 'lucide-react';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const Label = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (

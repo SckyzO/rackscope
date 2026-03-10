@@ -11,8 +11,8 @@ import {
   Cpu,
   Search,
 } from 'lucide-react';
-import { api } from '../../services/api';
-import type { ActiveAlert, SlurmNodeEntry } from '../../types';
+import { api } from '@src/services/api';
+import type { ActiveAlert, SlurmNodeEntry } from '@src/types';
 import { usePageTitle } from '../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from './templates/EmptyPage';
 import { RefreshButton, useAutoRefresh } from '../components/RefreshButton';

@@ -13,21 +13,21 @@ import {
   Check,
   AlertCircle,
 } from 'lucide-react';
-import { useSettingsConfig } from '../../../components/settings/useSettingsConfig';
-import { useAppConfigSafe } from '../../contexts/AppConfigContext';
-import { ConfirmationModal } from '../../components/layout/ConfirmationModal';
-import { StatefulSaveButton, type SaveState } from '../../components/ui/StatefulSaveButton';
-import { AppSettingsSection } from '../../../components/settings/sections/AppSettingsSection';
-import { AppearanceSettingsSection } from '../../components/settings/AppearanceSettingsSection';
-import { TelemetrySettingsSection } from '../../../components/settings/sections/TelemetrySettingsSection';
-import { PlannerSettingsSection } from '../../../components/settings/sections/PlannerSettingsSection';
-import { PluginsSettingsSection } from '../../../components/settings/sections/PluginsSettingsSection';
-import { SecuritySettingsSection } from '../../../components/settings/sections/SecuritySettingsSection';
-import { ViewsSettingsSection } from '../../../components/settings/sections/ViewsSettingsSection';
-import { TooltipSettingsSection } from '../../../components/settings/sections/TooltipSettingsSection';
+import { useSettingsConfig } from '@src/components/settings/useSettingsConfig';
+import { useAppConfigSafe } from '@app/contexts/AppConfigContext';
+import { ConfirmationModal } from '@app/components/layout/ConfirmationModal';
+import { StatefulSaveButton, type SaveState } from '@app/components/ui/StatefulSaveButton';
+import { AppSettingsSection } from '@src/components/settings/sections/AppSettingsSection';
+import { AppearanceSettingsSection } from '@app/components/settings/AppearanceSettingsSection';
+import { TelemetrySettingsSection } from '@src/components/settings/sections/TelemetrySettingsSection';
+import { PlannerSettingsSection } from '@src/components/settings/sections/PlannerSettingsSection';
+import { PluginsSettingsSection } from '@src/components/settings/sections/PluginsSettingsSection';
+import { SecuritySettingsSection } from '@src/components/settings/sections/SecuritySettingsSection';
+import { ViewsSettingsSection } from '@src/components/settings/sections/ViewsSettingsSection';
+import { TooltipSettingsSection } from '@src/components/settings/sections/TooltipSettingsSection';
 import { NotificationsSettingsSection } from './NotificationsSettingsSection';
 import { SeverityLabelsSettingsSection } from './SeverityLabelsSettingsSection';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
 type TabId =

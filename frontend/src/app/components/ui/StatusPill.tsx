@@ -9,7 +9,7 @@ export const HEALTH_STATUS_PILL: Record<HealthStatus, string> = {
   INFO: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400',
 };
 
-import { useSeverityLabels } from '../../lib/severityLabels';
+import { useSeverityLabels } from '@app/lib/severityLabels';
 
 type StatusPillSize = 'sm' | 'md' | 'lg';
 

@@ -1,5 +1,5 @@
 import { CheckCircle, Info, AlertTriangle, XCircle, X, Bell } from 'lucide-react';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const toasts = [

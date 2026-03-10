@@ -22,9 +22,9 @@ import {
   AlertTriangle,
   HelpCircle,
 } from 'lucide-react';
-import { RackElevation } from '../../../components/RackVisualizer';
-import { usePageTitle } from '../../contexts/PageTitleContext';
-import type { Rack, Device, DeviceTemplate, InfrastructureComponent } from '../../../types';
+import { RackElevation } from '@src/components/RackVisualizer';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
+import type { Rack, Device, DeviceTemplate, InfrastructureComponent } from '@src/types';
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
 

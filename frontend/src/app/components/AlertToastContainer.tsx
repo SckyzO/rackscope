@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { AlertTriangle, XCircle, X, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../services/api';
+import { api } from '@src/services/api';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
 import { loadSoundSettings, playSound } from '../lib/soundAlerts';
-import type { ActiveAlert } from '../../types';
+import type { ActiveAlert } from '@src/types';
 
 interface ToastEntry {
   id: string;

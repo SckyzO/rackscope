@@ -1,6 +1,6 @@
 import { Globe } from 'lucide-react';
 import { SeverityDonut } from '../primitives';
-import { getSeverityLabel } from '../../lib/severityLabels';
+import { getSeverityLabel } from '@app/lib/severityLabels';
 import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
 

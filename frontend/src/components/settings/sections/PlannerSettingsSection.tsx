@@ -2,8 +2,8 @@ import React from 'react';
 import { Cpu } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
-import { StepperInput } from '../../../app/components/forms/StepperInput';
-import { TooltipHelp } from '../../../app/components/ui/Tooltip';
+import { StepperInput } from '@app/components/forms/StepperInput';
+import { TooltipHelp } from '@app/components/ui/Tooltip';
 import type { ConfigDraft } from '../useSettingsConfig';
 
 interface PlannerSettingsSectionProps {

@@ -7,12 +7,16 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
+    // tsconfigPaths: true reads aliases directly from tsconfig.app.json — single source of truth.
+    // The explicit alias entries below are kept only for @plugins (external volume mount)
+    // and as a fallback for tooling that doesn't parse tsconfig paths.
+
     alias: {
-      // @plugins → /app/plugins (mounted via docker-compose volume)
+      // @plugins → /app/plugins (mounted via docker-compose volume, not in tsconfig include)
       '@plugins': path.resolve(__dirname, 'plugins'),
-      // @app → /app/src/app  (used by plugin widgets to import dashboard/*)
+      // @app and @src are declared in tsconfig.app.json paths — duplicated here
+      // for backwards-compat with any tool that reads vite.config.ts directly.
       '@app': path.resolve(__dirname, 'src/app'),
-      // @src → /app/src      (used by plugin widgets to import services/*)
       '@src': path.resolve(__dirname, 'src'),
     },
   },

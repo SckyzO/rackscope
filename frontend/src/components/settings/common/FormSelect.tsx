@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
-import { TooltipHelp } from '../../../app/components/ui/Tooltip';
+import { TooltipHelp } from '@app/components/ui/Tooltip';
 
 interface FormSelectOption {
   value: string;

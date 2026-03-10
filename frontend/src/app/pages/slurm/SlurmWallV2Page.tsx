@@ -16,14 +16,14 @@ import {
   XCircle,
   CheckCircle,
 } from 'lucide-react';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
-import { HUDTooltip } from '../../../components/HUDTooltip';
-import { RackElevation } from '../../../components/RackVisualizer';
-import { api } from '../../../services/api';
-import type { Device, DeviceTemplate, Room, RoomSummary, RackNodeState } from '../../../types';
-import { Drawer } from '../../components/layout/Drawer';
-import { DrawerHeader } from '../../components/layout/DrawerHeader';
+import { HUDTooltip } from '@src/components/HUDTooltip';
+import { RackElevation } from '@src/components/RackVisualizer';
+import { api } from '@src/services/api';
+import type { Device, DeviceTemplate, Room, RoomSummary, RackNodeState } from '@src/types';
+import { Drawer } from '@app/components/layout/Drawer';
+import { DrawerHeader } from '@app/components/layout/DrawerHeader';
 
 type WallView = 'compact' | 'rack' | 'columns';
 type WallLayout = 'scroll' | 'wrap' | 'wrap-auto';

@@ -1,4 +1,4 @@
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const base = 'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium';

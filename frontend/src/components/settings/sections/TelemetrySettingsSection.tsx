@@ -3,8 +3,8 @@ import { Activity, Tag, KeyRound, ShieldCheck, Wifi, WifiOff, Loader2 } from 'lu
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
 import { FormToggle } from '../common/FormToggle';
-import { StepperInput } from '../../../app/components/forms/StepperInput';
-import { TooltipHelp } from '../../../app/components/ui/Tooltip';
+import { StepperInput } from '@app/components/forms/StepperInput';
+import { TooltipHelp } from '@app/components/ui/Tooltip';
 import type { ConfigDraft } from '../useSettingsConfig';
 
 interface TelemetrySettingsSectionProps {

@@ -2,7 +2,7 @@
  * HUD Tooltip Preview — static variants for design validation.
  * Self-contained: no imports from RackVisualizer, no side effects.
  */
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 import { Server, Router, Zap, Power, Cpu } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';

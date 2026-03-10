@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { HUDTooltip } from '../../../components/HUDTooltip';
+import { HUDTooltip } from '@src/components/HUDTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
-import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import { PageActionButton, PageActionIconButton } from '../../components/PageActionButton';
-import { ZoomBar } from '../../components/ui/ZoomBar';
+import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
+import { PageActionButton, PageActionIconButton } from '@app/components/PageActionButton';
+import { ZoomBar } from '@app/components/ui/ZoomBar';
 import {
   Settings2,
   X,
@@ -34,11 +34,11 @@ import {
   Gauge,
   Network,
 } from 'lucide-react';
-import { api } from '../../../services/api';
-import type { Room, Aisle, Rack, RoomState, RackState, DeviceTemplate } from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { api } from '@src/services/api';
+import type { Room, Aisle, Rack, RoomState, RackState, DeviceTemplate } from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageBreadcrumb } from '../templates/EmptyPage';
-import { RackElevation } from '../../../components/RackVisualizer';
+import { RackElevation } from '@src/components/RackVisualizer';
 
 // Maps health state to Tailwind CSS classes.
 // Two maps exist: pill styles for badges, hex colors for SVG/inline borders.

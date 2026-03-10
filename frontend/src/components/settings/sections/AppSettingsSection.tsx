@@ -2,8 +2,8 @@ import React from 'react';
 import { Info, FolderOpen, RefreshCw, Database } from 'lucide-react';
 import { FormField } from '../common/FormField';
 import { FormSection } from '../common/FormSection';
-import { TooltipHelp } from '../../../app/components/ui/Tooltip';
-import { StepperInput } from '../../../app/components/forms/StepperInput';
+import { TooltipHelp } from '@app/components/ui/Tooltip';
+import { StepperInput } from '@app/components/forms/StepperInput';
 import type { ConfigDraft } from '../useSettingsConfig';
 
 interface AppSettingsSectionProps {

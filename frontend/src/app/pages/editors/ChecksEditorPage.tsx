@@ -27,9 +27,9 @@ import {
 } from 'lucide-react';
 import MonacoEditor from '@monaco-editor/react';
 import jsYaml from 'js-yaml';
-import { api } from '../../../services/api';
-import type { CheckDefinition, DeviceTemplate, RackTemplate } from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { api } from '@src/services/api';
+import type { CheckDefinition, DeviceTemplate, RackTemplate } from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import {
   PageHeader,
   PageBreadcrumb,
@@ -37,7 +37,7 @@ import {
   LoadingState,
   ErrorState,
 } from '../templates/EmptyPage';
-import { PageActionButton } from '../../components/PageActionButton';
+import { PageActionButton } from '@app/components/PageActionButton';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

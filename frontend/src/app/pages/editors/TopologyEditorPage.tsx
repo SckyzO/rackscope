@@ -16,9 +16,9 @@ import {
   ExternalLink,
   Wand2,
 } from 'lucide-react';
-import { api } from '../../../services/api';
-import type { Site, Room, Aisle, Rack, RackTemplate } from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { api } from '@src/services/api';
+import type { Site, Room, Aisle, Rack, RackTemplate } from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 
 // ─── SaveBadge ───────────────────────────────────────────────────────────────

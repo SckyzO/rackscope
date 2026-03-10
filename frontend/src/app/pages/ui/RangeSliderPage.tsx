@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const trackStyle = (val: number, color = '#465fff') => ({

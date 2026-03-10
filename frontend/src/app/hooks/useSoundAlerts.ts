@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { ActiveAlert } from '../../types';
+import type { ActiveAlert } from '@src/types';
 import { playSound, loadSoundSettings } from '../lib/soundAlerts';
 
 const COOLDOWN_MS = 5000; // minimum ms between two sounds

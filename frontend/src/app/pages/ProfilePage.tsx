@@ -14,10 +14,10 @@ import {
   DatabaseZap,
   AtSign,
 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { api } from '../../services/api';
-import type { PasswordPolicy } from '../../contexts/AuthContext';
-import { useAvatar, resizeAvatar } from '../../hooks/useAvatar';
+import { useAuth } from '@src/contexts/AuthContext';
+import { api } from '@src/services/api';
+import type { PasswordPolicy } from '@src/contexts/AuthContext';
+import { useAvatar, resizeAvatar } from '@src/hooks/useAvatar';
 import { usePageTitle } from '../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from './templates/EmptyPage';
 import { TooltipHelp } from '../components/ui/Tooltip';

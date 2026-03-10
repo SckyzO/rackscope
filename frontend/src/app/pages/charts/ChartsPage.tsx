@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactApexChart from 'react-apexcharts';
 import type { ApexOptions } from 'apexcharts';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, SectionCard } from '../templates/EmptyPage';
 
 // ── Dark mode helper ──────────────────────────────────────────────────────────

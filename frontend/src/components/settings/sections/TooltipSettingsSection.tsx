@@ -1,12 +1,12 @@
 import { createPortal } from 'react-dom';
 import { useRef, useState } from 'react';
 import { Check, MousePointerClick, Server } from 'lucide-react';
-import { useTooltipSettings, TOOLTIP_STYLES } from '../../../hooks/useTooltipSettings';
-import type { TooltipStyle } from '../../../hooks/useTooltipSettings';
+import { useTooltipSettings, TOOLTIP_STYLES } from '@src/hooks/useTooltipSettings';
+import type { TooltipStyle } from '@src/hooks/useTooltipSettings';
 import { FormToggle } from '../common/FormToggle';
-import { HUDTooltipCard } from '../../HUDTooltip';
-import { StatusPill } from '../../../app/components/ui/StatusPill';
-import { SectionCard } from '../../../app/pages/templates/EmptyPage';
+import { HUDTooltipCard } from '@src/components/HUDTooltip';
+import { StatusPill } from '@app/components/ui/StatusPill';
+import { SectionCard } from '@app/pages/templates/EmptyPage';
 
 // ── Sample data ────────────────────────────────────────────────────────────
 

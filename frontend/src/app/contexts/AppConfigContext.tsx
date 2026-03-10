@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
-import { api } from '../../services/api';
-import type { AppConfig } from '../../types';
+import { api } from '@src/services/api';
+import type { AppConfig } from '@src/types';
 
 // Feature flags with safe defaults (fail-open: show everything if config not loaded)
 interface AppFeatures {

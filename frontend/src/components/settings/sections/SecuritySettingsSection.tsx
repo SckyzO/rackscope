@@ -1,9 +1,9 @@
 import { AlertTriangle, Type, Lock, ShieldAlert } from 'lucide-react';
 import { FormSection } from '../common/FormSection';
-import { TooltipHelp } from '../../../app/components/ui/Tooltip';
-import { StepperInput } from '../../../app/components/forms/StepperInput';
+import { TooltipHelp } from '@app/components/ui/Tooltip';
+import { StepperInput } from '@app/components/forms/StepperInput';
 import type { ConfigDraft } from '../useSettingsConfig';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@src/contexts/AuthContext';
 
 type Props = {
   draft: ConfigDraft;

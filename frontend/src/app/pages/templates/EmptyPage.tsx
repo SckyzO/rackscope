@@ -39,9 +39,9 @@ import {
   Download,
   Upload,
 } from 'lucide-react';
-import { usePageTitle } from '../../contexts/PageTitleContext';
-import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import { PageActionButton, PageActionIconButton } from '../../components/PageActionButton';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
+import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
+import { PageActionButton, PageActionIconButton } from '@app/components/PageActionButton';
 
 // ── Shared sub-components ─────────────────────────────────────────────────────
 

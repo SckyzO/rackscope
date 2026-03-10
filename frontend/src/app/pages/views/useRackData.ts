@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { api } from '../../../services/api';
-import { resolveRackComponents } from '../../../utils/rackComponents';
+import { api } from '@src/services/api';
+import { resolveRackComponents } from '@src/utils/rackComponents';
 import type {
   Rack,
   DeviceTemplate,
@@ -10,7 +10,7 @@ import type {
   RackState,
   RackNodeState,
   RoomSummary,
-} from '../../../types';
+} from '@src/types';
 
 export type RoomContext = {
   roomId: string;

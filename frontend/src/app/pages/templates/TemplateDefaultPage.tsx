@@ -23,52 +23,52 @@ import {
   Settings,
   Bell,
 } from 'lucide-react';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 // Actions
-import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import { PageActionButton, PageActionIconButton } from '../../components/PageActionButton';
+import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
+import { PageActionButton, PageActionIconButton } from '@app/components/PageActionButton';
 
 // New components
-import { FormRow } from '../../components/forms/FormRow';
-import { NumberInput } from '../../components/forms/NumberInput';
-import { StepperInput } from '../../components/forms/StepperInput';
-import { StatefulSaveButton, type SaveState } from '../../components/ui/StatefulSaveButton';
-import { UnsavedIndicator } from '../../components/ui/UnsavedIndicator';
-import { ConfirmationModal } from '../../components/layout/ConfirmationModal';
+import { FormRow } from '@app/components/forms/FormRow';
+import { NumberInput } from '@app/components/forms/NumberInput';
+import { StepperInput } from '@app/components/forms/StepperInput';
+import { StatefulSaveButton, type SaveState } from '@app/components/ui/StatefulSaveButton';
+import { UnsavedIndicator } from '@app/components/ui/UnsavedIndicator';
+import { ConfirmationModal } from '@app/components/layout/ConfirmationModal';
 
 // UI primitives
-import { Spinner } from '../../components/ui/Spinner';
-import { Tooltip, TooltipHelp } from '../../components/ui/Tooltip';
-import { SectionLabel } from '../../components/ui/SectionLabel';
-import { StatusPill } from '../../components/ui/StatusPill';
-import { StatusDot } from '../../components/ui/StatusDot';
-import { IconBox } from '../../components/ui/IconBox';
-import { AlertBanner } from '../../components/ui/AlertBanner';
-import { SelectInput } from '../../components/ui/SelectInput';
-import { Dropdown } from '../../components/ui/Dropdown';
-import { ZoomBar } from '../../components/ui/ZoomBar';
+import { Spinner } from '@app/components/ui/Spinner';
+import { Tooltip, TooltipHelp } from '@app/components/ui/Tooltip';
+import { SectionLabel } from '@app/components/ui/SectionLabel';
+import { StatusPill } from '@app/components/ui/StatusPill';
+import { StatusDot } from '@app/components/ui/StatusDot';
+import { IconBox } from '@app/components/ui/IconBox';
+import { AlertBanner } from '@app/components/ui/AlertBanner';
+import { SelectInput } from '@app/components/ui/SelectInput';
+import { Dropdown } from '@app/components/ui/Dropdown';
+import { ZoomBar } from '@app/components/ui/ZoomBar';
 
 // Forms
-import { SearchInput } from '../../components/forms/SearchInput';
-import { SegmentedControl } from '../../components/forms/SegmentedControl';
-import { FilterPills } from '../../components/forms/FilterPills';
-import { ToggleSwitch } from '../../components/forms/ToggleSwitch';
+import { SearchInput } from '@app/components/forms/SearchInput';
+import { SegmentedControl } from '@app/components/forms/SegmentedControl';
+import { FilterPills } from '@app/components/forms/FilterPills';
+import { ToggleSwitch } from '@app/components/forms/ToggleSwitch';
 
 // Data
-import { KpiCard } from '../../components/data/KpiCard';
+import { KpiCard } from '@app/components/data/KpiCard';
 
 // Layout
-import { DrawerHeader } from '../../components/layout/DrawerHeader';
-import { Drawer } from '../../components/layout/Drawer';
-import { Modal, ModalHeader, ModalFooter } from '../../components/layout/Modal';
-import { Tabs } from '../../components/layout/Tabs';
+import { DrawerHeader } from '@app/components/layout/DrawerHeader';
+import { Drawer } from '@app/components/layout/Drawer';
+import { Modal, ModalHeader, ModalFooter } from '@app/components/layout/Modal';
+import { Tabs } from '@app/components/layout/Tabs';
 
 // Feedback
-import { LoadingState } from '../../components/feedback/LoadingState';
-import { EmptyState } from '../../components/feedback/EmptyState';
-import { ErrorState } from '../../components/feedback/ErrorState';
+import { LoadingState } from '@app/components/feedback/LoadingState';
+import { EmptyState } from '@app/components/feedback/EmptyState';
+import { ErrorState } from '@app/components/feedback/ErrorState';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

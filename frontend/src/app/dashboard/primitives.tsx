@@ -3,7 +3,7 @@
 
 import { ChevronRight } from 'lucide-react';
 import { getSeverityLabel } from '../lib/severityLabels';
-import type { ActiveAlert } from '../../types';
+import type { ActiveAlert } from '@src/types';
 
 // ── StatCard ──────────────────────────────────────────────────────────────────
 

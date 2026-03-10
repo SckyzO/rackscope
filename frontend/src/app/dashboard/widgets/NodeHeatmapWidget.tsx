@@ -3,8 +3,8 @@ import { Cpu, CheckCircle } from 'lucide-react';
 import { HC } from '../constants';
 import { registerWidget, type WidgetRegistration } from '../registry';
 import type { DashboardData } from '../types';
-import type { ActiveAlert } from '../../../types';
-import { HUDTooltip } from '../../../components/HUDTooltip';
+import type { ActiveAlert } from '@src/types';
+import { HUDTooltip } from '@src/components/HUDTooltip';
 
 // ── Widget config ──────────────────────────────────────────────────────────
 const WIDGET_META: Omit<WidgetRegistration, 'component'> = {

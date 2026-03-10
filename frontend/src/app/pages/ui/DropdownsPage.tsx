@@ -9,7 +9,7 @@ import {
   Trash2,
   Copy,
 } from 'lucide-react';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 const Menu = ({ children }: { children: React.ReactNode }) => (

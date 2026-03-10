@@ -18,12 +18,12 @@ import {
   X,
   Settings,
 } from 'lucide-react';
-import { api } from '../../services/api';
-import type { ActiveAlert } from '../../types';
+import { api } from '@src/services/api';
+import type { ActiveAlert } from '@src/types';
 import { AppSearch } from './AppSearch';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@src/contexts/AuthContext';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
-import { useAvatar } from '../../hooks/useAvatar';
+import { useAvatar } from '@src/hooks/useAvatar';
 import { usePageTitleValue } from '../contexts/PageTitleContext';
 import { usePlaylistSafe } from '../contexts/PlaylistContext';
 import { PlaylistCountdownCircle } from '../components/PlaylistCountdown';

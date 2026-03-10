@@ -17,14 +17,14 @@ import {
 } from 'lucide-react';
 import MonacoEditor from '@monaco-editor/react';
 import jsYaml from 'js-yaml';
-import { api } from '../../../services/api';
+import { api } from '@src/services/api';
 import type {
   RackTemplate,
   InfrastructureComponent,
   CheckDefinition,
   RackComponentTemplate,
-} from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+} from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import {
   PageHeader,
   PageBreadcrumb,

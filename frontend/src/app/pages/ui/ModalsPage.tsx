@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, CheckCircle, Info, AlertTriangle, XCircle } from 'lucide-react';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 export const ModalsPage = () => {

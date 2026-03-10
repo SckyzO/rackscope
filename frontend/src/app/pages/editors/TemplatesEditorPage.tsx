@@ -24,15 +24,15 @@ import {
 } from 'lucide-react';
 import MonacoEditor from '@monaco-editor/react';
 import jsYaml from 'js-yaml';
-import { api } from '../../../services/api';
+import { api } from '@src/services/api';
 import type {
   DeviceTemplate,
   DeviceRearComponent,
   CheckDefinition,
   Rack,
   Device,
-} from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+} from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import {
   PageHeader,
   PageBreadcrumb,
@@ -41,8 +41,8 @@ import {
   ErrorState,
   EmptyState,
 } from '../templates/EmptyPage';
-import { RackElevation } from '../../../components/RackVisualizer';
-import { PageActionButton } from '../../components/PageActionButton';
+import { RackElevation } from '@src/components/RackVisualizer';
+import { PageActionButton } from '@app/components/PageActionButton';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

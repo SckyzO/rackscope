@@ -3,16 +3,16 @@ import { Outlet } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '@src/context/ThemeContext';
 import { PageTitleProvider } from '../contexts/PageTitleContext';
 import { AppConfigProvider, useAppConfigSafe } from '../contexts/AppConfigContext';
-import { PluginsMenuProvider } from '../../context/PluginsMenuContext';
+import { PluginsMenuProvider } from '@src/context/PluginsMenuContext';
 import { PlaylistProvider } from '../contexts/PlaylistContext';
 import { usePlaylistSafe } from '../contexts/PlaylistContext';
 import { PlaylistCountdownBar } from '../components/PlaylistCountdown';
 import { AlertToastContainer } from '../components/AlertToastContainer';
 import { SetupWizard, LS_KEY as SETUP_LS_KEY } from '../components/SetupWizard';
-import { api } from '../../services/api';
+import { api } from '@src/services/api';
 import '../app.css';
 
 // ── MatrixBackground ──────────────────────────────────────────────────────────

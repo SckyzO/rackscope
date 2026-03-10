@@ -12,8 +12,8 @@ import {
   ChevronRight,
   Trash2,
 } from 'lucide-react';
-import type { Room, Aisle, Rack, RackTemplate } from '../../../types';
-import { api } from '../../../services/api';
+import type { Room, Aisle, Rack, RackTemplate } from '@src/types';
+import { api } from '@src/services/api';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { CheckCircle, Info, AlertTriangle, XCircle, X } from 'lucide-react';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
 type ToastType = 'success' | 'info' | 'warning' | 'error';

@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import { Play } from 'lucide-react';
-import { FormRow } from '../../components/forms/FormRow';
-import { ToggleSwitch } from '../../components/forms/ToggleSwitch';
-import { SelectInput } from '../../components/ui/SelectInput';
-import { StepperInput } from '../../components/forms/StepperInput';
-import { PageActionButton } from '../../components/PageActionButton';
-import { SectionLabel } from '../../components/ui/SectionLabel';
-import { AlertBanner } from '../../components/ui/AlertBanner';
+import { FormRow } from '@app/components/forms/FormRow';
+import { ToggleSwitch } from '@app/components/forms/ToggleSwitch';
+import { SelectInput } from '@app/components/ui/SelectInput';
+import { StepperInput } from '@app/components/forms/StepperInput';
+import { PageActionButton } from '@app/components/PageActionButton';
+import { SectionLabel } from '@app/components/ui/SectionLabel';
+import { AlertBanner } from '@app/components/ui/AlertBanner';
 import {
   loadSoundSettings,
   saveSoundSettings,
@@ -14,9 +14,9 @@ import {
   playSound,
   type SoundAlertSettings,
   type SoundPreset,
-} from '../../lib/soundAlerts';
-import { useSettingsConfig } from '../../../components/settings/useSettingsConfig';
-import type { ConfigDraft } from '../../../components/settings/useSettingsConfig';
+} from '@app/lib/soundAlerts';
+import { useSettingsConfig } from '@src/components/settings/useSettingsConfig';
+import type { ConfigDraft } from '@src/components/settings/useSettingsConfig';
 
 const SOUND_OPTIONS = [
   { value: 'none', label: 'None (silent)' },

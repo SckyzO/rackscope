@@ -31,13 +31,13 @@ import {
   Save,
   Pencil,
 } from 'lucide-react';
-import { api } from '../../../services/api';
-import type { RoomSummary, Rack, DeviceTemplate, RackState, RackNodeState } from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { api } from '@src/services/api';
+import type { RoomSummary, Rack, DeviceTemplate, RackState, RackNodeState } from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
-import { RackElevation } from '../../../components/RackVisualizer';
-import { Drawer } from '../../components/layout/Drawer';
-import { DrawerHeader } from '../../components/layout/DrawerHeader';
+import { RackElevation } from '@src/components/RackVisualizer';
+import { Drawer } from '@app/components/layout/Drawer';
+import { DrawerHeader } from '@app/components/layout/DrawerHeader';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 

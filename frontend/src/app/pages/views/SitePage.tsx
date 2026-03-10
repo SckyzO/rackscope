@@ -2,17 +2,17 @@ import { createPortal } from 'react-dom';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Building2, SlidersHorizontal, LayoutGrid, List, ChevronRight, Server } from 'lucide-react';
-import { HUDTooltipCard } from '../../../components/HUDTooltip';
-import { useTooltipSettings } from '../../../hooks/useTooltipSettings';
-import { api } from '../../../services/api';
-import type { Site, Room, RoomState } from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
-import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import { PageActionIconButton } from '../../components/PageActionButton';
-import { KpiCard } from '../../components/data/KpiCard';
-import { Drawer } from '../../components/layout/Drawer';
-import { DrawerHeader } from '../../components/layout/DrawerHeader';
-import { SegmentedControl } from '../../components/forms/SegmentedControl';
+import { HUDTooltipCard } from '@src/components/HUDTooltip';
+import { useTooltipSettings } from '@src/hooks/useTooltipSettings';
+import { api } from '@src/services/api';
+import type { Site, Room, RoomState } from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
+import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
+import { PageActionIconButton } from '@app/components/PageActionButton';
+import { KpiCard } from '@app/components/data/KpiCard';
+import { Drawer } from '@app/components/layout/Drawer';
+import { DrawerHeader } from '@app/components/layout/DrawerHeader';
+import { SegmentedControl } from '@app/components/forms/SegmentedControl';
 import {
   PageHeader,
   PageBreadcrumb,

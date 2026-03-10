@@ -14,7 +14,7 @@ import {
   LayoutGrid,
   Monitor,
 } from 'lucide-react';
-import type { RoomSummary } from '../../types';
+import type { RoomSummary } from '@src/types';
 import type { Dashboard } from '../dashboard/types';
 
 // ── Icon registry ─────────────────────────────────────────────────────────────
