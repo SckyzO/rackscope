@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { api } from '../../services/api';
-import type { AppConfig } from '../../types';
+import { api } from '@src/services/api';
+import type { AppConfig } from '@src/types';
 
 export type ConfigDraft = {
   app: {
@@ -99,6 +99,7 @@ export type ConfigDraft = {
         path: string;
         enabled: boolean;
       }>;
+      slurm_alloc_percent: number;
       slurm_random_statuses: Record<string, string>;
       slurm_random_match: string[];
     };
@@ -227,6 +228,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
         ...c,
         enabled: c.enabled ?? false,
       })),
+      slurm_alloc_percent: (config.plugins?.simulator?.slurm_alloc_percent as number) ?? 80,
       slurm_random_statuses: Object.fromEntries(
         Object.entries(
           (config.plugins?.simulator?.slurm_random_statuses as Record<string, number>) || {
@@ -392,6 +394,7 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
       default_ttl_seconds: parseInt(draft.plugins.simulator.default_ttl_seconds, 10) || 120,
       metrics_catalog_path: draft.plugins.simulator.metrics_catalog_path,
       metrics_catalogs: draft.plugins.simulator.metrics_catalogs,
+      slurm_alloc_percent: Math.max(0, Math.min(100, draft.plugins.simulator.slurm_alloc_percent ?? 80)),
       slurm_random_statuses: Object.fromEntries(
         Object.entries(draft.plugins.simulator.slurm_random_statuses)
           .map(([k, v]) => [k, parseInt(v, 10) || 0])

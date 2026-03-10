@@ -1,7 +1,7 @@
 update_interval_seconds: 20
 seed: null
 incident_mode: light
-changes_per_hour: 2
+changes_per_hour: 4
 custom_incidents:
   devices_crit: 0
   devices_warn: 0
@@ -14,6 +14,7 @@ metrics_catalogs:
 - id: slurm
   path: /app/config/plugins/simulator/metrics/metrics_slurm.yaml
   enabled: false
+slurm_alloc_percent: 80
 slurm_random_statuses:
   drain: 0
   down: 0

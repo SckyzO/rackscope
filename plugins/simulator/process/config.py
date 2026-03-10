@@ -48,6 +48,7 @@ def load_simulator_config():
             "custom_incidents",
             "slurm_random_statuses",
             "slurm_random_match",
+            "slurm_alloc_percent",
             "update_interval_seconds",
             "seed",
             "profiles",

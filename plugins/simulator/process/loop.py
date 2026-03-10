@@ -35,9 +35,11 @@ from plugins.simulator.process.topology import (
     load_topology_nodes,
 )
 
+
 # Read topology path from app.yaml if available, fall back to env var
 def _resolve_topology_path():
     import yaml as _yaml
+
     app_cfg_path = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
     try:
         cfg = _yaml.safe_load(open(app_cfg_path)) or {}
@@ -50,6 +52,7 @@ def _resolve_topology_path():
     except Exception:
         pass
     return os.getenv("TOPOLOGY_FILE", "/app/config/topology")
+
 
 TOPOLOGY_PATH = _resolve_topology_path()
 TEMPLATES_PATH = os.getenv("TEMPLATES_PATH", "/app/config/templates")
@@ -463,6 +466,7 @@ def simulate():
         sim_cfg.get("slurm_random_statuses", {}) if isinstance(sim_cfg, dict) else {}
     )
     slurm_random_match = sim_cfg.get("slurm_random_match", []) if isinstance(sim_cfg, dict) else []
+    slurm_alloc_percent = int(sim_cfg.get("slurm_alloc_percent", 80)) if isinstance(sim_cfg, dict) else 80
     overrides_path = sim_cfg.get(
         "overrides_path", "/app/config/plugins/simulator/overrides/overrides.yaml"
     )
@@ -533,6 +537,7 @@ def simulate():
         slurm_random_match = (
             _new_cfg.get("slurm_random_match", []) if isinstance(_new_cfg, dict) else []
         )
+        slurm_alloc_percent = int(_new_cfg.get("slurm_alloc_percent", 80)) if isinstance(_new_cfg, dict) else 80
         update_interval = _new_cfg.get(
             "update_interval_seconds", _new_cfg.get("update_interval", update_interval)
         )
@@ -565,6 +570,17 @@ def simulate():
                 for _ in range(min(count, max(0, len(available_nodes) - cursor))):
                     forced_slurm_status[available_nodes[cursor]] = status_name
                     cursor += 1
+
+        # Build a deterministic set of nodes to place in "allocated" state.
+        # Nodes already assigned a forced status are excluded.
+        # Sorted alphabetically for stability across ticks; no randomness here.
+        _alloc_eligible = sorted(
+            nid
+            for nid in [t["node_id"] for t in targets if t.get("node_id")]
+            if nid not in forced_slurm_status
+        )
+        _n_alloc = int(len(_alloc_eligible) * max(0, min(100, slurm_alloc_percent)) / 100)
+        _alloc_set: set = set(_alloc_eligible[:_n_alloc])
 
         rack_info = {}
         for target in targets:
@@ -871,14 +887,17 @@ def simulate():
                                 )
 
             # Slurm node metrics
-            slurm_status = forced_slurm_status.get(target["node_id"], "idle")
-            if slurm_status == "idle":
+            # Priority: forced status > hardware failure > alloc_percent ratio
+            slurm_status = forced_slurm_status.get(target["node_id"])
+            if slurm_status is None:
                 if up_val == 0 or status == 2:
                     slurm_status = "down"
                 elif status == 1:
                     slurm_status = "drain"
-                elif final_load >= 70:
+                elif nid in _alloc_set:
                     slurm_status = "allocated"
+                else:
+                    slurm_status = "idle"
             partitions = ["all", "cpu"]
             is_gpu_node = "gpu" in nid or "visu" in nid
             if is_gpu_node:

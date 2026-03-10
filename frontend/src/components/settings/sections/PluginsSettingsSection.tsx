@@ -14,14 +14,14 @@ import {
 } from 'lucide-react';
 import { FormSection } from '../common/FormSection';
 import { FormField } from '../common/FormField';
-import { FormRow } from '../../../app/components/forms/FormRow';
-import { ToggleSwitch } from '../../../app/components/forms/ToggleSwitch';
-import { SelectInput } from '../../../app/components/ui/SelectInput';
-import { StepperInput } from '../../../app/components/forms/StepperInput';
-import { AlertBanner } from '../../../app/components/ui/AlertBanner';
-import { TooltipHelp } from '../../../app/components/ui/Tooltip';
-import { api } from '../../../services/api';
-import type { SimulatorOverride } from '../../../types';
+import { FormRow } from '@app/components/forms/FormRow';
+import { ToggleSwitch } from '@app/components/forms/ToggleSwitch';
+import { SelectInput } from '@app/components/ui/SelectInput';
+import { StepperInput } from '@app/components/forms/StepperInput';
+import { AlertBanner } from '@app/components/ui/AlertBanner';
+import { TooltipHelp } from '@app/components/ui/Tooltip';
+import { api } from '@src/services/api';
+import type { SimulatorOverride } from '@src/types';
 import type { ConfigDraft } from '../useSettingsConfig';
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -708,6 +708,23 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                       Add catalog
                     </button>
                   </div>
+                </div>
+
+                {/* Slurm Allocation */}
+                <div className="space-y-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+                  <p className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Allocation ratio
+                    <TooltipHelp text="Percentage of eligible Slurm nodes in 'allocated' state. The rest are 'idle'. 80% reflects a typical busy HPC cluster." />
+                  </p>
+                  <StepperInput
+                    value={sim.slurm_alloc_percent ?? 80}
+                    onChange={(v) => updateSimulator('slurm_alloc_percent', v)}
+                    min={0}
+                    max={100}
+                    step={5}
+                    unit="%"
+                    className="w-36"
+                  />
                 </div>
 
                 {/* Slurm Node Failures */}

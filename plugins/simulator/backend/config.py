@@ -72,3 +72,13 @@ class SimulatorPluginConfig(BaseModel):
         default_factory=lambda: ["compute*", "visu*"],
         description="Glob patterns selecting nodes eligible for random Slurm status injection.",
     )
+    slurm_alloc_percent: int = Field(
+        default=80,
+        ge=0,
+        le=100,
+        description=(
+            "Percentage of eligible nodes to put in 'allocated' state. "
+            "Remaining nodes (not forced by slurm_random_statuses) will be 'idle'. "
+            "0 = all idle, 100 = all allocated."
+        ),
+    )

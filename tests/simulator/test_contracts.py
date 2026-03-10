@@ -106,6 +106,20 @@ class TestSimulatorPluginConfigContract:
         cfg = SimulatorPluginConfig()
         assert not hasattr(cfg, "incident_durations")
 
+    def test_slurm_alloc_percent_field_present(self):
+        cfg = SimulatorPluginConfig()
+        assert hasattr(cfg, "slurm_alloc_percent")
+
+    def test_slurm_alloc_percent_defaults_to_80(self):
+        cfg = SimulatorPluginConfig()
+        assert cfg.slurm_alloc_percent == 80
+
+    def test_slurm_alloc_percent_clamped(self):
+        cfg = SimulatorPluginConfig(slurm_alloc_percent=100)
+        assert cfg.slurm_alloc_percent == 100
+        cfg2 = SimulatorPluginConfig(slurm_alloc_percent=0)
+        assert cfg2.slurm_alloc_percent == 0
+
     def test_extra_fields_silently_ignored(self):
         """Old YAML files with scenario/scale_factor must not crash on load."""
         cfg = SimulatorPluginConfig(

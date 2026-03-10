@@ -437,6 +437,7 @@ export interface AppConfig {
         path: string;
         enabled?: boolean;
       }>;
+      slurm_alloc_percent?: number;
       slurm_random_statuses?: Record<string, number>;
       slurm_random_match?: string[];
     };
