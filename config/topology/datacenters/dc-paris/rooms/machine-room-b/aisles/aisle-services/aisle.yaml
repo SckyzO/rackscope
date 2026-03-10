@@ -1,8 +1,0 @@
-id: aisle-services
-name: Services Aisle
-room_id: machine-room-b
-
-racks:
-  - id: rack-login
-  - id: rack-visu
-  - id: rack-admin

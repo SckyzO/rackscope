@@ -1,7 +1,0 @@
-id: aisle-dr
-name: DR Compute Aisle
-room_id: machine-room-dr
-
-racks:
-  - id: rack-dr01
-  - id: rack-dr02

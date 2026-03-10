@@ -1,11 +1,11 @@
 app:
   name: Rackscope
-  description: Paris + Lyon datacenters
+  description: HPC Cluster (Paris datacenter)
 paths:
-  topology: config/topology
-  templates: config/templates
-  checks: config/checks/library
-  metrics: config/metrics/library
+  topology: config/examples/hpc-cluster/topology
+  templates: config/examples/hpc-cluster/templates
+  checks: config/examples/hpc-cluster/checks/library
+  metrics: config/examples/hpc-cluster/metrics/library
 refresh:
   room_state_seconds: 60
   rack_state_seconds: 60
