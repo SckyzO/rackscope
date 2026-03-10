@@ -118,10 +118,12 @@ def switch_example(ex):
     if not app_src.exists():
         raise FileNotFoundError(f'app.example.{ex}.yaml not found')
     # Write .env so Docker Compose picks up APP_CONFIG (takes precedence over app.yaml).
-    # This is the mechanism used by `make use EXAMPLE=...`.
+    # IMPORTANT: use `up -d --force-recreate` not `restart` — restart does NOT re-read .env,
+    # so the containers would keep the old APP_CONFIG from when they were first created.
+    # force-recreate guarantees a fresh container with the updated environment.
     env_path = ROOT / '.env'
     env_path.write_text(f'APP_CONFIG=app.example.{ex}.yaml\n')
-    compose('restart', 'backend', 'simulator')
+    compose('up', '-d', '--force-recreate', '--no-deps', 'backend', 'simulator')
 
 # ── Expected values per example ───────────────────────────────────────────────
 EXPECTED = {

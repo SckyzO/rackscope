@@ -187,13 +187,13 @@ endif
 use: _check-example
 	@echo "APP_CONFIG=app.example.$(EXAMPLE).yaml" > .env
 	@echo "→ [dev] Switching to: $(EXAMPLE)"
-	docker compose -f $(COMPOSE_DEV) restart backend simulator
+	docker compose -f $(COMPOSE_DEV) up -d --force-recreate --no-deps backend simulator
 	@echo "✅ Dev stack running with: $(EXAMPLE)"
 
 use-prod: _check-example
 	@echo "APP_CONFIG=app.example.$(EXAMPLE).yaml" > .env
 	@echo "→ [prod] Switching to: $(EXAMPLE)"
-	docker compose -f $(COMPOSE_PROD) restart backend
+	docker compose -f $(COMPOSE_PROD) up -d --force-recreate --no-deps backend
 	@echo "✅ Prod stack running with: $(EXAMPLE)"
 
 # Dev shorthands
