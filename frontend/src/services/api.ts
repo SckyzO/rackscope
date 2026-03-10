@@ -706,6 +706,16 @@ export const api = {
   getEnv: async (): Promise<Record<string, string | null>> => {
     return fetchWithCache('/api/env', 'app.env');
   },
+  getProcessStats: async (): Promise<{
+    backend: { memory_bytes: number | null; cpu_seconds: number | null; available: boolean };
+    simulator: { memory_bytes: number | null; cpu_seconds: number | null; available: boolean };
+    prometheus: { memory_bytes: number | null; cpu_seconds: number | null; available: boolean };
+  }> => {
+    return apiFetch('/api/system/process-stats').then((r) => r.json());
+  },
+  getAllRoomStates: async (): Promise<Record<string, string>> => {
+    return fetchWithCache('/api/rooms/states', 'rooms.all-states', 15_000);
+  },
   getSimulatorStatus: async (): Promise<{
     running: boolean;
     endpoint: string;

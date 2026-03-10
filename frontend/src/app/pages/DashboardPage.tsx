@@ -22,7 +22,7 @@ import {
   AlignCenter,
 } from 'lucide-react';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
-import { api } from '../../services/api';
+import { api } from '@src/services/api';
 import { PageActionButton, PageActionIconButton } from '../components/PageActionButton';
 import { RefreshButton, useAutoRefresh } from '../components/RefreshButton';
 import type {
@@ -30,10 +30,9 @@ import type {
   Site,
   SlurmSummary,
   PrometheusStats,
-  RoomState,
   DeviceTemplate,
   CheckDefinition,
-} from '../../types';
+} from '@src/types';
 // Importing from '../dashboard' triggers all registerWidget() side effects.
 import {
   getAllWidgets,
@@ -489,16 +488,8 @@ export const DashboardPage = () => {
         setSlurm(slurmData);
       }
 
-      const roomIds: string[] = siteList.flatMap((s: Site) => (s.rooms ?? []).map((r) => r.id));
-      const stateEntries = await Promise.all(
-        roomIds.map((id) =>
-          api
-            .getRoomState(id)
-            .then((s: RoomState) => [id, s?.state ?? 'UNKNOWN'] as [string, string])
-            .catch(() => [id, 'UNKNOWN'] as [string, string])
-        )
-      );
-      setRoomStates(Object.fromEntries(stateEntries));
+      const allStates = await api.getAllRoomStates().catch(() => ({}));
+      setRoomStates(allStates);
     } catch {
       /* ignore */
     } finally {
@@ -512,9 +503,12 @@ export const DashboardPage = () => {
 
   useEffect(() => {
     void loadAll();
+    // If useAutoRefresh is active it already fires handleQuietRefresh on its own
+    // timer — skip the manual interval to avoid double polling.
+    if (autoRefreshMs > 0) return;
     const t = setInterval(() => void loadAll(true), refreshInterval * 1000);
     return () => clearInterval(t);
-  }, [refreshInterval]);
+  }, [refreshInterval, autoRefreshMs]);
 
   // ── Prometheus countdown ticker ───────────────────────────────────────────
   const [now, setNow] = useState(Date.now());

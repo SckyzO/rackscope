@@ -18,6 +18,7 @@ Key design decisions:
 
 from __future__ import annotations
 
+import asyncio
 import re
 import time
 from dataclasses import dataclass, field
@@ -76,6 +77,11 @@ class TelemetryPlanner:
     def __init__(self, config: Optional[PlannerConfig] = None) -> None:
         self.config = config or PlannerConfig()
         self._snapshot: Optional[PlannerSnapshot] = None
+        # Lock: ensures only one recomputation runs at a time.
+        # Concurrent callers that arrive while a recompute is in progress will
+        # wait for it to finish and then return the freshly computed snapshot,
+        # rather than each triggering their own full recompute.
+        self._refresh_lock: asyncio.Lock = asyncio.Lock()
         # Pending state: key = f"{check_id}:{instance_id}", value = severity string
         self._pending_states: Dict[str, str] = {}
         # When pending started: key = f"{check_id}:{instance_id}", value = monotonic timestamp
@@ -108,6 +114,27 @@ class TelemetryPlanner:
         if self._snapshot and (now - self._snapshot.generated_at) < self.config.cache_ttl_seconds:
             return self._snapshot
 
+        # Acquire the lock so only one coroutine recomputes at a time.
+        # Others that arrive while the lock is held will block here, then
+        # re-check the cache once released — returning the fresh snapshot
+        # without triggering a second full recomputation.
+        async with self._refresh_lock:
+            # Re-check inside the lock: another coroutine may have finished
+            # recomputing while we were waiting.
+            now = time.monotonic()
+            if self._snapshot and (now - self._snapshot.generated_at) < self.config.cache_ttl_seconds:
+                return self._snapshot
+
+            return await self._recompute(topology, checks, targets_by_check)
+
+    async def _recompute(
+        self,
+        topology: Topology,
+        checks: ChecksLibrary,
+        targets_by_check: Optional[Dict[str, Dict[str, List[str]]]] = None,
+    ) -> PlannerSnapshot:
+        """Internal: run the full Prometheus query cycle and update the snapshot."""
+        now = time.monotonic()
         node_ids, chassis_ids, rack_ids, rack_nodes = _collect_topology_ids(topology)
         queries = _build_queries(
             checks.checks,

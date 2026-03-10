@@ -172,6 +172,47 @@ async def get_room_state(
     return {"room_id": room_id, "state": room_status, "racks": racks_out}
 
 
+@router.get("/api/rooms/states")
+async def get_all_room_states(
+    topology: Annotated[Optional[Topology], Depends(get_topology_optional)],
+    catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
+    checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
+    planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
+):
+    """Get health state for all rooms in one request.
+
+    Returns a map of room_id → state (OK | WARN | CRIT | UNKNOWN).
+    One planner snapshot is computed (or reused from cache) for all rooms,
+    avoiding N parallel get_snapshot() calls from the frontend.
+    """
+    if not topology or not catalog or not checks_library or not planner:
+        return {}
+
+    targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
+    snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
+    rack_healths = snapshot.rack_states
+
+    result: Dict[str, str] = {}
+    for site in topology.sites:
+        for room in site.rooms:
+            rack_ids: list[str] = []
+            for aisle in room.aisles:
+                rack_ids.extend(r.id for r in aisle.racks)
+            rack_ids.extend(r.id for r in room.standalone_racks)
+
+            room_status = "OK"
+            for rid in rack_ids:
+                h = rack_healths.get(rid, "OK")
+                if h == "CRIT":
+                    room_status = "CRIT"
+                    break
+                if h == "WARN" and room_status != "CRIT":
+                    room_status = "WARN"
+            result[room.id] = room_status
+
+    return result
+
+
 @router.get("/api/racks/{rack_id}/state")
 async def get_rack_state(
     rack_id: str,

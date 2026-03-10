@@ -18,6 +18,7 @@ import './widgets/WorldMapWidget';
 import './widgets/InfrastructureWidget';
 import './widgets/SiteMapWidget';
 import './widgets/PrometheusWidget';
+import './widgets/ContainerStatsWidget';
 
 import './widgets/CatalogChecksWidget';
 import './widgets/CheckSummaryWidget';

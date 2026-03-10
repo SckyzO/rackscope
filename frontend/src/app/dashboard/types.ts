@@ -5,7 +5,7 @@ import type {
   PrometheusStats,
   DeviceTemplate,
   CheckDefinition,
-} from '../../types';
+} from '@src/types';
 
 export type RoomWithState = {
   id: string;
@@ -39,7 +39,8 @@ export type WidgetType =
   | 'slurm-nodes'
   | 'slurm-utilization'
   | 'world-map'
-  | 'simulator-status';
+  | 'simulator-status'
+  | 'container-stats';
 
 export type WidgetConfig = {
   id: string;
