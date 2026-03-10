@@ -910,6 +910,7 @@ function HomeContent() {
                 borderLeft: i>0 ? 'none' : `1px solid ${C.border}`,
                 position:'relative',
                 display:'flex', flexDirection:'column', gap:14,
+                ...stagger(howV, i + 1, 0.05, 0.14),
               }}>
                 {/* Step number — prominent indigo, large */}
                 <div style={{
@@ -952,7 +953,7 @@ function HomeContent() {
           </div>
 
           {/* Doc cards */}
-          <div style={{ textAlign:'center', marginBottom:32 }}>
+          <div ref={docRef} style={{ textAlign:'center', marginBottom:32, ...stagger(docV, 0) }}>
             <p style={{ color:C.textLo, fontSize:'0.9rem', margin:0 }}>
               The documentation covers everything in detail. Start where it makes sense for you.
             </p>
@@ -963,7 +964,7 @@ function HomeContent() {
               { icon:'📦', label:'Examples',    sub:'Ready-made topologies',    desc:'From a simple 4-rack lab to an 855-node HPC cluster. Load in one command.',             to:'/getting-started/examples' },
               { icon:'⚙️', label:'Admin Guide', sub:'Production deployment',    desc:'Docker images, GHCR, nginx, config reference, app.yaml explained.',                     to:'/admin-guide/deployment' },
               { icon:'🔌', label:'API Reference', sub:'Automate & integrate',   desc:'Generate topology from scripts, push checks, query health states.',                     to:'/api-reference/overview' },
-            ].map(({ icon, label, sub, desc, to }) => (
+            ].map(({ icon, label, sub, desc, to }, i) => (
               <Link key={label} to={to}
                 style={{
                   display:'flex', flexDirection:'column', gap:8,
@@ -971,6 +972,7 @@ function HomeContent() {
                   background:C.dark3, border:`1px solid ${C.border}`,
                   borderRadius:10, textDecoration:'none',
                   transition:'border-color 0.2s, transform 0.2s',
+                  ...stagger(docV, i + 1, 0.05, 0.10),
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor=C.indigoBorder; e.currentTarget.style.transform='translateY(-2px)'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor=C.border; e.currentTarget.style.transform='translateY(0)'; }}
