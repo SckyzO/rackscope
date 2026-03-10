@@ -226,7 +226,16 @@ function Carousel() {
 }
 
 // ── Page content — must be rendered inside <Layout> so ColorModeProvider exists ─
-const LEVELS = ['Site','Room','Aisle','Rack','Device','Instance'];
+
+// Realistic alert path — shows the drill-down concept with a concrete example.
+// Each node reveals sequentially (stagger animation), CRIT pulses at the end.
+const PATH = [
+  { name: 'Paris HPC',      level: 'Site'     },
+  { name: 'Machine Room A', level: 'Room'     },
+  { name: 'Compute Aisle',  level: 'Aisle'    },
+  { name: 'Rack C04',       level: 'Rack'     },
+  { name: 'compute-042',    level: 'Instance', crit: true },
+];
 
 function HomeContent() {
   const C = useTokens();
@@ -317,19 +326,55 @@ function HomeContent() {
             </Link>
           </div>
 
-          {/* Hierarchy */}
-          <div className="rs-a5" style={{ display:'flex', alignItems:'center', gap:6, justifyContent:'center', flexWrap:'wrap' }}>
-            {LEVELS.map((lvl, i) => (
-              <React.Fragment key={lvl}>
-                <span style={{
-                  fontFamily:"'JetBrains Mono',monospace", fontSize:'0.75rem', fontWeight:500,
-                  color: i===0 ? C.indigo : i===LEVELS.length-1 ? C.textLo : C.textMid,
-                  padding:'3px 9px', borderRadius:5,
-                  background: i===0 ? C.indigoLo : 'transparent',
-                  border:`1px solid ${i===0 ? C.indigoBorder : 'transparent'}`,
-                  letterSpacing:'0.03em',
-                }}>{lvl}</span>
-                {i < LEVELS.length-1 && <span style={{ color:C.textLo, fontSize:'0.7rem', userSelect:'none' }}>→</span>}
+          {/* Hierarchy path — B+C mix: realistic alert path + stagger reveal */}
+          <div style={{ display:'flex', alignItems:'flex-start', gap:0, justifyContent:'center', flexWrap:'wrap', rowGap:12 }}>
+            {PATH.map(({ name, level, crit }, i) => (
+              <React.Fragment key={name}>
+                {/* Separator — appears with the same delay as the following node */}
+                {i > 0 && (
+                  <span style={{
+                    color: C.textLo, fontSize:'0.75rem', margin:'0 5px',
+                    userSelect:'none', paddingTop:6,
+                    animation:`rs-fade-up 0.45s ease both ${0.52 + i * 0.12}s`,
+                  }}>›</span>
+                )}
+                {/* Node — name pill + level label */}
+                <div style={{
+                  display:'flex', flexDirection:'column', alignItems:'center', gap:4,
+                  animation:`rs-fade-up 0.45s ease both ${0.46 + i * 0.12}s`,
+                }}>
+                  {/* Name pill */}
+                  <div style={{
+                    display:'flex', alignItems:'center', gap:6,
+                    fontFamily:"'JetBrains Mono',monospace", fontSize:'0.78rem', fontWeight:600,
+                    color: crit ? '#ef4444' : i===0 ? C.indigo : C.textHi,
+                    padding:'4px 11px', borderRadius:6,
+                    background: crit ? 'rgba(239,68,68,0.10)' : i===0 ? C.indigoLo : 'transparent',
+                    border:`1px solid ${crit ? 'rgba(239,68,68,0.25)' : i===0 ? C.indigoBorder : C.border}`,
+                    letterSpacing:'-0.01em',
+                  }}>
+                    {name}
+                    {crit && (
+                      <>
+                        <span style={{
+                          width:5, height:5, borderRadius:'50%',
+                          background:'#ef4444', display:'inline-block', flexShrink:0,
+                          animation:'rs-glow-pulse 1.5s ease infinite',
+                        }}/>
+                        <span style={{
+                          fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.06em',
+                          color:'#ef4444', animation:'rs-glow-pulse 1.5s ease infinite',
+                        }}>CRIT</span>
+                      </>
+                    )}
+                  </div>
+                  {/* Level label */}
+                  <span style={{
+                    fontSize:'0.6rem', color:C.textLo, letterSpacing:'0.10em',
+                    textTransform:'uppercase', fontFamily:"'JetBrains Mono',monospace",
+                    fontWeight:500,
+                  }}>{level}</span>
+                </div>
               </React.Fragment>
             ))}
           </div>
