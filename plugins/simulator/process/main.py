@@ -15,12 +15,22 @@ from prometheus_client import start_http_server
 
 from plugins.simulator.process.loop import simulate
 
+_CONTROL_TOKEN = os.getenv("SIMULATOR_CONTROL_TOKEN", "")
+
 
 class _ControlHandler(BaseHTTPRequestHandler):
     """Minimal control server — handles POST /restart."""
 
     def do_POST(self):
         if self.path == "/restart":
+            if _CONTROL_TOKEN:
+                auth_header = self.headers.get("Authorization", "")
+                if not auth_header.startswith("Bearer ") or auth_header[7:] != _CONTROL_TOKEN:
+                    self.send_response(401)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(b'{"detail":"Unauthorized"}')
+                    return
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()

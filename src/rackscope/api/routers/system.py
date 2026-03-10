@@ -41,8 +41,10 @@ def _parse_backend_stats() -> dict:
                     kb = int(re.sub(r"[^0-9]", "", line.split(":")[1]))
                     mem_bytes = kb * 1024
                     break
-    except Exception:
-        pass
+    except FileNotFoundError:
+        logger.debug("/proc/self/status not available (non-Linux host)")
+    except Exception as e:
+        logger.warning("Failed to read backend memory stats: %s", e)
     try:
         with open("/proc/self/stat") as f:
             fields = f.read().split()
@@ -50,8 +52,10 @@ def _parse_backend_stats() -> dict:
             utime = int(fields[13])
             stime = int(fields[14])
             cpu_seconds = (utime + stime) / 100.0
-    except Exception:
-        pass
+    except FileNotFoundError:
+        logger.debug("/proc/self/stat not available (non-Linux host)")
+    except Exception as e:
+        logger.warning("Failed to read backend CPU stats: %s", e)
     return {"memory_bytes": mem_bytes, "cpu_seconds": cpu_seconds, "available": True}
 
 

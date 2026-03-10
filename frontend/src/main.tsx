@@ -48,5 +48,15 @@ try {
     </StrictMode>
   );
 } catch (e) {
-  document.body.innerHTML = `<div style="color: red; padding: 20px;"><h1>Critical Error</h1><pre>${e}</pre></div>`;
+  // Use DOM API instead of innerHTML to prevent XSS if the error message
+  // contains HTML characters (e.g. from a malicious config value).
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'color:red;padding:20px;font-family:monospace';
+  const h1 = document.createElement('h1');
+  h1.textContent = 'Critical Error';
+  const pre = document.createElement('pre');
+  pre.textContent = String(e);
+  wrapper.appendChild(h1);
+  wrapper.appendChild(pre);
+  document.body.appendChild(wrapper);
 }

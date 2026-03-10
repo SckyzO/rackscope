@@ -7,6 +7,8 @@ Endpoints for authentication: login, session info, credential management.
 from __future__ import annotations
 
 import os
+import time
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Annotated
 
@@ -21,6 +23,23 @@ from rackscope.model.config import AppConfig, PasswordPolicyConfig
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+_login_attempts: dict[str, list[float]] = defaultdict(list)
+_LOGIN_WINDOW_SECONDS = 900  # 15 minutes
+_LOGIN_MAX_ATTEMPTS = 10     # per window
+
+
+def _check_login_rate_limit(identifier: str) -> None:
+    """Raise 429 if the identifier has exceeded the login attempt threshold."""
+    now = time.monotonic()
+    attempts = [t for t in _login_attempts[identifier] if now - t < _LOGIN_WINDOW_SECONDS]
+    _login_attempts[identifier] = attempts
+    if len(attempts) >= _LOGIN_MAX_ATTEMPTS:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many login attempts. Try again in {_LOGIN_WINDOW_SECONDS // 60} minutes.",
+        )
+    _login_attempts[identifier].append(now)
+
 
 def _hash_password(password: str) -> str:
     return _bcrypt.hashpw(password.encode(), _bcrypt.gensalt()).decode()
@@ -29,7 +48,13 @@ def _hash_password(password: str) -> str:
 def _verify_password(password: str, hashed: str) -> bool:
     try:
         return _bcrypt.checkpw(password.encode(), hashed.encode())
-    except Exception:
+    except (ValueError, UnicodeDecodeError) as e:
+        import logging
+        logging.getLogger(__name__).warning("Password verification error (corrupted hash?): %s", e)
+        return False
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error("Unexpected error in password verification: %s", e)
         return False
 
 
@@ -154,6 +179,7 @@ def login(
     app_config: Annotated[Optional[AppConfig], Depends(get_app_config)],
 ):
     """Validate credentials and return a JWT."""
+    _check_login_rate_limit(body.username)
     if not app_config or not app_config.auth.enabled:
         raise HTTPException(status_code=400, detail="Authentication is not enabled")
 

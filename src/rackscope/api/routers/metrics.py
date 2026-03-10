@@ -17,6 +17,22 @@ from rackscope.model.config import AppConfig
 router = APIRouter(prefix="/api/metrics", tags=["metrics"])
 
 
+def _validate_safe_path(name: str, base_dir: Path) -> Path:
+    """Validate that a user-supplied filename stays within base_dir.
+
+    Raises HTTPException 400 if name contains traversal sequences.
+    Raises HTTPException 403 if the resolved path escapes base_dir.
+    """
+    if not name or ".." in name or name.startswith("/") or name.startswith("\\"):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    target = (base_dir / name).resolve()
+    try:
+        target.relative_to(base_dir.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return target
+
+
 @router.get("/library")
 async def list_metrics(
     category: Optional[str] = Query(None, description="Filter by category"),
@@ -258,22 +274,6 @@ class MetricFileWriteRequest(BaseModel):
     content: str
 
 
-@router.get("/library/files")
-async def list_library_metric_files(
-    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
-):
-    """List all metric YAML files in the library directory."""
-    if not app_config:
-        return {"files": []}
-    library_path = Path(app_config.paths.metrics)
-    if not library_path.exists() or not library_path.is_dir():
-        return {"files": []}
-    files = []
-    for f in sorted(library_path.glob("*.yaml")) + sorted(library_path.glob("*.yml")):
-        files.append({"name": f.name, "path": str(f)})
-    return {"files": files}
-
-
 @router.get("/library/files/{name}")
 async def get_library_metric_file(
     name: str,
@@ -282,7 +282,7 @@ async def get_library_metric_file(
     """Read a metric YAML file from the library."""
     if not app_config:
         raise HTTPException(status_code=503, detail="Config not loaded")
-    library_path = Path(app_config.paths.metrics) / name
+    library_path = _validate_safe_path(name, Path(app_config.paths.metrics))
     if not library_path.exists():
         raise HTTPException(status_code=404, detail=f"Metric file '{name}' not found")
     content = library_path.read_text(encoding="utf-8")
@@ -304,7 +304,7 @@ async def put_library_metric_file(
         _yaml.safe_load(body.content)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid YAML: {e}")
-    library_path = Path(app_config.paths.metrics) / name
+    library_path = _validate_safe_path(name, Path(app_config.paths.metrics))
     library_path.write_text(body.content, encoding="utf-8")
     from rackscope.api import app as app_module
     from rackscope.model.loader import load_metrics_library as _load_metrics_library
@@ -321,7 +321,7 @@ async def delete_library_metric_file(
     """Delete a metric YAML file from the library and reload."""
     if not app_config:
         raise HTTPException(status_code=503, detail="Config not loaded")
-    library_path = Path(app_config.paths.metrics) / name
+    library_path = _validate_safe_path(name, Path(app_config.paths.metrics))
     if not library_path.exists():
         raise HTTPException(status_code=404, detail=f"Metric file '{name}' not found")
     library_path.unlink()
