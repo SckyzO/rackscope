@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { StadeToulousainOverlay } from '../components/StadeToulousainOverlay';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
 import { api } from '@src/services/api';
@@ -471,17 +472,26 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
   const [matrixActive, setMatrixActive] = useState(false);
   const [bootActive, setBootActive] = useState(false);
   const [helpActive, setHelpActive] = useState(false);
+  const [toulouseActive, setToulouseActive] = useState(false);
   const logoClickTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const helpProgress = React.useRef(0);
   const helpTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toulouseProgress = React.useRef(0);
+  const toulouseTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Easter egg: typing 'help' triggers a retro terminal overlay.
-  // Sequence is detected via keydown accumulation with 1.5s timeout.
+  // Easter egg: typing 'toulouse' triggers the Stade Toulousain overlay.
+  // Sequences are detected via keydown accumulation with 1.5s timeout.
   useEffect(() => {
     const HELP = ['h', 'e', 'l', 'p'];
+    const TOULOUSE = ['t', 'o', 'u', 'l', 'o', 'u', 's', 'e'];
+    const anyActive = matrixActive || bootActive || helpActive || toulouseActive;
     const onKey = (e: KeyboardEvent) => {
-      if (matrixActive || bootActive || helpActive) return;
-      if (e.key.toLowerCase() === HELP[helpProgress.current]) {
+      if (anyActive) return;
+      const k = e.key.toLowerCase();
+
+      // 'help' sequence
+      if (k === HELP[helpProgress.current]) {
         helpProgress.current += 1;
         if (helpProgress.current === HELP.length) {
           helpProgress.current = 0;
@@ -489,17 +499,30 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
           setHelpActive(true);
         } else {
           if (helpTimer.current) clearTimeout(helpTimer.current);
-          helpTimer.current = setTimeout(() => {
-            helpProgress.current = 0;
-          }, 1500);
+          helpTimer.current = setTimeout(() => { helpProgress.current = 0; }, 1500);
         }
       } else {
-        helpProgress.current = e.key.toLowerCase() === 'h' ? 1 : 0;
+        helpProgress.current = k === 'h' ? 1 : 0;
+      }
+
+      // 'toulouse' sequence
+      if (k === TOULOUSE[toulouseProgress.current]) {
+        toulouseProgress.current += 1;
+        if (toulouseProgress.current === TOULOUSE.length) {
+          toulouseProgress.current = 0;
+          if (toulouseTimer.current) clearTimeout(toulouseTimer.current);
+          setToulouseActive(true);
+        } else {
+          if (toulouseTimer.current) clearTimeout(toulouseTimer.current);
+          toulouseTimer.current = setTimeout(() => { toulouseProgress.current = 0; }, 2000);
+        }
+      } else {
+        toulouseProgress.current = k === 't' ? 1 : 0;
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [matrixActive, bootActive, helpActive]);
+  }, [matrixActive, bootActive, helpActive, toulouseActive]);
   const navigate = useNavigate();
   const location = useLocation();
   const { features, plugins, config } = useAppConfigSafe();
@@ -527,6 +550,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
       {matrixActive && <MatrixRainOverlay onClose={() => setMatrixActive(false)} />}
       {bootActive && <AsciiBootOverlay onClose={() => setBootActive(false)} />}
       {helpActive && <HelpTerminalOverlay onClose={() => setHelpActive(false)} />}
+      {toulouseActive && <StadeToulousainOverlay onClose={() => setToulouseActive(false)} />}
 
       <div className="flex h-[72px] shrink-0 items-center">
         <div className="flex min-w-0 items-center gap-3">

@@ -367,10 +367,10 @@ const KonamiChallengeModal = ({
 
         <div className="text-center">
           <p className="text-base font-bold text-gray-900 dark:text-white">
-            🎮 Saisir le Konami Code
+            🎮 Enter the Konami Code
           </p>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Tape la séquence pour débloquer les easter eggs
+            Type the sequence to unlock the Easter eggs list
           </p>
         </div>
 
@@ -400,7 +400,7 @@ const KonamiChallengeModal = ({
 
         <div className="mt-3 min-h-[20px] text-center">
           {error && (
-            <p className="text-xs text-red-500 dark:text-red-400">Mauvaise touche — réessaie !</p>
+            <p className="text-xs text-red-500 dark:text-red-400">Wrong key — try again!</p>
           )}
           {progress > 0 && !error && (
             <p className="text-xs text-green-600 dark:text-green-400">
@@ -461,6 +461,13 @@ const EGGS = [
     title: 'Hidden terminal',
     desc: 'A retro datacenter terminal with very questionable commands.',
     icon: '💻',
+  },
+  {
+    combo: 'Type  t o u l o u s e',
+    where: 'Any page',
+    title: 'Grand Sud Easter Egg',
+    desc: '🔴⚫ Scientific proof that Stade Toulousain is the greatest club in the known universe. FR/EN toggle included.',
+    icon: '🏉',
   },
 ];
 
