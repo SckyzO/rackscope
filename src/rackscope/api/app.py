@@ -85,7 +85,14 @@ async def apply_config(app_config: AppConfig) -> None:
 
     Called on startup and on every PUT /api/config request.
     """
-    global TOPOLOGY, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY, APP_CONFIG, PLANNER, _CONFIG_RELOAD_LOCK
+    global \
+        TOPOLOGY, \
+        CATALOG, \
+        CHECKS_LIBRARY, \
+        METRICS_LIBRARY, \
+        APP_CONFIG, \
+        PLANNER, \
+        _CONFIG_RELOAD_LOCK
     if _CONFIG_RELOAD_LOCK is None:
         _CONFIG_RELOAD_LOCK = asyncio.Lock()
     async with _CONFIG_RELOAD_LOCK:

@@ -53,6 +53,31 @@ function useTokens() {
   return colorMode === 'dark' ? DARK : LIGHT;
 }
 
+// ── Scroll-triggered visibility hook ─────────────────────────────────────────
+// Fires once when the element crosses the viewport threshold, then disconnects.
+function useInView(threshold = 0.12) {
+  const ref = React.useRef(null);
+  const [visible, setVisible] = React.useState(false);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') { setVisible(true); return; }
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return [ref, visible];
+}
+
+// ── Stagger animation helper ──────────────────────────────────────────────────
+// Returns inline style: invisible+shifted before visible, fade-up with delay after.
+const stagger = (visible, i, base = 0.05, step = 0.12) =>
+  visible
+    ? { animation: `rs-fade-up 0.55s ease both ${(base + i * step).toFixed(2)}s` }
+    : { opacity: 0, transform: 'translateY(22px)' };
+
 // ── Keyframes & hover utilities ───────────────────────────────────────────────
 const KF = `
   @keyframes rs-fade-up {
@@ -286,6 +311,14 @@ const ANIM_DURATIONS = [2500, 900, 750, 650, 650, 650, 3000];
 
 function HomeContent() {
   const C = useTokens();
+
+  // Scroll-triggered refs — one per major section below the hero
+  const [philosophyRef, philosophyV] = useInView();
+  const [zoomRef,       zoomV]       = useInView(0.08);
+  const [metricsRef,    metricsV]    = useInView();
+  const [missingRef,    missingV]    = useInView();
+  const [howRef,        howV]        = useInView();
+  const [docRef,        docV]        = useInView();
   return (
     <>
       <style>{KF}</style>
@@ -508,9 +541,9 @@ function HomeContent() {
       </div>
 
       {/* ── PHILOSOPHY ───────────────────────────────────────────────────── */}
-      <div style={{ background:C.dark1, padding:'72px 24px', borderBottom:`1px solid ${C.border}` }}>
+      <div ref={philosophyRef} style={{ background:C.dark1, padding:'72px 24px', borderBottom:`1px solid ${C.border}` }}>
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
-          <div style={{ textAlign:'center', marginBottom:48 }}>
+          <div style={{ textAlign:'center', marginBottom:48, ...stagger(philosophyV, 0) }}>
             <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:C.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
               Design Philosophy
             </div>
@@ -526,9 +559,10 @@ function HomeContent() {
               { icon:'📄', title:'Zero Database', delay:'0.1s', desc:'All configuration is stored in YAML files — GitOps-compatible, version-controlled, and diff-friendly. Commit your infrastructure topology to Git and roll back with a single command.' },
               { icon:'📡', title:'Prometheus-Only', delay:'0.2s', desc:'Every health state derives from a live PromQL query against your existing Prometheus instance. No agents, no collectors, no additional telemetry infrastructure to operate.' },
               { icon:'🏗️', title:'Physical Hierarchy', delay:'0.3s', desc:'Site → Room → Aisle → Rack → Device → Instance. Health states propagate upward — a failing node elevates its rack to CRIT, which propagates to the room level.' },
-            ].map(({ icon, title, desc, delay }) => (
+            ].map(({ icon, title, desc }, i) => (
               <div key={title} className="rs-philocard" style={{
-                animationDelay:delay, padding:'28px 28px 24px',
+                ...stagger(philosophyV, i + 1, 0.1, 0.14),
+                padding:'28px 28px 24px',
                 background:C.dark3, border:`1px solid ${C.border}`,
                 borderRadius:12, position:'relative', overflow:'hidden',
               }}>
@@ -543,9 +577,9 @@ function HomeContent() {
       </div>
 
       {/* ── BLOC 1 : ZOOM IN ─────────────────────────────────────────────── */}
-      <div style={{ background:C.dark2, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
+      <div ref={zoomRef} style={{ background:C.dark2, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
         <div style={{ maxWidth:900, margin:'0 auto' }}>
-          <div style={{ textAlign:'center', marginBottom:56 }}>
+          <div style={{ textAlign:'center', marginBottom:56, ...stagger(zoomV, 0) }}>
             <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:C.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
               Physical drill-down
             </div>
@@ -640,9 +674,9 @@ function HomeContent() {
       </div>
 
       {/* ── BLOC 2 : ANY METRIC ANY TEAM ────────────────────────────────── */}
-      <div style={{ background:C.dark1, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
+      <div ref={metricsRef} style={{ background:C.dark1, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
-          <div style={{ textAlign:'center', marginBottom:48 }}>
+          <div style={{ textAlign:'center', marginBottom:48, ...stagger(metricsV, 0) }}>
             <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:C.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
               Universal by design
             </div>
@@ -656,7 +690,7 @@ function HomeContent() {
 
           <div style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', gap:24, alignItems:'start' }}>
             {/* Hardware */}
-            <div style={{ padding:'28px', background:C.dark3, border:`1px solid ${C.border}`, borderRadius:12 }}>
+            <div style={{ padding:'28px', background:C.dark3, border:`1px solid ${C.border}`, borderRadius:12, ...stagger(metricsV, 1, 0.1) }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
                 <span style={{ fontSize:'1.4rem' }}>🔩</span>
                 <div>
@@ -682,7 +716,7 @@ function HomeContent() {
             </div>
 
             {/* Center — PromQL */}
-            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12, paddingTop:32 }}>
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12, paddingTop:32, ...stagger(metricsV, 2, 0.1) }}>
               <div style={{ width:1, flex:1, background:C.border }} />
               <div style={{
                 width:48, height:48, borderRadius:'50%',
@@ -696,7 +730,7 @@ function HomeContent() {
             </div>
 
             {/* Software */}
-            <div style={{ padding:'28px', background:C.dark3, border:`1px solid ${C.border}`, borderRadius:12 }}>
+            <div style={{ padding:'28px', background:C.dark3, border:`1px solid ${C.border}`, borderRadius:12, ...stagger(metricsV, 3, 0.1) }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
                 <span style={{ fontSize:'1.4rem' }}>💻</span>
                 <div>
@@ -727,6 +761,7 @@ function HomeContent() {
             marginTop:24, padding:'16px 20px',
             background:C.dark3, border:`1px solid ${C.border}`,
             borderRadius:10,
+            ...stagger(metricsV, 4, 0.1),
           }}>
             <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
               <span style={{ fontSize:'1rem', flexShrink:0, marginTop:'2px' }}>⚡</span>
@@ -740,9 +775,9 @@ function HomeContent() {
       </div>
 
       {/* ── BLOC 3 : THE MISSING LAYER ───────────────────────────────────── */}
-      <div style={{ background:C.dark2, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
+      <div ref={missingRef} style={{ background:C.dark2, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
         <div style={{ maxWidth:900, margin:'0 auto' }}>
-          <div style={{ textAlign:'center', marginBottom:52 }}>
+          <div style={{ textAlign:'center', marginBottom:52, ...stagger(missingV, 0) }}>
             <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:C.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
               Positioning
             </div>
@@ -762,6 +797,7 @@ function HomeContent() {
               background:C.dark3, border:`1px solid ${C.border}`,
               borderRadius:'10px 0 0 10px',
               display:'flex', flexDirection:'column', alignItems:'center', gap:10, textAlign:'center',
+              ...stagger(missingV, 1, 0.1, 0.18),
             }}>
               <div style={{ fontSize:'2.2rem' }}>📊</div>
               <div style={{ fontWeight:700, color:C.textMid, fontSize:'0.95rem' }}>Grafana</div>
@@ -783,6 +819,7 @@ function HomeContent() {
             {/* Rackscope — highlighted */}
             <div style={{
               flex:'1.4', padding:'24px 24px',
+              ...stagger(missingV, 2, 0.1, 0.18),
               background: `linear-gradient(135deg, ${C.dark3}, ${C.dark4})`,
               border:`2px solid ${C.indigoBorder}`,
               display:'flex', flexDirection:'column', gap:8,
@@ -819,6 +856,7 @@ function HomeContent() {
               background:C.dark3, border:`1px solid ${C.border}`,
               borderRadius:'0 10px 10px 0',
               display:'flex', flexDirection:'column', alignItems:'center', gap:10, textAlign:'center',
+              ...stagger(missingV, 3, 0.1, 0.18),
             }}>
               <div style={{ fontSize:'2.2rem' }}>🚨</div>
               <div style={{ fontWeight:700, color:C.textMid, fontSize:'0.95rem' }}>Supervision</div>
@@ -840,10 +878,10 @@ function HomeContent() {
       </div>
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────────────── */}
-      <div style={{ background:C.dark1, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
+      <div ref={howRef} style={{ background:C.dark1, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
 
-          <div style={{ textAlign:'center', marginBottom:64 }}>
+          <div style={{ textAlign:'center', marginBottom:64, ...stagger(howV, 0) }}>
             <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:C.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
               How it works
             </div>

@@ -9,14 +9,28 @@ interface SlurmSeverityColors {
 }
 
 const DEFAULT_STATUS_MAP: Record<string, string> = {
-  allocated: 'ok', alloc: 'ok', completing: 'ok', comp: 'ok', mixed: 'ok',
+  allocated: 'ok',
+  alloc: 'ok',
+  completing: 'ok',
+  comp: 'ok',
+  mixed: 'ok',
   idle: 'info',
-  drain: 'warn', draining: 'warn', drained: 'warn', maint: 'warn', reserved: 'warn',
-  down: 'crit', fail: 'crit', error: 'crit', unknown: 'crit',
+  drain: 'warn',
+  draining: 'warn',
+  drained: 'warn',
+  maint: 'warn',
+  reserved: 'warn',
+  down: 'crit',
+  fail: 'crit',
+  error: 'crit',
+  unknown: 'crit',
 };
 
 const DEFAULT_COLORS: SlurmSeverityColors = {
-  ok: '#22c55e', warn: '#f59e0b', crit: '#ef4444', info: '#3b82f6',
+  ok: '#22c55e',
+  warn: '#f59e0b',
+  crit: '#ef4444',
+  info: '#3b82f6',
 };
 
 const FALLBACK_COLOR = '#6b7280';
@@ -31,7 +45,10 @@ export const useSlurmConfig = () => {
       try {
         const config = await api.getConfig();
         const slurm = config.plugins?.slurm as
-          | { severity_colors?: Partial<SlurmSeverityColors>; status_map?: Record<string, string[]> }
+          | {
+              severity_colors?: Partial<SlurmSeverityColors>;
+              status_map?: Record<string, string[]>;
+            }
           | undefined;
         if (slurm?.severity_colors) {
           setSeverityColors({ ...DEFAULT_COLORS, ...slurm.severity_colors });

@@ -449,7 +449,8 @@ def _get_alloc_set(targets: list, forced_slurm_status: dict, slurm_alloc_percent
     if _alloc_cache["cache_key"] == cache_key:
         return _alloc_cache["set"]
     eligible = sorted(
-        nid for nid in (t["node_id"] for t in targets if t.get("node_id"))
+        nid
+        for nid in (t["node_id"] for t in targets if t.get("node_id"))
         if nid not in forced_slurm_status
     )
     n_alloc = int(len(eligible) * max(0, min(100, slurm_alloc_percent)) / 100)
@@ -485,7 +486,9 @@ def simulate():
         sim_cfg.get("slurm_random_statuses", {}) if isinstance(sim_cfg, dict) else {}
     )
     slurm_random_match = sim_cfg.get("slurm_random_match", []) if isinstance(sim_cfg, dict) else []
-    slurm_alloc_percent = int(sim_cfg.get("slurm_alloc_percent", 80)) if isinstance(sim_cfg, dict) else 80
+    slurm_alloc_percent = (
+        int(sim_cfg.get("slurm_alloc_percent", 80)) if isinstance(sim_cfg, dict) else 80
+    )
     overrides_path = sim_cfg.get(
         "overrides_path", "/app/config/plugins/simulator/overrides/overrides.yaml"
     )
@@ -556,7 +559,9 @@ def simulate():
         slurm_random_match = (
             _new_cfg.get("slurm_random_match", []) if isinstance(_new_cfg, dict) else []
         )
-        slurm_alloc_percent = int(_new_cfg.get("slurm_alloc_percent", 80)) if isinstance(_new_cfg, dict) else 80
+        slurm_alloc_percent = (
+            int(_new_cfg.get("slurm_alloc_percent", 80)) if isinstance(_new_cfg, dict) else 80
+        )
         update_interval = _new_cfg.get(
             "update_interval_seconds", _new_cfg.get("update_interval", update_interval)
         )

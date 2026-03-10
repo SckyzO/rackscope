@@ -147,126 +147,630 @@ interface RackCellProps {
   onClick: () => void;
 }
 
-const RackCell = memo(({
-  rack,
-  state,
-  nodeCounts,
-  isSelected,
-  isHighlighted,
-  showName,
-  showLabel,
-  searchMatch,
-  rackStyle,
-  catalog,
-  onClick,
-}: RackCellProps) => {
-  const color = HC[state] ?? HC.UNKNOWN;
-  const dimmed = isHighlighted === false;
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [hovered, setHovered] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+const RackCell = memo(
+  ({
+    rack,
+    state,
+    nodeCounts,
+    isSelected,
+    isHighlighted,
+    showName,
+    showLabel,
+    searchMatch,
+    rackStyle,
+    catalog,
+    onClick,
+  }: RackCellProps) => {
+    const color = HC[state] ?? HC.UNKNOWN;
+    const dimmed = isHighlighted === false;
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+    const [hovered, setHovered] = useState(false);
+    const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const handleMouseEnter = (e: React.MouseEvent) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-    setHovered(true);
-  };
-  const handleMouseMove = (e: React.MouseEvent) => {
-    setMousePos({ x: e.clientX, y: e.clientY });
-  };
-  const handleMouseLeave = () => setHovered(false);
+    const handleMouseEnter = (e: React.MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+      setHovered(true);
+    };
+    const handleMouseMove = (e: React.MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    const handleMouseLeave = () => setHovered(false);
 
-  const deviceCount = rack.devices?.length ?? 0;
-  // When catalog is available use exact sum of device u_heights; otherwise
-  // fall back to the 2U-per-device estimate.
-  const occupancy = Math.min(
-    100,
-    catalog && rack.devices?.length
-      ? (rack.devices.reduce((sum, d) => sum + (catalog[d.template_id]?.u_height ?? 2), 0) /
-          rack.u_height) *
-          100
-      : (deviceCount / (rack.u_height / 2)) * 100
-  );
-
-  const checkSummary = nodeCounts
-    ? {
-        ok: Math.max(0, nodeCounts.total - nodeCounts.crit - nodeCounts.warn),
-        warn: nodeCounts.warn,
-        crit: nodeCounts.crit,
-      }
-    : undefined;
-
-  const tooltip = hovered ? (
-    <HUDTooltip
-      title={rack.name}
-      subtitle="Rack"
-      status={state}
-      details={[
-        { label: 'ID', value: rack.id, italic: true },
-        { label: 'Height', value: `${rack.u_height}U` },
-        {
-          label: 'Occupancy',
-          value: `${deviceCount} device${deviceCount !== 1 ? 's' : ''} · ${Math.round(occupancy)}%`,
-        },
-      ]}
-      checkSummary={checkSummary}
-      mousePos={mousePos}
-    />
-  ) : null;
-
-  const ringClass = [
-    isSelected ? 'ring-brand-500 ring-2 ring-offset-1 dark:ring-offset-gray-900' : '',
-    searchMatch ? 'ring-2 ring-yellow-400 ring-offset-1' : '',
-  ].join(' ');
-  const dimmedClass = dimmed ? 'opacity-25' : '';
-
-  // ── Dot ────────────────────────────────────────────────────────────────────
-  if (rackStyle === 'dot') {
-    return (
-      <div
-        ref={wrapperRef}
-        className="relative"
-        onMouseEnter={handleMouseEnter}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        <button
-          onClick={onClick}
-          className={`relative h-10 w-8 rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
-          style={{ backgroundColor: `${color}20`, borderColor: color }}
-        >
-          <div
-            className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full"
-            style={{ backgroundColor: color }}
-          />
-        </button>
-        {tooltip}
-      </div>
+    const deviceCount = rack.devices?.length ?? 0;
+    // When catalog is available use exact sum of device u_heights; otherwise
+    // fall back to the 2U-per-device estimate.
+    const occupancy = Math.min(
+      100,
+      catalog && rack.devices?.length
+        ? (rack.devices.reduce((sum, d) => sum + (catalog[d.template_id]?.u_height ?? 2), 0) /
+            rack.u_height) *
+            100
+        : (deviceCount / (rack.u_height / 2)) * 100
     );
-  }
 
-  // ── Compact ────────────────────────────────────────────────────────────────
-  if (rackStyle === 'compact') {
+    const checkSummary = nodeCounts
+      ? {
+          ok: Math.max(0, nodeCounts.total - nodeCounts.crit - nodeCounts.warn),
+          warn: nodeCounts.warn,
+          crit: nodeCounts.crit,
+        }
+      : undefined;
+
+    const tooltip = hovered ? (
+      <HUDTooltip
+        title={rack.name}
+        subtitle="Rack"
+        status={state}
+        details={[
+          { label: 'ID', value: rack.id, italic: true },
+          { label: 'Height', value: `${rack.u_height}U` },
+          {
+            label: 'Occupancy',
+            value: `${deviceCount} device${deviceCount !== 1 ? 's' : ''} · ${Math.round(occupancy)}%`,
+          },
+        ]}
+        checkSummary={checkSummary}
+        mousePos={mousePos}
+      />
+    ) : null;
+
+    const ringClass = [
+      isSelected ? 'ring-brand-500 ring-2 ring-offset-1 dark:ring-offset-gray-900' : '',
+      searchMatch ? 'ring-2 ring-yellow-400 ring-offset-1' : '',
+    ].join(' ');
+    const dimmedClass = dimmed ? 'opacity-25' : '';
+
+    // ── Dot ────────────────────────────────────────────────────────────────────
+    if (rackStyle === 'dot') {
+      return (
+        <div
+          ref={wrapperRef}
+          className="relative"
+          onMouseEnter={handleMouseEnter}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <button
+            onClick={onClick}
+            className={`relative h-10 w-8 rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
+            style={{ backgroundColor: `${color}20`, borderColor: color }}
+          >
+            <div
+              className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full"
+              style={{ backgroundColor: color }}
+            />
+          </button>
+          {tooltip}
+        </div>
+      );
+    }
+
+    // ── Compact ────────────────────────────────────────────────────────────────
+    if (rackStyle === 'compact') {
+      return (
+        <div
+          ref={wrapperRef}
+          className="relative flex flex-col items-center gap-1"
+          onMouseEnter={handleMouseEnter}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <button
+            onClick={onClick}
+            className={`relative h-16 w-14 rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
+            style={{ backgroundColor: `${color}18`, borderColor: color }}
+          >
+            <div
+              className="absolute top-1 right-1 h-2 w-2 rounded-full"
+              style={{ backgroundColor: color }}
+            />
+          </button>
+          {showName && (
+            <p
+              className="w-14 text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                wordBreak: 'break-word',
+              }}
+            >
+              {rack.name}
+            </p>
+          )}
+          {showLabel && (
+            <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+              {rack.id}
+            </span>
+          )}
+          {tooltip}
+        </div>
+      );
+    }
+
+    // ── Glass ─────────────────────────────────────────────────────────────────
+    if (rackStyle === 'glass') {
+      return (
+        <div
+          ref={wrapperRef}
+          className="relative flex flex-col items-center gap-1.5"
+          onMouseEnter={handleMouseEnter}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <button
+            onClick={onClick}
+            className={`relative h-24 w-20 overflow-hidden rounded-xl border transition-all ${ringClass} ${dimmedClass}`}
+            style={{
+              background: `linear-gradient(135deg, ${color}18 0%, ${color}06 100%)`,
+              borderColor: `${color}35`,
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              boxShadow: `0 4px 24px ${color}12, inset 0 1px 0 rgba(255,255,255,0.12)`,
+            }}
+          >
+            <div
+              className="absolute -top-6 -left-6 h-20 w-20 rounded-full opacity-40"
+              style={{ background: `radial-gradient(circle, ${color}70 0%, transparent 70%)` }}
+            />
+            <div
+              className="absolute top-0 right-0 left-0 h-px"
+              style={{
+                background:
+                  'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
+              }}
+            />
+            <div
+              className="absolute right-2.5 bottom-2.5 h-2 w-2 rounded-full"
+              style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }}
+            />
+          </button>
+          {showName && (
+            <p
+              className="w-20 text-center text-[11px] leading-tight text-gray-700 dark:text-gray-300"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {rack.name}
+            </p>
+          )}
+          {showLabel && (
+            <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+              {rack.id}
+            </span>
+          )}
+          {tooltip}
+        </div>
+      );
+    }
+
+    // ── Slots (mini élévation) ─────────────────────────────────────────────────
+    if (rackStyle === 'slots') {
+      const totalSlots = 16;
+      const filledSlots = Math.round((occupancy / 100) * totalSlots);
+      return (
+        <div
+          ref={wrapperRef}
+          className="relative flex flex-col items-center gap-1.5"
+          onMouseEnter={handleMouseEnter}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <button
+            onClick={onClick}
+            className={`relative flex flex-col-reverse overflow-hidden rounded border-2 p-1.5 transition-all ${ringClass} ${dimmedClass}`}
+            style={{
+              gap: 2,
+              width: 52,
+              height: 96,
+              backgroundColor: `${color}08`,
+              borderColor: `${color}50`,
+            }}
+          >
+            {Array.from({ length: totalSlots }).map((_, i) => (
+              <div
+                key={i}
+                className="w-full rounded-sm transition-colors"
+                style={{
+                  height: 3,
+                  backgroundColor: i < filledSlots ? color : `${color}22`,
+                }}
+              />
+            ))}
+          </button>
+          {showName && (
+            <p
+              className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+              style={{
+                width: 52,
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                minHeight: '2.2em',
+              }}
+            >
+              {rack.name}
+            </p>
+          )}
+          {showLabel && (
+            <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+              {rack.id}
+            </span>
+          )}
+          {tooltip}
+        </div>
+      );
+    }
+
+    // ── Cells ─────────────────────────────────────────────────────────────────
+    if (rackStyle === 'cells') {
+      const CELL_W = 72;
+      const CELL_H = 170;
+      // 2U per cell: 42U → 21 cells, 48U → 24 cells — exact integer divisor for
+      // both common rack sizes so 2U and 4U devices map to whole cells with no rounding.
+      const U_PER_CELL = 2;
+      const rackU = rack.u_height || 42;
+      const TOTAL_CELLS = Math.round(rackU / U_PER_CELL);
+      const devices = rack.devices ?? [];
+
+      // Build device ranges using exact u_height from catalog when available,
+      // falling back to gap-inferred height capped at 4U.
+      const sorted = [...devices].sort((a, b) => a.u_position - b.u_position);
+      const deviceRanges = sorted.map((d, i) => {
+        const exactH = catalog?.[d.template_id]?.u_height;
+        const gap = i < sorted.length - 1 ? sorted[i + 1].u_position - d.u_position : 1;
+        const h = exactH ?? Math.min(gap, 4);
+        return { from: d.u_position, to: d.u_position + h - 1 };
+      });
+
+      // Cell i (from top) covers U range: (TOTAL_CELLS-1-i)*U_PER_CELL+1 … (TOTAL_CELLS-i)*U_PER_CELL
+      // A cell is filled if any device range overlaps with it.
+      const cellFilled = Array.from({ length: TOTAL_CELLS }, (_, i) => {
+        const cellBottom = (TOTAL_CELLS - 1 - i) * U_PER_CELL + 1; // lowest U in this cell
+        const cellTop = (TOTAL_CELLS - i) * U_PER_CELL; // highest U in this cell
+        return deviceRanges.some((r) => r.from <= cellTop && r.to >= cellBottom);
+      });
+
+      return (
+        <div
+          ref={wrapperRef}
+          className="relative flex flex-col items-center gap-1.5"
+          onMouseEnter={handleMouseEnter}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <button
+            onClick={onClick}
+            className={`relative overflow-hidden rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
+            style={{
+              width: CELL_W,
+              height: CELL_H,
+              backgroundColor: `${color}06`,
+              borderColor: `${color}55`,
+            }}
+          >
+            <div
+              className="absolute inset-1.5"
+              style={{ display: 'grid', gridTemplateRows: `repeat(${TOTAL_CELLS}, 1fr)`, gap: 3 }}
+            >
+              {cellFilled.map((filled, i) => (
+                <div
+                  key={i}
+                  className="rounded-sm"
+                  style={{
+                    backgroundColor: filled ? color : undefined,
+                    border: filled ? 'none' : `1px solid ${color}35`,
+                  }}
+                />
+              ))}
+            </div>
+          </button>
+          {showName && (
+            <p
+              className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+              style={{
+                width: CELL_W,
+                overflow: 'hidden',
+                display: '-webkit-box' as React.CSSProperties['display'],
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
+              {rack.name}
+            </p>
+          )}
+          {showLabel && (
+            <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+              {rack.id}
+            </span>
+          )}
+          {tooltip}
+        </div>
+      );
+    }
+
+    // ── Pixel grid ────────────────────────────────────────────────────────────
+    if (rackStyle === 'pixel') {
+      const cols = 4;
+      const rows = 8;
+      const total = cols * rows;
+      const filledCount = Math.round((occupancy / 100) * total);
+      return (
+        <div
+          ref={wrapperRef}
+          className="relative flex flex-col items-center gap-1.5"
+          onMouseEnter={handleMouseEnter}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <button
+            onClick={onClick}
+            className={`relative overflow-hidden rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
+            style={{ width: 56, height: 96, backgroundColor: '#070710', borderColor: `${color}55` }}
+          >
+            <div
+              className="absolute inset-1.5 grid"
+              style={{
+                gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                gridTemplateRows: `repeat(${rows}, 1fr)`,
+                gap: 2,
+              }}
+            >
+              {Array.from({ length: total }).map((_, i) => (
+                <div
+                  key={i}
+                  className="rounded-[1px]"
+                  style={{ backgroundColor: i >= total - filledCount ? color : `${color}18` }}
+                />
+              ))}
+            </div>
+          </button>
+          {showName && (
+            <p
+              className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+              style={{
+                width: 56,
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {rack.name}
+            </p>
+          )}
+          {showLabel && (
+            <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+              {rack.id}
+            </span>
+          )}
+          {tooltip}
+        </div>
+      );
+    }
+
+    // ── Gauge ─────────────────────────────────────────────────────────────────
+    if (rackStyle === 'gauge') {
+      const pct = Math.round(occupancy);
+      return (
+        <div
+          ref={wrapperRef}
+          className="relative flex flex-col items-center gap-1.5"
+          onMouseEnter={handleMouseEnter}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <button
+            onClick={onClick}
+            className={`relative overflow-hidden rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
+            style={{
+              width: 44,
+              height: 96,
+              backgroundColor: `${color}08`,
+              borderColor: `${color}55`,
+            }}
+          >
+            <div
+              className="absolute right-0 bottom-0 left-0"
+              style={{ height: `${pct}%`, backgroundColor: color, opacity: 0.55 }}
+            />
+            {[0, 25, 50, 75, 100].map((tick) => (
+              <div
+                key={tick}
+                className="absolute right-0 w-2.5 border-t border-white/20"
+                style={{ top: `${100 - tick}%` }}
+              />
+            ))}
+            <div className="absolute top-1.5 right-0 left-0 text-center">
+              <p className="font-mono text-[9px] font-bold" style={{ color }}>
+                {pct}%
+              </p>
+            </div>
+          </button>
+          {showName && (
+            <p
+              className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+              style={{
+                width: 44,
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {rack.name}
+            </p>
+          )}
+          {showLabel && (
+            <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+              {rack.id}
+            </span>
+          )}
+          {tooltip}
+        </div>
+      );
+    }
+
+    // ── Industrial / SCADA ────────────────────────────────────────────────────
+    if (rackStyle === 'industrial') {
+      return (
+        <div
+          ref={wrapperRef}
+          className="relative flex flex-col items-center gap-1.5"
+          onMouseEnter={handleMouseEnter}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <button
+            onClick={onClick}
+            className={`relative h-24 w-20 overflow-hidden rounded transition-all ${ringClass} ${dimmedClass}`}
+            style={{
+              backgroundColor: '#111111',
+              border: '1px solid #2a2a2a',
+              boxShadow:
+                'inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.5)',
+            }}
+          >
+            {/* Top bar: LED + ID */}
+            <div className="flex items-center gap-1.5 border-b border-white/5 bg-black/40 px-2 py-1.5">
+              <div
+                className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}90` }}
+              />
+              <span className="flex-1 truncate font-mono text-[8px] text-gray-500">{rack.id}</span>
+            </div>
+            {/* Body */}
+            <div className="flex flex-col justify-end px-2 py-1.5">
+              {showName && (
+                <p className="truncate font-mono text-[9px] text-gray-500">{rack.name}</p>
+              )}
+              <p className="mt-1 font-mono text-[11px] font-bold" style={{ color }}>
+                {state}
+              </p>
+              <p className="font-mono text-[8px] text-gray-700">{rack.u_height}U</p>
+            </div>
+            {/* Corner rivets */}
+            <div className="absolute top-1 right-1 h-1 w-1 rounded-full bg-gray-700" />
+            <div className="absolute top-1 left-1 h-1 w-1 rounded-full bg-gray-700" />
+          </button>
+          {tooltip}
+        </div>
+      );
+    }
+
+    // ── Topology node ─────────────────────────────────────────────────────────
+    if (rackStyle === 'node') {
+      const svgSize = 72;
+      const cx = svgSize / 2;
+      const r = 30;
+      const circ = 2 * Math.PI * r;
+      // Arc = healthy fraction (full circle = all OK, depleting arc = more problems).
+      // Use real node counts when available, otherwise fall back to state-based estimate.
+      const problemFraction =
+        nodeCounts && nodeCounts.total > 0
+          ? (nodeCounts.crit + nodeCounts.warn) / nodeCounts.total
+          : state === 'CRIT'
+            ? 0.75
+            : state === 'WARN'
+              ? 0.35
+              : state === 'UNKNOWN'
+                ? 0.9
+                : 0;
+      const arc = (1 - problemFraction) * circ;
+      return (
+        <div
+          ref={wrapperRef}
+          className="relative flex flex-col items-center gap-1.5"
+          onMouseEnter={handleMouseEnter}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          <button
+            onClick={onClick}
+            className={`relative flex items-center justify-center transition-all ${ringClass} ${dimmedClass}`}
+            style={{ width: svgSize, height: svgSize }}
+          >
+            <svg width={svgSize} height={svgSize} className="absolute inset-0">
+              <circle
+                cx={cx}
+                cy={cx}
+                r={r}
+                fill="none"
+                strokeWidth={3}
+                className="stroke-gray-200 dark:stroke-gray-800"
+              />
+              <circle
+                cx={cx}
+                cy={cx}
+                r={r}
+                fill="none"
+                strokeWidth={3}
+                stroke={color}
+                strokeDasharray={`${arc} ${circ}`}
+                strokeLinecap="round"
+                transform={`rotate(-90 ${cx} ${cx})`}
+              />
+            </svg>
+            <div
+              className="relative flex h-11 w-11 items-center justify-center rounded-full"
+              style={{ backgroundColor: `${color}18`, border: `1.5px solid ${color}45` }}
+            >
+              <Server className="h-5 w-5" style={{ color }} />
+            </div>
+          </button>
+          {showName && (
+            <p
+              className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+              style={{
+                width: 64,
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {rack.name}
+            </p>
+          )}
+          {showLabel && (
+            <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+              {rack.id}
+            </span>
+          )}
+          {tooltip}
+        </div>
+      );
+    }
+
+    // ── Standard (default) ────────────────────────────────────────────────────
     return (
       <div
         ref={wrapperRef}
-        className="relative flex flex-col items-center gap-1"
+        className="relative flex flex-col items-center gap-1.5"
         onMouseEnter={handleMouseEnter}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
         <button
           onClick={onClick}
-          className={`relative h-16 w-14 rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
+          className={`relative h-24 w-20 rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
           style={{ backgroundColor: `${color}18`, borderColor: color }}
         >
           <div
-            className="absolute top-1 right-1 h-2 w-2 rounded-full"
+            className="absolute right-0 bottom-0 left-0 rounded-sm"
+            style={{ backgroundColor: color, height: `${occupancy}%`, opacity: 0.3 }}
+          />
+          <div
+            className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full"
             style={{ backgroundColor: color }}
           />
         </button>
         {showName && (
           <p
-            className="w-14 text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
+            className="w-20 text-center text-[11px] leading-tight text-gray-700 dark:text-gray-300"
             style={{
               display: '-webkit-box',
               WebkitLineClamp: 3,
@@ -286,516 +790,16 @@ const RackCell = memo(({
         {tooltip}
       </div>
     );
-  }
-
-  // ── Glass ─────────────────────────────────────────────────────────────────
-  if (rackStyle === 'glass') {
-    return (
-      <div
-        ref={wrapperRef}
-        className="relative flex flex-col items-center gap-1.5"
-        onMouseEnter={handleMouseEnter}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        <button
-          onClick={onClick}
-          className={`relative h-24 w-20 overflow-hidden rounded-xl border transition-all ${ringClass} ${dimmedClass}`}
-          style={{
-            background: `linear-gradient(135deg, ${color}18 0%, ${color}06 100%)`,
-            borderColor: `${color}35`,
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            boxShadow: `0 4px 24px ${color}12, inset 0 1px 0 rgba(255,255,255,0.12)`,
-          }}
-        >
-          <div
-            className="absolute -top-6 -left-6 h-20 w-20 rounded-full opacity-40"
-            style={{ background: `radial-gradient(circle, ${color}70 0%, transparent 70%)` }}
-          />
-          <div
-            className="absolute top-0 right-0 left-0 h-px"
-            style={{
-              background:
-                'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
-            }}
-          />
-          <div
-            className="absolute right-2.5 bottom-2.5 h-2 w-2 rounded-full"
-            style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }}
-          />
-        </button>
-        {showName && (
-          <p
-            className="w-20 text-center text-[11px] leading-tight text-gray-700 dark:text-gray-300"
-            style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
-            {rack.name}
-          </p>
-        )}
-        {showLabel && (
-          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-            {rack.id}
-          </span>
-        )}
-        {tooltip}
-      </div>
-    );
-  }
-
-  // ── Slots (mini élévation) ─────────────────────────────────────────────────
-  if (rackStyle === 'slots') {
-    const totalSlots = 16;
-    const filledSlots = Math.round((occupancy / 100) * totalSlots);
-    return (
-      <div
-        ref={wrapperRef}
-        className="relative flex flex-col items-center gap-1.5"
-        onMouseEnter={handleMouseEnter}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        <button
-          onClick={onClick}
-          className={`relative flex flex-col-reverse overflow-hidden rounded border-2 p-1.5 transition-all ${ringClass} ${dimmedClass}`}
-          style={{
-            gap: 2,
-            width: 52,
-            height: 96,
-            backgroundColor: `${color}08`,
-            borderColor: `${color}50`,
-          }}
-        >
-          {Array.from({ length: totalSlots }).map((_, i) => (
-            <div
-              key={i}
-              className="w-full rounded-sm transition-colors"
-              style={{
-                height: 3,
-                backgroundColor: i < filledSlots ? color : `${color}22`,
-              }}
-            />
-          ))}
-        </button>
-        {showName && (
-          <p
-            className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
-            style={{
-              width: 52,
-              display: '-webkit-box',
-              WebkitLineClamp: 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              minHeight: '2.2em',
-            }}
-          >
-            {rack.name}
-          </p>
-        )}
-        {showLabel && (
-          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-            {rack.id}
-          </span>
-        )}
-        {tooltip}
-      </div>
-    );
-  }
-
-  // ── Cells ─────────────────────────────────────────────────────────────────
-  if (rackStyle === 'cells') {
-    const CELL_W = 72;
-    const CELL_H = 170;
-    // 2U per cell: 42U → 21 cells, 48U → 24 cells — exact integer divisor for
-    // both common rack sizes so 2U and 4U devices map to whole cells with no rounding.
-    const U_PER_CELL = 2;
-    const rackU = rack.u_height || 42;
-    const TOTAL_CELLS = Math.round(rackU / U_PER_CELL);
-    const devices = rack.devices ?? [];
-
-    // Build device ranges using exact u_height from catalog when available,
-    // falling back to gap-inferred height capped at 4U.
-    const sorted = [...devices].sort((a, b) => a.u_position - b.u_position);
-    const deviceRanges = sorted.map((d, i) => {
-      const exactH = catalog?.[d.template_id]?.u_height;
-      const gap = i < sorted.length - 1 ? sorted[i + 1].u_position - d.u_position : 1;
-      const h = exactH ?? Math.min(gap, 4);
-      return { from: d.u_position, to: d.u_position + h - 1 };
-    });
-
-    // Cell i (from top) covers U range: (TOTAL_CELLS-1-i)*U_PER_CELL+1 … (TOTAL_CELLS-i)*U_PER_CELL
-    // A cell is filled if any device range overlaps with it.
-    const cellFilled = Array.from({ length: TOTAL_CELLS }, (_, i) => {
-      const cellBottom = (TOTAL_CELLS - 1 - i) * U_PER_CELL + 1; // lowest U in this cell
-      const cellTop = (TOTAL_CELLS - i) * U_PER_CELL; // highest U in this cell
-      return deviceRanges.some((r) => r.from <= cellTop && r.to >= cellBottom);
-    });
-
-    return (
-      <div
-        ref={wrapperRef}
-        className="relative flex flex-col items-center gap-1.5"
-        onMouseEnter={handleMouseEnter}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        <button
-          onClick={onClick}
-          className={`relative overflow-hidden rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
-          style={{
-            width: CELL_W,
-            height: CELL_H,
-            backgroundColor: `${color}06`,
-            borderColor: `${color}55`,
-          }}
-        >
-          <div
-            className="absolute inset-1.5"
-            style={{ display: 'grid', gridTemplateRows: `repeat(${TOTAL_CELLS}, 1fr)`, gap: 3 }}
-          >
-            {cellFilled.map((filled, i) => (
-              <div
-                key={i}
-                className="rounded-sm"
-                style={{
-                  backgroundColor: filled ? color : undefined,
-                  border: filled ? 'none' : `1px solid ${color}35`,
-                }}
-              />
-            ))}
-          </div>
-        </button>
-        {showName && (
-          <p
-            className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
-            style={{
-              width: CELL_W,
-              overflow: 'hidden',
-              display: '-webkit-box' as React.CSSProperties['display'],
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-            }}
-          >
-            {rack.name}
-          </p>
-        )}
-        {showLabel && (
-          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-            {rack.id}
-          </span>
-        )}
-        {tooltip}
-      </div>
-    );
-  }
-
-  // ── Pixel grid ────────────────────────────────────────────────────────────
-  if (rackStyle === 'pixel') {
-    const cols = 4;
-    const rows = 8;
-    const total = cols * rows;
-    const filledCount = Math.round((occupancy / 100) * total);
-    return (
-      <div
-        ref={wrapperRef}
-        className="relative flex flex-col items-center gap-1.5"
-        onMouseEnter={handleMouseEnter}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        <button
-          onClick={onClick}
-          className={`relative overflow-hidden rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
-          style={{ width: 56, height: 96, backgroundColor: '#070710', borderColor: `${color}55` }}
-        >
-          <div
-            className="absolute inset-1.5 grid"
-            style={{
-              gridTemplateColumns: `repeat(${cols}, 1fr)`,
-              gridTemplateRows: `repeat(${rows}, 1fr)`,
-              gap: 2,
-            }}
-          >
-            {Array.from({ length: total }).map((_, i) => (
-              <div
-                key={i}
-                className="rounded-[1px]"
-                style={{ backgroundColor: i >= total - filledCount ? color : `${color}18` }}
-              />
-            ))}
-          </div>
-        </button>
-        {showName && (
-          <p
-            className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
-            style={{
-              width: 56,
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {rack.name}
-          </p>
-        )}
-        {showLabel && (
-          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-            {rack.id}
-          </span>
-        )}
-        {tooltip}
-      </div>
-    );
-  }
-
-  // ── Gauge ─────────────────────────────────────────────────────────────────
-  if (rackStyle === 'gauge') {
-    const pct = Math.round(occupancy);
-    return (
-      <div
-        ref={wrapperRef}
-        className="relative flex flex-col items-center gap-1.5"
-        onMouseEnter={handleMouseEnter}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        <button
-          onClick={onClick}
-          className={`relative overflow-hidden rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
-          style={{
-            width: 44,
-            height: 96,
-            backgroundColor: `${color}08`,
-            borderColor: `${color}55`,
-          }}
-        >
-          <div
-            className="absolute right-0 bottom-0 left-0"
-            style={{ height: `${pct}%`, backgroundColor: color, opacity: 0.55 }}
-          />
-          {[0, 25, 50, 75, 100].map((tick) => (
-            <div
-              key={tick}
-              className="absolute right-0 w-2.5 border-t border-white/20"
-              style={{ top: `${100 - tick}%` }}
-            />
-          ))}
-          <div className="absolute top-1.5 right-0 left-0 text-center">
-            <p className="font-mono text-[9px] font-bold" style={{ color }}>
-              {pct}%
-            </p>
-          </div>
-        </button>
-        {showName && (
-          <p
-            className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
-            style={{
-              width: 44,
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {rack.name}
-          </p>
-        )}
-        {showLabel && (
-          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-            {rack.id}
-          </span>
-        )}
-        {tooltip}
-      </div>
-    );
-  }
-
-  // ── Industrial / SCADA ────────────────────────────────────────────────────
-  if (rackStyle === 'industrial') {
-    return (
-      <div
-        ref={wrapperRef}
-        className="relative flex flex-col items-center gap-1.5"
-        onMouseEnter={handleMouseEnter}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        <button
-          onClick={onClick}
-          className={`relative h-24 w-20 overflow-hidden rounded transition-all ${ringClass} ${dimmedClass}`}
-          style={{
-            backgroundColor: '#111111',
-            border: '1px solid #2a2a2a',
-            boxShadow:
-              'inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.5)',
-          }}
-        >
-          {/* Top bar: LED + ID */}
-          <div className="flex items-center gap-1.5 border-b border-white/5 bg-black/40 px-2 py-1.5">
-            <div
-              className="h-2.5 w-2.5 shrink-0 rounded-sm"
-              style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}90` }}
-            />
-            <span className="flex-1 truncate font-mono text-[8px] text-gray-500">{rack.id}</span>
-          </div>
-          {/* Body */}
-          <div className="flex flex-col justify-end px-2 py-1.5">
-            {showName && <p className="truncate font-mono text-[9px] text-gray-500">{rack.name}</p>}
-            <p className="mt-1 font-mono text-[11px] font-bold" style={{ color }}>
-              {state}
-            </p>
-            <p className="font-mono text-[8px] text-gray-700">{rack.u_height}U</p>
-          </div>
-          {/* Corner rivets */}
-          <div className="absolute top-1 right-1 h-1 w-1 rounded-full bg-gray-700" />
-          <div className="absolute top-1 left-1 h-1 w-1 rounded-full bg-gray-700" />
-        </button>
-        {tooltip}
-      </div>
-    );
-  }
-
-  // ── Topology node ─────────────────────────────────────────────────────────
-  if (rackStyle === 'node') {
-    const svgSize = 72;
-    const cx = svgSize / 2;
-    const r = 30;
-    const circ = 2 * Math.PI * r;
-    // Arc = healthy fraction (full circle = all OK, depleting arc = more problems).
-    // Use real node counts when available, otherwise fall back to state-based estimate.
-    const problemFraction =
-      nodeCounts && nodeCounts.total > 0
-        ? (nodeCounts.crit + nodeCounts.warn) / nodeCounts.total
-        : state === 'CRIT'
-          ? 0.75
-          : state === 'WARN'
-            ? 0.35
-            : state === 'UNKNOWN'
-              ? 0.9
-              : 0;
-    const arc = (1 - problemFraction) * circ;
-    return (
-      <div
-        ref={wrapperRef}
-        className="relative flex flex-col items-center gap-1.5"
-        onMouseEnter={handleMouseEnter}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        <button
-          onClick={onClick}
-          className={`relative flex items-center justify-center transition-all ${ringClass} ${dimmedClass}`}
-          style={{ width: svgSize, height: svgSize }}
-        >
-          <svg width={svgSize} height={svgSize} className="absolute inset-0">
-            <circle
-              cx={cx}
-              cy={cx}
-              r={r}
-              fill="none"
-              strokeWidth={3}
-              className="stroke-gray-200 dark:stroke-gray-800"
-            />
-            <circle
-              cx={cx}
-              cy={cx}
-              r={r}
-              fill="none"
-              strokeWidth={3}
-              stroke={color}
-              strokeDasharray={`${arc} ${circ}`}
-              strokeLinecap="round"
-              transform={`rotate(-90 ${cx} ${cx})`}
-            />
-          </svg>
-          <div
-            className="relative flex h-11 w-11 items-center justify-center rounded-full"
-            style={{ backgroundColor: `${color}18`, border: `1.5px solid ${color}45` }}
-          >
-            <Server className="h-5 w-5" style={{ color }} />
-          </div>
-        </button>
-        {showName && (
-          <p
-            className="text-center text-[10px] leading-tight text-gray-600 dark:text-gray-400"
-            style={{
-              width: 64,
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {rack.name}
-          </p>
-        )}
-        {showLabel && (
-          <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-            {rack.id}
-          </span>
-        )}
-        {tooltip}
-      </div>
-    );
-  }
-
-  // ── Standard (default) ────────────────────────────────────────────────────
-  return (
-    <div
-      ref={wrapperRef}
-      className="relative flex flex-col items-center gap-1.5"
-      onMouseEnter={handleMouseEnter}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    >
-      <button
-        onClick={onClick}
-        className={`relative h-24 w-20 rounded border-2 transition-all ${ringClass} ${dimmedClass}`}
-        style={{ backgroundColor: `${color}18`, borderColor: color }}
-      >
-        <div
-          className="absolute right-0 bottom-0 left-0 rounded-sm"
-          style={{ backgroundColor: color, height: `${occupancy}%`, opacity: 0.3 }}
-        />
-        <div
-          className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full"
-          style={{ backgroundColor: color }}
-        />
-      </button>
-      {showName && (
-        <p
-          className="w-20 text-center text-[11px] leading-tight text-gray-700 dark:text-gray-300"
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            wordBreak: 'break-word',
-          }}
-        >
-          {rack.name}
-        </p>
-      )}
-      {showLabel && (
-        <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-100 px-1.5 py-0.5 font-mono text-[9px] text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-          {rack.id}
-        </span>
-      )}
-      {tooltip}
-    </div>
-  );
-}, (prev, next) =>
-  prev.rack.id === next.rack.id &&
-  prev.state === next.state &&
-  prev.isSelected === next.isSelected &&
-  prev.isHighlighted === next.isHighlighted &&
-  prev.searchMatch === next.searchMatch &&
-  prev.rackStyle === next.rackStyle &&
-  prev.showName === next.showName &&
-  prev.showLabel === next.showLabel
+  },
+  (prev, next) =>
+    prev.rack.id === next.rack.id &&
+    prev.state === next.state &&
+    prev.isSelected === next.isSelected &&
+    prev.isHighlighted === next.isHighlighted &&
+    prev.searchMatch === next.searchMatch &&
+    prev.rackStyle === next.rackStyle &&
+    prev.showName === next.showName &&
+    prev.showLabel === next.showLabel
 );
 
 // ── Aisle band ────────────────────────────────────────────────────────────────

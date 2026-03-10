@@ -9,7 +9,6 @@ import { SearchInput } from '@app/components/forms/SearchInput';
 import { Dropdown } from '@app/components/ui/Dropdown';
 import { useSlurmConfig } from '@src/hooks/useSlurmConfig';
 
-
 // ── Severity badge — hardcoded classes (avoids Firefox color-mix issue) ────────
 
 const SeverityBadge = ({ sev }: { sev: string }) => {

@@ -72,20 +72,18 @@ async def _fetch_process_stats_raw(url: str) -> dict:
         return {"memory_bytes": None, "cpu_seconds": None, "available": False}
 
 
-async def _query_prom_process_stats(
-    prometheus_base: str, instance_selector: str
-) -> dict:
+async def _query_prom_process_stats(prometheus_base: str, instance_selector: str) -> dict:
     """Query Prometheus API for process metrics of a given instance."""
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
             mem_r, cpu_r = await asyncio.gather(
                 client.get(
                     f"{prometheus_base}/api/v1/query",
-                    params={"query": f'process_resident_memory_bytes{{{instance_selector}}}'},
+                    params={"query": f"process_resident_memory_bytes{{{instance_selector}}}"},
                 ),
                 client.get(
                     f"{prometheus_base}/api/v1/query",
-                    params={"query": f'process_cpu_seconds_total{{{instance_selector}}}'},
+                    params={"query": f"process_cpu_seconds_total{{{instance_selector}}}"},
                 ),
             )
 

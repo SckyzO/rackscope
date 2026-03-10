@@ -124,7 +124,10 @@ class TelemetryPlanner:
             # Re-check inside the lock: another coroutine may have finished
             # recomputing while we were waiting.
             now = time.monotonic()
-            if self._snapshot and (now - self._snapshot.generated_at) < self.config.cache_ttl_seconds:
+            if (
+                self._snapshot
+                and (now - self._snapshot.generated_at) < self.config.cache_ttl_seconds
+            ):
                 return self._snapshot
 
             return await self._recompute(topology, checks, targets_by_check)
@@ -144,10 +147,18 @@ class TelemetryPlanner:
             node_ids_set, chassis_ids_set, rack_ids_set, _ = _collect_topology_ids(topology)
             valid_keys: set[str] = set()
             for check in checks.checks:
-                scope_ids = {"node": node_ids_set, "chassis": chassis_ids_set, "rack": rack_ids_set}.get(check.scope, set())
+                scope_ids = {
+                    "node": node_ids_set,
+                    "chassis": chassis_ids_set,
+                    "rack": rack_ids_set,
+                }.get(check.scope, set())
                 for id_ in scope_ids:
                     valid_keys.add(f"{check.id}:{id_}")
-            stale = [k for k in self._pending_states if k not in valid_keys or (now - self._pending_since.get(k, now)) > 86400]
+            stale = [
+                k
+                for k in self._pending_states
+                if k not in valid_keys or (now - self._pending_since.get(k, now)) > 86400
+            ]
             for k in stale:
                 self._pending_states.pop(k, None)
                 self._pending_since.pop(k, None)

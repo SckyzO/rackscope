@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 _login_attempts: dict[str, list[float]] = defaultdict(list)
 _LOGIN_WINDOW_SECONDS = 900  # 15 minutes
-_LOGIN_MAX_ATTEMPTS = 10     # per window
+_LOGIN_MAX_ATTEMPTS = 10  # per window
 
 
 def _check_login_rate_limit(identifier: str) -> None:
@@ -51,10 +51,12 @@ def _verify_password(password: str, hashed: str) -> bool:
         return _bcrypt.checkpw(password.encode(), hashed.encode())
     except (ValueError, UnicodeDecodeError) as e:
         import logging
+
         logging.getLogger(__name__).warning("Password verification error (corrupted hash?): %s", e)
         return False
     except Exception as e:
         import logging
+
         logging.getLogger(__name__).error("Unexpected error in password verification: %s", e)
         return False
 

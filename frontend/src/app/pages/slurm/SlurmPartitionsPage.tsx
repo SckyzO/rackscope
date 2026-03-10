@@ -13,7 +13,6 @@ import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
 import { Dropdown } from '@app/components/ui/Dropdown';
 import { useSlurmConfig } from '@src/hooks/useSlurmConfig';
 
-
 export const SlurmPartitionsPage = () => {
   usePageTitle('Slurm Partitions');
   const { getStatusColor: statusColor } = useSlurmConfig();

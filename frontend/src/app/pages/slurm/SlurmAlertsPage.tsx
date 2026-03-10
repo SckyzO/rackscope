@@ -14,7 +14,6 @@ import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
 import { Dropdown } from '@app/components/ui/Dropdown';
 import { useSlurmConfig } from '@src/hooks/useSlurmConfig';
 
-
 const SevBadge = ({ sev }: { sev: string }) => {
   if (sev === 'CRIT')
     return (

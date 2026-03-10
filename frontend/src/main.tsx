@@ -4,7 +4,6 @@ import './index.css';
 import App from './App.tsx';
 import { ThemeProvider } from './context/ThemeContext';
 
-
 // ── HMR Firefox fixes ─────────────────────────────────────────────────────────
 // Firefox has two distinct blank-screen failure modes with Vite HMR:
 //

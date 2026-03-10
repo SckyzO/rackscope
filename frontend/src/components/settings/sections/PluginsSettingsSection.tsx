@@ -752,7 +752,9 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                               Object.fromEntries([...entries, [newVal, count]])
                             );
                           }}
-                          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') e.currentTarget.blur();
+                          }}
                           className="w-28 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 font-mono text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                           placeholder="status"
                         />

@@ -46,7 +46,10 @@ def _find_rack_component_path(templates_dir: Path, template_id: str) -> Optional
                     return yaml_file
         except Exception as e:
             import logging
-            logging.getLogger(__name__).warning("Failed to parse rack component template %s: %s", yaml_file, e)
+
+            logging.getLogger(__name__).warning(
+                "Failed to parse rack component template %s: %s", yaml_file, e
+            )
             continue
     return None
 

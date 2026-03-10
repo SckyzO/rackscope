@@ -50,12 +50,7 @@ type ServiceRowProps = {
 
 const ServiceRow = ({ label, stats, prevCpu, elapsedSec }: ServiceRowProps) => {
   let cpuStr = '—';
-  if (
-    stats?.available &&
-    stats.cpu_seconds !== null &&
-    prevCpu !== null &&
-    elapsedSec > 0
-  ) {
+  if (stats?.available && stats.cpu_seconds !== null && prevCpu !== null && elapsedSec > 0) {
     const pct = ((stats.cpu_seconds - prevCpu) / elapsedSec) * 100;
     cpuStr = `${Math.max(0, pct).toFixed(1)}%`;
   }
@@ -70,10 +65,12 @@ const ServiceRow = ({ label, stats, prevCpu, elapsedSec }: ServiceRowProps) => {
           <span className="text-[11px] text-gray-400 dark:text-gray-600">unavailable</span>
         ) : (
           <>
-            <span className={`font-mono text-xs font-medium tabular-nums ${memColor(stats?.memory_bytes ?? null)}`}>
+            <span
+              className={`font-mono text-xs font-medium tabular-nums ${memColor(stats?.memory_bytes ?? null)}`}
+            >
               {fmtMemory(stats?.memory_bytes ?? null)}
             </span>
-            <span className="w-10 text-right font-mono text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+            <span className="w-10 text-right font-mono text-[11px] text-gray-500 tabular-nums dark:text-gray-400">
               {cpuStr}
             </span>
           </>
@@ -124,7 +121,7 @@ export const ContainerStatsWidget = () => {
 
   // Track previous snapshot for CPU rate
   const prev = prevRef.current;
-  const elapsedSec = prev ? (Date.now() / 1000 - prev.ts) : 0;
+  const elapsedSec = prev ? Date.now() / 1000 - prev.ts : 0;
   useEffect(() => {
     if (stats) {
       prevRef.current = { stats, ts: Date.now() / 1000 };
@@ -135,14 +132,14 @@ export const ContainerStatsWidget = () => {
     <div className="flex h-full flex-col p-4">
       {/* Column headers */}
       <div className="mb-1 flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-300 dark:text-gray-600">
+        <span className="text-[10px] font-semibold tracking-wider text-gray-300 uppercase dark:text-gray-600">
           Service
         </span>
         <div className="flex shrink-0 items-center gap-3">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-300 dark:text-gray-600">
+          <span className="text-[10px] font-semibold tracking-wider text-gray-300 uppercase dark:text-gray-600">
             Memory
           </span>
-          <span className="w-10 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-300 dark:text-gray-600">
+          <span className="w-10 text-right text-[10px] font-semibold tracking-wider text-gray-300 uppercase dark:text-gray-600">
             CPU
           </span>
         </div>

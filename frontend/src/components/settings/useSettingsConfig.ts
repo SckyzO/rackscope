@@ -394,7 +394,10 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
       default_ttl_seconds: parseInt(draft.plugins.simulator.default_ttl_seconds, 10) || 120,
       metrics_catalog_path: draft.plugins.simulator.metrics_catalog_path,
       metrics_catalogs: draft.plugins.simulator.metrics_catalogs,
-      slurm_alloc_percent: Math.max(0, Math.min(100, draft.plugins.simulator.slurm_alloc_percent ?? 80)),
+      slurm_alloc_percent: Math.max(
+        0,
+        Math.min(100, draft.plugins.simulator.slurm_alloc_percent ?? 80)
+      ),
       slurm_random_statuses: Object.fromEntries(
         Object.entries(draft.plugins.simulator.slurm_random_statuses)
           .map(([k, v]) => [k, parseInt(v, 10) || 0])
