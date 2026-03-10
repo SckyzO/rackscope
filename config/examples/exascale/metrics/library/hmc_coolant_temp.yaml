@@ -2,16 +2,11 @@ metrics:
 - id: hmc_coolant_temp
   name: HMC Coolant Temperature
   description: Water cooling temperature
-  expr: hmc_coolant_temperature_celsius{rack_id="$rack_id"}
+  metric: hmc_coolant_temperature_celsius{rack_id="$rack_id"}
   display:
     unit: °C
     chart_type: line
     color: '#22d3ee'
-    thresholds:
-    - value: 35
-      color: '#f59e0b'
-    - value: 45
-      color: '#ef4444'
   category: cooling
   tags:
   - hmc

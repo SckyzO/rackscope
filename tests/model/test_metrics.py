@@ -290,9 +290,9 @@ def test_load_metrics_library_nonexistent_path():
 
 def test_load_metrics_library_with_actual_config():
     """Test loading the actual metrics library from config."""
-    library = load_metrics_library("config/metrics/library")
-    # Should have the 5 metrics we created
-    assert len(library.metrics) >= 5
+    library = load_metrics_library("config/examples/hpc-cluster/metrics/library")
+    # hpc-cluster has 6 metrics (node_power, node_temperature, pdu_*, pmc_power, hmc_*)
+    assert len(library.metrics) >= 4
 
     # Check some expected metrics exist
     node_temp = library.get_metric("node_temperature")

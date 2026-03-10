@@ -2,7 +2,7 @@ metrics:
 - id: pdu_active_power
   name: PDU Active Power
   description: Total active power on PDU
-  expr: pdu_total_load_watts{rack_id="$rack_id"}
+  metric: pdu_total_load_watts{rack_id="$rack_id"}
   display:
     unit: W
     chart_type: line

@@ -425,7 +425,7 @@ def test_get_available_metrics_from_library(mock_app_config_with_simulator):
     from rackscope.model.loader import load_metrics_library
 
     # Load actual metrics library
-    app_module.METRICS_LIBRARY = load_metrics_library("config/metrics/library")
+    app_module.METRICS_LIBRARY = load_metrics_library("config/examples/hpc-cluster/metrics/library")
 
     response = client.get("/api/simulator/metrics")
 

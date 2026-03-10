@@ -18,10 +18,12 @@ client = TestClient(app)
 
 
 def _load_topology():
-    config_path = Path("config/topology")
-    if config_path.exists():
-        return load_topology(config_path)
-    return load_topology(Path("config/topology/topology.yaml"))
+    # Try real topology first, fall back to hpc-cluster example
+    for path_str in ["config/topology", "config/examples/hpc-cluster/topology"]:
+        config_path = Path(path_str)
+        if config_path.exists():
+            return load_topology(config_path)
+    raise FileNotFoundError("No topology directory found")
 
 
 def _first_room_id():
