@@ -444,12 +444,17 @@ function HomeContent() {
                         animation:`rs-fade-up 0.45s ease both ${0.46 + i * 0.12}s`,
                         ...nStyle(status, isFirst),
                       }}>
-                        {/* Bell on first node when site is in WARN */}
-                        {isFirst && showBell && (
+                        {/* Bell on first node — always rendered to prevent layout shift.
+                            Space is always reserved; visibility controlled via opacity. */}
+                        {isFirst && (
                           <span style={{
                             fontSize:'0.85rem', marginRight:2,
-                            animation:'rs-bell-ring 0.6s ease 0.1s, rs-glow-pulse 2s ease 0.8s infinite',
                             display:'inline-block',
+                            opacity: showBell ? 1 : 0,
+                            transition:'opacity 0.4s ease',
+                            animation: showBell
+                              ? 'rs-bell-ring 0.6s ease 0.1s, rs-glow-pulse 2s ease 0.8s infinite'
+                              : 'none',
                           }}>🔔</span>
                         )}
                         {name}
