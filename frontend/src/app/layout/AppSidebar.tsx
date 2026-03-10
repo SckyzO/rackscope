@@ -499,7 +499,9 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
           setHelpActive(true);
         } else {
           if (helpTimer.current) clearTimeout(helpTimer.current);
-          helpTimer.current = setTimeout(() => { helpProgress.current = 0; }, 1500);
+          helpTimer.current = setTimeout(() => {
+            helpProgress.current = 0;
+          }, 1500);
         }
       } else {
         helpProgress.current = k === 'h' ? 1 : 0;
@@ -514,7 +516,9 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
           setToulouseActive(true);
         } else {
           if (toulouseTimer.current) clearTimeout(toulouseTimer.current);
-          toulouseTimer.current = setTimeout(() => { toulouseProgress.current = 0; }, 2000);
+          toulouseTimer.current = setTimeout(() => {
+            toulouseProgress.current = 0;
+          }, 2000);
         }
       } else {
         toulouseProgress.current = k === 't' ? 1 : 0;

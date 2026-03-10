@@ -124,7 +124,7 @@ const TEXT: Record<Lang, LangContent> = {
     ],
     conclusion:
       'In short, Stade never loses. Either they win, or they learn... but usually, they win.',
-    ps: "P.S.: If you support another club, know that this app still loves you — it just runs 15% slower for you.",
+    ps: 'P.S.: If you support another club, know that this app still loves you — it just runs 15% slower for you.',
     toggle: 'FR',
   },
 };
@@ -194,7 +194,7 @@ export const StadeToulousainOverlay = ({ onClose }: { onClose: () => void }) => 
 
       {/* Red scan line */}
       <div
-        className="pointer-events-none fixed left-0 right-0 h-px"
+        className="pointer-events-none fixed right-0 left-0 h-px"
         style={{
           background: 'linear-gradient(90deg, transparent, #E63228, transparent)',
           opacity: visible ? 0.6 : 0,
@@ -289,7 +289,8 @@ export const StadeToulousainOverlay = ({ onClose }: { onClose: () => void }) => 
         <div
           className="mx-8 mb-1 h-px"
           style={{
-            background: 'linear-gradient(90deg, transparent, #E63228 30%, #E63228 70%, transparent)',
+            background:
+              'linear-gradient(90deg, transparent, #E63228 30%, #E63228 70%, transparent)',
           }}
         />
 
@@ -328,7 +329,7 @@ export const StadeToulousainOverlay = ({ onClose }: { onClose: () => void }) => 
 
           {/* Conclusion */}
           <p className="mt-4 text-center text-sm font-semibold text-white/90">{t.conclusion}</p>
-          <p className="mt-2 mb-1 text-center text-[11px] italic text-white/40">{t.ps}</p>
+          <p className="mt-2 mb-1 text-center text-[11px] text-white/40 italic">{t.ps}</p>
         </div>
 
         {/* Countdown progress bar */}
