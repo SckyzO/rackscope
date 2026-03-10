@@ -1,100 +1,12 @@
 /**
  * Rackscope Documentation — site-specific CSS overrides
  *
- * The base theme (colors, typography, navbar, sidebar, code blocks, admonitions,
- * tabs, cards, tags, scrollbar, DocSearch…) is provided by cosmos-docusaurus-theme.
+ * The base theme (colors, typography, navbar, sidebar, code blocks,
+ * admonitions, tables, search bar, ctrl+K, tags, TOC, mobile…)
+ * is fully handled by cosmos-docusaurus-theme v2.0.1.
  *
- * Only Rackscope-specific customizations live here.
+ * Only keep overrides that are specific to the Rackscope docs site.
  */
-
-/* ── Search bar — styled like Rackscope app (AppSearch component) ────────── */
-/* Mirrors: h-10 rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-8
-   dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200               */
-
-/* Position: Search left of GitHub, GitHub left of color toggle */
-.navbar__search {
-  order: 0;
-  margin-right: 4px;
-}
-
-.navbar__items--right .navbar__link {
-  order: 1;
-}
-
-/* Color mode toggle WRAPPER (direct child of navbar__items--right) — rightmost */
-/* Must target the wrapper div, not the button inside it */
-[class*="colorModeToggle"] {
-  order: 2;
-}
-
-/* The input itself */
-.navbar__search-input {
-  height: 36px;
-  min-width: 200px;
-  padding-left: 36px !important;  /* room for the search icon inside */
-  padding-right: 28px !important;
-  border-radius: 8px !important;
-  font-size: 0.875rem !important;
-  font-weight: 400 !important;
-  border: 1px solid #e5e7eb !important;
-  background-color: #f9fafb !important;
-  color: #1a1714 !important;
-  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s !important;
-}
-
-.navbar__search-input::placeholder {
-  color: #8a8479 !important;
-  font-size: 0.875rem !important;
-}
-
-.navbar__search-input:focus {
-  border-color: #465fff !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 0 0 3px rgb(70, 95, 255, 0.10) !important;
-  outline: none !important;
-}
-
-[data-theme='dark'] .navbar__search-input {
-  border-color: #1f2937 !important;
-  background-color: #111827 !important;
-  color: #e5e5e5 !important;
-}
-
-[data-theme='dark'] .navbar__search-input::placeholder {
-  color: #6b7280 !important;
-}
-
-[data-theme='dark'] .navbar__search-input:focus {
-  border-color: #7592ff !important;
-  background-color: #1f2937 !important;
-  box-shadow: 0 0 0 3px rgb(117, 146, 255, 0.12) !important;
-}
-
-/* Search hint (Ctrl+K badge) — style to match */
-[class*="searchHint"] {
-  border-color: #d1d5db !important;
-  color: #8a8479 !important;
-  font-size: 0.7rem !important;
-}
-
-[data-theme='dark'] [class*="searchHint"] {
-  border-color: #374151 !important;
-  color: #6b7280 !important;
-  background-color: #1f2937 !important;
-}
-
-/* Dropdown modal — rounded-xl, matches SectionCard */
-[class*="dropdownMenu"] {
-  border-radius: 12px !important;
-  border: 1px solid #e5e7eb !important;
-  box-shadow: 0 8px 24px rgb(0, 0, 0, 0.12) !important;
-  margin-top: 6px !important;
-}
-
-[data-theme='dark'] [class*="dropdownMenu"] {
-  border-color: #1f2937 !important;
-  box-shadow: 0 8px 32px rgb(0, 0, 0, 0.5) !important;
-}
 
 /* ── Footer — 2-column centered layout ───────────────────────────────────── */
 .footer .container {
