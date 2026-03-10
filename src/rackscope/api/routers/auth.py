@@ -42,7 +42,8 @@ def _check_login_rate_limit(identifier: str) -> None:
 
 
 def _hash_password(password: str) -> str:
-    return _bcrypt.hashpw(password.encode(), _bcrypt.gensalt()).decode()
+    # rounds=13 gives ~200ms on modern CPU — good balance of security and UX
+    return _bcrypt.hashpw(password.encode(), _bcrypt.gensalt(rounds=13)).decode()
 
 
 def _verify_password(password: str, hashed: str) -> bool:

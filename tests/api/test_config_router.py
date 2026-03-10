@@ -113,9 +113,9 @@ def test_put_config_with_minimal_data(protect_app_yaml):
     """Test PUT /api/config — app.yaml restored after."""
     minimal_config = {
         "paths": {
-            "topology": "config/topology",
-            "templates": "config/templates",
-            "checks": "config/checks",
+            "topology": "config/examples/hpc-cluster/topology",
+            "templates": "config/examples/hpc-cluster/templates",
+            "checks": "config/examples/hpc-cluster/checks/library",
         },
         "telemetry": {
             "prometheus_url": "http://prometheus:9090",

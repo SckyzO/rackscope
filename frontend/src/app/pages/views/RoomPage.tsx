@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { HUDTooltip } from '@src/components/HUDTooltip';
 import { useParams, useNavigate } from 'react-router-dom';
 import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
@@ -147,7 +147,7 @@ interface RackCellProps {
   onClick: () => void;
 }
 
-const RackCell = ({
+const RackCell = memo(({
   rack,
   state,
   nodeCounts,
@@ -787,7 +787,16 @@ const RackCell = ({
       {tooltip}
     </div>
   );
-};
+}, (prev, next) =>
+  prev.rack.id === next.rack.id &&
+  prev.state === next.state &&
+  prev.isSelected === next.isSelected &&
+  prev.isHighlighted === next.isHighlighted &&
+  prev.searchMatch === next.searchMatch &&
+  prev.rackStyle === next.rackStyle &&
+  prev.showName === next.showName &&
+  prev.showLabel === next.showLabel
+);
 
 // ── Aisle band ────────────────────────────────────────────────────────────────
 

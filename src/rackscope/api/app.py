@@ -71,6 +71,10 @@ PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
 # Runtime JWT secret — used when auth.secret_key is empty in config
 AUTH_RUNTIME_SECRET: str = secrets.token_hex(32)
 
+# Lock preventing concurrent apply_config() calls from creating inconsistent global state
+# (e.g. TOPOLOGY from call A with CATALOG from call B).
+_CONFIG_RELOAD_LOCK: Optional[asyncio.Lock] = None
+
 
 async def apply_config(app_config: AppConfig) -> None:
     """Reload all global state from a new AppConfig.
@@ -81,6 +85,15 @@ async def apply_config(app_config: AppConfig) -> None:
 
     Called on startup and on every PUT /api/config request.
     """
+    global TOPOLOGY, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY, APP_CONFIG, PLANNER, _CONFIG_RELOAD_LOCK
+    if _CONFIG_RELOAD_LOCK is None:
+        _CONFIG_RELOAD_LOCK = asyncio.Lock()
+    async with _CONFIG_RELOAD_LOCK:
+        await _do_apply_config(app_config)
+
+
+async def _do_apply_config(app_config: AppConfig) -> None:
+    """Internal: perform the actual config reload (called under _CONFIG_RELOAD_LOCK)."""
     global TOPOLOGY, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY, APP_CONFIG, PLANNER
     APP_CONFIG = app_config
     TOPOLOGY = load_topology(app_config.paths.topology)
@@ -140,6 +153,7 @@ async def apply_config(app_config: AppConfig) -> None:
     # Reload plugins with new configuration
     await plugin_registry.reload_plugins(app_config)
     logger.info("Configuration applied successfully")
+    return  # end of _do_apply_config
 
 
 @asynccontextmanager
@@ -253,6 +267,12 @@ async def lifespan(app: FastAPI):
         PROMETHEUS_HEARTBEAT.cancel()
         with suppress(asyncio.CancelledError):
             await PROMETHEUS_HEARTBEAT
+
+    # Close Prometheus httpx client to release connections cleanly
+    try:
+        await prom_client.client.aclose()
+    except Exception as e:
+        logger.warning("Error closing Prometheus client: %s", e)
 
 
 app = FastAPI(

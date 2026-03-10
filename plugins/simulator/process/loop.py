@@ -568,6 +568,12 @@ def simulate():
             targets = load_topology_nodes(topo_data, device_templates)
             _topo_mtime = _current_mtime
             print(f"[topology] Reloaded {len(targets)} targets (mtime changed)")
+            # Clean up incident state for nodes/racks no longer in topology
+            valid_nodes = {t["node_id"] for t in targets if t.get("node_id")}
+            valid_racks = {t["rack_id"] for t in targets if t.get("rack_id")}
+            _incident_state["nodes_crit"] &= valid_nodes
+            _incident_state["nodes_warn"] &= valid_nodes
+            _incident_state["racks_crit"] &= valid_racks
 
         forced_slurm_status = {}
         _slurm_agg: dict = {}

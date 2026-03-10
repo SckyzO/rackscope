@@ -1,0 +1,33 @@
+"""
+Shared pytest fixtures for the Rackscope test suite.
+"""
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def reset_global_state():
+    """Reset backend global state before each test.
+
+    Prevents state pollution between tests that modify TOPOLOGY, CATALOG,
+    METRICS_LIBRARY, or other app-level globals via the TestClient.
+    """
+    from rackscope.api import app as app_module
+
+    saved = {
+        "TOPOLOGY": app_module.TOPOLOGY,
+        "CATALOG": app_module.CATALOG,
+        "CHECKS_LIBRARY": app_module.CHECKS_LIBRARY,
+        "METRICS_LIBRARY": app_module.METRICS_LIBRARY,
+        "APP_CONFIG": app_module.APP_CONFIG,
+        "PLANNER": app_module.PLANNER,
+    }
+
+    yield
+
+    app_module.TOPOLOGY = saved["TOPOLOGY"]
+    app_module.CATALOG = saved["CATALOG"]
+    app_module.CHECKS_LIBRARY = saved["CHECKS_LIBRARY"]
+    app_module.METRICS_LIBRARY = saved["METRICS_LIBRARY"]
+    app_module.APP_CONFIG = saved["APP_CONFIG"]
+    app_module.PLANNER = saved["PLANNER"]

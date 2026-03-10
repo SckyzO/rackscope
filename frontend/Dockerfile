@@ -12,6 +12,9 @@ RUN npm install --legacy-peer-deps
 # Copy source code
 COPY . .
 
+# Drop root privileges — node image ships with a built-in 'node' user (uid 1000)
+USER node
+
 # Expose Vite port
 EXPOSE 5173
 
