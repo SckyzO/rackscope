@@ -6,72 +6,115 @@ sidebar_position: 1
 
 # Quick Start
 
-Get Rackscope running in 3 steps using Docker Compose.
+Get Rackscope running in minutes. Choose your mode:
 
-## Prerequisites
+| Mode | Use for | Command |
+|---|---|---|
+| **Dev** | Testing, demos, development | `make up` |
+| **Prod** | Production deployment | `make up-prod` |
 
-- **Docker** and **Docker Compose v2+** on your host machine
-- No local Python or Node.js required — everything runs in containers
+---
 
-## Step 1: Clone
+## Dev mode
+
+### Prerequisites
+
+- Docker 24+ and Docker Compose v2+
+- No local Python or Node.js required
+
+### 1. Clone
 
 ```bash
 git clone https://github.com/SckyzO/rackscope.git
 cd rackscope
 ```
 
-## Step 2: Start the stack
+### 2. Generate the TLS certificate (first time only)
+
+```bash
+make cert
+```
+
+### 3. Start the dev stack
 
 ```bash
 make up
 ```
 
-Five services start automatically:
+Six services start automatically:
 
 | Service | URL | Description |
 |---|---|---|
-| **Frontend** | http://localhost:5173 | React UI |
-| **Backend** | http://localhost:8000 | FastAPI REST API |
+| **UI** | https://localhost | React frontend (via nginx) |
+| **API** | https://localhost/api | FastAPI REST + Swagger |
 | **Prometheus** | http://localhost:9090 | Metrics storage |
 | **Simulator** | http://localhost:9000 | Demo metrics generator |
-| **Docs** | http://localhost:3001 | This documentation site |
+| **Frontend dev** | http://localhost:5173 | Vite dev server (hot-reload) |
+| **Docs** | http://localhost:3001 | This site (`make docs`) |
 
-## Step 3: Open the UI
+:::tip Browser warning
+The TLS certificate is self-signed. Add a browser exception once for `https://localhost`.
+:::
 
-Navigate to **http://localhost:5173**
+### 4. Open the UI
 
-The stack starts with a demo topology and simulated metrics — no hardware required. The dashboard is live immediately.
+Navigate to **https://localhost**
 
-## Explore
+The stack starts with the `hpc-cluster` example — a realistic HPC datacenter with simulated metrics. No hardware required.
 
-- **Dashboard** (`/`) — widgets with infrastructure health at a glance
-- **World Map** (`/views/worldmap`) — sites with health markers
-- **Room View** (`/views/room/:id`) — floor plan with rack grid
-- **Rack View** (`/views/rack/:id`) — front/rear elevation with devices
-- **Slurm** (`/slurm/overview`) — HPC cluster status (simulator enabled)
-- **API docs** — http://localhost:8000/docs (Swagger UI)
+---
+
+## Prod mode
+
+Prod uses pre-built images from GHCR — no source code required.
+
+```bash
+git clone https://github.com/SckyzO/rackscope.git
+cd rackscope
+RACKSCOPE_VERSION=latest make up-prod
+```
+
+| Service | URL | Description |
+|---|---|---|
+| **UI** | http://localhost | React frontend (nginx-served) |
+| **API** | http://localhost:8000 | FastAPI REST |
+
+The prod stack does **not** include the simulator or Prometheus — connect to your existing Prometheus via `app.yaml`.
+
+See [Installation](/getting-started/installation) for full prod setup details.
+
+---
 
 ## Try the bundled examples
 
-Rackscope ships with ready-to-use example configurations. Switch between them with a single command:
+Switch between four ready-to-use configurations with a single command:
 
 ```bash
-# Minimal lab — 1 room, 4 racks, ~10 nodes
-./scripts/use-example.sh simple-room
-
-# Full HPC datacenter — 2 sites, 855 nodes, GPU + high-memory aisles
-./scripts/use-example.sh full-datacenter
+make use-homelab         # ~23 nodes, 1 site, no Slurm
+make use-small-cluster   # ~600 nodes, GPU + compute, Slurm
+make use-hpc-cluster     # ~1900 nodes, DCW cooling, Slurm
+make use-exascale        # ~14000 nodes, 3 sites, Slurm
 ```
 
-Each example works immediately with the built-in simulator. Your current config is automatically backed up to `config.bak/`.
+Or with an explicit argument:
 
-See [Example Configurations](/getting-started/examples) for the full list and details.
+```bash
+make use EXAMPLE=hpc-cluster
+```
+
+Check the active config at any time:
+
+```bash
+make which-config
+```
+
+Each example works immediately with the built-in simulator. See [Example Configurations](/getting-started/examples) for details.
 
 ---
 
 ## Next steps
 
-- [Example Configurations](/getting-started/examples) — bundled ready-to-use topologies
-- [Configuration](/getting-started/configuration) — connect to your Prometheus and define your topology
+- [Installation](/getting-started/installation) — full setup, prod deployment, Makefile reference
+- [Example Configurations](/getting-started/examples) — bundled topologies
+- [Configuration](/getting-started/configuration) — connect your Prometheus and define your topology
 - [User Guide](/user-guide/overview) — all views and features
-- [Admin Guide](/admin-guide/topology-yaml) — YAML schema reference

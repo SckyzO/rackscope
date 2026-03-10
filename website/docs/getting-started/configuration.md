@@ -8,108 +8,98 @@ sidebar_position: 3
 
 All Rackscope configuration lives in `config/` as YAML files. The main entry point is `config/app.yaml`.
 
-## app.yaml — annotated reference
+:::tip Reference file
+`config/app.yaml.reference` contains every available key with its default value and a description. Copy it to `config/app.yaml` as a starting point for your own deployment.
+:::
+
+---
+
+## app.yaml overview
 
 ```yaml
-# Application identity
 app:
   name: Rackscope
-  description: Datacenter Monitoring
+  description: My Datacenter
 
-# Paths to config file trees
+# Paths to your topology, templates, checks, and metrics
 paths:
-  topology: config/topology         # or a single topology.yaml
-  templates: config/templates
-  checks: config/checks/library
-  metrics: config/metrics/library
+  topology: config/examples/hpc-cluster/topology
+  templates: config/examples/hpc-cluster/templates
+  checks: config/examples/hpc-cluster/checks/library
+  metrics: config/examples/hpc-cluster/metrics/library
 
 # Prometheus connection
 telemetry:
   prometheus_url: http://prometheus:9090
-  identity_label: instance          # Prometheus label that maps to a node
+  identity_label: instance     # Prometheus label mapping to a node
   rack_label: rack_id
   chassis_label: chassis_id
-  job_regex: node|rackscope-simulator   # Jobs included in queries
-  prometheus_heartbeat_seconds: 30
-  prometheus_latency_window: 20         # Number of samples for avg latency
-  tls_verify: false
-  # tls_ca_file: /certs/ca.crt
-  # basic_auth_user: user
-  # basic_auth_password: secret
+  job_regex: node              # Jobs included in health check queries
 
-# How often room/rack state is refreshed from API
-refresh:
-  room_state_seconds: 60
-  rack_state_seconds: 60
-
-# Prometheus query cache
+# Cache and performance
 cache:
-  ttl_seconds: 60
-  health_checks_ttl_seconds: 30
+  health_checks_ttl_seconds: 60
   metrics_ttl_seconds: 120
-
-# Query planner
 planner:
   cache_ttl_seconds: 60
-  max_ids_per_query: 300      # Max node IDs per PromQL query (tune for large clusters)
-  unknown_state: UNKNOWN
+  max_ids_per_query: 300       # Tune upward for large clusters (>1000 nodes)
 
 # Feature flags
 features:
   notifications: true
-  notifications_max_visible: 10
   playlist: true
-  offline: true
   worldmap: true
-  dev_tools: false
-  wizard: true    # Show setup wizard on first launch; set to false to disable permanently
+  wizard: true
 
 # Authentication (disabled by default)
 auth:
   enabled: false
-  username: admin
-  password_hash: ""             # bcrypt hash — generate via Settings UI
-  secret_key: ""                # JWT secret — generate a random string
-  session_duration: 24h
-  policy:
-    min_length: 6
-    max_length: 128
-    require_digit: false
-    require_symbol: false
 
-# World map defaults
-map:
-  default_zoom: 2
-  min_zoom: 2
-  max_zoom: 7
-  center:
-    lat: 20.0
-    lon: 0.0
-
-# Playlist rotation defaults
-playlist:
-  interval_seconds: 30
-  views:
-    - /views/worldmap
-    - /slurm/overview
-
-# Plugins — only enabled flag lives here; full config in config/plugins/{id}/config.yml
+# Plugins
 plugins:
   simulator:
-    enabled: true
+    enabled: true    # Set to false on real infrastructure
   slurm:
-    enabled: true
+    enabled: false   # Enable if you have a Slurm workload manager
 ```
 
-> **Plugin configuration**: Each plugin's detailed settings live in a dedicated file at `config/plugins/{plugin_id}/config.yml`. Only the `enabled` flag is in `app.yaml`. See [Plugins](/plugins/overview) for details.
+> Full reference: every key with its default and description is in `config/app.yaml.reference`.
+
+---
+
+## Setting up for real infrastructure
+
+When connecting Rackscope to a real Prometheus and real hardware, replace the `paths` section to point to your own config directories:
+
+```yaml
+paths:
+  topology: config/topology       # your topology YAML files
+  templates: config/templates     # your hardware templates
+  checks: config/checks/library   # your health check definitions
+  metrics: config/metrics/library # your metric definitions
+```
+
+Then disable the simulator and configure your Prometheus:
+
+```yaml
+telemetry:
+  prometheus_url: http://your-prometheus:9090
+  job_regex: node|ipmi            # match your actual Prometheus job names
+
+plugins:
+  simulator:
+    enabled: false
+```
+
+---
 
 ## Topology
 
 Topology can be defined in two formats:
 
-### Monolithic (simple labs/demos)
+### Monolithic (simple labs)
 
-A single `config/topology.yaml` with all sites, rooms, racks, and devices.
+A single `config/topology.yaml` containing all sites, rooms, racks, and devices.
 
 ### Segmented (recommended for production)
 
@@ -118,11 +108,10 @@ config/topology/
   sites.yaml
   datacenters/{site_id}/
     rooms/{room_id}/
-      room.yaml                         # Room + aisle/rack references
+      room.yaml
       aisles/{aisle_id}/
-        aisle.yaml                      # Aisle + rack references
-        racks/{rack_id}.yaml            # Rack + devices
-      standalone_racks/{rack_id}.yaml   # Racks outside aisles
+        aisle.yaml
+        racks/{rack_id}.yaml
 ```
 
 ### Rack example
@@ -136,45 +125,54 @@ template_id: standard-42u
 devices:
   - id: compute-01
     name: "Compute 01"
-    template_id: bs-x440-a5
+    template_id: generic-1u-server
     u_position: 1
-    instance: compute[001-004]    # expands to compute001..compute004
+    instance: compute[001-004]   # expands to compute001..compute004
 ```
 
-> **`instance` vs `nodes`**: Use `instance` in all new configs. `nodes` is a deprecated alias kept for backward compatibility.
+See [Topology YAML](/admin-guide/topology-yaml) for the full schema.
+
+---
 
 ## Templates
 
-Templates define hardware characteristics, reused across the topology.
-
-### Device template example
+Templates define hardware characteristics and are reused across the topology.
 
 ```yaml
 templates:
-  - id: bs-x440-a5
-    name: "BullSequana X440 A5"
+  - id: generic-1u-server
+    name: "Generic 1U Server"
     type: server
-    u_height: 10
-    layout:
-      type: grid
-      rows: 5
-      cols: 4
-      matrix: [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16],[17,18,19,20]]
+    u_height: 1
     checks:
       - node_up
       - ipmi_temp_warn
     metrics:
       - node_temperature
       - node_power
-      - node_cpu_load
 ```
+
+See [Templates](/admin-guide/templates) for all fields.
+
+---
+
+## Plugin configuration
+
+Each plugin has its own config file. Only the `enabled` flag lives in `app.yaml`.
+
+| Plugin | Config file |
+|---|---|
+| Simulator | `config/plugins/simulator/config/plugin.yaml` |
+| Slurm | `config/plugins/slurm/config.yml` |
+
+See [Simulator Plugin](/plugins/simulator) and [Slurm Plugin](/plugins/slurm) for details.
+
+---
 
 ## Environment variables
 
 | Variable | Default | Description |
 |---|---|---|
 | `RACKSCOPE_APP_CONFIG` | `config/app.yaml` | Path to app.yaml |
+| `APP_CONFIG` | `app.yaml` | Filename within `config/` — set by `make use` |
 | `RACKSCOPE_CONFIG_DIR` | `config` | Base config directory |
-| `RACKSCOPE_CONFIG` | — | Topology root (fallback if no app.yaml) |
-| `RACKSCOPE_TEMPLATES` | — | Templates directory (fallback) |
-| `RACKSCOPE_CHECKS` | — | Checks library (fallback) |

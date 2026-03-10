@@ -21,18 +21,33 @@ Rackscope ships with four ready-to-use configurations that work immediately with
 
 ## Quick switch
 
-```bash
-# Switch to an example (backs up current config/app.yaml)
-./scripts/use-example.sh homelab
-./scripts/use-example.sh small-cluster
-./scripts/use-example.sh hpc-cluster
-./scripts/use-example.sh exascale
+### Dev stack
 
-# Restore previous config
-cp config/app.yaml.bak config/app.yaml && make restart
+```bash
+make use-homelab
+make use-small-cluster
+make use-hpc-cluster
+make use-exascale
+
+# Or with an explicit argument
+make use EXAMPLE=hpc-cluster
+
+# Check what's currently active
+make which-config
 ```
 
-The script copies `config/app.example.{name}.yaml` to `config/app.yaml` and restarts the backend and simulator. The `config/` directory itself is **never deleted** — this preserves the Docker bind mount.
+The active config is stored in `.env` (gitignored) and picked up automatically by Docker Compose on the next `make up` or `make restart`. Only the backend and simulator are restarted — no rebuild required.
+
+### Prod stack
+
+```bash
+make use-prod-homelab
+make use-prod EXAMPLE=hpc-cluster
+```
+
+### Default config
+
+`config/app.yaml` points to `hpc-cluster` out of the box. Run `make up` and the HPC cluster example starts immediately — no extra command needed.
 
 ---
 
