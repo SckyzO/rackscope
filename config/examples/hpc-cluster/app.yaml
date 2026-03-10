@@ -2,10 +2,10 @@ app:
   name: Rackscope
   description: Datacenter Overview
 paths:
-  topology: config/examples/hpc-cluster/topology
-  templates: config/examples/hpc-cluster/templates
-  checks: config/examples/hpc-cluster/checks/library
-  metrics: config/examples/hpc-cluster/metrics/library
+  topology: topology
+  templates: templates
+  checks: checks/library
+  metrics: metrics/library
 refresh:
   room_state_seconds: 30
   rack_state_seconds: 30

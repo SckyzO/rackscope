@@ -6,8 +6,9 @@ COMPOSE_PROD := docker-compose.prod.yml
 
 .PHONY: up down restart logs build
 .PHONY: up-prod down-prod restart-prod logs-prod build-prod
-.PHONY: use use-homelab use-small-cluster use-hpc-cluster use-exascale which-config
-.PHONY: use-prod use-prod-homelab use-prod-small-cluster use-prod-hpc-cluster use-prod-exascale
+.PHONY: use use-prod which-config list-configs
+.PHONY: use-homelab use-small-cluster use-hpc-cluster use-exascale
+.PHONY: use-prod-homelab use-prod-small-cluster use-prod-hpc-cluster use-prod-exascale
 .PHONY: lint test test-v test-k test-file clean coverage typecheck complexity quality ci
 .PHONY: shell-backend shell-frontend watch-logs nginx-logs cert
 .PHONY: docs docs-build docs-logs
@@ -164,56 +165,84 @@ docs-logs:
 # Switch between named configurations without touching app.yaml.
 # The active config is stored in .env (gitignored, read by Docker Compose).
 #
+# Profiles: config/profiles/<name>/app.yaml  — your real infrastructure
+# Examples: config/examples/<name>/app.yaml  — bundled demos
+#
 # Dev usage:
-#   make use EXAMPLE=homelab        # switch + restart dev stack
-#   make use-exascale               # shorthand
+#   make use CONFIG=homelab          # auto-detects profiles/ then examples/
+#   make use CONFIG=my-datacenter    # custom profile in config/profiles/
 #
 # Prod usage:
-#   make use-prod EXAMPLE=homelab   # switch + restart prod stack
-#   make use-prod-exascale          # shorthand
+#   make use-prod CONFIG=homelab
 #
 # Other:
-#   make which-config               # show active config
-#   make up / make up-prod          # start with active config (default: app.yaml)
+#   make which-config                # show active config
+#   make list-configs                # list all available configs
+#   make up / make up-prod           # start with active config (default: app.yaml)
 
-_check-example:
-ifndef EXAMPLE
-	$(error Usage: make use EXAMPLE=<name>  — available: homelab, small-cluster, hpc-cluster, exascale)
+_find-config = \
+	$(if $(wildcard config/profiles/$(1)/app.yaml),profiles/$(1)/app.yaml, \
+	$(if $(wildcard config/examples/$(1)/app.yaml),examples/$(1)/app.yaml, \
+	))
+
+use:
+ifndef CONFIG
+	$(error Usage: make use CONFIG=<name>  — run 'make list-configs' to see available options)
 endif
-	@if [ ! -f config/app.example.$(EXAMPLE).yaml ]; then \
-		echo "❌ config/app.example.$(EXAMPLE).yaml not found"; exit 1; \
+	$(eval _cfg := $(call _find-config,$(CONFIG)))
+	@if [ -z "$(_cfg)" ]; then \
+		echo "❌ '$(CONFIG)' not found in config/profiles/ or config/examples/"; \
+		echo "   Run 'make list-configs' to see available options."; exit 1; \
 	fi
-
-use: _check-example
-	@echo "APP_CONFIG=app.example.$(EXAMPLE).yaml" > .env
-	@echo "→ [dev] Switching to: $(EXAMPLE)"
+	@echo "APP_CONFIG=$(_cfg)" > .env
+	@echo "→ [dev] Switching to: $(CONFIG)  ($(_cfg))"
 	docker compose -f $(COMPOSE_DEV) up -d --force-recreate --no-deps backend simulator
-	@echo "✅ Dev stack running with: $(EXAMPLE)"
+	@echo "✅ Dev stack running with: $(CONFIG)"
 
-use-prod: _check-example
-	@echo "APP_CONFIG=app.example.$(EXAMPLE).yaml" > .env
-	@echo "→ [prod] Switching to: $(EXAMPLE)"
+use-prod:
+ifndef CONFIG
+	$(error Usage: make use-prod CONFIG=<name>)
+endif
+	$(eval _cfg := $(call _find-config,$(CONFIG)))
+	@if [ -z "$(_cfg)" ]; then \
+		echo "❌ '$(CONFIG)' not found"; exit 1; \
+	fi
+	@echo "APP_CONFIG=$(_cfg)" > .env
+	@echo "→ [prod] Switching to: $(CONFIG)  ($(_cfg))"
 	docker compose -f $(COMPOSE_PROD) up -d --force-recreate --no-deps backend
-	@echo "✅ Prod stack running with: $(EXAMPLE)"
+	@echo "✅ Prod stack running with: $(CONFIG)"
 
-# Dev shorthands
-use-homelab:       ; $(MAKE) use EXAMPLE=homelab
-use-small-cluster: ; $(MAKE) use EXAMPLE=small-cluster
-use-hpc-cluster:   ; $(MAKE) use EXAMPLE=hpc-cluster
-use-exascale:      ; $(MAKE) use EXAMPLE=exascale
-
-# Prod shorthands
-use-prod-homelab:       ; $(MAKE) use-prod EXAMPLE=homelab
-use-prod-small-cluster: ; $(MAKE) use-prod EXAMPLE=small-cluster
-use-prod-hpc-cluster:   ; $(MAKE) use-prod EXAMPLE=hpc-cluster
-use-prod-exascale:      ; $(MAKE) use-prod EXAMPLE=exascale
+# Shorthands — examples
+use-homelab:        ; $(MAKE) use CONFIG=homelab
+use-small-cluster:  ; $(MAKE) use CONFIG=small-cluster
+use-hpc-cluster:    ; $(MAKE) use CONFIG=hpc-cluster
+use-exascale:       ; $(MAKE) use CONFIG=exascale
+use-prod-homelab:       ; $(MAKE) use-prod CONFIG=homelab
+use-prod-small-cluster: ; $(MAKE) use-prod CONFIG=small-cluster
+use-prod-hpc-cluster:   ; $(MAKE) use-prod CONFIG=hpc-cluster
+use-prod-exascale:      ; $(MAKE) use-prod CONFIG=exascale
 
 which-config:
 	@if [ -f .env ] && grep -q "APP_CONFIG" .env; then \
-		echo "Active config: $$(grep APP_CONFIG .env | cut -d= -f2)"; \
+		cfg=$$(grep APP_CONFIG .env | cut -d= -f2); \
+		name=$$(echo "$$cfg" | sed 's|.*/||' | sed 's|/app.yaml||' | sed 's|app.yaml||'); \
+		if echo "$$cfg" | grep -q "^profiles/"; then \
+			echo "Active: $$name  (profile — config/$$cfg)"; \
+		elif echo "$$cfg" | grep -q "^examples/"; then \
+			echo "Active: $$name  (example — config/$$cfg)"; \
+		else \
+			echo "Active: config/$$cfg"; \
+		fi \
 	else \
-		echo "Active config: app.yaml (default)"; \
+		echo "Active: app.yaml  (default)"; \
 	fi
+
+list-configs:
+	@echo "── Profiles (real infrastructure) ──────────────────"
+	@found=0; for d in config/profiles/*/app.yaml; do [ -f "$$d" ] && found=1 && echo "  $$(basename $$(dirname $$d))  →  make use CONFIG=$$(basename $$(dirname $$d))"; done; [ $$found -eq 0 ] && echo "  (none — create config/profiles/<name>/ to add one)" || true
+	@echo ""
+	@echo "── Examples (demos) ─────────────────────────────────"
+	@for d in config/examples/*/app.yaml; do [ -f "$$d" ] && echo "  $$(basename $$(dirname $$d))  →  make use CONFIG=$$(basename $$(dirname $$d))"; done; true
 
 # Cleanup
 clean:

@@ -114,15 +114,12 @@ def run_lint():
 
 # ── Switch example ────────────────────────────────────────────────────────────
 def switch_example(ex):
-    app_src = ROOT / f'config/app.example.{ex}.yaml'
-    if not app_src.exists():
-        raise FileNotFoundError(f'app.example.{ex}.yaml not found')
-    # Write .env so Docker Compose picks up APP_CONFIG (takes precedence over app.yaml).
-    # IMPORTANT: use `up -d --force-recreate` not `restart` — restart does NOT re-read .env,
-    # so the containers would keep the old APP_CONFIG from when they were first created.
-    # force-recreate guarantees a fresh container with the updated environment.
+    # Each example now has its own app.yaml inside config/examples/{ex}/
+    app_yaml = ROOT / f'config/examples/{ex}/app.yaml'
+    if not app_yaml.exists():
+        raise FileNotFoundError(f'config/examples/{ex}/app.yaml not found')
     env_path = ROOT / '.env'
-    env_path.write_text(f'APP_CONFIG=app.example.{ex}.yaml\n')
+    env_path.write_text(f'APP_CONFIG=examples/{ex}/app.yaml\n')
     compose('up', '-d', '--force-recreate', '--no-deps', 'backend', 'simulator')
 
 # ── Expected values per example ───────────────────────────────────────────────

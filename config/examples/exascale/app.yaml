@@ -7,10 +7,10 @@ app:
   description: exascale example
 
 paths:
-  topology: config/examples/exascale/topology
-  templates: config/examples/exascale/templates
-  checks: config/examples/exascale/checks/library
-  metrics: config/examples/exascale/metrics/library
+  topology: topology
+  templates: templates
+  checks: checks/library
+  metrics: metrics/library
 
 refresh:
   room_state_seconds: 60
@@ -68,7 +68,7 @@ map:
     lon: 2.3
 
 plugins:
-  # Only 'enabled' here — behaviour in config/examples/exascale/plugins/
+  # Only 'enabled' here — behaviour in plugins/
   simulator:
     enabled: true
     metrics_catalog_path: /app/config/plugins/simulator/metrics/metrics_full.yaml

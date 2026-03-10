@@ -205,3 +205,35 @@ async def disable_setup_wizard(
 
     await apply_config(updated)
     return {"wizard": False, "status": "disabled"}
+
+
+@router.get("/config/profiles")
+def list_config_profiles() -> dict:
+    """List available config profiles from config/profiles/ and config/examples/.
+
+    Returns all directories that contain an app.yaml file, grouped by type.
+    Used by the Settings UI to populate the profile switcher dropdown.
+    """
+    config_base = Path(os.getenv("RACKSCOPE_CONFIG_DIR", "config"))
+    active_cfg = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
+    profiles = []
+
+    for category in ["profiles", "examples"]:
+        base = config_base / category
+        if not base.exists():
+            continue
+        for entry in sorted(base.iterdir()):
+            if not entry.is_dir():
+                continue
+            app_yaml = entry / "app.yaml"
+            if not app_yaml.exists():
+                continue
+            rel_path = f"{category}/{entry.name}/app.yaml"
+            profiles.append({
+                "name": entry.name,
+                "type": category[:-1],  # "profile" or "example"
+                "path": rel_path,
+                "active": active_cfg.endswith(rel_path) or active_cfg.endswith(f"config/{rel_path}"),
+            })
+
+    return {"profiles": profiles, "active": active_cfg}

@@ -354,8 +354,36 @@ def load_checks_library(path: Union[str, Path]) -> ChecksLibrary:
     return library
 
 
+def _resolve_config_path(raw: str, config_dir: Path) -> str:
+    """Resolve a path from AppConfig.paths against the config file's directory.
+
+    Resolution order:
+    1. Absolute paths → returned as-is.
+    2. Relative paths that exist from the current working directory → returned as-is
+       (backward-compatible with the old "config/examples/X/topology" style).
+    3. Relative paths resolved against the config file's own directory → enables
+       self-contained profiles where paths like "topology" resolve to
+       "<profile-dir>/topology".
+    4. Fallback: return the original string and let the actual loader raise.
+    """
+    p = Path(raw)
+    if p.is_absolute():
+        return raw
+    if p.exists():
+        return raw
+    resolved = config_dir / p
+    if resolved.exists():
+        return str(resolved)
+    return raw
+
+
 def load_app_config(path: Union[str, Path]) -> AppConfig:
-    """Load and validate app config from a YAML file."""
+    """Load and validate app config from a YAML file.
+
+    Paths inside AppConfig.paths are resolved relative to the config file's
+    own directory so that self-contained profiles (config/profiles/X/app.yaml
+    with topology: topology) work without absolute paths.
+    """
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Config file not found: {path}")
@@ -370,9 +398,17 @@ def load_app_config(path: Union[str, Path]) -> AppConfig:
         raise InvalidFormatError(f"Config file is empty: {path}")
 
     try:
-        return AppConfig(**data)
+        cfg = AppConfig(**data)
     except ValidationError as e:
         raise InvalidFormatError(f"Validation failed for {path}:\n{e}")
+
+    # Resolve relative paths against the config file's directory
+    config_dir = path.parent
+    cfg.paths.topology = _resolve_config_path(cfg.paths.topology, config_dir)
+    cfg.paths.templates = _resolve_config_path(cfg.paths.templates, config_dir)
+    cfg.paths.checks = _resolve_config_path(cfg.paths.checks, config_dir)
+    cfg.paths.metrics = _resolve_config_path(cfg.paths.metrics, config_dir)
+    return cfg
 
 
 def _load_metrics_file(path: Path, library: MetricsLibrary) -> None:
