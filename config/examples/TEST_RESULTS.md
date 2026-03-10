@@ -1,7 +1,7 @@
 # Rackscope Example Test Results
 
-> Generated: 2026-03-09 22:44
-> Suite started: 2026-03-09 22:39
+> Generated: 2026-03-10 14:46
+> Suite started: 2026-03-10 14:32
 
 ## Lint: ✅ passed
 
@@ -9,8 +9,14 @@
 
 | Example | Loop | Mode | Rooms | Racks | Up nodes | Temp | Power | PDU | OK | CRIT | UNKNOWN | Slurm | Incident | Pass/Fail |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| exascale | 1 | default | 9 | 140 | 14138 | 14138 | 14138 | 188 | 212 | 29 | 0 | OK | N/A | ✅ (8/8) |
-| exascale | 2 | custom_10_10_1 | 9 | 140 | 14138 | 14138 | 14138 | 188 | 210 | 31 | 0 | OK | down=372 crit_alerts=130 rack_crit=31 | ✅ (11/11) |
+| homelab | 1 | default | 1 | 3 | 23 | 23 | 23 | 6 | 1 | 2 | 0 | disabled | N/A | ✅ (8/8) |
+| homelab | 2 | default | 1 | 3 | 23 | 23 | 23 | 6 | 1 | 2 | 0 | disabled | N/A | ✅ (8/8) |
+| small-cluster | 1 | default | 1 | 11 | 608 | 608 | 608 | 22 | 8 | 3 | 0 | OK | N/A | ✅ (8/8) |
+| small-cluster | 2 | custom_10_10_1 | 1 | 11 | 608 | 608 | 608 | 22 | 4 | 7 | 0 | OK | down=23 crit_alerts=88 rack_crit=7 | ✅ (11/11) |
+| hpc-cluster | 1 | default | 2 | 25 | 1912 | 1912 | 1912 | 50 | 22 | 3 | 0 | OK | N/A | ✅ (8/8) |
+| hpc-cluster | 2 | custom_10_10_1 | 2 | 25 | 1912 | 1912 | 1912 | 50 | 17 | 8 | 0 | OK | down=51 crit_alerts=49 rack_crit=8 | ✅ (11/11) |
+| exascale | 1 | default | 9 | 140 | 14138 | 14138 | 14138 | 188 | 232 | 7 | 2 | OK | N/A | ✅ (8/8) |
+| exascale | 2 | custom_10_10_1 | 9 | 140 | 14138 | 14138 | 14138 | 188 | 214 | 27 | 0 | OK | down=21 crit_alerts=50 rack_crit=27 | ✅ (11/11) |
 
 ## Column definitions
 - **Loop 1**: normal incident mode
