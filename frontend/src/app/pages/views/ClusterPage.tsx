@@ -31,6 +31,7 @@ import {
   Save,
   Pencil,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@src/services/api';
 import type { RoomSummary, Rack, DeviceTemplate, RackState, RackNodeState } from '@src/types';
 import { usePageTitle } from '@app/contexts/PageTitleContext';
@@ -278,6 +279,7 @@ const RackCard = ({
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
 }) => {
+  const navigate = useNavigate();
   const cardStyle: React.CSSProperties = {
     width: displayConfig.rackWidth,
     ...(wrapHeight !== undefined ? { height: wrapHeight } : {}),
@@ -341,7 +343,7 @@ const RackCard = ({
       onClick={
         !editMode
           ? () => {
-              window.location.href = `/views/rack/${rack.id}`;
+              navigate(`/views/rack/${rack.id}`);
             }
           : undefined
       }
@@ -350,8 +352,7 @@ const RackCard = ({
       onKeyDown={
         !editMode
           ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ')
-                window.location.href = `/views/rack/${rack.id}`;
+              if (e.key === 'Enter' || e.key === ' ') navigate(`/views/rack/${rack.id}`);
             }
           : undefined
       }

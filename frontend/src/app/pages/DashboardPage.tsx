@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import ReactGridLayout from 'react-grid-layout/legacy';
 import { type Layout, type LayoutItem } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -91,27 +91,33 @@ type WidgetRendererProps = {
   titleAlign: TitleAlign;
 };
 
-const WidgetContent = ({ widget, data, navigate, titleAlign }: WidgetRendererProps) => {
-  const reg = getWidget(widget.type);
-  if (!reg) return null;
-  const Component = reg.component;
-  return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
-      {reg.showTitle && (
-        <div
-          className={`flex shrink-0 items-center border-b border-gray-100 px-5 py-3 dark:border-gray-800 ${
-            titleAlign === 'center' ? 'justify-center' : ''
-          }`}
-        >
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{reg.title}</h3>
+const WidgetContent = memo(
+  ({ widget, data, navigate, titleAlign }: WidgetRendererProps) => {
+    const reg = getWidget(widget.type);
+    if (!reg) return null;
+    const Component = reg.component;
+    return (
+      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        {reg.showTitle && (
+          <div
+            className={`flex shrink-0 items-center border-b border-gray-100 px-5 py-3 dark:border-gray-800 ${
+              titleAlign === 'center' ? 'justify-center' : ''
+            }`}
+          >
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{reg.title}</h3>
+          </div>
+        )}
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <Component widget={widget} data={data} navigate={navigate} />
         </div>
-      )}
-      <div className="min-h-0 flex-1 overflow-hidden">
-        <Component widget={widget} data={data} navigate={navigate} />
       </div>
-    </div>
-  );
-};
+    );
+  },
+  (prev, next) =>
+    prev.widget.id === next.widget.id &&
+    prev.data === next.data &&
+    prev.titleAlign === next.titleAlign
+);
 
 // ── Widget picker panel ───────────────────────────────────────────────────────
 
@@ -321,12 +327,16 @@ export const DashboardPage = () => {
   useEffect(() => {
     const el = gridContainerRef.current;
     if (!el) return;
+    let mounted = true;
     const obs = new ResizeObserver(([entry]) => {
-      setGridWidth(entry.contentRect.width);
+      if (mounted) setGridWidth(entry.contentRect.width);
     });
     obs.observe(el);
     setGridWidth(el.getBoundingClientRect().width);
-    return () => obs.disconnect();
+    return () => {
+      mounted = false;
+      obs.disconnect();
+    };
   }, []);
 
   // ── Widget + dashboard operations ─────────────────────────────────────────
@@ -518,33 +528,41 @@ export const DashboardPage = () => {
   }, []);
 
   // ── Derived stats ─────────────────────────────────────────────────────────
-  const totalRooms = sites.reduce((n, s) => n + (s.rooms?.length ?? 0), 0);
-  const totalRacks = sites.reduce(
-    (n, s) =>
-      n +
-      (s.rooms ?? []).reduce(
-        (rn, r) =>
-          rn +
-          (r.aisles ?? []).reduce((an, a) => an + (a.racks?.length ?? 0), 0) +
-          (r.standalone_racks?.length ?? 0),
-        0
-      ),
-    0
-  );
-  const totalDevices = sites.reduce(
-    (n, s) =>
-      n +
-      (s.rooms ?? []).reduce(
-        (rn, r) =>
-          rn +
-          (r.aisles ?? []).reduce(
-            (an, a) =>
-              an + (a.racks ?? []).reduce((dn, rack) => dn + (rack.devices?.length ?? 0), 0),
+  const totalRooms = useMemo(() => sites.reduce((n, s) => n + (s.rooms?.length ?? 0), 0), [sites]);
+  const totalRacks = useMemo(
+    () =>
+      sites.reduce(
+        (n, s) =>
+          n +
+          (s.rooms ?? []).reduce(
+            (rn, r) =>
+              rn +
+              (r.aisles ?? []).reduce((an, a) => an + (a.racks?.length ?? 0), 0) +
+              (r.standalone_racks?.length ?? 0),
             0
           ),
         0
       ),
-    0
+    [sites]
+  );
+  const totalDevices = useMemo(
+    () =>
+      sites.reduce(
+        (n, s) =>
+          n +
+          (s.rooms ?? []).reduce(
+            (rn, r) =>
+              rn +
+              (r.aisles ?? []).reduce(
+                (an, a) =>
+                  an + (a.racks ?? []).reduce((dn, rack) => dn + (rack.devices?.length ?? 0), 0),
+                0
+              ),
+            0
+          ),
+        0
+      ),
+    [sites]
   );
 
   const critCount = alerts.filter((a) => a.state === 'CRIT').length;
@@ -554,19 +572,27 @@ export const DashboardPage = () => {
       ? Math.round(((totalDevices - critCount - warnCount) / totalDevices) * 100)
       : 100;
 
-  const donutSlices = [
-    { label: 'CRIT', count: critCount, color: '#ef4444' },
-    { label: 'WARN', count: warnCount, color: '#f59e0b' },
-    { label: 'OK', count: Math.max(0, totalDevices - critCount - warnCount), color: '#10b981' },
-  ].filter((s) => s.count > 0);
+  const donutSlices = useMemo(
+    () =>
+      [
+        { label: 'CRIT', count: critCount, color: '#ef4444' },
+        { label: 'WARN', count: warnCount, color: '#f59e0b' },
+        { label: 'OK', count: Math.max(0, totalRacks - critCount - warnCount), color: '#10b981' },
+      ].filter((s) => s.count > 0),
+    [critCount, warnCount, totalRacks]
+  );
 
-  const allRooms: RoomWithState[] = sites.flatMap((s) =>
-    (s.rooms ?? []).map((r) => ({
-      id: r.id,
-      name: r.name,
-      siteName: s.name,
-      state: roomStates[r.id] ?? 'UNKNOWN',
-    }))
+  const allRooms = useMemo<RoomWithState[]>(
+    () =>
+      sites.flatMap((s) =>
+        (s.rooms ?? []).map((r) => ({
+          id: r.id,
+          name: r.name,
+          siteName: s.name,
+          state: roomStates[r.id] ?? 'UNKNOWN',
+        }))
+      ),
+    [sites, roomStates]
   );
 
   const devsByType = deviceTemplates.reduce<Record<string, number>>((acc, t) => {
@@ -579,63 +605,110 @@ export const DashboardPage = () => {
   }, {});
 
   // ── Filtered alerts ───────────────────────────────────────────────────────
-  const filteredAlertsAll = alerts
-    .filter((a) => alertStateFilter === 'all' || a.state === alertStateFilter)
-    .filter((a) => alertRoomFilter === 'all' || a.room_id === alertRoomFilter)
-    .sort((a, b) => (a.state === 'CRIT' ? -1 : 1) - (b.state === 'CRIT' ? -1 : 1));
+  const filteredAlertsAll = useMemo(
+    () =>
+      alerts
+        .filter((a) => alertStateFilter === 'all' || a.state === alertStateFilter)
+        .filter((a) => alertRoomFilter === 'all' || a.room_id === alertRoomFilter)
+        .sort((a, b) => (a.state === 'CRIT' ? -1 : 1) - (b.state === 'CRIT' ? -1 : 1)),
+    [alerts, alertStateFilter, alertRoomFilter]
+  );
   // alertLimit === 0 means 'auto' — widget measures its own height and slices internally
   const totalAlertPages =
     alertLimit === 0 ? 1 : Math.max(1, Math.ceil(filteredAlertsAll.length / alertLimit));
   const safeAlertPage = Math.min(alertPage, totalAlertPages - 1);
-  const filteredAlerts =
-    alertLimit === 0
-      ? filteredAlertsAll
-      : filteredAlertsAll.slice(safeAlertPage * alertLimit, (safeAlertPage + 1) * alertLimit);
+  const filteredAlerts = useMemo(
+    () =>
+      alertLimit === 0
+        ? filteredAlertsAll
+        : filteredAlertsAll.slice(safeAlertPage * alertLimit, (safeAlertPage + 1) * alertLimit),
+    [filteredAlertsAll, safeAlertPage, alertLimit]
+  );
 
   // ── Prometheus countdown ──────────────────────────────────────────────────
   const promConnected = Boolean(promStats?.last_ts);
   const promNextMs = promStats?.next_ts ? promStats.next_ts - now : null;
   const promNextSec = promNextMs && promNextMs > 0 ? Math.ceil(promNextMs / 1000) : 0;
 
+  // ── Stable setter callbacks ────────────────────────────────────────────────
+  const handleSetAlertLimit = useCallback((n: number) => {
+    setAlertLimit(n);
+    localStorage.setItem('rackscope.dash.alert-limit', String(n));
+  }, []);
+
   // ── Shared data object passed to all widgets ──────────────────────────────
-  const dashboardData: DashboardData = {
-    alerts,
-    sites,
-    roomStates,
-    slurm,
-    slurmEnabled,
-    promStats,
-    deviceTemplates,
-    rackTemplateCount,
-    checks,
-    critCount,
-    warnCount,
-    totalDevices,
-    totalRacks,
-    totalRooms,
-    healthScore,
-    allRooms,
-    donutSlices,
-    alertLimit,
-    setAlertLimit: (n: number) => {
-      setAlertLimit(n);
-      localStorage.setItem('rackscope.dash.alert-limit', String(n));
-    },
-    alertPage,
-    setAlertPage,
-    alertStateFilter,
-    setAlertStateFilter,
-    alertRoomFilter,
-    setAlertRoomFilter,
-    filteredAlerts,
-    filteredAlertsAll,
-    totalAlertPages,
-    safeAlertPage,
-    promNextSec,
-    promConnected,
-    devsByType,
-    checksByScope,
-  };
+  const dashboardData = useMemo<DashboardData>(
+    () => ({
+      alerts,
+      sites,
+      roomStates,
+      slurm,
+      slurmEnabled,
+      promStats,
+      deviceTemplates,
+      rackTemplateCount,
+      checks,
+      critCount,
+      warnCount,
+      totalDevices,
+      totalRacks,
+      totalRooms,
+      healthScore,
+      allRooms,
+      donutSlices,
+      alertLimit,
+      setAlertLimit: handleSetAlertLimit,
+      alertPage,
+      setAlertPage,
+      alertStateFilter,
+      setAlertStateFilter,
+      alertRoomFilter,
+      setAlertRoomFilter,
+      filteredAlerts,
+      filteredAlertsAll,
+      totalAlertPages,
+      safeAlertPage,
+      promNextSec,
+      promConnected,
+      devsByType,
+      checksByScope,
+    }),
+    [
+      alerts,
+      sites,
+      roomStates,
+      slurm,
+      slurmEnabled,
+      promStats,
+      deviceTemplates,
+      rackTemplateCount,
+      checks,
+      critCount,
+      warnCount,
+      totalDevices,
+      totalRacks,
+      totalRooms,
+      healthScore,
+      allRooms,
+      donutSlices,
+      alertLimit,
+      handleSetAlertLimit,
+      alertPage,
+      setAlertPage,
+      alertStateFilter,
+      setAlertStateFilter,
+      alertRoomFilter,
+      setAlertRoomFilter,
+      filteredAlerts,
+      filteredAlertsAll,
+      totalAlertPages,
+      safeAlertPage,
+      promNextSec,
+      promConnected,
+      devsByType,
+      checksByScope,
+    ]
+  );
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (

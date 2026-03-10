@@ -218,7 +218,7 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
 
     const t = setInterval(advance, intervalMs);
     return () => clearInterval(t);
-  }, [isPlaying, features.playlist, queue.length, currentIndex, globalInterval]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isPlaying, features.playlist, queue.length, currentIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const views = queue.map((q) => q.route);
 
