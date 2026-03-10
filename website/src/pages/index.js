@@ -67,6 +67,20 @@ const KF = `
     from { opacity:0; transform:translateX(16px); }
     to   { opacity:1; transform:translateX(0); }
   }
+  @keyframes rs-bell-ring {
+    0%,100% { transform: rotate(0deg); }
+    15%     { transform: rotate(-18deg); }
+    35%     { transform: rotate(18deg); }
+    55%     { transform: rotate(-12deg); }
+    75%     { transform: rotate(12deg); }
+    90%     { transform: rotate(-4deg); }
+  }
+  @keyframes rs-arrow-swap {
+    0%   { opacity:1; }
+    45%  { opacity:0; }
+    55%  { opacity:0; }
+    100% { opacity:1; }
+  }
   .rs-a0 { animation: rs-fade-up 0.6s ease both 0.05s; }
   .rs-a1 { animation: rs-fade-up 0.6s ease both 0.15s; }
   .rs-a2 { animation: rs-fade-up 0.6s ease both 0.25s; }
@@ -227,15 +241,43 @@ function Carousel() {
 
 // ── Page content — must be rendered inside <Layout> so ColorModeProvider exists ─
 
-// Realistic alert path — shows the drill-down concept with a concrete example.
-// Each node reveals sequentially (stagger animation), CRIT pulses at the end.
-const PATH = [
-  { name: 'Paris HPC',      level: 'Site'     },
-  { name: 'Machine Room A', level: 'Room'     },
-  { name: 'Compute Aisle',  level: 'Aisle'    },
-  { name: 'Rack C04',       level: 'Rack'     },
-  { name: 'compute-042',    level: 'Instance', crit: true },
+// ── Alert propagation animation ───────────────────────────────────────────────
+// 3-act animation showing the drill-down → alert → propagation cycle.
+//
+// Act 1 (0-2s)   : All nodes reveal left-to-right, arrows → (drill-down)
+// Act 2 (2-3.5s) : compute-042 triggers CRIT, arrows flip ← (propagation),
+//                  cascade WARN upwards: Rack → Aisle → Room → Site + bell
+// Act 3 (3.5-6s) : Steady notification state, then loop
+//
+// Nodes (left to right):
+const PATH_NODES = [
+  { id: 'site',     name: 'Toulouse HPC'  },
+  { id: 'room',     name: 'Machine Room A'},
+  { id: 'aisle',    name: 'Compute Aisle' },
+  { id: 'rack',     name: 'Rack C04'      },
+  { id: 'instance', name: 'compute-042'   },
 ];
+
+// Animation phases: [arrowDir, bell, {nodeId: status}]
+// status: 'n' neutral | 'warn' | 'crit'
+const ANIM_PHASES = [
+  // Phase 0 — initial drill-down view
+  ['right', false, {site:'n',room:'n',aisle:'n',rack:'n',instance:'n'}],
+  // Phase 1 — instance CRIT (arrows still →)
+  ['right', false, {site:'n',room:'n',aisle:'n',rack:'n',instance:'crit'}],
+  // Phase 2 — arrows flip ←, rack WARN
+  ['left',  false, {site:'n',room:'n',aisle:'n',rack:'warn',instance:'crit'}],
+  // Phase 3 — aisle WARN
+  ['left',  false, {site:'n',room:'n',aisle:'warn',rack:'warn',instance:'crit'}],
+  // Phase 4 — room WARN
+  ['left',  false, {site:'n',room:'warn',aisle:'warn',rack:'warn',instance:'crit'}],
+  // Phase 5 — site WARN + bell
+  ['left',  true,  {site:'warn',room:'warn',aisle:'warn',rack:'warn',instance:'crit'}],
+  // Phase 6 — steady notification (hold)
+  ['left',  true,  {site:'warn',room:'warn',aisle:'warn',rack:'warn',instance:'crit'}],
+];
+// Duration of each phase in ms
+const ANIM_DURATIONS = [2000, 400, 350, 300, 300, 300, 2500];
 
 function HomeContent() {
   const C = useTokens();
@@ -326,58 +368,110 @@ function HomeContent() {
             </Link>
           </div>
 
-          {/* Hierarchy path — B+C mix: realistic alert path + stagger reveal */}
-          <div style={{ display:'flex', alignItems:'flex-start', gap:0, justifyContent:'center', flexWrap:'wrap', rowGap:12 }}>
-            {PATH.map(({ name, level, crit }, i) => (
-              <React.Fragment key={name}>
-                {/* Separator — appears with the same delay as the following node */}
-                {i > 0 && (
-                  <span style={{
-                    color: C.textLo, fontSize:'0.75rem', margin:'0 5px',
-                    userSelect:'none', paddingTop:6,
-                    animation:`rs-fade-up 0.45s ease both ${0.52 + i * 0.12}s`,
-                  }}>›</span>
-                )}
-                {/* Node — name pill + level label */}
-                <div style={{
-                  display:'flex', flexDirection:'column', alignItems:'center', gap:4,
-                  animation:`rs-fade-up 0.45s ease both ${0.46 + i * 0.12}s`,
-                }}>
-                  {/* Name pill */}
-                  <div style={{
-                    display:'flex', alignItems:'center', gap:6,
-                    fontFamily:"'JetBrains Mono',monospace", fontSize:'0.78rem', fontWeight:600,
-                    color: crit ? '#ef4444' : i===0 ? C.indigo : C.textHi,
-                    padding:'4px 11px', borderRadius:6,
-                    background: crit ? 'rgba(239,68,68,0.10)' : i===0 ? C.indigoLo : 'transparent',
-                    border:`1px solid ${crit ? 'rgba(239,68,68,0.25)' : i===0 ? C.indigoBorder : C.border}`,
-                    letterSpacing:'-0.01em',
-                  }}>
-                    {name}
-                    {crit && (
-                      <>
+          {/* ── Alert propagation animation ─────────────────────────────── */}
+          {(() => {
+            const [phase, setPhase] = React.useState(0);
+
+            React.useEffect(() => {
+              let timer;
+              const advance = (p) => {
+                timer = setTimeout(() => {
+                  const next = (p + 1) % ANIM_PHASES.length;
+                  setPhase(next);
+                  advance(next);
+                }, ANIM_DURATIONS[p]);
+              };
+              advance(phase);
+              return () => clearTimeout(timer);
+            }, []); // eslint-disable-line
+
+            const [arrowDir, showBell, states] = ANIM_PHASES[phase];
+
+            // Node style by status
+            const nStyle = (status, isFirst) => {
+              if (status === 'crit') return {
+                color:'#ef4444', background:'rgba(239,68,68,0.12)',
+                border:'1px solid rgba(239,68,68,0.30)',
+              };
+              if (status === 'warn') return {
+                color:'#f79009', background:'rgba(247,144,9,0.10)',
+                border:'1px solid rgba(247,144,9,0.25)',
+              };
+              // neutral
+              return isFirst
+                ? { color:C.indigo, background:C.indigoLo, border:`1px solid ${C.indigoBorder}` }
+                : { color:C.textHi, background:'transparent', border:`1px solid ${C.border}` };
+            };
+
+            return (
+              <div style={{ display:'flex', alignItems:'center', gap:0, justifyContent:'center', flexWrap:'wrap', rowGap:10 }}>
+                {PATH_NODES.map(({ id, name }, i) => {
+                  const status = states[id];
+                  const isFirst = i === 0;
+                  const isLast  = i === PATH_NODES.length - 1;
+                  return (
+                    <React.Fragment key={id}>
+                      {/* Arrow separator — direction flips on propagation phase */}
+                      {i > 0 && (
                         <span style={{
-                          width:5, height:5, borderRadius:'50%',
-                          background:'#ef4444', display:'inline-block', flexShrink:0,
-                          animation:'rs-glow-pulse 1.5s ease infinite',
-                        }}/>
-                        <span style={{
-                          fontSize:'0.6rem', fontWeight:700, letterSpacing:'0.06em',
-                          color:'#ef4444', animation:'rs-glow-pulse 1.5s ease infinite',
-                        }}>CRIT</span>
-                      </>
-                    )}
-                  </div>
-                  {/* Level label */}
-                  <span style={{
-                    fontSize:'0.6rem', color:C.textLo, letterSpacing:'0.10em',
-                    textTransform:'uppercase', fontFamily:"'JetBrains Mono',monospace",
-                    fontWeight:500,
-                  }}>{level}</span>
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
+                          display:'inline-flex', alignItems:'center', justifyContent:'center',
+                          width:28, fontSize:'0.8rem', fontWeight:700,
+                          color: arrowDir === 'left' ? '#f79009' : C.textLo,
+                          userSelect:'none', flexShrink:0,
+                          transition:'color 0.3s ease',
+                          animation:`rs-fade-up 0.45s ease both ${0.52 + i * 0.12}s`,
+                        }}>
+                          {arrowDir === 'right' ? '→' : '←'}
+                        </span>
+                      )}
+
+                      {/* Node pill */}
+                      <div style={{
+                        display:'flex', alignItems:'center', gap:5,
+                        fontFamily:"'JetBrains Mono',monospace", fontSize:'0.77rem', fontWeight:600,
+                        padding:'4px 11px', borderRadius:6,
+                        letterSpacing:'-0.01em',
+                        transition:'all 0.35s ease',
+                        animation:`rs-fade-up 0.45s ease both ${0.46 + i * 0.12}s`,
+                        ...nStyle(status, isFirst),
+                      }}>
+                        {/* Bell on first node when site is in WARN */}
+                        {isFirst && showBell && (
+                          <span style={{
+                            fontSize:'0.85rem', marginRight:2,
+                            animation:'rs-bell-ring 0.6s ease 0.1s, rs-glow-pulse 2s ease 0.8s infinite',
+                            display:'inline-block',
+                          }}>🔔</span>
+                        )}
+                        {name}
+                        {/* CRIT dot on last node */}
+                        {isLast && status === 'crit' && (
+                          <>
+                            <span style={{
+                              width:5, height:5, borderRadius:'50%',
+                              background:'#ef4444', flexShrink:0,
+                              animation:'rs-glow-pulse 1.2s ease infinite',
+                            }}/>
+                            <span style={{
+                              fontSize:'0.58rem', fontWeight:800, letterSpacing:'0.06em',
+                              color:'#ef4444', animation:'rs-glow-pulse 1.2s ease infinite',
+                            }}>CRIT</span>
+                          </>
+                        )}
+                        {/* WARN badge on non-instance nodes */}
+                        {!isLast && status === 'warn' && (
+                          <span style={{
+                            fontSize:'0.58rem', fontWeight:800, letterSpacing:'0.06em',
+                            color:'#f79009', animation:'rs-glow-pulse 2s ease infinite',
+                          }}>!</span>
+                        )}
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
 

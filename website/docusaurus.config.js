@@ -114,6 +114,8 @@ const config = {
             position: 'left',
             label: 'Architecture',
           },
+          // Search positioned explicitly before GitHub link
+          { type: 'search', position: 'right' },
           {
             href: 'https://github.com/SckyzO/rackscope',
             label: 'GitHub',
