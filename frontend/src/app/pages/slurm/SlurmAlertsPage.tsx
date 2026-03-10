@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { XCircle, AlertTriangle } from 'lucide-react';
-import { api } from '../../../services/api';
-import type { SlurmNodeEntry, RoomSummary } from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { api } from '@src/services/api';
+import type { SlurmNodeEntry, RoomSummary } from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import {
   PageHeader,
   PageBreadcrumb,
@@ -10,19 +10,10 @@ import {
   LoadingState,
   EmptyState,
 } from '../templates/EmptyPage';
-import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import { Dropdown } from '../../components/ui/Dropdown';
+import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
+import { Dropdown } from '@app/components/ui/Dropdown';
+import { useSlurmConfig } from '@src/hooks/useSlurmConfig';
 
-const STATUS_COLOR: Record<string, string> = {
-  down: '#ef4444',
-  drain: '#f97316',
-  drained: '#f97316',
-  draining: '#f59e0b',
-  mixed: '#8b5cf6',
-  fail: '#ef4444',
-  unknown: '#6b7280',
-};
-const statusColor = (s: string) => STATUS_COLOR[s.toLowerCase()] ?? '#6b7280';
 
 const SevBadge = ({ sev }: { sev: string }) => {
   if (sev === 'CRIT')
@@ -42,6 +33,7 @@ const SevBadge = ({ sev }: { sev: string }) => {
 
 export const SlurmAlertsPage = () => {
   usePageTitle('Slurm Alerts');
+  const { getStatusColor: statusColor } = useSlurmConfig();
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [roomId, setRoomId] = useState('');
   const [allNodes, setAllNodes] = useState<SlurmNodeEntry[]>([]);

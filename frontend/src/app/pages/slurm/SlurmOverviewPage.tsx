@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Activity, AlertTriangle, XCircle, Server } from 'lucide-react';
-import { api } from '../../../services/api';
-import type { SlurmSummary, SlurmPartitionSummary, RoomSummary } from '../../../types';
-import { usePageTitle } from '../../contexts/PageTitleContext';
+import { api } from '@src/services/api';
+import type { SlurmSummary, SlurmPartitionSummary, RoomSummary } from '@src/types';
+import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard, LoadingState } from '../templates/EmptyPage';
-import { RefreshButton, useAutoRefresh } from '../../components/RefreshButton';
-import { Dropdown } from '../../components/ui/Dropdown';
+import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
+import { Dropdown } from '@app/components/ui/Dropdown';
+import { useSlurmConfig } from '@src/hooks/useSlurmConfig';
 
 const SEV_COLOR: Record<string, string> = {
   OK: '#22c55e',
@@ -13,24 +14,12 @@ const SEV_COLOR: Record<string, string> = {
   CRIT: '#ef4444',
   UNKNOWN: '#6b7280',
 };
-const STATUS_COLOR: Record<string, string> = {
-  idle: '#10b981',
-  allocated: '#3b82f6',
-  alloc: '#3b82f6',
-  completing: '#3b82f6',
-  down: '#ef4444',
-  drain: '#f97316',
-  drained: '#f97316',
-  draining: '#f59e0b',
-  mixed: '#8b5cf6',
-  maint: '#6366f1',
-  unknown: '#6b7280',
-};
-const statusColor = (s: string) => STATUS_COLOR[s.toLowerCase()] ?? '#6b7280';
 const sevColor = (s: string) => SEV_COLOR[s] ?? SEV_COLOR.UNKNOWN;
 
 export const SlurmOverviewPage = () => {
   usePageTitle('Slurm Overview');
+  const { getStatusColor } = useSlurmConfig();
+  const statusColor = getStatusColor;
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
   const [roomId, setRoomId] = useState('');
   const [summary, setSummary] = useState<SlurmSummary | null>(null);
