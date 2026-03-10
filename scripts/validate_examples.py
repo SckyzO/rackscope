@@ -115,11 +115,12 @@ def run_lint():
 # ── Switch example ────────────────────────────────────────────────────────────
 def switch_example(ex):
     app_src = ROOT / f'config/app.example.{ex}.yaml'
-    app_dst = ROOT / 'config/app.yaml'
     if not app_src.exists():
         raise FileNotFoundError(f'app.example.{ex}.yaml not found')
-    import shutil
-    shutil.copy(app_src, app_dst)
+    # Write .env so Docker Compose picks up APP_CONFIG (takes precedence over app.yaml).
+    # This is the mechanism used by `make use EXAMPLE=...`.
+    env_path = ROOT / '.env'
+    env_path.write_text(f'APP_CONFIG=app.example.{ex}.yaml\n')
     compose('restart', 'backend', 'simulator')
 
 # ── Expected values per example ───────────────────────────────────────────────
