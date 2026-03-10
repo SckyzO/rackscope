@@ -1,6 +1,6 @@
 # Rackscope — Status
 
-> Updated: 2026-03-10 12:48 UTC · Commit: [21d73d5](https://github.com/SckyzO/rackscope/commit/21d73d5f359a687f540cbddd18f702bc7e2dc068) · [View run](https://github.com/SckyzO/rackscope/actions/runs/22903190161)
+> Updated: 2026-03-10 13:01 UTC · Commit: [da33f48](https://github.com/SckyzO/rackscope/commit/da33f4868c84b9cc8d98e0595ecca57679a5e0cb) · [View run](https://github.com/SckyzO/rackscope/actions/runs/22903680345)
 
 ## Summary
 
@@ -9,8 +9,8 @@
 | 🧪 **Tests** | ❌ 816 passed | 01 failed · 85% coverage |
 | 🔍 **Python lint** | ⬜ unknown | ruff check + ruff format |
 | 📐 **Python types** | ⬜ unknown | mypy |
-| 🎨 **Frontend lint** | ❌ failing | eslint · prettier · stylelint |
-| 📦 **TypeScript** | ⬜ unknown | tsc -b |
+| 🎨 **Frontend lint** | ✅ passing | eslint · prettier · stylelint |
+| 📦 **TypeScript** | ❌ failing | tsc -b |
 | 🔒 **Python security** | ⬜ unknown | pip-audit · clean |
 | 🔒 **npm security** | ⬜ unknown | npm audit · clean |
 
