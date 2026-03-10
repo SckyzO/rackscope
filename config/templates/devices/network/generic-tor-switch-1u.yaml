@@ -1,0 +1,8 @@
+templates:
+  - id: generic-tor-switch-1u
+    name: "Generic ToR Switch 1U"
+    type: switch
+    u_height: 1
+    checks:
+      - switch_up
+      - switch_port_err

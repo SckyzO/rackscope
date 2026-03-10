@@ -1,0 +1,92 @@
+id: rack-gpu03
+name: "GPU Rack GPU03"
+u_height: 42
+template_id: standard-42u-air
+
+devices:
+  - id: cgpu03-01
+    name: "gpu065-gpu068"
+    template_id: generic-4u-quad-gpu
+    u_position: 1
+    face: front
+    instance:
+      1: gpu065
+      2: gpu066
+      3: gpu067
+      4: gpu068
+  - id: cgpu03-02
+    name: "gpu069-gpu072"
+    template_id: generic-4u-quad-gpu
+    u_position: 5
+    face: front
+    instance:
+      1: gpu069
+      2: gpu070
+      3: gpu071
+      4: gpu072
+  - id: cgpu03-03
+    name: "gpu073-gpu076"
+    template_id: generic-4u-quad-gpu
+    u_position: 9
+    face: front
+    instance:
+      1: gpu073
+      2: gpu074
+      3: gpu075
+      4: gpu076
+  - id: cgpu03-04
+    name: "gpu077-gpu080"
+    template_id: generic-4u-quad-gpu
+    u_position: 13
+    face: front
+    instance:
+      1: gpu077
+      2: gpu078
+      3: gpu079
+      4: gpu080
+  - id: cgpu03-05
+    name: "gpu081-gpu084"
+    template_id: generic-4u-quad-gpu
+    u_position: 17
+    face: front
+    instance:
+      1: gpu081
+      2: gpu082
+      3: gpu083
+      4: gpu084
+  - id: cgpu03-06
+    name: "gpu085-gpu088"
+    template_id: generic-4u-quad-gpu
+    u_position: 21
+    face: front
+    instance:
+      1: gpu085
+      2: gpu086
+      3: gpu087
+      4: gpu088
+  - id: cgpu03-07
+    name: "gpu089-gpu092"
+    template_id: generic-4u-quad-gpu
+    u_position: 25
+    face: front
+    instance:
+      1: gpu089
+      2: gpu090
+      3: gpu091
+      4: gpu092
+  - id: cgpu03-08
+    name: "gpu093-gpu096"
+    template_id: generic-4u-quad-gpu
+    u_position: 29
+    face: front
+    instance:
+      1: gpu093
+      2: gpu094
+      3: gpu095
+      4: gpu096
+  - id: sw-gpu03-tor
+    name: "tor-rack-gpu03"
+    template_id: generic-tor-switch-1u
+    u_position: 42
+    face: front
+    instance: tor-rack-gpu03

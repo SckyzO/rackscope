@@ -1,0 +1,18 @@
+templates:
+  - id: generic-4u-quad-gpu
+    name: "Generic 4U GPU Quad (4 GPU nodes)"
+    type: server
+    u_height: 4
+    role: gpu
+    layout:
+      type: grid
+      rows: 2
+      cols: 2
+      matrix:
+        - [1, 2]
+        - [3, 4]
+    checks:
+      - node_up
+      - ipmi_temp_warn
+      - ipmi_temp_crit
+      - ipmi_power_state

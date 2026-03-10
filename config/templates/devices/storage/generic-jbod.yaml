@@ -1,0 +1,7 @@
+templates:
+  - id: generic-2u-jbod
+    name: "Generic 2U JBOD Storage"
+    type: storage
+    u_height: 2
+    checks:
+      - node_up

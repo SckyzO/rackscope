@@ -1,4 +1,0 @@
-rack_templates:
-  - id: simple-42u
-    name: "Simple 42U Rack"
-    u_height: 42
