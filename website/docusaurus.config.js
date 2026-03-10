@@ -25,9 +25,24 @@ const config = {
     locales: ['en'],
   },
 
-  // cosmos-docusaurus-theme: CSS-only theme plugin (Void/Slate palette, Outfit font,
-  // full Infima coverage). Rackscope-specific overrides stay in custom.css.
-  themes: ['cosmos-docusaurus-theme'],
+  themes: [
+    // CSS theme — Void/Slate palette, Outfit font, full Infima coverage
+    'cosmos-docusaurus-theme',
+    // Local search — zero config, no API key, works with GitHub Pages
+    [
+      require.resolve('@easyops-cn/docusaurus-search-local'),
+      {
+        hashed: true,
+        indexDocs: true,
+        indexBlog: false,
+        docsRouteBasePath: '/',
+        language: ['en'],
+        highlightSearchTermsOnTargetPage: true,
+        searchResultLimits: 8,
+        searchBarShortcutHint: true,
+      },
+    ],
+  ],
 
   presets: [
     [
