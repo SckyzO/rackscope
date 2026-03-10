@@ -66,7 +66,7 @@ def sim_count():
                        capture_output=True, text=True)
     return r.stdout.count('\nup{')
 
-def wait_sim(min_nodes, timeout=90):
+def wait_sim(min_nodes, timeout=240):
     for _ in range(timeout // 3):
         if sim_count() >= min_nodes:
             return True
@@ -341,6 +341,11 @@ def run_suite(examples):
             ok(f'Simulator ready ({sim_count()} nodes)')
         else:
             warn('Simulator slow — continuing with available data')
+            # For large topologies (exascale), first tick can take 2-3min.
+            # Add extra wait so Prometheus has time to scrape before Loop 1.
+            if min_n >= 10000:
+                log(f'[{ex}] Large topology — waiting extra 60s for first Prometheus scrape...')
+                time.sleep(60)
         time.sleep(120)  # 2x planner cache TTL ensures fresh snapshot after sim ready
 
         # Loop 1: normal mode
