@@ -123,28 +123,10 @@ const config = {
           },
         ],
       },
+      // Footer — copyright only, no redundant link columns
       footer: {
         style: 'dark',
-        links: [
-          {
-            title: 'Docs',
-            items: [
-              { label: 'Quick Start',    to: '/getting-started/quick-start' },
-              { label: 'Configuration',  to: '/getting-started/configuration' },
-              { label: 'Examples',       to: '/getting-started/examples' },
-              { label: 'API Reference',  to: '/api-reference/overview' },
-            ],
-          },
-          {
-            title: 'Project',
-            items: [
-              { label: 'GitHub',     href: 'https://github.com/SckyzO/rackscope' },
-              { label: 'Changelog',  href: 'https://github.com/SckyzO/rackscope/blob/main/CHANGELOG.md' },
-              { label: 'Issues',     href: 'https://github.com/SckyzO/rackscope/issues' },
-              { label: 'AGPL-3.0',   href: 'https://github.com/SckyzO/rackscope/blob/main/LICENSE' },
-            ],
-          },
-        ],
+        links: [],
         copyright: `Copyright © ${new Date().getFullYear()} Rackscope · AGPL-3.0`,
       },
       prism: {

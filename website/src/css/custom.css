@@ -21,8 +21,9 @@
   order: 1;
 }
 
-/* Color mode toggle — rightmost */
-button[aria-label*="dark and light mode"] {
+/* Color mode toggle WRAPPER (direct child of navbar__items--right) — rightmost */
+/* Must target the wrapper div, not the button inside it */
+[class*="colorModeToggle"] {
   order: 2;
 }
 

@@ -259,25 +259,30 @@ const PATH_NODES = [
 ];
 
 // Animation phases: [arrowDir, bell, {nodeId: status}]
-// status: 'n' neutral | 'warn' | 'crit'
+// status: 'ok' green | 'warn' orange | 'crit' red | 'n' neutral
+//
+// Act 1 — Everything healthy (all green, → drill-down arrows)
+// Act 2 — Alert: compute-042 triggers CRIT while rest still green
+// Act 3 — Propagation: arrows flip ←, cascade WARN from bottom to top
+// Act 4 — Steady notification state
 const ANIM_PHASES = [
-  // Phase 0 — initial drill-down view
-  ['right', false, {site:'n',room:'n',aisle:'n',rack:'n',instance:'n'}],
-  // Phase 1 — instance CRIT (arrows still →)
-  ['right', false, {site:'n',room:'n',aisle:'n',rack:'n',instance:'crit'}],
-  // Phase 2 — arrows flip ←, rack WARN
-  ['left',  false, {site:'n',room:'n',aisle:'n',rack:'warn',instance:'crit'}],
-  // Phase 3 — aisle WARN
-  ['left',  false, {site:'n',room:'n',aisle:'warn',rack:'warn',instance:'crit'}],
-  // Phase 4 — room WARN
-  ['left',  false, {site:'n',room:'warn',aisle:'warn',rack:'warn',instance:'crit'}],
-  // Phase 5 — site WARN + bell
-  ['left',  true,  {site:'warn',room:'warn',aisle:'warn',rack:'warn',instance:'crit'}],
-  // Phase 6 — steady notification (hold)
-  ['left',  true,  {site:'warn',room:'warn',aisle:'warn',rack:'warn',instance:'crit'}],
+  // Phase 0 — healthy state (all OK / green)
+  ['right', false, {site:'ok', room:'ok', aisle:'ok', rack:'ok', instance:'ok'}],
+  // Phase 1 — compute-042 triggers CRIT! Others still OK (arrows still →)
+  ['right', false, {site:'ok', room:'ok', aisle:'ok', rack:'ok', instance:'crit'}],
+  // Phase 2 — arrows flip ←, rack C04 → WARN
+  ['left',  false, {site:'ok', room:'ok', aisle:'ok', rack:'warn', instance:'crit'}],
+  // Phase 3 — compute aisle → WARN
+  ['left',  false, {site:'ok', room:'ok', aisle:'warn', rack:'warn', instance:'crit'}],
+  // Phase 4 — machine room A → WARN
+  ['left',  false, {site:'ok', room:'warn', aisle:'warn', rack:'warn', instance:'crit'}],
+  // Phase 5 — toulouse HPC → WARN + bell
+  ['left',  true,  {site:'warn', room:'warn', aisle:'warn', rack:'warn', instance:'crit'}],
+  // Phase 6 — steady notification state (hold longer)
+  ['left',  true,  {site:'warn', room:'warn', aisle:'warn', rack:'warn', instance:'crit'}],
 ];
-// Duration of each phase in ms
-const ANIM_DURATIONS = [2000, 400, 350, 300, 300, 300, 2500];
+// Duration of each phase in ms — slower, more dramatic
+const ANIM_DURATIONS = [2500, 900, 750, 650, 650, 650, 3000];
 
 function HomeContent() {
   const C = useTokens();
@@ -394,10 +399,14 @@ function HomeContent() {
                 border:'1px solid rgba(239,68,68,0.30)',
               };
               if (status === 'warn') return {
-                color:'#f79009', background:'rgba(247,144,9,0.10)',
-                border:'1px solid rgba(247,144,9,0.25)',
+                color:'#f59e0b', background:'rgba(245,158,11,0.10)',
+                border:'1px solid rgba(245,158,11,0.25)',
               };
-              // neutral
+              if (status === 'ok') return {
+                color:'#10b981', background:'rgba(16,185,129,0.10)',
+                border:'1px solid rgba(16,185,129,0.25)',
+              };
+              // neutral (during initial reveal only)
               return isFirst
                 ? { color:C.indigo, background:C.indigoLo, border:`1px solid ${C.indigoBorder}` }
                 : { color:C.textHi, background:'transparent', border:`1px solid ${C.border}` };
@@ -416,7 +425,7 @@ function HomeContent() {
                         <span style={{
                           display:'inline-flex', alignItems:'center', justifyContent:'center',
                           width:28, fontSize:'0.8rem', fontWeight:700,
-                          color: arrowDir === 'left' ? '#f79009' : C.textLo,
+                          color: arrowDir === 'left' ? '#f59e0b' : states.site === 'ok' ? '#10b981' : C.textLo,
                           userSelect:'none', flexShrink:0,
                           transition:'color 0.3s ease',
                           animation:`rs-fade-up 0.45s ease both ${0.52 + i * 0.12}s`,
@@ -543,7 +552,7 @@ function HomeContent() {
             ];
             const [hov, setHov] = React.useState(-1);
             return (
-              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:7 }}>
                 {DRILL.map(({ level, w, desc, tooltip, icon }, i) => (
                   <div key={level} style={{ width:'100%', maxWidth:w, position:'relative' }}
                     onMouseEnter={() => setHov(i)}
@@ -639,19 +648,16 @@ function HomeContent() {
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                 {[
-                  ['Server / rack down', 'ipmi_up, node_up'],
-                  ['Temperature & cooling', 'ipmi_temperature'],
-                  ['PDU load & power', 'pdu_total_load_watts'],
-                  ['InfiniBand / network', 'ib_port_state'],
-                  ['Storage health', 'eseries_drive_status'],
-                  ['Liquid cooling leaks', 'sequana3_leak_sensor'],
-                ].map(([label, tag]) => (
-                  <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <div style={{ width:5, height:5, borderRadius:'50%', background:C.indigo, flexShrink:0 }} />
-                      <span style={{ fontSize:'0.85rem', color:C.textMid }}>{label}</span>
-                    </div>
-                    <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color:C.textLo, background:C.dark4, padding:'2px 7px', borderRadius:4, flexShrink:0 }}>{tag}</span>
+                  'Server / rack health',
+                  'Temperature & cooling',
+                  'PDU load & power',
+                  'Network infrastructure',
+                  'Storage health',
+                  'Cooling sensors',
+                ].map((label) => (
+                  <div key={label} style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <div style={{ width:5, height:5, borderRadius:'50%', background:C.indigo, flexShrink:0 }} />
+                    <span style={{ fontSize:'0.85rem', color:C.textMid }}>{label}</span>
                   </div>
                 ))}
               </div>
@@ -682,19 +688,16 @@ function HomeContent() {
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                 {[
-                  ['Service availability', 'up{job="myapp"}'],
-                  ['Critical app alerts', 'custom_error_rate'],
-                  ['Slurm node states', 'slurm_node_status'],
-                  ['Job queue depth', 'slurm_jobs_pending'],
-                  ['Any custom exporter', 'any_metric{...}'],
-                  ['Plugin system', 'extensible'],
-                ].map(([label, tag]) => (
-                  <div key={label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <div style={{ width:5, height:5, borderRadius:'50%', background:'#22c55e', flexShrink:0 }} />
-                      <span style={{ fontSize:'0.85rem', color:C.textMid }}>{label}</span>
-                    </div>
-                    <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', color:C.textLo, background:C.dark4, padding:'2px 7px', borderRadius:4, flexShrink:0 }}>{tag}</span>
+                  'Service availability',
+                  'Application error rates',
+                  'HPC workload states',
+                  'Job queue depth',
+                  'Any custom exporter',
+                  'Plugin system',
+                ].map((label) => (
+                  <div key={label} style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <div style={{ width:5, height:5, borderRadius:'50%', background:'#22c55e', flexShrink:0 }} />
+                    <span style={{ fontSize:'0.85rem', color:C.textMid }}>{label}</span>
                   </div>
                 ))}
               </div>
@@ -737,16 +740,16 @@ function HomeContent() {
           <div style={{ display:'flex', alignItems:'stretch', gap:0 }}>
             {/* Grafana */}
             <div style={{
-              flex:1, padding:'24px 20px',
+              flex:1, padding:'28px 20px',
               background:C.dark3, border:`1px solid ${C.border}`,
               borderRadius:'10px 0 0 10px',
-              display:'flex', flexDirection:'column', gap:8,
+              display:'flex', flexDirection:'column', alignItems:'center', gap:10, textAlign:'center',
             }}>
-              <div style={{ fontSize:'1.3rem' }}>📊</div>
-              <div style={{ fontWeight:700, color:C.textMid, fontSize:'0.9rem' }}>Grafana</div>
-              <div style={{ fontSize:'0.8rem', color:C.textLo, lineHeight:1.5 }}>Metrics & dashboards. Charts, panels, time series. Indicates <em>what</em> is happening.</div>
+              <div style={{ fontSize:'2.2rem' }}>📊</div>
+              <div style={{ fontWeight:700, color:C.textMid, fontSize:'0.95rem' }}>Grafana</div>
+              <div style={{ fontSize:'0.8rem', color:C.textLo, lineHeight:1.55 }}>Metrics & dashboards. Charts, panels, time series. Indicates <em>what</em> is happening.</div>
               <div style={{
-                marginTop:'auto', padding:'6px 10px',
+                marginTop:'auto', padding:'6px 12px',
                 background:C.bgMuted, borderRadius:6,
                 fontSize:'0.75rem', color:C.textLo, fontStyle:'italic',
               }}>
@@ -775,9 +778,9 @@ function HomeContent() {
                 padding:'3px 12px', borderRadius:999,
                 fontFamily:"'JetBrains Mono',monospace",
               }}>RACKSCOPE</div>
-              <div style={{ fontSize:'1.3rem' }}>🔭</div>
-              <div style={{ fontWeight:700, color:C.textHi, fontSize:'0.9rem' }}>Physical context</div>
-              <div style={{ fontSize:'0.8rem', color:C.textMid, lineHeight:1.5 }}>Bridges metrics to physical location. Answers <em>where</em> — which rack, which aisle, which room.</div>
+              <div style={{ fontSize:'2.2rem', textAlign:'center' }}>🔭</div>
+              <div style={{ fontWeight:700, color:C.textHi, fontSize:'0.95rem', textAlign:'center' }}>Physical context</div>
+              <div style={{ fontSize:'0.8rem', color:C.textMid, lineHeight:1.55, textAlign:'center' }}>Bridges metrics to physical location. Answers <em>where</em> — which rack, which aisle, which room.</div>
               <div style={{
                 marginTop:'auto', padding:'6px 10px',
                 background:C.indigoLo, border:`1px solid ${C.indigoBorder}`,
@@ -794,14 +797,14 @@ function HomeContent() {
 
             {/* Supervision */}
             <div style={{
-              flex:1, padding:'24px 20px',
+              flex:1, padding:'28px 20px',
               background:C.dark3, border:`1px solid ${C.border}`,
               borderRadius:'0 10px 10px 0',
-              display:'flex', flexDirection:'column', gap:8,
+              display:'flex', flexDirection:'column', alignItems:'center', gap:10, textAlign:'center',
             }}>
-              <div style={{ fontSize:'1.3rem' }}>🚨</div>
-              <div style={{ fontWeight:700, color:C.textMid, fontSize:'0.9rem' }}>Supervision</div>
-              <div style={{ fontSize:'0.8rem', color:C.textLo, lineHeight:1.5 }}>Full monitoring & alerting. Nagios, Zabbix, PagerDuty. Determines <em>what action to take</em>.</div>
+              <div style={{ fontSize:'2.2rem' }}>🚨</div>
+              <div style={{ fontWeight:700, color:C.textMid, fontSize:'0.95rem' }}>Supervision</div>
+              <div style={{ fontSize:'0.8rem', color:C.textLo, lineHeight:1.55 }}>Full monitoring & alerting. Nagios, Zabbix, PagerDuty. Determines <em>what action to take</em>.</div>
               <div style={{
                 marginTop:'auto', padding:'6px 10px',
                 background:C.bgMuted, borderRadius:6,
@@ -850,13 +853,23 @@ function HomeContent() {
                 border:`1px solid ${C.border}`,
                 borderLeft: i>0 ? 'none' : `1px solid ${C.border}`,
                 position:'relative',
-                display:'flex', flexDirection:'column', gap:12,
+                display:'flex', flexDirection:'column', gap:14,
               }}>
-                <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.68rem', fontWeight:700, color:C.textLo, letterSpacing:'0.1em' }}>
+                {/* Step number — prominent indigo, large */}
+                <div style={{
+                  fontFamily:"'JetBrains Mono',monospace",
+                  fontSize:'1.6rem', fontWeight:800,
+                  color:C.indigo, letterSpacing:'-0.02em',
+                  lineHeight:1,
+                }}>
                   {num}
                 </div>
-                <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
-                  <span style={{ fontSize:'1.3rem', flexShrink:0, marginTop:1 }}>{icon}</span>
+                {/* Icon + Title — same flex row, both vertically centered */}
+                <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                  <span style={{
+                    fontSize:'1.6rem', flexShrink:0,
+                    lineHeight:1, display:'flex', alignItems:'center',
+                  }}>{icon}</span>
                   <h3 style={{ margin:0, fontSize:'0.95rem', fontWeight:700, color:C.textHi, letterSpacing:'-0.01em', lineHeight:1.3 }}>{title}</h3>
                 </div>
                 <p style={{ margin:0, fontSize:'0.85rem', lineHeight:1.65, color:C.textMid, flex:1 }}>{desc}</p>
