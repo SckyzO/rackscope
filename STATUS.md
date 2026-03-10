@@ -1,6 +1,6 @@
 # Rackscope — Status
 
-> Updated: 2026-03-10 17:44 UTC · Commit: [52f44cd](https://github.com/SckyzO/rackscope/commit/52f44cdda34a95c0f30d5e04eced46f62d67bd8f) · [View run](https://github.com/SckyzO/rackscope/actions/runs/22916171718)
+> Updated: 2026-03-10 17:59 UTC · Commit: [3ad7f10](https://github.com/SckyzO/rackscope/commit/3ad7f10d3401c1ab9a2c580d6d667cd063a986c2) · [View run](https://github.com/SckyzO/rackscope/actions/runs/22916785442)
 
 ## Summary
 
