@@ -425,7 +425,19 @@ function HomeContent() {
                         <span style={{
                           display:'inline-flex', alignItems:'center', justifyContent:'center',
                           width:28, fontSize:'0.8rem', fontWeight:700,
-                          color: arrowDir === 'left' ? '#f59e0b' : states.site === 'ok' ? '#10b981' : C.textLo,
+                          // Arrow color follows the status of the node it points FROM (i-1)
+                        // propagation: only warn when the source node is in warn/crit
+                        color: (() => {
+                          if (arrowDir === 'right') {
+                            // Drill-down: green when all OK, neutral otherwise
+                            return states[PATH_NODES[i-1].id] === 'ok' ? '#10b981' : C.textLo;
+                          }
+                          // Propagation (←): color by the node to the right (i = current index)
+                          const srcStatus = states[PATH_NODES[i].id];
+                          if (srcStatus === 'crit') return '#ef4444';
+                          if (srcStatus === 'warn') return '#f59e0b';
+                          return C.textLo;
+                        })(),
                           userSelect:'none', flexShrink:0,
                           transition:'color 0.3s ease',
                           animation:`rs-fade-up 0.45s ease both ${0.52 + i * 0.12}s`,
@@ -444,14 +456,15 @@ function HomeContent() {
                         animation:`rs-fade-up 0.45s ease both ${0.46 + i * 0.12}s`,
                         ...nStyle(status, isFirst),
                       }}>
-                        {/* Bell on first node — always rendered to prevent layout shift.
-                            Space is always reserved; visibility controlled via opacity. */}
+                        {/* Bell on first node — font-size: 0 when hidden takes no space,
+                            transitions to 0.85rem when shown. No layout shift, no blank gap. */}
                         {isFirst && (
                           <span style={{
-                            fontSize:'0.85rem', marginRight:2,
                             display:'inline-block',
-                            opacity: showBell ? 1 : 0,
-                            transition:'opacity 0.4s ease',
+                            fontSize: showBell ? '0.85rem' : '0',
+                            marginRight: showBell ? 2 : 0,
+                            overflow:'hidden',
+                            transition:'font-size 0.35s ease, margin 0.35s ease',
                             animation: showBell
                               ? 'rs-bell-ring 0.6s ease 0.1s, rs-glow-pulse 2s ease 0.8s infinite'
                               : 'none',
