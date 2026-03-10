@@ -7,8 +7,9 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 const ST_LOGO_SVG = `<svg
    xmlns="http://www.w3.org/2000/svg"
    version="1.1"
-   width="517"
-   height="600"
+   width="100%"
+   height="100%"
+   viewBox="0 0 517 600"
    id="svg6681">
   <g
      id="g4148">
@@ -277,10 +278,13 @@ export const StadeToulousainOverlay = ({ onClose }: { onClose: () => void }) => 
         >
           <div
             style={{
-              width: 130,
-              height: 151,
+              width: 200,
+              height: 232,
+              flexShrink: 0,
+              overflow: 'hidden',
               filter: 'drop-shadow(0 0 28px rgba(230,50,40,0.65))',
             }}
+            // SVG is a static compile-time constant — no user input, no XSS risk
             dangerouslySetInnerHTML={{ __html: ST_LOGO_SVG }}
           />
         </div>
