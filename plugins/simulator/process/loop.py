@@ -36,8 +36,33 @@ from plugins.simulator.process.topology import (
 )
 
 
-# Read topology path from app.yaml if available, fall back to env var
-def _resolve_topology_path():
+# Read topology and templates paths from app.yaml, with the same relative-path
+# resolution as the backend's load_app_config / _resolve_config_path.
+def _resolve_app_path(raw: str, app_cfg_path: str) -> str:
+    """Resolve a path from app.yaml's paths section.
+
+    Resolution order (mirrors backend loader._resolve_config_path):
+    1. Absolute → return as-is.
+    2. Relative that exists from /app → return /app/<raw>.
+    3. Relative to the config file's directory → enables self-contained profiles
+       where 'topology: topology' resolves to <profile-dir>/topology.
+    4. Fallback → /app/<raw> (let the caller handle the missing path).
+    """
+    if raw.startswith("/"):
+        return raw
+    # Try old-style: relative to /app (e.g. "config/examples/homelab/topology")
+    abs_from_app = f"/app/{raw}"
+    if os.path.exists(abs_from_app):
+        return abs_from_app
+    # Try new-style: relative to the config file's own directory
+    config_dir = os.path.dirname(os.path.abspath(app_cfg_path))
+    rel_to_cfg = os.path.join(config_dir, raw)
+    if os.path.exists(rel_to_cfg):
+        return rel_to_cfg
+    return abs_from_app  # fallback — caller logs warning if missing
+
+
+def _resolve_topology_path() -> str:
     import yaml as _yaml
 
     app_cfg_path = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
@@ -45,17 +70,28 @@ def _resolve_topology_path():
         cfg = _yaml.safe_load(open(app_cfg_path)) or {}
         topo = cfg.get("paths", {}).get("topology")
         if topo:
-            # If relative path, make it absolute from /app
-            if not topo.startswith("/"):
-                topo = f"/app/{topo}"
-            return topo
+            return _resolve_app_path(topo, app_cfg_path)
     except Exception:
         pass
     return os.getenv("TOPOLOGY_FILE", "/app/config/topology")
 
 
+def _resolve_templates_path() -> str:
+    import yaml as _yaml
+
+    app_cfg_path = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
+    try:
+        cfg = _yaml.safe_load(open(app_cfg_path)) or {}
+        tmpl = cfg.get("paths", {}).get("templates")
+        if tmpl:
+            return _resolve_app_path(tmpl, app_cfg_path)
+    except Exception:
+        pass
+    return os.getenv("TEMPLATES_PATH", "/app/config/templates")
+
+
 TOPOLOGY_PATH = _resolve_topology_path()
-TEMPLATES_PATH = os.getenv("TEMPLATES_PATH", "/app/config/templates")
+TEMPLATES_PATH = _resolve_templates_path()
 METRICS_LIBRARY_PATH = os.getenv("METRICS_LIBRARY", "/app/config/metrics/library")
 
 # ── Mutable simulation state ───────────────────────────────────────────────
