@@ -16,7 +16,8 @@ const sidebars = {
     // ── Views ────────────────────────────────────────────────────────────────
     {
       type: 'category',
-      label: '📊 Views',
+      label: 'Views',
+      className: 'sidebar-cat-monitor',
       collapsed: false,
       items: [
         'user-guide/views',
@@ -28,7 +29,8 @@ const sidebars = {
     // ── Editors ──────────────────────────────────────────────────────────────
     {
       type: 'category',
-      label: '🛠️ Editors',
+      label: 'Editors',
+      className: 'sidebar-cat-pencil',
       collapsed: false,
       items: [
         'user-guide/editors',
@@ -40,7 +42,8 @@ const sidebars = {
     // ── Plugins & Features ───────────────────────────────────────────────────
     {
       type: 'category',
-      label: '🔌 Plugins & Features',
+      label: 'Plugins & Features',
+      className: 'sidebar-cat-puzzle',
       collapsed: false,
       items: [
         'user-guide/health-checks',
@@ -54,7 +57,8 @@ const sidebars = {
     // ── Interface ────────────────────────────────────────────────────────────
     {
       type: 'category',
-      label: '⚙️ Interface',
+      label: 'Interface',
+      className: 'sidebar-cat-sliders',
       collapsed: true,
       items: [
         'user-guide/ui-library',
@@ -70,7 +74,8 @@ const sidebars = {
     // ── Deployment & Operations ───────────────────────────────────────────────
     {
       type: 'category',
-      label: '🚀 Deployment',
+      label: 'Deployment',
+      className: 'sidebar-cat-rocket',
       collapsed: false,
       items: [
         'admin-guide/deployment',
@@ -82,7 +87,8 @@ const sidebars = {
     // ── Configuration ─────────────────────────────────────────────────────────
     {
       type: 'category',
-      label: '📁 Configuration',
+      label: 'Configuration',
+      className: 'sidebar-cat-folder',
       collapsed: false,
       items: [
         'admin-guide/topology-yaml',
@@ -99,7 +105,8 @@ const sidebars = {
     // ── Infrastructure ─────────────────────────────────────────────────────────
     {
       type: 'category',
-      label: '🏗️ Infrastructure',
+      label: 'Infrastructure',
+      className: 'sidebar-cat-server',
       collapsed: false,
       items: [
         'api-reference/telemetry',
@@ -110,7 +117,8 @@ const sidebars = {
     // ── Data & Plugins ─────────────────────────────────────────────────────────
     {
       type: 'category',
-      label: '🔌 Data & Plugins',
+      label: 'Data & Plugins',
+      className: 'sidebar-cat-database',
       collapsed: false,
       items: [
         'api-reference/metrics',
@@ -125,7 +133,8 @@ const sidebars = {
     // ── Core ──────────────────────────────────────────────────────────────────
     {
       type: 'category',
-      label: '⚙️ Core',
+      label: 'Core',
+      className: 'sidebar-cat-sliders',
       collapsed: false,
       items: [
         'architecture/data-model',
@@ -137,7 +146,8 @@ const sidebars = {
     // ── Features ──────────────────────────────────────────────────────────────
     {
       type: 'category',
-      label: '🧩 Features',
+      label: 'Features',
+      className: 'sidebar-cat-code',
       collapsed: false,
       items: [
         'architecture/dashboard-widgets',
