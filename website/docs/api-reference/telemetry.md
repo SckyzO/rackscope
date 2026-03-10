@@ -16,8 +16,7 @@ All telemetry endpoints return `UNKNOWN` states (rather than errors) when the ba
 
 ## Stats
 
-### `GET /api/stats/global`
-
+### <span class="method-get">GET</span> `/api/stats/global`
 Returns a summary of the global infrastructure health state. Counts are derived from rack-level health aggregation via the TelemetryPlanner.
 
 ```bash
@@ -52,8 +51,7 @@ curl http://localhost:8000/api/stats/global
 
 ---
 
-### `GET /api/stats/prometheus`
-
+### <span class="method-get">GET</span> `/api/stats/prometheus`
 Returns Prometheus client latency statistics and heartbeat timing. Useful for diagnosing connectivity issues and measuring query performance.
 
 ```bash
@@ -84,8 +82,7 @@ Returns `{"last_ms": null, "avg_ms": null, "last_ts": null}` if no queries have 
 
 ---
 
-### `GET /api/stats/telemetry`
-
+### <span class="method-get">GET</span> `/api/stats/telemetry`
 Returns detailed telemetry planner statistics including cache performance and in-flight query tracking. Intended for operators debugging query load and cache behavior.
 
 ```bash
@@ -129,8 +126,7 @@ curl http://localhost:8000/api/stats/telemetry
 
 ## Alerts
 
-### `GET /api/alerts/active`
-
+### <span class="method-get">GET</span> `/api/alerts/active`
 Returns all active `WARN` and `CRIT` alerts enriched with full topology context (site, room, rack, device). Combines both node-level and rack-level alert sources from the TelemetryPlanner snapshot.
 
 ```bash
@@ -201,8 +197,7 @@ Returns `{"alerts": []}` when topology or checks are not loaded.
 
 ## Rooms
 
-### `GET /api/rooms`
-
+### <span class="method-get">GET</span> `/api/rooms`
 Returns all rooms across all sites with basic metadata and aisle/rack structure. This is the primary endpoint for the room list view.
 
 ```bash
@@ -229,8 +224,7 @@ Returns `[]` when topology is not loaded.
 
 ---
 
-### `GET /api/rooms/{room_id}/layout`
-
+### <span class="method-get">GET</span> `/api/rooms/{room_id}/layout`
 Returns the full room object including aisle definitions, rack references, and optional floor plan metadata (grid layout, compass orientation, door markers).
 
 ```bash
@@ -265,8 +259,7 @@ The response is a full `Room` Pydantic model. Key fields:
 
 ---
 
-### `GET /api/rooms/{room_id}/state`
-
+### <span class="method-get">GET</span> `/api/rooms/{room_id}/state`
 Returns the aggregated health state for a room, with a per-rack breakdown including node counts. This is the primary endpoint used by the room floor plan view to color-code racks.
 
 ```bash
@@ -318,8 +311,7 @@ Returns `{"room_id": "...", "state": "UNKNOWN", "racks": {}}` when topology or p
 
 ## Racks
 
-### `GET /api/racks/{rack_id}`
-
+### <span class="method-get">GET</span> `/api/racks/{rack_id}`
 Returns the full rack object with all devices, as defined in topology. Does not include live health or metric data.
 
 ```bash
@@ -355,8 +347,7 @@ The response is a full `Rack` Pydantic model. Key fields:
 
 ---
 
-### `GET /api/racks/{rack_id}/state`
-
+### <span class="method-get">GET</span> `/api/racks/{rack_id}/state`
 The primary rack telemetry endpoint. Returns the aggregated rack health state, per-node states, check results, and — optionally — live metric values.
 
 :::tip Performance
@@ -487,8 +478,7 @@ Returns `{"rack_id": "...", "state": "UNKNOWN", "metrics": {}, "nodes": {}}` whe
 
 ---
 
-### `GET /api/devices/{rack_id}/{device_id}/metrics`
-
+### <span class="method-get">GET</span> `/api/devices/{rack_id}/{device_id}/metrics`
 Returns live metrics for a single device, querying only the instances belonging to that device. This is faster than loading full rack metrics when only one device needs to be refreshed.
 
 ```bash

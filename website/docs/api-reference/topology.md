@@ -16,8 +16,7 @@ All write operations persist changes to YAML files on disk and reload global bac
 
 ### Sites
 
-#### GET /api/sites
-
+#### <span class="method-get">GET</span> `/api/sites`
 Returns all sites with their room lists.
 
 ```bash
@@ -41,8 +40,7 @@ curl http://localhost:8000/api/sites
 
 ---
 
-#### POST /api/topology/sites
-
+#### <span class="method-post">POST</span> `/api/topology/sites`
 Creates a new site. The `id` field is optional — if omitted, one is auto-generated from the name.
 
 ```bash
@@ -77,8 +75,7 @@ Supply `location.lat` and `location.lon` to make the site appear as a pin on the
 
 ---
 
-#### `DELETE /api/topology/sites/{site_id}`
-
+#### <span class="method-delete">DELETE</span> `/api/topology/sites/{site_id}`
 Deletes a site and all of its rooms, aisles, racks, and devices. This is irreversible.
 
 ```bash
@@ -100,8 +97,7 @@ This cascades through the entire hierarchy: all rooms, aisles, racks, and device
 
 ### Rooms
 
-#### GET /api/rooms
-
+#### <span class="method-get">GET</span> `/api/rooms`
 Returns all rooms across all sites, including their aisle and rack hierarchy.
 
 ```bash
@@ -133,8 +129,7 @@ curl http://localhost:8000/api/rooms
 
 ---
 
-#### `GET /api/rooms/{room_id}/layout`
-
+#### <span class="method-get">GET</span> `/api/rooms/{room_id}/layout`
 Returns the full room object including layout metadata used to render the floor plan (grid dimensions, compass orientation, door position).
 
 ```bash
@@ -164,8 +159,7 @@ curl http://localhost:8000/api/rooms/r001/layout
 
 ---
 
-#### `POST /api/topology/sites/{site_id}/rooms`
-
+#### <span class="method-post">POST</span> `/api/topology/sites/{site_id}/rooms`
 Creates a new room under the specified site.
 
 ```bash
@@ -197,8 +191,7 @@ curl -X POST http://localhost:8000/api/topology/sites/dc1/rooms \
 
 ---
 
-#### `DELETE /api/topology/rooms/{room_id}`
-
+#### <span class="method-delete">DELETE</span> `/api/topology/rooms/{room_id}`
 Deletes a room and all aisles, racks, and devices it contains.
 
 ```bash
@@ -216,8 +209,7 @@ curl -X DELETE http://localhost:8000/api/topology/rooms/r001
 
 ### Aisles
 
-#### `POST /api/topology/rooms/{room_id}/aisles/create`
-
+#### <span class="method-post">POST</span> `/api/topology/rooms/{room_id}/aisles/create`
 Creates one or more aisles in a room in a single request.
 
 ```bash
@@ -251,8 +243,7 @@ curl -X POST http://localhost:8000/api/topology/rooms/r001/aisles/create \
 
 ---
 
-#### `PUT /api/topology/rooms/{room_id}/aisles`
-
+#### <span class="method-put">PUT</span> `/api/topology/rooms/{room_id}/aisles`
 Reorganizes the aisles in a room and assigns racks to each aisle. Use this to reorder aisles or move racks between aisles.
 
 ```bash
@@ -281,8 +272,7 @@ curl -X PUT http://localhost:8000/api/topology/rooms/r001/aisles \
 
 ---
 
-#### `DELETE /api/topology/aisles/{aisle_id}`
-
+#### <span class="method-delete">DELETE</span> `/api/topology/aisles/{aisle_id}`
 Deletes an aisle and all racks and devices it contains.
 
 ```bash
@@ -300,8 +290,7 @@ curl -X DELETE http://localhost:8000/api/topology/aisles/a01
 
 ### Racks
 
-#### `PUT /api/topology/aisles/{aisle_id}/racks`
-
+#### <span class="method-put">PUT</span> `/api/topology/aisles/{aisle_id}/racks`
 Reorders the racks within an aisle. The `room_id` is required for context.
 
 ```bash
@@ -330,8 +319,7 @@ curl -X PUT http://localhost:8000/api/topology/aisles/a01/racks \
 
 ---
 
-#### `GET /api/racks/{rack_id}`
-
+#### <span class="method-get">GET</span> `/api/racks/{rack_id}`
 Returns a rack with all of its devices, including device templates and instance definitions.
 
 ```bash
@@ -365,8 +353,7 @@ curl http://localhost:8000/api/racks/a01-r01
 
 ---
 
-#### `POST /api/topology/aisles/{aisle_id}/racks`
-
+#### <span class="method-post">POST</span> `/api/topology/aisles/{aisle_id}/racks`
 Creates a new rack in the specified aisle.
 
 ```bash
@@ -399,8 +386,7 @@ curl -X POST http://localhost:8000/api/topology/aisles/a01/racks \
 
 ---
 
-#### `PUT /api/topology/racks/{rack_id}/template`
-
+#### <span class="method-put">PUT</span> `/api/topology/racks/{rack_id}/template`
 Assigns or removes a rack template. Pass `null` as `template_id` to detach the current template.
 
 ```bash
@@ -431,8 +417,7 @@ Rack templates define built-in infrastructure like PDUs and HMC cooling modules.
 
 ### Devices
 
-#### `GET /api/racks/{rack_id}/devices/{device_id}`
-
+#### <span class="method-get">GET</span> `/api/racks/{rack_id}/devices/{device_id}`
 Returns a device with full topology context: the device definition, its resolved template, and parent rack, aisle, room, and site.
 
 ```bash
@@ -476,8 +461,7 @@ curl http://localhost:8000/api/racks/a01-r01/devices/compute-blade-01
 
 ---
 
-#### `POST /api/topology/racks/{rack_id}/devices`
-
+#### <span class="method-post">POST</span> `/api/topology/racks/{rack_id}/devices`
 Adds a device to a rack. The `instance` field maps the device to Prometheus instance labels — it can be a pattern string, an explicit list, or a slot map.
 
 ```bash
@@ -529,8 +513,7 @@ Returns `400 Bad Request` if `u_position` overlaps with an existing device in th
 
 ---
 
-#### `PUT /api/topology/racks/{rack_id}/devices/{device_id}`
-
+#### <span class="method-put">PUT</span> `/api/topology/racks/{rack_id}/devices/{device_id}`
 Moves a device to a new U position within the same rack.
 
 ```bash
@@ -560,8 +543,7 @@ Returns `400 Bad Request` if the new position overlaps another device. The exist
 
 ---
 
-#### `DELETE /api/topology/racks/{rack_id}/devices/{device_id}`
-
+#### <span class="method-delete">DELETE</span> `/api/topology/racks/{rack_id}/devices/{device_id}`
 Removes a device from a rack.
 
 ```bash
@@ -578,8 +560,7 @@ curl -X DELETE http://localhost:8000/api/topology/racks/a01-r01/devices/compute-
 
 ---
 
-#### `PUT /api/topology/racks/{rack_id}/devices`
-
+#### <span class="method-put">PUT</span> `/api/topology/racks/{rack_id}/devices`
 Replaces **all** devices in a rack atomically. Used by the Rack Editor to persist a full drag-and-drop session.
 
 ```bash
@@ -623,8 +604,7 @@ This replaces the entire device list for the rack. Any device not included in th
 
 The catalog stores device templates, rack templates, and rack component templates. Templates define hardware dimensions, visual layouts, health checks, and metrics — they are referenced by topology devices and racks.
 
-### GET /api/catalog
-
+### <span class="method-get">GET</span> `/api/catalog`
 Returns the full catalog with all template types.
 
 ```bash
@@ -676,8 +656,7 @@ curl http://localhost:8000/api/catalog
 
 ---
 
-### POST /api/catalog/templates
-
+### <span class="method-post">POST</span> `/api/catalog/templates`
 Creates a new template. Set `kind` to `"device"`, `"rack"`, or `"rack_component"` to indicate the template type.
 
 ```bash
@@ -724,8 +703,7 @@ Returns `400 Bad Request` if a template with the same `id` already exists. Use `
 
 ---
 
-### PUT /api/catalog/templates
-
+### <span class="method-put">PUT</span> `/api/catalog/templates`
 Updates an existing template. The body format is identical to `POST`. The existing template is replaced in full.
 
 ```bash
@@ -754,8 +732,7 @@ curl -X PUT http://localhost:8000/api/catalog/templates \
 
 ---
 
-### `DELETE /api/catalog/templates/device/{template_id}`
-
+### <span class="method-delete">DELETE</span> `/api/catalog/templates/device/{template_id}`
 Deletes a device template by ID.
 
 ```bash
@@ -775,8 +752,7 @@ Deleting a template that is still referenced by topology devices will cause thos
 
 ---
 
-### POST /api/catalog/templates/validate
-
+### <span class="method-post">POST</span> `/api/catalog/templates/validate`
 Validates a template definition without saving it. Useful for editors and CI pipelines to check template correctness before committing.
 
 ```bash
@@ -815,8 +791,7 @@ curl -X POST http://localhost:8000/api/catalog/templates/validate \
 
 Health checks are defined in YAML files under `config/checks/library/`. Each check specifies a PromQL expression, evaluation scope, and threshold rules that map metric values to health severities.
 
-### GET /api/checks
-
+### <span class="method-get">GET</span> `/api/checks`
 Returns all checks loaded from the library.
 
 ```bash
@@ -867,8 +842,7 @@ curl http://localhost:8000/api/checks
 
 ---
 
-### GET /api/checks/files
-
+### <span class="method-get">GET</span> `/api/checks/files`
 Returns the list of YAML files that make up the checks library.
 
 ```bash
@@ -899,8 +873,7 @@ curl http://localhost:8000/api/checks/files
 
 ---
 
-### `GET /api/checks/files/{filename}`
-
+### <span class="method-get">GET</span> `/api/checks/files/{filename}`
 Reads the raw YAML content of a specific checks file. Used by the Checks Library editor.
 
 ```bash
@@ -916,8 +889,7 @@ curl http://localhost:8000/api/checks/files/up.yaml
 
 ---
 
-### `PUT /api/checks/files/{filename}`
-
+### <span class="method-put">PUT</span> `/api/checks/files/{filename}`
 Writes a new YAML content to a checks file. The backend validates the YAML structure and check definitions before saving. If validation fails, the file is not modified.
 
 ```bash
@@ -947,8 +919,7 @@ Returns `400 Bad Request` if the YAML is syntactically invalid or if check defin
 
 ---
 
-### POST /api/checks/test
-
+### <span class="method-post">POST</span> `/api/checks/test`
 Tests a PromQL expression by substituting variable placeholders and executing the query against Prometheus. Useful for validating expressions in the Checks Library editor before saving.
 
 ```bash

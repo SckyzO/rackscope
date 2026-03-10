@@ -5,7 +5,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 const config = {
   title: 'Rackscope',
   tagline: 'Prometheus-first physical infrastructure monitoring',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/favicon.svg',
 
   url: 'https://rackscope.dev',
   // DOCS_BASE_URL env var allows deploying to GitHub Pages subdirectory

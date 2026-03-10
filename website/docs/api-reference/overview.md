@@ -130,8 +130,7 @@ States propagate upward through the hierarchy: **Node → Device → Rack → Ro
 | `POST` | `/api/system/restart` | Trigger a uvicorn reload (dev mode only) |
 | `GET` | `/api/system/process-stats` | Memory and CPU usage for backend, simulator and Prometheus |
 
-### `GET /api/system/process-stats`
-
+### <span class="method-get">GET</span> `/api/system/process-stats`
 Returns live process metrics for the three core services. The backend reads its own stats from `/proc/self/`; simulator and Prometheus stats are fetched asynchronously.
 
 ```bash

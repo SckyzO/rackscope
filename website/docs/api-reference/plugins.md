@@ -12,8 +12,7 @@ This page covers the Plugin Discovery endpoints, the Simulator plugin API, the S
 
 ## Plugin Discovery {#plugins}
 
-### GET /api/plugins
-
+### <span class="method-get">GET</span> `/api/plugins`
 Returns all registered plugins with their current status.
 
 ```http
@@ -38,8 +37,7 @@ GET /api/plugins
 
 ---
 
-### GET /api/plugins/menu
-
+### <span class="method-get">GET</span> `/api/plugins/menu`
 Returns the sidebar navigation sections contributed by all active plugins. The frontend uses this endpoint to build dynamic navigation — each plugin registers its own menu sections and items.
 
 ```http
@@ -85,8 +83,7 @@ GET /api/plugins/menu
 
 ---
 
-### GET /api/plugins/\{plugin\_id\}
-
+### <span class="method-get">GET</span> `/api/plugins/\{plugin\_id\}`
 Returns details about a specific plugin.
 
 ```http
@@ -103,8 +100,7 @@ Returns `404` if the plugin is not registered.
 
 ---
 
-### GET /api/plugins/\{plugin\_id\}/config
-
+### <span class="method-get">GET</span> `/api/plugins/\{plugin\_id\}/config`
 Returns the full configuration for a specific plugin, read from its dedicated YAML file at
 `config/plugins/<plugin_id>/config.yml`.
 
@@ -134,8 +130,7 @@ GET /api/plugins/simulator/config
 
 ---
 
-### POST /api/plugins/\{plugin\_id\}/config
-
+### <span class="method-post">POST</span> `/api/plugins/\{plugin\_id\}/config`
 Updates the configuration for a specific plugin. Writes the new config to the plugin's YAML file
 and hot-reloads it.
 
@@ -159,8 +154,7 @@ The Simulator plugin generates realistic Prometheus metrics for testing without 
 
 ---
 
-### GET /api/simulator/status
-
+### <span class="method-get">GET</span> `/api/simulator/status`
 Returns the current simulator status, including the active incident mode and number of active overrides.
 
 ```http
@@ -191,8 +185,7 @@ GET /api/simulator/status
 
 ---
 
-### POST /api/simulator/restart
-
+### <span class="method-post">POST</span> `/api/simulator/restart`
 Sends a restart signal to the simulator container via its internal control
 server (port 9001). Docker restarts the container automatically
 (`restart: unless-stopped`). Use this after changing `overrides_path` or
@@ -212,8 +205,7 @@ Returns `503` if the simulator control server is unreachable.
 
 ---
 
-### POST /api/simulator/incidents
-
+### <span class="method-post">POST</span> `/api/simulator/incidents`
 Triggers a simulated incident stored as an override. Currently supports `rack_down`; `aisle_cooling` is reserved but not yet implemented.
 
 ```http
@@ -245,8 +237,7 @@ The incident is stored as a `rack_down` override and expires after `duration` se
 
 ---
 
-### GET /api/simulator/overrides
-
+### <span class="method-get">GET</span> `/api/simulator/overrides`
 Returns all currently active metric overrides.
 
 ```http
@@ -275,8 +266,7 @@ GET /api/simulator/overrides
 
 ---
 
-### POST /api/simulator/overrides
-
+### <span class="method-post">POST</span> `/api/simulator/overrides`
 Adds a new metric override. Use overrides to simulate failures, temperature spikes, or power anomalies without restarting the simulator.
 
 ```http
@@ -320,8 +310,7 @@ Returns the updated override list:
 
 ---
 
-### DELETE /api/simulator/overrides
-
+### <span class="method-delete">DELETE</span> `/api/simulator/overrides`
 Clears **all** active overrides immediately.
 
 ```http
@@ -336,8 +325,7 @@ DELETE /api/simulator/overrides
 
 ---
 
-### `DELETE /api/simulator/overrides/{override_id}`
-
+### <span class="method-delete">DELETE</span> `/api/simulator/overrides/{override_id}`
 Deletes a specific override by its ID.
 
 ```http
@@ -359,8 +347,7 @@ Returns the remaining override list:
 
 ---
 
-### GET /api/simulator/metrics
-
+### <span class="method-get">GET</span> `/api/simulator/metrics`
 Returns all metrics available for override, grouped by category.
 
 ```http
@@ -396,8 +383,7 @@ Node states are mapped to health severities using `slurm.status_map` in the appl
 
 ---
 
-### `GET /api/slurm/rooms/{room_id}/nodes`
-
+### <span class="method-get">GET</span> `/api/slurm/rooms/{room_id}/nodes`
 Returns Slurm node states for all nodes in a given room, keyed by instance name. Used by the Slurm Wallboard view to color-code devices by workload state.
 
 ```http
@@ -443,8 +429,7 @@ GET /api/slurm/rooms/{room_id}/nodes
 
 ---
 
-### GET /api/slurm/summary
-
+### <span class="method-get">GET</span> `/api/slurm/summary`
 Returns an aggregate summary of node counts by Slurm status and health severity. Optionally scoped to a single room.
 
 ```http
@@ -481,8 +466,7 @@ GET /api/slurm/summary?room_id=dc1-r001
 
 ---
 
-### GET /api/slurm/partitions
-
+### <span class="method-get">GET</span> `/api/slurm/partitions`
 Returns per-partition node count breakdowns. Optionally scoped to a single room.
 
 ```http
@@ -510,8 +494,7 @@ GET /api/slurm/partitions?room_id=dc1-r001
 
 ---
 
-### GET /api/slurm/nodes
-
+### <span class="method-get">GET</span> `/api/slurm/nodes`
 Returns the full flat node list with Slurm state and topology placement context. Used by the Node List dashboard view.
 
 ```http
@@ -561,8 +544,7 @@ GET /api/slurm/nodes?room_id=dc1-r001
 
 ---
 
-### GET /api/slurm/mapping
-
+### <span class="method-get">GET</span> `/api/slurm/mapping`
 Returns current node name → topology instance mapping entries.
 
 ```http
@@ -583,8 +565,7 @@ GET /api/slurm/mapping
 
 ---
 
-### POST /api/slurm/mapping
-
+### <span class="method-post">POST</span> `/api/slurm/mapping`
 Saves node mapping entries to the configured YAML file. Used by the node mapping editor in Settings → Plugins → Slurm.
 
 ```http
@@ -606,8 +587,7 @@ Returns `400` if `mapping_path` is not configured.
 
 ---
 
-### GET /api/slurm/metrics/catalog
-
+### <span class="method-get">GET</span> `/api/slurm/metrics/catalog`
 Returns all loaded Slurm metric definitions and the list of available catalog files.
 
 ```http
@@ -626,8 +606,7 @@ GET /api/slurm/metrics/catalog
 
 ---
 
-### POST /api/slurm/metrics/catalog/config
-
+### <span class="method-post">POST</span> `/api/slurm/metrics/catalog/config`
 Updates which Slurm metric catalog files are active (persisted to plugin config).
 
 ```http
@@ -647,8 +626,7 @@ Content-Type: application/json
 
 ---
 
-### GET /api/slurm/metrics/data
-
+### <span class="method-get">GET</span> `/api/slurm/metrics/data`
 Queries Prometheus for a specific Slurm metric from the loaded catalog.
 
 ```http
@@ -666,8 +644,7 @@ GET /api/slurm/metrics/data?metric_id=slurm_node_status&scope=all
 
 ---
 
-### GET /api/config
-
+### <span class="method-get">GET</span> `/api/config`
 Returns the full application configuration as a JSON object. This reflects the contents of `config/app.yaml` at the time of the last reload.
 
 ```http
@@ -680,8 +657,7 @@ The full `AppConfig` object. See [Configuration Reference](/docs/admin-guide/app
 
 ---
 
-### PUT /api/config
-
+### <span class="method-put">PUT</span> `/api/config`
 Updates the application configuration and persists the changes to `config/app.yaml`. Triggers a config reload and syncs dependent plugin configurations (simulator incident mode, Slurm settings, etc.).
 
 ```http
@@ -701,8 +677,7 @@ The full `AppConfig` object. Sensitive fields such as `password_hash` and `secre
 
 ---
 
-### GET /api/env
-
+### <span class="method-get">GET</span> `/api/env`
 Returns the environment variables that affect Rackscope's behavior. Useful for debugging deployment configuration.
 
 ```http
@@ -727,8 +702,7 @@ GET /api/env
 
 ---
 
-### GET /api/system/status
-
+### <span class="method-get">GET</span> `/api/system/status`
 Returns the current status of the backend process.
 
 ```http
@@ -748,8 +722,7 @@ GET /api/system/status
 
 ---
 
-### POST /api/system/restart
-
+### <span class="method-post">POST</span> `/api/system/restart`
 Triggers a backend server restart. Only available when the backend is running in development mode with `uvicorn --reload`.
 
 ```http
@@ -775,8 +748,7 @@ These endpoints manage user credentials. They are available whether or not `auth
 
 ---
 
-### POST /api/auth/change-password
-
+### <span class="method-post">POST</span> `/api/auth/change-password`
 Updates the user's password. Verifies the current password before applying the change, then
 writes the new bcrypt hash to `config/app.yaml` and hot-reloads the config.
 
@@ -823,8 +795,7 @@ auth:
 
 ---
 
-### POST /api/auth/change-username
-
+### <span class="method-post">POST</span> `/api/auth/change-username`
 Updates the username. Requires the current password for verification. Writes the new username
 to `config/app.yaml` and hot-reloads the config.
 
