@@ -26,8 +26,9 @@ const config = {
   },
 
   themes: [
-    // CSS theme — Void/Slate palette, Outfit font, full Infima coverage
-    'cosmos-docusaurus-theme',
+    // CSS theme — Void/Slate palette, Outfit + IBM Plex Mono, full Infima coverage
+    // injectFavicon: false — Rackscope has its own favicon (img/favicon.svg)
+    ['cosmos-docusaurus-theme', { injectFavicon: false }],
     // Local search — zero config, no API key, works with GitHub Pages
     [
       require.resolve('@easyops-cn/docusaurus-search-local'),
