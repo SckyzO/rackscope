@@ -862,11 +862,8 @@ export const AboutPage = () => {
               <ExtLink href="https://github.com/SckyzO/rackscope" icon={Github}>
                 GitHub — SckyzO/rackscope
               </ExtLink>
-              <ExtLink href="#" icon={BookOpen}>
-                Documentation
-                <span className="ml-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
-                  Coming soon
-                </span>
+              <ExtLink href="https://www.rackscope.dev" icon={BookOpen}>
+                Documentation — rackscope.dev
               </ExtLink>
             </div>
           </SectionCard>
@@ -950,6 +947,9 @@ export const AboutPage = () => {
           <p className="text-center text-xs text-gray-400 dark:text-gray-600">
             Rackscope is open-source software — AGPL-3.0 License. All trademarks are property of
             their respective owners.
+          </p>
+          <p className="mt-1 text-center text-[11px] font-mono text-gray-300 dark:text-gray-700">
+            v1.0.0-beta
           </p>
         </div>
       </div>
