@@ -31,7 +31,7 @@ Rackscope does **not** collect or store metrics. All data is queried live from P
 
 ---
 
-## <span class="method-get">GET</span> `/api/metrics/library`
+## <span className="method-get">GET</span> `/api/metrics/library`
 List all metric definitions in the library. Supports filtering by category or tag.
 
 ### Query Parameters
@@ -107,7 +107,7 @@ curl "http://localhost:8000/api/metrics/library?category=storage&tag=eseries"
 
 ---
 
-## <span class="method-get">GET</span> `/api/metrics/library/{metric_id}`
+## <span className="method-get">GET</span> `/api/metrics/library/{metric_id}`
 Retrieve a single metric definition by its unique identifier.
 
 ### Path Parameters
@@ -165,7 +165,7 @@ The **Metrics Library Editor** at `/editors/metrics` provides a visual UI for ma
 
 ---
 
-### <span class="method-get">GET</span> `/api/metrics/library/files`
+### <span className="method-get">GET</span> `/api/metrics/library/files`
 List all YAML files present in the metrics library directory.
 
 #### Response
@@ -201,7 +201,7 @@ curl "http://localhost:8000/api/metrics/library/files"
 
 ---
 
-### <span class="method-get">GET</span> `/api/metrics/library/files/{name}`
+### <span className="method-get">GET</span> `/api/metrics/library/files/{name}`
 Read the raw YAML content of a specific metric file. The `{name}` parameter is the filename including the `.yaml` extension.
 
 #### Path Parameters
@@ -234,7 +234,7 @@ curl "http://localhost:8000/api/metrics/library/files/node_temperature.yaml"
 
 ---
 
-### <span class="method-put">PUT</span> `/api/metrics/library/files/{name}`
+### <span className="method-put">PUT</span> `/api/metrics/library/files/{name}`
 Create or update a metric YAML file. The metrics library is automatically reloaded after the file is saved.
 
 #### Path Parameters
@@ -280,7 +280,7 @@ curl -X PUT "http://localhost:8000/api/metrics/library/files/my_metric.yaml" \
 
 ---
 
-### <span class="method-delete">DELETE</span> `/api/metrics/library/files/{name}`
+### <span className="method-delete">DELETE</span> `/api/metrics/library/files/{name}`
 Delete a metric YAML file and reload the metrics library. This operation is irreversible.
 
 #### Path Parameters
@@ -310,7 +310,7 @@ curl -X DELETE "http://localhost:8000/api/metrics/library/files/my_metric.yaml"
 
 ---
 
-## <span class="method-get">GET</span> `/api/metrics/data`
+## <span className="method-get">GET</span> `/api/metrics/data`
 Query live time-series metric data from Prometheus. This is the primary endpoint consumed by frontend charts.
 
 :::caution Performance
@@ -393,7 +393,7 @@ curl "http://localhost:8000/api/metrics/data?metric_id=node_cpu_load&target_id=c
 
 ---
 
-## <span class="method-get">GET</span> `/api/metrics/categories`
+## <span className="method-get">GET</span> `/api/metrics/categories`
 List all unique metric categories present in the loaded library.
 
 ### Response
@@ -421,7 +421,7 @@ curl "http://localhost:8000/api/metrics/categories"
 
 ---
 
-## <span class="method-get">GET</span> `/api/metrics/tags`
+## <span className="method-get">GET</span> `/api/metrics/tags`
 List all unique tags across all metrics in the loaded library.
 
 ### Response
@@ -454,7 +454,7 @@ curl "http://localhost:8000/api/metrics/tags"
 
 ---
 
-## <span class="method-get">GET</span> `/api/metrics/files`
+## <span className="method-get">GET</span> `/api/metrics/files`
 List YAML files present in the metrics library directory. Used internally by the simulator and the Settings UI to enumerate available configuration files.
 
 ### Response

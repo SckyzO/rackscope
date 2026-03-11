@@ -11,9 +11,9 @@
   "dependencies": {
     "@docusaurus/core": "^3.9.2",
     "@docusaurus/preset-classic": "^3.9.2",
-    "@easyops-cn/docusaurus-search-local": "latest",
+    "@easyops-cn/docusaurus-search-local": "^0.55",
     "clsx": "^2.1.1",
-    "cosmos-docusaurus-theme": "^2.0.1",
+    "cosmos-docusaurus-theme": "^2.1.1",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
