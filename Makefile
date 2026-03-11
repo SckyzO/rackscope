@@ -151,9 +151,18 @@ cert:
 	@echo "   Open https://localhost and add a browser exception for the self-signed cert."
 
 # Documentation site (Docusaurus — runs in Docker)
+# WSL2 note: bind-mounted config files lose their inode on edit (Links: 0).
+# Use `make docs-reload` after editing docusaurus.config.js, sidebars.js or
+# src/css/custom.css to force a container recreate and pick up the new inode.
 docs:
 	docker compose -f $(COMPOSE_DEV) up docs -d
 	@echo "📚 Docs available at http://localhost:3001"
+
+## Force-recreate docs container (fixes WSL2 stale inode on volume-mounted files)
+docs-reload:
+	docker compose -f $(COMPOSE_DEV) down docs
+	docker compose -f $(COMPOSE_DEV) up docs -d
+	@echo "📚 Docs reloaded at http://localhost:3001"
 
 docs-build:
 	docker compose -f $(COMPOSE_DEV) run --rm docs npm run build

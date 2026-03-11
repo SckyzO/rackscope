@@ -54,3 +54,49 @@
   letter-spacing: 0.04em !important;
   margin-top: 24px !important;
 }
+
+/* ── Mermaid diagrams — Slate palette override (light mode) ───────────────── */
+/* Dark mode uses themeVariables in docusaurus.config.js (Void palette).
+   Light mode overrides reclaim the Slate palette colors.                     */
+[data-theme='light'] .docusaurus-mermaid-container svg {
+  /* Nodes */
+  --mermaid-primary-color: #fff;
+  --mermaid-primary-text-color: #1a1714;
+  --mermaid-primary-border-color: #465fff;
+  --mermaid-secondary-color: #f9fafb;
+  --mermaid-tertiary-color: #f3f4f6;
+}
+
+/* Light mode: override node fills rendered inline by Mermaid */
+[data-theme='light'] .docusaurus-mermaid-container .node rect,
+[data-theme='light'] .docusaurus-mermaid-container .node circle,
+[data-theme='light'] .docusaurus-mermaid-container .node polygon,
+[data-theme='light'] .docusaurus-mermaid-container .node path {
+  fill: #f9fafb;
+  stroke: #465fff;
+}
+
+[data-theme='light'] .docusaurus-mermaid-container .label,
+[data-theme='light'] .docusaurus-mermaid-container .nodeLabel {
+  color: #1a1714 !important;
+}
+
+[data-theme='light'] .docusaurus-mermaid-container .edgePath .path,
+[data-theme='light'] .docusaurus-mermaid-container .flowchart-link {
+  stroke: #465fff;
+}
+
+[data-theme='light'] .docusaurus-mermaid-container .edgeLabel rect {
+  fill: #f3f4f6;
+}
+
+[data-theme='light'] .docusaurus-mermaid-container .cluster rect {
+  fill: #f3f4f6;
+  stroke: #e5e7eb;
+}
+
+/* Both modes: font override */
+.docusaurus-mermaid-container svg text,
+.docusaurus-mermaid-container svg .label {
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif !important;
+}

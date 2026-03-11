@@ -48,50 +48,20 @@ All infrastructure configuration is stored in YAML files — GitOps-compatible, 
 ## Architecture
 
 ```mermaid
-flowchart TB
-    subgraph config["📁 YAML Configuration"]
-        direction LR
-        topo[topology/]
-        tmpl[templates/]
-        chk[checks/]
-        met[metrics/]
-    end
+flowchart LR
+    yaml[/"YAML\nConfig"/]
+    backend["Backend\nFastAPI"]
+    prom[("Prometheus")]
+    frontend["Frontend\nReact"]
 
-    subgraph backend["⚙️ Backend — FastAPI :8000"]
-        direction TB
-        health[Health Engine]
-        planner[Telemetry Planner]
-        plugreg[Plugin Registry]
-        api[REST API]
-    end
+    yaml -->|startup| backend
+    backend <-->|PromQL| prom
+    frontend <-->|REST API| backend
 
-    subgraph plugins["🔌 Optional Plugins"]
-        direction LR
-        slurm[Slurm]
-        sim[Simulator]
-    end
-
-    subgraph frontend["🖥️ Frontend — React :5173"]
-        direction LR
-        views[Physical Views]
-        editors[Visual Editors]
-        dashboards[Dashboards]
-    end
-
-    exporters[(Exporters\nIPMI · node · custom)]
-
-    config -->|"loaded at startup"| backend
-    backend -->|"batched PromQL"| prom[(Prometheus\n:9090)]
-    prom -->|"scrapes"| exporters
-    plugreg -.->|"enabled"| plugins
-    frontend -->|"REST API"| api
-
-    style config fill:#1e2a3a,stroke:#465fff,color:#e5e5e5
+    style yaml fill:#1e2a3a,stroke:#465fff,color:#e5e5e5
     style backend fill:#1a2535,stroke:#465fff,color:#e5e5e5
-    style frontend fill:#1a2535,stroke:#465fff,color:#e5e5e5
-    style plugins fill:#1a2535,stroke:#374151,color:#9ca3af
     style prom fill:#1f2937,stroke:#374151,color:#e5e5e5
-    style exporters fill:#1f2937,stroke:#374151,color:#9ca3af
+    style frontend fill:#1a2535,stroke:#465fff,color:#e5e5e5
 ```
 
 :::tip Deep dive
