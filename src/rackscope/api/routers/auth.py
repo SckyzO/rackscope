@@ -6,11 +6,14 @@ Endpoints for authentication: login, session info, credential management.
 
 from __future__ import annotations
 
+import asyncio
+import logging
 import os
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Annotated
+
 
 import bcrypt as _bcrypt
 import yaml
@@ -20,6 +23,8 @@ import jwt as _jwt_lib
 from jwt.exceptions import InvalidTokenError as JWTError
 
 from rackscope.model.config import AppConfig, PasswordPolicyConfig
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -50,14 +55,10 @@ def _verify_password(password: str, hashed: str) -> bool:
     try:
         return _bcrypt.checkpw(password.encode(), hashed.encode())
     except (ValueError, UnicodeDecodeError) as e:
-        import logging
-
-        logging.getLogger(__name__).warning("Password verification error (corrupted hash?): %s", e)
+        logger.warning("Password verification error (corrupted hash?): %s", e)
         return False
     except Exception as e:
-        import logging
-
-        logging.getLogger(__name__).error("Unexpected error in password verification: %s", e)
+        logger.error("Unexpected error in password verification: %s", e)
         return False
 
 
@@ -284,7 +285,6 @@ def change_username(
 
 def _update_auth_config(app_config: AppConfig, updates: dict) -> None:  # pragma: no cover
     """Patch auth section in app.yaml and reload global config."""
-    import asyncio
     from rackscope.api.app import apply_config
 
     config_path = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
@@ -300,13 +300,9 @@ def _update_auth_config(app_config: AppConfig, updates: dict) -> None:  # pragma
     with open(config_path, "w") as f:
         yaml.safe_dump(raw, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
 
-    # Reload config in background
+    # Reload config in background (FastAPI always runs in an async context)
     updated = app_config.model_copy(update={"auth": app_config.auth.model_copy(update=updates)})
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.ensure_future(apply_config(updated))
-        else:
-            loop.run_until_complete(apply_config(updated))
-    except Exception:
-        pass
+        asyncio.create_task(apply_config(updated))
+    except Exception as e:
+        logger.warning("Failed to reload config after auth update: %s", e)

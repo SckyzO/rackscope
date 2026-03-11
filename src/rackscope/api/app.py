@@ -10,10 +10,11 @@ Global state is reloaded on every PUT /api/config call — see apply_config().
 
 from __future__ import annotations
 
-import os
 import asyncio
+import os
 import secrets
 from contextlib import asynccontextmanager, suppress
+from importlib.metadata import PackageNotFoundError, version as pkg_version
 from typing import Optional, Dict, List
 
 from fastapi import FastAPI
@@ -305,9 +306,14 @@ async def lifespan(app: FastAPI):
         logger.warning("Error closing Prometheus client: %s", e)
 
 
+try:
+    _app_version = pkg_version("rackscope")
+except PackageNotFoundError:
+    _app_version = "dev"
+
 app = FastAPI(
     title="rackscope",
-    version="0.0.0",
+    version=_app_version,
     lifespan=lifespan,
     docs_url="/api/docs",
     redoc_url="/api/redoc",

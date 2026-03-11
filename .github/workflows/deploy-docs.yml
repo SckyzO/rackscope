@@ -37,7 +37,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: website
-        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
       - name: Build documentation site
         working-directory: website

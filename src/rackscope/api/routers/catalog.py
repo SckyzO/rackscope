@@ -4,9 +4,11 @@ Catalog Router
 Endpoints for hardware templates (devices and racks).
 """
 
+import logging
 import re
 from pathlib import Path
 from typing import Annotated, Optional
+
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
@@ -16,6 +18,8 @@ from rackscope.model.config import AppConfig
 from rackscope.model.loader import load_catalog, dump_yaml
 from rackscope.api.dependencies import get_app_config, get_catalog_optional
 from rackscope.api.models import TemplateWriteRequest
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/catalog", tags=["catalog"])
 
@@ -45,9 +49,7 @@ def _find_rack_component_path(templates_dir: Path, template_id: str) -> Optional
                 if t.get("id") == template_id:
                     return yaml_file
         except Exception as e:
-            import logging
-
-            logging.getLogger(__name__).warning(
+            logger.warning(
                 "Failed to parse rack component template %s: %s", yaml_file, e
             )
             continue

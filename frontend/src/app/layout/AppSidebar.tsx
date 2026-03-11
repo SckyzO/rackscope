@@ -366,7 +366,7 @@ const HELP_COMMANDS = [
   { cmd: 'sudo rm -rf /incidents/*', out: 'Permission denied. Nice try though.' },
   {
     cmd: 'git blame --follow .',
-    out: 'Thomas Bourcey, 3 years ago: "TODO: refactor this someday"',
+    out: 'dev@rackscope, 3 years ago: "TODO: refactor this someday"',
   },
   { cmd: 'ssh compute001', out: 'ssh: connect to host compute001: Connection timed out. Classic.' },
   {
