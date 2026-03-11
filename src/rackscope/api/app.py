@@ -306,14 +306,15 @@ async def lifespan(app: FastAPI):
         logger.warning("Error closing Prometheus client: %s", e)
 
 
+APP_VERSION = "1.0.0-beta"
 try:
     _app_version = pkg_version("rackscope")
 except PackageNotFoundError:
-    _app_version = "dev"
+    _app_version = APP_VERSION
 
 app = FastAPI(
     title="rackscope",
-    version=_app_version,
+    version=APP_VERSION,
     lifespan=lifespan,
     docs_url="/api/docs",
     redoc_url="/api/redoc",
