@@ -511,13 +511,24 @@ export const DashboardPage = () => {
   const handleQuietRefresh = useCallback(() => void loadAll(true), []);
   const { autoRefreshMs, onIntervalChange } = useAutoRefresh('dashboard', handleQuietRefresh);
 
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     void loadAll();
     // If useAutoRefresh is active it already fires handleQuietRefresh on its own
     // timer — skip the manual interval to avoid double polling.
     if (autoRefreshMs > 0) return;
-    const t = setInterval(() => void loadAll(true), refreshInterval * 1000);
-    return () => clearInterval(t);
+    timerRef.current = setInterval(() => void loadAll(true), refreshInterval * 1000);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [refreshInterval, autoRefreshMs]);
 
   // ── Prometheus countdown ticker ───────────────────────────────────────────
@@ -595,14 +606,22 @@ export const DashboardPage = () => {
     [sites, roomStates]
   );
 
-  const devsByType = deviceTemplates.reduce<Record<string, number>>((acc, t) => {
-    acc[t.type ?? 'other'] = (acc[t.type ?? 'other'] ?? 0) + 1;
-    return acc;
-  }, {});
-  const checksByScope = checks.reduce<Record<string, number>>((acc, c) => {
-    acc[c.scope ?? 'unknown'] = (acc[c.scope ?? 'unknown'] ?? 0) + 1;
-    return acc;
-  }, {});
+  const devsByType = useMemo(
+    () =>
+      deviceTemplates.reduce<Record<string, number>>((acc, t) => {
+        acc[t.type ?? 'other'] = (acc[t.type ?? 'other'] ?? 0) + 1;
+        return acc;
+      }, {}),
+    [deviceTemplates]
+  );
+  const checksByScope = useMemo(
+    () =>
+      checks.reduce<Record<string, number>>((acc, c) => {
+        acc[c.scope ?? 'unknown'] = (acc[c.scope ?? 'unknown'] ?? 0) + 1;
+        return acc;
+      }, {}),
+    [checks]
+  );
 
   // ── Filtered alerts ───────────────────────────────────────────────────────
   const filteredAlertsAll = useMemo(

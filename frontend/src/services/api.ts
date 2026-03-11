@@ -78,13 +78,14 @@ const markSuccess = () => {
   writeJSON(META_KEY, { lastSuccess: Date.now() });
 };
 
-const readCache = (key: string) => readJSON<{ ts: number; data: unknown }>(`${CACHE_PREFIX}${key}`);
-const writeCache = (key: string, data: unknown) => {
+const readCache = (key: string) =>
+  readJSON<{ ts: number; data: unknown; ttl?: number }>(`${CACHE_PREFIX}${key}`);
+const writeCache = (key: string, data: unknown, ttl?: number) => {
   if (data === null) {
     localStorage.removeItem(`${CACHE_PREFIX}${key}`);
     return;
   }
-  writeJSON(`${CACHE_PREFIX}${key}`, { ts: Date.now(), data });
+  writeJSON(`${CACHE_PREFIX}${key}`, { ts: Date.now(), data, ...(ttl !== undefined && { ttl }) });
 };
 
 // ── Auth-aware fetch ───────────────────────────────────────────────────────
@@ -110,7 +111,15 @@ const apiFetch = (url: string, options?: RequestInit): Promise<Response> => {
  * On network/HTTP failure, returns the previously cached value if available,
  * so the UI degrades gracefully rather than showing empty states.
  */
-const fetchWithCache = async <T>(url: string, cacheKey: string, _ttl?: number): Promise<T> => {
+const fetchWithCache = async <T>(url: string, cacheKey: string, ttl?: number): Promise<T> => {
+  // Check if we have a fresh cached value before hitting the network.
+  const existing = readCache(cacheKey);
+  if (existing?.data) {
+    const threshold = existing.ttl ?? STALE_THRESHOLD_MS;
+    if (Date.now() - existing.ts < threshold) {
+      return existing.data as T;
+    }
+  }
   try {
     const res = await apiFetch(url);
     if (!res.ok) {
@@ -120,7 +129,7 @@ const fetchWithCache = async <T>(url: string, cacheKey: string, _ttl?: number): 
       throw new Error(`Request failed: ${res.status}`);
     }
     const data = await res.json();
-    writeCache(cacheKey, data);
+    writeCache(cacheKey, data, ttl);
     markSuccess();
     return data as T;
   } catch (err: unknown) {

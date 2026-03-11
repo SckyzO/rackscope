@@ -794,6 +794,9 @@ const RackCell = memo(
   (prev, next) =>
     prev.rack.id === next.rack.id &&
     prev.state === next.state &&
+    prev.nodeCounts?.total === next.nodeCounts?.total &&
+    prev.nodeCounts?.crit === next.nodeCounts?.crit &&
+    prev.nodeCounts?.warn === next.nodeCounts?.warn &&
     prev.isSelected === next.isSelected &&
     prev.isHighlighted === next.isHighlighted &&
     prev.searchMatch === next.searchMatch &&
