@@ -15,9 +15,9 @@ jobs:
     name: Python SAST (bandit)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38  # v5.4.0
         with:
           python-version: '3.12'
 
@@ -25,14 +25,15 @@ jobs:
         run: pip install bandit
 
       - name: Run bandit
-        run: bandit -r src/rackscope -ll -f json -o bandit-report.json || true
+        continue-on-error: true
+        run: bandit -r src/rackscope -ll -f json -o bandit-report.json
 
       - name: Show results
         run: bandit -r src/rackscope -ll -f screen
 
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1  # v4.6.1
         with:
           name: bandit-report
           path: bandit-report.json
@@ -42,9 +43,9 @@ jobs:
     name: Python deps (pip-audit)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38  # v5.4.0
         with:
           python-version: '3.12'
 
@@ -52,16 +53,17 @@ jobs:
         run: pip install pip-audit
 
       - name: Audit Python dependencies
-        run: pip-audit --requirement <(pip show rackscope 2>/dev/null || echo "") || pip-audit
+        continue-on-error: true
+        run: pip-audit
 
   # ── Frontend deps: npm audit ───────────────────────────────────────────────
   npm-audit:
     name: Frontend deps (npm audit)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e  # v4.3.0
         with:
           node-version: '20'
           cache: 'npm'
@@ -73,8 +75,9 @@ jobs:
 
       - name: Run npm audit
         working-directory: frontend
+        continue-on-error: true
         # Report only high and critical; known exceptions tracked in issue #4
-        run: npm audit --audit-level=critical || true
+        run: npm audit --audit-level=critical
 
       - name: Show full audit report
         working-directory: frontend

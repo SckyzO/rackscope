@@ -31,9 +31,9 @@ jobs:
       audit_vulns:  ${{ steps.audit.outputs.vulns }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38  # v5.4.0
         with:
           python-version: '3.12'
           cache: pip
@@ -82,8 +82,9 @@ jobs:
 
       - name: Security audit (pip-audit)
         id: audit
+        continue-on-error: true
         run: |
-          pip-audit --format=json --output=pip_audit.json 2>/dev/null || true
+          pip-audit --format=json --output=pip_audit.json
           VULNS=$(python3 -c "
           import json, os
           if os.path.exists('pip_audit.json'):
@@ -110,9 +111,9 @@ jobs:
       audit_vulns:  ${{ steps.audit.outputs.vulns }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e  # v4.3.0
         with:
           node-version: '22'
           cache: npm
@@ -141,6 +142,7 @@ jobs:
       - name: Security audit (npm)
         id: audit
         working-directory: frontend
+        continue-on-error: true
         run: |
           AUDIT_OUT=$(npm audit --json 2>/dev/null || echo '{}')
           HIGH=$(echo "$AUDIT_OUT" | python3 -c "
@@ -166,7 +168,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
