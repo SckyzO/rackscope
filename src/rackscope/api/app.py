@@ -100,13 +100,23 @@ async def apply_config(app_config: AppConfig) -> None:
 
 
 async def _do_apply_config(app_config: AppConfig) -> None:
-    """Internal: perform the actual config reload (called under _CONFIG_RELOAD_LOCK)."""
+    """Internal: perform the actual config reload (called under _CONFIG_RELOAD_LOCK).
+
+    All loads are attempted before any global is modified so that a failure
+    (e.g. bad topology path) leaves the running state fully intact.
+    """
     global TOPOLOGY, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY, APP_CONFIG, PLANNER
+    # Load everything into locals first — if any raises, globals are untouched.
+    new_topology = load_topology(app_config.paths.topology)
+    new_catalog = load_catalog(app_config.paths.templates)
+    new_checks = load_checks_library(app_config.paths.checks)
+    new_metrics = load_metrics_library(app_config.paths.metrics)
+    # All loads succeeded — update globals atomically.
     APP_CONFIG = app_config
-    TOPOLOGY = load_topology(app_config.paths.topology)
-    CATALOG = load_catalog(app_config.paths.templates)
-    CHECKS_LIBRARY = load_checks_library(app_config.paths.checks)
-    METRICS_LIBRARY = load_metrics_library(app_config.paths.metrics)
+    TOPOLOGY = new_topology
+    CATALOG = new_catalog
+    CHECKS_LIBRARY = new_checks
+    METRICS_LIBRARY = new_metrics
     base_url = APP_CONFIG.telemetry.prometheus_url or prom_client.base_url
     auth = None
     if APP_CONFIG.telemetry.basic_auth_user:
@@ -132,6 +142,7 @@ async def _do_apply_config(app_config: AppConfig) -> None:
         debug_stats=APP_CONFIG.telemetry.debug_stats,
         health_checks_ttl=APP_CONFIG.cache.health_checks_ttl_seconds,
         metrics_ttl=APP_CONFIG.cache.metrics_ttl_seconds,
+        timeout=APP_CONFIG.telemetry.prometheus_timeout_seconds,
     )
     PLANNER = TelemetryPlanner(
         PlannerConfig(

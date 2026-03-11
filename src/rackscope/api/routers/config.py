@@ -26,7 +26,12 @@ def get_app_config(
         # Enrich plugins config with actual plugin configurations
         from rackscope.plugins.registry import registry
 
-        enriched_config = app_config.model_dump()
+        enriched_config = app_config.model_dump(
+            exclude={
+                "telemetry": {"basic_auth_password"},
+                "auth": {"password_hash", "secret_key"},
+            }
+        )
 
         if registry and hasattr(registry, "_plugins"):
             for plugin_id, plugin in registry._plugins.items():
@@ -107,6 +112,12 @@ async def update_app_config(
 
     config_path = Path(os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml"))
     config_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Validate the new config (topology load etc.) BEFORE writing the file.
+    # If apply_config raises, app.yaml is left untouched — no corrupted state.
+    await apply_config(payload)
+
+    # Validation passed — write the file.
     with config_path.open("w") as f:
         yaml.safe_dump(payload.model_dump(), f, sort_keys=False)
 
@@ -180,7 +191,7 @@ async def update_app_config(
             f.write("# Slurm Plugin Configuration — managed by Settings UI\n\n")
             yaml.safe_dump(merged_slurm, f, sort_keys=False)
 
-    await apply_config(payload)
+    # apply_config already called above (before writing app.yaml) — do not call again.
     return payload
 
 

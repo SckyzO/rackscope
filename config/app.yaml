@@ -71,6 +71,6 @@ plugins:
   # Only 'enabled' here — behaviour in config/examples/homelab/plugins/
   simulator:
     enabled: true
-    metrics_catalog_path: /app/config/plugins/simulator/metrics/metrics_full.yaml
+    metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
   slurm:
     enabled: false

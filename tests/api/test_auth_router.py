@@ -548,24 +548,29 @@ class TestChangePassword:
             assert resp.status_code == 422
 
     def test_change_password_initial_setup_without_hash(self):
-        """Change password when no hash exists should allow setup."""
+        """Change password when no hash exists must be rejected (security fix H2).
+
+        An empty password_hash means no password is configured yet.
+        Accepting a change-password request in this state would allow anyone
+        to take over the admin account before the wizard sets the initial password.
+        The endpoint now returns 400 to force use of the setup wizard.
+        """
         auth_config = AuthConfig(
-            enabled=False,  # Disable auth for test
+            enabled=False,
             password_hash="",  # not configured yet
             policy=PasswordPolicyConfig(),
         )
         mock_config = MagicMock(spec=AppConfig)
         mock_config.auth = auth_config
 
-        with patch("rackscope.api.routers.auth._update_auth_config") as mock_update:
-            with patch("rackscope.api.app.APP_CONFIG", mock_config):
-                resp = client.post(
-                    "/api/auth/change-password",
-                    json={"current_password": "", "new_password": "newpass123"},
-                )
-                # Should succeed and call _update_auth_config
-                assert resp.status_code == 200
-                mock_update.assert_called_once()
+        with patch("rackscope.api.app.APP_CONFIG", mock_config):
+            resp = client.post(
+                "/api/auth/change-password",
+                json={"current_password": "", "new_password": "newpass123"},
+            )
+            # Must be rejected — empty hash = no password configured
+            assert resp.status_code == 400
+            assert "setup wizard" in resp.json()["detail"].lower()
 
 
 class TestChangeUsername:

@@ -30,7 +30,8 @@ PROMETHEUS_CACHE_TTL = float(os.getenv("PROMETHEUS_CACHE_TTL", "60"))
 class PrometheusClient:
     def __init__(self, base_url: str = PROMETHEUS_URL):
         self.base_url = base_url.rstrip("/")
-        self.client = httpx.AsyncClient(timeout=2.0)
+        self.timeout = 5.0  # configurable via configure()
+        self.client = httpx.AsyncClient(timeout=httpx.Timeout(self.timeout, connect=2.0))
         self.cache_ttl = PROMETHEUS_CACHE_TTL  # Deprecated, kept for backward compatibility
         self.health_checks_ttl = 30.0  # TTL for health checks (default 30s)
         self.metrics_ttl = 120.0  # TTL for detailed metrics (default 120s)
@@ -63,6 +64,7 @@ class PrometheusClient:
         debug_stats: bool = False,
         health_checks_ttl: Optional[float] = None,
         metrics_ttl: Optional[float] = None,
+        timeout: Optional[float] = None,
     ) -> None:
         """Reconfigure the client with new settings.
 
@@ -80,9 +82,14 @@ class PrometheusClient:
         self._debug_stats = debug_stats
         if latency_window >= 1:
             self._latency_samples = deque(list(self._latency_samples), maxlen=latency_window)
+        if timeout is not None:
+            self.timeout = timeout
         old_client = self.client
         self.client = httpx.AsyncClient(
-            timeout=2.0, auth=self._auth, verify=self._verify, cert=self._cert
+            timeout=httpx.Timeout(self.timeout, connect=2.0),
+            auth=self._auth,
+            verify=self._verify,
+            cert=self._cert,
         )
         try:
             loop = asyncio.get_running_loop()

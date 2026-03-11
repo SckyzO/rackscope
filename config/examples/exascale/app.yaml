@@ -1,76 +1,71 @@
-# Rackscope — app.yaml for example: exascale
-# Generated from app.yaml.reference
-# To activate: cp config/app.example.exascale.yaml config/app.yaml && make restart
-
 app:
   name: Rackscope
-  description: exascale example
-
+  description: Datacenter Overview
 paths:
-  topology: topology
-  templates: templates
-  checks: checks/library
-  metrics: metrics/library
-
+  topology: config/examples/hpc-cluster/topology
+  templates: config/examples/hpc-cluster/templates
+  checks: config/examples/hpc-cluster/checks/library
+  metrics: config/metrics/library
 refresh:
-  room_state_seconds: 60
-  rack_state_seconds: 60
-
+  room_state_seconds: 30
+  rack_state_seconds: 30
 cache:
-  ttl_seconds: 60
+  ttl_seconds: 30
   health_checks_ttl_seconds: 30
   metrics_ttl_seconds: 120
-
 telemetry:
   prometheus_url: http://prometheus:9090
+  prometheus_timeout_seconds: 5.0
   identity_label: instance
   rack_label: rack_id
   chassis_label: chassis_id
-  job_regex: node|rackscope-simulator
+  job_regex: .*
   prometheus_heartbeat_seconds: 30
   prometheus_latency_window: 20
   debug_stats: false
-
+  basic_auth_user: null
+  basic_auth_password: null
+  tls_verify: true
+  tls_ca_file: null
+  tls_cert_file: null
+  tls_key_file: null
 planner:
   unknown_state: UNKNOWN
-  cache_ttl_seconds: 60
-  max_ids_per_query: 300
-
+  cache_ttl_seconds: 30
+  max_ids_per_query: 200
 features:
   notifications: true
   notifications_max_visible: 10
-  playlist: true
-  offline: true
-  wizard: false
+  playlist: false
+  offline: false
+  wizard: true
   worldmap: true
   dev_tools: false
-
 auth:
   enabled: false
   username: admin
-  password_hash: ""
-  secret_key: ""
+  password_hash: ''
+  secret_key: ''
   session_duration: 24h
   policy:
     min_length: 6
     max_length: 128
     require_digit: false
     require_symbol: false
-
 map:
   default_view: world
-  default_zoom: 2
+  default_zoom: null
   min_zoom: 2
   max_zoom: 7
   zoom_controls: true
   center:
-    lat: 46.0
-    lon: 2.3
-
-plugins:
-  # Only 'enabled' here — behaviour in plugins/
-  simulator:
-    enabled: true
-    metrics_catalog_path: /app/config/plugins/simulator/metrics/metrics_full.yaml
-  slurm:
-    enabled: true
+    lat: 20
+    lon: 0
+playlist:
+  interval_seconds: 30
+  views:
+  - /views/worldmap
+  - /slurm/overview
+plugins: {}
+simulator: null
+slurm: null

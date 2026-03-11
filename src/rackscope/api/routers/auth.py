@@ -236,8 +236,16 @@ def change_password(
 
     auth = app_config.auth
 
-    # Allow initial password setup even when no hash exists yet
-    if auth.password_hash and not _verify_password(body.current_password, auth.password_hash):
+    # If no password is configured yet, require the request to be authenticated
+    # (middleware ensures a valid JWT exists when auth.enabled=True).
+    # Reject change-password when hash is empty to prevent takeover during
+    # the initial setup window — use the Settings UI wizard instead.
+    if not auth.password_hash:
+        raise HTTPException(
+            status_code=400,
+            detail="No password configured. Use the setup wizard to set an initial password.",
+        )
+    if not _verify_password(body.current_password, auth.password_hash):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
 
     policy_error = _validate_policy(body.new_password, auth.policy)

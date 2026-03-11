@@ -14,7 +14,7 @@ default_ttl_seconds: 120
 metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
 metrics_catalogs:
 - id: slurm
-  path: /app/config/plugins/simulator/metrics/metrics_slurm.yaml
+  path: config/plugins/simulator/metrics/metrics_slurm.yaml
   enabled: true
 slurm_alloc_percent: 80
 slurm_random_statuses:

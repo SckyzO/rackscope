@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from typing import Optional, Literal, List, Dict, Any
+import ipaddress
 import re
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -26,6 +28,12 @@ class CacheConfig(BaseModel):
 
 class TelemetryConfig(BaseModel):
     prometheus_url: Optional[str] = None
+    prometheus_timeout_seconds: float = Field(
+        default=5.0,
+        gt=0,
+        le=60,
+        description="Timeout in seconds for Prometheus HTTP requests (connect + read).",
+    )
     identity_label: str = "instance"
     rack_label: str = "rack_id"
     chassis_label: str = "chassis_id"
@@ -39,6 +47,29 @@ class TelemetryConfig(BaseModel):
     tls_ca_file: Optional[str] = None
     tls_cert_file: Optional[str] = None
     tls_key_file: Optional[str] = None
+
+    @field_validator("prometheus_url")
+    @classmethod
+    def validate_prometheus_url(cls, value: Optional[str]) -> Optional[str]:
+        if not value:
+            return value
+        parsed = urlparse(value)
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError("prometheus_url must use http or https scheme")
+        host = parsed.hostname or ""
+        # Reject link-local metadata endpoints (AWS/GCP/Azure IMDS)
+        _BLOCKED_HOSTS = {"169.254.169.254", "metadata.google.internal", "100.100.100.200"}
+        if host in _BLOCKED_HOSTS:
+            raise ValueError(f"prometheus_url targets a reserved address: {host}")
+        # Reject IPv6 link-local
+        try:
+            addr = ipaddress.ip_address(host)
+            if addr.is_link_local:
+                raise ValueError(f"prometheus_url targets a link-local address: {host}")
+        except ValueError as e:
+            if "link-local" in str(e) or "reserved" in str(e):
+                raise
+        return value
 
     @field_validator("job_regex")
     @classmethod
