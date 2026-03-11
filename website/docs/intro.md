@@ -47,28 +47,51 @@ All infrastructure configuration is stored in YAML files — GitOps-compatible, 
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────┐
-│               YAML Configuration            │
-│   topology/  templates/  checks/  metrics/  │
-└───────────────────┬─────────────────────────┘
-                    │ loaded at startup
-          ┌─────────▼──────────┐
-          │   Backend (FastAPI) │  :8000
-          │   Health engine     │
-          │   Telemetry planner │◄── batches PromQL
-          │   Plugin registry   │
-          └─────────┬──────────┘
-                    │ PromQL (batched)
-          ┌─────────▼──────────┐
-          │   Prometheus :9090  │◄── scrapes exporters
-          └─────────────────────┘
-                    ▲
-          ┌─────────┴──────────┐
-          │  Frontend :5173    │  React 19 + Tailwind v4
-          │  Physical views    │
-          │  Visual editors    │
-          └────────────────────┘
+```mermaid
+flowchart TB
+    subgraph config["📁 YAML Configuration"]
+        direction LR
+        topo[topology/]
+        tmpl[templates/]
+        chk[checks/]
+        met[metrics/]
+    end
+
+    subgraph backend["⚙️ Backend — FastAPI :8000"]
+        direction TB
+        health[Health Engine]
+        planner[Telemetry Planner]
+        plugreg[Plugin Registry]
+        api[REST API]
+    end
+
+    subgraph plugins["🔌 Optional Plugins"]
+        direction LR
+        slurm[Slurm]
+        sim[Simulator]
+    end
+
+    subgraph frontend["🖥️ Frontend — React :5173"]
+        direction LR
+        views[Physical Views]
+        editors[Visual Editors]
+        dashboards[Dashboards]
+    end
+
+    exporters[(Exporters\nIPMI · node · custom)]
+
+    config -->|"loaded at startup"| backend
+    backend -->|"batched PromQL"| prom[(Prometheus\n:9090)]
+    prom -->|"scrapes"| exporters
+    plugreg -.->|"enabled"| plugins
+    frontend -->|"REST API"| api
+
+    style config fill:#1e2a3a,stroke:#465fff,color:#e5e5e5
+    style backend fill:#1a2535,stroke:#465fff,color:#e5e5e5
+    style frontend fill:#1a2535,stroke:#465fff,color:#e5e5e5
+    style plugins fill:#1a2535,stroke:#374151,color:#9ca3af
+    style prom fill:#1f2937,stroke:#374151,color:#e5e5e5
+    style exporters fill:#1f2937,stroke:#374151,color:#9ca3af
 ```
 
 :::tip Deep dive

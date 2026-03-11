@@ -15,6 +15,7 @@ const config = {
 
   onBrokenLinks: 'warn',
   markdown: {
+    mermaid: true,
     hooks: {
       onBrokenMarkdownLinks: 'warn',
     },
@@ -29,6 +30,8 @@ const config = {
     // CSS theme — Void/Slate palette, Outfit + IBM Plex Mono, full Infima coverage
     // injectFavicon: false — Rackscope has its own favicon (img/favicon.svg)
     ['cosmos-docusaurus-theme', { injectFavicon: false }],
+    // Mermaid diagrams — native Docusaurus 3 support
+    '@docusaurus/theme-mermaid',
     // Local search — zero config, no API key, works with GitHub Pages
     [
       require.resolve('@easyops-cn/docusaurus-search-local'),
