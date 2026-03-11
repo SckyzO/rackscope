@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Literal
 
 from rackscope.model.domain import Device, Rack
@@ -84,7 +84,7 @@ class RackDeviceUpdate(BaseModel):
 class RackDevicesUpdate(BaseModel):
     """Request model for replacing all rack devices."""
 
-    devices: List[Device]
+    devices: List[Device] = Field(default_factory=list, max_length=500)
 
 
 class RoomAislesUpdate(BaseModel):
