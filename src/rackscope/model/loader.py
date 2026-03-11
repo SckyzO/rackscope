@@ -123,16 +123,18 @@ def load_topology(path: Union[str, Path]) -> Topology:
 
 
 def _check_duplicate_ids(topology: "Topology") -> None:
-    """Log warnings for duplicate rack/room IDs across sites.
+    """Log warnings for duplicate rack/room/device IDs across sites.
 
     Duplicate IDs break direct-link routes (/views/rack/:id, /api/racks/:id)
-    because the first match wins. This does not raise — topology still loads —
-    but operators should use unique IDs across sites.
+    because the first match wins. Duplicate device IDs also cause chassis_id
+    collisions in the TelemetryPlanner. This does not raise — topology still
+    loads — but operators should use unique IDs across sites.
     """
     from collections import Counter
 
     rack_ids: list[str] = []
     room_ids: list[str] = []
+    device_ids: list[str] = []
 
     for site in topology.sites:
         for room in site.rooms:
@@ -140,11 +142,16 @@ def _check_duplicate_ids(topology: "Topology") -> None:
             for aisle in room.aisles:
                 for rack in aisle.racks:
                     rack_ids.append(rack.id)
+                    for device in rack.devices:
+                        device_ids.append(device.id)
             for rack in room.standalone_racks:
                 rack_ids.append(rack.id)
+                for device in rack.devices:
+                    device_ids.append(device.id)
 
     dup_racks = [rid for rid, n in Counter(rack_ids).items() if n > 1]
     dup_rooms = [rid for rid, n in Counter(room_ids).items() if n > 1]
+    dup_devices = [did for did, n in Counter(device_ids).items() if n > 1]
 
     if dup_racks:
         logger.warning(
@@ -155,6 +162,11 @@ def _check_duplicate_ids(topology: "Topology") -> None:
         logger.warning(
             "Duplicate room IDs detected across sites — consider prefixing with site ID: %s",
             dup_rooms,
+        )
+    if dup_devices:
+        logger.warning(
+            "Duplicate device IDs detected — chassis_id collisions in TelemetryPlanner: %s",
+            dup_devices,
         )
 
 

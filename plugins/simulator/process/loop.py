@@ -67,7 +67,8 @@ def _resolve_topology_path() -> str:
 
     app_cfg_path = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
     try:
-        cfg = _yaml.safe_load(open(app_cfg_path)) or {}
+        with open(app_cfg_path) as f:
+            cfg = _yaml.safe_load(f) or {}
         topo = cfg.get("paths", {}).get("topology")
         if topo:
             return _resolve_app_path(topo, app_cfg_path)
@@ -81,7 +82,8 @@ def _resolve_templates_path() -> str:
 
     app_cfg_path = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
     try:
-        cfg = _yaml.safe_load(open(app_cfg_path)) or {}
+        with open(app_cfg_path) as f:
+            cfg = _yaml.safe_load(f) or {}
         tmpl = cfg.get("paths", {}).get("templates")
         if tmpl:
             return _resolve_app_path(tmpl, app_cfg_path)
@@ -481,7 +483,8 @@ def _get_alloc_set(targets: list, forced_slurm_status: dict, slurm_alloc_percent
     """Return the set of nodes to put in 'allocated' state.
     Result is cached and only recomputed when inputs change."""
     forced_keys = frozenset(forced_slurm_status.keys())
-    cache_key = (id(targets), len(targets), forced_keys, slurm_alloc_percent)
+    nodes_key = frozenset(t["node_id"] for t in targets if t.get("node_id"))
+    cache_key = (nodes_key, forced_keys, slurm_alloc_percent)
     if _alloc_cache["cache_key"] == cache_key:
         return _alloc_cache["set"]
     eligible = sorted(

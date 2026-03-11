@@ -21,6 +21,7 @@ from rackscope.api.dependencies import (
     get_checks_library_optional,
     get_app_config_optional,
     get_planner_optional,
+    get_targets_by_check_optional,
 )
 from rackscope.utils.aggregation import aggregate_states
 from rackscope.services import telemetry_service
@@ -34,11 +35,12 @@ async def get_global_stats(
     catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
     checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
     planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
+    targets_by_check_cached: Annotated[Optional[Dict], Depends(get_targets_by_check_optional)],
 ):
     """Get global system statistics."""
     rack_healths: Dict[str, str] = {}
     if topology and catalog and checks_library and planner:
-        targets_by_check = telemetry_service.collect_check_targets(
+        targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
             topology, catalog, checks_library
         )
         snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
@@ -71,7 +73,9 @@ async def get_global_stats(
         global_status = "WARN"
 
     return {
-        "total_rooms": len(topology.sites[0].rooms) if topology and topology.sites else 0,
+        "total_rooms": sum(len(s.rooms) for s in topology.sites)
+        if topology and topology.sites
+        else 0,
         "total_racks": total_racks,
         "active_alerts": crit_alerts + warn_alerts,
         "crit_count": crit_alerts,
@@ -112,13 +116,14 @@ async def get_room_state(
     catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
     checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
     planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
+    targets_by_check_cached: Annotated[Optional[Dict], Depends(get_targets_by_check_optional)],
 ):
     """Get room health state and rack states."""
-    # Lazy import to avoid circular dependency
-
     if not topology or not catalog or not checks_library or not planner:
         return {"room_id": room_id, "state": "UNKNOWN", "racks": {}}
-    targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
+    targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
+        topology, catalog, checks_library
+    )
     snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
     rack_healths = snapshot.rack_states
 
@@ -178,6 +183,7 @@ async def get_all_room_states(
     catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
     checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
     planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
+    targets_by_check_cached: Annotated[Optional[Dict], Depends(get_targets_by_check_optional)],
 ):
     """Get health state for all rooms in one request.
 
@@ -188,7 +194,9 @@ async def get_all_room_states(
     if not topology or not catalog or not checks_library or not planner:
         return {}
 
-    targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
+    targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
+        topology, catalog, checks_library
+    )
     snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
     rack_healths = snapshot.rack_states
 
@@ -220,6 +228,7 @@ async def get_rack_state(
     catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
     checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
     planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
+    targets_by_check_cached: Annotated[Optional[Dict], Depends(get_targets_by_check_optional)],
     include_metrics: bool = False,
 ):
     """Get rack health state and device metrics.
@@ -228,7 +237,6 @@ async def get_rack_state(
         rack_id: Rack identifier
         include_metrics: Include detailed metrics (CPU, RAM, etc.). Default: False for faster response.
     """
-    # Lazy import to avoid circular dependency
     from rackscope.services import metrics_service
     from rackscope.telemetry.prometheus import client as prom_client
     from rackscope.api.app import METRICS_LIBRARY
@@ -239,7 +247,9 @@ async def get_rack_state(
     # Find the rack in topology
     rack = topology_service.find_rack_by_id(topology, rack_id)
 
-    targets_by_check = telemetry_service.collect_check_targets(topology, catalog, checks_library)
+    targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
+        topology, catalog, checks_library
+    )
     snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
 
     # Build check name lookup for human-readable labels in the response

@@ -81,7 +81,8 @@ class TelemetryPlanner:
         # Concurrent callers that arrive while a recompute is in progress will
         # wait for it to finish and then return the freshly computed snapshot,
         # rather than each triggering their own full recompute.
-        self._refresh_lock: Optional[asyncio.Lock] = None
+        # asyncio.Lock() is safe to construct without a running event loop in Python 3.10+.
+        self._refresh_lock: asyncio.Lock = asyncio.Lock()
         # Pending state: key = f"{check_id}:{instance_id}", value = severity string
         self._pending_states: Dict[str, str] = {}
         # When pending started: key = f"{check_id}:{instance_id}", value = monotonic timestamp
@@ -118,8 +119,6 @@ class TelemetryPlanner:
         # Others that arrive while the lock is held will block here, then
         # re-check the cache once released — returning the fresh snapshot
         # without triggering a second full recomputation.
-        if self._refresh_lock is None:
-            self._refresh_lock = asyncio.Lock()
         async with self._refresh_lock:
             # Re-check inside the lock: another coroutine may have finished
             # recomputing while we were waiting.

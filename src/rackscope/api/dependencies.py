@@ -4,7 +4,7 @@ API Dependencies
 Provides FastAPI dependency injection functions for accessing global state.
 """
 
-from typing import Optional
+from typing import Dict, List, Optional
 
 from fastapi import HTTPException
 
@@ -98,3 +98,10 @@ async def get_planner_optional() -> Optional[TelemetryPlanner]:
     from rackscope.api import app as app_module
 
     return app_module.PLANNER
+
+
+async def get_targets_by_check_optional() -> Optional[Dict[str, Dict[str, List[str]]]]:
+    """Get cached collect_check_targets() result, returns None if not yet computed."""
+    from rackscope.api import app as app_module
+
+    return app_module.TARGETS_BY_CHECK

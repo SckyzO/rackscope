@@ -96,7 +96,14 @@ class PrometheusClient:
         except RuntimeError:
             asyncio.run(old_client.aclose())
         else:
-            loop.create_task(old_client.aclose())
+            task = loop.create_task(old_client.aclose())
+            task.add_done_callback(
+                lambda t: (
+                    logger.warning("Error closing old Prometheus client: %s", t.exception())
+                    if t.exception()
+                    else None
+                )
+            )
 
     async def query(self, query: str, cache_type: Optional[str] = None) -> Dict[str, Any]:
         """Execute a PromQL instant query with TTL caching.

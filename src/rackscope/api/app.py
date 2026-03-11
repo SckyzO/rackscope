@@ -14,7 +14,7 @@ import os
 import asyncio
 import secrets
 from contextlib import asynccontextmanager, suppress
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -71,6 +71,10 @@ PROMETHEUS_HEARTBEAT: Optional[asyncio.Task] = None
 # Runtime JWT secret — used when auth.secret_key is empty in config
 AUTH_RUNTIME_SECRET: str = secrets.token_hex(32)
 
+# Cached result of collect_check_targets() — invalidated on every config reload.
+# Avoids a full topology traversal on every HTTP request.
+TARGETS_BY_CHECK: Optional[Dict[str, Dict[str, List[str]]]] = None
+
 # Lock preventing concurrent apply_config() calls from creating inconsistent global state
 # (e.g. TOPOLOGY from call A with CATALOG from call B).
 _CONFIG_RELOAD_LOCK: Optional[asyncio.Lock] = None
@@ -92,6 +96,7 @@ async def apply_config(app_config: AppConfig) -> None:
         METRICS_LIBRARY, \
         APP_CONFIG, \
         PLANNER, \
+        TARGETS_BY_CHECK, \
         _CONFIG_RELOAD_LOCK
     if _CONFIG_RELOAD_LOCK is None:
         _CONFIG_RELOAD_LOCK = asyncio.Lock()
@@ -105,7 +110,7 @@ async def _do_apply_config(app_config: AppConfig) -> None:
     All loads are attempted before any global is modified so that a failure
     (e.g. bad topology path) leaves the running state fully intact.
     """
-    global TOPOLOGY, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY, APP_CONFIG, PLANNER
+    global TOPOLOGY, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY, APP_CONFIG, PLANNER, TARGETS_BY_CHECK
     # Load everything into locals first — if any raises, globals are untouched.
     new_topology = load_topology(app_config.paths.topology)
     new_catalog = load_catalog(app_config.paths.templates)
@@ -170,6 +175,13 @@ async def _do_apply_config(app_config: AppConfig) -> None:
             )
     # Reload plugins with new configuration
     await plugin_registry.reload_plugins(app_config)
+    # Eagerly compute the check-targets cache so HTTP requests can use it
+    # without triggering a full topology traversal on every call.
+    TARGETS_BY_CHECK = (
+        telemetry_service.collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
+        if TOPOLOGY and CATALOG and CHECKS_LIBRARY
+        else None
+    )
     logger.info("Configuration applied successfully")
     return  # end of _do_apply_config
 
@@ -340,7 +352,9 @@ async def get_active_alerts():
     """
     if not TOPOLOGY or not CATALOG or not CHECKS_LIBRARY or not PLANNER:
         return {"alerts": []}
-    targets_by_check = telemetry_service.collect_check_targets(TOPOLOGY, CATALOG, CHECKS_LIBRARY)
+    targets_by_check = TARGETS_BY_CHECK or telemetry_service.collect_check_targets(
+        TOPOLOGY, CATALOG, CHECKS_LIBRARY
+    )
     snapshot = await PLANNER.get_snapshot(TOPOLOGY, CHECKS_LIBRARY, targets_by_check)
 
     node_context: Dict[str, Dict[str, str]] = {}

@@ -42,6 +42,10 @@ def load_simulator_config():
         # plugin.yaml is the single source of truth for simulator behaviour
         # (incident_mode, changes_per_hour, etc.).  app.yaml should only carry
         # the 'enabled' flag and optional path overrides.
+        #
+        # MAINTENANCE NOTE: any new field added to plugin.yaml that should NOT
+        # be overridable from app.yaml must be added to this set to prevent
+        # silent shadowing (app.yaml value would silently win otherwise).
         PLUGIN_YAML_OWNED = {
             "incident_mode",
             "changes_per_hour",
