@@ -238,7 +238,7 @@ def load_segmented_topology(base_dir: Path) -> Topology:
                 rack_data = _load_rack_ref(base_dir, site_id, room_id, None, rack_ref)
                 if rack_data:
                     assert isinstance(room_out["standalone_racks"], list)
-                room_out["standalone_racks"].append(rack_data)
+                    room_out["standalone_racks"].append(rack_data)
 
             rooms_out.append(room_out)
 

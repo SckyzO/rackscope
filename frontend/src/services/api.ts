@@ -342,7 +342,7 @@ export const api = {
     const params = roomId ? `?room_id=${encodeURIComponent(roomId)}` : '';
     return fetchWithCache<{ nodes: SlurmNodeEntry[] }>(
       `/api/slurm/nodes${params}`,
-      `slurm.nodes.${roomId || 'all'}`
+      `slurm.node-list.${roomId || 'all'}`
     );
   },
   getSlurmMetricsCatalog: async () => {
