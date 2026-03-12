@@ -130,17 +130,21 @@ export const TooltipSettingsSection = () => {
             key={s.id}
             type="button"
             onClick={() => setStyle(s.id)}
-            className={`flex flex-col gap-2 rounded-xl border-2 p-3 text-left transition-all ${
+            className={`relative flex flex-col gap-2 rounded-xl border-2 p-3 text-left transition-all ${
               style === s.id
                 ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
                 : 'border-transparent bg-gray-100 hover:border-gray-300 dark:bg-gray-800/50 dark:hover:border-gray-600'
             }`}
           >
-            {/* Label + active check */}
-            <div className="flex items-start justify-between gap-1">
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">{s.label}</span>
-              {style === s.id && <Check className="text-brand-500 mt-0.5 h-3.5 w-3.5 shrink-0" />}
-            </div>
+            {/* Badge top-right when active */}
+            {style === s.id && (
+              <div className="bg-brand-500 absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full">
+                <Check className="h-2.5 w-2.5 text-white" />
+              </div>
+            )}
+
+            {/* Label */}
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">{s.label}</span>
 
             {/* Description */}
             <p className="text-[11px] text-gray-500 dark:text-gray-400">{s.desc}</p>
