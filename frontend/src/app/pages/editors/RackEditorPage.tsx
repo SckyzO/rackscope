@@ -1268,13 +1268,14 @@ export const RackEditorPage = () => {
 
                 <FormField
                   label="Instance / node"
-                  hint="Maps this device to Prometheus metrics. Supports patterns: compute[001-004]"
+                  hint="Prometheus identity. Supports patterns: compute[001-004] or JSON slot maps."
                 >
-                  <input
+                  <textarea
                     value={placingForm.instance}
                     onChange={(e) => setPlacingForm((f) => ({ ...f, instance: e.target.value }))}
-                    placeholder="compute001"
-                    className={`${inputCls} font-mono text-xs`}
+                    placeholder='compute001  or  {"1":"compute055","2":"compute056"}'
+                    rows={3}
+                    className={`${inputCls} font-mono text-xs resize-y min-h-[60px]`}
                   />
                 </FormField>
               </div>
@@ -1357,16 +1358,17 @@ export const RackEditorPage = () => {
 
                     <FormField
                       label="Instance / node"
-                      hint="Prometheus identity. Supports patterns: compute[001-004]"
+                      hint="Prometheus identity. Supports patterns: compute[001-004] or JSON slot maps."
                     >
-                      <input
+                      <textarea
                         value={editForm.instance}
                         onChange={(e) => {
                           setEditForm((f) => ({ ...f, instance: e.target.value }));
                           setEditDirty(true);
                         }}
-                        placeholder="compute001"
-                        className={`${inputCls} font-mono text-xs`}
+                        placeholder='compute001  or  {"1":"compute055","2":"compute056"}'
+                        rows={3}
+                        className={`${inputCls} font-mono text-xs resize-y min-h-[60px]`}
                       />
                     </FormField>
 

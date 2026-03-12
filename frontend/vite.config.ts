@@ -21,7 +21,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['apexcharts', 'react-apexcharts'],
+    include: ['apexcharts', 'react-apexcharts', 'monaco-editor'],
   },
   server: {
     host: true, // Needed for Docker exposure

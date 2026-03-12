@@ -4,6 +4,14 @@ import './index.css';
 import App from './App.tsx';
 import { ThemeProvider } from './context/ThemeContext';
 
+// ── Monaco Editor — offline / local setup ─────────────────────────────────────
+// Configure @monaco-editor/react to use the locally installed monaco-editor
+// package instead of loading from CDN (jsdelivr.net). This ensures the editors
+// work in air-gapped/offline environments.
+import { loader } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
+loader.config({ monaco });
+
 // ── HMR Firefox fixes ─────────────────────────────────────────────────────────
 // Firefox has two distinct blank-screen failure modes with Vite HMR:
 //
