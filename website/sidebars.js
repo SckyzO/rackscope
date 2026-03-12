@@ -3,7 +3,6 @@
 /** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
 const sidebars = {
   gettingStarted: [
-    'intro',
     'getting-started/quick-start',
     'getting-started/installation',
     'getting-started/configuration',
