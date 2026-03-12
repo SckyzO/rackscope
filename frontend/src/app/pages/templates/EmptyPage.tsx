@@ -138,8 +138,8 @@ export const SectionCard = ({
         </div>
       )}
       <div>
-        <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">{title}</h3>
-        {desc && <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{desc}</p>}
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">{title}</h3>
+        {desc && <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{desc}</p>}
       </div>
     </div>
     {children}

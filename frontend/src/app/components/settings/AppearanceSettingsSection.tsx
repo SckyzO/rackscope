@@ -13,7 +13,10 @@ import {
   type LightTheme,
   type DarkTheme,
   type PaletteMeta,
+  type IconId,
+  type IconBg,
 } from '@src/context/ThemeContext';
+import { AppIcon, ICON_LABELS, getIconContainerClass, getIconSize } from '../AppIcon';
 import { TooltipHelp } from '../ui/Tooltip';
 
 // ── Palette preview card ───────────────────────────────────────────────────────
@@ -96,29 +99,138 @@ const AccentSwatch = ({
   <button
     onClick={onClick}
     title={label}
-    className={`relative flex h-9 w-9 items-center justify-center rounded-full border-2 transition-all ${
+    className={`relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-2.5 transition-all ${
       active
-        ? 'scale-110 border-gray-400 dark:border-gray-200'
-        : 'border-transparent hover:scale-105'
+        ? 'border-gray-400 dark:border-gray-200 scale-105'
+        : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:scale-[1.02]'
     }`}
-    style={{ backgroundColor: hex }}
   >
-    {active && <Check className="h-3.5 w-3.5 text-white drop-shadow" />}
+    <div
+      className="h-8 w-full rounded-lg"
+      style={{ backgroundColor: hex }}
+    >
+      {active && (
+        <div className="flex h-full items-center justify-center">
+          <Check className="h-3.5 w-3.5 text-white drop-shadow" />
+        </div>
+      )}
+    </div>
+    <span className={`text-[10px] font-medium leading-none ${active ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500'}`}>
+      {label}
+    </span>
   </button>
 );
 
 // ── Section header (inline, no card wrapper) ───────────────────────────────────
 
 const SubLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="mb-2 text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
+  <p className="text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">
     {children}
   </p>
 );
 
+/** Header row: label + optional tooltip, consistent spacing */
+const SectionHeader = ({ label, tooltip }: { label: string; tooltip?: string }) => (
+  <div className="mb-2 flex items-center gap-1.5">
+    <SubLabel>{label}</SubLabel>
+    {tooltip && <TooltipHelp text={tooltip} />}
+  </div>
+);
+
+// ── Icon picker card ───────────────────────────────────────────────────────────
+
+const IconCard = ({
+  id,
+  active,
+  iconBg,
+  onClick,
+}: {
+  id: IconId;
+  active: boolean;
+  iconBg: IconBg;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    title={ICON_LABELS[id]}
+    className={`group relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all ${
+      active
+        ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
+        : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+    }`}
+  >
+    <div className={getIconContainerClass(iconBg)}>
+      <AppIcon id={id} className={getIconSize(iconBg)} />
+    </div>
+    <p className="text-center text-[10px] leading-tight text-gray-500 dark:text-gray-400">
+      {ICON_LABELS[id]}
+    </p>
+    {active && (
+      <div className="bg-brand-500 absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full">
+        <Check className="h-2.5 w-2.5 text-white" />
+      </div>
+    )}
+  </button>
+);
+
+// ── Icon background style card ─────────────────────────────────────────────────
+
+const BG_STYLES: { id: IconBg; label: string; desc: string }[] = [
+  { id: 'badge',  label: 'Badge',  desc: 'Filled square' },
+  { id: 'soft',   label: 'Soft',   desc: 'Tinted bg' },
+  { id: 'circle', label: 'Circle', desc: 'Filled circle' },
+  { id: 'ghost',  label: 'Ghost',  desc: 'Outline only' },
+  { id: 'solo',   label: 'Solo',   desc: 'Icon only' },
+];
+
+const BgStyleCard = ({
+  style,
+  active,
+  onClick,
+  previewIconId,
+}: {
+  style: (typeof BG_STYLES)[number];
+  active: boolean;
+  onClick: () => void;
+  previewIconId: IconId;
+}) => (
+  <button
+    onClick={onClick}
+    className={`relative flex flex-col items-center gap-2.5 rounded-xl border-2 py-3 px-2 transition-all ${
+      active
+        ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
+        : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+    }`}
+  >
+    {/* Visual mini-preview of the container style */}
+    <div className={getIconContainerClass(style.id)}>
+      <AppIcon id={previewIconId} className={getIconSize(style.id)} />
+    </div>
+    <div className="text-center">
+      <p className={`text-xs font-semibold ${active ? 'text-brand-500' : 'text-gray-700 dark:text-gray-300'}`}>
+        {style.label}
+      </p>
+      <p className="text-[10px] text-gray-400 dark:text-gray-500">{style.desc}</p>
+    </div>
+    {active && (
+      <div className="bg-brand-500 absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full">
+        <Check className="h-2.5 w-2.5 text-white" />
+      </div>
+    )}
+  </button>
+);
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
+const ALL_ICON_IDS: IconId[] = Object.keys(ICON_LABELS) as IconId[];
+
 export const AppearanceSettingsSection = () => {
-  const { accent, lightTheme, darkTheme, setAccent, setLightTheme, setDarkTheme } = useTheme();
+  const {
+    accent, lightTheme, darkTheme,
+    iconId, iconBg,
+    setAccent, setLightTheme, setDarkTheme,
+    setIconId, setIconBg,
+  } = useTheme();
   const [autoSaved, setAutoSaved] = useState(false);
 
   const flash = useCallback(() => {
@@ -126,18 +238,11 @@ export const AppearanceSettingsSection = () => {
     setTimeout(() => setAutoSaved(false), 2500);
   }, []);
 
-  const handleAccent = (a: AccentColor) => {
-    setAccent(a);
-    flash();
-  };
-  const handleLightTheme = (t: LightTheme) => {
-    setLightTheme(t);
-    flash();
-  };
-  const handleDarkTheme = (t: DarkTheme) => {
-    setDarkTheme(t);
-    flash();
-  };
+  const handleAccent = (a: AccentColor) => { setAccent(a); flash(); };
+  const handleLightTheme = (t: LightTheme) => { setLightTheme(t); flash(); };
+  const handleDarkTheme = (t: DarkTheme) => { setDarkTheme(t); flash(); };
+  const handleIconId = (id: IconId) => { setIconId(id); flash(); };
+  const handleIconBg = (bg: IconBg) => { setIconBg(bg); flash(); };
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
@@ -173,11 +278,8 @@ export const AppearanceSettingsSection = () => {
       <div className="space-y-6">
         {/* ── Accent color ─────────────────────────────────────────────── */}
         <div>
-          <div className="flex items-center gap-1.5">
-            <SubLabel>Accent color</SubLabel>
-            <TooltipHelp text="Primary interactive color for buttons, active sidebar items, focused inputs and links. Applied immediately." />
-          </div>
-          <div className="flex items-center gap-3">
+          <SectionHeader label="Accent color" tooltip="Primary interactive color for buttons, active sidebar items, focused inputs and links. Applied immediately." />
+          <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-10">
             {ACCENTS.map((a) => (
               <AccentSwatch
                 key={a.id}
@@ -192,10 +294,7 @@ export const AppearanceSettingsSection = () => {
 
         {/* ── Light themes ─────────────────────────────────────────────── */}
         <div>
-          <div className="flex items-center gap-1.5">
-            <SubLabel>Light theme — default palette in light mode</SubLabel>
-            <TooltipHelp text="Color palette used when light mode is active." />
-          </div>
+          <SectionHeader label="Light theme — default palette in light mode" tooltip="Color palette used when light mode is active." />
           <div className="grid grid-cols-4 gap-3">
             {LIGHT_THEMES.map((t) => (
               <PaletteCard
@@ -210,10 +309,7 @@ export const AppearanceSettingsSection = () => {
 
         {/* ── Dark themes ──────────────────────────────────────────────── */}
         <div>
-          <div className="flex items-center gap-1.5">
-            <SubLabel>Dark theme — default palette in dark mode</SubLabel>
-            <TooltipHelp text="Color palette used when dark mode is active. Void (near-black) is recommended for NOC environments." />
-          </div>
+          <SectionHeader label="Dark theme — default palette in dark mode" tooltip="Color palette used when dark mode is active. Void (near-black) is recommended for NOC environments." />
           <div className="grid grid-cols-4 gap-3">
             {DARK_THEMES.map((t) => (
               <PaletteCard
@@ -221,6 +317,38 @@ export const AppearanceSettingsSection = () => {
                 meta={t}
                 active={darkTheme === t.id}
                 onClick={() => handleDarkTheme(t.id as DarkTheme)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* ── Icon style ──────────────────────────────────────────────── */}
+        <div>
+          <SectionHeader label="Icon style" tooltip="Container shape and fill for the app icon in the sidebar and throughout the UI." />
+          <div className="grid grid-cols-5 gap-2">
+            {BG_STYLES.map((s) => (
+              <BgStyleCard
+                key={s.id}
+                style={s}
+                active={iconBg === s.id}
+                onClick={() => handleIconBg(s.id)}
+                previewIconId={iconId}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* ── App icon ──────────────────────────────────────────────────── */}
+        <div>
+          <SectionHeader label="App icon" tooltip="Icon used in the sidebar, favicon, and About page." />
+          <div className="grid grid-cols-5 gap-2 sm:grid-cols-7">
+            {ALL_ICON_IDS.map((id) => (
+              <IconCard
+                key={id}
+                id={id}
+                active={iconId === id}
+                iconBg={iconBg}
+                onClick={() => handleIconId(id)}
               />
             ))}
           </div>

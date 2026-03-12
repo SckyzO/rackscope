@@ -4,7 +4,35 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type AccentColor = 'indigo' | 'violet' | 'emerald' | 'rose' | 'amber';
+export type AccentColor =
+  | 'indigo'
+  | 'violet'
+  | 'emerald'
+  | 'rose'
+  | 'amber'
+  | 'cyan'
+  | 'lime'
+  | 'pink'
+  | 'orange'
+  | 'slate';
+
+export type IconId =
+  | 'server-stack'
+  | 'minimal-rack'
+  | 'rack-pulse'
+  | 'status-matrix'
+  | 'grid-floor'
+  | 'binary-rack'
+  | 'alert-panel'
+  | 'disk-array'
+  | 'heatmap'
+  | 'node-health'
+  | 'incident-flag'
+  | 'health-score'
+  | 'rack-blueprint'
+  | 'rack-spotlight';
+
+export type IconBg = 'badge' | 'soft' | 'circle' | 'ghost' | 'solo';
 export type LightTheme = 'slate' | 'warm' | 'cool' | 'solarized';
 export type DarkTheme = 'void' | 'navy' | 'forest' | 'matrix';
 
@@ -23,9 +51,14 @@ export interface PaletteMeta {
 export const ACCENTS: AccentMeta[] = [
   { id: 'indigo', label: 'Indigo', hex: '#465fff' },
   { id: 'violet', label: 'Violet', hex: '#7c3aed' },
+  { id: 'cyan', label: 'Cyan', hex: '#06b6d4' },
+  { id: 'lime', label: 'Lime', hex: '#65a30d' },
   { id: 'emerald', label: 'Emerald', hex: '#059669' },
   { id: 'rose', label: 'Rose', hex: '#e11d48' },
+  { id: 'pink', label: 'Pink', hex: '#ec4899' },
+  { id: 'orange', label: 'Orange', hex: '#f97316' },
   { id: 'amber', label: 'Amber', hex: '#d97706' },
+  { id: 'slate', label: 'Slate', hex: '#64748b' },
 ];
 
 export const LIGHT_THEMES: PaletteMeta[] = [
@@ -165,6 +198,86 @@ const ACCENT_PALETTES: Record<AccentColor, Record<string, string>> = {
     '--color-accent': '#d97706',
     '--shadow-focus-ring': '0px 0px 0px 4px rgb(217 119 6 / 12%)',
   },
+  cyan: {
+    '--color-brand-25': '#ecfeff',
+    '--color-brand-50': '#cffafe',
+    '--color-brand-100': '#a5f3fc',
+    '--color-brand-200': '#67e8f9',
+    '--color-brand-300': '#22d3ee',
+    '--color-brand-400': '#06b6d4',
+    '--color-brand-500': '#06b6d4',
+    '--color-brand-600': '#0891b2',
+    '--color-brand-700': '#0e7490',
+    '--color-brand-800': '#155e75',
+    '--color-brand-900': '#164e63',
+    '--color-brand-950': '#083344',
+    '--color-accent': '#06b6d4',
+    '--shadow-focus-ring': '0px 0px 0px 4px rgb(6 182 212 / 12%)',
+  },
+  lime: {
+    '--color-brand-25': '#f7fee7',
+    '--color-brand-50': '#ecfccb',
+    '--color-brand-100': '#d9f99d',
+    '--color-brand-200': '#bef264',
+    '--color-brand-300': '#a3e635',
+    '--color-brand-400': '#84cc16',
+    '--color-brand-500': '#65a30d',
+    '--color-brand-600': '#4d7c0f',
+    '--color-brand-700': '#3f6212',
+    '--color-brand-800': '#365314',
+    '--color-brand-900': '#1a2e05',
+    '--color-brand-950': '#0f1a03',
+    '--color-accent': '#65a30d',
+    '--shadow-focus-ring': '0px 0px 0px 4px rgb(101 163 13 / 12%)',
+  },
+  pink: {
+    '--color-brand-25': '#fdf2f8',
+    '--color-brand-50': '#fce7f3',
+    '--color-brand-100': '#fbcfe8',
+    '--color-brand-200': '#f9a8d4',
+    '--color-brand-300': '#f472b6',
+    '--color-brand-400': '#ec4899',
+    '--color-brand-500': '#ec4899',
+    '--color-brand-600': '#db2777',
+    '--color-brand-700': '#be185d',
+    '--color-brand-800': '#9d174d',
+    '--color-brand-900': '#831843',
+    '--color-brand-950': '#500724',
+    '--color-accent': '#ec4899',
+    '--shadow-focus-ring': '0px 0px 0px 4px rgb(236 72 153 / 12%)',
+  },
+  orange: {
+    '--color-brand-25': '#fff7ed',
+    '--color-brand-50': '#ffedd5',
+    '--color-brand-100': '#fed7aa',
+    '--color-brand-200': '#fdba74',
+    '--color-brand-300': '#fb923c',
+    '--color-brand-400': '#f97316',
+    '--color-brand-500': '#f97316',
+    '--color-brand-600': '#ea580c',
+    '--color-brand-700': '#c2410c',
+    '--color-brand-800': '#9a3412',
+    '--color-brand-900': '#7c2d12',
+    '--color-brand-950': '#431407',
+    '--color-accent': '#f97316',
+    '--shadow-focus-ring': '0px 0px 0px 4px rgb(249 115 22 / 12%)',
+  },
+  slate: {
+    '--color-brand-25': '#f8fafc',
+    '--color-brand-50': '#f1f5f9',
+    '--color-brand-100': '#e2e8f0',
+    '--color-brand-200': '#cbd5e1',
+    '--color-brand-300': '#94a3b8',
+    '--color-brand-400': '#64748b',
+    '--color-brand-500': '#64748b',
+    '--color-brand-600': '#475569',
+    '--color-brand-700': '#334155',
+    '--color-brand-800': '#1e293b',
+    '--color-brand-900': '#0f172a',
+    '--color-brand-950': '#020617',
+    '--color-accent': '#64748b',
+    '--shadow-focus-ring': '0px 0px 0px 4px rgb(100 116 139 / 12%)',
+  },
 };
 
 const LIGHT_PALETTES: Record<LightTheme, Record<string, string>> = {
@@ -250,15 +363,30 @@ interface ThemeContextType {
   accent: AccentColor;
   lightTheme: LightTheme;
   darkTheme: DarkTheme;
+  iconId: IconId;
+  iconBg: IconBg;
+  docsIconId: IconId;
   setMode: (mode: 'dark' | 'light') => void;
   setAccent: (accent: AccentColor) => void;
   setLightTheme: (theme: LightTheme) => void;
   setDarkTheme: (theme: DarkTheme) => void;
+  setIconId: (id: IconId) => void;
+  setIconBg: (bg: IconBg) => void;
+  setDocsIconId: (id: IconId) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const VALID_ACCENTS = new Set<AccentColor>(['indigo', 'violet', 'emerald', 'rose', 'amber']);
+const VALID_ACCENTS = new Set<AccentColor>([
+  'indigo', 'violet', 'emerald', 'rose', 'amber',
+  'cyan', 'lime', 'pink', 'orange', 'slate',
+]);
+const VALID_ICONS = new Set<IconId>([
+  'server-stack', 'minimal-rack', 'rack-pulse', 'status-matrix', 'grid-floor',
+  'binary-rack', 'alert-panel', 'disk-array', 'heatmap', 'node-health',
+  'incident-flag', 'health-score', 'rack-blueprint', 'rack-spotlight',
+]);
+const VALID_ICON_BGS = new Set<IconBg>(['badge', 'soft', 'circle', 'ghost', 'solo']);
 const VALID_LIGHT = new Set<LightTheme>(['slate', 'warm', 'cool', 'solarized']);
 const VALID_DARK = new Set<DarkTheme>(['void', 'navy', 'forest', 'matrix']);
 
@@ -283,6 +411,18 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     // 'charcoal' was removed — fall back to 'void'
     if (saved === ('charcoal' as string)) return 'void';
     return saved && VALID_DARK.has(saved) ? saved : 'void';
+  });
+  const [iconId, setIconIdState] = useState<IconId>(() => {
+    const saved = localStorage.getItem('rackscope.icon.id') as IconId | null;
+    return saved && VALID_ICONS.has(saved) ? saved : 'server-stack';
+  });
+  const [iconBg, setIconBgState] = useState<IconBg>(() => {
+    const saved = localStorage.getItem('rackscope.icon.bg') as IconBg | null;
+    return saved && VALID_ICON_BGS.has(saved) ? saved : 'badge';
+  });
+  const [docsIconId, setDocsIconIdState] = useState<IconId>(() => {
+    const saved = localStorage.getItem('rackscope.icon.docs') as IconId | null;
+    return saved && VALID_ICONS.has(saved) ? saved : 'server-stack';
   });
 
   // Listen for mode changes fired by AppLayout's header toggle via the
@@ -369,6 +509,31 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('theme-dark', darkTheme);
   }, [mode, accent, lightTheme, darkTheme]);
 
+  // Persist icon settings
+  useEffect(() => {
+    localStorage.setItem('rackscope.icon.id', iconId);
+    localStorage.setItem('rackscope.icon.bg', iconBg);
+    localStorage.setItem('rackscope.icon.docs', docsIconId);
+  }, [iconId, iconBg, docsIconId]);
+
+  // Dynamic favicon — updates whenever the app icon or accent changes
+  useEffect(() => {
+    const accentHex = ACCENT_PALETTES[accent]?.['--color-brand-500'] ?? '#465fff';
+    // Import icon SVG string lazily to avoid circular dep
+    import('../app/components/AppIcon').then(({ getIconSvgString }) => {
+      const svgContent = getIconSvgString(iconId, accentHex);
+      const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent);
+      let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = dataUrl;
+      link.type = 'image/svg+xml';
+    });
+  }, [iconId, accent]);
+
   // Dispatch 'rackscope-theme-mode' to keep AppLayout's isDark state in sync.
   // setAccent does not dispatch because accent changes do not affect AppLayout's
   // dark/light toggle — only mode switches need cross-tree coordination.
@@ -389,6 +554,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setMode('dark');
   };
 
+  const setIconId = (id: IconId) => setIconIdState(id);
+  const setIconBg = (bg: IconBg) => setIconBgState(bg);
+  const setDocsIconId = (id: IconId) => setDocsIconIdState(id);
+
   return (
     <ThemeContext.Provider
       value={{
@@ -396,10 +565,16 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
         accent,
         lightTheme,
         darkTheme,
+        iconId,
+        iconBg,
+        docsIconId,
         setMode,
         setAccent: setAccentState,
         setLightTheme,
         setDarkTheme,
+        setIconId,
+        setIconBg,
+        setDocsIconId,
       }}
     >
       {children}

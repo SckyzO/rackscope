@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StadeToulousainOverlay } from '../components/StadeToulousainOverlay';
+import { AppIcon, getIconContainerClass, getIconSize } from '../components/AppIcon';
+import { useTheme } from '@src/context/ThemeContext';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAppConfigSafe } from '../contexts/AppConfigContext';
 import { api } from '@src/services/api';
@@ -530,6 +532,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { features, plugins, config } = useAppConfigSafe();
+  const { iconId, iconBg } = useTheme();
   // Slurm plugin registers its menu section as id="workload", not "slurm"
   const slurmActive = plugins.slurm;
 
@@ -559,7 +562,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
       <div className="flex h-[72px] shrink-0 items-center">
         <div className="flex min-w-0 items-center gap-3">
           <div
-            className="bg-brand-500 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-white transition-transform select-none active:scale-90"
+            className={`${getIconContainerClass(iconBg)} cursor-pointer`}
             onClick={(e) => {
               if (e.shiftKey) {
                 setBootActive(true);
@@ -578,36 +581,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
             }}
             title="Go to Dashboard"
           >
-            {/* Rackscope logo — rack cabinet + monitoring pulse */}
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <rect
-                x="1.5"
-                y="1.5"
-                width="17"
-                height="17"
-                rx="2"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              />
-              <rect x="3.5" y="3.5" width="10" height="3" rx="0.75" fill="currentColor" />
-              <circle cx="16" cy="5" r="1.25" fill="currentColor" />
-              <path
-                d="M3.5 10.5h2L7 8.5l2 4 1.5-2h2.5"
-                stroke="currentColor"
-                strokeWidth="1.25"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle cx="16" cy="10.5" r="1.25" fill="currentColor" />
-              <rect x="3.5" y="13.5" width="10" height="3" rx="0.75" fill="currentColor" />
-              <circle cx="16" cy="15" r="1.25" fill="currentColor" />
-            </svg>
+            <AppIcon id={iconId} className={getIconSize(iconBg)} />
           </div>
           <button
             onClick={() => navigate('/')}
