@@ -8,7 +8,44 @@ sidebar_position: 7
 
 ## Notification feed
 
-The notification feed (`/notifications`) shows all active CRIT and WARN alerts across the infrastructure. Alerts are grouped by severity, sortable by rack, room, or check type.
+The notification feed (`/notifications`) shows all active CRIT and WARN alerts across the infrastructure (Prometheus health checks + Slurm node states).
+
+### Column sort
+
+Click any column header to sort by that column. A second click reverses the order (asc/desc). The active sort column is highlighted in the accent color.
+
+Sortable columns: **Severity**, **Name**, **Type**, **Location**, **Rack**, **Room**, **Checks**.
+
+Default sort: **Severity DESC** — Critical alerts first.
+
+### Column filters
+
+Each filterable column header has a filter icon (⊞). Clicking it opens a dropdown listing all unique values for that column. Select one or more values to show only matching rows.
+
+| Column | Values shown |
+|--------|-------------|
+| Severity | CRIT, WARN |
+| Type | Infrastructure, Slurm |
+| Room | all room names |
+| Rack | all rack names |
+| Location | device names (infra) / Slurm statuses |
+| Checks | individual check IDs (e.g. `node_up`, `ipmi_temp_warn`) |
+
+For columns with many values (Rack, Location, Checks), a search field appears inside the dropdown.
+
+The **Checks** filter is multi-select: a row matches if any of its failing checks is in the selected set. Slurm rows (which have no checks) are excluded when a check filter is active.
+
+### Active filter chips
+
+When column filters are active, a chip bar appears below the toolbar showing each active filter with its selected values. Click the × on a chip to remove that filter, or **Clear all** to reset everything.
+
+### Combining filters
+
+All filter mechanisms combine with AND logic:
+- Quick filter (All / Critical / Warning / Infrastructure / Slurm)
+- Full-text search
+- Column filters
+- Sort
 
 ## Notification panel
 
