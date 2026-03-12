@@ -1,236 +1,244 @@
 /**
  * ArchDiagram — Rackscope architecture overview
  *
- * Pure inline SVG, zero runtime dependencies.
- * Void dark palette · Outfit typography · brand indigo accents.
- * Import directly in any MDX file:
- *   import ArchDiagram from '@site/src/components/ArchDiagram';
- *   <ArchDiagram />
+ * Premium dark-tech SVG. Zero dependencies. Docusaurus MDX compatible.
+ * Draw order: bg → nodes → connections (on top) → labels (topmost).
+ * Arrowheads: filled polygons (no SVG marker/gradient rendering bugs).
  */
 
 export default function ArchDiagram() {
   return (
     <svg
-      viewBox="0 0 860 380"
+      viewBox="0 0 900 420"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-label="Rackscope architecture diagram"
-      style={{ width: '100%', maxWidth: 860, height: 'auto', display: 'block', margin: '1.5rem auto' }}
+      style={{
+        width: '100%',
+        maxWidth: 900,
+        height: 'auto',
+        display: 'block',
+        margin: '2rem auto',
+        borderRadius: 14,
+      }}
     >
       <defs>
-        {/* ── Backgrounds ──────────────────────────────────────── */}
-        <radialGradient id="bg-glow" cx="50%" cy="45%" r="60%">
-          <stop offset="0%" stopColor="#0c1628" />
+        <radialGradient id="D_bg" cx="48%" cy="45%" r="58%">
+          <stop offset="0%" stopColor="#0d1a2e" />
           <stop offset="100%" stopColor="#030712" />
         </radialGradient>
 
-        <pattern id="grid" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
-          <circle cx="0.8" cy="0.8" r="0.8" fill="#1f2937" opacity="0.7" />
+        <pattern id="D_grid" x="0" y="0" width="28" height="28" patternUnits="userSpaceOnUse">
+          <circle cx="0.8" cy="0.8" r="0.8" fill="#1a2535" opacity="0.9" />
         </pattern>
 
-        {/* ── Node fills ───────────────────────────────────────── */}
-        <linearGradient id="fill-default" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#111827" />
-          <stop offset="100%" stopColor="#161f2e" />
+        <linearGradient id="D_card" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#111e33" />
+          <stop offset="100%" stopColor="#0b1524" />
         </linearGradient>
 
-        <linearGradient id="fill-hub" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#1a2642" />
-          <stop offset="100%" stopColor="#111827" />
+        <linearGradient id="D_hub" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#162040" />
+          <stop offset="100%" stopColor="#0d1a30" />
         </linearGradient>
 
-        {/* ── Glows ────────────────────────────────────────────── */}
-        <filter id="glow-brand" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="5" result="blur" />
+        <filter id="D_glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="5" result="b" />
           <feMerge>
-            <feMergeNode in="blur" />
+            <feMergeNode in="b" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-
-        <filter id="glow-soft" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-
-
-
       </defs>
 
-      {/* ── Background ───────────────────────────────────────────── */}
-      <rect width="860" height="380" rx="16" fill="url(#bg-glow)" />
-      <rect width="860" height="380" rx="16" fill="url(#grid)" />
-      <rect width="860" height="380" rx="16" fill="none" stroke="#1f2937" strokeWidth="1" />
+      {/* ── 1. Background ──────────────────────────────────────────── */}
+      <rect width="900" height="420" rx="14" fill="url(#D_bg)" />
+      <rect width="900" height="420" rx="14" fill="url(#D_grid)" />
+      <rect width="900" height="420" rx="14" fill="none" stroke="#1a2d4a" strokeWidth="1" />
 
-      {/* ── Hub accent ring (Backend glow) ───────────────────────── */}
-      <ellipse cx="430" cy="162" rx="130" ry="90" fill="none" stroke="#465fff" strokeWidth="0.5" opacity="0.12" />
-      <ellipse cx="430" cy="162" rx="155" ry="110" fill="none" stroke="#465fff" strokeWidth="0.3" opacity="0.07" />
+      {/* Hub rings */}
+      <ellipse cx="430" cy="180" rx="148" ry="96"
+        fill="none" stroke="#465fff" strokeWidth="0.6" opacity="0.10" />
+      <ellipse cx="430" cy="180" rx="175" ry="118"
+        fill="none" stroke="#465fff" strokeWidth="0.3" opacity="0.05" />
 
-      {/* ═══════════════════════════════════════════════════════════
-          CONNECTIONS — Y unified at 166 (Backend mid-y) for perfect
-          horizontal alignment. userSpaceOnUse gradients = always visible.
-          Chevron size ×2, dot radius 4.5, pill contrast maxed.
-          ═══════════════════════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════════════
+          ── 2. NODES (drawn before connections so arrows appear on top)
+          Node geometry — all mid-y = 180, Backend/Frontend mid-x = 430:
+            Config:     x=22,  y=140, w=160, h=80  → right=182, mid=(112,180)
+            Backend:    x=310, y=125, w=240, h=110 → right=550, mid=(430,180)
+            Prometheus: x=718, y=140, w=162, h=80  → left=718,  mid=(799,180)
+            Frontend:   x=320, y=290, w=220, h=76  → top=290,   mid=(430,328)
+          ═══════════════════════════════════════════════════════════════ */}
 
-      {/* ── Config ──► Backend ─────────────────────────────────── */}
-      {/* Line: Config right edge + 8px gap → Backend left edge - 8px */}
-      <line x1="210" y1="166" x2="290" y2="166"
-        stroke="#5571ff" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Chevron → at Backend entry (bigger, more visible) */}
-      <polyline points="280,158 291,166 280,174"
-        fill="none" stroke="#5571ff" strokeWidth="2.5"
-        strokeLinecap="round" strokeLinejoin="round" />
-      {/* Anchor dots */}
-      <circle cx="210" cy="166" r="4.5" fill="#5571ff" opacity="0.95" />
-      <circle cx="290" cy="166" r="3" fill="#5571ff" opacity="0.75" />
-      {/* Pill label — above, pill shape with visible bg + border */}
-      <rect x="216" y="148" width="60" height="24" rx="12"
-        fill="#0a1628" stroke="#2d4a7a" strokeWidth="1.2" />
-      <text x="246" y="164" fill="#7592ff" fontSize="10.5"
+      {/* ── YAML CONFIG ── */}
+      <rect x="23" y="143" width="160" height="80" rx="10" fill="#000" opacity="0.3" />
+      <rect x="22" y="140" width="160" height="80" rx="10" fill="url(#D_card)" />
+      <rect x="22" y="140" width="160" height="80" rx="10"
+        fill="none" stroke="#1e2d4e" strokeWidth="1" />
+      {/* Icon: 3 YAML lines — centered with title y=164 (cap-center ≈ y=157) */}
+      <rect x="38" y="154" width="20" height="2.5" rx="1.25" fill="#5571ff" opacity="0.95" />
+      <rect x="38" y="160" width="15" height="2.5" rx="1.25" fill="#5571ff" opacity="0.6" />
+      <rect x="38" y="166" width="18" height="2.5" rx="1.25" fill="#5571ff" opacity="0.4" />
+      {/* Text */}
+      <text x="66" y="163" fill="#e5e7eb" fontSize="13"
+        fontFamily="Outfit, system-ui" fontWeight="600" letterSpacing="0.01em">
+        YAML Config
+      </text>
+      <text x="38" y="184" fill="#4b5563" fontSize="9"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.03em">
+        topology · templates
+      </text>
+      <text x="38" y="197" fill="#374151" fontSize="9"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.03em">
+        checks · metrics
+      </text>
+
+      {/* ── BACKEND (HUB) ── */}
+      <rect x="308" y="123" width="244" height="114" rx="13"
+        fill="#465fff" opacity="0.04" filter="url(#D_glow)" />
+      <rect x="311" y="128" width="240" height="110" rx="12" fill="#000" opacity="0.3" />
+      <rect x="310" y="125" width="240" height="110" rx="12" fill="url(#D_hub)" />
+      <rect x="310" y="125" width="240" height="110" rx="12"
+        fill="none" stroke="#465fff" strokeWidth="1.2" opacity="0.55" />
+      {/* Full-width top bar — hub indicator */}
+      <rect x="310" y="125" width="240" height="3" rx="1.5" fill="#465fff" opacity="0.85" />
+      {/* Icon: hexagon — cap-center of 15px title at y=151 is ≈ y=146 */}
+      <polygon
+        points="336,140 344,136 352,140 352,148 344,152 336,148"
+        fill="none" stroke="#5571ff" strokeWidth="1.5" opacity="0.85" />
+      <circle cx="344" cy="144" r="3.5" fill="#465fff" opacity="0.7" />
+      {/* Text */}
+      <text x="362" y="151" fill="#f9fafb" fontSize="15"
+        fontFamily="Outfit, system-ui" fontWeight="700" letterSpacing="0.01em">
+        Backend
+      </text>
+      <text x="362" y="165" fill="#7592ff" fontSize="11"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.03em">
+        FastAPI · :8000
+      </text>
+      <line x1="326" y1="174" x2="534" y2="174" stroke="#1e2d4e" strokeWidth="1" />
+      <text x="326" y="189" fill="#4b5563" fontSize="9"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.025em">
+        Health Engine  ·  Telemetry Planner
+      </text>
+      <text x="326" y="202" fill="#4b5563" fontSize="9"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.025em">
+        Plugin Registry  ·  REST API
+      </text>
+      <text x="326" y="215" fill="#374151" fontSize="9"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.025em">
+        batched PromQL  ·  health aggregation
+      </text>
+
+      {/* ── PROMETHEUS ── */}
+      <rect x="719" y="143" width="162" height="80" rx="10" fill="#000" opacity="0.3" />
+      <rect x="718" y="140" width="162" height="80" rx="10" fill="url(#D_card)" />
+      <rect x="718" y="140" width="162" height="80" rx="10"
+        fill="none" stroke="#1e2d4e" strokeWidth="1" />
+      {/* Icon: bar chart — cap-center of 13px title at y=163 is ≈ y=158 */}
+      <rect x="734" y="150" width="5" height="14" rx="2" fill="#f79009" opacity="0.5" />
+      <rect x="742" y="145" width="5" height="19" rx="2" fill="#f79009" opacity="0.75" />
+      <rect x="750" y="148" width="5" height="16" rx="2" fill="#f79009" opacity="0.6" />
+      {/* Text */}
+      <text x="764" y="163" fill="#e5e7eb" fontSize="13"
+        fontFamily="Outfit, system-ui" fontWeight="600" letterSpacing="0.01em">
+        Prometheus
+      </text>
+      <text x="734" y="181" fill="#4b5563" fontSize="9"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.03em">
+        PromQL Engine · :9090
+      </text>
+      <text x="734" y="193" fill="#4b5563" fontSize="9"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.03em">
+        scrapes exporters
+      </text>
+      <text x="734" y="205" fill="#374151" fontSize="9"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.03em">
+        IPMI · node · custom
+      </text>
+
+      {/* ── FRONTEND ── */}
+      <rect x="321" y="293" width="220" height="76" rx="10" fill="#000" opacity="0.3" />
+      <rect x="320" y="290" width="220" height="76" rx="10" fill="url(#D_card)" />
+      <rect x="320" y="290" width="220" height="76" rx="10"
+        fill="none" stroke="#1e2d4e" strokeWidth="1" />
+      {/* Icon: monitor — cap-center of 13px title at y=314 is ≈ y=309 */}
+      <rect x="336" y="303" width="23" height="16" rx="3"
+        fill="none" stroke="#5571ff" strokeWidth="1.4" opacity="0.75" />
+      <rect x="342" y="311" width="11" height="2" rx="1" fill="#465fff" opacity="0.35" />
+      <line x1="347.5" y1="319" x2="347.5" y2="323"
+        stroke="#465fff" strokeWidth="1.3" opacity="0.45" />
+      <line x1="343" y1="323" x2="352" y2="323"
+        stroke="#465fff" strokeWidth="1.3" opacity="0.45" />
+      {/* Text */}
+      <text x="368" y="314" fill="#e5e7eb" fontSize="13"
+        fontFamily="Outfit, system-ui" fontWeight="600" letterSpacing="0.01em">
+        Frontend
+      </text>
+      <text x="368" y="328" fill="#7592ff" fontSize="11"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.03em">
+        React · :5173
+      </text>
+      <text x="336" y="348" fill="#4b5563" fontSize="9"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.025em">
+        Physical Views  ·  Visual Editors  ·  Dashboards
+      </text>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          ── 3. CONNECTIONS (drawn AFTER nodes — appear on top)
+          Gaps: 8px from each node edge.
+          Config right=182 → gap → x=190 to x=302 → gap → Backend left=310
+          Backend right=550 → gap → x=558 to x=710 → gap → Prom left=718
+          Backend bottom=235 → gap → y=243 to y=282 → gap → Frontend top=290
+          Label pills drawn above lines (+16px upward) to avoid covering arrows.
+          ═══════════════════════════════════════════════════════════════ */}
+
+      {/* ── Config ──► Backend ─────────────────────────────────────── */}
+      <line x1="190" y1="180" x2="302" y2="180"
+        stroke="#5571ff" strokeWidth="2.5" strokeOpacity="0.9" />
+      {/* Arrowhead → */}
+      <polygon points="291,174 303,180 291,186" fill="#5571ff" opacity="0.95" />
+      {/* Anchor dot */}
+      <circle cx="190" cy="180" r="4" fill="#5571ff" opacity="0.9" />
+      {/* Label ABOVE the line (y=180-16=164, pill height 20 → top at 156) */}
+      <rect x="211" y="156" width="60" height="20" rx="10"
+        fill="#060e1c" stroke="#253d6a" strokeWidth="1.2" />
+      <text x="241" y="170" fill="#7592ff" fontSize="10"
         fontFamily="'IBM Plex Mono', monospace"
         fontWeight="500" textAnchor="middle" letterSpacing="0.06em">startup</text>
 
-      {/* ── Backend ◄──► Prometheus ────────────────────────────── */}
-      <line x1="572" y1="166" x2="648" y2="166"
-        stroke="#5571ff" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Chevrons ← → */}
-      <polyline points="582,158 571,166 582,174"
-        fill="none" stroke="#5571ff" strokeWidth="2.5"
-        strokeLinecap="round" strokeLinejoin="round" />
-      <polyline points="638,158 649,166 638,174"
-        fill="none" stroke="#5571ff" strokeWidth="2.5"
-        strokeLinecap="round" strokeLinejoin="round" />
+      {/* ── Backend ◄──► Prometheus ────────────────────────────────── */}
+      <line x1="558" y1="170" x2="710" y2="170"
+        stroke="#5571ff" strokeWidth="2.5" strokeOpacity="0.9" />
+      {/* Arrowheads ← → */}
+      <polygon points="569,164 557,170 569,176" fill="#5571ff" opacity="0.95" />
+      <polygon points="699,164 711,170 699,176" fill="#5571ff" opacity="0.95" />
       {/* Anchor dots */}
-      <circle cx="572" cy="166" r="3" fill="#5571ff" opacity="0.75" />
-      <circle cx="648" cy="166" r="3" fill="#5571ff" opacity="0.75" />
-      {/* Pill label — above */}
-      <rect x="577" y="148" width="56" height="24" rx="12"
-        fill="#0a1628" stroke="#2d4a7a" strokeWidth="1.2" />
-      <text x="605" y="164" fill="#7592ff" fontSize="10.5"
+      <circle cx="558" cy="170" r="3.5" fill="#5571ff" opacity="0.8" />
+      <circle cx="710" cy="170" r="3.5" fill="#5571ff" opacity="0.8" />
+      {/* Label ABOVE */}
+      <rect x="600" y="150" width="60" height="20" rx="10"
+        fill="#060e1c" stroke="#253d6a" strokeWidth="1.2" />
+      <text x="630" y="164" fill="#7592ff" fontSize="10"
         fontFamily="'IBM Plex Mono', monospace"
         fontWeight="500" textAnchor="middle" letterSpacing="0.06em">PromQL</text>
 
-      {/* ── Backend ◄──► Frontend ──────────────────────────────── */}
-      {/* Backend bottom=226 + 8px → Frontend top=292 - 8px */}
-      <line x1="431" y1="234" x2="431" y2="284"
-        stroke="#5571ff" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Chevrons ↑ ↓ */}
-      <polyline points="423,244 431,233 439,244"
-        fill="none" stroke="#5571ff" strokeWidth="2.5"
-        strokeLinecap="round" strokeLinejoin="round" />
-      <polyline points="423,274 431,285 439,274"
-        fill="none" stroke="#5571ff" strokeWidth="2.5"
-        strokeLinecap="round" strokeLinejoin="round" />
+      {/* ── Backend ◄──► Frontend ──────────────────────────────────── */}
+      <line x1="430" y1="243" x2="430" y2="282"
+        stroke="#5571ff" strokeWidth="2.5" strokeOpacity="0.9" />
+      {/* Arrowheads ↑ ↓ */}
+      <polygon points="424,254 430,242 436,254" fill="#5571ff" opacity="0.95" />
+      <polygon points="424,271 430,283 436,271" fill="#5571ff" opacity="0.95" />
       {/* Anchor dots */}
-      <circle cx="431" cy="234" r="3" fill="#5571ff" opacity="0.75" />
-      <circle cx="431" cy="284" r="3" fill="#5571ff" opacity="0.75" />
-      {/* Pill label — right of line, centered vertically */}
-      <rect x="443" y="249" width="74" height="24" rx="12"
-        fill="#0a1628" stroke="#2d4a7a" strokeWidth="1.2" />
-      <text x="480" y="265" fill="#7592ff" fontSize="10.5"
+      <circle cx="430" cy="243" r="3.5" fill="#5571ff" opacity="0.8" />
+      <circle cx="430" cy="282" r="3.5" fill="#5571ff" opacity="0.8" />
+      {/* Label to the RIGHT of the line */}
+      <rect x="443" y="253" width="76" height="20" rx="10"
+        fill="#060e1c" stroke="#253d6a" strokeWidth="1.2" />
+      <text x="481" y="267" fill="#7592ff" fontSize="10"
         fontFamily="'IBM Plex Mono', monospace"
         fontWeight="500" textAnchor="middle" letterSpacing="0.06em">REST API</text>
-
-      {/* ═══════════════════════════════════════════════════════════
-          NODE — YAML CONFIG
-          ═══════════════════════════════════════════════════════════ */}
-      {/* Shadow */}
-      <rect x="24" y="118" width="180" height="88" rx="12" fill="#465fff" opacity="0.04" />
-      {/* Card */}
-      <rect x="22" y="116" width="180" height="88" rx="12" fill="url(#fill-default)" />
-      <rect x="22" y="116" width="180" height="88" rx="12" fill="none" stroke="#1f2937" strokeWidth="1" />
-      <rect x="22" y="116" width="180" height="88" rx="12" fill="none" stroke="#465fff" strokeWidth="0.8" opacity="0.25" />
-      {/* Top accent line */}
-      <rect x="34" y="117" width="60" height="2" rx="1" fill="#5571ff" opacity="0.75" />
-      {/* Icon: stacked lines (YAML/file) */}
-      <rect x="42" y="138" width="18" height="2.5" rx="1.25" fill="#465fff" opacity="0.9" />
-      <rect x="42" y="144" width="14" height="2.5" rx="1.25" fill="#465fff" opacity="0.6" />
-      <rect x="42" y="150" width="16" height="2.5" rx="1.25" fill="#465fff" opacity="0.4" />
-      {/* Labels */}
-      <text x="68" y="144" fill="#e5e5e5" fontSize="13" fontFamily="Outfit, system-ui"
-        fontWeight="600" letterSpacing="0.01em">YAML Config</text>
-      <text x="42" y="172" fill="#4b5563" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.02em">topology · templates</text>
-      <text x="42" y="185" fill="#4b5563" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.02em">checks · metrics</text>
-      <text x="42" y="198" fill="#374151" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.02em">loaded at startup</text>
-
-      {/* ═══════════════════════════════════════════════════════════
-          NODE — BACKEND (hub, prominent)
-          ═══════════════════════════════════════════════════════════ */}
-      {/* Outer glow */}
-      <rect x="296" y="104" width="270" height="124" rx="14"
-        fill="#465fff" opacity="0.04" filter="url(#glow-brand)" />
-      {/* Card */}
-      <rect x="298" y="106" width="266" height="120" rx="13" fill="url(#fill-hub)" />
-      <rect x="298" y="106" width="266" height="120" rx="13" fill="none" stroke="#465fff" strokeWidth="1.2" opacity="0.6" />
-      {/* Top accent bar — full width */}
-      <rect x="298" y="106" width="266" height="3" rx="1.5" fill="#465fff" opacity="0.7" />
-      {/* Icon: hexagon (api/service) */}
-      <polygon points="324,133 330,129 336,133 336,141 330,145 324,141"
-        fill="none" stroke="#465fff" strokeWidth="1.5" opacity="0.8" />
-      <circle cx="330" cy="137" r="3" fill="#465fff" opacity="0.6" />
-      {/* Labels */}
-      <text x="350" y="136" fill="#e5e5e5" fontSize="15" fontFamily="Outfit, system-ui"
-        fontWeight="700" letterSpacing="0.01em">Backend</text>
-      <text x="350" y="152" fill="#7592ff" fontSize="11"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.03em">FastAPI · :8000</text>
-      {/* Divider */}
-      <line x1="314" y1="162" x2="548" y2="162" stroke="#1f2937" strokeWidth="1" />
-      {/* Feature list */}
-      <text x="314" y="178" fill="#4b5563" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.02em">Health Engine  ·  Telemetry Planner</text>
-      <text x="314" y="192" fill="#4b5563" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.02em">Plugin Registry  ·  REST API</text>
-      <text x="314" y="206" fill="#374151" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.02em">batched PromQL · health aggregation</text>
-
-      {/* ═══════════════════════════════════════════════════════════
-          NODE — PROMETHEUS
-          ═══════════════════════════════════════════════════════════ */}
-      <rect x="654" y="118" width="180" height="88" rx="12" fill="url(#fill-default)" />
-      <rect x="654" y="118" width="180" height="88" rx="12" fill="none" stroke="#1f2937" strokeWidth="1" />
-      <rect x="654" y="118" width="180" height="88" rx="12" fill="none" stroke="#f79009" strokeWidth="0.8" opacity="0.2" />
-      {/* Top accent */}
-      <rect x="666" y="119" width="50" height="2" rx="1" fill="#f79009" opacity="0.45" />
-      {/* Icon: chart bars */}
-      <rect x="674" y="154" width="4" height="12" rx="2" fill="#f79009" opacity="0.5" />
-      <rect x="681" y="148" width="4" height="18" rx="2" fill="#f79009" opacity="0.7" />
-      <rect x="688" y="151" width="4" height="15" rx="2" fill="#f79009" opacity="0.6" />
-      {/* Labels */}
-      <text x="700" y="143" fill="#e5e5e5" fontSize="13" fontFamily="Outfit, system-ui"
-        fontWeight="600" letterSpacing="0.01em">Prometheus</text>
-      <text x="674" y="172" fill="#4b5563" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.02em">PromQL Engine · :9090</text>
-      <text x="674" y="185" fill="#4b5563" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.02em">scrapes exporters</text>
-      <text x="674" y="198" fill="#374151" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.02em">IPMI · node · custom</text>
-
-      {/* ═══════════════════════════════════════════════════════════
-          NODE — FRONTEND
-          ═══════════════════════════════════════════════════════════ */}
-      <rect x="298" y="292" width="266" height="74" rx="12" fill="url(#fill-default)" />
-      <rect x="298" y="292" width="266" height="74" rx="12" fill="none" stroke="#1f2937" strokeWidth="1" />
-      <rect x="298" y="292" width="266" height="74" rx="12" fill="none" stroke="#465fff" strokeWidth="0.8" opacity="0.25" />
-      {/* Bottom accent */}
-      <rect x="310" y="363" width="50" height="2" rx="1" fill="#465fff" opacity="0.35" />
-      {/* Icon: monitor */}
-      <rect x="316" y="308" width="24" height="17" rx="3" fill="none" stroke="#465fff" strokeWidth="1.4" opacity="0.7" />
-      <rect x="322" y="317" width="12" height="2" rx="1" fill="#465fff" opacity="0.35" />
-      <line x1="328" y1="325" x2="328" y2="330" stroke="#465fff" strokeWidth="1.2" opacity="0.5" />
-      <line x1="323" y1="330" x2="333" y2="330" stroke="#465fff" strokeWidth="1.2" opacity="0.5" />
-      {/* Labels */}
-      <text x="352" y="316" fill="#e5e5e5" fontSize="13" fontFamily="Outfit, system-ui"
-        fontWeight="600" letterSpacing="0.01em">Frontend</text>
-      <text x="352" y="332" fill="#7592ff" fontSize="11"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.03em">React · :5173</text>
-      <text x="316" y="352" fill="#4b5563" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.02em">Physical Views  ·  Visual Editors  ·  Dashboards</text>
     </svg>
   );
 }
