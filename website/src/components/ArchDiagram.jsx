@@ -65,16 +65,16 @@ export default function ArchDiagram() {
       {/* ═══════════════════════════════════════════════════════════════
           ── 2. NODES (drawn before connections so arrows appear on top)
           Node geometry — all mid-y = 180, Backend/Frontend mid-x = 430:
-            Config:     x=22,  y=140, w=160, h=80  → right=182, mid=(112,180)
-            Backend:    x=310, y=125, w=240, h=110 → right=550, mid=(430,180)
-            Prometheus: x=718, y=140, w=162, h=80  → left=718,  mid=(799,180)
-            Frontend:   x=320, y=290, w=220, h=76  → top=290,   mid=(430,328)
+            Config:     x=22,  y=128, w=160, h=100 → right=182, mid-y=178
+            Backend:    x=310, y=128, w=240, h=100 → right=550, mid-y=178 (wider=hub)
+            Prometheus: x=718, y=128, w=162, h=100 → left=718,  mid-y=178
+            Frontend:   x=310, y=290, w=240, h=84  → top=290,   mid-x=430 (same width)
           ═══════════════════════════════════════════════════════════════ */}
 
       {/* ── YAML CONFIG ── */}
-      <rect x="23" y="143" width="160" height="80" rx="10" fill="#000" opacity="0.3" />
-      <rect x="22" y="140" width="160" height="80" rx="10" fill="url(#D_card)" />
-      <rect x="22" y="140" width="160" height="80" rx="10"
+      <rect x="23" y="131" width="160" height="100" rx="10" fill="#000" opacity="0.3" />
+      <rect x="22" y="128" width="160" height="100" rx="10" fill="url(#D_card)" />
+      <rect x="22" y="128" width="160" height="100" rx="10"
         fill="none" stroke="#1e2d4e" strokeWidth="1" />
       {/* Icon: 3 YAML lines — centered with title y=164 (cap-center ≈ y=157) */}
       <rect x="38" y="154" width="20" height="2.5" rx="1.25" fill="#5571ff" opacity="0.95" />
@@ -95,14 +95,12 @@ export default function ArchDiagram() {
       </text>
 
       {/* ── BACKEND (HUB) ── */}
-      <rect x="308" y="123" width="244" height="114" rx="13"
+      <rect x="308" y="126" width="244" height="104" rx="13"
         fill="#465fff" opacity="0.04" filter="url(#D_glow)" />
-      <rect x="311" y="128" width="240" height="110" rx="12" fill="#000" opacity="0.3" />
-      <rect x="310" y="125" width="240" height="110" rx="12" fill="url(#D_hub)" />
-      <rect x="310" y="125" width="240" height="110" rx="12"
+      <rect x="311" y="131" width="240" height="100" rx="12" fill="#000" opacity="0.3" />
+      <rect x="310" y="128" width="240" height="100" rx="12" fill="url(#D_hub)" />
+      <rect x="310" y="128" width="240" height="100" rx="12"
         fill="none" stroke="#465fff" strokeWidth="1.2" opacity="0.55" />
-      {/* Full-width top bar — hub indicator */}
-      <rect x="310" y="125" width="240" height="3" rx="1.5" fill="#465fff" opacity="0.85" />
       {/* Icon: hexagon — cap-center of 15px title at y=151 is ≈ y=146 */}
       <polygon
         points="336,140 344,136 352,140 352,148 344,152 336,148"
@@ -132,9 +130,9 @@ export default function ArchDiagram() {
       </text>
 
       {/* ── PROMETHEUS ── */}
-      <rect x="719" y="143" width="162" height="80" rx="10" fill="#000" opacity="0.3" />
-      <rect x="718" y="140" width="162" height="80" rx="10" fill="url(#D_card)" />
-      <rect x="718" y="140" width="162" height="80" rx="10"
+      <rect x="719" y="131" width="162" height="100" rx="10" fill="#000" opacity="0.3" />
+      <rect x="718" y="128" width="162" height="100" rx="10" fill="url(#D_card)" />
+      <rect x="718" y="128" width="162" height="100" rx="10"
         fill="none" stroke="#1e2d4e" strokeWidth="1" />
       {/* Icon: bar chart — cap-center of 13px title at y=163 is ≈ y=158 */}
       <rect x="734" y="150" width="5" height="14" rx="2" fill="#f79009" opacity="0.5" />
@@ -159,9 +157,9 @@ export default function ArchDiagram() {
       </text>
 
       {/* ── FRONTEND ── */}
-      <rect x="321" y="293" width="220" height="76" rx="10" fill="#000" opacity="0.3" />
-      <rect x="320" y="290" width="220" height="76" rx="10" fill="url(#D_card)" />
-      <rect x="320" y="290" width="220" height="76" rx="10"
+      <rect x="311" y="293" width="240" height="84" rx="10" fill="#000" opacity="0.3" />
+      <rect x="310" y="290" width="240" height="84" rx="10" fill="url(#D_card)" />
+      <rect x="310" y="290" width="240" height="84" rx="10"
         fill="none" stroke="#1e2d4e" strokeWidth="1" />
       {/* Icon: monitor — cap-center of 13px title at y=314 is ≈ y=309 */}
       <rect x="336" y="303" width="23" height="16" rx="3"
@@ -199,14 +197,12 @@ export default function ArchDiagram() {
         stroke="#5571ff" strokeWidth="2.5" strokeOpacity="0.9" />
       {/* Arrowhead → */}
       <polygon points="291,174 303,180 291,186" fill="#5571ff" opacity="0.95" />
-      {/* Anchor dot */}
-      <circle cx="190" cy="180" r="4" fill="#5571ff" opacity="0.9" />
       {/* Label ABOVE the line (y=180-16=164, pill height 20 → top at 156) */}
       <rect x="211" y="156" width="60" height="20" rx="10"
         fill="#060e1c" stroke="#253d6a" strokeWidth="1.2" />
       <text x="241" y="170" fill="#7592ff" fontSize="10"
         fontFamily="'IBM Plex Mono', monospace"
-        fontWeight="500" textAnchor="middle" letterSpacing="0.06em">startup</text>
+        fontWeight="500" textAnchor="middle" letterSpacing="0.06em">loads</text>
 
       {/* ── Backend ◄──► Prometheus ────────────────────────────────── */}
       <line x1="558" y1="170" x2="710" y2="170"
@@ -214,9 +210,6 @@ export default function ArchDiagram() {
       {/* Arrowheads ← → */}
       <polygon points="569,164 557,170 569,176" fill="#5571ff" opacity="0.95" />
       <polygon points="699,164 711,170 699,176" fill="#5571ff" opacity="0.95" />
-      {/* Anchor dots */}
-      <circle cx="558" cy="170" r="3.5" fill="#5571ff" opacity="0.8" />
-      <circle cx="710" cy="170" r="3.5" fill="#5571ff" opacity="0.8" />
       {/* Label ABOVE */}
       <rect x="600" y="150" width="60" height="20" rx="10"
         fill="#060e1c" stroke="#253d6a" strokeWidth="1.2" />
@@ -230,9 +223,6 @@ export default function ArchDiagram() {
       {/* Arrowheads ↑ ↓ */}
       <polygon points="424,254 430,242 436,254" fill="#5571ff" opacity="0.95" />
       <polygon points="424,271 430,283 436,271" fill="#5571ff" opacity="0.95" />
-      {/* Anchor dots */}
-      <circle cx="430" cy="243" r="3.5" fill="#5571ff" opacity="0.8" />
-      <circle cx="430" cy="282" r="3.5" fill="#5571ff" opacity="0.8" />
       {/* Label to the RIGHT of the line */}
       <rect x="443" y="253" width="76" height="20" rx="10"
         fill="#060e1c" stroke="#253d6a" strokeWidth="1.2" />
