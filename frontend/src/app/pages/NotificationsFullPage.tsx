@@ -223,7 +223,7 @@ const ColumnHeader = ({
       <div className="flex items-center gap-1">
         <button
           onClick={() => onSort(col)}
-          className={`flex items-center gap-0.5 transition-colors hover:text-gray-900 dark:hover:text-gray-100 ${
+          className={`flex items-center gap-0.5 uppercase tracking-wider transition-colors hover:text-gray-900 dark:hover:text-gray-100 ${
             active ? 'text-brand-500 dark:text-brand-400' : ''
           }`}
         >
@@ -670,7 +670,7 @@ export const NotificationsFullPage = () => {
               <button
                 key={f.id}
                 onClick={() => setFilter(f.id)}
-                className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors ${
+                className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
                   filter === f.id
                     ? 'bg-brand-500 text-white shadow-sm'
                     : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
