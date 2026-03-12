@@ -56,24 +56,8 @@ export default function ArchDiagram() {
           </feMerge>
         </filter>
 
-        {/* ── Arrows ───────────────────────────────────────────── */}
-        <linearGradient id="arrow-h" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#465fff" stopOpacity="0.3" />
-          <stop offset="50%" stopColor="#465fff" />
-          <stop offset="100%" stopColor="#465fff" stopOpacity="0.3" />
-        </linearGradient>
 
-        <linearGradient id="arrow-v" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#465fff" />
-          <stop offset="100%" stopColor="#465fff" stopOpacity="0.3" />
-        </linearGradient>
 
-        <marker id="tip" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
-          <path d="M0,0.5 L6,3.5 L0,6.5" fill="none" stroke="#465fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-        </marker>
-        <marker id="tip-back" markerWidth="7" markerHeight="7" refX="1" refY="3.5" orient="auto">
-          <path d="M6,0.5 L0,3.5 L6,6.5" fill="none" stroke="#465fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-        </marker>
       </defs>
 
       {/* ── Background ───────────────────────────────────────────── */}
@@ -86,31 +70,69 @@ export default function ArchDiagram() {
       <ellipse cx="430" cy="162" rx="155" ry="110" fill="none" stroke="#465fff" strokeWidth="0.3" opacity="0.07" />
 
       {/* ═══════════════════════════════════════════════════════════
-          ARROWS
+          CONNECTIONS — Y unified at 166 (Backend mid-y) for perfect
+          horizontal alignment. userSpaceOnUse gradients = always visible.
+          Chevron size ×2, dot radius 4.5, pill contrast maxed.
           ═══════════════════════════════════════════════════════════ */}
 
-      {/* Config ──► Backend */}
-      <line x1="204" y1="162" x2="298" y2="162"
-        stroke="url(#arrow-h)" strokeWidth="1.5" markerEnd="url(#tip)" />
-      <rect x="213" y="150" width="72" height="18" rx="4" fill="#030712" opacity="0.9" />
-      <text x="249" y="163" fill="#4b5563" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" textAnchor="middle" letterSpacing="0.04em">startup</text>
+      {/* ── Config ──► Backend ─────────────────────────────────── */}
+      {/* Line: Config right edge + 8px gap → Backend left edge - 8px */}
+      <line x1="210" y1="166" x2="290" y2="166"
+        stroke="#5571ff" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Chevron → at Backend entry (bigger, more visible) */}
+      <polyline points="280,158 291,166 280,174"
+        fill="none" stroke="#5571ff" strokeWidth="2.5"
+        strokeLinecap="round" strokeLinejoin="round" />
+      {/* Anchor dots */}
+      <circle cx="210" cy="166" r="4.5" fill="#5571ff" opacity="0.95" />
+      <circle cx="290" cy="166" r="3" fill="#5571ff" opacity="0.75" />
+      {/* Pill label — above, pill shape with visible bg + border */}
+      <rect x="216" y="148" width="60" height="24" rx="12"
+        fill="#0a1628" stroke="#2d4a7a" strokeWidth="1.2" />
+      <text x="246" y="164" fill="#7592ff" fontSize="10.5"
+        fontFamily="'IBM Plex Mono', monospace"
+        fontWeight="500" textAnchor="middle" letterSpacing="0.06em">startup</text>
 
-      {/* Backend ◄──► Prometheus */}
-      <line x1="566" y1="152" x2="654" y2="152"
-        stroke="url(#arrow-h)" strokeWidth="1.5"
-        markerStart="url(#tip-back)" markerEnd="url(#tip)" />
-      <rect x="574" y="140" width="72" height="18" rx="4" fill="#030712" opacity="0.9" />
-      <text x="610" y="153" fill="#4b5563" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" textAnchor="middle" letterSpacing="0.04em">PromQL</text>
+      {/* ── Backend ◄──► Prometheus ────────────────────────────── */}
+      <line x1="572" y1="166" x2="648" y2="166"
+        stroke="#5571ff" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Chevrons ← → */}
+      <polyline points="582,158 571,166 582,174"
+        fill="none" stroke="#5571ff" strokeWidth="2.5"
+        strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points="638,158 649,166 638,174"
+        fill="none" stroke="#5571ff" strokeWidth="2.5"
+        strokeLinecap="round" strokeLinejoin="round" />
+      {/* Anchor dots */}
+      <circle cx="572" cy="166" r="3" fill="#5571ff" opacity="0.75" />
+      <circle cx="648" cy="166" r="3" fill="#5571ff" opacity="0.75" />
+      {/* Pill label — above */}
+      <rect x="577" y="148" width="56" height="24" rx="12"
+        fill="#0a1628" stroke="#2d4a7a" strokeWidth="1.2" />
+      <text x="605" y="164" fill="#7592ff" fontSize="10.5"
+        fontFamily="'IBM Plex Mono', monospace"
+        fontWeight="500" textAnchor="middle" letterSpacing="0.06em">PromQL</text>
 
-      {/* Backend ◄──► Frontend */}
-      <line x1="430" y1="226" x2="430" y2="290"
-        stroke="url(#arrow-v)" strokeWidth="1.5"
-        markerStart="url(#tip-back)" markerEnd="url(#tip)" />
-      <rect x="438" y="250" width="70" height="18" rx="4" fill="#030712" opacity="0.9" />
-      <text x="473" y="263" fill="#4b5563" fontSize="9.5"
-        fontFamily="'IBM Plex Mono', monospace" textAnchor="middle" letterSpacing="0.04em">REST API</text>
+      {/* ── Backend ◄──► Frontend ──────────────────────────────── */}
+      {/* Backend bottom=226 + 8px → Frontend top=292 - 8px */}
+      <line x1="431" y1="234" x2="431" y2="284"
+        stroke="#5571ff" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Chevrons ↑ ↓ */}
+      <polyline points="423,244 431,233 439,244"
+        fill="none" stroke="#5571ff" strokeWidth="2.5"
+        strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points="423,274 431,285 439,274"
+        fill="none" stroke="#5571ff" strokeWidth="2.5"
+        strokeLinecap="round" strokeLinejoin="round" />
+      {/* Anchor dots */}
+      <circle cx="431" cy="234" r="3" fill="#5571ff" opacity="0.75" />
+      <circle cx="431" cy="284" r="3" fill="#5571ff" opacity="0.75" />
+      {/* Pill label — right of line, centered vertically */}
+      <rect x="443" y="249" width="74" height="24" rx="12"
+        fill="#0a1628" stroke="#2d4a7a" strokeWidth="1.2" />
+      <text x="480" y="265" fill="#7592ff" fontSize="10.5"
+        fontFamily="'IBM Plex Mono', monospace"
+        fontWeight="500" textAnchor="middle" letterSpacing="0.06em">REST API</text>
 
       {/* ═══════════════════════════════════════════════════════════
           NODE — YAML CONFIG
@@ -122,7 +144,7 @@ export default function ArchDiagram() {
       <rect x="22" y="116" width="180" height="88" rx="12" fill="none" stroke="#1f2937" strokeWidth="1" />
       <rect x="22" y="116" width="180" height="88" rx="12" fill="none" stroke="#465fff" strokeWidth="0.8" opacity="0.25" />
       {/* Top accent line */}
-      <rect x="34" y="117" width="60" height="2" rx="1" fill="#465fff" opacity="0.5" />
+      <rect x="34" y="117" width="60" height="2" rx="1" fill="#5571ff" opacity="0.75" />
       {/* Icon: stacked lines (YAML/file) */}
       <rect x="42" y="138" width="18" height="2.5" rx="1.25" fill="#465fff" opacity="0.9" />
       <rect x="42" y="144" width="14" height="2.5" rx="1.25" fill="#465fff" opacity="0.6" />
