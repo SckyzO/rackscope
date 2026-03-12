@@ -56,6 +56,8 @@ For the full architecture documentation — design principles, backend/frontend 
 
 ---
 
-## Status
+<div className="rs-status">
 
 <StatusContent />
+
+</div>
