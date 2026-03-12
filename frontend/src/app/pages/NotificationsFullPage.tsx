@@ -19,7 +19,14 @@ import {
 import { api } from '@src/services/api';
 import type { ActiveAlert, SlurmNodeEntry } from '@src/types';
 import { usePageTitle } from '../contexts/PageTitleContext';
-import { PageHeader, PageBreadcrumb, LoadingState, EmptyState } from './templates/EmptyPage';
+import {
+  PageHeader,
+  PageBreadcrumb,
+  LoadingState,
+  EmptyState,
+  ErrorState,
+  StatusBadge,
+} from './templates/EmptyPage';
 import { RefreshButton, useAutoRefresh } from '../components/RefreshButton';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -38,7 +45,7 @@ type SortKey = ColumnFilterKey | 'name';
 type ColumnFilters = Record<ColumnFilterKey, Set<string>>;
 
 const FILTER_COLS: ColumnFilterKey[] = ['severity', 'type', 'rack', 'room', 'location', 'checks'];
-const SEARCHABLE_THRESHOLD = 8; // show search field in dropdown when > N values
+const SEARCHABLE_THRESHOLD = 8;
 
 const emptyFilters = (): ColumnFilters => ({
   severity: new Set(),
@@ -105,31 +112,6 @@ function buildPages(current: number, total: number): (number | '...')[] {
   if (current >= total - 4) return [0, '...', total - 4, total - 3, total - 2, total - 1];
   return [0, '...', current - 1, current, current + 1, '...', total - 1];
 }
-
-// ── SeverityBadge ─────────────────────────────────────────────────────────────
-
-const SeverityBadge = ({ sev }: { sev: string }) => {
-  if (sev === 'CRIT')
-    return (
-      <span className="bg-error-50 text-error-500 dark:bg-error-500/15 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
-        <span className="bg-error-500 h-1.5 w-1.5 rounded-full" />
-        Critical
-      </span>
-    );
-  if (sev === 'WARN')
-    return (
-      <span className="bg-warning-50 text-warning-500 dark:bg-warning-500/15 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
-        <span className="bg-warning-500 h-1.5 w-1.5 rounded-full" />
-        Warning
-      </span>
-    );
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-      <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-      {sev}
-    </span>
-  );
-};
 
 // ── ColumnFilterDropdown ──────────────────────────────────────────────────────
 
@@ -293,6 +275,7 @@ export const NotificationsFullPage = () => {
   const [slurmEnabled, setSlurmEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(false);
 
   // ── Quick filter / search / pagination ──────────────────────────────────────
   const [filter, setFilter] = useState<FilterType>('all');
@@ -315,6 +298,7 @@ export const NotificationsFullPage = () => {
     if (!quiet) setLoading(true);
     else setRefreshing(true);
     try {
+      setError(false);
       const [infraData, slurmData] = await Promise.all([
         api.getActiveAlerts(),
         api.getSlurmNodes().catch(() => null),
@@ -326,7 +310,7 @@ export const NotificationsFullPage = () => {
         setSlurmAlerts(nodes.filter((n) => n.severity === 'CRIT' || n.severity === 'WARN'));
       }
     } catch {
-      /* ignore */
+      setError(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -763,6 +747,13 @@ export const NotificationsFullPage = () => {
             <div className="flex h-full items-center justify-center">
               <LoadingState message="Loading alerts…" />
             </div>
+          ) : error ? (
+            <div className="flex h-full items-center justify-center">
+              <ErrorState
+                message="Failed to load alerts."
+                onRetry={() => void loadData()}
+              />
+            </div>
           ) : sortedRows.length === 0 ? (
             <div className="flex h-full items-center justify-center">
               <EmptyState
@@ -821,7 +812,7 @@ export const NotificationsFullPage = () => {
                     return (
                       <tr key={`i-${i}`} className="hover:bg-gray-50 dark:hover:bg-white/5">
                         <td className="px-4 py-3.5">
-                          <SeverityBadge sev={row.sev} />
+                          <StatusBadge status={row.sev as 'CRIT' | 'WARN'} size="md" />
                         </td>
                         <td className="truncate px-4 py-3.5 text-sm font-medium text-gray-900 dark:text-white">
                           {a.node_id}
@@ -877,7 +868,7 @@ export const NotificationsFullPage = () => {
                     return (
                       <tr key={`s-${i}`} className="hover:bg-gray-50 dark:hover:bg-white/5">
                         <td className="px-4 py-3.5">
-                          <SeverityBadge sev={row.sev} />
+                          <StatusBadge status={row.sev as 'CRIT' | 'WARN'} size="md" />
                         </td>
                         <td className="truncate px-4 py-3.5 font-mono text-sm font-medium text-gray-900 dark:text-white">
                           {n.node}
