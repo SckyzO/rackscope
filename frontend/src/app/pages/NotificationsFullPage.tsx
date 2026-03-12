@@ -260,7 +260,7 @@ const ColumnHeader = ({
           >
             <SlidersHorizontal className="h-3 w-3" />
             {filterCount > 0 && (
-              <span className="bg-brand-500 absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full text-[8px] font-bold leading-none text-white">
+              <span className="bg-brand-500 absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full text-[8px] leading-none font-bold text-white">
                 {filterCount > 9 ? '9+' : filterCount}
               </span>
             )}
@@ -504,7 +504,9 @@ export const NotificationsFullPage = () => {
   // ── Pagination ───────────────────────────────────────────────────────────────
   const totalPages = Math.max(1, Math.ceil(sortedRows.length / perPage));
   const safePage = Math.min(page, totalPages - 1);
-  const pageRows = showAll ? sortedRows : sortedRows.slice(safePage * perPage, (safePage + 1) * perPage);
+  const pageRows = showAll
+    ? sortedRows
+    : sortedRows.slice(safePage * perPage, (safePage + 1) * perPage);
   const pageNums = buildPages(safePage, totalPages);
   const firstEntry = sortedRows.length === 0 ? 0 : safePage * perPage + 1;
   const lastEntry = Math.min((safePage + 1) * perPage, sortedRows.length);
@@ -728,19 +730,19 @@ export const NotificationsFullPage = () => {
 
         {/* Active column filter chips */}
         {hasActiveColumnFilters && (
-          <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-gray-100 bg-brand-50/50 px-4 py-2 dark:border-gray-800 dark:bg-brand-500/5">
+          <div className="bg-brand-50/50 dark:bg-brand-500/5 flex shrink-0 flex-wrap items-center gap-1.5 border-b border-gray-100 px-4 py-2 dark:border-gray-800">
             <span className="text-xs text-gray-400">Active filters:</span>
             {activeFilters.map((col) => (
               <span
                 key={col}
-                className="flex items-center gap-1.5 rounded-full border border-brand-200 bg-white px-2.5 py-1 text-xs font-medium text-brand-600 dark:border-brand-700/50 dark:bg-gray-900 dark:text-brand-400"
+                className="border-brand-200 text-brand-600 dark:border-brand-700/50 dark:text-brand-400 flex items-center gap-1.5 rounded-full border bg-white px-2.5 py-1 text-xs font-medium dark:bg-gray-900"
               >
-                <span className="capitalize font-semibold">{col}</span>
+                <span className="font-semibold capitalize">{col}</span>
                 <span className="text-brand-400">·</span>
                 <span className="max-w-[180px] truncate">{chipLabel(col)}</span>
                 <button
                   onClick={() => clearColumnFilter(col)}
-                  className="ml-0.5 rounded-full hover:text-brand-800 dark:hover:text-brand-200"
+                  className="hover:text-brand-800 dark:hover:text-brand-200 ml-0.5 rounded-full"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -790,10 +792,20 @@ export const NotificationsFullPage = () => {
               </colgroup>
               <thead className="sticky top-0 z-10" style={{ overflow: 'visible' }}>
                 <tr className="border-b border-gray-100 dark:border-gray-800">
-                  <ColumnHeader col="severity" label="Severity" {...colShared} {...fp('severity')} />
+                  <ColumnHeader
+                    col="severity"
+                    label="Severity"
+                    {...colShared}
+                    {...fp('severity')}
+                  />
                   <ColumnHeader col="name" label="Name" {...colShared} />
                   <ColumnHeader col="type" label="Type" {...colShared} {...fp('type')} />
-                  <ColumnHeader col="location" label="Location" {...colShared} {...fp('location')} />
+                  <ColumnHeader
+                    col="location"
+                    label="Location"
+                    {...colShared}
+                    {...fp('location')}
+                  />
                   <ColumnHeader col="rack" label="Rack" {...colShared} {...fp('rack')} />
                   <ColumnHeader col="room" label="Room" {...colShared} {...fp('room')} />
                   <ColumnHeader col="checks" label="Checks" {...colShared} {...fp('checks')} />
@@ -925,8 +937,7 @@ export const NotificationsFullPage = () => {
                   <b className="text-gray-700 dark:text-gray-200">
                     {firstEntry}–{lastEntry}
                   </b>{' '}
-                  of <b className="text-gray-700 dark:text-gray-200">{sortedRows.length}</b>{' '}
-                  results
+                  of <b className="text-gray-700 dark:text-gray-200">{sortedRows.length}</b> results
                 </>
               )}
             </p>
