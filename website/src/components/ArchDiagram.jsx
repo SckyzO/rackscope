@@ -77,9 +77,9 @@ export default function ArchDiagram() {
       <rect x="22" y="128" width="160" height="100" rx="10"
         fill="none" stroke="#1e2d4e" strokeWidth="1" />
       {/* Icon: 3 YAML lines — centered with title y=164 (cap-center ≈ y=157) */}
-      <rect x="38" y="154" width="20" height="2.5" rx="1.25" fill="#5571ff" opacity="0.95" />
-      <rect x="38" y="160" width="15" height="2.5" rx="1.25" fill="#5571ff" opacity="0.6" />
-      <rect x="38" y="166" width="18" height="2.5" rx="1.25" fill="#5571ff" opacity="0.4" />
+      <rect x="38" y="151" width="20" height="2.5" rx="1.25" fill="#5571ff" opacity="0.95" />
+      <rect x="38" y="157" width="15" height="2.5" rx="1.25" fill="#5571ff" opacity="0.6" />
+      <rect x="38" y="163" width="18" height="2.5" rx="1.25" fill="#5571ff" opacity="0.4" />
       {/* Text */}
       <text x="66" y="163" fill="#e5e7eb" fontSize="13"
         fontFamily="Outfit, system-ui" fontWeight="600" letterSpacing="0.01em">
@@ -103,9 +103,9 @@ export default function ArchDiagram() {
         fill="none" stroke="#465fff" strokeWidth="1.2" opacity="0.55" />
       {/* Icon: hexagon — cap-center of 15px title at y=151 is ≈ y=146 */}
       <polygon
-        points="336,140 344,136 352,140 352,148 344,152 336,148"
+        points="336,144 344,140 352,144 352,152 344,156 336,152"
         fill="none" stroke="#5571ff" strokeWidth="1.5" opacity="0.85" />
-      <circle cx="344" cy="144" r="3.5" fill="#465fff" opacity="0.7" />
+      <circle cx="344" cy="148" r="3.5" fill="#465fff" opacity="0.7" />
       {/* Text */}
       <text x="362" y="151" fill="#f9fafb" fontSize="15"
         fontFamily="Outfit, system-ui" fontWeight="700" letterSpacing="0.01em">
@@ -180,7 +180,11 @@ export default function ArchDiagram() {
       </text>
       <text x="336" y="348" fill="#4b5563" fontSize="9"
         fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.025em">
-        Physical Views  ·  Visual Editors  ·  Dashboards
+        Physical Views  ·  Visual Editors
+      </text>
+      <text x="336" y="361" fill="#374151" fontSize="9"
+        fontFamily="'IBM Plex Mono', monospace" letterSpacing="0.025em">
+        Dashboards
       </text>
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -193,10 +197,10 @@ export default function ArchDiagram() {
           ═══════════════════════════════════════════════════════════════ */}
 
       {/* ── Config ──► Backend ─────────────────────────────────────── */}
-      <line x1="190" y1="180" x2="302" y2="180"
+      <line x1="190" y1="178" x2="302" y2="178"
         stroke="#5571ff" strokeWidth="2.5" strokeOpacity="0.9" />
       {/* Arrowhead → */}
-      <polygon points="291,174 303,180 291,186" fill="#5571ff" opacity="0.95" />
+      <polygon points="291,172 303,178 291,184" fill="#5571ff" opacity="0.95" />
       {/* Label ABOVE the line (y=180-16=164, pill height 20 → top at 156) */}
       <rect x="211" y="156" width="60" height="20" rx="10"
         fill="#060e1c" stroke="#253d6a" strokeWidth="1.2" />
@@ -205,15 +209,15 @@ export default function ArchDiagram() {
         fontWeight="500" textAnchor="middle" letterSpacing="0.06em">loads</text>
 
       {/* ── Backend ◄──► Prometheus ────────────────────────────────── */}
-      <line x1="558" y1="170" x2="710" y2="170"
+      <line x1="558" y1="178" x2="710" y2="178"
         stroke="#5571ff" strokeWidth="2.5" strokeOpacity="0.9" />
       {/* Arrowheads ← → */}
-      <polygon points="569,164 557,170 569,176" fill="#5571ff" opacity="0.95" />
-      <polygon points="699,164 711,170 699,176" fill="#5571ff" opacity="0.95" />
+      <polygon points="569,172 557,178 569,184" fill="#5571ff" opacity="0.95" />
+      <polygon points="699,172 711,178 699,184" fill="#5571ff" opacity="0.95" />
       {/* Label ABOVE */}
-      <rect x="600" y="150" width="60" height="20" rx="10"
+      <rect x="600" y="156" width="60" height="20" rx="10"
         fill="#060e1c" stroke="#253d6a" strokeWidth="1.2" />
-      <text x="630" y="164" fill="#7592ff" fontSize="10"
+      <text x="630" y="170" fill="#7592ff" fontSize="10"
         fontFamily="'IBM Plex Mono', monospace"
         fontWeight="500" textAnchor="middle" letterSpacing="0.06em">PromQL</text>
 
