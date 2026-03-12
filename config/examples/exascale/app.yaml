@@ -2,9 +2,9 @@ app:
   name: Rackscope
   description: Datacenter Overview
 paths:
-  topology: config/examples/hpc-cluster/topology
-  templates: config/examples/hpc-cluster/templates
-  checks: config/examples/hpc-cluster/checks/library
+  topology: config/examples/exascale/topology
+  templates: config/examples/exascale/templates
+  checks: config/examples/exascale/checks/library
   metrics: config/metrics/library
 refresh:
   room_state_seconds: 30
@@ -66,6 +66,38 @@ playlist:
   views:
   - /views/worldmap
   - /slurm/overview
-plugins: {}
-simulator: null
-slurm: null
+plugins:
+  simulator:
+    enabled: true
+    update_interval_seconds: 20
+    seed: null
+    incident_mode: heavy
+    changes_per_hour: 4
+    custom_incidents:
+      devices_crit: 0
+      devices_warn: 0
+      racks_crit: 0
+      aisles_hot: 0
+    overrides_path: config/examples/exascale/plugins/simulator/overrides/overrides.yaml
+    default_ttl_seconds: 120
+    metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
+    metrics_catalogs:
+      - id: slurm
+        path: config/plugins/simulator/metrics/metrics_slurm.yaml
+        enabled: true
+    slurm_alloc_percent: 80
+    slurm_random_statuses:
+      drain: 1
+      down: 1
+      maint: 0
+    slurm_random_match:
+      - compute*
+      - hm*
+      - gpu*
+  slurm:
+    enabled: true
+    metric: slurm_node_status
+    label_node: node
+    label_status: status
+    label_partition: partition
+    mapping_path: config/examples/exascale/plugins/slurm/node_mapping.yaml
