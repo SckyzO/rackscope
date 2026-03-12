@@ -15,11 +15,11 @@ interface AppIconProps {
 
 const ICON_PATHS: Record<IconId, string> = {
   'server-stack': `
-    <rect x="2" y="3" width="16" height="3" rx=".75" fill="currentColor"/>
-    <rect x="2" y="7.5" width="16" height="3" rx=".75" fill="currentColor" opacity=".7"/>
-    <rect x="2" y="12" width="16" height="3" rx=".75" fill="currentColor" opacity=".5"/>
-    <rect x="2" y="16.5" width="16" height="3" rx=".75" fill="currentColor" opacity=".3"/>
-    <circle cx="17" cy="4.5" r="1" fill="currentColor"/>
+    <rect x="2" y="1.75" width="16" height="3" rx=".75" fill="currentColor"/>
+    <rect x="2" y="6.25" width="16" height="3" rx=".75" fill="currentColor" opacity=".7"/>
+    <rect x="2" y="10.75" width="16" height="3" rx=".75" fill="currentColor" opacity=".5"/>
+    <rect x="2" y="15.25" width="16" height="3" rx=".75" fill="currentColor" opacity=".3"/>
+    <circle cx="17" cy="3.25" r="1" fill="currentColor"/>
   `,
   'minimal-rack': `
     <rect x="2" y="2" width="16" height="16" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
@@ -101,27 +101,26 @@ const ICON_PATHS: Record<IconId, string> = {
     <rect x="4" y="9.5" width="6" height="1.5" rx=".4" fill="currentColor" opacity=".2"/>
   `,
   heatmap: `
-    <rect x="2" y="2" width="4" height="4" rx=".5" fill="currentColor"/>
-    <rect x="7" y="2" width="4" height="4" rx=".5" fill="currentColor" opacity=".7"/>
-    <rect x="12" y="2" width="4" height="4" rx=".5" fill="currentColor" opacity=".4"/>
-    <rect x="2" y="7" width="4" height="4" rx=".5" fill="currentColor" opacity=".6"/>
-    <rect x="7" y="7" width="4" height="4" rx=".5" fill="currentColor" opacity=".9"/>
-    <rect x="12" y="7" width="4" height="4" rx=".5" fill="currentColor" opacity=".7"/>
-    <rect x="2" y="12" width="4" height="4" rx=".5" fill="currentColor" opacity=".3"/>
-    <rect x="7" y="12" width="4" height="4" rx=".5" fill="currentColor" opacity=".5"/>
-    <rect x="12" y="12" width="4" height="4" rx=".5" fill="currentColor" opacity=".85"/>
-    <rect x="1" y="17.5" width="18" height="1" rx=".5" fill="currentColor" opacity=".15"/>
+    <rect x="3" y="3" width="4" height="4" rx=".5" fill="currentColor"/>
+    <rect x="8" y="3" width="4" height="4" rx=".5" fill="currentColor" opacity=".7"/>
+    <rect x="13" y="3" width="4" height="4" rx=".5" fill="currentColor" opacity=".4"/>
+    <rect x="3" y="8" width="4" height="4" rx=".5" fill="currentColor" opacity=".6"/>
+    <rect x="8" y="8" width="4" height="4" rx=".5" fill="currentColor" opacity=".9"/>
+    <rect x="13" y="8" width="4" height="4" rx=".5" fill="currentColor" opacity=".7"/>
+    <rect x="3" y="13" width="4" height="4" rx=".5" fill="currentColor" opacity=".3"/>
+    <rect x="8" y="13" width="4" height="4" rx=".5" fill="currentColor" opacity=".5"/>
+    <rect x="13" y="13" width="4" height="4" rx=".5" fill="currentColor" opacity=".85"/>
   `,
   'node-health': `
-    <rect x="2" y="2" width="5" height="5" rx="1" fill="currentColor" opacity=".8"/>
-    <rect x="8" y="2" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/>
-    <rect x="14" y="2" width="5" height="5" rx="1" fill="currentColor" opacity=".4"/>
-    <rect x="2" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/>
-    <rect x="8" y="8" width="5" height="5" rx="1" fill="currentColor"/>
-    <rect x="14" y="8" width="5" height="5" rx="1" fill="currentColor" opacity=".7"/>
-    <rect x="2" y="14" width="5" height="5" rx="1" fill="currentColor" opacity=".7"/>
-    <rect x="8" y="14" width="5" height="5" rx="1" fill="currentColor" opacity=".3"/>
-    <rect x="14" y="14" width="5" height="5" rx="1" fill="currentColor" opacity=".6"/>
+    <rect x="1.5" y="1.5" width="5" height="5" rx="1" fill="currentColor" opacity=".8"/>
+    <rect x="7.5" y="1.5" width="5" height="5" rx="1" fill="currentColor" opacity=".9"/>
+    <rect x="13.5" y="1.5" width="5" height="5" rx="1" fill="currentColor" opacity=".4"/>
+    <rect x="1.5" y="7.5" width="5" height="5" rx="1" fill="currentColor" opacity=".5"/>
+    <rect x="7.5" y="7.5" width="5" height="5" rx="1" fill="currentColor"/>
+    <rect x="13.5" y="7.5" width="5" height="5" rx="1" fill="currentColor" opacity=".7"/>
+    <rect x="1.5" y="13.5" width="5" height="5" rx="1" fill="currentColor" opacity=".7"/>
+    <rect x="7.5" y="13.5" width="5" height="5" rx="1" fill="currentColor" opacity=".3"/>
+    <rect x="13.5" y="13.5" width="5" height="5" rx="1" fill="currentColor" opacity=".6"/>
   `,
   'incident-flag': `
     <rect x="2" y="2" width="16" height="16" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".06"/>
@@ -180,37 +179,86 @@ export const ICON_LABELS: Record<IconId, string> = {
   'rack-spotlight': 'Rack Spotlight',
 };
 
-// ── Icon background container classes ─────────────────────────────────────────
+// ── Unified icon container + icon size API ────────────────────────────────────
+//
+// size  container   icon (non-solo)   icon (solo)   border-radius   used in
+// ────  ─────────   ───────────────   ───────────   ─────────────   ───────────────────
+// sm    h-9  w-9    h-5 w-5           h-9 w-9       rounded-lg      Sidebar, header
+// md    h-12 w-12   h-7 w-7           h-12 w-12     rounded-xl      Icon style preview
+// lg    h-14 w-14   h-9 w-9           h-14 w-14     rounded-2xl     App icon picker
+// hero  h-16 w-16   h-8 w-8           h-16 w-16     rounded-2xl     About page hero
 
-export const getIconContainerClass = (bg: IconBg): string => {
-  const base =
-    'h-9 w-9 flex items-center justify-center shrink-0 transition-transform select-none active:scale-90';
+export type IconContainerSize = 'sm' | 'md' | 'lg' | 'hero';
+
+const CONTAINER_DIM: Record<IconContainerSize, string> = {
+  sm: 'h-9 w-9',
+  md: 'h-12 w-12',
+  lg: 'h-14 w-14',
+  hero: 'h-16 w-16',
+};
+const RADIUS: Record<IconContainerSize, string> = {
+  sm: 'rounded-lg',
+  md: 'rounded-xl',
+  lg: 'rounded-2xl',
+  hero: 'rounded-2xl',
+};
+const ICON_DIM: Record<IconContainerSize, { inner: string; solo: string }> = {
+  sm: { inner: 'h-7 w-7', solo: 'h-9 w-9' },
+  md: { inner: 'h-9 w-9', solo: 'h-12 w-12' },
+  lg: { inner: 'h-11 w-11', solo: 'h-14 w-14' },
+  hero: { inner: 'h-[52px] w-[52px]', solo: 'h-16 w-16' },
+};
+
+export const getIconContainerClass = (bg: IconBg, size: IconContainerSize = 'sm'): string => {
+  const dim = CONTAINER_DIM[size];
+  const r = RADIUS[size];
+  // Interaction affordances only needed at sm (sidebar button)
+  const interactive = size === 'sm' ? ' transition-transform select-none active:scale-90' : '';
+  const base = `${dim} flex items-center justify-center shrink-0${interactive}`;
   switch (bg) {
     case 'badge':
-      return `${base} bg-brand-500 text-white rounded-lg`;
+      return `${base} bg-brand-500 text-white ${r}`;
     case 'soft':
-      return `${base} bg-brand-50 dark:bg-brand-500/10 text-brand-500 rounded-lg`;
+      return `${base} bg-brand-50 dark:bg-brand-500/10 text-brand-500 ${r}`;
     case 'circle':
       return `${base} bg-brand-500 text-white rounded-full`;
     case 'ghost':
-      return `${base} border border-brand-500 text-brand-500 rounded-lg`;
+      return `${base} border-2 border-brand-500 text-brand-500 ${r}`;
     case 'solo':
       return `${base} text-brand-500`;
   }
 };
 
-// ── Icon size — solo uses full container size, others use smaller icon-within-container
-export const getIconSize = (bg: IconBg): string => (bg === 'solo' ? 'h-9 w-9' : 'h-5 w-5');
+export const getIconSize = (bg: IconBg, size: IconContainerSize = 'sm'): string =>
+  bg === 'solo' ? ICON_DIM[size].solo : ICON_DIM[size].inner;
 
 // ── SVG string for favicon (fills with a concrete color) ──────────────────────
 
-export const getIconSvgString = (id: IconId, color: string): string => {
+export const getIconSvgString = (id: IconId, color: string, bg: IconBg = 'solo'): string => {
+  // Validate: accept only CSS hex colors (#rgb / #rrggbb / #rrggbbaa) to prevent SVG injection
+  const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(color) ? color : '#465fff';
+
+  // For badge/circle: white icon on colored background.
+  // For soft: icon with accent color on translucent background.
+  // For ghost: icon with accent color + border rect. For solo: icon only.
+  const iconColor = bg === 'badge' || bg === 'circle' ? '#ffffff' : safeColor;
+
   const paths = (ICON_PATHS[id] ?? ICON_PATHS['server-stack'])
-    .replace(/fill="currentColor"/g, `fill="${color}"`)
-    .replace(/stroke="currentColor"/g, `stroke="${color}"`)
+    .replace(/fill="currentColor"/g, `fill="${iconColor}"`)
+    .replace(/stroke="currentColor"/g, `stroke="${iconColor}"`)
     .replace(/fill-opacity="([^"]+)"/g, (_, op) => `fill-opacity="${op}"`)
     .replace(/opacity="([^"]+)"/g, (_, op) => `opacity="${op}"`);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" width="32" height="32">${paths}</svg>`;
+
+  // Background element per style
+  const bgSvg: Record<IconBg, string> = {
+    badge: `<rect width="20" height="20" rx="4" fill="${safeColor}"/>`,
+    circle: `<circle cx="10" cy="10" r="10" fill="${safeColor}"/>`,
+    soft: `<rect width="20" height="20" rx="4" fill="${safeColor}" opacity="0.15"/>`,
+    ghost: `<rect width="20" height="20" rx="4" fill="none" stroke="${safeColor}" stroke-width="1.5"/>`,
+    solo: '',
+  };
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" width="32" height="32">${bgSvg[bg]}${paths}</svg>`;
 };
 
 // ── React component ───────────────────────────────────────────────────────────

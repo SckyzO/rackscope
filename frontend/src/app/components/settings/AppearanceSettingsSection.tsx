@@ -158,8 +158,8 @@ const IconCard = ({
         : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
     }`}
   >
-    <div className={getIconContainerClass(iconBg)}>
-      <AppIcon id={id} className={getIconSize(iconBg)} />
+    <div className={getIconContainerClass(iconBg, 'lg')}>
+      <AppIcon id={id} className={getIconSize(iconBg, 'lg')} />
     </div>
     <p className="text-center text-[10px] leading-tight text-gray-500 dark:text-gray-400">
       {ICON_LABELS[id]}
@@ -201,9 +201,8 @@ const BgStyleCard = ({
         : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
     }`}
   >
-    {/* Visual mini-preview of the container style */}
-    <div className={getIconContainerClass(style.id)}>
-      <AppIcon id={previewIconId} className={getIconSize(style.id)} />
+    <div className={getIconContainerClass(style.id, 'md')}>
+      <AppIcon id={previewIconId} className={getIconSize(style.id, 'md')} />
     </div>
     <div className="text-center">
       <p

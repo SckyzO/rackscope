@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 # --legacy-peer-deps: react-simple-maps@3 declares peer react ^18, not 19.
 # Remove once react-simple-maps releases React 19 support.
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY . .

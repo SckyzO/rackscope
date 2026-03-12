@@ -72,9 +72,9 @@ const config = {
         respectPrefersColorScheme: true,
       },
       navbar: {
-        title: 'Rackscope',
+        title: '',
         logo: {
-          alt: 'Rackscope Logo',
+          alt: 'Rackscope',
           src: 'img/logo.svg',
           href: '/',
         },

@@ -9,7 +9,7 @@ export type AccentColor =
   | 'violet'
   | 'emerald'
   | 'rose'
-  | 'amber'
+  | 'yellow'
   | 'cyan'
   | 'lime'
   | 'pink'
@@ -57,7 +57,7 @@ export const ACCENTS: AccentMeta[] = [
   { id: 'rose', label: 'Rose', hex: '#e11d48' },
   { id: 'pink', label: 'Pink', hex: '#ec4899' },
   { id: 'orange', label: 'Orange', hex: '#f97316' },
-  { id: 'amber', label: 'Amber', hex: '#d97706' },
+  { id: 'yellow', label: 'Yellow', hex: '#eab308' },
   { id: 'slate', label: 'Slate', hex: '#64748b' },
 ];
 
@@ -182,21 +182,21 @@ const ACCENT_PALETTES: Record<AccentColor, Record<string, string>> = {
     '--color-accent': '#e11d48',
     '--shadow-focus-ring': '0px 0px 0px 4px rgb(225 29 72 / 12%)',
   },
-  amber: {
-    '--color-brand-25': '#fffdf5',
-    '--color-brand-50': '#fffbeb',
-    '--color-brand-100': '#fef3c7',
-    '--color-brand-200': '#fde68a',
-    '--color-brand-300': '#fcd34d',
-    '--color-brand-400': '#fbbf24',
-    '--color-brand-500': '#d97706',
-    '--color-brand-600': '#b45309',
-    '--color-brand-700': '#92400e',
-    '--color-brand-800': '#78350f',
-    '--color-brand-900': '#5a2800',
-    '--color-brand-950': '#3d1a00',
-    '--color-accent': '#d97706',
-    '--shadow-focus-ring': '0px 0px 0px 4px rgb(217 119 6 / 12%)',
+  yellow: {
+    '--color-brand-25': '#fefff0',
+    '--color-brand-50': '#fefce8',
+    '--color-brand-100': '#fef9c3',
+    '--color-brand-200': '#fef08a',
+    '--color-brand-300': '#fde047',
+    '--color-brand-400': '#facc15',
+    '--color-brand-500': '#eab308',
+    '--color-brand-600': '#ca8a04',
+    '--color-brand-700': '#a16207',
+    '--color-brand-800': '#854d0e',
+    '--color-brand-900': '#713f12',
+    '--color-brand-950': '#422006',
+    '--color-accent': '#eab308',
+    '--shadow-focus-ring': '0px 0px 0px 4px rgb(234 179 8 / 12%)',
   },
   cyan: {
     '--color-brand-25': '#ecfeff',
@@ -382,7 +382,7 @@ const VALID_ACCENTS = new Set<AccentColor>([
   'violet',
   'emerald',
   'rose',
-  'amber',
+  'yellow',
   'cyan',
   'lime',
   'pink',
@@ -410,23 +410,46 @@ const VALID_LIGHT = new Set<LightTheme>(['slate', 'warm', 'cool', 'solarized']);
 const VALID_DARK = new Set<DarkTheme>(['void', 'navy', 'forest', 'matrix']);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  // localStorage keys: 'theme-mode' | 'theme-accent' | 'theme-light' | 'theme-dark'
+  // localStorage keys use the rackscope.* namespace (CLAUDE.md requirement).
+  // One-time migration: if old bare keys exist, copy them to the new namespace and remove them.
   const [mode, setModeState] = useState<'dark' | 'light'>(() => {
-    const saved = localStorage.getItem('theme-mode');
+    const migratedMode = localStorage.getItem('theme-mode');
+    if (migratedMode !== null) {
+      localStorage.setItem('rackscope.theme.mode', migratedMode);
+      localStorage.removeItem('theme-mode');
+    }
+    const saved = localStorage.getItem('rackscope.theme.mode');
     return saved === 'light' ? 'light' : 'dark';
   });
   const [accent, setAccentState] = useState<AccentColor>(() => {
-    const saved = localStorage.getItem('theme-accent') as AccentColor | null;
+    const migratedAccent = localStorage.getItem('theme-accent');
+    if (migratedAccent !== null) {
+      localStorage.setItem('rackscope.theme.accent', migratedAccent);
+      localStorage.removeItem('theme-accent');
+    }
+    const saved = localStorage.getItem('rackscope.theme.accent') as AccentColor | null;
+    // amber was renamed to yellow — fall back to indigo
+    if (saved === ('amber' as string)) return 'indigo';
     return saved && VALID_ACCENTS.has(saved) ? saved : 'indigo';
   });
   const [lightTheme, setLightThemeState] = useState<LightTheme>(() => {
-    const saved = localStorage.getItem('theme-light') as LightTheme | null;
+    const migratedLight = localStorage.getItem('theme-light');
+    if (migratedLight !== null) {
+      localStorage.setItem('rackscope.theme.light', migratedLight);
+      localStorage.removeItem('theme-light');
+    }
+    const saved = localStorage.getItem('rackscope.theme.light') as LightTheme | null;
     // 'stone' was replaced by 'solarized' — fall back to 'slate'
     if (saved === ('stone' as string)) return 'slate';
     return saved && VALID_LIGHT.has(saved) ? saved : 'slate';
   });
   const [darkTheme, setDarkThemeState] = useState<DarkTheme>(() => {
-    const saved = localStorage.getItem('theme-dark') as DarkTheme | null;
+    const migratedDark = localStorage.getItem('theme-dark');
+    if (migratedDark !== null) {
+      localStorage.setItem('rackscope.theme.dark', migratedDark);
+      localStorage.removeItem('theme-dark');
+    }
+    const saved = localStorage.getItem('rackscope.theme.dark') as DarkTheme | null;
     // 'charcoal' was removed — fall back to 'void'
     if (saved === ('charcoal' as string)) return 'void';
     return saved && VALID_DARK.has(saved) ? saved : 'void';
@@ -522,10 +545,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       root.classList.remove('mode-matrix');
     }
 
-    localStorage.setItem('theme-mode', mode);
-    localStorage.setItem('theme-accent', accent);
-    localStorage.setItem('theme-light', lightTheme);
-    localStorage.setItem('theme-dark', darkTheme);
+    localStorage.setItem('rackscope.theme.mode', mode);
+    localStorage.setItem('rackscope.theme.accent', accent);
+    localStorage.setItem('rackscope.theme.light', lightTheme);
+    localStorage.setItem('rackscope.theme.dark', darkTheme);
   }, [mode, accent, lightTheme, darkTheme]);
 
   // Persist icon settings
@@ -537,10 +560,12 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   // Dynamic favicon — updates whenever the app icon or accent changes
   useEffect(() => {
+    let active = true;
     const accentHex = ACCENT_PALETTES[accent]?.['--color-brand-500'] ?? '#465fff';
     // Import icon SVG string lazily to avoid circular dep
     import('../app/components/AppIcon').then(({ getIconSvgString }) => {
-      const svgContent = getIconSvgString(iconId, accentHex);
+      if (!active) return;
+      const svgContent = getIconSvgString(iconId, accentHex, iconBg);
       const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent);
       let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
       if (!link) {
@@ -551,7 +576,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       link.href = dataUrl;
       link.type = 'image/svg+xml';
     });
-  }, [iconId, accent]);
+    return () => {
+      active = false;
+    };
+  }, [iconId, iconBg, accent]);
 
   // Dispatch 'rackscope-theme-mode' to keep AppLayout's isDark state in sync.
   // setAccent does not dispatch because accent changes do not affect AppLayout's

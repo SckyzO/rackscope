@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { usePageTitle } from '../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from './templates/EmptyPage';
-import { AppIcon, getIconContainerClass } from '../components/AppIcon';
+import { AppIcon, getIconContainerClass, getIconSize } from '../components/AppIcon';
 import { useTheme } from '@src/context/ThemeContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -775,10 +775,8 @@ export const AboutPage = () => {
                 className="flex min-w-0 flex-1 items-start gap-6 md:w-0"
                 style={{ flexBasis: '66.666%' }}
               >
-                <div
-                  className={`${getIconContainerClass(iconBg)} !h-16 !w-16 !rounded-2xl shadow-lg`}
-                >
-                  <AppIcon id={iconId} className={iconBg === 'solo' ? 'h-16 w-16' : 'h-8 w-8'} />
+                <div className={`${getIconContainerClass(iconBg, 'hero')} shadow-lg`}>
+                  <AppIcon id={iconId} className={getIconSize(iconBg, 'hero')} />
                 </div>
                 <div className="min-w-0">
                   <h1 className="text-2xl font-black tracking-tight text-gray-900 dark:text-white">

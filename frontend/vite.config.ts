@@ -23,6 +23,16 @@ export default defineConfig({
   optimizeDeps: {
     include: ['apexcharts', 'react-apexcharts', 'monaco-editor'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Keep Monaco out of the main bundle — it's ~7 MB and only needed in editor pages.
+        manualChunks: {
+          monaco: ['monaco-editor'],
+        },
+      },
+    },
+  },
   server: {
     host: true, // Needed for Docker exposure
     port: 5173,

@@ -48,10 +48,11 @@ def _parse_backend_stats() -> dict:
     try:
         with open("/proc/self/stat") as f:
             fields = f.read().split()
-            # fields[13] = utime, fields[14] = stime (in jiffies, assume HZ=100)
+            # fields[13] = utime, fields[14] = stime (in jiffies; use SC_CLK_TCK for accuracy)
             utime = int(fields[13])
             stime = int(fields[14])
-            cpu_seconds = (utime + stime) / 100.0
+            hz = float(os.sysconf("SC_CLK_TCK"))
+            cpu_seconds = (utime + stime) / hz
     except FileNotFoundError:
         logger.debug("/proc/self/stat not available (non-Linux host)")
     except Exception as e:

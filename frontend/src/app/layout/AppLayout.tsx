@@ -129,9 +129,10 @@ const AppInnerLayout = () => {
 
   const { features } = useAppConfigSafe();
   const [isDark, setIsDark] = useState(() => {
-    // Theme resolution: check new key first (theme-mode, shared with ThemeContext),
-    // then legacy key (cosmos-dark-mode, pre-v1.0 migration), then default to dark.
-    const primary = localStorage.getItem('theme-mode');
+    // Theme resolution: rackscope.theme.mode is the canonical key (migrated from bare theme-mode).
+    // Also check bare theme-mode as fallback for any race on first migration, then legacy.
+    const primary =
+      localStorage.getItem('rackscope.theme.mode') ?? localStorage.getItem('theme-mode');
     if (primary !== null) return primary !== 'light';
     const legacy = localStorage.getItem('cosmos-dark-mode');
     return legacy === null ? true : legacy === 'true';
@@ -152,7 +153,7 @@ const AppInnerLayout = () => {
 
     // Custom event dispatched to sync ThemeContext (separate React tree).
     // Context is not used here to avoid prop-drilling through AppLayout.
-    localStorage.setItem('theme-mode', next ? 'dark' : 'light');
+    localStorage.setItem('rackscope.theme.mode', next ? 'dark' : 'light');
     window.dispatchEvent(new CustomEvent('rackscope-theme-mode', { detail: { dark: next } }));
     setIsDark(next);
   };

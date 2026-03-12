@@ -58,8 +58,8 @@ class TelemetryConfig(BaseModel):
             raise ValueError("prometheus_url must use http or https scheme")
         host = parsed.hostname or ""
         # Reject link-local metadata endpoints (AWS/GCP/Azure IMDS)
-        _BLOCKED_HOSTS = {"169.254.169.254", "metadata.google.internal", "100.100.100.200"}
-        if host in _BLOCKED_HOSTS:
+        blocked_hosts = {"169.254.169.254", "metadata.google.internal", "100.100.100.200"}
+        if host in blocked_hosts:
             raise ValueError(f"prometheus_url targets a reserved address: {host}")
         # Reject IPv6 link-local
         try:

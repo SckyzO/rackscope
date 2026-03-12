@@ -504,6 +504,18 @@ export const RackEditorPage = () => {
 
   // ── Device CRUD ───────────────────────────────────────────────────────────
 
+  // Parse the instance textarea value back to its original type.
+  // The textarea may contain a JSON array, object, or plain string (pattern / node name).
+  const parseInstance = (raw: string): string | Record<string, string> | string[] => {
+    const trimmed = raw.trim();
+    if (!trimmed) return '';
+    try {
+      return JSON.parse(trimmed) as Record<string, string> | string[];
+    } catch {
+      return trimmed;
+    }
+  };
+
   const confirmPlacement = () => {
     if (!placing || !rack) return;
     const newDev: Device = {
@@ -511,7 +523,7 @@ export const RackEditorPage = () => {
       name: placingForm.name.trim() || placing.template.name,
       template_id: placing.template.id,
       u_position: placing.u,
-      instance: placingForm.instance.trim() || '',
+      instance: parseInstance(placingForm.instance),
     };
     setDraftDevices((prev) => [...prev, newDev]);
     setDirty(true);
@@ -554,7 +566,7 @@ export const RackEditorPage = () => {
       ...selectedDevice,
       name: editForm.name.trim() || selectedDevice.name,
       id: editForm.id.trim() || selectedDevice.id,
-      instance: editForm.instance.trim() || '',
+      instance: parseInstance(editForm.instance),
     };
     setDraftDevices((prev) => prev.map((d) => (d.id === selectedDevice.id ? updated : d)));
     setSelectedDevice(updated);
