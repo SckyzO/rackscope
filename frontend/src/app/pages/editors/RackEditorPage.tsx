@@ -1275,7 +1275,7 @@ export const RackEditorPage = () => {
                     onChange={(e) => setPlacingForm((f) => ({ ...f, instance: e.target.value }))}
                     placeholder='compute001  or  {"1":"compute055","2":"compute056"}'
                     rows={3}
-                    className={`${inputCls} font-mono text-xs resize-y min-h-[60px]`}
+                    className={`${inputCls} min-h-[60px] resize-y font-mono text-xs`}
                   />
                 </FormField>
               </div>
@@ -1368,7 +1368,7 @@ export const RackEditorPage = () => {
                         }}
                         placeholder='compute001  or  {"1":"compute055","2":"compute056"}'
                         rows={3}
-                        className={`${inputCls} font-mono text-xs resize-y min-h-[60px]`}
+                        className={`${inputCls} min-h-[60px] resize-y font-mono text-xs`}
                       />
                     </FormField>
 

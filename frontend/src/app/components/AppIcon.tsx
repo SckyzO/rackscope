@@ -100,7 +100,7 @@ const ICON_PATHS: Record<IconId, string> = {
     <rect x="4" y="4" width="6" height="1.5" rx=".4" fill="currentColor" opacity=".2"/>
     <rect x="4" y="9.5" width="6" height="1.5" rx=".4" fill="currentColor" opacity=".2"/>
   `,
-  'heatmap': `
+  heatmap: `
     <rect x="2" y="2" width="4" height="4" rx=".5" fill="currentColor"/>
     <rect x="7" y="2" width="4" height="4" rx=".5" fill="currentColor" opacity=".7"/>
     <rect x="12" y="2" width="4" height="4" rx=".5" fill="currentColor" opacity=".4"/>
@@ -172,7 +172,7 @@ export const ICON_LABELS: Record<IconId, string> = {
   'binary-rack': 'Binary Rack',
   'alert-panel': 'Alert Panel',
   'disk-array': 'Disk Array',
-  'heatmap': 'Heatmap',
+  heatmap: 'Heatmap',
   'node-health': 'Node Health',
   'incident-flag': 'Incident Flag',
   'health-score': 'Health Score',
@@ -183,19 +183,24 @@ export const ICON_LABELS: Record<IconId, string> = {
 // ── Icon background container classes ─────────────────────────────────────────
 
 export const getIconContainerClass = (bg: IconBg): string => {
-  const base = 'h-9 w-9 flex items-center justify-center shrink-0 transition-transform select-none active:scale-90';
+  const base =
+    'h-9 w-9 flex items-center justify-center shrink-0 transition-transform select-none active:scale-90';
   switch (bg) {
-    case 'badge':  return `${base} bg-brand-500 text-white rounded-lg`;
-    case 'soft':   return `${base} bg-brand-50 dark:bg-brand-500/10 text-brand-500 rounded-lg`;
-    case 'circle': return `${base} bg-brand-500 text-white rounded-full`;
-    case 'ghost':  return `${base} border border-brand-500 text-brand-500 rounded-lg`;
-    case 'solo':   return `${base} text-brand-500`;
+    case 'badge':
+      return `${base} bg-brand-500 text-white rounded-lg`;
+    case 'soft':
+      return `${base} bg-brand-50 dark:bg-brand-500/10 text-brand-500 rounded-lg`;
+    case 'circle':
+      return `${base} bg-brand-500 text-white rounded-full`;
+    case 'ghost':
+      return `${base} border border-brand-500 text-brand-500 rounded-lg`;
+    case 'solo':
+      return `${base} text-brand-500`;
   }
 };
 
 // ── Icon size — solo uses full container size, others use smaller icon-within-container
-export const getIconSize = (bg: IconBg): string =>
-  bg === 'solo' ? 'h-9 w-9' : 'h-5 w-5';
+export const getIconSize = (bg: IconBg): string => (bg === 'solo' ? 'h-9 w-9' : 'h-5 w-5');
 
 // ── SVG string for favicon (fills with a concrete color) ──────────────────────
 

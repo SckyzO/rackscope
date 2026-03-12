@@ -101,21 +101,20 @@ const AccentSwatch = ({
     title={label}
     className={`relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-2.5 transition-all ${
       active
-        ? 'border-gray-400 dark:border-gray-200 scale-105'
-        : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:scale-[1.02]'
+        ? 'scale-105 border-gray-400 dark:border-gray-200'
+        : 'border-transparent hover:scale-[1.02] hover:border-gray-200 dark:hover:border-gray-700'
     }`}
   >
-    <div
-      className="h-8 w-full rounded-lg"
-      style={{ backgroundColor: hex }}
-    >
+    <div className="h-8 w-full rounded-lg" style={{ backgroundColor: hex }}>
       {active && (
         <div className="flex h-full items-center justify-center">
           <Check className="h-3.5 w-3.5 text-white drop-shadow" />
         </div>
       )}
     </div>
-    <span className={`text-[10px] font-medium leading-none ${active ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500'}`}>
+    <span
+      className={`text-[10px] leading-none font-medium ${active ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500'}`}
+    >
       {label}
     </span>
   </button>
@@ -176,11 +175,11 @@ const IconCard = ({
 // ── Icon background style card ─────────────────────────────────────────────────
 
 const BG_STYLES: { id: IconBg; label: string; desc: string }[] = [
-  { id: 'badge',  label: 'Badge',  desc: 'Filled square' },
-  { id: 'soft',   label: 'Soft',   desc: 'Tinted bg' },
+  { id: 'badge', label: 'Badge', desc: 'Filled square' },
+  { id: 'soft', label: 'Soft', desc: 'Tinted bg' },
   { id: 'circle', label: 'Circle', desc: 'Filled circle' },
-  { id: 'ghost',  label: 'Ghost',  desc: 'Outline only' },
-  { id: 'solo',   label: 'Solo',   desc: 'Icon only' },
+  { id: 'ghost', label: 'Ghost', desc: 'Outline only' },
+  { id: 'solo', label: 'Solo', desc: 'Icon only' },
 ];
 
 const BgStyleCard = ({
@@ -196,7 +195,7 @@ const BgStyleCard = ({
 }) => (
   <button
     onClick={onClick}
-    className={`relative flex flex-col items-center gap-2.5 rounded-xl border-2 py-3 px-2 transition-all ${
+    className={`relative flex flex-col items-center gap-2.5 rounded-xl border-2 px-2 py-3 transition-all ${
       active
         ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10'
         : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
@@ -207,7 +206,9 @@ const BgStyleCard = ({
       <AppIcon id={previewIconId} className={getIconSize(style.id)} />
     </div>
     <div className="text-center">
-      <p className={`text-xs font-semibold ${active ? 'text-brand-500' : 'text-gray-700 dark:text-gray-300'}`}>
+      <p
+        className={`text-xs font-semibold ${active ? 'text-brand-500' : 'text-gray-700 dark:text-gray-300'}`}
+      >
         {style.label}
       </p>
       <p className="text-[10px] text-gray-400 dark:text-gray-500">{style.desc}</p>
@@ -226,10 +227,16 @@ const ALL_ICON_IDS: IconId[] = Object.keys(ICON_LABELS) as IconId[];
 
 export const AppearanceSettingsSection = () => {
   const {
-    accent, lightTheme, darkTheme,
-    iconId, iconBg,
-    setAccent, setLightTheme, setDarkTheme,
-    setIconId, setIconBg,
+    accent,
+    lightTheme,
+    darkTheme,
+    iconId,
+    iconBg,
+    setAccent,
+    setLightTheme,
+    setDarkTheme,
+    setIconId,
+    setIconBg,
   } = useTheme();
   const [autoSaved, setAutoSaved] = useState(false);
 
@@ -238,11 +245,26 @@ export const AppearanceSettingsSection = () => {
     setTimeout(() => setAutoSaved(false), 2500);
   }, []);
 
-  const handleAccent = (a: AccentColor) => { setAccent(a); flash(); };
-  const handleLightTheme = (t: LightTheme) => { setLightTheme(t); flash(); };
-  const handleDarkTheme = (t: DarkTheme) => { setDarkTheme(t); flash(); };
-  const handleIconId = (id: IconId) => { setIconId(id); flash(); };
-  const handleIconBg = (bg: IconBg) => { setIconBg(bg); flash(); };
+  const handleAccent = (a: AccentColor) => {
+    setAccent(a);
+    flash();
+  };
+  const handleLightTheme = (t: LightTheme) => {
+    setLightTheme(t);
+    flash();
+  };
+  const handleDarkTheme = (t: DarkTheme) => {
+    setDarkTheme(t);
+    flash();
+  };
+  const handleIconId = (id: IconId) => {
+    setIconId(id);
+    flash();
+  };
+  const handleIconBg = (bg: IconBg) => {
+    setIconBg(bg);
+    flash();
+  };
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
@@ -278,7 +300,10 @@ export const AppearanceSettingsSection = () => {
       <div className="space-y-6">
         {/* ── Accent color ─────────────────────────────────────────────── */}
         <div>
-          <SectionHeader label="Accent color" tooltip="Primary interactive color for buttons, active sidebar items, focused inputs and links. Applied immediately." />
+          <SectionHeader
+            label="Accent color"
+            tooltip="Primary interactive color for buttons, active sidebar items, focused inputs and links. Applied immediately."
+          />
           <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-10">
             {ACCENTS.map((a) => (
               <AccentSwatch
@@ -294,7 +319,10 @@ export const AppearanceSettingsSection = () => {
 
         {/* ── Light themes ─────────────────────────────────────────────── */}
         <div>
-          <SectionHeader label="Light theme — default palette in light mode" tooltip="Color palette used when light mode is active." />
+          <SectionHeader
+            label="Light theme — default palette in light mode"
+            tooltip="Color palette used when light mode is active."
+          />
           <div className="grid grid-cols-4 gap-3">
             {LIGHT_THEMES.map((t) => (
               <PaletteCard
@@ -309,7 +337,10 @@ export const AppearanceSettingsSection = () => {
 
         {/* ── Dark themes ──────────────────────────────────────────────── */}
         <div>
-          <SectionHeader label="Dark theme — default palette in dark mode" tooltip="Color palette used when dark mode is active. Void (near-black) is recommended for NOC environments." />
+          <SectionHeader
+            label="Dark theme — default palette in dark mode"
+            tooltip="Color palette used when dark mode is active. Void (near-black) is recommended for NOC environments."
+          />
           <div className="grid grid-cols-4 gap-3">
             {DARK_THEMES.map((t) => (
               <PaletteCard
@@ -324,7 +355,10 @@ export const AppearanceSettingsSection = () => {
 
         {/* ── Icon style ──────────────────────────────────────────────── */}
         <div>
-          <SectionHeader label="Icon style" tooltip="Container shape and fill for the app icon in the sidebar and throughout the UI." />
+          <SectionHeader
+            label="Icon style"
+            tooltip="Container shape and fill for the app icon in the sidebar and throughout the UI."
+          />
           <div className="grid grid-cols-5 gap-2">
             {BG_STYLES.map((s) => (
               <BgStyleCard
@@ -340,7 +374,10 @@ export const AppearanceSettingsSection = () => {
 
         {/* ── App icon ──────────────────────────────────────────────────── */}
         <div>
-          <SectionHeader label="App icon" tooltip="Icon used in the sidebar, favicon, and About page." />
+          <SectionHeader
+            label="App icon"
+            tooltip="Icon used in the sidebar, favicon, and About page."
+          />
           <div className="grid grid-cols-5 gap-2 sm:grid-cols-7">
             {ALL_ICON_IDS.map((id) => (
               <IconCard

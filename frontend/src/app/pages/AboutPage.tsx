@@ -775,7 +775,9 @@ export const AboutPage = () => {
                 className="flex min-w-0 flex-1 items-start gap-6 md:w-0"
                 style={{ flexBasis: '66.666%' }}
               >
-                <div className={`${getIconContainerClass(iconBg)} !h-16 !w-16 !rounded-2xl shadow-lg`}>
+                <div
+                  className={`${getIconContainerClass(iconBg)} !h-16 !w-16 !rounded-2xl shadow-lg`}
+                >
                   <AppIcon id={iconId} className={iconBg === 'solo' ? 'h-16 w-16' : 'h-8 w-8'} />
                 </div>
                 <div className="min-w-0">
@@ -950,7 +952,7 @@ export const AboutPage = () => {
             Rackscope is open-source software — AGPL-3.0 License. All trademarks are property of
             their respective owners.
           </p>
-          <p className="mt-1 text-center text-[11px] font-mono text-gray-300 dark:text-gray-700">
+          <p className="mt-1 text-center font-mono text-[11px] text-gray-300 dark:text-gray-700">
             v1.0.0-beta
           </p>
         </div>

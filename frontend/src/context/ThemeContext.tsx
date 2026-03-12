@@ -378,13 +378,32 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const VALID_ACCENTS = new Set<AccentColor>([
-  'indigo', 'violet', 'emerald', 'rose', 'amber',
-  'cyan', 'lime', 'pink', 'orange', 'slate',
+  'indigo',
+  'violet',
+  'emerald',
+  'rose',
+  'amber',
+  'cyan',
+  'lime',
+  'pink',
+  'orange',
+  'slate',
 ]);
 const VALID_ICONS = new Set<IconId>([
-  'server-stack', 'minimal-rack', 'rack-pulse', 'status-matrix', 'grid-floor',
-  'binary-rack', 'alert-panel', 'disk-array', 'heatmap', 'node-health',
-  'incident-flag', 'health-score', 'rack-blueprint', 'rack-spotlight',
+  'server-stack',
+  'minimal-rack',
+  'rack-pulse',
+  'status-matrix',
+  'grid-floor',
+  'binary-rack',
+  'alert-panel',
+  'disk-array',
+  'heatmap',
+  'node-health',
+  'incident-flag',
+  'health-score',
+  'rack-blueprint',
+  'rack-spotlight',
 ]);
 const VALID_ICON_BGS = new Set<IconBg>(['badge', 'soft', 'circle', 'ghost', 'solo']);
 const VALID_LIGHT = new Set<LightTheme>(['slate', 'warm', 'cool', 'solarized']);
