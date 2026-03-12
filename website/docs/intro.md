@@ -5,6 +5,7 @@ sidebar_position: 1
 ---
 
 import StatusContent from './_status.md';
+import ArchDiagram from '@site/src/components/ArchDiagram';
 
 # Rackscope
 
@@ -47,22 +48,7 @@ All infrastructure configuration is stored in YAML files — GitOps-compatible, 
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    yaml[/"YAML\nConfig"/]
-    backend["Backend\nFastAPI"]
-    prom[("Prometheus")]
-    frontend["Frontend\nReact"]
-
-    yaml -->|startup| backend
-    backend <-->|PromQL| prom
-    frontend <-->|REST API| backend
-
-    style yaml fill:#1e2a3a,stroke:#465fff,color:#e5e5e5
-    style backend fill:#1a2535,stroke:#465fff,color:#e5e5e5
-    style prom fill:#1f2937,stroke:#374151,color:#e5e5e5
-    style frontend fill:#1a2535,stroke:#465fff,color:#e5e5e5
-```
+<ArchDiagram />
 
 :::tip Deep dive
 For the full architecture documentation — design principles, backend/frontend stacks, plugin system, and data model — see [Architecture Overview](/architecture/overview).

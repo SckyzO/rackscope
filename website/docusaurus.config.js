@@ -15,7 +15,6 @@ const config = {
 
   onBrokenLinks: 'warn',
   markdown: {
-    mermaid: true,
     hooks: {
       onBrokenMarkdownLinks: 'warn',
     },
@@ -30,8 +29,6 @@ const config = {
     // CSS theme — Void/Slate palette, Outfit + IBM Plex Mono, full Infima coverage
     // injectFavicon: false — Rackscope has its own favicon (img/favicon.svg)
     ['cosmos-docusaurus-theme', { injectFavicon: false }],
-    // Mermaid diagrams — native Docusaurus 3 support
-    '@docusaurus/theme-mermaid',
     // Local search — zero config, no API key, works with GitHub Pages
     [
       require.resolve('@easyops-cn/docusaurus-search-local'),
@@ -132,33 +129,6 @@ const config = {
         style: 'dark',
         links: [],
         copyright: `Copyright © ${new Date().getFullYear()} Rackscope · AGPL-3.0`,
-      },
-      // Mermaid — aligned with Void/Slate palette + brand indigo
-      mermaid: {
-        theme: { light: 'base', dark: 'base' },
-        options: {
-          fontFamily: 'Outfit, system-ui, -apple-system, sans-serif',
-          fontSize: 14,
-          // Dark mode (Void palette) themeVariables — applied via CSS per-mode below
-          themeVariables: {
-            // Base palette — overridden in custom.css for light/dark split
-            primaryColor: '#1a2535',
-            primaryTextColor: '#e5e5e5',
-            primaryBorderColor: '#465fff',
-            lineColor: '#465fff',
-            secondaryColor: '#111827',
-            tertiaryColor: '#1f2937',
-            background: '#030712',
-            mainBkg: '#111827',
-            nodeBorder: '#465fff',
-            clusterBkg: '#1e2a3a',
-            clusterBorder: '#374151',
-            titleColor: '#e5e5e5',
-            edgeLabelBackground: '#1f2937',
-            attributeBackgroundColorEven: '#111827',
-            attributeBackgroundColorOdd: '#1a2535',
-          },
-        },
       },
       prism: {
         theme: prismThemes.github,
