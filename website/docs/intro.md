@@ -6,6 +6,7 @@ sidebar_position: 1
 
 import StatusContent from './_status.md';
 import ArchDiagram from '@site/src/components/ArchDiagram';
+import LogoPulse from '@site/src/components/LogoPulse';
 
 # Rackscope
 
@@ -47,6 +48,8 @@ All infrastructure configuration is stored in YAML files — GitOps-compatible, 
 ---
 
 ## Architecture
+
+<LogoPulse size={72} />
 
 <ArchDiagram />
 

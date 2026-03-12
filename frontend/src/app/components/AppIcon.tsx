@@ -66,22 +66,22 @@ const ICON_PATHS: Record<IconId, string> = {
   `,
   'binary-rack': `
     <rect x="1.5" y="1.5" width="17" height="17" rx="1.5" stroke="currentColor" stroke-width="1.2" fill="currentColor" fill-opacity=".04"/>
-    <rect x="3" y="3.5" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
-    <rect x="6.5" y="3.5" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
-    <rect x="10" y="3.5" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
-    <rect x="13.5" y="3.5" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
-    <rect x="3" y="7.5" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
-    <rect x="6.5" y="7.5" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
-    <rect x="10" y="7.5" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
-    <rect x="13.5" y="7.5" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
-    <rect x="3" y="11.5" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
-    <rect x="6.5" y="11.5" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
-    <rect x="10" y="11.5" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
-    <rect x="13.5" y="11.5" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
-    <rect x="3" y="15" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
-    <rect x="6.5" y="15" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
-    <rect x="10" y="15" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
-    <rect x="13.5" y="15" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
+    <rect x="3.5" y="3.5" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
+    <rect x="7" y="3.5" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
+    <rect x="10.5" y="3.5" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
+    <rect x="14" y="3.5" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
+    <rect x="3.5" y="7" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
+    <rect x="7" y="7" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
+    <rect x="10.5" y="7" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
+    <rect x="14" y="7" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
+    <rect x="3.5" y="10.5" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
+    <rect x="7" y="10.5" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
+    <rect x="10.5" y="10.5" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
+    <rect x="14" y="10.5" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
+    <rect x="3.5" y="14" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
+    <rect x="7" y="14" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
+    <rect x="10.5" y="14" width="2.5" height="2.5" rx=".4" fill="currentColor"/>
+    <rect x="14" y="14" width="2.5" height="2.5" rx=".4" fill="currentColor" opacity=".25"/>
   `,
   'alert-panel': `
     <rect x="2" y="2" width="16" height="16" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".06"/>

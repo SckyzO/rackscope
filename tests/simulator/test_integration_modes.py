@@ -30,8 +30,11 @@ from plugins.simulator.process.topology import (
 import os as _os
 
 _BASE = _os.environ.get("RACKSCOPE_CONFIG_DIR", "/app/config")
-TOPOLOGY_PATH = _os.path.join(_BASE, "topology")
-TEMPLATES_PATH = _os.path.join(_BASE, "templates")
+# Integration tests run against the hpc-cluster example (256 nodes · 13 racks · 3 aisles).
+# The active app.yaml may point to a different profile, so we use the example path directly.
+_EXAMPLES = _os.path.join(_BASE, "examples", "hpc-cluster")
+TOPOLOGY_PATH = _os.path.join(_EXAMPLES, "topology")
+TEMPLATES_PATH = _os.path.join(_EXAMPLES, "templates")
 ROLLS = 50  # number of independent rolls per mode
 
 

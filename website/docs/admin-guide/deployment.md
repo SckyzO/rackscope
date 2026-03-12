@@ -91,6 +91,26 @@ plugins:
     enabled: false
 ```
 
+## Network security — firewall port 8000
+
+:::warning
+**Always firewall port 8000 (backend) in production.**
+
+When `auth.enabled: false` (the default), the backend API has no authentication layer. Two system endpoints are particularly sensitive:
+
+- `POST /api/system/restart` — triggers a backend reload
+- `GET /api/system/process-stats` — exposes Prometheus URL, simulator hostname, and process memory/CPU
+
+These endpoints are protected by the JWT middleware **only when `auth.enabled: true`**. When auth is disabled, anyone who can reach port 8000 can call them.
+
+**Recommended setup:**
+- Expose only the nginx reverse proxy (ports 80/443) to the network
+- Keep port 8000 bound to `localhost` or the Docker internal network only
+- Use `auth.enabled: true` + a strong `secret_key` for any deployment reachable outside localhost
+
+See [GitHub issue #9](https://github.com/SckyzO/rackscope/issues/9) for the roadmap to harden these endpoints independently of `auth.enabled`.
+:::
+
 ## Connecting to Real Slurm
 
 Enable the Slurm plugin in `config/app.yaml`:
