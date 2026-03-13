@@ -223,7 +223,7 @@ const ColumnHeader = ({
       <div className="flex items-center gap-1">
         <button
           onClick={() => onSort(col)}
-          className={`flex items-center gap-0.5 uppercase tracking-wider transition-colors hover:text-gray-900 dark:hover:text-gray-100 ${
+          className={`flex items-center gap-0.5 tracking-wider uppercase transition-colors hover:text-gray-900 dark:hover:text-gray-100 ${
             active ? 'text-brand-500 dark:text-brand-400' : ''
           }`}
         >
@@ -670,7 +670,7 @@ export const NotificationsFullPage = () => {
               <button
                 key={f.id}
                 onClick={() => setFilter(f.id)}
-                className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                className={`flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold tracking-wider uppercase transition-colors ${
                   filter === f.id
                     ? 'bg-brand-500 text-white shadow-sm'
                     : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/5'
@@ -749,10 +749,7 @@ export const NotificationsFullPage = () => {
             </div>
           ) : error ? (
             <div className="flex h-full items-center justify-center">
-              <ErrorState
-                message="Failed to load alerts."
-                onRetry={() => void loadData()}
-              />
+              <ErrorState message="Failed to load alerts." onRetry={() => void loadData()} />
             </div>
           ) : sortedRows.length === 0 ? (
             <div className="flex h-full items-center justify-center">

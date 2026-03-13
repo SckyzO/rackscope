@@ -1,0 +1,4 @@
+# Files excluded from `git archive` (public release via publish-release.yml)
+# These stay in rackscope_dev but are NOT included in SckyzO/rackscope releases.
+CLAUDE.md         export-ignore
+ARCHITECTURE/     export-ignore
