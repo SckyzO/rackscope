@@ -78,6 +78,7 @@ export type ConfigDraft = {
     policy_max_length: string;
     policy_require_digit: boolean;
     policy_require_symbol: boolean;
+    trusted_networks: string[];
   };
   plugins: {
     simulator: {
@@ -205,6 +206,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     policy_max_length: String(config.auth?.policy?.max_length ?? 128),
     policy_require_digit: config.auth?.policy?.require_digit ?? false,
     policy_require_symbol: config.auth?.policy?.require_symbol ?? false,
+    trusted_networks: (config.auth?.trusted_networks as string[]) ?? [],
   },
   plugins: {
     simulator: {
@@ -379,6 +381,7 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
       require_digit: draft.auth.policy_require_digit,
       require_symbol: draft.auth.policy_require_symbol,
     },
+    trusted_networks: draft.auth.trusted_networks,
   },
   plugins: {
     simulator: {

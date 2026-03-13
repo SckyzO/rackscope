@@ -38,7 +38,19 @@ Configure toast popup behavior (position, display duration, stack threshold) and
 
 ## Security
 
+### Authentication
+
 Enable authentication, set the session duration, configure the password policy (minimum/maximum length, require digit/symbol), and set the hashed admin password. Authentication is disabled by default — enable it for any deployment reachable outside localhost.
+
+### Admin Endpoint Protection
+
+When authentication is disabled, the **Admin Endpoint Protection** section lets you restrict access to destructive endpoints (`POST /api/system/restart`, `PUT /api/config`) by IP address or CIDR block. Read-only endpoints like `GET /api/system/process-stats` are always accessible (monitoring scrape use case).
+
+Add entries in CIDR notation (`192.168.1.0/24`) or as exact IPs (`10.0.0.1`). Remove entries with the × button. Leave the list empty to allow all IPs (default — backward compatible).
+
+An amber warning banner appears whenever authentication is disabled and the list is empty, reminding you that admin endpoints are open to all hosts on the network.
+
+This setting maps to [`auth.trusted_networks`](./app-yaml#authtrusted_networks) in `app.yaml`.
 
 See [Deployment — firewall port 8000](./deployment#network-security--firewall-port-8000) for the security implications of running without auth.
 

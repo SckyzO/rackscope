@@ -4,9 +4,10 @@ API Dependencies
 Provides FastAPI dependency injection functions for accessing global state.
 """
 
+import ipaddress
 from typing import Dict, List, Optional
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 
 from rackscope.model.domain import Topology, TopologyIndex
 from rackscope.api.cache import ServiceCache as _SC
@@ -131,3 +132,59 @@ async def get_service_cache() -> _SC:
     from rackscope.api import app as app_module
 
     return app_module.SERVICE_CACHE
+
+
+# ── Admin guard ───────────────────────────────────────────────────────────────
+
+
+def _is_trusted_ip(host: str, networks: List[str]) -> bool:
+    """Return True if host matches any CIDR or exact IP in networks.
+
+    An empty networks list always returns True (no restriction).
+    Invalid CIDR entries are silently skipped.
+    """
+    if not networks:
+        return True
+    try:
+        addr = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    for net in networks:
+        try:
+            if addr in ipaddress.ip_network(net, strict=False):
+                return True
+        except ValueError:
+            continue
+    return False
+
+
+def require_admin(request: Request) -> None:
+    """Dependency: gate admin/destructive endpoints.
+
+    When auth.enabled=true  → requires a valid JWT (already set in request.state.user
+                               by AuthMiddleware; raises 401 if absent).
+    When auth.enabled=false → allows all when trusted_networks is empty (default,
+                               backward compatible); raises 403 when the client IP
+                               is not in the configured trusted_networks list.
+    """
+    from rackscope.api.app import APP_CONFIG
+
+    if APP_CONFIG and APP_CONFIG.auth.enabled:
+        if not getattr(request.state, "user", None):
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        return
+
+    # auth.enabled = false → check trusted_networks (empty = open, backward compatible)
+    networks = APP_CONFIG.auth.trusted_networks if APP_CONFIG else []
+    if not networks:
+        return
+
+    client_host = (request.client.host if request.client else "") or ""
+    if not _is_trusted_ip(client_host, networks):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Access denied: your IP is not in auth.trusted_networks. "
+                "Enable auth.enabled=true or add your IP/CIDR to the trusted list."
+            ),
+        )

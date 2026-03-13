@@ -9,7 +9,9 @@ import re
 import logging
 import asyncio
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from rackscope.api.dependencies import require_admin
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["system"])
@@ -104,7 +106,7 @@ async def _query_prom_process_stats(prometheus_base: str, instance_selector: str
         return {"memory_bytes": None, "cpu_seconds": None, "available": False}
 
 
-@router.post("/api/system/restart")
+@router.post("/api/system/restart", dependencies=[Depends(require_admin)])
 async def restart_backend():
     """
     Restart the backend server.
