@@ -510,3 +510,165 @@ async def test_get_rack_state_no_metrics(
     assert data["metrics"]["temperature"] == 0
 
     app.dependency_overrides.clear()
+
+
+# ── /api/alerts/active ────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_get_active_alerts_no_state():
+    """Returns empty alerts list when topology/planner not loaded."""
+    app.dependency_overrides[get_topology_optional] = override_topology(None)
+    app.dependency_overrides[get_catalog_optional] = override_catalog(None)
+    app.dependency_overrides[get_checks_library_optional] = override_checks_library(None)
+    app.dependency_overrides[get_planner_optional] = override_planner(None)
+
+    response = client.get("/api/alerts/active")
+
+    assert response.status_code == 200
+    assert response.json() == {"alerts": []}
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_get_active_alerts_node_alert(mock_topology, mock_catalog, mock_checks_library):
+    """Node-level alert is returned with full topology context."""
+    planner = Mock()
+    planner.get_snapshot = AsyncMock(
+        return_value=PlannerSnapshot(
+            generated_at=1000000.0,
+            rack_states={"rack01": "WARN"},
+            node_states={"node01": "WARN"},
+            node_alerts={"node01": {"node_up": "WARN"}},
+            rack_alerts={},
+        )
+    )
+
+    app.dependency_overrides[get_topology_optional] = override_topology(mock_topology)
+    app.dependency_overrides[get_catalog_optional] = override_catalog(mock_catalog)
+    app.dependency_overrides[get_checks_library_optional] = override_checks_library(
+        mock_checks_library
+    )
+    app.dependency_overrides[get_planner_optional] = override_planner(planner)
+
+    response = client.get("/api/alerts/active")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "alerts" in data
+    assert len(data["alerts"]) == 1
+
+    alert = data["alerts"][0]
+    assert alert["type"] == "node"
+    assert alert["node_id"] == "node01"
+    assert alert["state"] == "WARN"
+    assert alert["site_id"] == "site1"
+    assert alert["room_id"] == "room1"
+    assert alert["rack_id"] == "rack01"
+    assert alert["device_id"] == "dev1"
+    assert len(alert["checks"]) == 1
+    assert alert["checks"][0]["id"] == "node_up"
+    assert alert["checks"][0]["severity"] == "WARN"
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_get_active_alerts_rack_alert(mock_topology, mock_catalog, mock_checks_library):
+    """Rack-level alert is returned with topology context."""
+    planner = Mock()
+    planner.get_snapshot = AsyncMock(
+        return_value=PlannerSnapshot(
+            generated_at=1000000.0,
+            rack_states={"rack01": "CRIT"},
+            node_states={},
+            node_alerts={},
+            rack_alerts={"rack01": {"pdu_power": "CRIT"}},
+        )
+    )
+
+    app.dependency_overrides[get_topology_optional] = override_topology(mock_topology)
+    app.dependency_overrides[get_catalog_optional] = override_catalog(mock_catalog)
+    app.dependency_overrides[get_checks_library_optional] = override_checks_library(
+        mock_checks_library
+    )
+    app.dependency_overrides[get_planner_optional] = override_planner(planner)
+
+    response = client.get("/api/alerts/active")
+
+    assert response.status_code == 200
+    data = response.json()
+    alerts = data["alerts"]
+    assert len(alerts) == 1
+
+    alert = alerts[0]
+    assert alert["type"] == "rack"
+    assert alert["rack_id"] == "rack01"
+    assert alert["state"] == "CRIT"
+    assert alert["site_id"] == "site1"
+    assert alert["room_id"] == "room1"
+    assert alert["rack_name"] == "Rack 01"
+    assert alert["checks"][0]["id"] == "pdu_power"
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_get_active_alerts_unknown_node_skipped(
+    mock_topology, mock_catalog, mock_checks_library
+):
+    """Alerts for node IDs not in topology are silently skipped."""
+    planner = Mock()
+    planner.get_snapshot = AsyncMock(
+        return_value=PlannerSnapshot(
+            generated_at=1000000.0,
+            rack_states={},
+            node_states={"ghost-node": "CRIT"},
+            node_alerts={"ghost-node": {"node_up": "CRIT"}},
+            rack_alerts={},
+        )
+    )
+
+    app.dependency_overrides[get_topology_optional] = override_topology(mock_topology)
+    app.dependency_overrides[get_catalog_optional] = override_catalog(mock_catalog)
+    app.dependency_overrides[get_checks_library_optional] = override_checks_library(
+        mock_checks_library
+    )
+    app.dependency_overrides[get_planner_optional] = override_planner(planner)
+
+    response = client.get("/api/alerts/active")
+
+    assert response.status_code == 200
+    assert response.json()["alerts"] == []
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_get_active_alerts_no_alerts(mock_topology, mock_catalog, mock_checks_library):
+    """Returns empty list when snapshot has no alerts."""
+    planner = Mock()
+    planner.get_snapshot = AsyncMock(
+        return_value=PlannerSnapshot(
+            generated_at=1000000.0,
+            rack_states={"rack01": "OK"},
+            node_states={"node01": "OK"},
+            node_alerts={},
+            rack_alerts={},
+        )
+    )
+
+    app.dependency_overrides[get_topology_optional] = override_topology(mock_topology)
+    app.dependency_overrides[get_catalog_optional] = override_catalog(mock_catalog)
+    app.dependency_overrides[get_checks_library_optional] = override_checks_library(
+        mock_checks_library
+    )
+    app.dependency_overrides[get_planner_optional] = override_planner(planner)
+
+    response = client.get("/api/alerts/active")
+
+    assert response.status_code == 200
+    assert response.json() == {"alerts": []}
+
+    app.dependency_overrides.clear()
