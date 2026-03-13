@@ -83,10 +83,10 @@ make docs     # Docusaurus → http://localhost:3001
 
 Full documentation at **[rackscope.dev](https://rackscope.dev)**
 
-- [Quick Start](https://rackscope.dev/docs/getting-started/quick-start)
-- [Configuration Reference](https://rackscope.dev/docs/admin-guide/app-yaml)
-- [Health Checks](https://rackscope.dev/docs/user-guide/health-checks)
-- [Plugin Development](https://rackscope.dev/docs/plugins/writing-plugins)
+- [Quick Start](https://rackscope.dev/getting-started/quick-start)
+- [Configuration Reference](https://rackscope.dev/admin-guide/app-yaml)
+- [Health Checks](https://rackscope.dev/user-guide/health-checks)
+- [Plugin Development](https://rackscope.dev/plugins/writing-plugins)
 
 ---
 
