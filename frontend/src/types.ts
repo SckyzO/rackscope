@@ -377,6 +377,7 @@ export interface AppConfig {
     ttl_seconds: number;
     health_checks_ttl_seconds?: number;
     metrics_ttl_seconds?: number;
+  service_ttl_seconds?: number;
   };
   telemetry: {
     prometheus_url?: string | null;

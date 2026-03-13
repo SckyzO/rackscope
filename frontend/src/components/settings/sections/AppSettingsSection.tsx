@@ -176,6 +176,21 @@ export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, s
             className="w-32"
           />
         </div>
+        <div className="space-y-2">
+          <label className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-gray-400">
+            Service Cache TTL (seconds)
+            <TooltipHelp text="Response-level cache lifetime. Assembled JSON responses (room state, rack state, global stats) are cached for this duration before being recomputed. Lower = more reactive, higher = less CPU under concurrent load." />
+          </label>
+          <StepperInput
+            value={Number(draft.cache.service_ttl_seconds ?? 5)}
+            onChange={(v) => update('cache', 'service_ttl_seconds', String(v))}
+            min={1}
+            max={120}
+            step={1}
+            unit="s"
+            className="w-32"
+          />
+        </div>
       </FormSection>
     </div>
   );

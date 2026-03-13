@@ -31,6 +31,7 @@ export type ConfigDraft = {
     ttl_seconds: string;
     health_checks_ttl_seconds: string;
     metrics_ttl_seconds: string;
+    service_ttl_seconds: string;
   };
   telemetry: {
     prometheus_url: string;
@@ -157,6 +158,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     ttl_seconds: String(config.cache?.ttl_seconds ?? 60),
     health_checks_ttl_seconds: String(config.cache?.health_checks_ttl_seconds ?? 30),
     metrics_ttl_seconds: String(config.cache?.metrics_ttl_seconds ?? 120),
+    service_ttl_seconds: String(config.cache?.service_ttl_seconds ?? 5),
   },
   telemetry: {
     prometheus_url: config.telemetry?.prometheus_url || '',
@@ -329,6 +331,7 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
     ttl_seconds: parseInt(draft.cache.ttl_seconds, 10) || 60,
     health_checks_ttl_seconds: parseInt(draft.cache.health_checks_ttl_seconds, 10) || 30,
     metrics_ttl_seconds: parseInt(draft.cache.metrics_ttl_seconds, 10) || 120,
+    service_ttl_seconds: parseInt(draft.cache.service_ttl_seconds, 10) || 5,
   },
   telemetry: {
     prometheus_url: draft.telemetry.prometheus_url,

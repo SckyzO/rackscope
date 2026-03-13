@@ -33,6 +33,7 @@ cache:
   ttl_seconds: 60                    # Generic fallback TTL
   health_checks_ttl_seconds: 30      # Health check results cache (shorter = more reactive)
   metrics_ttl_seconds: 120           # Metric chart data cache (temperature, power, PDU)
+  service_ttl_seconds: 5             # Response-level ServiceCache (assembled JSON, above planner)
 
 # ── Prometheus connection ─────────────────────────────────────────────────────
 telemetry:
