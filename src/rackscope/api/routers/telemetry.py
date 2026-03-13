@@ -22,7 +22,9 @@ from rackscope.api.dependencies import (
     get_app_config_optional,
     get_planner_optional,
     get_targets_by_check_optional,
+    get_service_cache,
 )
+from rackscope.api.cache import ServiceCache
 from rackscope.utils.aggregation import aggregate_states
 from rackscope.services import telemetry_service
 
@@ -36,8 +38,16 @@ async def get_global_stats(
     checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
     planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
     targets_by_check_cached: Annotated[Optional[Dict], Depends(get_targets_by_check_optional)],
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+    svc_cache: Annotated[ServiceCache, Depends(get_service_cache)],
 ):
     """Get global system statistics."""
+    _cache_key = "stats:global"
+    _ttl = float(app_config.cache.service_ttl_seconds) if app_config else 5.0
+    cached = await svc_cache.get(_cache_key)
+    if cached is not None:
+        return cached
+
     rack_healths: Dict[str, str] = {}
     if topology and catalog and checks_library and planner:
         targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
@@ -72,7 +82,7 @@ async def get_global_stats(
     elif warn_alerts > 0:
         global_status = "WARN"
 
-    return {
+    result = {
         "total_rooms": sum(len(s.rooms) for s in topology.sites)
         if topology and topology.sites
         else 0,
@@ -82,6 +92,8 @@ async def get_global_stats(
         "warn_count": warn_alerts,
         "status": global_status,
     }
+    await svc_cache.set(_cache_key, result, ttl=_ttl)
+    return result
 
 
 @router.get("/api/stats/prometheus")
@@ -117,8 +129,16 @@ async def get_room_state(
     checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
     planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
     targets_by_check_cached: Annotated[Optional[Dict], Depends(get_targets_by_check_optional)],
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+    svc_cache: Annotated[ServiceCache, Depends(get_service_cache)],
 ):
     """Get room health state and rack states."""
+    _cache_key = f"room:{room_id}:state"
+    _ttl = float(app_config.cache.service_ttl_seconds) if app_config else 5.0
+    cached = await svc_cache.get(_cache_key)
+    if cached is not None:
+        return cached
+
     if not topology or not catalog or not checks_library or not planner:
         return {"room_id": room_id, "state": "UNKNOWN", "racks": {}}
     targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
@@ -174,7 +194,9 @@ async def get_room_state(
             "node_warn": warn,
         }
 
-    return {"room_id": room_id, "state": room_status, "racks": racks_out}
+    result = {"room_id": room_id, "state": room_status, "racks": racks_out}
+    await svc_cache.set(_cache_key, result, ttl=_ttl)
+    return result
 
 
 @router.get("/api/rooms/states")
@@ -184,6 +206,8 @@ async def get_all_room_states(
     checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
     planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
     targets_by_check_cached: Annotated[Optional[Dict], Depends(get_targets_by_check_optional)],
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+    svc_cache: Annotated[ServiceCache, Depends(get_service_cache)],
 ):
     """Get health state for all rooms in one request.
 
@@ -191,6 +215,12 @@ async def get_all_room_states(
     One planner snapshot is computed (or reused from cache) for all rooms,
     avoiding N parallel get_snapshot() calls from the frontend.
     """
+    _cache_key = "rooms:states"
+    _ttl = float(app_config.cache.service_ttl_seconds) if app_config else 5.0
+    cached = await svc_cache.get(_cache_key)
+    if cached is not None:
+        return cached
+
     if not topology or not catalog or not checks_library or not planner:
         return {}
 
@@ -218,6 +248,7 @@ async def get_all_room_states(
                     room_status = "WARN"
             result[room.id] = room_status
 
+    await svc_cache.set(_cache_key, result, ttl=_ttl)
     return result
 
 
@@ -229,6 +260,8 @@ async def get_rack_state(
     checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
     planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
     targets_by_check_cached: Annotated[Optional[Dict], Depends(get_targets_by_check_optional)],
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+    svc_cache: Annotated[ServiceCache, Depends(get_service_cache)],
     include_metrics: bool = False,
 ):
     """Get rack health state and device metrics.
@@ -237,6 +270,19 @@ async def get_rack_state(
         rack_id: Rack identifier
         include_metrics: Include detailed metrics (CPU, RAM, etc.). Default: False for faster response.
     """
+    # include_metrics=True uses a longer TTL (metrics cache is 120s, heavier queries)
+    _cache_key = f"rack:{rack_id}:state" + (":metrics" if include_metrics else "")
+    if app_config:
+        _ttl = float(
+            app_config.cache.metrics_ttl_seconds
+            if include_metrics
+            else app_config.cache.service_ttl_seconds
+        )
+    else:
+        _ttl = 120.0 if include_metrics else 5.0
+    cached = await svc_cache.get(_cache_key)
+    if cached is not None:
+        return cached
     from rackscope.services import metrics_service
     from rackscope.telemetry.prometheus import client as prom_client
     from rackscope.api.app import METRICS_LIBRARY
@@ -341,7 +387,7 @@ async def get_rack_state(
 
     avg_temp = total_temp / temp_count if temp_count > 0 else 0
 
-    return {
+    rack_result = {
         "rack_id": rack_id,
         "state": rack_state,
         "checks": [
@@ -356,6 +402,8 @@ async def get_rack_state(
         "infra_metrics": {"components": component_metrics},
         "nodes": processed_nodes,
     }
+    await svc_cache.set(_cache_key, rack_result, ttl=_ttl)
+    return rack_result
 
 
 @router.get("/api/devices/{rack_id}/{device_id}/metrics")

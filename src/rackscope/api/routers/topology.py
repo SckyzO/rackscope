@@ -11,7 +11,7 @@ import shutil
 import yaml
 from fastapi import APIRouter, HTTPException, Depends
 
-from rackscope.model.domain import Site, Room, Rack, Topology
+from rackscope.model.domain import Site, Room, Rack, Topology, build_topology_index
 from rackscope.model.catalog import Catalog
 from rackscope.model.config import AppConfig
 from rackscope.model.loader import load_topology, dump_yaml
@@ -81,6 +81,8 @@ async def create_site(
     (base_dir / "datacenters" / site_id / "rooms").mkdir(parents=True, exist_ok=True)
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"site": site_entry}
 
 
@@ -134,6 +136,8 @@ async def create_room(
     (room_dir / "room.yaml").write_text(dump_yaml(room_payload))
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"room": room_payload, "site_id": site_id}
 
 
@@ -270,6 +274,8 @@ async def update_room_aisles(
         aisle_path.write_text(dump_yaml(data))
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"status": "ok", "room_id": room_id}
 
 
@@ -331,6 +337,8 @@ async def create_room_aisles(
         )
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"room_id": room_id, "aisles": new_aisles}
 
 
@@ -358,6 +366,8 @@ async def update_aisle_racks(
 
     # Reload topology to keep in-memory state aligned.
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"status": "ok", "aisle_id": aisle_id, "racks": payload.racks}
 
 
@@ -388,6 +398,8 @@ async def delete_site(
         shutil.rmtree(site_dir)
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"status": "deleted", "site_id": site_id}
 
 
@@ -424,6 +436,8 @@ async def delete_room(
         shutil.rmtree(room_dir)
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"status": "deleted", "room_id": room_id}
 
 
@@ -467,6 +481,8 @@ async def delete_aisle(
         shutil.rmtree(aisle_dir)
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"status": "deleted", "aisle_id": aisle_id}
 
 
@@ -546,6 +562,8 @@ async def create_rack(
         aisle_path.write_text(dump_yaml(aisle_data))
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"rack_id": rack_id, "name": name, "aisle_id": aisle_id}
 
 
@@ -595,6 +613,8 @@ async def update_rack_template(
     rack_path.write_text(dump_yaml(data))
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"status": "ok", "rack_id": rack_id, "template_id": payload.template_id}
 
 
@@ -714,6 +734,8 @@ async def add_rack_device(
     rack_path.write_text(dump_yaml(data))
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"status": "ok", "rack_id": rack_id, "device_id": payload.id}
 
 
@@ -771,6 +793,8 @@ async def update_rack_device(
     rack_path.write_text(dump_yaml(data))
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {
         "status": "ok",
         "rack_id": rack_id,
@@ -804,6 +828,8 @@ async def delete_rack_device(
     rack_path.write_text(dump_yaml(data))
 
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"status": "ok", "rack_id": rack_id, "device_id": device_id}
 
 
@@ -850,4 +876,6 @@ async def replace_rack_devices(
     data["devices"] = [d.model_dump() for d in payload.devices]
     rack_path.write_text(dump_yaml(data))
     app_module.TOPOLOGY = load_topology(app_config.paths.topology)
+    app_module.TOPOLOGY_INDEX = build_topology_index(app_module.TOPOLOGY)
+    await app_module.SERVICE_CACHE.invalidate_all()
     return {"status": "ok", "rack_id": rack_id, "devices": len(payload.devices)}

@@ -23,6 +23,7 @@ from pydantic import ValidationError
 import httpx
 
 from rackscope.model.domain import Topology, TopologyIndex, build_topology_index
+from rackscope.api.cache import ServiceCache
 from rackscope.model.catalog import Catalog
 from rackscope.model.checks import ChecksLibrary
 from rackscope.model.metrics import MetricsLibrary
@@ -63,6 +64,7 @@ logger = get_logger(__name__)
 # Global state
 TOPOLOGY: Optional[Topology] = None
 TOPOLOGY_INDEX: Optional[TopologyIndex] = None   # O(1) lookup index — rebuilt on every reload
+SERVICE_CACHE: ServiceCache = ServiceCache()          # Response-level cache — cleared on topology reload
 CATALOG: Optional[Catalog] = None
 CHECKS_LIBRARY: Optional[ChecksLibrary] = None
 METRICS_LIBRARY: Optional[MetricsLibrary] = None
@@ -122,6 +124,7 @@ async def _do_apply_config(app_config: AppConfig) -> None:
     APP_CONFIG = app_config
     TOPOLOGY = new_topology
     TOPOLOGY_INDEX = build_topology_index(new_topology)
+    await SERVICE_CACHE.invalidate_all()              # topology changed — all cached responses stale
     CATALOG = new_catalog
     CHECKS_LIBRARY = new_checks
     METRICS_LIBRARY = new_metrics

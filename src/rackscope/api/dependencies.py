@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 from fastapi import HTTPException
 
 from rackscope.model.domain import Topology, TopologyIndex
+from rackscope.api.cache import ServiceCache as _SC
 from rackscope.model.catalog import Catalog
 from rackscope.model.checks import ChecksLibrary
 from rackscope.model.config import AppConfig
@@ -122,3 +123,11 @@ async def get_topology_index_optional() -> Optional[TopologyIndex]:
     from rackscope.api import app as app_module
 
     return app_module.TOPOLOGY_INDEX
+
+
+
+async def get_service_cache() -> _SC:
+    """Get service-level response cache (always available, never None)."""
+    from rackscope.api import app as app_module
+
+    return app_module.SERVICE_CACHE

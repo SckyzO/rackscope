@@ -23,6 +23,10 @@ def reset_global_state():
         "PLANNER": app_module.PLANNER,
     }
 
+    # Clear ServiceCache before and after each test — prevents stale responses
+    # from leaking across tests that mock TOPOLOGY but share the global cache.
+    app_module.SERVICE_CACHE._store.clear()
+
     yield
 
     app_module.TOPOLOGY = saved["TOPOLOGY"]
@@ -31,3 +35,4 @@ def reset_global_state():
     app_module.METRICS_LIBRARY = saved["METRICS_LIBRARY"]
     app_module.APP_CONFIG = saved["APP_CONFIG"]
     app_module.PLANNER = saved["PLANNER"]
+    app_module.SERVICE_CACHE._store.clear()
