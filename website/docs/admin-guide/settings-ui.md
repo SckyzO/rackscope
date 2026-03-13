@@ -44,7 +44,7 @@ Enable authentication, set the session duration, configure the password policy (
 
 ### Admin Endpoint Protection
 
-When authentication is disabled, the **Admin Endpoint Protection** section lets you restrict access to destructive endpoints (`POST /api/system/restart`, `GET /api/system/process-stats`, `PUT /api/config`) by IP address or CIDR block.
+When authentication is disabled, the **Admin Endpoint Protection** section lets you restrict access to destructive endpoints (`POST /api/system/restart`, `PUT /api/config`) by IP address or CIDR block. Read-only endpoints like `GET /api/system/process-stats` are always accessible (monitoring scrape use case).
 
 Add entries in CIDR notation (`192.168.1.0/24`) or as exact IPs (`10.0.0.1`). Remove entries with the × button. Leave the list empty to allow all IPs (default — backward compatible).
 

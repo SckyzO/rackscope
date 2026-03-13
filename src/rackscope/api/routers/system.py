@@ -153,7 +153,7 @@ def get_system_status():
     }
 
 
-@router.get("/api/system/process-stats", dependencies=[Depends(require_admin)])
+@router.get("/api/system/process-stats")
 async def get_process_stats():
     """
     Return memory and CPU usage for backend, simulator, and Prometheus.

@@ -104,13 +104,14 @@ def test_require_admin_allows_trusted_ip():
         require_admin(mock_request)
 
 
-def test_process_stats_denied_when_ip_not_trusted():
-    """GET /api/system/process-stats returns 403 when IP not in trusted_networks."""
+def test_process_stats_always_accessible():
+    """GET /api/system/process-stats is public — no guard (monitoring scrape use case)."""
     with patch("rackscope.api.app.APP_CONFIG") as mock_cfg:
         mock_cfg.auth.enabled = False
         mock_cfg.auth.trusted_networks = ["10.0.0.0/8"]
         response = client.get("/api/system/process-stats")
-    assert response.status_code == 403
+    # Guard is NOT applied — should never return 403 regardless of trusted_networks
+    assert response.status_code != 403
 
 
 def test_restart_backend_legacy():

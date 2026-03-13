@@ -292,7 +292,7 @@ auth:
 | `password_hash` | string | `""` | bcrypt hash of the password. An empty string means authentication is not yet configured even if `enabled: true` |
 | `secret_key` | string | `""` | JWT signing secret. Auto-generated at startup when empty. Set explicitly for multi-instance deployments to preserve sessions across restarts |
 | `session_duration` | `8h` \| `24h` \| `unlimited` | `24h` | How long a login session remains valid |
-| `trusted_networks` | list[string] | `[]` | CIDRs or IPs allowed to call admin endpoints (`POST /api/system/restart`, `GET /api/system/process-stats`, `PUT /api/config`) when `auth.enabled=false`. Empty list = no restriction (default, backward compatible) |
+| `trusted_networks` | list[string] | `[]` | CIDRs or IPs allowed to call destructive endpoints (`POST /api/system/restart`, `PUT /api/config`) when `auth.enabled=false`. Empty list = no restriction (default, backward compatible). Read-only endpoints like `GET /api/system/process-stats` are never restricted (monitoring scrape use case) |
 
 ### `auth.trusted_networks`
 
