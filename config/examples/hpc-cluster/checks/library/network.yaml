@@ -1,0 +1,37 @@
+checks:
+- id: switch_up
+  name: Switch Up
+  kind: switch
+  scope: node
+  expr: up{instance=~"$instances"}
+  output: bool
+  for: 30s
+  rules:
+  - op: ==
+    value: 0
+    severity: CRIT
+- id: switch_port_err
+  name: Switch Port Error Rate
+  kind: switch
+  scope: node
+  expr: rate(ifInErrors{instance=~"$instances"}[5m]) + rate(ifOutErrors{instance=~"$instances"}[5m])
+  output: numeric
+  for: 2m
+  rules:
+  - op: '>'
+    value: 10
+    severity: WARN
+  - op: '>'
+    value: 100
+    severity: CRIT
+- id: ib_port_state
+  name: InfiniBand Port Not Active
+  kind: switch
+  scope: node
+  expr: infiniband_port_state{instance=~"$instances",state!="active"}
+  output: bool
+  for: 2m
+  rules:
+  - op: ==
+    value: 1
+    severity: WARN

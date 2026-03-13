@@ -1,0 +1,44 @@
+
+# Rackscope — Production stack
+#
+# Usage:
+#   export RACKSCOPE_VERSION=1.0.0   # or "latest"
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Images are built and pushed to GHCR by .github/workflows/docker.yml and
+# .github/workflows/release.yml.
+#
+# ⚠️  config/ is mounted read-write because the Settings UI writes to
+#     app.yaml, config.yml and plugin.yaml at runtime.
+
+services:
+  backend:
+    image: ghcr.io/sckyzO/rackscope-backend:${RACKSCOPE_VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # rw: Settings UI writes to config/ at runtime (app.yaml, plugin configs, overrides)
+      - ./config:/app/config
+      # plugins/ is already baked into the image (see src/Dockerfile).
+      # Uncomment only if you want to override or add custom plugins without rebuilding:
+      # - ./plugins:/app/plugins:ro
+    environment:
+      - RACKSCOPE_APP_CONFIG=/app/config/${APP_CONFIG:-app.yaml}
+      - PYTHONPATH=/app/src:/app
+    command: uvicorn rackscope.api.app:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    image: ghcr.io/sckyzO/rackscope-frontend:${RACKSCOPE_VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy

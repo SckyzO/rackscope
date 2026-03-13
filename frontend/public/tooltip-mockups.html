@@ -1,0 +1,2605 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HUD Tooltip — 10 Mockups</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #0a0a0f;
+        font-family: 'Inter', system-ui, sans-serif;
+        color: #fff;
+        padding: 40px;
+      }
+      h1 {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #4b5563;
+        margin-bottom: 8px;
+      }
+      .subtitle {
+        font-size: 12px;
+        color: #374151;
+        margin-bottom: 48px;
+      }
+      .grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 48px;
+      }
+      .item {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .item-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #4b5563;
+      }
+      .item-desc {
+        font-size: 10px;
+        color: #374151;
+        max-width: 300px;
+        line-height: 1.5;
+      }
+      .w {
+        width: 300px;
+      }
+
+      /* shared */
+      .mono {
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      }
+      .ok {
+        --c: #22c55e;
+      }
+      .w1 {
+        --c: #f59e0b;
+      }
+      .cr {
+        --c: #ef4444;
+      }
+      .uk {
+        --c: #6b7280;
+      }
+
+      /* ── MODÈLE 1 — Compact strip ─────────────────────────────── */
+      .m1 {
+        background: #111118;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+      }
+      .m1.cr {
+        box-shadow:
+          0 0 0 1px #ef444422,
+          0 12px 48px #ef444444;
+      }
+      .m1.w1 {
+        box-shadow:
+          0 0 0 1px #f59e0b18,
+          0 8px 36px #f59e0b33;
+      }
+      .m1-bar {
+        height: 2px;
+        background: var(--c);
+        opacity: 0.7;
+      }
+      .m1-body {
+        padding: 12px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .m1-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .m1-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+      .m1-icon {
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .m1-icon svg {
+        width: 13px;
+        height: 13px;
+        color: #9ca3af;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .m1-name {
+        font-size: 16px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        color: #fff;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+      .m1-enc {
+        font-size: 10px;
+        color: #6b7280;
+        margin-top: 2px;
+      }
+      .m1-badge {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        flex-shrink: 0;
+      }
+      .m1-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--c);
+        box-shadow: 0 0 6px var(--c);
+      }
+      .cr .m1-dot {
+        animation: pulse 1.5s infinite;
+      }
+      .m1-status {
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--c);
+      }
+      .m1-sep {
+        height: 1px;
+        background: linear-gradient(to right, rgba(255, 255, 255, 0.06), transparent);
+      }
+      .m1-metrics {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .m1-metric {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .m1-metric svg {
+        width: 12px;
+        height: 12px;
+        flex-shrink: 0;
+      }
+      .m1-val {
+        font-size: 15px;
+        font-weight: 900;
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .m1-unit {
+        font-size: 9px;
+        color: #6b7280;
+        margin-left: 2px;
+      }
+      .m1-alerts {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .m1-alert {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 8px;
+        border-radius: 7px;
+      }
+      .m1-alert.cr {
+        background: rgba(239, 68, 68, 0.08);
+      }
+      .m1-alert.w1 {
+        background: rgba(245, 158, 11, 0.08);
+      }
+      .m1-alert-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .cr .m1-alert-dot,
+      .m1-alert.cr .m1-alert-dot {
+        background: #ef4444;
+        animation: pulse 1.5s infinite;
+      }
+      .m1-alert.w1 .m1-alert-dot {
+        background: #f59e0b;
+      }
+      .m1-alert-text {
+        font-size: 10px;
+        color: #d1d5db;
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .m1-alert-sev {
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .m1-alert.cr .m1-alert-sev {
+        color: #ef4444;
+      }
+      .m1-alert.w1 .m1-alert-sev {
+        color: #f59e0b;
+      }
+      .m1-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .m1-loc {
+        font-family: monospace;
+        font-size: 10px;
+        color: #6b7280;
+      }
+      .m1-checks {
+        display: flex;
+        gap: 8px;
+      }
+      .m1-check {
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .m1-check.ok {
+        color: #22c55e;
+      }
+      .m1-check.w1 {
+        color: #f59e0b;
+      }
+      .m1-check.cr {
+        color: #ef4444;
+      }
+
+      /* ── MODÈLE 2 — Left accent bar (actuel amélioré) ─────────── */
+      .m2 {
+        background: #0f0f18;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+      }
+      .m2.cr {
+        box-shadow:
+          0 0 0 1px #ef444422,
+          0 12px 48px #ef444433;
+      }
+      .m2.w1 {
+        box-shadow:
+          0 0 0 1px #f59e0b15,
+          0 8px 32px #f59e0b28;
+      }
+      .m2-accent {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 3px;
+      }
+      .cr .m2-accent {
+        background: #ef4444;
+        animation: pulse 1.5s infinite;
+      }
+      .w1 .m2-accent {
+        background: #f59e0b;
+      }
+      .ok .m2-accent {
+        background: #22c55e;
+      }
+      .m2-inner {
+        padding: 14px 14px 14px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .m2-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .m2-left {
+        min-width: 0;
+      }
+      .m2-sub {
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #4b5563;
+      }
+      .m2-name {
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        text-transform: uppercase;
+        color: #fff;
+        margin-top: 2px;
+        line-height: 1;
+      }
+      .m2-enc {
+        font-size: 10px;
+        color: #6b7280;
+        margin-top: 3px;
+      }
+      .m2-chip {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .m2-chip-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+      }
+      .cr .m2-chip-dot {
+        background: #ef4444;
+        box-shadow: 0 0 8px #ef4444;
+        animation: pulse 1.5s infinite;
+      }
+      .w1 .m2-chip-dot {
+        background: #f59e0b;
+        box-shadow: 0 0 6px #f59e0b;
+      }
+      .ok .m2-chip-dot {
+        background: #22c55e;
+      }
+      .m2-chip-text {
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .cr .m2-chip-text {
+        color: #ef4444;
+      }
+      .w1 .m2-chip-text {
+        color: #f59e0b;
+      }
+      .ok .m2-chip-text {
+        color: #22c55e;
+      }
+      /* arc block inside m2 */
+      .m2-metrics {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .m2-arc-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      .m2-arc-val {
+        font-family: monospace;
+        font-size: 14px;
+        font-weight: 900;
+        text-align: center;
+      }
+      .m2-arc-lbl {
+        font-size: 7px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        text-align: center;
+      }
+      .m2-pow-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 8px;
+        padding-top: 4px;
+      }
+      .m2-pow-val {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .m2-pow-val svg {
+        width: 13px;
+        height: 13px;
+        color: #fbbf24;
+      }
+      .m2-pow-num {
+        font-family: monospace;
+        font-size: 16px;
+        font-weight: 900;
+        color: #f3f4f6;
+      }
+      .m2-bar {
+        height: 3px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .m2-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+      }
+      .m2-bar-pct {
+        font-size: 8px;
+        color: #6b7280;
+        margin-top: 2px;
+        font-family: monospace;
+      }
+      .m2-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 10px;
+      }
+
+      /* ── MODÈLE 3 — Dark glass minimal ───────────────────────── */
+      .m3 {
+        background: rgba(15, 15, 25, 0.96);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 18px;
+        backdrop-filter: blur(20px);
+      }
+      .m3-hd {
+        padding: 14px 14px 12px;
+      }
+      .m3-row1 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: space-between;
+      }
+      .m3-icontitle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+      .m3-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .cr .m3-icon {
+        background: rgba(239, 68, 68, 0.12);
+      }
+      .w1 .m3-icon {
+        background: rgba(245, 158, 11, 0.1);
+      }
+      .ok .m3-icon {
+        background: rgba(34, 197, 94, 0.1);
+      }
+      .m3-icon svg {
+        width: 13px;
+        height: 13px;
+        stroke: var(--c);
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .m3-title {
+        font-size: 15px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+        color: #fff;
+      }
+      .m3-status-pill {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 9px;
+        border-radius: 99px;
+        border: 1px solid;
+      }
+      .cr .m3-status-pill {
+        border-color: rgba(239, 68, 68, 0.4);
+        background: rgba(239, 68, 68, 0.08);
+      }
+      .w1 .m3-status-pill {
+        border-color: rgba(245, 158, 11, 0.35);
+        background: rgba(245, 158, 11, 0.07);
+      }
+      .ok .m3-status-pill {
+        border-color: rgba(34, 197, 94, 0.3);
+        background: rgba(34, 197, 94, 0.06);
+      }
+      .m3-pill-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--c);
+      }
+      .cr .m3-pill-dot {
+        animation: pulse 1.5s infinite;
+      }
+      .m3-pill-text {
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--c);
+      }
+      .m3-enc {
+        font-size: 10px;
+        color: #6b7280;
+        margin-top: 3px;
+        padding-left: 36px;
+      }
+      .m3-divider {
+        height: 1px;
+        margin: 0 14px;
+        background: linear-gradient(to right, var(--c), rgba(255, 255, 255, 0.04), transparent);
+        opacity: 0.4;
+      }
+      .m3-body {
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .m3-alerts {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .m3-alert {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 9px;
+      }
+      .m3-alert.cr {
+        background: rgba(239, 68, 68, 0.07);
+        border-left: 2px solid rgba(239, 68, 68, 0.5);
+      }
+      .m3-alert.w1 {
+        background: rgba(245, 158, 11, 0.07);
+        border-left: 2px solid rgba(245, 158, 11, 0.4);
+      }
+      .m3-alert-icon {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 8px;
+        font-weight: 900;
+      }
+      .m3-alert.cr .m3-alert-icon {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+      }
+      .m3-alert.w1 .m3-alert-icon {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+      }
+      .m3-alert-text {
+        font-size: 11px;
+        color: #e5e7eb;
+        flex: 1;
+      }
+      .m3-alert-sev {
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .m3-alert.cr .m3-alert-sev {
+        color: #ef4444;
+      }
+      .m3-alert.w1 .m3-alert-sev {
+        color: #f59e0b;
+      }
+      .m3-metrics {
+        display: flex;
+        gap: 12px;
+      }
+      .m3-metric-card {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .m3-metric-label {
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #6b7280;
+      }
+      .m3-metric-val {
+        font-family: monospace;
+        font-size: 17px;
+        font-weight: 900;
+      }
+      .m3-metric-unit {
+        font-size: 9px;
+        font-weight: 400;
+        color: #9ca3af;
+        margin-left: 2px;
+      }
+      .m3-metric-sub {
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .m3-footer {
+        padding: 10px 14px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .m3-loc {
+        font-family: monospace;
+        font-size: 10px;
+        color: #4b5563;
+      }
+      .m3-checks {
+        display: flex;
+        gap: 10px;
+      }
+      .m3-chk {
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      /* ── MODÈLE 4 — Floating card with glow border ────────────── */
+      .m4 {
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+        padding: 1px;
+      }
+      .m4::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 16px;
+        padding: 1px;
+        background: linear-gradient(135deg, var(--c), transparent 60%);
+        -webkit-mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0.6;
+      }
+      .m4-inner {
+        background: #0d0d16;
+        border-radius: 15px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .m4-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .m4-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.06);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .m4-icon svg {
+        width: 15px;
+        height: 15px;
+        stroke: #9ca3af;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .m4-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .m4-sub {
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #4b5563;
+      }
+      .m4-title {
+        font-size: 18px;
+        font-weight: 900;
+        letter-spacing: -0.025em;
+        text-transform: uppercase;
+        color: #f9fafb;
+        line-height: 1.1;
+        margin-top: 1px;
+      }
+      .m4-enc {
+        font-size: 10px;
+        color: #6b7280;
+        margin-top: 2px;
+      }
+      .m4-badge {
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--c);
+        border: 1px solid;
+        flex-shrink: 0;
+      }
+      .cr .m4-badge {
+        border-color: rgba(239, 68, 68, 0.3);
+      }
+      .w1 .m4-badge {
+        border-color: rgba(245, 158, 11, 0.25);
+      }
+      .ok .m4-badge {
+        border-color: rgba(34, 197, 94, 0.25);
+      }
+      .m4-alerts {
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 10px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .m4-alert {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 6px;
+      }
+      .m4-alert-line {
+        width: 2px;
+        height: 14px;
+        border-radius: 1px;
+        flex-shrink: 0;
+      }
+      .m4-alert.cr .m4-alert-line {
+        background: #ef4444;
+      }
+      .m4-alert.w1 .m4-alert-line {
+        background: #f59e0b;
+      }
+      .m4-alert-text {
+        font-size: 11px;
+        color: #d1d5db;
+        flex: 1;
+      }
+      .m4-alert-sev {
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .m4-alert.cr .m4-alert-sev {
+        color: #fca5a5;
+      }
+      .m4-alert.w1 .m4-alert-sev {
+        color: #fcd34d;
+      }
+      .m4-metrics {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .m4-temp {
+        display: flex;
+        align-items: baseline;
+        gap: 3px;
+      }
+      .m4-temp-val {
+        font-family: monospace;
+        font-size: 28px;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .m4-temp-unit {
+        font-size: 11px;
+        color: #9ca3af;
+      }
+      .m4-temp-lbl {
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+      .m4-divider-v {
+        width: 1px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .m4-pow {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+      }
+      .m4-pow-val {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .m4-pow-val svg {
+        width: 13px;
+        height: 13px;
+        color: #fbbf24;
+      }
+      .m4-pow-num {
+        font-family: monospace;
+        font-size: 17px;
+        font-weight: 900;
+        color: #f3f4f6;
+      }
+      .m4-pow-bar {
+        height: 3px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .m4-pow-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+      }
+      .m4-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .m4-loc {
+        font-family: monospace;
+        font-size: 10px;
+        color: #4b5563;
+      }
+      .m4-checks {
+        display: flex;
+        gap: 10px;
+      }
+
+      /* ── MODÈLE 5 — Horizontal row layout ────────────────────── */
+      .m5 {
+        background: #0c0c14;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .m5-top {
+        display: flex;
+        align-items: stretch;
+      }
+      .m5-status-col {
+        width: 4px;
+        flex-shrink: 0;
+        background: var(--c);
+      }
+      .cr .m5-status-col {
+        animation: pulse 1.5s infinite;
+      }
+      .m5-main {
+        flex: 1;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .m5-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+      .m5-name-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .m5-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .m5-icon svg {
+        width: 11px;
+        height: 11px;
+        stroke: #9ca3af;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .m5-title {
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+        color: #fff;
+      }
+      .m5-enc {
+        font-size: 10px;
+        color: #6b7280;
+        margin-top: 1px;
+      }
+      .m5-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+      }
+      .m5-status {
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--c);
+      }
+      .m5-subtype {
+        font-size: 8px;
+        color: #4b5563;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .m5-metrics-row {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .m5-metric {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .m5-metric svg {
+        width: 11px;
+        height: 11px;
+      }
+      .m5-metric-val {
+        font-family: monospace;
+        font-size: 14px;
+        font-weight: 900;
+      }
+      .m5-metric-unit {
+        font-size: 8px;
+        color: #6b7280;
+      }
+      .m5-bar-track {
+        height: 2px;
+        flex: 1;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+      .m5-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+      }
+      .m5-bottom {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .m5-alerts-inline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .m5-alert-tag {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 5px;
+      }
+      .m5-alert-tag.cr {
+        background: rgba(239, 68, 68, 0.12);
+        color: #fca5a5;
+      }
+      .m5-alert-tag.w1 {
+        background: rgba(245, 158, 11, 0.1);
+        color: #fcd34d;
+      }
+      .m5-foot-checks {
+        display: flex;
+        gap: 8px;
+        font-size: 9px;
+        font-weight: 700;
+      }
+
+      /* ── MODÈLE 6 — "Terminal" style ────────────────────────── */
+      .m6 {
+        background: #050508;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        font-family: 'JetBrains Mono', monospace;
+        overflow: hidden;
+      }
+      .m6-titlebar {
+        background: rgba(255, 255, 255, 0.04);
+        padding: 7px 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .m6-dots {
+        display: flex;
+        gap: 5px;
+      }
+      .m6-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+      }
+      .m6-dot.r {
+        background: #ef4444;
+      }
+      .m6-dot.y {
+        background: #f59e0b;
+      }
+      .m6-dot.g {
+        background: #22c55e;
+      }
+      .m6-tbtitle {
+        font-size: 10px;
+        color: #6b7280;
+        flex: 1;
+        text-align: center;
+        letter-spacing: 0.05em;
+      }
+      .m6-body {
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .m6-line {
+        font-size: 10px;
+        line-height: 1.6;
+      }
+      .m6-key {
+        color: #60a5fa;
+      }
+      .m6-eq {
+        color: #6b7280;
+      }
+      .m6-str {
+        color: #34d399;
+      }
+      .m6-num {
+        color: #fbbf24;
+      }
+      .m6-err {
+        color: #f87171;
+      }
+      .m6-warn-c {
+        color: #fbbf24;
+      }
+      .m6-ok {
+        color: #4ade80;
+      }
+      .m6-comment {
+        color: #374151;
+      }
+      .m6-prompt {
+        color: #a78bfa;
+      }
+      .m6-section {
+        color: #e879f9;
+        font-weight: 700;
+      }
+
+      /* ── MODÈLE 7 — Split layout (info left + arc right) ──────── */
+      .m7 {
+        background: #0e0e1a;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+      .m7.cr {
+        box-shadow:
+          0 0 0 1px #ef444418,
+          0 12px 40px #ef444430;
+      }
+      .m7.w1 {
+        box-shadow:
+          0 0 0 1px #f59e0b12,
+          0 8px 30px #f59e0b22;
+      }
+      .m7-top {
+        display: flex;
+      }
+      .m7-left {
+        flex: 1;
+        padding: 14px;
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .m7-right {
+        width: 110px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 14px 10px;
+        gap: 6px;
+      }
+      .m7-sub {
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #4b5563;
+      }
+      .m7-title {
+        font-size: 15px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+        color: #fff;
+        line-height: 1;
+      }
+      .m7-enc {
+        font-size: 9px;
+        color: #6b7280;
+        margin-top: 1px;
+      }
+      .m7-status {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 4px;
+      }
+      .m7-sdot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--c);
+      }
+      .cr .m7-sdot {
+        animation: pulse 1.5s infinite;
+        box-shadow: 0 0 6px var(--c);
+      }
+      .m7-stext {
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--c);
+      }
+      .m7-alerts {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .m7-alert {
+        font-size: 10px;
+        color: #d1d5db;
+        padding: 4px 8px;
+        border-radius: 6px;
+      }
+      .m7-alert.cr {
+        background: rgba(239, 68, 68, 0.08);
+        color: #fca5a5;
+      }
+      .m7-alert.w1 {
+        background: rgba(245, 158, 11, 0.07);
+        color: #fcd34d;
+      }
+      .m7-arc-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #4b5563;
+      }
+      .m7-arc-val {
+        font-family: monospace;
+        font-size: 18px;
+        font-weight: 900;
+        text-align: center;
+      }
+      .m7-arc-unit {
+        font-size: 9px;
+        color: #6b7280;
+      }
+      .m7-arc-status {
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+      .m7-bottom {
+        padding: 8px 14px;
+        background: rgba(0, 0, 0, 0.15);
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .m7-loc {
+        font-family: monospace;
+        font-size: 9px;
+        color: #4b5563;
+      }
+      .m7-chks {
+        display: flex;
+        gap: 8px;
+        font-size: 9px;
+        font-weight: 700;
+      }
+
+      /* ── MODÈLE 8 — Notification card style ──────────────────── */
+      .m8 {
+        background: #0c0c14;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      }
+      .m8-header {
+        padding: 12px 14px 10px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .m8-icon-wrap {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .cr .m8-icon-wrap {
+        background: rgba(239, 68, 68, 0.15);
+      }
+      .w1 .m8-icon-wrap {
+        background: rgba(245, 158, 11, 0.12);
+      }
+      .ok .m8-icon-wrap {
+        background: rgba(34, 197, 94, 0.1);
+      }
+      .m8-icon-wrap svg {
+        width: 16px;
+        height: 16px;
+        stroke: var(--c);
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .m8-content {
+        flex: 1;
+        min-width: 0;
+      }
+      .m8-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #f9fafb;
+      }
+      .m8-enc {
+        font-size: 10px;
+        color: #9ca3af;
+        margin-top: 1px;
+      }
+      .m8-time {
+        font-size: 9px;
+        color: #4b5563;
+        margin-top: 4px;
+      }
+      .m8-x {
+        font-size: 14px;
+        color: #4b5563;
+        cursor: pointer;
+        align-self: flex-start;
+      }
+      .m8-sep {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .m8-alerts {
+        padding: 10px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .m8-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .m8-alert-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        margin-top: 4px;
+        flex-shrink: 0;
+      }
+      .m8-alert.cr .m8-alert-dot {
+        background: #ef4444;
+        animation: pulse 1.5s infinite;
+      }
+      .m8-alert.w1 .m8-alert-dot {
+        background: #f59e0b;
+      }
+      .m8-alert-text {
+        font-size: 11px;
+        color: #e5e7eb;
+        line-height: 1.4;
+      }
+      .m8-alert-sev {
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        display: block;
+        margin-top: 1px;
+      }
+      .m8-alert.cr .m8-alert-sev {
+        color: #ef4444;
+      }
+      .m8-alert.w1 .m8-alert-sev {
+        color: #f59e0b;
+      }
+      .m8-footer {
+        padding: 8px 14px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .m8-metrics {
+        display: flex;
+        gap: 14px;
+      }
+      .m8-met {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-family: monospace;
+        font-weight: 700;
+      }
+      .m8-met svg {
+        width: 10px;
+        height: 10px;
+      }
+      .m8-link {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--c);
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      /* ── MODÈLE 9 — Tinted sections ──────────────────────────── */
+      .m9 {
+        background: #0a0a12;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+      .m9.cr {
+        box-shadow:
+          0 0 0 1px #ef444420,
+          0 16px 48px #ef444435;
+      }
+      .m9.w1 {
+        box-shadow:
+          0 0 0 1px #f59e0b15,
+          0 10px 36px #f59e0b25;
+      }
+      .m9-hd {
+        padding: 14px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
+      }
+      .cr .m9-hd {
+        background: linear-gradient(180deg, rgba(239, 68, 68, 0.07) 0%, transparent 100%);
+      }
+      .w1 .m9-hd {
+        background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);
+      }
+      .m9-row1 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+      .m9-badge {
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--c);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 3px 8px;
+        border-radius: 6px;
+        border: 1px solid;
+      }
+      .cr .m9-badge {
+        border-color: rgba(239, 68, 68, 0.3);
+      }
+      .w1 .m9-badge {
+        border-color: rgba(245, 158, 11, 0.25);
+      }
+      .ok .m9-badge {
+        border-color: rgba(34, 197, 94, 0.2);
+      }
+      .m9-sub {
+        font-size: 8px;
+        color: #4b5563;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+      .m9-title {
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        text-transform: uppercase;
+        color: #fff;
+        line-height: 1;
+      }
+      .m9-enc {
+        font-size: 10px;
+        color: #6b7280;
+        margin-top: 3px;
+      }
+      .m9-body {
+        padding: 0 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .m9-alerts {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        padding-bottom: 10px;
+      }
+      .m9-alert {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 8px;
+        border-radius: 8px;
+      }
+      .m9-alert.cr {
+        background: rgba(239, 68, 68, 0.07);
+      }
+      .m9-alert.w1 {
+        background: rgba(245, 158, 11, 0.06);
+      }
+      .m9-alert-bar {
+        width: 2px;
+        height: 20px;
+        border-radius: 1px;
+        flex-shrink: 0;
+      }
+      .m9-alert.cr .m9-alert-bar {
+        background: #ef4444;
+      }
+      .m9-alert.w1 .m9-alert-bar {
+        background: #f59e0b;
+      }
+      .m9-alert-text {
+        font-size: 10px;
+        color: #e5e7eb;
+        flex: 1;
+      }
+      .m9-alert-sev {
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .m9-alert.cr .m9-alert-sev {
+        color: #ef4444;
+      }
+      .m9-alert.w1 .m9-alert-sev {
+        color: #f59e0b;
+      }
+      .m9-metrics {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .m9-met-block {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 10px;
+        padding: 10px;
+      }
+      .m9-met-lbl {
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #4b5563;
+        margin-bottom: 4px;
+      }
+      .m9-met-val {
+        font-family: monospace;
+        font-size: 19px;
+        font-weight: 900;
+        line-height: 1;
+      }
+      .m9-met-unit {
+        font-size: 9px;
+        color: #9ca3af;
+      }
+      .m9-met-status {
+        font-size: 8px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-top: 3px;
+      }
+      .m9-met-bar {
+        height: 3px;
+        background: rgba(255, 255, 255, 0.07);
+        border-radius: 99px;
+        overflow: hidden;
+        margin-top: 6px;
+      }
+      .m9-met-bar-fill {
+        height: 100%;
+        border-radius: 99px;
+      }
+      .m9-foot {
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .m9-loc {
+        font-family: monospace;
+        font-size: 9px;
+        color: #4b5563;
+      }
+      .m9-chks {
+        display: flex;
+        gap: 8px;
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      /* ── MODÈLE 10 — Ultra-compact (cluster view) ────────────── */
+      .m10 {
+        background: #0b0b14;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        overflow: hidden;
+        width: 220px;
+      }
+      .m10-accent {
+        height: 2px;
+      }
+      .cr .m10-accent {
+        background: #ef4444;
+      }
+      .w1 .m10-accent {
+        background: #f59e0b;
+      }
+      .ok .m10-accent {
+        background: #22c55e;
+      }
+      .m10-body {
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .m10-head {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .m10-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .m10-icon svg {
+        width: 10px;
+        height: 10px;
+        stroke: #9ca3af;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .m10-titleblock {
+        flex: 1;
+        min-width: 0;
+      }
+      .m10-title {
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .m10-sub {
+        font-size: 8px;
+        color: #6b7280;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .m10-sdot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--c);
+        flex-shrink: 0;
+      }
+      .cr .m10-sdot {
+        animation: pulse 1.5s infinite;
+        box-shadow: 0 0 5px var(--c);
+      }
+      .m10-metrics {
+        display: flex;
+        gap: 10px;
+      }
+      .m10-met {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-family: monospace;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .m10-met svg {
+        width: 9px;
+        height: 9px;
+      }
+      .m10-alerts {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .m10-alert {
+        font-size: 9px;
+        padding: 4px 7px;
+        border-radius: 5px;
+      }
+      .m10-alert.cr {
+        background: rgba(239, 68, 68, 0.08);
+        color: #fca5a5;
+      }
+      .m10-alert.w1 {
+        background: rgba(245, 158, 11, 0.07);
+        color: #fcd34d;
+      }
+      .m10-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 6px;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .m10-loc {
+        font-family: monospace;
+        font-size: 8px;
+        color: #4b5563;
+      }
+      .m10-chks {
+        display: flex;
+        gap: 6px;
+        font-size: 9px;
+        font-weight: 700;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* SVG arc */
+      .arc-svg {
+        overflow: visible;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>HUD Tooltip — 10 Mockups</h1>
+    <p class="subtitle">Design exploration · fond sombre requis · statuts : OK / WARN / CRIT</p>
+
+    <div class="grid">
+      <!-- ══ MODÈLE 1 — Compact strip (CRIT) ═══════════════════════════════════ -->
+      <div class="item">
+        <div class="item-label">1 — Compact strip</div>
+        <div class="m1 cr w">
+          <div class="m1-bar"></div>
+          <div class="m1-body">
+            <div class="m1-header">
+              <div class="m1-title-wrap">
+                <div class="m1-icon">
+                  <svg viewBox="0 0 24 24">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
+                </div>
+                <div>
+                  <div
+                    style="
+                      font-size: 8px;
+                      color: #6b7280;
+                      letter-spacing: 0.18em;
+                      text-transform: uppercase;
+                    "
+                  >
+                    Node
+                  </div>
+                  <div class="m1-name">COMPUTE031</div>
+                  <div class="m1-enc">BullSequana X410 · 1U Twin CPU</div>
+                </div>
+              </div>
+              <div class="m1-badge">
+                <div class="m1-dot"></div>
+                <div class="m1-status">CRIT</div>
+              </div>
+            </div>
+            <div class="m1-sep"></div>
+            <div class="m1-alerts">
+              <div class="m1-alert cr">
+                <div class="m1-alert-dot"></div>
+                <div class="m1-alert-text">IPMI temperature high</div>
+                <div class="m1-alert-sev">CRIT</div>
+              </div>
+              <div class="m1-alert w1">
+                <div class="m1-alert-dot" style="background: #f59e0b"></div>
+                <div class="m1-alert-text">IPMI fan speed state</div>
+                <div class="m1-alert-sev" style="color: #f59e0b">WARN</div>
+              </div>
+            </div>
+            <div class="m1-sep"></div>
+            <div class="m1-metrics">
+              <div class="m1-metric" style="color: #ef4444">
+                <svg
+                  viewBox="0 0 24 24"
+                  style="stroke: #ef4444; fill: none; stroke-width: 2; stroke-linecap: round"
+                >
+                  <path d="M12 2a4 4 0 0 1 4 4v8a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
+                  <line x1="12" y1="18" x2="12" y2="22" />
+                </svg>
+                <div class="m1-val" style="color: #ef4444">47.2<span class="m1-unit">°C</span></div>
+              </div>
+              <div class="m1-metric" style="color: #fbbf24">
+                <svg
+                  viewBox="0 0 24 24"
+                  style="stroke: #fbbf24; fill: none; stroke-width: 2; stroke-linecap: round"
+                >
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                <div class="m1-val mono" style="color: #f3f4f6">
+                  312<span class="m1-unit">W</span>
+                </div>
+              </div>
+            </div>
+            <div class="m1-footer">
+              <div class="m1-loc">RACK U08 · S1</div>
+              <div class="m1-checks">
+                <span class="m1-check cr">✕2</span>
+                <span class="m1-check ok">✓3</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item-desc">
+          Header barre colorée 2px top. Alertes puis métriques inline. Compact.
+        </div>
+      </div>
+
+      <!-- ══ MODÈLE 2 — Left bar + arc gauge (WARN) ════════════════════════════ -->
+      <div class="item">
+        <div class="item-label">2 — Left bar + arc gauge</div>
+        <div class="m2 w1 w">
+          <div class="m2-accent"></div>
+          <div class="m2-inner">
+            <div class="m2-head">
+              <div class="m2-left">
+                <div class="m2-sub">Node</div>
+                <div class="m2-name">COMPUTE125</div>
+                <div class="m2-enc">BullSequana X410 · 1U Twin CPU</div>
+              </div>
+              <div class="m2-chip">
+                <div class="m2-chip-dot"></div>
+                <div class="m2-chip-text">WARN</div>
+              </div>
+            </div>
+            <!-- arc + power -->
+            <div class="m2-metrics">
+              <div class="m2-arc-col">
+                <!-- arc SVG 76x76 pure gauge, value below -->
+                <svg class="arc-svg" width="76" height="76" viewBox="0 0 76 76">
+                  <path
+                    d="M11.54 64.46 A30 30 0 1 1 64.46 64.46"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.06)"
+                    stroke-width="5"
+                    stroke-linecap="round"
+                  />
+                  <path
+                    d="M11.54 64.46 A30 30 0 0 1 52.1 15.3"
+                    fill="none"
+                    stroke="#f59e0b"
+                    stroke-width="5"
+                    stroke-linecap="round"
+                    style="filter: drop-shadow(0 0 6px #f59e0b88)"
+                  />
+                  <!-- warn notch -->
+                  <circle cx="47" cy="13.5" r="3.5" fill="#f59e0b" opacity=".7" />
+                  <text
+                    x="39"
+                    y="6"
+                    text-anchor="middle"
+                    font-size="6"
+                    font-family="monospace"
+                    font-weight="700"
+                    fill="#d97706"
+                    opacity=".9"
+                  >
+                    38°
+                  </text>
+                  <!-- crit notch -->
+                  <circle cx="63.3" cy="52" r="3.5" fill="#ef4444" opacity=".7" />
+                  <text
+                    x="69"
+                    y="58"
+                    text-anchor="middle"
+                    font-size="6"
+                    font-family="monospace"
+                    font-weight="700"
+                    fill="#dc2626"
+                    opacity=".9"
+                  >
+                    45°
+                  </text>
+                </svg>
+                <div class="m2-arc-val" style="color: #f59e0b">
+                  39.8<span style="font-size: 9px; color: #9ca3af; margin-left: 2px">°C</span>
+                </div>
+                <div class="m2-arc-lbl" style="color: #f59e0b">WARN</div>
+              </div>
+              <div class="m2-pow-col">
+                <div class="m2-pow-val">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                  <span class="m2-pow-num">285 W</span>
+                </div>
+                <div class="m2-bar">
+                  <div class="m2-bar-fill" style="width: 81%; background: #f59e0b"></div>
+                </div>
+                <div class="m2-bar-pct">81% of 350W</div>
+              </div>
+            </div>
+            <div class="m2-footer">
+              <div class="m1-loc">RACK U14 · S2</div>
+              <div class="m1-checks">
+                <span class="m1-check w1">⚠1</span><span class="m1-check ok">✓4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item-desc">
+          Barre gauche 3px. Arc pur avec valeur + label en dessous. Barre power avec %.
+        </div>
+      </div>
+
+      <!-- ══ MODÈLE 3 — Dark glass + two metric cards (CRIT) ══════════════════ -->
+      <div class="item">
+        <div class="item-label">3 — Glass + metric cards</div>
+        <div class="m3 cr w">
+          <div class="m3-hd">
+            <div class="m3-row1">
+              <div class="m3-icontitle">
+                <div class="m3-icon">
+                  <svg viewBox="0 0 24 24">
+                    <rect x="2" y="3" width="20" height="14" rx="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
+                </div>
+                <div class="m3-title">COMPUTE007</div>
+              </div>
+              <div class="m3-status-pill">
+                <div class="m3-pill-dot" style="animation: pulse 1.5s infinite"></div>
+                <div class="m3-pill-text">CRIT</div>
+              </div>
+            </div>
+            <div class="m3-enc">BullSequana X440 · 2U 4-node</div>
+          </div>
+          <div class="m3-divider"></div>
+          <div class="m3-body">
+            <div class="m3-alerts">
+              <div class="m3-alert cr">
+                <div class="m3-alert-icon">!</div>
+                <div class="m3-alert-text">Node up</div>
+                <div class="m3-alert-sev">CRIT</div>
+              </div>
+              <div class="m3-alert cr">
+                <div class="m3-alert-icon">!</div>
+                <div class="m3-alert-text">IPMI exporter up</div>
+                <div class="m3-alert-sev">CRIT</div>
+              </div>
+              <div class="m3-alert w1" style="border-left-color: rgba(245, 158, 11, 0.4)">
+                <div
+                  class="m3-alert-icon"
+                  style="background: rgba(245, 158, 11, 0.15); color: #f59e0b"
+                >
+                  !
+                </div>
+                <div class="m3-alert-text">Node recent reboot</div>
+                <div class="m3-alert-sev" style="color: #f59e0b">WARN</div>
+              </div>
+            </div>
+            <div class="m3-metrics">
+              <div class="m3-metric-card">
+                <div class="m3-metric-label">Thermal</div>
+                <div class="m3-metric-val" style="color: #6b7280">
+                  --<span class="m3-metric-unit">°C</span>
+                </div>
+                <div class="m3-metric-sub" style="color: #374151">N/A</div>
+              </div>
+              <div class="m3-metric-card">
+                <div class="m3-metric-label">Power</div>
+                <div class="m3-metric-val" style="color: #6b7280">
+                  50<span class="m3-metric-unit">W</span>
+                </div>
+                <div class="m3-metric-sub" style="color: #374151">Standby</div>
+              </div>
+            </div>
+            <div class="m3-footer">
+              <div class="m3-loc">RACK U22 · S3</div>
+              <div class="m3-checks">
+                <span class="m3-chk" style="color: #ef4444">✕3</span
+                ><span class="m3-chk" style="color: #374151">✓0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item-desc">
+          Pill badge status. Alertes en sections. 2 metric cards égales. Nœud down.
+        </div>
+      </div>
+
+      <!-- ══ MODÈLE 4 — Gradient border + big temp (WARN) ═════════════════════ -->
+      <div class="item">
+        <div class="item-label">4 — Gradient border + big temp</div>
+        <div class="m4 w1 w">
+          <div class="m4-inner">
+            <div class="m4-head">
+              <div class="m4-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  style="stroke: #9ca3af; fill: none; stroke-width: 2; stroke-linecap: round"
+                >
+                  <circle cx="12" cy="12" r="3" />
+                  <path
+                    d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+                  />
+                </svg>
+              </div>
+              <div class="m4-info">
+                <div class="m4-sub">GPU Node</div>
+                <div class="m4-title">VISU003</div>
+                <div class="m4-enc">BullSequana X2415 · 4U Quad GPU</div>
+              </div>
+              <div class="m4-badge">WARN</div>
+            </div>
+            <div class="m4-alerts">
+              <div class="m4-alert w1">
+                <div class="m4-alert-line"></div>
+                <div class="m4-alert-text">IPMI temperature high</div>
+                <div class="m4-alert-sev">WARN</div>
+              </div>
+            </div>
+            <div class="m4-metrics">
+              <div class="m4-temp">
+                <div>
+                  <div style="display: flex; align-items: baseline; gap: 3px">
+                    <div class="m4-temp-val" style="color: #f59e0b">53.1</div>
+                    <div class="m4-temp-unit">°C</div>
+                  </div>
+                  <div class="m4-temp-lbl" style="color: #f59e0b">WARN · 52° threshold</div>
+                </div>
+              </div>
+              <div class="m4-divider-v"></div>
+              <div class="m4-pow">
+                <div class="m4-pow-val">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  >
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                  <span class="m4-pow-num">520 W</span>
+                </div>
+                <div class="m4-pow-bar">
+                  <div class="m4-pow-bar-fill" style="width: 87%; background: #f59e0b"></div>
+                </div>
+                <div
+                  style="font-size: 8px; color: #6b7280; font-family: monospace; margin-top: 2px"
+                >
+                  87% of 600W
+                </div>
+              </div>
+            </div>
+            <div class="m4-footer">
+              <div class="m4-loc">RACK U03 · S2</div>
+              <div class="m4-checks">
+                <span style="color: #f59e0b; font-size: 10px; font-weight: 700">⚠1</span
+                ><span style="color: #22c55e; font-size: 10px; font-weight: 700">✓3</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item-desc">
+          Bordure gradient. Grande valeur temp + barre power. GPU thresholds 52°/65°.
+        </div>
+      </div>
+
+      <!-- ══ MODÈLE 5 — Horizontal compact (WARN) ══════════════════════════════ -->
+      <div class="item">
+        <div class="item-label">5 — Horizontal compact</div>
+        <div class="m5 w1 w">
+          <div class="m5-top">
+            <div class="m5-status-col"></div>
+            <div class="m5-main">
+              <div class="m5-head">
+                <div>
+                  <div class="m5-name-row">
+                    <div class="m5-icon">
+                      <svg viewBox="0 0 24 24">
+                        <rect x="2" y="2" width="20" height="8" rx="2" />
+                        <rect x="2" y="14" width="20" height="8" rx="2" />
+                        <line x1="6" y1="6" x2="6" y2="6" />
+                        <line x1="6" y1="18" x2="6" y2="18" />
+                      </svg>
+                    </div>
+                    <div class="m5-title">SW-ETH-R01-03</div>
+                  </div>
+                  <div class="m5-enc">Ethernet ToR Switch · 1U</div>
+                </div>
+                <div class="m5-right">
+                  <div class="m5-status">WARN</div>
+                  <div class="m5-subtype">Network</div>
+                </div>
+              </div>
+              <div class="m5-metrics-row">
+                <div class="m5-metric" style="color: #f59e0b">
+                  <svg
+                    viewBox="0 0 24 24"
+                    style="stroke: #f59e0b; fill: none; stroke-width: 2; stroke-linecap: round"
+                  >
+                    <path d="M12 2a4 4 0 0 1 4 4v8a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
+                  </svg>
+                  <span class="m5-metric-val" style="color: #f59e0b">41.5</span>
+                  <span class="m5-metric-unit">°C</span>
+                </div>
+                <div class="m5-bar-track">
+                  <div
+                    class="m5-bar-fill"
+                    style="width: 83%; background: #f59e0b; height: 100%; border-radius: 99px"
+                  ></div>
+                </div>
+                <div class="m5-metric" style="color: #fbbf24">
+                  <svg
+                    viewBox="0 0 24 24"
+                    style="stroke: #fbbf24; fill: none; stroke-width: 2; stroke-linecap: round"
+                  >
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                  <span class="m5-metric-val mono" style="color: #e5e7eb">142 W</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="m5-bottom">
+            <div class="m5-alerts-inline">
+              <span class="m5-alert-tag w1">IPMI temp high</span>
+            </div>
+            <div class="m5-foot-checks">
+              <span style="color: #f59e0b">⚠1</span><span style="color: #22c55e">✓2</span
+              ><span style="font-family: monospace; font-size: 9px; color: #4b5563">U44</span>
+            </div>
+          </div>
+        </div>
+        <div class="item-desc">
+          Layout horizontal. Barre de progression thermique inline. Footer minimal.
+        </div>
+      </div>
+
+      <!-- ══ MODÈLE 6 — Terminal / monospace (CRIT) ════════════════════════════ -->
+      <div class="item">
+        <div class="item-label">6 — Terminal style</div>
+        <div class="m6 w">
+          <div class="m6-titlebar">
+            <div class="m6-dots">
+              <div class="m6-dot r"></div>
+              <div class="m6-dot y"></div>
+              <div class="m6-dot g"></div>
+            </div>
+            <div class="m6-tbtitle">node-inspector · r01-01</div>
+          </div>
+          <div class="m6-body">
+            <div class="m6-line"><span class="m6-comment"># Node identity</span></div>
+            <div class="m6-line">
+              <span class="m6-key">node</span><span class="m6-eq"> = </span
+              ><span class="m6-str">"COMPUTE031"</span>
+            </div>
+            <div class="m6-line">
+              <span class="m6-key">type</span><span class="m6-eq"> = </span
+              ><span class="m6-str">"bs-x410-1u-twin-cpu"</span>
+            </div>
+            <div class="m6-line">
+              <span class="m6-key">location</span><span class="m6-eq"> = </span
+              ><span class="m6-str">"RACK U08 S1"</span>
+            </div>
+            <div class="m6-line" style="margin-top: 8px">
+              <span class="m6-comment"># Status</span>
+            </div>
+            <div class="m6-line">
+              <span class="m6-key">state</span><span class="m6-eq"> = </span
+              ><span class="m6-err">CRIT</span>
+            </div>
+            <div class="m6-line">
+              <span class="m6-key">temp</span><span class="m6-eq"> = </span
+              ><span class="m6-err">47.2</span><span class="m6-comment">°C # &gt; 45 CRIT</span>
+            </div>
+            <div class="m6-line">
+              <span class="m6-key">power</span><span class="m6-eq"> = </span
+              ><span class="m6-num">312</span><span class="m6-comment">W</span>
+            </div>
+            <div class="m6-line" style="margin-top: 8px">
+              <span class="m6-comment"># Alerts</span>
+            </div>
+            <div class="m6-line">
+              <span class="m6-prompt">!</span><span class="m6-err"> ipmi_temperature_high</span
+              ><span class="m6-comment"> [CRIT]</span>
+            </div>
+            <div class="m6-line">
+              <span class="m6-prompt">!</span><span class="m6-warn-c"> ipmi_fan_speed_state</span
+              ><span class="m6-comment"> [WARN]</span>
+            </div>
+            <div class="m6-line" style="margin-top: 8px">
+              <span class="m6-comment"># Checks</span>
+            </div>
+            <div class="m6-line">
+              <span class="m6-ok">✓ </span
+              ><span style="color: #374151">node_up node_reboot ipmi_up</span>
+            </div>
+          </div>
+        </div>
+        <div class="item-desc">
+          Style terminal monospace. Données brutes façon config/logs. Pour HPC.
+        </div>
+      </div>
+
+      <!-- ══ MODÈLE 7 — Split left info / right arc (OK) ══════════════════════ -->
+      <div class="item">
+        <div class="item-label">7 — Split layout</div>
+        <div class="m7 ok w">
+          <div class="m7-top">
+            <div class="m7-left">
+              <div>
+                <div class="m7-sub">Node</div>
+                <div class="m7-title">COMPUTE042</div>
+                <div class="m7-enc">BullSequana X410 · 1U Twin CPU</div>
+              </div>
+              <div class="m7-status">
+                <div class="m7-sdot"></div>
+                <div class="m7-stext">OK</div>
+              </div>
+              <div style="font-family: monospace; font-size: 9px; color: #4b5563">
+                RACK U12 · S1
+              </div>
+            </div>
+            <div class="m7-right">
+              <div class="m7-arc-label">Thermal</div>
+              <svg class="arc-svg" width="70" height="70" viewBox="0 0 70 70">
+                <path
+                  d="M9 60 A28 28 0 1 1 61 60"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.06)"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M9 60 A28 28 0 0 1 26 12"
+                  fill="none"
+                  stroke="#22c55e"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                  style="filter: drop-shadow(0 0 5px #22c55e99)"
+                />
+                <circle cx="35.5" cy="7" r="3.5" fill="#f59e0b" opacity=".6" />
+                <text
+                  x="27"
+                  y="2"
+                  text-anchor="middle"
+                  font-size="5.5"
+                  font-family="monospace"
+                  font-weight="700"
+                  fill="#d97706"
+                  opacity=".85"
+                >
+                  38°
+                </text>
+                <circle cx="62" cy="46" r="3.5" fill="#ef4444" opacity=".6" />
+                <text
+                  x="68"
+                  y="52"
+                  text-anchor="middle"
+                  font-size="5.5"
+                  font-family="monospace"
+                  font-weight="700"
+                  fill="#dc2626"
+                  opacity=".85"
+                >
+                  45°
+                </text>
+              </svg>
+              <div class="m7-arc-val" style="color: #22c55e">
+                27.4<span class="m7-arc-unit">°C</span>
+              </div>
+              <div class="m7-arc-status" style="color: #22c55e">OK</div>
+            </div>
+          </div>
+          <div class="m7-bottom">
+            <div style="display: flex; align-items: center; gap: 6px">
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#fbbf24"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              <span
+                style="font-family: monospace; font-size: 11px; font-weight: 900; color: #f3f4f6"
+                >167 W</span
+              >
+            </div>
+            <div class="m7-chks"><span style="color: #22c55e">✓5</span></div>
+          </div>
+        </div>
+        <div class="item-desc">Layout split 60/40. Infos à gauche, arc à droite. Nœud OK sain.</div>
+      </div>
+
+      <!-- ══ MODÈLE 8 — Notification card (CRIT) ══════════════════════════════ -->
+      <div class="item">
+        <div class="item-label">8 — Notification card</div>
+        <div class="m8 cr w">
+          <div class="m8-header">
+            <div class="m8-icon-wrap">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <div class="m8-content">
+              <div class="m8-title">COMPUTE031 — CRIT</div>
+              <div class="m8-enc">BullSequana X410 · RACK U08</div>
+              <div class="m8-time">2 checks failing · just now</div>
+            </div>
+            <div class="m8-x">✕</div>
+          </div>
+          <div class="m8-sep"></div>
+          <div class="m8-alerts">
+            <div class="m8-alert cr">
+              <div class="m8-alert-dot"></div>
+              <div class="m8-alert-text">
+                IPMI temperature high
+                <span class="m8-alert-sev">CRIT</span>
+              </div>
+            </div>
+            <div class="m8-alert w1">
+              <div class="m8-alert-dot" style="background: #f59e0b"></div>
+              <div class="m8-alert-text">
+                IPMI fan speed state
+                <span class="m8-alert-sev" style="color: #f59e0b">WARN</span>
+              </div>
+            </div>
+          </div>
+          <div class="m8-sep"></div>
+          <div class="m8-footer">
+            <div class="m8-metrics">
+              <div class="m8-met" style="color: #ef4444">
+                <svg viewBox="0 0 24 24" style="stroke: #ef4444; fill: none; stroke-width: 2">
+                  <path d="M12 2a4 4 0 0 1 4 4v8a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
+                </svg>
+                47.2°C
+              </div>
+              <div class="m8-met" style="color: #e5e7eb">
+                <svg
+                  viewBox="0 0 24 24"
+                  style="stroke: #fbbf24; fill: none; stroke-width: 2; stroke-linecap: round"
+                >
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                312 W
+              </div>
+            </div>
+            <div class="m8-link">→ View rack</div>
+          </div>
+        </div>
+        <div class="item-desc">
+          Style notification système. Bouton "View rack" intégré. Proche d'une alerte push.
+        </div>
+      </div>
+
+      <!-- ══ MODÈLE 9 — Tinted sections + big title (WARN) ═══════════════════ -->
+      <div class="item">
+        <div class="item-label">9 — Tinted sections + big title</div>
+        <div class="m9 w1 w">
+          <div class="m9-hd">
+            <div class="m9-row1">
+              <div>
+                <div class="m9-sub">PDU · Raritan</div>
+              </div>
+              <div class="m9-badge">WARN</div>
+            </div>
+            <div class="m9-title">PDU-R02-01</div>
+            <div class="m9-enc">Power Distribution Unit · Rack R02-01</div>
+          </div>
+          <div class="m9-body">
+            <div class="m9-alerts">
+              <div class="m9-alert w1">
+                <div class="m9-alert-bar"></div>
+                <div class="m9-alert-text">PDU current high (warn)</div>
+                <div class="m9-alert-sev">WARN</div>
+              </div>
+            </div>
+            <div class="m9-metrics">
+              <div class="m9-met-block" style="flex: none; width: 48%">
+                <div class="m9-met-lbl">Active power</div>
+                <div class="m9-met-val" style="color: #fbbf24">
+                  3.8<span class="m9-met-unit">kW</span>
+                </div>
+                <div class="m9-met-bar">
+                  <div class="m9-met-bar-fill" style="width: 83%; background: #f59e0b"></div>
+                </div>
+                <div
+                  style="font-size: 7px; color: #6b7280; font-family: monospace; margin-top: 2px"
+                >
+                  83% of 4.6kW
+                </div>
+              </div>
+              <div class="m9-met-block" style="flex: none; width: 48%">
+                <div class="m9-met-lbl">Current</div>
+                <div class="m9-met-val" style="color: #f59e0b">
+                  18.2<span class="m9-met-unit">A</span>
+                </div>
+                <div class="m9-met-status" style="color: #f59e0b">WARN &gt; 16A</div>
+              </div>
+            </div>
+            <div class="m9-foot">
+              <div class="m9-loc">RACK R02-01 · Side</div>
+              <div class="m9-chks">
+                <span style="color: #f59e0b">⚠1</span><span style="color: #22c55e">✓1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item-desc">
+          Header très grand titre. Sections tintées selon statut. PDU avec courant.
+        </div>
+      </div>
+
+      <!-- ══ MODÈLE 10 — Ultra-compact cluster mode (OK) ═══════════════════════ -->
+      <div class="item">
+        <div class="item-label">10 — Ultra-compact (cluster view)</div>
+        <div class="m10 ok">
+          <div class="m10-accent"></div>
+          <div class="m10-body">
+            <div class="m10-head">
+              <div class="m10-icon">
+                <svg viewBox="0 0 24 24">
+                  <rect x="2" y="3" width="20" height="14" rx="2" />
+                  <line x1="8" y1="21" x2="16" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+              </div>
+              <div class="m10-titleblock">
+                <div class="m10-title">COMPUTE042</div>
+                <div class="m10-sub">Node · 1U Twin CPU</div>
+              </div>
+              <div class="m10-sdot"></div>
+            </div>
+            <div class="m10-metrics">
+              <div class="m10-met" style="color: #22c55e">
+                <svg viewBox="0 0 24 24" style="stroke: #22c55e; fill: none; stroke-width: 2">
+                  <path d="M12 2a4 4 0 0 1 4 4v8a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
+                </svg>
+                27.4°C
+              </div>
+              <div class="m10-met" style="color: #e5e7eb">
+                <svg
+                  viewBox="0 0 24 24"
+                  style="stroke: #fbbf24; fill: none; stroke-width: 2; stroke-linecap: round"
+                >
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                167 W
+              </div>
+            </div>
+            <div class="m10-foot">
+              <div class="m10-loc">U12 · S1</div>
+              <div class="m10-chks"><span style="color: #22c55e">✓5</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="height: 8px"></div>
+        <div class="m10 cr" style="width: 220px">
+          <div class="m10-accent"></div>
+          <div class="m10-body">
+            <div class="m10-head">
+              <div class="m10-icon">
+                <svg viewBox="0 0 24 24">
+                  <rect x="2" y="3" width="20" height="14" rx="2" />
+                  <line x1="8" y1="21" x2="16" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+              </div>
+              <div class="m10-titleblock">
+                <div class="m10-title">COMPUTE031</div>
+                <div class="m10-sub">Node · 1U Twin CPU</div>
+              </div>
+              <div
+                class="m10-sdot"
+                style="
+                  background: #ef4444;
+                  box-shadow: 0 0 5px #ef4444;
+                  animation: pulse 1.5s infinite;
+                "
+              ></div>
+            </div>
+            <div class="m10-metrics">
+              <div class="m10-met" style="color: #ef4444">
+                <svg viewBox="0 0 24 24" style="stroke: #ef4444; fill: none; stroke-width: 2">
+                  <path d="M12 2a4 4 0 0 1 4 4v8a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
+                </svg>
+                47.2°C
+              </div>
+              <div class="m10-met" style="color: #e5e7eb">
+                <svg
+                  viewBox="0 0 24 24"
+                  style="stroke: #fbbf24; fill: none; stroke-width: 2; stroke-linecap: round"
+                >
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                312 W
+              </div>
+            </div>
+            <div class="m10-alerts">
+              <div class="m10-alert cr">! IPMI temperature high</div>
+            </div>
+            <div class="m10-foot">
+              <div class="m10-loc">U08 · S1</div>
+              <div class="m10-chks">
+                <span style="color: #ef4444">✕2</span><span style="color: #22c55e">✓3</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="item-desc">
+          Format 220px pour vue cluster. Deux états : OK (vert) et CRIT (rouge).
+        </div>
+      </div>
+    </div>
+
+    <div
+      style="
+        margin-top: 60px;
+        border-top: 1px solid #1f2937;
+        padding-top: 20px;
+        font-size: 10px;
+        color: #374151;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      "
+    >
+      Rackscope · HUD Tooltip Exploration · 10 modèles
+    </div>
+  </body>
+</html>

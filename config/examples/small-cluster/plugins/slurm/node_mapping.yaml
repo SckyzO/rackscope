@@ -1,0 +1,5 @@
+# Node mapping for small-cluster
+# Format: slurm_pattern: topology_instance_pattern
+mapping:
+  "c[001-120]": "compute[001-120]"
+  "g[01-16]": "gpu[001-016]"

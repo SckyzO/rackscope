@@ -1,0 +1,50 @@
+metric: slurm_node_status
+label_node: node
+label_status: status
+label_partition: partition
+mapping_path: config/examples/exascale/plugins/slurm/node_mapping.yaml
+roles:
+- compute
+- gpu
+- highmem
+- visu
+- login
+include_unlabeled: false
+status_map:
+  ok:
+  - idle
+  - allocated
+  - alloc
+  - completing
+  - mixed
+  - mix
+  warn:
+  - drain
+  - draining
+  - drained
+  - maint
+  - reserved
+  - resv
+  - blocked
+  - power_down
+  - power_up
+  - powering_up
+  - powered_down
+  crit:
+  - down
+  - fail
+  - failing
+  - error
+  - unknown
+  - unk
+  - noresp
+  - inval
+  info: []
+severity_colors:
+  ok: '#22c55e'
+  warn: '#f59e0b'
+  crit: '#ef4444'
+  info: '#3b82f6'
+metrics_catalog_dir: config/plugins/slurm/metrics
+metrics_catalogs:
+- metrics.yaml

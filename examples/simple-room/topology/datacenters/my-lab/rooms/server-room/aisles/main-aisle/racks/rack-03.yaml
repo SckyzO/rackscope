@@ -1,0 +1,11 @@
+id: rack-03
+name: "Network Rack"
+u_height: 42
+template_id: simple-42u
+devices:
+  - id: sw-tor-01
+    name: tor-sw-01
+    template_id: simple-1u-switch
+    u_position: 42
+    face: front
+    instance: tor-sw-01

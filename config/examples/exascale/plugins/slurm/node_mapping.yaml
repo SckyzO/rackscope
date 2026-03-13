@@ -1,0 +1,6 @@
+# Node mapping for exascale
+# Format: slurm_pattern: topology_instance_pattern
+mapping:
+  "c[00001-08000]": "compute[00001-08000]"
+  "g[0001-1600]": "gpu[0001-1600]"
+  "h[0001-0800]": "hm[0001-0800]"

@@ -1,0 +1,7 @@
+sites:
+- id: dc-main
+  name: Main Datacenter
+  description: Small HPC cluster
+  lat: 48.8566
+  lon: 2.3522
+  rooms_path: datacenters/dc-main/rooms

@@ -1,0 +1,66 @@
+checks:
+- id: pmc_power_warn
+  name: PMC Total Power Warning
+  kind: pdu
+  scope: rack
+  expr: sum by (rack_id) (sequana3_pmc_total_watt{rack_id=~"$racks"})
+  output: numeric
+  for: 5m
+  rules:
+  - op: '>'
+    value: 15000
+    severity: WARN
+- id: pmc_power_crit
+  name: PMC Total Power Critical
+  kind: pdu
+  scope: rack
+  expr: sum by (rack_id) (sequana3_pmc_total_watt{rack_id=~"$racks"})
+  output: numeric
+  for: 2m
+  rules:
+  - op: '>'
+    value: 20000
+    severity: CRIT
+- id: hmc_temp_warn
+  name: HMC Coolant Temperature Warning
+  kind: cooling
+  scope: rack
+  expr: max by (rack_id) (sequana3_hyc_tmp_pcb_cel{rack_id=~"$racks"})
+  output: numeric
+  for: 3m
+  rules:
+  - op: '>'
+    value: 35
+    severity: WARN
+- id: hmc_temp_crit
+  name: HMC Coolant Temperature Critical
+  kind: cooling
+  scope: rack
+  expr: max by (rack_id) (sequana3_hyc_tmp_pcb_cel{rack_id=~"$racks"})
+  output: numeric
+  for: 1m
+  rules:
+  - op: '>'
+    value: 45
+    severity: CRIT
+- id: hmc_flow_warn
+  name: HMC Coolant Flow Low
+  kind: cooling
+  scope: rack
+  expr: min by (rack_id) (sequana3_hyc_flow_lmin{rack_id=~"$racks"})
+  output: numeric
+  for: 2m
+  rules:
+  - op: <
+    value: 5
+    severity: WARN
+- id: hmc_leak
+  name: HMC Leak Detected
+  kind: cooling
+  scope: rack
+  expr: sequana3_hyc_leak_sensor_pump{rack_id=~"$racks"}
+  output: bool
+  rules:
+  - op: ==
+    value: 1
+    severity: CRIT

@@ -1,0 +1,98 @@
+/* Rackscope app-scoped CSS variables.
+   Tailwind design tokens (brand, semantic colors, shadows) live in index.css
+   because Tailwind must scan them to generate utility classes. Variables here
+   are consumed by RackVisualizer and other components via CSS custom properties. */
+
+/* Applied to structural layout containers — separate from index.css body transition
+   so only the app shell gets this 500ms ease, not every DOM element */
+.rs-bg-transition {
+  transition-property: color, background-color, border-color;
+  transition-duration: 500ms;
+  transition-timing-function: ease;
+}
+
+/* Width and color use different durations: 300ms for collapse/expand snap,
+   500ms for theme switch to feel unhurried */
+.rs-sidebar {
+  transition:
+    width 300ms ease,
+    background-color 500ms ease,
+    border-color 500ms ease,
+    color 500ms ease;
+}
+
+.rs-root {
+  font-family: Outfit, system-ui, sans-serif;
+  background: white;
+  color: #101828;
+
+  /* Design tokens consumed by RackVisualizer and monitoring components */
+  --color-bg-base: #f9fafb;
+  --color-bg-panel: #fff;
+  --color-bg-elevated: #fff;
+  --color-border: #d0d5dd;
+  --color-text-base: #101828;
+  --color-text-primary: #101828;
+  --color-text-secondary: #667085;
+  --color-text-muted: #98a2b3;
+  --color-accent: #465fff;
+
+  /* Light mode rack values are lighter than dark so rack structure remains legible
+     against a white background without excessive contrast */
+  --color-rack-interior: #c8d0de;
+  --color-rack-frame: #8896ab;
+  --color-device-surface: #eef1f7;
+  --color-node-surface: #dde3ee;
+  --color-empty-slot: #b0bccf;
+  --color-accent-primary: #465fff;
+}
+
+.rs-root.dark {
+  color-scheme: dark;
+  background: var(--color-gray-dark);
+  color: #e4e7ec;
+
+  --color-bg-base: #0c111d;
+  --color-bg-panel: #1a2231;
+  --color-bg-elevated: #1d2939;
+  --color-border: #344054;
+  --color-text-base: #e4e7ec;
+  --color-text-primary: #fff;
+  --color-text-secondary: #98a2b3;
+  --color-text-muted: #667085;
+  --color-accent: #465fff;
+
+  /* Dark mode uses deep navy/charcoal values matching server room aesthetics */
+  --color-rack-interior: #0d1420;
+  --color-rack-frame: #1e3a5f;
+  --color-device-surface: #1a2535;
+  --color-node-surface: #111827;
+  --color-empty-slot: #0d1420;
+  --color-accent-primary: #465fff;
+}
+
+.rs-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.rs-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rs-scrollbar::-webkit-scrollbar-thumb {
+  background: #e4e7ec;
+  border-radius: 3px;
+}
+
+.dark .rs-scrollbar::-webkit-scrollbar-thumb {
+  background: #344054;
+}
+
+.rs-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #d0d5dd;
+}
+
+.dark .rs-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475467;
+}

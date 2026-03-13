@@ -1,0 +1,3 @@
+# Test checks — for use in automated tests and simulator scenarios only.
+# Do not reference from production device templates.
+checks: []

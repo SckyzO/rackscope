@@ -1,0 +1,28 @@
+app:
+  name: Rackscope
+  description: My Lab
+
+paths:
+  topology: config/topology
+  templates: config/templates
+  checks: config/checks/library
+
+telemetry:
+  prometheus_url: http://prometheus:9090
+  identity_label: instance
+  job_regex: ".*"
+
+features:
+  wizard: false
+  worldmap: false
+
+auth:
+  enabled: false
+  username: admin
+  password_hash: ""
+
+plugins:
+  # Only 'enabled' here — all simulator behaviour lives in
+  # config/plugins/simulator/config/plugin.yaml
+  simulator:
+    enabled: true

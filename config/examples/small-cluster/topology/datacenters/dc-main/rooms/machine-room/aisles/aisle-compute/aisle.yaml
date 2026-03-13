@@ -1,0 +1,10 @@
+id: aisle-compute
+name: Compute Aisle
+room_id: machine-room
+racks:
+- id: rack-c01
+- id: rack-c02
+- id: rack-c03
+- id: rack-c04
+- id: rack-c05
+- id: rack-c06

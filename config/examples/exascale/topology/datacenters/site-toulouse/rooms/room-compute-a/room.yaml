@@ -1,0 +1,24 @@
+id: room-compute-a
+name: Compute Room A
+site_id: site-toulouse
+description: Compute Room A — Toulouse — Site Secondaire
+layout:
+  shape: rectangle
+  size:
+    width: 48
+    height: 36
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+- id: aisle-compute-1
+  name: Aisle Compute 1
+- id: aisle-compute-2
+  name: Aisle Compute 2
+- id: aisle-compute-3
+  name: Aisle Compute 3

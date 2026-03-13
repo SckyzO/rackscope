@@ -1,0 +1,69 @@
+id: r03-01
+name: Rack Mgmt + Login
+template_id: standard-42u-air
+aisle_id: aisle-03
+devices:
+- id: r03-01-ib
+  name: IB Switch
+  template_id: ib-switch-l1
+  u_position: 42
+  instance: sw-ib-r03-01
+- id: r03-01-esw
+  name: Ethernet Switch
+  template_id: eth-switch-tor
+  u_position: 40
+  instance: sw-eth-r03-01
+- id: r03-01-m01
+  name: Mgmt 01
+  template_id: bs-x430-service-2u
+  u_position: 1
+  instance:
+    1: mngt0
+- id: r03-01-m02
+  name: Mgmt 02
+  template_id: bs-x430-service-2u
+  u_position: 3
+  instance:
+    1: mngt1
+- id: r03-01-s01
+  name: Service 01
+  template_id: bs-x430-service-2u
+  u_position: 5
+  instance:
+    1: service0
+- id: r03-01-s02
+  name: Service 02
+  template_id: bs-x430-service-2u
+  u_position: 7
+  instance:
+    1: service1
+- id: r03-01-l01
+  name: Login 01
+  template_id: bs-x430-service-2u
+  u_position: 9
+  instance:
+    1: login0
+- id: r03-01-l02
+  name: Login 02
+  template_id: bs-x430-service-2u
+  u_position: 11
+  instance:
+    1: login1
+- id: r03-01-l03
+  name: Login 03
+  template_id: bs-x430-service-2u
+  u_position: 13
+  instance:
+    1: login2
+- id: r03-01-l04
+  name: Login 04
+  template_id: bs-x430-service-2u
+  u_position: 15
+  instance:
+    1: login3
+- id: r03-01-l05
+  name: Login 05
+  template_id: bs-x430-service-2u
+  u_position: 17
+  instance:
+    1: login4

@@ -1,0 +1,292 @@
+/* Self-hosted via @fontsource — no internet required at runtime */
+@import '@fontsource/vt323/400.css';
+@import '@fontsource/outfit/300.css';
+@import '@fontsource/outfit/400.css';
+@import '@fontsource/outfit/500.css';
+@import '@fontsource/outfit/600.css';
+@import '@fontsource/outfit/700.css';
+@import '@fontsource/outfit/800.css';
+@import 'leaflet/dist/leaflet.css';
+@import 'tailwindcss';
+
+/* Must come after @import 'tailwindcss' — overrides the default prefers-color-scheme
+   dark variant so Tailwind responds to the .dark class set by ThemeContext. */
+@custom-variant dark (&:is(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* ── Rackscope status colors — shared across health indicators and rack visualizer */
+  --color-status-ok: #10b981;
+  --color-status-warn: #f59e0b;
+  --color-status-crit: #ef4444;
+  --color-status-unknown: #6b7280;
+
+  /* ── Card shadows — heavier than TailAdmin defaults to work on dark backgrounds */
+  --shadow-card: 0 1px 3px rgb(0 0 0 / 40%), 0 1px 2px rgb(0 0 0 / 30%);
+  --shadow-card-hover: 0 10px 25px rgb(0 0 0 / 50%), 0 4px 6px rgb(0 0 0 / 20%);
+
+  /* ── Aliases that bridge app.css design tokens into Tailwind utilities */
+  --color-rack-dark: var(--color-bg-base);
+  --color-rack-panel: var(--color-bg-panel);
+  --color-rack-border: var(--color-border);
+  --color-accent-primary: var(--color-accent);
+
+  /* ── Brand palette (TailAdmin blue) */
+  --color-brand-25: #f2f7ff;
+  --color-brand-50: #ecf3ff;
+  --color-brand-100: #dde9ff;
+  --color-brand-200: #c2d6ff;
+  --color-brand-300: #9cb9ff;
+  --color-brand-400: #7592ff;
+  --color-brand-500: #465fff;
+  --color-brand-600: #3641f5;
+  --color-brand-700: #2a31d8;
+  --color-brand-800: #252dae;
+  --color-brand-900: #262e89;
+  --color-brand-950: #161950;
+
+  /* Aligned with Tailwind gray-900 so SectionCard dark bg matches body bg */
+  --color-gray-dark: #111827;
+
+  /* ── Semantic colors */
+  --color-success-25: #f6fef9;
+  --color-success-50: #ecfdf3;
+  --color-success-100: #d1fadf;
+  --color-success-500: #12b76a;
+  --color-success-600: #039855;
+  --color-error-25: #fffbfa;
+  --color-error-50: #fef3f2;
+  --color-error-100: #fee4e2;
+  --color-error-500: #f04438;
+  --color-error-600: #d92d20;
+  --color-warning-25: #fffcf5;
+  --color-warning-50: #fffaeb;
+  --color-warning-100: #fef0c7;
+  --color-warning-500: #f79009;
+  --color-warning-600: #dc6803;
+
+  /* ── TailAdmin elevation shadows */
+  --shadow-theme-xs: 0px 1px 2px 0px rgb(16 24 40 / 5%);
+  --shadow-theme-sm: 0px 1px 3px 0px rgb(16 24 40 / 10%), 0px 1px 2px 0px rgb(16 24 40 / 6%);
+  --shadow-theme-md: 0px 4px 8px -2px rgb(16 24 40 / 10%), 0px 2px 4px -2px rgb(16 24 40 / 6%);
+  --shadow-theme-lg: 0px 12px 16px -4px rgb(16 24 40 / 8%), 0px 4px 6px -2px rgb(16 24 40 / 3%);
+  --shadow-theme-xl: 0px 20px 24px -4px rgb(16 24 40 / 8%), 0px 8px 8px -4px rgb(16 24 40 / 3%);
+  --shadow-focus-ring: 0px 0px 0px 4px rgb(70 95 255 / 12%);
+}
+
+body {
+  background-color: var(--color-rack-dark);
+  color: var(--color-text-base);
+  font-family: var(--font-sans);
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Leaflet's default map background is gray — transparent lets our dark bg show through */
+.leaflet-container {
+  background: transparent;
+  font-family: var(--font-sans);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: rgb(10 10 10 / 90%);
+  color: #e5e7eb;
+  border: 1px solid rgb(255 255 255 / 8%);
+  box-shadow: 0 16px 30px rgb(0 0 0 / 35%);
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px;
+}
+
+.leaflet-popup-close-button {
+  color: #9ca3af;
+}
+
+/* Global thin scrollbar — 4px keeps it unobtrusive on monitoring views */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
+
+/* ── Matrix / TTY mode ────────────────────────────────────────────────────────
+   Applied via 'mode-matrix' class on <html> when darkTheme='matrix' + dark mode.
+   Crosshair cursor signals to NOC operators that the interface is in a special state.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+html.mode-matrix {
+  cursor: crosshair;
+}
+
+/* !important overrides Tailwind utilities and component-level styles to enforce
+   the CRT aesthetic globally — there is no other way to reach every element */
+html.mode-matrix *,
+html.mode-matrix *::before,
+html.mode-matrix *::after {
+  border-radius: 0 !important;
+  font-family: 'VT323', 'Courier New', monospace !important;
+  box-shadow: none !important;
+  letter-spacing: 0.08em;
+}
+
+/* Scanlines: alternating transparent/black horizontal lines simulate a CRT display.
+   The 90deg gradient adds a faint RGB fringe (phosphor chromatic aberration).
+   z-index 9998 sits below toasts (9999) but above all page content. */
+html.mode-matrix::before {
+  content: ' ';
+  display: block;
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(rgb(18 16 16 / 0%) 50%, rgb(0 0 0 / 30%) 50%),
+    linear-gradient(90deg, rgb(255 0 0 / 4%), rgb(0 255 0 / 2%), rgb(0 0 255 / 4%));
+  background-size:
+    100% 2px,
+    3px 100%;
+  z-index: 9998;
+  pointer-events: none;
+  animation: scanlines-flicker 8s infinite;
+}
+
+@keyframes scanlines-flicker {
+  0%,
+  97% {
+    opacity: 1;
+  }
+
+  97.5% {
+    opacity: 0.85;
+  }
+
+  98% {
+    opacity: 1;
+  }
+
+  99% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Canvas starts invisible and fades in when matrix mode activates.
+   opacity: 0 on the default state avoids a flash when first mounted. */
+#matrix-bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+html.mode-matrix #matrix-bg-canvas {
+  opacity: 0.35;
+}
+
+/* Semi-transparent dimmer sits between canvas and content to ensure text readability */
+#matrix-dimmer {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+html.mode-matrix #matrix-dimmer {
+  opacity: 1;
+}
+
+/* z-index stacking in matrix mode:
+   0 = canvas (green rain)
+   1 = dimmer (readability layer)
+   2 = rs-root (app content)
+   9998 = scanlines overlay
+   9999 = toasts */
+html.mode-matrix .rs-root {
+  position: relative;
+  z-index: 2;
+}
+
+/* react-grid-layout ships its own background-image handle sprite — remove it
+   so we can render brand-colored handles instead */
+.react-resizable-handle {
+  background-image: none;
+  width: 20px;
+  height: 20px;
+}
+
+.react-resizable-handle-se {
+  bottom: 4px;
+  right: 4px;
+  cursor: se-resize;
+  background: var(--color-brand-500);
+  opacity: 0.35;
+  border-radius: 4px 0 8px;
+  transition: opacity 0.15s;
+}
+
+.react-resizable-handle-s {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 6px;
+  background: var(--color-brand-500);
+  opacity: 0.3;
+  border-radius: 3px;
+  cursor: s-resize;
+  transition: opacity 0.15s;
+}
+
+.react-resizable-handle-e {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 40px;
+  background: var(--color-brand-500);
+  opacity: 0.3;
+  border-radius: 3px;
+  cursor: e-resize;
+  transition: opacity 0.15s;
+}
+
+.react-resizable-handle-se:hover,
+.react-resizable-handle-s:hover,
+.react-resizable-handle-e:hover {
+  opacity: 0.7;
+}
+
+.react-grid-item.react-draggable-dragging {
+  opacity: 0.75;
+  z-index: 100;
+}
+
+/* react-grid-layout injects a ::after pseudo-element arrow; hide it since our
+   own handle appearance replaces it */
+.react-grid-item > .react-resizable-handle::after {
+  display: none;
+}

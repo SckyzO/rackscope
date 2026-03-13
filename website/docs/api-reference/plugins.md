@@ -1,0 +1,830 @@
+---
+id: plugins
+title: Plugins, Simulator & Slurm API
+sidebar_position: 5
+---
+
+# Plugins, Simulator & Slurm API
+
+This page covers the Plugin Discovery endpoints, the Simulator plugin API, the Slurm plugin API, and the Config & System endpoints.
+
+---
+
+## Plugin Discovery {#plugins}
+
+### <span className="method-get">GET</span> `/api/plugins`
+Returns all registered plugins with their current status.
+
+```http
+GET /api/plugins
+```
+
+**Response**
+
+```json
+[
+  {"plugin_id": "simulator", "plugin_name": "Metrics Simulator", "enabled": true, "version": "1.0.0"},
+  {"plugin_id": "workload-slurm", "plugin_name": "Slurm Workload Manager", "enabled": true, "version": "1.0.0"}
+]
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `plugin_id` | string | Unique plugin identifier |
+| `plugin_name` | string | Human-readable plugin name |
+| `enabled` | boolean | Whether the plugin is currently active |
+| `version` | string | Plugin version |
+
+---
+
+### <span className="method-get">GET</span> `/api/plugins/menu`
+Returns the sidebar navigation sections contributed by all active plugins. The frontend uses this endpoint to build dynamic navigation — each plugin registers its own menu sections and items.
+
+```http
+GET /api/plugins/menu
+```
+
+**Response**
+
+```json
+[
+  {
+    "id": "workload",
+    "label": "Workload",
+    "icon": "Zap",
+    "order": 50,
+    "items": [
+      {"id": "slurm-overview", "label": "Overview", "path": "/slurm/overview", "icon": "BarChart2"},
+      {"id": "slurm-nodes", "label": "Nodes", "path": "/slurm/nodes", "icon": "Server"},
+      {"id": "slurm-partitions", "label": "Partitions", "path": "/slurm/partitions", "icon": "Layers"},
+      {"id": "slurm-alerts", "label": "Alerts", "path": "/slurm/alerts", "icon": "AlertTriangle"}
+    ]
+  },
+  {
+    "id": "simulator",
+    "label": "Simulator",
+    "icon": "FlaskConical",
+    "order": 200,
+    "items": [
+      {"id": "sim-control", "label": "Control", "path": "/editors/settings#simulator", "icon": "Settings"}
+    ]
+  }
+]
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Section identifier |
+| `label` | string | Display label in the sidebar |
+| `icon` | string | Lucide icon name |
+| `order` | integer | Sidebar sort order (lower = higher in sidebar) |
+| `items` | array | Navigation items within this section |
+| `items[].path` | string | Frontend route path |
+
+---
+
+### <span className="method-get">GET</span> `/api/plugins/\{plugin\_id\}`
+Returns details about a specific plugin.
+
+```http
+GET /api/plugins/simulator
+```
+
+**Response**
+
+```json
+{"plugin_id": "simulator", "plugin_name": "Metrics Simulator", "enabled": true, "version": "1.0.0"}
+```
+
+Returns `404` if the plugin is not registered.
+
+---
+
+### <span className="method-get">GET</span> `/api/plugins/\{plugin\_id\}/config`
+Returns the full configuration for a specific plugin, read from its dedicated YAML file at
+`config/plugins/<plugin_id>/config.yml`.
+
+```http
+GET /api/plugins/simulator/config
+```
+
+**Response**
+
+```json
+{
+  "config": {
+    "incident_mode": "light",
+    "changes_per_hour": 2,
+    "update_interval_seconds": 20
+  },
+  "source": "file",
+  "path": "config/plugins/simulator/config/plugin.yaml"
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `config` | object | Full plugin configuration dict |
+| `source` | string | `"file"` if loaded from disk, `"defaults"` if no file found |
+| `path` | string | Filesystem path of the config file |
+
+---
+
+### <span className="method-post">POST</span> `/api/plugins/\{plugin\_id\}/config`
+Updates the configuration for a specific plugin. Writes the new config to the plugin's YAML file
+and hot-reloads it.
+
+```http
+POST /api/plugins/simulator/config
+Content-Type: application/json
+
+{"config": {"incident_mode": "heavy", "changes_per_hour": 4}}
+```
+
+**Notes**
+- For the Simulator plugin, `incident_mode` and `changes_per_hour` apply on the next tick (~20 s).
+- Path changes (`overrides_path`, `metrics_catalog_path`) require a `POST /api/simulator/restart`.
+- Returns the updated config object on success.
+
+---
+
+## Simulator Plugin {#simulator}
+
+The Simulator plugin generates realistic Prometheus metrics for testing without real hardware. It is enabled by setting `plugins.simulator.enabled: true` in `config/app.yaml`. Prometheus scrapes the simulator and the backend queries Prometheus normally, making the demo environment behaviorally identical to production.
+
+---
+
+### <span className="method-get">GET</span> `/api/simulator/status`
+Returns the current simulator status, including the active incident mode and number of active overrides.
+
+```http
+GET /api/simulator/status
+```
+
+**Response**
+
+```json
+{
+  "running": true,
+  "endpoint": "http://simulator:9000",
+  "update_interval": 20,
+  "incident_mode": "light",
+  "changes_per_hour": 2,
+  "overrides_count": 2
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `running` | boolean | Whether the simulator process is reachable |
+| `endpoint` | string | Simulator scrape endpoint used by Prometheus |
+| `update_interval` | integer | Metric refresh interval in seconds |
+| `incident_mode` | string | Active incident mode (`full_ok` / `light` / `medium` / `heavy` / `chaos` / `custom`) |
+| `changes_per_hour` | integer | How many times per hour incidents are reshuffled |
+| `overrides_count` | integer | Number of active metric overrides |
+
+---
+
+### <span className="method-post">POST</span> `/api/simulator/restart`
+Sends a restart signal to the simulator container via its internal control
+server (port 9001). Docker restarts the container automatically
+(`restart: unless-stopped`). Use this after changing `overrides_path` or
+`metrics_catalog_path` which are not hot-reloaded.
+
+```http
+POST /api/simulator/restart
+```
+
+**Response**
+
+```json
+{"status": "restarting"}
+```
+
+Returns `503` if the simulator control server is unreachable.
+
+---
+
+### <span className="method-post">POST</span> `/api/simulator/incidents`
+Triggers a simulated incident stored as an override. Currently supports `rack_down`; `aisle_cooling` is reserved but not yet implemented.
+
+```http
+POST /api/simulator/incidents
+Content-Type: application/json
+```
+
+**Request body**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `type` | string | yes | `"rack_down"` (aisle_cooling reserved) |
+| `target_id` | string | yes | Rack ID to bring down |
+| `duration` | integer | no | Duration in seconds (default: `300`). `0` = permanent. |
+
+**Response**
+
+```json
+{
+  "status": "triggered",
+  "incident_type": "rack_down",
+  "target_id": "r01-01",
+  "duration": 300,
+  "expires_at": 1770000000
+}
+```
+
+The incident is stored as a `rack_down` override and expires after `duration` seconds. Use `DELETE /api/simulator/overrides` to clear immediately.
+
+---
+
+### <span className="method-get">GET</span> `/api/simulator/overrides`
+Returns all currently active metric overrides.
+
+```http
+GET /api/simulator/overrides
+```
+
+**Response**
+
+```json
+{
+  "overrides": [
+    {"id": "ov-001", "instance": "compute001", "rack_id": null, "metric": "up", "value": 0, "expires_at": null},
+    {"id": "ov-002", "instance": "compute002", "rack_id": null, "metric": "node_temperature_celsius", "value": 90, "expires_at": 1709251200}
+  ]
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Override identifier |
+| `instance` | string or null | Target node instance name |
+| `rack_id` | string or null | Target rack ID (for rack-level overrides) |
+| `metric` | string | Metric name to override |
+| `value` | number | Override value |
+| `expires_at` | integer or null | Unix timestamp when override expires, or null if permanent |
+
+---
+
+### <span className="method-post">POST</span> `/api/simulator/overrides`
+Adds a new metric override. Use overrides to simulate failures, temperature spikes, or power anomalies without restarting the simulator.
+
+```http
+POST /api/simulator/overrides
+Content-Type: application/json
+```
+
+**Request body examples**
+
+Force a node down permanently:
+```json
+{"instance": "compute001", "metric": "up", "value": 0, "ttl_seconds": 0}
+```
+
+Simulate a high temperature for 5 minutes:
+```json
+{"instance": "compute001", "metric": "node_temperature_celsius", "value": 90, "ttl_seconds": 300}
+```
+
+Override an entire rack PDU:
+```json
+{"rack_id": "a01-r01", "metric": "up", "value": 0}
+```
+
+**Request fields**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `instance` | string | Conditional | Target node instance name. Either `instance` or `rack_id` must be provided. |
+| `rack_id` | string | Conditional | Target rack ID. Either `instance` or `rack_id` must be provided. |
+| `metric` | string | Yes | Metric name to override (see `GET /api/simulator/metrics`) |
+| `value` | number | Yes | Value to inject |
+| `ttl_seconds` | integer | No | Duration in seconds. `0` = permanent. Omit to use the default TTL from config. |
+
+**Response**
+
+Returns the updated override list:
+```json
+{"overrides": []}
+```
+
+---
+
+### <span className="method-delete">DELETE</span> `/api/simulator/overrides`
+Clears **all** active overrides immediately.
+
+```http
+DELETE /api/simulator/overrides
+```
+
+**Response**
+
+```json
+{"overrides": []}
+```
+
+---
+
+### <span className="method-delete">DELETE</span> `/api/simulator/overrides/{override_id}`
+Deletes a specific override by its ID.
+
+```http
+DELETE /api/simulator/overrides/{override_id}
+```
+
+**Path parameter**
+
+| Parameter | Description |
+|---|---|
+| `override_id` | The override ID returned by `GET /api/simulator/overrides` |
+
+**Response**
+
+Returns the remaining override list:
+```json
+{"overrides": []}
+```
+
+---
+
+### <span className="method-get">GET</span> `/api/simulator/metrics`
+Returns all metrics available for override, grouped by category.
+
+```http
+GET /api/simulator/metrics
+```
+
+**Response**
+
+```json
+{
+  "metrics": [
+    {"id": "node_temperature", "name": "Node Temperature", "unit": "°C", "category": "temperature"},
+    {"id": "up", "name": "Node Up", "unit": "", "category": "compute"},
+    {"id": "pdu_active_power", "name": "PDU Active Power", "unit": "W", "category": "power"}
+  ]
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Metric identifier used in override requests |
+| `name` | string | Human-readable metric name |
+| `unit` | string | Measurement unit (empty string if dimensionless) |
+| `category` | string | Grouping category (compute, temperature, power, etc.) |
+
+---
+
+## Slurm Plugin {#slurm}
+
+The Slurm plugin reads node states from Prometheus via a Slurm exporter and maps them to the physical topology. It provides workload-aware views for HPC cluster operations. The plugin is only available when `slurm.enabled: true` is set in `config/app.yaml`.
+
+Node states are mapped to health severities using `slurm.status_map` in the application config. For example: `allocated` → `OK`, `drain` → `CRIT`, `down` → `CRIT`.
+
+---
+
+### <span className="method-get">GET</span> `/api/slurm/rooms/{room_id}/nodes`
+Returns Slurm node states for all nodes in a given room, keyed by instance name. Used by the Slurm Wallboard view to color-code devices by workload state.
+
+```http
+GET /api/slurm/rooms/{room_id}/nodes
+```
+
+**Path parameter**
+
+| Parameter | Description |
+|---|---|
+| `room_id` | The room identifier from the topology |
+
+**Response**
+
+```json
+{
+  "room_id": "dc1-r001",
+  "nodes": {
+    "compute001": {
+      "status": "allocated",
+      "severity": "OK",
+      "statuses": ["allocated"],
+      "partitions": ["compute", "all"]
+    },
+    "compute002": {
+      "status": "drain",
+      "severity": "CRIT",
+      "statuses": ["drain"],
+      "partitions": ["compute"]
+    }
+  }
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `room_id` | string | Room identifier |
+| `nodes` | object | Map of instance name → node state |
+| `nodes[].status` | string | Primary Slurm status |
+| `nodes[].severity` | string | Mapped severity: `OK`, `WARN`, `CRIT`, or `UNKNOWN` |
+| `nodes[].statuses` | array | All Slurm statuses reported for the node |
+| `nodes[].partitions` | array | Partitions the node belongs to |
+
+---
+
+### <span className="method-get">GET</span> `/api/slurm/summary`
+Returns an aggregate summary of node counts by Slurm status and health severity. Optionally scoped to a single room.
+
+```http
+GET /api/slurm/summary?room_id=dc1-r001
+```
+
+**Query parameter**
+
+| Parameter | Required | Description |
+|---|---|---|
+| `room_id` | No | Scope the summary to a specific room. Omit for cluster-wide totals. |
+
+**Response**
+
+```json
+{
+  "room_id": null,
+  "total_nodes": 320,
+  "by_status": {
+    "allocated": 280,
+    "idle": 24,
+    "down": 8,
+    "drain": 6,
+    "mixed": 2
+  },
+  "by_severity": {
+    "OK": 306,
+    "WARN": 6,
+    "CRIT": 8,
+    "UNKNOWN": 0
+  }
+}
+```
+
+---
+
+### <span className="method-get">GET</span> `/api/slurm/partitions`
+Returns per-partition node count breakdowns. Optionally scoped to a single room.
+
+```http
+GET /api/slurm/partitions?room_id=dc1-r001
+```
+
+**Query parameter**
+
+| Parameter | Required | Description |
+|---|---|---|
+| `room_id` | No | Scope to a specific room. Omit for cluster-wide data. |
+
+**Response**
+
+```json
+{
+  "room_id": null,
+  "partitions": {
+    "compute": {"allocated": 200, "idle": 15, "down": 5, "drain": 4, "mixed": 2},
+    "visu": {"allocated": 8, "idle": 4, "down": 0, "drain": 0, "mixed": 0},
+    "all": {"allocated": 280, "idle": 24, "down": 8, "drain": 6, "mixed": 2}
+  }
+}
+```
+
+---
+
+### <span className="method-get">GET</span> `/api/slurm/nodes`
+Returns the full flat node list with Slurm state and topology placement context. Used by the Node List dashboard view.
+
+```http
+GET /api/slurm/nodes?room_id=dc1-r001
+```
+
+**Query parameter**
+
+| Parameter | Required | Description |
+|---|---|---|
+| `room_id` | No | Filter nodes to a specific room. Omit for all nodes. |
+
+**Response**
+
+```json
+{
+  "room_id": null,
+  "nodes": [
+    {
+      "node": "compute001",
+      "status": "allocated",
+      "severity": "OK",
+      "statuses": ["allocated"],
+      "partitions": ["compute"],
+      "site_id": "dc1",
+      "room_id": "dc1-r001",
+      "aisle_id": "a01",
+      "rack_id": "a01-r01",
+      "device_id": "compute-blade-01"
+    }
+  ]
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `node` | string | Slurm node name (matched via `slurm.mapping_path` if configured) |
+| `status` | string | Primary Slurm status |
+| `severity` | string | Mapped severity (`OK`, `WARN`, `CRIT`, `UNKNOWN`) |
+| `statuses` | array | All reported Slurm statuses |
+| `partitions` | array | Partitions the node belongs to |
+| `site_id` | string or null | Topology site ID |
+| `room_id` | string or null | Topology room ID |
+| `aisle_id` | string or null | Topology aisle ID |
+| `rack_id` | string or null | Topology rack ID |
+| `device_id` | string or null | Topology device ID |
+
+---
+
+### <span className="method-get">GET</span> `/api/slurm/mapping`
+Returns current node name → topology instance mapping entries.
+
+```http
+GET /api/slurm/mapping
+```
+
+**Response**
+
+```json
+{
+  "mapping_path": "config/plugins/slurm/node_mapping.yaml",
+  "entries": [
+    {"node": "n*", "instance": "compute*"},
+    {"node": "gpu001", "instance": "gpu001"}
+  ]
+}
+```
+
+---
+
+### <span className="method-post">POST</span> `/api/slurm/mapping`
+Saves node mapping entries to the configured YAML file. Used by the node mapping editor in Settings → Plugins → Slurm.
+
+```http
+POST /api/slurm/mapping
+Content-Type: application/json
+```
+
+**Request body**
+
+```json
+{
+  "entries": [
+    {"node": "n*", "instance": "compute*"}
+  ]
+}
+```
+
+Returns `400` if `mapping_path` is not configured.
+
+---
+
+### <span className="method-get">GET</span> `/api/slurm/metrics/catalog`
+Returns all loaded Slurm metric definitions and the list of available catalog files.
+
+```http
+GET /api/slurm/metrics/catalog
+```
+
+**Response**
+
+```json
+{
+  "metrics": [...],
+  "loaded_files": [{"id": "slurm", "path": "...", "enabled": true}],
+  "available_files": [{"name": "metrics_slurm.yaml", "path": "..."}]
+}
+```
+
+---
+
+### <span className="method-post">POST</span> `/api/slurm/metrics/catalog/config`
+Updates which Slurm metric catalog files are active (persisted to plugin config).
+
+```http
+POST /api/slurm/metrics/catalog/config
+Content-Type: application/json
+```
+
+**Request body**
+
+```json
+{
+  "metrics_catalogs": [
+    {"id": "slurm", "path": "config/plugins/slurm/metrics/metrics_slurm.yaml", "enabled": true}
+  ]
+}
+```
+
+---
+
+### <span className="method-get">GET</span> `/api/slurm/metrics/data`
+Queries Prometheus for a specific Slurm metric from the loaded catalog.
+
+```http
+GET /api/slurm/metrics/data?metric_id=slurm_node_status&scope=all
+```
+
+| Parameter | Type | Description |
+|---|---|---|
+| `metric_id` | string | Metric ID from the Slurm metrics catalog |
+| `scope` | string | Optional scope filter |
+
+---
+
+## Config & System {#config}
+
+---
+
+### <span className="method-get">GET</span> `/api/config`
+Returns the full application configuration as a JSON object. This reflects the contents of `config/app.yaml` at the time of the last reload.
+
+```http
+GET /api/config
+```
+
+**Response**
+
+The full `AppConfig` object. See [Configuration Reference](/docs/admin-guide/app-yaml) for the complete schema.
+
+---
+
+### <span className="method-put">PUT</span> `/api/config`
+Updates the application configuration and persists the changes to `config/app.yaml`. Triggers a config reload and syncs dependent plugin configurations (simulator incident mode, Slurm settings, etc.).
+
+```http
+PUT /api/config
+Content-Type: application/json
+```
+
+**Request body**
+
+The full `AppConfig` object. Sensitive fields such as `password_hash` and `secret_key` are preserved from the current config if they are not included in the request body.
+
+**Notes**
+
+- Prometheus URL and credential changes take effect on the next query.
+- Simulator `incident_mode` and `changes_per_hour` are hot-reloaded on the next tick (~20 s). Path changes (`overrides_path`, `metrics_catalog_path`) require a `POST /api/simulator/restart`.
+- Slurm label and status map changes apply to the next state fetch.
+
+---
+
+### <span className="method-get">GET</span> `/api/env`
+Returns the environment variables that affect Rackscope's behavior. Useful for debugging deployment configuration.
+
+```http
+GET /api/env
+```
+
+**Response**
+
+```json
+{
+  "RACKSCOPE_APP_CONFIG": "config/app.yaml",
+  "PROMETHEUS_URL": "http://prometheus:9090",
+  "RACKSCOPE_CONFIG_DIR": null
+}
+```
+
+| Variable | Description |
+|---|---|
+| `RACKSCOPE_APP_CONFIG` | Path to the main application config file |
+| `PROMETHEUS_URL` | Prometheus base URL (from config or environment) |
+| `RACKSCOPE_CONFIG_DIR` | Base config directory override (null if not set) |
+
+---
+
+### <span className="method-get">GET</span> `/api/system/status`
+Returns the current status of the backend process.
+
+```http
+GET /api/system/status
+```
+
+**Response**
+
+```json
+{"status": "running", "pid": 12345}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `status` | string | Always `"running"` when the backend responds |
+| `pid` | integer | Backend process ID |
+
+---
+
+### <span className="method-post">POST</span> `/api/system/restart`
+Triggers a backend server restart. Only available when the backend is running in development mode with `uvicorn --reload`.
+
+```http
+POST /api/system/restart
+```
+
+**Response**
+
+```json
+{"status": "ok", "message": "Backend restart initiated"}
+```
+
+:::warning
+This endpoint is intended for development use only. It requires the backend to be started with `uvicorn --reload`. It has no effect in production deployments.
+:::
+
+---
+
+## Authentication {#auth}
+
+These endpoints manage user credentials. They are available whether or not `auth.enabled` is
+`true` in `app.yaml` — credential updates always go through these endpoints.
+
+---
+
+### <span className="method-post">POST</span> `/api/auth/change-password`
+Updates the user's password. Verifies the current password before applying the change, then
+writes the new bcrypt hash to `config/app.yaml` and hot-reloads the config.
+
+```http
+POST /api/auth/change-password
+Content-Type: application/json
+
+{
+  "current_password": "old-password",
+  "new_password": "new-secure-password"
+}
+```
+
+**Request body**
+
+| Field | Type | Description |
+|---|---|---|
+| `current_password` | string | The user's current password (verified against the stored bcrypt hash) |
+| `new_password` | string | The new password (validated against `auth.policy`) |
+
+**Response**
+
+```json
+{"ok": true}
+```
+
+**Errors**
+
+| Status | Reason |
+|---|---|
+| `401` | `current_password` does not match the stored hash |
+| `422` | `new_password` fails policy validation (too short, missing digit, etc.) |
+
+Password policy rules are configured under `auth.policy` in `app.yaml`:
+
+```yaml
+auth:
+  policy:
+    min_length: 6
+    max_length: 128
+    require_digit: false
+    require_symbol: false
+```
+
+---
+
+### <span className="method-post">POST</span> `/api/auth/change-username`
+Updates the username. Requires the current password for verification. Writes the new username
+to `config/app.yaml` and hot-reloads the config.
+
+```http
+POST /api/auth/change-username
+Content-Type: application/json
+
+{
+  "new_username": "newname",
+  "password": "current-password"
+}
+```
+
+**Request body**
+
+| Field | Type | Description |
+|---|---|---|
+| `new_username` | string | The new username (must not be empty or whitespace-only) |
+| `password` | string | The current password (for verification) |
+
+**Response**
+
+```json
+{"ok": true, "username": "newname"}
+```
+
+**Errors**
+
+| Status | Reason |
+|---|---|
+| `401` | `password` does not match the stored hash |
+| `422` | `new_username` is empty or whitespace-only |

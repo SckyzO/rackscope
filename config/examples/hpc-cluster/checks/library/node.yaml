@@ -1,0 +1,75 @@
+checks:
+- id: node_up
+  name: Node Up
+  kind: server
+  scope: node
+  expr: up{instance=~"$instances"}
+  output: bool
+  rules:
+  - op: ==
+    value: 0
+    severity: CRIT
+- id: node_temp_warn
+  name: Node Temperature Warning
+  kind: server
+  scope: node
+  expr: node_temperature_celsius{instance=~"$instances"}
+  output: numeric
+  for: 5m
+  rules:
+  - op: '>'
+    value: 75
+    severity: WARN
+  - op: '>'
+    value: 90
+    severity: CRIT
+- id: ipmi_temp_state
+  name: IPMI Temperature State Abnormal
+  kind: server
+  scope: node
+  expr: ipmi_temperature_state{instance=~"$instances"}
+  output: numeric
+  for: 3m
+  rules:
+  - op: '>'
+    value: 0
+    severity: WARN
+  - op: '>'
+    value: 1
+    severity: CRIT
+- id: node_power_warn
+  name: Node Power Consumption Warning
+  kind: server
+  scope: node
+  expr: node_power_watts{instance=~"$instances"}
+  output: numeric
+  for: 5m
+  rules:
+  - op: '>'
+    value: 500
+    severity: WARN
+  - op: '>'
+    value: 800
+    severity: CRIT
+- id: ipmi_power_state
+  name: IPMI Power State Abnormal
+  kind: server
+  scope: node
+  expr: ipmi_power_state{instance=~"$instances"}
+  output: numeric
+  for: 5m
+  rules:
+  - op: '>'
+    value: 0
+    severity: WARN
+- id: ipmi_fan_state
+  name: IPMI Fan State Abnormal
+  kind: server
+  scope: node
+  expr: ipmi_fan_speed_state{instance=~"$instances"}
+  output: numeric
+  for: 3m
+  rules:
+  - op: '>'
+    value: 0
+    severity: WARN

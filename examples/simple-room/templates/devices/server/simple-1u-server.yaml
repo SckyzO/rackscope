@@ -1,0 +1,14 @@
+templates:
+  - id: simple-1u-server
+    name: "Generic 1U Server"
+    type: server
+    u_height: 1
+    role: compute
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix:
+        - [1]
+    checks:
+      - node_up

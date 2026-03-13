@@ -1,0 +1,12 @@
+id: aisle-gpu
+name: Aisle Gpu
+room_id: room-gpu-hm
+racks:
+- id: rack-tou-gpu012
+- id: rack-tou-gpu013
+- id: rack-tou-gpu014
+- id: rack-tou-gpu015
+- id: rack-tou-gpu016
+- id: rack-tou-gpu017
+- id: rack-tou-gpu018
+- id: rack-tou-gpu019

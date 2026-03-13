@@ -1,0 +1,5 @@
+sites:
+  - id: my-lab
+    name: My Lab
+    description: Local server room
+    rooms_path: datacenters/my-lab/rooms

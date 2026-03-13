@@ -1,0 +1,23 @@
+id: rack-03
+name: Services Rack
+u_height: 42
+template_id: rack-42u-air
+devices:
+- id: mgmt-02
+  name: mgmt02
+  template_id: generic-1u-mgmt
+  u_position: 1
+  face: front
+  instance: mgmt02
+- id: storage-01
+  name: storage01
+  template_id: generic-1u-storage-head
+  u_position: 2
+  face: front
+  instance: storage01
+- id: sw-mgmt
+  name: sw-mgmt
+  template_id: generic-mgmt-switch-1u
+  u_position: 42
+  face: front
+  instance: sw-mgmt
