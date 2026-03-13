@@ -19,10 +19,10 @@ import os
 import subprocess
 import sys
 import time
-
-import yaml
 from datetime import datetime
 from pathlib import Path
+
+import yaml
 
 ROOT = Path(__file__).parent.parent
 COMPOSE_FILE = str(ROOT / 'docker-compose.dev.yml')

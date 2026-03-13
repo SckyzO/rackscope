@@ -1,12 +1,15 @@
 name: CI
 
+# Runs on every push / PR to main, and weekly on Monday.
+# Two parallel jobs (backend + frontend) then STATUS.md update.
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 6 * * 1'
+    - cron: '0 6 * * 1'  # weekly Monday 06:00 UTC
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -16,48 +19,45 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # ── Lint + Tests (Docker Compose, mirrors local dev workflow) ──────────────
-  quality:
-    name: Quality
+  # ── Backend: ruff · mypy · pytest ─────────────────────────────────────────
+  backend:
+    name: Backend
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    env:
+      PYTHONPATH: src:.
+      RACKSCOPE_CONFIG_DIR: config
+      RACKSCOPE_APP_CONFIG: config/app.yaml
+    outputs:
+      tests_passed: ${{ steps.tests.outputs.passed }}
+      tests_failed: ${{ steps.tests.outputs.failed }}
+      coverage:     ${{ steps.tests.outputs.coverage }}
+      lint:         ${{ steps.lint.outcome }}
+      mypy:         ${{ steps.mypy.outcome }}
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2  # v3.10.0
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38  # v5.4.0
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
-      - name: Build stack
-        run: docker compose -f docker-compose.dev.yml build
-        env:
-          DOCKER_BUILDKIT: 1
+      - name: Install dependencies
+        run: pip install -e ".[dev]" pip-audit
 
-      - name: Start stack
-        run: docker compose -f docker-compose.dev.yml up -d
-
-      - name: Wait for backend to be ready
-        run: |
-          for i in $(seq 1 30); do
-            if docker compose -f docker-compose.dev.yml exec -T backend python -c "import rackscope" 2>/dev/null; then
-              echo "Backend ready"
-              break
-            fi
-            echo "Waiting... ($i/30)"
-            sleep 2
-          done
-
-      - name: Lint (ruff + eslint + prettier + stylelint)
+      - name: Lint (ruff check + format)
         id: lint
-        run: make lint
-        continue-on-error: true
+        run: ruff check . && ruff format --check .
 
-      - name: Tests (pytest 855+)
+      - name: Type check (mypy)
+        id: mypy
+        run: mypy src/rackscope --no-error-summary
+
+      - name: Tests (pytest + coverage)
         id: tests
         run: |
-          docker compose -f docker-compose.dev.yml exec -T backend \
-            pytest --tb=short -q \
+          pytest --tb=short -q \
             --cov=src/rackscope \
             --cov-report=term-missing \
             --cov-report=json:coverage.json \
@@ -65,7 +65,7 @@ jobs:
 
           PASSED=$(grep -oP '\d+ passed' test_output.txt | grep -oP '\d+' | head -1 || echo 0)
           FAILED=$(grep -oP '\d+ failed' test_output.txt | grep -oP '\d+' | head -1 || echo 0)
-          COVERAGE=$(docker compose -f docker-compose.dev.yml exec -T backend python3 -c "
+          COVERAGE=$(python3 -c "
           import json
           d = json.load(open('coverage.json'))
           print(round(d['totals']['percent_covered']))
@@ -77,39 +77,70 @@ jobs:
 
           [ "$FAILED" = "0" ] || exit 1
 
+  # ── Frontend: eslint · prettier · stylelint · tsc ─────────────────────────
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    outputs:
+      lint:  ${{ steps.lint.outcome }}
+      build: ${{ steps.build.outcome }}
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e  # v4.3.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Copy plugins (needed for @plugins alias resolution)
+        run: cp -r plugins frontend/plugins
+
+      - name: Lint (eslint + prettier + stylelint)
+        id: lint
+        working-directory: frontend
+        run: npm run lint && npm run lint:css && npm run lint:format
+
       - name: TypeScript build
-        id: tsbuild
-        run: docker compose -f docker-compose.dev.yml exec -T frontend npm run build
-        continue-on-error: true
+        id: build
+        working-directory: frontend
+        run: npm run build
 
-      - name: Type check (mypy)
-        id: mypy
-        run: |
-          docker compose -f docker-compose.dev.yml exec -T backend \
-            /home/appuser/.local/bin/mypy src/rackscope
-        continue-on-error: true
+  # ── Update STATUS.md (push to main only, always runs) ─────────────────────
+  update-status:
+    name: Update STATUS.md
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    if: always() && github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
 
-      - name: Stop stack
-        if: always()
-        run: docker compose -f docker-compose.dev.yml down
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update STATUS.md
-        if: always() && github.ref == 'refs/heads/main'
+      - name: Generate STATUS.md
         env:
-          TESTS_PASSED:   ${{ steps.tests.outputs.passed }}
-          TESTS_FAILED:   ${{ steps.tests.outputs.failed }}
-          COVERAGE:       ${{ steps.tests.outputs.coverage }}
-          BE_LINT:        ${{ steps.lint.outcome }}
-          BE_MYPY:        ${{ steps.mypy.outcome }}
-          FE_BUILD:       ${{ steps.tsbuild.outcome }}
-          COMMIT_SHA:     ${{ github.sha }}
-          RUN_ID:         ${{ github.run_id }}
-          REPO:           ${{ github.repository }}
-          SERVER_URL:     ${{ github.server_url }}
+          TESTS_PASSED: ${{ needs.backend.outputs.tests_passed }}
+          TESTS_FAILED: ${{ needs.backend.outputs.tests_failed }}
+          COVERAGE:     ${{ needs.backend.outputs.coverage }}
+          BE_LINT:      ${{ needs.backend.outputs.lint }}
+          BE_MYPY:      ${{ needs.backend.outputs.mypy }}
+          FE_LINT:      ${{ needs.frontend.outputs.lint }}
+          FE_BUILD:     ${{ needs.frontend.outputs.build }}
+          COMMIT_SHA:   ${{ github.sha }}
+          RUN_ID:       ${{ github.run_id }}
+          REPO:         ${{ github.repository }}
+          SERVER_URL:   ${{ github.server_url }}
         run: python3 scripts/gen_status.py
 
       - name: Commit STATUS.md
-        if: always() && github.ref == 'refs/heads/main'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
