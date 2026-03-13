@@ -38,7 +38,7 @@ const LIGHT = {
   dark4:  '#eef0f4',    // code tags, deep card elements
   textHi:  '#1a1714',   // warm dark (Slate primary)
   textMid: '#5c574f',   // warm medium (Slate secondary)
-  textLo:  '#8a8479',   // warm muted (Slate muted)
+  textLo:  '#6b6560',   // warm muted — #6b6560 = 5.4:1 on white (WCAG AA ✓)
   border:  'rgba(0,0,0,0.07)',
   borderMd:'rgba(0,0,0,0.10)',
   bgMuted: 'rgba(0,0,0,0.04)',
@@ -189,7 +189,7 @@ function Carousel() {
         {/* Slide label */}
         <span style={{
           fontFamily: "'JetBrains Mono', monospace",
-          fontSize: '0.7rem', color: C.textLo,
+          fontSize: '0.75rem', color: C.textMid,
           marginLeft: 'auto',
         }}>
           {active + 1} / {SLIDES.length}
@@ -246,18 +246,29 @@ function Carousel() {
         </div>
       </div>
 
-      {/* Dots */}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+      {/* Dots — min 44×44 touch target via padding, aria-label for screen readers */}
+      <div style={{ display: 'flex', gap: 0, justifyContent: 'center', marginTop: 16 }}>
         {SLIDES.map((_, i) => (
           <button key={i} onClick={() => go(i)}
             className="rs-dot"
+            aria-label={`Go to slide ${i + 1}`}
+            aria-current={i === active ? 'true' : undefined}
             style={{
+              width: 44, height: 44, borderRadius: 999,
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer', padding: '18px 10px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.25s',
+            }}>
+            <span style={{
+              display: 'block',
               width: i === active ? 24 : 8, height: 8, borderRadius: 999,
               background: i === active ? C.indigo : C.dark4,
               border: `1px solid ${i === active ? C.indigo : C.borderMd}`,
-              cursor: 'pointer', padding: 0,
               transition: 'all 0.25s',
             }} />
+          </button>
         ))}
       </div>
     </div>
@@ -320,7 +331,7 @@ function HomeContent() {
   const [howRef,        howV]        = useInView();
   const [docRef,        docV]        = useInView();
   return (
-    <>
+    <main>
       <style>{KF}</style>
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
@@ -1029,7 +1040,7 @@ function HomeContent() {
           </div>
         </div>
       </div>
-    </>
+    </main>
   );
 }
 
