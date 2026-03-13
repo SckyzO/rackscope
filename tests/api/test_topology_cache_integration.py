@@ -12,11 +12,10 @@ that the infrastructure (index + cache) is correctly wired to mutations.
 import pytest
 import yaml
 from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch
 
 from rackscope.api.app import app
 from rackscope.api import app as app_module
-from rackscope.api.dependencies import get_topology_optional, get_app_config_optional
 from rackscope.model.domain import (
     Topology,
     Site,
@@ -105,7 +104,7 @@ def test_topology_index_is_rebuilt_after_topology_mutation(tmp_path):
         new_topo = Topology(sites=[new_site1, new_site2])
         mock_load.return_value = new_topo
 
-        response = client.post(
+        client.post(
             "/api/topology/sites",
             json={"id": "site-new", "name": "New Site"},
         )

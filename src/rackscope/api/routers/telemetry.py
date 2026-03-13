@@ -8,7 +8,7 @@ from typing import Dict, Optional, Annotated
 
 from fastapi import APIRouter, Depends
 
-from rackscope.model.domain import Topology
+from rackscope.model.domain import Topology, TopologyIndex
 from rackscope.model.catalog import Catalog
 from rackscope.model.checks import ChecksLibrary
 from rackscope.model.config import AppConfig
@@ -22,11 +22,16 @@ from rackscope.api.dependencies import (
     get_app_config_optional,
     get_planner_optional,
     get_targets_by_check_optional,
+    get_topology_index_optional,
     get_service_cache,
 )
 from rackscope.api.cache import ServiceCache
 from rackscope.utils.aggregation import aggregate_states
 from rackscope.services import telemetry_service
+
+# Default TTL fallbacks when AppConfig is not yet loaded (startup race)
+_DEFAULT_SERVICE_TTL: float = 5.0
+_DEFAULT_METRICS_TTL: float = 120.0
 
 router = APIRouter(tags=["telemetry"])
 
@@ -43,7 +48,7 @@ async def get_global_stats(
 ):
     """Get global system statistics."""
     _cache_key = "stats:global"
-    _ttl = float(app_config.cache.service_ttl_seconds) if app_config else 5.0
+    _ttl = float(app_config.cache.service_ttl_seconds) if app_config else _DEFAULT_SERVICE_TTL
     cached = await svc_cache.get(_cache_key)
     if cached is not None:
         return cached
@@ -134,7 +139,7 @@ async def get_room_state(
 ):
     """Get room health state and rack states."""
     _cache_key = f"room:{room_id}:state"
-    _ttl = float(app_config.cache.service_ttl_seconds) if app_config else 5.0
+    _ttl = float(app_config.cache.service_ttl_seconds) if app_config else _DEFAULT_SERVICE_TTL
     cached = await svc_cache.get(_cache_key)
     if cached is not None:
         return cached
@@ -216,7 +221,7 @@ async def get_all_room_states(
     avoiding N parallel get_snapshot() calls from the frontend.
     """
     _cache_key = "rooms:states"
-    _ttl = float(app_config.cache.service_ttl_seconds) if app_config else 5.0
+    _ttl = float(app_config.cache.service_ttl_seconds) if app_config else _DEFAULT_SERVICE_TTL
     cached = await svc_cache.get(_cache_key)
     if cached is not None:
         return cached
@@ -262,6 +267,7 @@ async def get_rack_state(
     targets_by_check_cached: Annotated[Optional[Dict], Depends(get_targets_by_check_optional)],
     app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
     svc_cache: Annotated[ServiceCache, Depends(get_service_cache)],
+    topo_index: Annotated[Optional[TopologyIndex], Depends(get_topology_index_optional)],
     include_metrics: bool = False,
 ):
     """Get rack health state and device metrics.
@@ -279,7 +285,7 @@ async def get_rack_state(
             else app_config.cache.service_ttl_seconds
         )
     else:
-        _ttl = 120.0 if include_metrics else 5.0
+        _ttl = _DEFAULT_METRICS_TTL if include_metrics else _DEFAULT_SERVICE_TTL
     cached = await svc_cache.get(_cache_key)
     if cached is not None:
         return cached
@@ -291,7 +297,7 @@ async def get_rack_state(
         return {"rack_id": rack_id, "state": "UNKNOWN", "metrics": {}, "nodes": {}}
 
     # Find the rack in topology
-    rack = topology_service.find_rack_by_id(topology, rack_id)
+    rack = topology_service.find_rack_by_id(topology, rack_id, index=topo_index)
 
     targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
         topology, catalog, checks_library
@@ -412,6 +418,7 @@ async def get_device_metrics(
     device_id: str,
     topology: Annotated[Optional[Topology], Depends(get_topology_optional)],
     catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
+    topo_index: Annotated[Optional[TopologyIndex], Depends(get_topology_index_optional)],
 ):
     """Get detailed metrics for a specific device.
 
@@ -433,7 +440,7 @@ async def get_device_metrics(
         return {"device_id": device_id, "rack_id": rack_id, "metrics": {}}
 
     # Find the rack and device in topology
-    rack = topology_service.find_rack_by_id(topology, rack_id)
+    rack = topology_service.find_rack_by_id(topology, rack_id, index=topo_index)
     if not rack:
         return {"device_id": device_id, "rack_id": rack_id, "metrics": {}}
 

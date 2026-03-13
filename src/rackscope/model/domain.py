@@ -17,6 +17,8 @@ Use build_topology_index(topology) after loading topology to get fast access.
 
 from __future__ import annotations
 
+import logging
+import re
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
 
@@ -200,8 +202,11 @@ class TopologyIndex:
     rooms: Dict[str, "Room"] = field(default_factory=dict)
     aisles: Dict[str, "Aisle"] = field(default_factory=dict)
     racks: Dict[str, RackContext] = field(default_factory=dict)
-    devices: Dict[str, tuple] = field(default_factory=dict)     # device_id → (Device, rack_id)
+    devices: Dict[str, "tuple[Device, str]"] = field(default_factory=dict)     # device_id → (Device, rack_id)
     instances: Dict[str, InstanceContext] = field(default_factory=dict)
+
+
+_MAX_INSTANCE_RANGE = 10_000  # prevents DoS via "compute[0-999999]" patterns
 
 
 def _expand_instances(device: "Device") -> List[str]:
@@ -213,8 +218,6 @@ def _expand_instances(device: "Device") -> List[str]:
     - Slot map: {1: "node01", 2: "node02"} → ["node01", "node02"]
     - Single string: "node01" → ["node01"]
     """
-    import re
-
     inst = device.instance
     if not inst:
         return []
@@ -230,6 +233,12 @@ def _expand_instances(device: "Device") -> List[str]:
     match = re.match(r"^(.*?)\[(\d+)-(\d+)\](.*)$", inst)
     if match:
         prefix, start_s, end_s, suffix = match.groups()
+        count = int(end_s) - int(start_s) + 1
+        if count > _MAX_INSTANCE_RANGE:
+            raise ValueError(
+                f"Instance range too large: {count} (max {_MAX_INSTANCE_RANGE}). "
+                f"Pattern: {inst!r}. Use explicit list for large device counts."
+            )
         width = len(start_s)
         return [
             f"{prefix}{str(i).zfill(width)}{suffix}"
@@ -237,6 +246,9 @@ def _expand_instances(device: "Device") -> List[str]:
         ]
 
     return [inst]
+
+
+_topo_index_logger = logging.getLogger(__name__)
 
 
 def build_topology_index(topology: Topology) -> TopologyIndex:
@@ -269,6 +281,14 @@ def build_topology_index(topology: Topology) -> TopologyIndex:
                     for device in rack.devices:
                         idx.devices[device.id] = (device, rack.id)
                         for inst_name in _expand_instances(device):
+                            if inst_name in idx.instances:
+                                existing = idx.instances[inst_name]
+                                _topo_index_logger.warning(
+                                    "Instance name collision: %r already mapped to "
+                                    "device=%r rack=%r — overwriting with device=%r rack=%r",
+                                    inst_name, existing.device.id, existing.rack.id,
+                                    device.id, rack.id,
+                                )
                             idx.instances[inst_name] = InstanceContext(
                                 device=device, rack=rack, room=room, site=site
                             )
@@ -286,6 +306,14 @@ def build_topology_index(topology: Topology) -> TopologyIndex:
                 for device in rack.devices:
                     idx.devices[device.id] = (device, rack.id)
                     for inst_name in _expand_instances(device):
+                        if inst_name in idx.instances:
+                            existing = idx.instances[inst_name]
+                            _topo_index_logger.warning(
+                                "Instance name collision: %r already mapped to "
+                                "device=%r rack=%r — overwriting with device=%r rack=%r",
+                                inst_name, existing.device.id, existing.rack.id,
+                                device.id, rack.id,
+                            )
                         idx.instances[inst_name] = InstanceContext(
                             device=device, rack=rack, room=room, site=site
                         )

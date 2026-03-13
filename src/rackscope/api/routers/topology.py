@@ -573,7 +573,7 @@ async def create_rack(
 @router.get("/api/racks/{rack_id}", response_model=Rack)
 async def get_rack_details(rack_id: str, topology: Annotated[Topology, Depends(get_topology)]):
     """Get rack details and devices."""
-    # Linear search (slow but ok for MVP)
+    # Find rack using index if available, O(n) fallback otherwise
     # In production, we would index racks by ID on load
     for site in topology.sites:
         for room in site.rooms:

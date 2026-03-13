@@ -81,7 +81,7 @@ TARGETS_BY_CHECK: Optional[Dict[str, Dict[str, List[str]]]] = None
 
 # Lock preventing concurrent apply_config() calls from creating inconsistent global state
 # (e.g. TOPOLOGY from call A with CATALOG from call B).
-_CONFIG_RELOAD_LOCK: Optional[asyncio.Lock] = None
+_CONFIG_RELOAD_LOCK: asyncio.Lock = asyncio.Lock()  # eager init prevents lazy-init race
 
 
 async def apply_config(app_config: AppConfig) -> None:
