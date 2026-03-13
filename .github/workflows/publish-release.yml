@@ -1,0 +1,85 @@
+name: Publish Release to rackscope
+
+# Triggered by an annotated tag push from rackscope_dev.
+# The tag annotation message becomes the commit message on SckyzO/rackscope.
+#
+# Usage from rackscope_dev:
+#   git tag -a v1.0.0-beta -m "First beta release"
+#   git push origin v1.0.0-beta
+#
+# Required secret (rackscope_dev Settings -> Secrets):
+#   PUBLIC_REPO_TOKEN: fine-grained PAT with Contents+Pages write on SckyzO/rackscope
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    name: Publish clean release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout tagged commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read tag annotation as commit message
+        id: tag_msg
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          MSG=$(git tag -l --format='%(contents)' "${TAG}")
+          echo "message=${MSG:-Release ${TAG}}" >> $GITHUB_OUTPUT
+
+      - name: Export clean archive (respects .gitattributes export-ignore)
+        run: |
+          mkdir /tmp/release
+          git archive HEAD | tar -x -C /tmp/release
+
+      - name: Push release commit to rackscope
+        env:
+          PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          MSG: ${{ steps.tag_msg.outputs.message }}
+        run: |
+          cd /tmp/release
+          git init
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git remote add public \
+            https://x-access-token:${PUBLIC_REPO_TOKEN}@github.com/SckyzO/rackscope.git
+
+          # Fetch existing history to accumulate one commit per release
+          git fetch public main --depth=1 2>/dev/null && \
+            git checkout -b main public/main 2>/dev/null || \
+            git checkout -b main
+
+          # Wipe and replace with clean archive content
+          git rm -rf . --quiet 2>/dev/null || true
+          rsync -a /tmp/release/ .
+
+          git add .
+          git commit -m "${MSG}"
+          git tag "${TAG}"
+          git push public main
+          git push public "${TAG}"
+
+      - name: Configure GitHub Pages on rackscope (idempotent)
+        env:
+          PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${PUBLIC_REPO_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/SckyzO/rackscope/pages \
+            -d '{"build_type":"workflow"}' || true
+          curl -s -X PUT \
+            -H "Authorization: Bearer ${PUBLIC_REPO_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/SckyzO/rackscope/pages \
+            -d '{"cname":"rackscope.dev","https_enforced":true}' || true
