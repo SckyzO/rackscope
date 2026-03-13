@@ -172,11 +172,11 @@ def test_auth_middleware_enabled_no_bearer_prefix():
 
     mock_config = MagicMock()
     mock_config.auth.enabled = True
-    mock_config.auth.secret_key = "test-secret-key"
+    mock_config.auth.secret_key = "test-secret-key-32-bytes-minimum!!"
 
     # Patch APP_CONFIG in the app module where it's defined
     with patch("rackscope.api.app.APP_CONFIG", mock_config):
-        with patch("rackscope.api.app.AUTH_RUNTIME_SECRET", "runtime-secret"):
+        with patch("rackscope.api.app.AUTH_RUNTIME_SECRET", "runtime-secret-key-32bytes!!"):
             from fastapi.testclient import TestClient
             from rackscope.api.app import app
 
@@ -194,11 +194,11 @@ def test_auth_middleware_enabled_invalid_jwt():
 
     mock_config = MagicMock()
     mock_config.auth.enabled = True
-    mock_config.auth.secret_key = "test-secret-key"
+    mock_config.auth.secret_key = "test-secret-key-32-bytes-minimum!!"
 
     # Patch APP_CONFIG in the app module where it's defined
     with patch("rackscope.api.app.APP_CONFIG", mock_config):
-        with patch("rackscope.api.app.AUTH_RUNTIME_SECRET", "runtime-secret"):
+        with patch("rackscope.api.app.AUTH_RUNTIME_SECRET", "runtime-secret-key-32bytes!!"):
             from fastapi.testclient import TestClient
             from rackscope.api.app import app
 
@@ -217,7 +217,7 @@ def test_auth_middleware_valid_jwt():
     from unittest.mock import patch, MagicMock
     import jwt
 
-    secret = "test-secret-key-for-jwt"
+    secret = "test-secret-key-for-jwt-32bytes!"
     mock_config = MagicMock()
     mock_config.auth.enabled = True
     mock_config.auth.secret_key = secret
@@ -227,7 +227,7 @@ def test_auth_middleware_valid_jwt():
 
     # Patch APP_CONFIG in the app module where it's defined
     with patch("rackscope.api.app.APP_CONFIG", mock_config):
-        with patch("rackscope.api.app.AUTH_RUNTIME_SECRET", "runtime-secret"):
+        with patch("rackscope.api.app.AUTH_RUNTIME_SECRET", "runtime-secret-key-32bytes!!"):
             from fastapi.testclient import TestClient
             from rackscope.api.app import app
 

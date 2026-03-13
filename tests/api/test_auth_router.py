@@ -242,7 +242,7 @@ class TestMakeAndDecodeToken:
         """Token signed with different secret should raise."""
         token = _make_token("admin", SECRET, None)
         with pytest.raises(HTTPException) as exc:
-            _decode_token(token, "wrong-secret")
+            _decode_token(token, "wrong-secret-key-32-bytes-minimum!!")
         assert exc.value.status_code == 401
 
     def test_expired_token_raises(self):
@@ -274,20 +274,20 @@ class TestSecretKey:
 
     def test_secret_from_config(self):
         """When config has secret_key, should return it."""
-        auth_config = AuthConfig(enabled=True, secret_key="config-secret")
+        auth_config = AuthConfig(enabled=True, secret_key="config-secret-key-32-bytes!!")
         app_config = MagicMock(spec=AppConfig)
         app_config.auth = auth_config
         secret = _secret_key(app_config)
-        assert secret == "config-secret"
+        assert secret == "config-secret-key-32-bytes!!"
 
     def test_secret_from_runtime_when_empty(self):
         """When config secret_key is empty, should fall back to runtime."""
         auth_config = AuthConfig(enabled=True, secret_key="")
         app_config = MagicMock(spec=AppConfig)
         app_config.auth = auth_config
-        with patch("rackscope.api.app.AUTH_RUNTIME_SECRET", "runtime-secret"):
+        with patch("rackscope.api.app.AUTH_RUNTIME_SECRET", "runtime-secret-key-32bytes!!"):
             secret = _secret_key(app_config)
-            assert secret == "runtime-secret"
+            assert secret == "runtime-secret-key-32bytes!!"
 
 
 # ── API endpoints ─────────────────────────────────────────────────────────────
