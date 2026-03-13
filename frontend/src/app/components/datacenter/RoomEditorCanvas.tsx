@@ -285,7 +285,7 @@ const RackCard = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/editors/rack?rackId=${rack.id}`);
+                void navigate(`/editors/rack?rackId=${rack.id}`);
               }}
               className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
             >
@@ -353,7 +353,7 @@ const AddRackForm = ({
     if (!form.id.trim()) return;
     const rack = buildRack();
     onAddAndEdit(rack);
-    navigate(`/editors/rack?rackId=${rack.id}&aisleId=${aisleId}`);
+    void navigate(`/editors/rack?rackId=${rack.id}&aisleId=${aisleId}`);
   };
 
   return (
@@ -712,7 +712,7 @@ export const RoomEditorCanvas = ({
     setDragOverAisle(null);
   };
 
-  const handleAisleDrop = async (e: React.DragEvent, targetAisleId: string) => {
+  const handleAisleDrop = (e: React.DragEvent, targetAisleId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverAisle(null);
@@ -758,7 +758,7 @@ export const RoomEditorCanvas = ({
     setDragOverRack(null);
   };
 
-  const handleRackDrop = async (
+  const handleRackDrop = (
     e: React.DragEvent,
     targetAisleId: string,
     afterRackId: string | null
@@ -797,11 +797,11 @@ export const RoomEditorCanvas = ({
     updateRoom({ ...room, aisles: newAisles });
   };
 
-  const handleRackDropEmpty = async (e: React.DragEvent, targetAisleId: string) => {
+  const handleRackDropEmpty = (e: React.DragEvent, targetAisleId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverAisleEmpty(null);
-    await handleRackDrop(e, targetAisleId, null);
+    handleRackDrop(e, targetAisleId, null);
   };
 
   // ── Rack CRUD ─────────────────────────────────────────────────────────────

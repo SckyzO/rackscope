@@ -391,7 +391,7 @@ export const SitePage = () => {
   }, [siteId, selectedRoomId]);
 
   useEffect(() => {
-    loadData();
+    void loadData();
   }, [siteId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { autoRefreshMs, onIntervalChange } = useAutoRefresh('site', loadData);
@@ -575,7 +575,7 @@ export const SitePage = () => {
             <div className="w-fit">
               <SegmentedControl
                 value={layout}
-                onChange={(v) => applyLayout(v as Layout)}
+                onChange={(v) => applyLayout(v)}
                 options={[
                   { label: 'Grid', value: 'grid', icon: LayoutGrid },
                   { label: 'List + Detail', value: 'list', icon: List },
@@ -592,7 +592,7 @@ export const SitePage = () => {
             <div className="w-fit">
               <SegmentedControl
                 value={rackSize}
-                onChange={(v) => applyRackSize(v as RackSize)}
+                onChange={(v) => applyRackSize(v)}
                 options={[
                   { label: 'Small', value: 'sm' },
                   { label: 'Medium', value: 'md' },

@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@src/services/api';
-import type { RoomSummary, Rack, DeviceTemplate, RackState, RackNodeState } from '@src/types';
+import type { RoomSummary, Rack, DeviceTemplate, RackState } from '@src/types';
 import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb } from '../templates/EmptyPage';
 import { RackElevation } from '@src/components/RackVisualizer';
@@ -316,10 +316,10 @@ const RackCard = ({
   const { rack, health, catalog } = entry;
   const state = health?.state ?? 'UNKNOWN';
   const stateColor = HC[state] ?? HC.UNKNOWN;
-  const nodes = (health?.nodes ?? {}) as Record<string, RackNodeState>;
+  const nodes = (health?.nodes ?? {});
   const pduMetrics = health?.infra_metrics?.pdu;
   const deviceCount = rack.devices?.length ?? 0;
-  const maxUPx = displayConfig.uSize === 'auto' ? undefined : (displayConfig.uSize as number);
+  const maxUPx = displayConfig.uSize === 'auto' ? undefined : (displayConfig.uSize);
 
   return (
     <div
@@ -343,7 +343,7 @@ const RackCard = ({
       onClick={
         !editMode
           ? () => {
-              navigate(`/views/rack/${rack.id}`);
+              void navigate(`/views/rack/${rack.id}`);
             }
           : undefined
       }
@@ -352,7 +352,7 @@ const RackCard = ({
       onKeyDown={
         !editMode
           ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') navigate(`/views/rack/${rack.id}`);
+              if (e.key === 'Enter' || e.key === ' ') void navigate(`/views/rack/${rack.id}`);
             }
           : undefined
       }
@@ -940,8 +940,8 @@ export const ClusterPage = () => {
         const next = { ...prev };
         results.forEach((r) => {
           next[r.id] = {
-            rack: r.rack as Rack | null,
-            health: r.health as RackState | null,
+            rack: r.rack,
+            health: r.health,
             catalog: devCat,
             loading: false,
             error: r.error,

@@ -113,7 +113,7 @@ function getSlotMap(device: Device, tpl?: DeviceTemplate): Record<number, string
   const lay = tpl.type === 'storage' && tpl.disk_layout ? tpl.disk_layout : tpl.layout;
   if (!lay?.matrix) return {};
   const slots = lay.matrix.flat().filter((s) => s > 0);
-  const exp = Array.isArray(inst) ? inst : expand(inst as string);
+  const exp = Array.isArray(inst) ? inst : expand(inst);
   return slots.reduce<Record<number, string>>((a, sl, i) => {
     if (exp[i]) a[sl] = exp[i];
     return a;
@@ -730,7 +730,7 @@ export const SlurmWallboardPage = () => {
         );
         const lm: Record<string, Room> = {};
         roomList.forEach((r, i) => {
-          if (lays[i]) lm[r.id] = lays[i] as Room;
+          if (lays[i]) lm[r.id] = lays[i];
         });
         setLayouts(lm);
       }

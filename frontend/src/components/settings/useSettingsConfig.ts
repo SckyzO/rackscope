@@ -459,7 +459,7 @@ export const useSettingsConfig = () => {
         setLoading(false);
       }
     };
-    loadConfig();
+    void loadConfig();
   }, []);
 
   const saveConfig = async () => {

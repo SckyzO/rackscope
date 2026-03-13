@@ -257,7 +257,7 @@ export const PlaylistCenterPage = () => {
     playlist.setQueue(mergedQueue);
     playlist.setGlobalInterval(localInterval);
     playlist.play(mode);
-    navigate(mergedQueue[0].route);
+    void navigate(mergedQueue[0].route);
   };
 
   return (

@@ -121,7 +121,7 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
       if (q.length === 0) return;
       const i = ((idx % q.length) + q.length) % q.length;
       setCurrentIndex(i);
-      navigate(q[i].route);
+      void navigate(q[i].route);
     },
     [navigate]
   );
@@ -162,7 +162,7 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
         requestFullscreen();
       }
       if (queue.length > 0) {
-        navigate(queue[currentIndex]?.route ?? queue[0].route);
+        void navigate(queue[currentIndex]?.route ?? queue[0].route);
       }
     },
     [features.playlist, mode, queue, currentIndex, navigate]
@@ -204,7 +204,7 @@ export const PlaylistProvider = ({ children }: { children: ReactNode }) => {
     const advance = () => {
       setCurrentIndex((prev) => {
         const next = (prev + 1) % queueRef.current.length;
-        navigateRef.current(queueRef.current[next].route);
+        void navigateRef.current(queueRef.current[next].route);
         return next;
       });
     };

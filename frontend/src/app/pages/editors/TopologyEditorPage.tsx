@@ -767,7 +767,7 @@ export const TopologyEditorPage = () => {
         if (active) setLoading(false);
       }
     };
-    load();
+    void load();
     return () => {
       active = false;
     };
@@ -776,7 +776,7 @@ export const TopologyEditorPage = () => {
   // Auto-select first room after initial load
   useEffect(() => {
     if (loading || selectedRoomId || topology.length === 0) return;
-    const autoSelect = async () => {
+    const autoSelect = () => {
       const firstSite = topology[0];
       if (firstSite.rooms.length > 0) {
         setSelectedRoomId(firstSite.rooms[0].id);
@@ -854,7 +854,7 @@ export const TopologyEditorPage = () => {
       if (a.id === dragFromAisleId) {
         newAisles[a.id] = a.racks.filter((r) => r.id !== dragRackId).map((r) => r.id);
       } else if (a.id === targetAisleId) {
-        newAisles[a.id] = [...a.racks.map((r) => r.id), dragRackId as string];
+        newAisles[a.id] = [...a.racks.map((r) => r.id), dragRackId];
       } else {
         newAisles[a.id] = a.racks.map((r) => r.id);
       }

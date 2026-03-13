@@ -101,7 +101,7 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!loading && authEnabled && !user) {
-      navigate('/auth/signin', { replace: true });
+      void navigate('/auth/signin', { replace: true });
     }
   }, [loading, authEnabled, user, navigate]);
 

@@ -124,7 +124,7 @@ export function useRackData(rackId: string | undefined): RackData {
         /* ignore */
       }
     };
-    poll();
+    void poll();
     const t = setInterval(poll, 30000);
     return () => {
       active = false;
@@ -159,7 +159,7 @@ export function useRackData(rackId: string | undefined): RackData {
     ...resolved.side,
   ];
 
-  const nodes = (health?.nodes ?? {}) as Record<string, RackNodeState>;
+  const nodes = (health?.nodes ?? {});
   const nodeCounts = Object.values(nodes).reduce(
     (acc, n) => {
       const s = n.state ?? 'UNKNOWN';

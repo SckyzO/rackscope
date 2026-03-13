@@ -154,7 +154,7 @@ export const TooltipSettingsSection = () => {
               {PREVIEW_SAMPLES.map((sample, idx) => (
                 <div
                   key={idx}
-                  onMouseEnter={(e) => showPreview(s.id as TooltipStyle, idx, e)}
+                  onMouseEnter={(e) => showPreview(s.id, idx, e)}
                   onMouseMove={updatePos}
                   onMouseLeave={hidePreview}
                   onClick={(e) => e.stopPropagation()}

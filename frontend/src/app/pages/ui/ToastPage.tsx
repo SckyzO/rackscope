@@ -120,7 +120,7 @@ export const ToastPage = () => {
           key={pos}
           className={`fixed z-[9999] flex flex-col gap-2 ${posClass[pos as ToastPos]}`}
         >
-          {(posToasts as Toast[]).map((t) => {
+          {(posToasts).map((t) => {
             const cfg = toastConfig[t.type];
             const Icon = cfg.icon;
             return (

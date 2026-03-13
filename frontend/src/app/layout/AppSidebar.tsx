@@ -576,7 +576,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
                 setMatrixActive(true);
               } else {
                 logoClickTimer.current = setTimeout(() => setLogoClickCount(0), 1500);
-                navigate('/');
+                void navigate('/');
               }
             }}
             title="Go to Dashboard"
@@ -655,7 +655,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
                     primary
                     hasLink
                     onLinkClick={() => {
-                      navigate(`/views/site/${site.id}`);
+                      void navigate(`/views/site/${site.id}`);
                       setExpandedSites((prev) => {
                         const next = new Set(prev);
                         next.add(site.id);
@@ -685,7 +685,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
                               }
                               return next;
                             });
-                            navigate(roomPath);
+                            void navigate(roomPath);
                           }}
                           isActive={isRoomActive}
                           collapsed={collapsed}
@@ -752,7 +752,7 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
                           }
                           return next;
                         });
-                        navigate(roomPath);
+                        void navigate(roomPath);
                       }}
                       isActive={location.pathname === roomPath}
                       collapsed={collapsed}

@@ -18,7 +18,7 @@ export const SignInPage = () => {
     setLoading(true);
     try {
       await login(username, password);
-      navigate('/', { replace: true });
+      void navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

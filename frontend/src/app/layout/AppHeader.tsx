@@ -109,7 +109,7 @@ export const AppHeader = ({
         /* ignore */
       }
     };
-    load();
+    void load();
     const t = setInterval(load, 30000);
     return () => {
       active = false;
@@ -281,7 +281,7 @@ export const AppHeader = ({
               <button
                 onClick={() => {
                   playlist.pause();
-                  navigate('/playlist');
+                  void navigate('/playlist');
                 }}
                 title="Exit playlist"
                 className="flex h-10 items-center gap-1.5 rounded-xl border border-gray-200 px-3 text-sm text-gray-500 transition-colors hover:bg-gray-100 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5"
@@ -388,7 +388,7 @@ export const AppHeader = ({
                         onClick={(e) => {
                           e.stopPropagation();
                           setNotifOpen(false);
-                          navigate('/settings#notifications');
+                          void navigate('/settings#notifications');
                         }}
                         title="Notification settings"
                         className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
@@ -416,7 +416,7 @@ export const AppHeader = ({
                           key={i}
                           onClick={() => {
                             setNotifOpen(false);
-                            navigate(`/views/rack/${alert.rack_id}`);
+                            void navigate(`/views/rack/${alert.rack_id}`);
                           }}
                           className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
                         >
@@ -466,7 +466,7 @@ export const AppHeader = ({
                       <button
                         onClick={() => {
                           setNotifOpen(false);
-                          navigate('/notifications');
+                          void navigate('/notifications');
                         }}
                         className="text-brand-500 w-full px-4 py-2 text-center text-xs font-medium transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
                       >
@@ -480,7 +480,7 @@ export const AppHeader = ({
                     <button
                       onClick={() => {
                         setNotifOpen(false);
-                        navigate('/notifications');
+                        void navigate('/notifications');
                       }}
                       className="text-brand-500 w-full rounded-lg py-2 text-center text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
                     >
@@ -523,7 +523,7 @@ export const AppHeader = ({
                   <button
                     onClick={() => {
                       setUserOpen(false);
-                      navigate('/profile');
+                      void navigate('/profile');
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
                   >
@@ -532,7 +532,7 @@ export const AppHeader = ({
                   <button
                     onClick={() => {
                       setUserOpen(false);
-                      navigate('/settings');
+                      void navigate('/settings');
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-white/5"
                   >

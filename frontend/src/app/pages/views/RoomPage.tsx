@@ -1696,8 +1696,8 @@ export const RoomPage = () => {
           api.getRoomState(roomId),
           api.getCatalog(),
         ]);
-        setRoom(roomData as Room);
-        setRoomState(stateData as RoomState);
+        setRoom(roomData);
+        setRoomState(stateData);
         const devCat: Record<string, DeviceTemplate> = {};
         (catalogData?.device_templates ?? []).forEach((t: DeviceTemplate) => {
           devCat[t.id] = t;

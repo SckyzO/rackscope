@@ -152,7 +152,7 @@ export const AlertToastContainer = () => {
   const goToRack = useCallback(
     (toast: ToastEntry) => {
       dismiss(toast.id);
-      navigate(`/views/rack/${toast.rackId}`);
+      void navigate(`/views/rack/${toast.rackId}`);
     },
     [dismiss, navigate]
   );

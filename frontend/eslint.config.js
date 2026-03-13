@@ -11,13 +11,20 @@ export default defineConfig([
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
-      tseslint.configs.recommended,
+      // recommendedTypeChecked enables type-aware rules (requires parserOptions.projectService).
+      // It is a superset of tseslint.configs.recommended — do not include both.
+      tseslint.configs.recommendedTypeChecked,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+      parserOptions: {
+        // projectService: true lets typescript-eslint automatically find the nearest
+        // tsconfig.json — no hardcoded path needed. Enables full type-aware linting.
+        projectService: true,
+      },
     },
     rules: {
       // Hooks — stale closures
@@ -44,7 +51,25 @@ export default defineConfig([
       '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
       '@typescript-eslint/no-empty-function': 'warn',
       '@typescript-eslint/prefer-as-const': 'error', // 'foo' as 'foo' → 'foo' as const
-      '@typescript-eslint/no-unnecessary-condition': 'off', // needs project
+      // ── Type-aware rules (require projectService: true) ──────────────────
+      // High-value async safety rules
+      '@typescript-eslint/no-floating-promises': 'error',   // await or .catch() on every Promise
+      '@typescript-eslint/no-misused-promises': [           // async fn where sync is expected
+        'error',
+        { checksVoidReturn: { attributes: false } },        // allow onClick={async () => {}} in JSX
+      ],
+      '@typescript-eslint/await-thenable': 'error',         // await on non-Promise value
+      // Prefer modern nullish patterns
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn',  // a || b → a ?? b
+      '@typescript-eslint/prefer-optional-chain': 'warn',      // a && a.b → a?.b
+      // Disabled: no-unsafe-* fire on API `any` types — too noisy without stricter typing
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      // Already handled at a different level
+      '@typescript-eslint/no-unnecessary-condition': 'off',
       // React
       'react-hooks/rules-of-hooks': 'error',
       // React Compiler rules (react-hooks v7) — disabled: we don't use the React Compiler

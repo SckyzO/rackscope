@@ -1009,7 +1009,7 @@ export const MetricsEditorPage = () => {
     const groups: Record<string, MetricDefinition[]> = {};
     for (const m of filtered) {
       const cat = m.category ?? 'other';
-      if (!groups[cat]) groups[cat] = [];
+      groups[cat] ||= [];
       groups[cat].push(m);
     }
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));

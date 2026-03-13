@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         setAuthEnabled(s.enabled);
         setAuthConfigured(s.configured);
-        if (s.policy) setPolicy(s.policy as PasswordPolicy);
+        if (s.policy) setPolicy(s.policy);
         return s.enabled;
       }
     } catch {
@@ -162,7 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     setToken(null);
     setUser(null);
-    navigate('/auth/signin');
+    void navigate('/auth/signin');
   }, [navigate]);
 
   const refreshStatus = useCallback(async () => {

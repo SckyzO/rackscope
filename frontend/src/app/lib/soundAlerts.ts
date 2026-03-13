@@ -187,7 +187,7 @@ export async function playSound(preset: SoundPreset, volume: number): Promise<vo
       break;
     }
   }
-  ctx.close();
+  void ctx.close();
 }
 
 // localStorage helpers

@@ -29,7 +29,7 @@ export const PluginsMenuProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    loadMenu();
+    void loadMenu();
     // Poll every 30s so the sidebar reflects plugin changes (e.g. Slurm plugin enable/disable)
     // without requiring a page reload
     const interval = setInterval(loadMenu, 30000);

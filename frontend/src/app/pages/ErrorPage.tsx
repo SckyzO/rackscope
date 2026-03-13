@@ -329,8 +329,8 @@ export const ErrorPage = ({ code }: { code?: ErrorCode }) => {
     if (!cfg.cta) return;
     if (cfg.cta.action === 'back') window.history.back();
     else if (cfg.cta.action === 'reload') window.location.reload();
-    else if (cfg.cta.action === 'login') navigate('/auth/signin');
-    else if (cfg.cta.href) navigate(cfg.cta.href);
+    else if (cfg.cta.action === 'login') void navigate('/auth/signin');
+    else if (cfg.cta.href) void navigate(cfg.cta.href);
   };
 
   const CfgIcon = cfg.cta?.icon;

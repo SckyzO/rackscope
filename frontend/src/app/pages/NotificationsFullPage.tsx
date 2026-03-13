@@ -951,14 +951,14 @@ export const NotificationsFullPage = () => {
                     ) : (
                       <button
                         key={p}
-                        onClick={() => setPage(p as number)}
+                        onClick={() => setPage(p)}
                         className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                           p === safePage
                             ? 'bg-brand-500 text-white'
                             : 'border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
                         }`}
                       >
-                        {(p as number) + 1}
+                        {(p) + 1}
                       </button>
                     )
                   )}

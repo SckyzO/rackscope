@@ -139,7 +139,7 @@ export const NotificationsSettingsSection = () => {
                 label="Critical sound"
                 description={
                   settings.critSound !== 'none'
-                    ? SOUND_PRESETS[settings.critSound as SoundPreset]?.description
+                    ? SOUND_PRESETS[settings.critSound]?.description
                     : 'No sound'
                 }
                 tooltip="Audio clip played for CRIT-level alerts."
@@ -153,7 +153,7 @@ export const NotificationsSettingsSection = () => {
                 label="Warning sound"
                 description={
                   settings.warnSound !== 'none'
-                    ? SOUND_PRESETS[settings.warnSound as SoundPreset]?.description
+                    ? SOUND_PRESETS[settings.warnSound]?.description
                     : 'No sound'
                 }
                 tooltip="Audio clip played for WARN-level alerts. Can differ from the critical sound to distinguish severity by ear."

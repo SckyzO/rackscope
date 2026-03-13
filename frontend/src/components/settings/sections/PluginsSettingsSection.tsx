@@ -81,7 +81,7 @@ const SlurmMappingEditor = ({ mappingPath }: { mappingPath?: string }) => {
 
   const handleOpen = () => {
     setOpen(true);
-    load();
+    void load();
   };
 
   const save = async () => {
@@ -259,7 +259,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   }, []);
 
   useEffect(() => {
-    loadSimulatorData();
+    void loadSimulatorData();
   }, [loadSimulatorData]);
 
   const handleRestartSimulator = async () => {
@@ -273,7 +273,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
           if (status?.running) {
             clearInterval(poll);
             setRestarting(false);
-            loadSimulatorData();
+            void loadSimulatorData();
           }
         } catch {
           /* still restarting */
@@ -282,7 +282,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
       setTimeout(() => {
         clearInterval(poll);
         setRestarting(false);
-        loadSimulatorData();
+        void loadSimulatorData();
       }, 30000);
     } catch {
       setRestarting(false);

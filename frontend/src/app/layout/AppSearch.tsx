@@ -327,7 +327,7 @@ export const AppSearch = () => {
     } else if (e.key === 'Enter' && activeIdx >= 0) {
       e.preventDefault();
       const r = results[activeIdx];
-      navigate(r.href);
+      void navigate(r.href);
       setOpen(false);
       setQuery('');
       setActiveIdx(-1);
@@ -336,7 +336,7 @@ export const AppSearch = () => {
   };
 
   const handleSelect = (r: SearchResult) => {
-    navigate(r.href);
+    void navigate(r.href);
     setOpen(false);
     setQuery('');
     setActiveIdx(-1);
@@ -518,7 +518,7 @@ export const AppSearch = () => {
                 <button
                   key={href}
                   onClick={() => {
-                    navigate(href);
+                    void navigate(href);
                     setOpen(false);
                   }}
                   className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs text-gray-600 transition-colors hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/5"

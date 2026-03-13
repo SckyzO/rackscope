@@ -68,7 +68,7 @@ export const useSlurmConfig = () => {
         setLoading(false);
       }
     };
-    loadConfig();
+    void loadConfig();
   }, []);
 
   const getStatusColor = (status: string): string => {

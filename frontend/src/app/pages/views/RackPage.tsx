@@ -16,7 +16,7 @@ import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
 import { PageActionButton } from '@app/components/PageActionButton';
 import { RackElevation } from '@src/components/RackVisualizer';
 import { useRackData } from './useRackData';
-import type { Device, InfrastructureComponent, RackNodeState } from '@src/types';
+import type { Device, InfrastructureComponent } from '@src/types';
 
 const HC: Record<string, string> = {
   OK: '#10b981',
@@ -107,7 +107,7 @@ export const RackPage = () => {
     // Virtual nodes use the key format "instance:labelValue" (e.g. "compute01:slot3").
     // Split on ':' to extract the base instance for tooltip and navigation.
     const matchKey = Object.keys(nodes).find((k) => k.startsWith(device.id.split(':')[0]));
-    const ns = matchKey ? (nodes[matchKey] as RackNodeState) : undefined;
+    const ns = matchKey ? (nodes[matchKey]) : undefined;
     setSelected({
       device,
       state: ns?.state ?? 'UNKNOWN',
@@ -394,7 +394,7 @@ export const RackPage = () => {
               ))}
             </div>
             <button
-              onClick={() => navigate(`/views/device/${rack.id}/${selected.device.id}`)}
+              onClick={() => void navigate(`/views/device/${rack.id}/${selected.device.id}`)}
               className="bg-brand-500 hover:bg-brand-600 mt-4 w-full rounded-lg py-2 text-xs font-semibold text-white transition-colors"
             >
               Open Device →

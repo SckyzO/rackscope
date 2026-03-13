@@ -56,7 +56,7 @@ export const SetupWizard = ({
     dismiss();
   }, [dismiss]);
 
-  const handlePermanentDisable = useCallback(async () => {
+  const handlePermanentDisable = useCallback(() => {
     if (!onPermanentDisable) {
       setShowDisableModal(false);
       dismiss();
@@ -64,7 +64,7 @@ export const SetupWizard = ({
     }
     setDisabling(true);
     try {
-      await onPermanentDisable();
+      onPermanentDisable();
       setShowDisableModal(false);
     } catch (err) {
       console.error('Failed to disable wizard:', err);
@@ -92,12 +92,12 @@ export const SetupWizard = ({
 
   const goToDatacenter = () => {
     dismiss();
-    navigate('/editors/datacenter');
+    void navigate('/editors/datacenter');
   };
 
   const goDashboard = () => {
     dismiss();
-    navigate('/');
+    void navigate('/');
   };
 
   // ── Progress dots ───────────────────────────────────────────────────────────

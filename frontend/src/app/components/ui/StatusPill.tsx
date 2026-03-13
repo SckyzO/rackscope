@@ -24,12 +24,12 @@ export const StatusPill = ({
   size = 'md',
   className = '',
 }: {
-  status: HealthStatus | string;
+  status: HealthStatus;
   size?: StatusPillSize;
   className?: string;
 }) => {
   const labels = useSeverityLabels();
-  const pillCls = HEALTH_STATUS_PILL[status as HealthStatus] ?? HEALTH_STATUS_PILL.UNKNOWN;
+  const pillCls = HEALTH_STATUS_PILL[status] ?? HEALTH_STATUS_PILL.UNKNOWN;
   return (
     <span
       className={`inline-flex items-center rounded-full font-bold ${SIZE[size]} ${pillCls} ${className}`}

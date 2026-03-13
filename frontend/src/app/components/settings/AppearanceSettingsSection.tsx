@@ -310,7 +310,7 @@ export const AppearanceSettingsSection = () => {
                 hex={a.hex}
                 label={a.label}
                 active={accent === a.id}
-                onClick={() => handleAccent(a.id as AccentColor)}
+                onClick={() => handleAccent(a.id)}
               />
             ))}
           </div>

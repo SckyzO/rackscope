@@ -107,7 +107,11 @@ export const expandInstanceMatches = (query: string, instance: unknown, limit = 
       if (results.length >= limit) break;
       if (typeof value === 'string') {
         expandPattern(value);
-      } else if (value !== null && value !== undefined) {
+      } else if (
+        value !== null &&
+        value !== undefined &&
+        (typeof value === 'number' || typeof value === 'boolean')
+      ) {
         pushIfMatch(String(value));
       }
     }

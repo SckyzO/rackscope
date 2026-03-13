@@ -183,7 +183,7 @@ export const RackElevation = ({
             const u = idx + 1;
             const device = uMap.get(u);
             const template = device ? catalog[device.template_id] : null;
-            const isDeviceStart = device && device.u_position === u;
+            const isDeviceStart = device?.u_position === u;
             const infraStart = infraMap.get(u);
 
             return (
@@ -646,7 +646,7 @@ export const DeviceChassis = ({
     template.disk_layout,
     template.layout,
   ]);
-  const instanceList = useMemo(() => Object.values(nodeMap).filter(Boolean) as string[], [nodeMap]);
+  const instanceList = useMemo(() => Object.values(nodeMap).filter(Boolean), [nodeMap]);
   const chassisHealth = useMemo(() => {
     if (!nodesData) return rackHealth;
     const nodeIds = Object.values(nodeMap);
@@ -664,7 +664,7 @@ export const DeviceChassis = ({
     for (const nodeId of instanceList) {
       const checks = nodesData[nodeId]?.checks;
       if (!Array.isArray(checks)) continue;
-      for (const check of checks as AlertCheck[]) {
+      for (const check of checks) {
         if (check?.id) checkIds.add(check.id);
       }
     }
@@ -679,7 +679,7 @@ export const DeviceChassis = ({
     for (const nodeId of instanceList) {
       const alerts = nodesData[nodeId]?.alerts;
       if (!Array.isArray(alerts)) continue;
-      for (const alert of alerts as AlertCheck[]) {
+      for (const alert of alerts) {
         if (!alert?.id) continue;
         const existing = alertMap.get(alert.id);
         if (!existing || sevOrder(alert.severity) > sevOrder(existing.severity)) {
@@ -861,10 +861,10 @@ export const DeviceChassis = ({
                 );
               const nodeId = nodeMap[slotNum];
               const nodeHealth =
-                (nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId].state : undefined) ??
+                (nodeId && nodesData?.[nodeId] ? nodesData[nodeId].state : undefined) ??
                 'UNKNOWN';
               const nodeMetrics =
-                nodeId && nodesData && nodesData[nodeId] ? nodesData[nodeId] : undefined;
+                nodeId && nodesData?.[nodeId] ? nodesData[nodeId] : undefined;
               return (
                 <NodeUnit
                   key={`${rIdx}-${cIdx}`}
@@ -978,8 +978,8 @@ export const NodeUnit = ({
   const Icon = type === 'network' ? RouterIcon : Server;
   const hideText = hideTextProp !== undefined ? hideTextProp : uHeight === 1;
 
-  const checks = Array.isArray(nodeMetrics?.checks) ? (nodeMetrics.checks as AlertCheck[]) : [];
-  const alertList = Array.isArray(nodeMetrics?.alerts) ? (nodeMetrics.alerts as AlertCheck[]) : [];
+  const checks = Array.isArray(nodeMetrics?.checks) ? (nodeMetrics.checks) : [];
+  const alertList = Array.isArray(nodeMetrics?.alerts) ? (nodeMetrics.alerts) : [];
   const checkSummary = {
     ok: Math.max(0, checks.length - alertList.length),
     warn: alertList.filter((a) => a.severity === 'WARN').length,

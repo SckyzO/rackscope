@@ -129,11 +129,11 @@ export const SettingsPage = () => {
       setPendingTab(tabId);
       return;
     }
-    navigate(`${location.pathname}#${tabId}`, { replace: true });
+    void navigate(`${location.pathname}#${tabId}`, { replace: true });
   };
 
   useEffect(() => {
-    if (!location.hash) navigate(`${location.pathname}#general`, { replace: true });
+    if (!location.hash) void navigate(`${location.pathname}#general`, { replace: true });
   }, [location.hash, location.pathname, navigate]);
 
   const handleSave = async () => {
@@ -152,11 +152,11 @@ export const SettingsPage = () => {
   // ── Tab modal actions ──────────────────────────────────────────────────────
   const tabModalSaveAndGo = async () => {
     await handleSave();
-    if (pendingTab) navigate(`${location.pathname}#${pendingTab}`, { replace: true });
+    if (pendingTab) void navigate(`${location.pathname}#${pendingTab}`, { replace: true });
     setPendingTab(null);
   };
   const tabModalDiscard = () => {
-    if (pendingTab) navigate(`${location.pathname}#${pendingTab}`, { replace: true });
+    if (pendingTab) void navigate(`${location.pathname}#${pendingTab}`, { replace: true });
     setPendingTab(null);
   };
   const tabModalStay = () => setPendingTab(null);
@@ -171,7 +171,7 @@ export const SettingsPage = () => {
       origPushState.current = null;
     }
     await handleSave();
-    if (url) navigate(url);
+    if (url) void navigate(url);
   };
   const navModalDiscard = () => {
     const url = pendingNavUrl.current;
@@ -181,7 +181,7 @@ export const SettingsPage = () => {
       window.history.pushState = origPushState.current;
       origPushState.current = null;
     }
-    if (url) navigate(url);
+    if (url) void navigate(url);
   };
   const navModalStay = () => {
     pendingNavUrl.current = null;
