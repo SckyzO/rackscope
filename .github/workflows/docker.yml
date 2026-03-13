@@ -35,7 +35,7 @@ jobs:
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@902fa8ec7d6ecbea8a7f31773d3b64f4929ba864  # v5.7.0
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051  # v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.REPO }}-backend
           tags: |
@@ -84,7 +84,7 @@ jobs:
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@902fa8ec7d6ecbea8a7f31773d3b64f4929ba864  # v5.7.0
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051  # v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.REPO }}-frontend
           tags: |

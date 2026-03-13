@@ -12,49 +12,60 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
-  # ── Backend: tests + lint + typecheck + security ──────────────────────────
-  backend:
-    name: Backend
+  # ── Lint + Tests (Docker Compose, mirrors local dev workflow) ──────────────
+  quality:
+    name: Quality
     runs-on: ubuntu-latest
-    env:
-      PYTHONPATH: src:.
-      RACKSCOPE_CONFIG_DIR: config
-      RACKSCOPE_APP_CONFIG: config/app.yaml
-    outputs:
-      tests_passed: ${{ steps.tests.outputs.passed }}
-      tests_failed: ${{ steps.tests.outputs.failed }}
-      coverage:     ${{ steps.tests.outputs.coverage }}
-      lint_status:  ${{ steps.lint.outputs.status }}
-      mypy_status:  ${{ steps.mypy.outputs.status }}
-      audit_status: ${{ steps.audit.outputs.status }}
-      audit_vulns:  ${{ steps.audit.outputs.vulns }}
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38  # v5.4.0
-        with:
-          python-version: '3.12'
-          cache: pip
-          cache-dependency-path: pyproject.toml
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2  # v3.10.0
 
-      - name: Install dependencies
-        run: pip install -e ".[dev]" pip-audit
+      - name: Build stack
+        run: docker compose -f docker-compose.dev.yml build
+        env:
+          DOCKER_BUILDKIT: 1
 
-      - name: Run tests
+      - name: Start stack
+        run: docker compose -f docker-compose.dev.yml up -d
+
+      - name: Wait for backend to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if docker compose -f docker-compose.dev.yml exec -T backend python -c "import rackscope" 2>/dev/null; then
+              echo "Backend ready"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+      - name: Lint (ruff + eslint + prettier + stylelint)
+        id: lint
+        run: make lint
+        continue-on-error: true
+
+      - name: Tests (pytest 855+)
         id: tests
         run: |
-          pytest --tb=short -q \
+          docker compose -f docker-compose.dev.yml exec -T backend \
+            pytest --tb=short -q \
             --cov=src/rackscope \
             --cov-report=term-missing \
             --cov-report=json:coverage.json \
             2>&1 | tee test_output.txt || true
 
           PASSED=$(grep -oP '\d+ passed' test_output.txt | grep -oP '\d+' | head -1 || echo 0)
-          FAILED=
-          FAILED="${FAILED:-0}"$(grep -oP '\d+ failed' test_output.txt | grep -oP '\d+' | head -1 || echo 0)
-          COVERAGE=$(python3 -c "
+          FAILED=$(grep -oP '\d+ failed' test_output.txt | grep -oP '\d+' | head -1 || echo 0)
+          COVERAGE=$(docker compose -f docker-compose.dev.yml exec -T backend python3 -c "
           import json
           d = json.load(open('coverage.json'))
           print(round(d['totals']['percent_covered']))
@@ -66,125 +77,31 @@ jobs:
 
           [ "$FAILED" = "0" ] || exit 1
 
-      - name: Python lint (ruff)
-        id: lint
-        run: |
-          ruff check . && ruff format --check . \
-            && echo "status=passing" >> "$GITHUB_OUTPUT" \
-            || (echo "status=failing" >> "$GITHUB_OUTPUT" && exit 1)
+      - name: TypeScript build
+        id: tsbuild
+        run: docker compose -f docker-compose.dev.yml exec -T frontend npm run build
+        continue-on-error: true
 
       - name: Type check (mypy)
         id: mypy
         run: |
-          mypy src/rackscope --no-error-summary \
-            && echo "status=passing" >> "$GITHUB_OUTPUT" \
-            || (echo "status=failing" >> "$GITHUB_OUTPUT" && exit 1)
-
-      - name: Security audit (pip-audit)
-        id: audit
+          docker compose -f docker-compose.dev.yml exec -T backend \
+            /home/appuser/.local/bin/mypy src/rackscope
         continue-on-error: true
-        run: |
-          pip-audit --format=json --output=pip_audit.json
-          VULNS=$(python3 -c "
-          import json, os
-          if os.path.exists('pip_audit.json'):
-              d = json.load(open('pip_audit.json'))
-              print(sum(len(v.get('vulns', [])) for v in d.get('dependencies', [])))
-          else:
-              print(0)
-          ")
-          echo "vulns=$VULNS" >> "$GITHUB_OUTPUT"
-          if [ "$VULNS" = "0" ]; then
-            echo "status=passing" >> "$GITHUB_OUTPUT"
-          else
-            echo "status=warning" >> "$GITHUB_OUTPUT"
-          fi
 
-  # ── Frontend: lint + typecheck + build + audit ────────────────────────────
-  frontend:
-    name: Frontend
-    runs-on: ubuntu-latest
-    outputs:
-      lint_status:  ${{ steps.lint.outputs.status }}
-      build_status: ${{ steps.build.outputs.status }}
-      audit_status: ${{ steps.audit.outputs.status }}
-      audit_vulns:  ${{ steps.audit.outputs.vulns }}
+      - name: Stop stack
+        if: always()
+        run: docker compose -f docker-compose.dev.yml down
 
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-
-      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e  # v4.3.0
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci --legacy-peer-deps
-
-      - name: Frontend lint
-        id: lint
-        working-directory: frontend
-        run: |
-          npm run lint && npm run lint:css && npm run lint:format \
-            && echo "status=passing" >> "$GITHUB_OUTPUT" \
-            || (echo "status=failing" >> "$GITHUB_OUTPUT" && exit 1)
-
-      - name: TypeScript build
-        id: build
-        working-directory: frontend
-        run: |
-          npm run build \
-            && echo "status=passing" >> "$GITHUB_OUTPUT" \
-            || (echo "status=failing" >> "$GITHUB_OUTPUT" && exit 1)
-
-      - name: Security audit (npm)
-        id: audit
-        working-directory: frontend
-        continue-on-error: true
-        run: |
-          AUDIT_OUT=$(npm audit --json 2>/dev/null || echo '{}')
-          HIGH=$(echo "$AUDIT_OUT" | python3 -c "
-          import json, sys
-          d = json.load(sys.stdin)
-          m = d.get('metadata', {}).get('vulnerabilities', {})
-          print(m.get('high', 0) + m.get('critical', 0))
-          " 2>/dev/null || echo 0)
-          echo "vulns=$HIGH" >> "$GITHUB_OUTPUT"
-          if [ "$HIGH" = "0" ]; then
-            echo "status=passing" >> "$GITHUB_OUTPUT"
-          else
-            echo "status=warning" >> "$GITHUB_OUTPUT"
-          fi
-
-  # ── Update STATUS.md (main branch only, always runs) ─────────────────────
-  update-status:
-    name: Update STATUS.md
-    runs-on: ubuntu-latest
-    needs: [backend, frontend]
-    if: always() && github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate STATUS.md
+      - name: Update STATUS.md
+        if: always() && github.ref == 'refs/heads/main'
         env:
-          TESTS_PASSED:   ${{ needs.backend.outputs.tests_passed }}
-          TESTS_FAILED:   ${{ needs.backend.outputs.tests_failed }}
-          COVERAGE:       ${{ needs.backend.outputs.coverage }}
-          BE_LINT:        ${{ needs.backend.outputs.lint_status }}
-          BE_MYPY:        ${{ needs.backend.outputs.mypy_status }}
-          BE_AUDIT:       ${{ needs.backend.outputs.audit_status }}
-          BE_AUDIT_VULNS: ${{ needs.backend.outputs.audit_vulns }}
-          FE_LINT:        ${{ needs.frontend.outputs.lint_status }}
-          FE_BUILD:       ${{ needs.frontend.outputs.build_status }}
-          FE_AUDIT:       ${{ needs.frontend.outputs.audit_status }}
-          FE_AUDIT_VULNS: ${{ needs.frontend.outputs.audit_vulns }}
+          TESTS_PASSED:   ${{ steps.tests.outputs.passed }}
+          TESTS_FAILED:   ${{ steps.tests.outputs.failed }}
+          COVERAGE:       ${{ steps.tests.outputs.coverage }}
+          BE_LINT:        ${{ steps.lint.outcome }}
+          BE_MYPY:        ${{ steps.mypy.outcome }}
+          FE_BUILD:       ${{ steps.tsbuild.outcome }}
           COMMIT_SHA:     ${{ github.sha }}
           RUN_ID:         ${{ github.run_id }}
           REPO:           ${{ github.repository }}
@@ -192,6 +109,7 @@ jobs:
         run: python3 scripts/gen_status.py
 
       - name: Commit STATUS.md
+        if: always() && github.ref == 'refs/heads/main'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

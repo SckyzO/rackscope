@@ -12,8 +12,10 @@ import os
 
 
 def icon(status: str) -> str:
+    # Handles both legacy "passing/failing" and GitHub Actions "success/failure" outcomes
+    norm = {"success": "passing", "failure": "failing", "skipped": "warning"}.get(status, status)
     return {"passing": "\u2705", "warning": "\u26a0\ufe0f", "failing": "\u274c"}.get(
-        status, "\u2b1c"
+        norm, "\u2b1c"
     )
 
 

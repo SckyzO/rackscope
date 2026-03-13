@@ -599,12 +599,14 @@ def test_trigger_incident_invalid_duration_type(mock_app_config_with_simulator):
 
 def test_get_simulator_status_running():
     """Test getting simulator status when simulator is running."""
-    from unittest.mock import AsyncMock, patch
+    from unittest.mock import AsyncMock, MagicMock, patch
 
-    class MockResponse:
-        status_code = 200
+    # Implementation uses asyncio.open_connection (TCP check), not httpx
+    mock_writer = MagicMock()
+    mock_writer.close = MagicMock()
+    mock_writer.wait_closed = AsyncMock()
 
-    with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=MockResponse())):
+    with patch("asyncio.open_connection", new=AsyncMock(return_value=(MagicMock(), mock_writer))):
         response = client.get("/api/simulator/status")
 
     assert response.status_code == 200

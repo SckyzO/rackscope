@@ -14,7 +14,13 @@ Output:
     - Console: colored pass/fail per assertion
     - config/examples/TEST_RESULTS.md: machine-readable results table
 """
-import subprocess, json, sys, os, time, yaml
+import json
+import os
+import subprocess
+import sys
+import time
+
+import yaml
 from datetime import datetime
 from pathlib import Path
 
@@ -23,14 +29,31 @@ COMPOSE_FILE = str(ROOT / 'docker-compose.dev.yml')
 RESULTS_FILE = ROOT / 'config/examples/TEST_RESULTS.md'
 
 # ── ANSI colors ───────────────────────────────────────────────────────────────
-GREEN = '\033[92m'; RED = '\033[91m'; YELLOW = '\033[93m'
-BLUE  = '\033[94m'; BOLD = '\033[1m'; RESET = '\033[0m'
+GREEN = '\033[92m'
+RED = '\033[91m'
+YELLOW = '\033[93m'
+BLUE = '\033[94m'
+BOLD = '\033[1m'
+RESET = '\033[0m'
 
-def log(msg):   print(f'{BLUE}{BOLD}[TEST]{RESET} {msg}')
-def ok(msg):    print(f'  {GREEN}✅  {msg}{RESET}')
-def fail(msg):  print(f'  {RED}❌  {msg}{RESET}')
-def warn(msg):  print(f'  {YELLOW}⚠️   {msg}{RESET}')
-def info(msg):  print(f'  {BLUE}ℹ️   {msg}{RESET}')
+def log(msg):
+    print(f'{BLUE}{BOLD}[TEST]{RESET} {msg}')
+
+
+def ok(msg):
+    print(f'  {GREEN}✅  {msg}{RESET}')
+
+
+def fail(msg):
+    print(f'  {RED}❌  {msg}{RESET}')
+
+
+def warn(msg):
+    print(f'  {YELLOW}⚠️   {msg}{RESET}')
+
+
+def info(msg):
+    print(f'  {BLUE}ℹ️   {msg}{RESET}')
 
 # ── Subprocess helpers ────────────────────────────────────────────────────────
 def compose(*args):
@@ -201,11 +224,12 @@ def validate_loop(ex, loop_num, incident_mode=None):
     rooms = len(rooms_list) if isinstance(rooms_list, list) else stats.get('total_rooms', 0)
     racks = stats.get('total_racks', 0)
 
-    p = assert_eq(f'rooms', rooms, exp['rooms'])
+    p = assert_eq('rooms', rooms, exp['rooms'])
     results['passed' if p else 'failed'] += 1
     p = assert_range('racks', racks, exp['min_racks'])
     results['passed' if p else 'failed'] += 1
-    results['rooms'] = rooms; results['racks'] = racks
+    results['rooms'] = rooms
+    results['racks'] = racks
 
     # 2. Simulator metrics
     nodes_up  = prom_count('up{job="node"}')
@@ -271,7 +295,10 @@ def validate_loop(ex, loop_num, incident_mode=None):
 
         # Expect at least 1 rack CRIT due to racks_crit=1
         p = rack_states.get('CRIT', 0) >= 1
-        ok(f'Rack CRIT from racks_crit=1: {rack_states.get("CRIT",0)}') if p else fail(f'No rack CRIT found')
+        if p:
+            ok(f'Rack CRIT from racks_crit=1: {rack_states.get("CRIT", 0)}')
+        else:
+            fail('No rack CRIT found')
         results['passed' if p else 'failed'] += 1
 
         inc_result = f'down={down} crit_alerts={crit_alerts} rack_crit={rack_states.get("CRIT",0)}'
@@ -397,7 +424,8 @@ def write_results(results, ts_start, lint_ok):
         '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|',
     ]
     for r in results:
-        p = r['passed']; f = r['failed']
+        p = r['passed']
+        f = r['failed']
         status = '✅' if f == 0 else f'❌ ({f} fail)'
         lines.append(
             f'| {r["example"]} | {r["loop"]} | {r.get("incident_mode","default")} '
