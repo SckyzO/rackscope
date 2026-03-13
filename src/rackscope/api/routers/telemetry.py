@@ -54,52 +54,55 @@ async def get_global_stats(
     if cached is not None:
         return cached
 
-    rack_healths: Dict[str, str] = {}
-    if topology and catalog and checks_library and planner:
-        targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
-            topology, catalog, checks_library
-        )
-        snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
-        rack_healths = snapshot.rack_states
-    else:
-        # Without planner/checks, we can't evaluate health properly
-        rack_healths = {}
+    try:
+        rack_healths: Dict[str, str] = {}
+        if topology and catalog and checks_library and planner:
+            targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
+                topology, catalog, checks_library
+            )
+            snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
+            rack_healths = snapshot.rack_states
+        else:
+            rack_healths = {}
 
-    total_racks = 0
-    crit_alerts = 0
-    warn_alerts = 0
+        total_racks = 0
+        crit_alerts = 0
+        warn_alerts = 0
 
-    if topology:
-        for site in topology.sites:
-            for room in site.rooms:
-                for aisle in room.aisles:
-                    total_racks += len(aisle.racks)
-                total_racks += len(room.standalone_racks)
+        if topology:
+            for site in topology.sites:
+                for room in site.rooms:
+                    for aisle in room.aisles:
+                        total_racks += len(aisle.racks)
+                    total_racks += len(room.standalone_racks)
 
-    for state in rack_healths.values():
-        if state == "CRIT":
-            crit_alerts += 1
-        elif state == "WARN":
-            warn_alerts += 1
+        for state in rack_healths.values():
+            if state == "CRIT":
+                crit_alerts += 1
+            elif state == "WARN":
+                warn_alerts += 1
 
-    global_status = "OK"
-    if crit_alerts > 0:
-        global_status = "CRIT"
-    elif warn_alerts > 0:
-        global_status = "WARN"
+        global_status = "OK"
+        if crit_alerts > 0:
+            global_status = "CRIT"
+        elif warn_alerts > 0:
+            global_status = "WARN"
 
-    result = {
-        "total_rooms": sum(len(s.rooms) for s in topology.sites)
-        if topology and topology.sites
-        else 0,
-        "total_racks": total_racks,
-        "active_alerts": crit_alerts + warn_alerts,
-        "crit_count": crit_alerts,
-        "warn_count": warn_alerts,
-        "status": global_status,
-    }
-    await svc_cache.set(_cache_key, result, ttl=_ttl)
-    return result
+        result = {
+            "total_rooms": sum(len(s.rooms) for s in topology.sites)
+            if topology and topology.sites
+            else 0,
+            "total_racks": total_racks,
+            "active_alerts": crit_alerts + warn_alerts,
+            "crit_count": crit_alerts,
+            "warn_count": warn_alerts,
+            "status": global_status,
+        }
+        await svc_cache.set(_cache_key, result, ttl=_ttl)
+        return result
+    except Exception:
+        await svc_cache.cancel_inflight(_cache_key)
+        raise
 
 
 @router.get("/api/stats/prometheus")
@@ -147,15 +150,16 @@ async def get_room_state(
 
     if not topology or not catalog or not checks_library or not planner:
         return {"room_id": room_id, "state": "UNKNOWN", "racks": {}}
-    targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
-        topology, catalog, checks_library
-    )
-    snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
-    rack_healths = snapshot.rack_states
 
-    room_status = "OK"
-    rack_ids = []
-    if topology:
+    try:
+        targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
+            topology, catalog, checks_library
+        )
+        snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
+        rack_healths = snapshot.rack_states
+
+        room_status = "OK"
+        rack_ids = []
         for site in topology.sites:
             for room in site.rooms:
                 if room.id == room_id:
@@ -163,46 +167,47 @@ async def get_room_state(
                         rack_ids.extend([r.id for r in aisle.racks])
                     rack_ids.extend([r.id for r in room.standalone_racks])
 
-    for rid in rack_ids:
-        h = rack_healths.get(rid, "OK")
-        if h == "CRIT":
-            room_status = "CRIT"
-            break
-        if h == "WARN" and room_status != "CRIT":
-            room_status = "WARN"
+        for rid in rack_ids:
+            h = rack_healths.get(rid, "OK")
+            if h == "CRIT":
+                room_status = "CRIT"
+                break
+            if h == "WARN" and room_status != "CRIT":
+                room_status = "WARN"
 
-    # Build rack → node instances mapping for the room
-    rack_to_nodes: Dict[str, list] = {}
-    for site in topology.sites:
-        for room in site.rooms:
-            if room.id == room_id:
-                all_racks = [r for aisle in room.aisles for r in aisle.racks]
-                all_racks.extend(room.standalone_racks)
-                for rack in all_racks:
-                    nodes: list = []
-                    for device in rack.devices:
-                        instances = expand_device_instances(device)
-                        nodes.extend(instances if instances else [device.id])
-                    rack_to_nodes[rack.id] = nodes
+        rack_to_nodes: Dict[str, list] = {}
+        for site in topology.sites:
+            for room in site.rooms:
+                if room.id == room_id:
+                    all_racks = [r for aisle in room.aisles for r in aisle.racks]
+                    all_racks.extend(room.standalone_racks)
+                    for rack in all_racks:
+                        nodes: list = []
+                        for device in rack.devices:
+                            instances = expand_device_instances(device)
+                            nodes.extend(instances if instances else [device.id])
+                        rack_to_nodes[rack.id] = nodes
 
-    # Build enriched rack states with per-rack node counts
-    racks_out = {}
-    node_states = snapshot.node_states
-    for rid in rack_ids:
-        nodes = rack_to_nodes.get(rid, [])
-        total = len(nodes)
-        crit = sum(1 for n in nodes if node_states.get(n) == "CRIT")
-        warn = sum(1 for n in nodes if node_states.get(n) == "WARN")
-        racks_out[rid] = {
-            "state": rack_healths.get(rid, "UNKNOWN"),
-            "node_total": total,
-            "node_crit": crit,
-            "node_warn": warn,
-        }
+        racks_out = {}
+        node_states = snapshot.node_states
+        for rid in rack_ids:
+            nodes = rack_to_nodes.get(rid, [])
+            total = len(nodes)
+            crit = sum(1 for n in nodes if node_states.get(n) == "CRIT")
+            warn = sum(1 for n in nodes if node_states.get(n) == "WARN")
+            racks_out[rid] = {
+                "state": rack_healths.get(rid, "UNKNOWN"),
+                "node_total": total,
+                "node_crit": crit,
+                "node_warn": warn,
+            }
 
-    result = {"room_id": room_id, "state": room_status, "racks": racks_out}
-    await svc_cache.set(_cache_key, result, ttl=_ttl)
-    return result
+        result = {"room_id": room_id, "state": room_status, "racks": racks_out}
+        await svc_cache.set(_cache_key, result, ttl=_ttl)
+        return result
+    except Exception:
+        await svc_cache.cancel_inflight(_cache_key)
+        raise
 
 
 @router.get("/api/rooms/states")
@@ -230,32 +235,36 @@ async def get_all_room_states(
     if not topology or not catalog or not checks_library or not planner:
         return {}
 
-    targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
-        topology, catalog, checks_library
-    )
-    snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
-    rack_healths = snapshot.rack_states
+    try:
+        targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
+            topology, catalog, checks_library
+        )
+        snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
+        rack_healths = snapshot.rack_states
 
-    result: Dict[str, str] = {}
-    for site in topology.sites:
-        for room in site.rooms:
-            rack_ids: list[str] = []
-            for aisle in room.aisles:
-                rack_ids.extend(r.id for r in aisle.racks)
-            rack_ids.extend(r.id for r in room.standalone_racks)
+        result: Dict[str, str] = {}
+        for site in topology.sites:
+            for room in site.rooms:
+                rack_ids: list[str] = []
+                for aisle in room.aisles:
+                    rack_ids.extend(r.id for r in aisle.racks)
+                rack_ids.extend(r.id for r in room.standalone_racks)
 
-            room_status = "OK"
-            for rid in rack_ids:
-                h = rack_healths.get(rid, "OK")
-                if h == "CRIT":
-                    room_status = "CRIT"
-                    break
-                if h == "WARN" and room_status != "CRIT":
-                    room_status = "WARN"
-            result[room.id] = room_status
+                room_status = "OK"
+                for rid in rack_ids:
+                    h = rack_healths.get(rid, "OK")
+                    if h == "CRIT":
+                        room_status = "CRIT"
+                        break
+                    if h == "WARN" and room_status != "CRIT":
+                        room_status = "WARN"
+                result[room.id] = room_status
 
-    await svc_cache.set(_cache_key, result, ttl=_ttl)
-    return result
+        await svc_cache.set(_cache_key, result, ttl=_ttl)
+        return result
+    except Exception:
+        await svc_cache.cancel_inflight(_cache_key)
+        raise
 
 
 @router.get("/api/racks/{rack_id}/state")
@@ -297,120 +306,107 @@ async def get_rack_state(
     if not topology or not catalog or not checks_library or not planner:
         return {"rack_id": rack_id, "state": "UNKNOWN", "metrics": {}, "nodes": {}}
 
-    # Find the rack in topology
-    rack = topology_service.find_rack_by_id(topology, rack_id, index=topo_index)
+    try:
+        rack = topology_service.find_rack_by_id(topology, rack_id, index=topo_index)
 
-    targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
-        topology, catalog, checks_library
-    )
-    snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
-
-    # Build check name lookup for human-readable labels in the response
-    check_names = {c.id: c.name for c in checks_library.checks}
-
-    # Collect metrics only if requested (to avoid performance impact)
-    nodes_metrics = {}
-    component_metrics = {}
-    if include_metrics and rack and catalog:
-        # Collect device metrics (nodes)
-        nodes_metrics = await metrics_service.collect_rack_devices_metrics(
-            rack=rack, catalog=catalog, prom_client=prom_client, library=METRICS_LIBRARY
+        targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
+            topology, catalog, checks_library
         )
-        # Collect component metrics (PDU, switches, etc.)
-        # Pass METRICS_LIBRARY so the service resolves library IDs (e.g. 'pdu_active_power')
-        # to actual PromQL expressions (e.g. 'raritan_pdu_activepower_watt{rack_id="..."}').
-        component_metrics = await metrics_service.collect_rack_component_metrics(
-            rack=rack, catalog=catalog, prom_client=prom_client, library=METRICS_LIBRARY
-        )
+        snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
 
-    # Calculate Node States and Aggregate Rack State
-    processed_nodes = {}
+        check_names = {c.id: c.name for c in checks_library.checks}
 
-    total_power = 0.0
-    total_temp = 0.0
-    temp_count = 0
+        nodes_metrics = {}
+        component_metrics = {}
+        if include_metrics and rack and catalog:
+            nodes_metrics = await metrics_service.collect_rack_devices_metrics(
+                rack=rack, catalog=catalog, prom_client=prom_client, library=METRICS_LIBRARY
+            )
+            component_metrics = await metrics_service.collect_rack_component_metrics(
+                rack=rack, catalog=catalog, prom_client=prom_client, library=METRICS_LIBRARY
+            )
 
-    node_states = []
+        processed_nodes = {}
+        total_power = 0.0
+        total_temp = 0.0
+        temp_count = 0
+        node_states = []
 
-    # Get all nodes from this rack (from snapshot or metrics)
-    all_node_ids = set(nodes_metrics.keys()) | set(snapshot.node_states.keys())
+        all_node_ids = set(nodes_metrics.keys()) | set(snapshot.node_states.keys())
 
-    # Filter to only nodes that belong to this rack
-    rack_node_ids = set()
-    if rack:
-        for device in rack.devices:
-            rack_node_ids.update(expand_device_instances(device))
+        rack_node_ids = set()
+        if rack:
+            for device in rack.devices:
+                rack_node_ids.update(expand_device_instances(device))
 
-    # Only process nodes that belong to this rack.
-    # Virtual nodes use the format "instance:labelvalue" — match on the base instance part.
-    if rack_node_ids:
-        relevant_nodes = set()
-        for node_id in all_node_ids:
-            base = node_id.split(":")[0] if ":" in node_id else node_id
-            if base in rack_node_ids:
-                relevant_nodes.add(node_id)
-    else:
-        relevant_nodes = all_node_ids
+        if rack_node_ids:
+            relevant_nodes = set()
+            for node_id in all_node_ids:
+                base = node_id.split(":")[0] if ":" in node_id else node_id
+                if base in rack_node_ids:
+                    relevant_nodes.add(node_id)
+        else:
+            relevant_nodes = all_node_ids
 
-    for node_id in relevant_nodes:
-        m = nodes_metrics.get(node_id, {})
+        for node_id in relevant_nodes:
+            m = nodes_metrics.get(node_id, {})
+            temp = (
+                m.get("temperature")
+                or m.get("node_temperature_celsius")
+                or m.get("ipmi_temperature_celsius")
+            )
+            power = m.get("power") or m.get("node_power_watts") or m.get("ipmi_power_watts")
 
-        # Support various metric naming conventions
-        temp = (
-            m.get("temperature")
-            or m.get("node_temperature_celsius")
-            or m.get("ipmi_temperature_celsius")
-        )
-        power = m.get("power") or m.get("node_power_watts") or m.get("ipmi_power_watts")
+            if power is not None:
+                total_power += power
+            if temp is not None and temp > 0:
+                total_temp += temp
+                temp_count += 1
 
-        if power is not None:
-            total_power += power
-        if temp is not None and temp > 0:
-            total_temp += temp
-            temp_count += 1
+            state = snapshot.node_states.get(node_id, "UNKNOWN")
+            checks = snapshot.node_checks.get(node_id, {})
+            alerts = snapshot.node_alerts.get(node_id, {})
 
-        state = snapshot.node_states.get(node_id, "UNKNOWN")
-        checks = snapshot.node_checks.get(node_id, {})
-        alerts = snapshot.node_alerts.get(node_id, {})
+            node_states.append(state)
+            processed_nodes[node_id] = {
+                "state": state,
+                "temperature": temp if temp is not None else 0,
+                "power": power if power is not None else 0,
+                "checks": [
+                    {"id": cid, "name": check_names.get(cid, cid), "severity": sev}
+                    for cid, sev in checks.items()
+                ],
+                "alerts": [
+                    {"id": cid, "name": check_names.get(cid, cid), "severity": sev}
+                    for cid, sev in alerts.items()
+                ],
+            }
 
-        node_states.append(state)
-        processed_nodes[node_id] = {
-            "state": state,
-            "temperature": temp if temp is not None else 0,
-            "power": power if power is not None else 0,
+        rack_state = snapshot.rack_states.get(rack_id, aggregate_states(node_states))
+        rack_checks_dict = snapshot.rack_checks.get(rack_id, {})
+        rack_alerts = snapshot.rack_alerts.get(rack_id, {})
+        avg_temp = total_temp / temp_count if temp_count > 0 else 0
+
+        rack_result = {
+            "rack_id": rack_id,
+            "state": rack_state,
             "checks": [
                 {"id": cid, "name": check_names.get(cid, cid), "severity": sev}
-                for cid, sev in checks.items()
+                for cid, sev in rack_checks_dict.items()
             ],
             "alerts": [
                 {"id": cid, "name": check_names.get(cid, cid), "severity": sev}
-                for cid, sev in alerts.items()
+                for cid, sev in rack_alerts.items()
             ],
+            "metrics": {"temperature": avg_temp, "power": total_power},
+            "infra_metrics": {"components": component_metrics},
+            "nodes": processed_nodes,
         }
-
-    rack_state = snapshot.rack_states.get(rack_id, aggregate_states(node_states))
-    rack_checks_dict = snapshot.rack_checks.get(rack_id, {})
-    rack_alerts = snapshot.rack_alerts.get(rack_id, {})
-
-    avg_temp = total_temp / temp_count if temp_count > 0 else 0
-
-    rack_result = {
-        "rack_id": rack_id,
-        "state": rack_state,
-        "checks": [
-            {"id": cid, "name": check_names.get(cid, cid), "severity": sev}
-            for cid, sev in rack_checks_dict.items()
-        ],
-        "alerts": [
-            {"id": cid, "name": check_names.get(cid, cid), "severity": sev}
-            for cid, sev in rack_alerts.items()
-        ],
-        "metrics": {"temperature": avg_temp, "power": total_power},
-        "infra_metrics": {"components": component_metrics},
-        "nodes": processed_nodes,
-    }
-    await svc_cache.set(_cache_key, rack_result, ttl=_ttl)
-    return rack_result
+        await svc_cache.set(_cache_key, rack_result, ttl=_ttl)
+        return rack_result
+    except Exception:
+        await svc_cache.cancel_inflight(_cache_key)
+        raise
 
 
 @router.get("/api/devices/{rack_id}/{device_id}/metrics")
@@ -494,32 +490,39 @@ async def get_active_alerts(
     if not topology or not catalog or not checks_library or not planner:
         return {"alerts": []}
 
-    targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
-        topology, catalog, checks_library
-    )
-    snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
+    try:
+        targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
+            topology, catalog, checks_library
+        )
+        snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
 
-    # Build node context — O(1) with index, O(n) fallback
-    node_context = build_node_context(topology, index=topo_index)
+        node_context = build_node_context(topology, index=topo_index)
 
-    # Build rack context — O(1) from index, O(n) fallback
-    if topo_index is not None:
-        rack_context: Dict[str, Dict[str, str]] = {
-            rack_id: {
-                "site_id": ctx.site.id,
-                "site_name": ctx.site.name,
-                "room_id": ctx.room.id,
-                "room_name": ctx.room.name,
-                "rack_name": ctx.rack.name,
+        if topo_index is not None:
+            rack_context: Dict[str, Dict[str, str]] = {
+                rack_id: {
+                    "site_id": ctx.site.id,
+                    "site_name": ctx.site.name,
+                    "room_id": ctx.room.id,
+                    "room_name": ctx.room.name,
+                    "rack_name": ctx.rack.name,
+                }
+                for rack_id, ctx in topo_index.racks.items()
             }
-            for rack_id, ctx in topo_index.racks.items()
-        }
-    else:
-        rack_context = {}
-        for site in topology.sites:
-            for room in site.rooms:
-                for aisle in room.aisles:
-                    for rack in aisle.racks:
+        else:
+            rack_context = {}
+            for site in topology.sites:
+                for room in site.rooms:
+                    for aisle in room.aisles:
+                        for rack in aisle.racks:
+                            rack_context[rack.id] = {
+                                "site_id": site.id,
+                                "site_name": site.name,
+                                "room_id": room.id,
+                                "room_name": room.name,
+                                "rack_name": rack.name,
+                            }
+                    for rack in room.standalone_racks:
                         rack_context[rack.id] = {
                             "site_id": site.id,
                             "site_name": site.name,
@@ -527,47 +530,40 @@ async def get_active_alerts(
                             "room_name": room.name,
                             "rack_name": rack.name,
                         }
-                for rack in room.standalone_racks:
-                    rack_context[rack.id] = {
-                        "site_id": site.id,
-                        "site_name": site.name,
-                        "room_id": room.id,
-                        "room_name": room.name,
-                        "rack_name": rack.name,
-                    }
 
-    alerts = []
+        alerts = []
 
-    # Node-level alerts
-    for node_id, node_checks in snapshot.node_alerts.items():
-        context = node_context.get(node_id)
-        if not context:
-            continue
-        alerts.append(
-            {
-                "type": "node",
-                "node_id": node_id,
-                "state": snapshot.node_states.get(node_id, "UNKNOWN"),
-                "checks": [{"id": cid, "severity": sev} for cid, sev in node_checks.items()],
-                **context,
-            }
-        )
+        for node_id, node_checks in snapshot.node_alerts.items():
+            context = node_context.get(node_id)
+            if not context:
+                continue
+            alerts.append(
+                {
+                    "type": "node",
+                    "node_id": node_id,
+                    "state": snapshot.node_states.get(node_id, "UNKNOWN"),
+                    "checks": [{"id": cid, "severity": sev} for cid, sev in node_checks.items()],
+                    **context,
+                }
+            )
 
-    # Rack-level alerts
-    for rack_id, rack_checks in snapshot.rack_alerts.items():
-        context = rack_context.get(rack_id)
-        if not context:
-            continue
-        alerts.append(
-            {
-                "type": "rack",
-                "rack_id": rack_id,
-                "state": snapshot.rack_states.get(rack_id, "UNKNOWN"),
-                "checks": [{"id": cid, "severity": sev} for cid, sev in rack_checks.items()],
-                **context,
-            }
-        )
+        for rack_id, rack_checks in snapshot.rack_alerts.items():
+            context = rack_context.get(rack_id)
+            if not context:
+                continue
+            alerts.append(
+                {
+                    "type": "rack",
+                    "rack_id": rack_id,
+                    "state": snapshot.rack_states.get(rack_id, "UNKNOWN"),
+                    "checks": [{"id": cid, "severity": sev} for cid, sev in rack_checks.items()],
+                    **context,
+                }
+            )
 
-    result = {"alerts": alerts}
-    await svc_cache.set(_cache_key, result, ttl=_ttl)
-    return result
+        result = {"alerts": alerts}
+        await svc_cache.set(_cache_key, result, ttl=_ttl)
+        return result
+    except Exception:
+        await svc_cache.cancel_inflight(_cache_key)
+        raise

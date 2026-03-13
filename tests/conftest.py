@@ -32,6 +32,7 @@ def reset_global_state():
 
     # Clear caches and overrides before each test
     app_module.SERVICE_CACHE._store.clear()
+    app_module.SERVICE_CACHE._inflight.clear()
     app.dependency_overrides.clear()
 
     yield
@@ -45,4 +46,5 @@ def reset_global_state():
     app_module.PLANNER = saved["PLANNER"]
     app_module.TARGETS_BY_CHECK = saved["TARGETS_BY_CHECK"]
     app_module.SERVICE_CACHE._store.clear()
+    app_module.SERVICE_CACHE._inflight.clear()
     app.dependency_overrides.clear()
