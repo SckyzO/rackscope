@@ -52,6 +52,7 @@ exclude = ["tests*"]
 pythonpath = [".", "src"]
 
 [tool.ruff]
+exclude = ["scripts/"]
 line-length = 100
 
 [tool.ruff.format]
