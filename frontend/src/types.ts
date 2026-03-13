@@ -518,6 +518,7 @@ export interface AppConfig {
       require_digit?: boolean;
       require_symbol?: boolean;
     };
+    trusted_networks?: string[];
   };
 }
 

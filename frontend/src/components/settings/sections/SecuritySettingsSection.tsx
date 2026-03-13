@@ -1,4 +1,5 @@
-import { AlertTriangle, Type, Lock, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, Type, Lock, ShieldAlert, Network, Plus, X } from 'lucide-react';
 import { FormSection } from '../common/FormSection';
 import { TooltipHelp } from '@app/components/ui/Tooltip';
 import { StepperInput } from '@app/components/forms/StepperInput';
@@ -50,13 +51,38 @@ const Toggle = ({
   </div>
 );
 
+const _CIDR_RE = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$|^([0-9a-fA-F:]+)(\/\d{1,3})?$/;
+
+const isValidCidr = (value: string): boolean => _CIDR_RE.test(value.trim());
+
 export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
   const { authConfigured } = useAuth(); // live from API — not stale draft
   const auth = draft.auth;
   const hasPassword = authConfigured;
+  const [networkInput, setNetworkInput] = useState('');
+  const [networkInputError, setNetworkInputError] = useState('');
 
   const setAuth = (updates: Partial<typeof auth>) =>
     setDraft({ ...draft, auth: { ...auth, ...updates } });
+
+  const addNetwork = () => {
+    const value = networkInput.trim();
+    if (!value) return;
+    if (!isValidCidr(value)) {
+      setNetworkInputError('Invalid IP or CIDR (e.g. 192.168.1.0/24 or 10.0.0.1)');
+      return;
+    }
+    if (auth.trusted_networks.includes(value)) {
+      setNetworkInputError('Already in the list');
+      return;
+    }
+    setAuth({ trusted_networks: [...auth.trusted_networks, value] });
+    setNetworkInput('');
+    setNetworkInputError('');
+  };
+
+  const removeNetwork = (entry: string) =>
+    setAuth({ trusted_networks: auth.trusted_networks.filter((n) => n !== entry) });
 
   return (
     <div className="space-y-4">
@@ -175,6 +201,94 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
             value={auth.policy_require_symbol}
             onChange={(v) => setAuth({ policy_require_symbol: v })}
           />
+        </div>
+      </FormSection>
+
+      {/* ── Admin Endpoint Protection ── */}
+      <FormSection
+        title="Admin Endpoint Protection"
+        description="Restrict access to destructive endpoints (restart, process stats, config update) by IP or CIDR when authentication is disabled."
+        icon={Network}
+        iconColor="text-blue-500"
+        iconBg="bg-blue-50 dark:bg-blue-500/10"
+      >
+        <div className="space-y-4">
+          {!auth.enabled && (
+            <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-700/40 dark:bg-amber-500/10">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                Authentication is disabled. Without trusted networks, admin endpoints are
+                accessible from any IP on your network. Add trusted IPs or CIDRs below to
+                restrict access.
+              </p>
+            </div>
+          )}
+
+          {/* Current list */}
+          {auth.trusted_networks.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {auth.trusted_networks.map((net) => (
+                <span
+                  key={net}
+                  className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 font-mono text-xs text-blue-700 dark:border-blue-700/40 dark:bg-blue-500/10 dark:text-blue-300"
+                >
+                  {net}
+                  <button
+                    type="button"
+                    onClick={() => removeNetwork(net)}
+                    className="rounded hover:text-red-500 transition-colors"
+                    aria-label={`Remove ${net}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {auth.trusted_networks.length === 0 && (
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              No trusted networks configured — admin endpoints are open to all IPs (default).
+            </p>
+          )}
+
+          {/* Add input */}
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <input
+                type="text"
+                value={networkInput}
+                onChange={(e) => {
+                  setNetworkInput(e.target.value);
+                  setNetworkInputError('');
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && addNetwork()}
+                placeholder="e.g. 192.168.1.0/24 or 10.0.0.1"
+                className={`w-full rounded-xl border px-3 py-2 font-mono text-sm outline-none transition-colors dark:bg-gray-800 dark:text-gray-100 ${
+                  networkInputError
+                    ? 'border-red-400 focus:border-red-500'
+                    : 'border-gray-200 focus:border-blue-400 dark:border-gray-700'
+                }`}
+              />
+              {networkInputError && (
+                <p className="mt-1 text-xs text-red-500">{networkInputError}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={addNetwork}
+              className="flex items-center gap-1.5 rounded-xl border border-blue-300 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-700/40 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20"
+            >
+              <Plus className="h-4 w-4" />
+              Add
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Accepts exact IPs (<code className="font-mono">127.0.0.1</code>) or CIDR notation (
+            <code className="font-mono">172.16.0.0/12</code>). Press Enter or click Add.
+            Leave empty to allow all.
+          </p>
         </div>
       </FormSection>
     </div>

@@ -11,7 +11,7 @@ from typing import Annotated, Dict, Any
 import yaml
 from fastapi import APIRouter, Depends
 
-from rackscope.api.dependencies import get_app_config_optional
+from rackscope.api.dependencies import get_app_config_optional, require_admin
 from rackscope.model.config import AppConfig
 
 router = APIRouter(prefix="/api", tags=["config"])
@@ -80,7 +80,7 @@ def get_app_config(
     }
 
 
-@router.put("/config")
+@router.put("/config", dependencies=[Depends(require_admin)])
 async def update_app_config(
     payload: AppConfig,
     current: Annotated[AppConfig | None, Depends(get_app_config_optional)] = None,

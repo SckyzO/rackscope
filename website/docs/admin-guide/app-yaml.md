@@ -282,6 +282,7 @@ auth:
     max_length: 128
     require_digit: false
     require_symbol: false
+  trusted_networks: []
 ```
 
 | Key | Type | Default | Description |
@@ -291,6 +292,24 @@ auth:
 | `password_hash` | string | `""` | bcrypt hash of the password. An empty string means authentication is not yet configured even if `enabled: true` |
 | `secret_key` | string | `""` | JWT signing secret. Auto-generated at startup when empty. Set explicitly for multi-instance deployments to preserve sessions across restarts |
 | `session_duration` | `8h` \| `24h` \| `unlimited` | `24h` | How long a login session remains valid |
+| `trusted_networks` | list[string] | `[]` | CIDRs or IPs allowed to call admin endpoints (`POST /api/system/restart`, `GET /api/system/process-stats`, `PUT /api/config`) when `auth.enabled=false`. Empty list = no restriction (default, backward compatible) |
+
+### `auth.trusted_networks`
+
+When `auth.enabled = false`, admin endpoints are accessible to all IPs by default.
+Configure `trusted_networks` to restrict them to specific hosts or subnets:
+
+```yaml
+auth:
+  enabled: false
+  trusted_networks:
+    - "127.0.0.1"          # localhost only
+    - "172.16.0.0/12"      # Docker bridge networks
+    - "192.168.0.0/16"     # private LAN
+```
+
+Accepts IPv4 exact addresses (`10.0.0.1`) and CIDR blocks (`10.0.0.0/24`).
+Invalid entries are silently skipped. Leave empty to allow all — this preserves the default open behaviour for internal-only deployments.
 
 ### Generating a password hash
 

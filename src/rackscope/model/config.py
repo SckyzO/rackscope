@@ -257,6 +257,11 @@ class AuthConfig(BaseModel):
     secret_key: str = ""  # JWT signing key; auto-generated at startup if empty
     session_duration: Literal["8h", "24h", "unlimited"] = "24h"
     policy: PasswordPolicyConfig = Field(default_factory=PasswordPolicyConfig)
+    trusted_networks: List[str] = Field(
+        default_factory=list,
+        description="CIDRs or exact IPs allowed to reach admin endpoints when "
+                    "auth.enabled=false. Empty list = no restriction (default, backward compatible).",
+    )
 
 
 class AppConfig(BaseModel):
