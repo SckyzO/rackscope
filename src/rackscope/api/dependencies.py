@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 
 from fastapi import HTTPException
 
-from rackscope.model.domain import Topology
+from rackscope.model.domain import Topology, TopologyIndex
 from rackscope.model.catalog import Catalog
 from rackscope.model.checks import ChecksLibrary
 from rackscope.model.config import AppConfig
@@ -105,3 +105,20 @@ async def get_targets_by_check_optional() -> Optional[Dict[str, Dict[str, List[s
     from rackscope.api import app as app_module
 
     return app_module.TARGETS_BY_CHECK
+
+
+async def get_topology_index() -> TopologyIndex:
+    """Get topology index (dependency injection). Raises 503 if not loaded."""
+    from rackscope.api import app as app_module
+
+    idx = app_module.TOPOLOGY_INDEX
+    if not idx:
+        raise HTTPException(status_code=503, detail="Topology index not loaded")
+    return idx
+
+
+async def get_topology_index_optional() -> Optional[TopologyIndex]:
+    """Get topology index, returns None if not loaded (no exception)."""
+    from rackscope.api import app as app_module
+
+    return app_module.TOPOLOGY_INDEX

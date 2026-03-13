@@ -10,10 +10,14 @@ Instance field accepts three formats:
 
 The `nodes` field is a deprecated alias for `instance` — kept for backward
 compatibility with older YAML configs.
+
+TopologyIndex provides O(1) lookups for any entity after a single O(n) build.
+Use build_topology_index(topology) after loading topology to get fast access.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
 
 from pydantic import BaseModel, Field, field_validator
@@ -155,3 +159,135 @@ class Topology(BaseModel):
         if len(ids) != len(set(ids)):
             raise ValueError("Duplicate site IDs found in topology")
         return v
+
+
+# ── Topology Index ─────────────────────────────────────────────────────────────
+
+
+@dataclass
+class RackContext:
+    """Full location context for a rack — avoids repeated topology traversal."""
+
+    rack: "Rack"
+    site: "Site"
+    room: "Room"
+    aisle_id: Optional[str]    # None for standalone racks
+    is_standalone: bool
+
+
+@dataclass
+class InstanceContext:
+    """Full location context for a Prometheus instance name."""
+
+    device: "Device"
+    rack: "Rack"
+    room: "Room"
+    site: "Site"
+
+
+@dataclass
+class TopologyIndex:
+    """O(1) lookup index built from a Topology.
+
+    Build once after loading topology with build_topology_index().
+    Rebuild on every topology reload (apply_config).
+
+    All dicts are keyed by the entity's .id field, except instances
+    which are keyed by the Prometheus instance name (string).
+    """
+
+    sites: Dict[str, "Site"] = field(default_factory=dict)
+    rooms: Dict[str, "Room"] = field(default_factory=dict)
+    aisles: Dict[str, "Aisle"] = field(default_factory=dict)
+    racks: Dict[str, RackContext] = field(default_factory=dict)
+    devices: Dict[str, tuple] = field(default_factory=dict)     # device_id → (Device, rack_id)
+    instances: Dict[str, InstanceContext] = field(default_factory=dict)
+
+
+def _expand_instances(device: "Device") -> List[str]:
+    """Expand device.instance into a flat list of Prometheus instance names.
+
+    Supports:
+    - Pattern string: "compute[001-004]" → ["compute001", ..., "compute004"]
+    - List: ["node01", "node02"] → same
+    - Slot map: {1: "node01", 2: "node02"} → ["node01", "node02"]
+    - Single string: "node01" → ["node01"]
+    """
+    import re
+
+    inst = device.instance
+    if not inst:
+        return []
+
+    if isinstance(inst, dict):
+        return list(inst.values())
+
+    if isinstance(inst, list):
+        return list(inst)
+
+    # String — check for range pattern like "compute[001-004]"
+    assert isinstance(inst, str)
+    match = re.match(r"^(.*?)\[(\d+)-(\d+)\](.*)$", inst)
+    if match:
+        prefix, start_s, end_s, suffix = match.groups()
+        width = len(start_s)
+        return [
+            f"{prefix}{str(i).zfill(width)}{suffix}"
+            for i in range(int(start_s), int(end_s) + 1)
+        ]
+
+    return [inst]
+
+
+def build_topology_index(topology: Topology) -> TopologyIndex:
+    """Build a TopologyIndex from a Topology in a single O(n) pass.
+
+    This is the only O(n) operation — after this, all lookups are O(1).
+    Call this once after loading or reloading topology.
+    """
+    idx = TopologyIndex()
+
+    for site in topology.sites:
+        idx.sites[site.id] = site
+
+        for room in site.rooms:
+            idx.rooms[room.id] = room
+
+            for aisle in room.aisles:
+                idx.aisles[aisle.id] = aisle
+
+                for rack in aisle.racks:
+                    ctx = RackContext(
+                        rack=rack,
+                        site=site,
+                        room=room,
+                        aisle_id=aisle.id,
+                        is_standalone=False,
+                    )
+                    idx.racks[rack.id] = ctx
+
+                    for device in rack.devices:
+                        idx.devices[device.id] = (device, rack.id)
+                        for inst_name in _expand_instances(device):
+                            idx.instances[inst_name] = InstanceContext(
+                                device=device, rack=rack, room=room, site=site
+                            )
+
+            for rack in room.standalone_racks:
+                ctx = RackContext(
+                    rack=rack,
+                    site=site,
+                    room=room,
+                    aisle_id=None,
+                    is_standalone=True,
+                )
+                idx.racks[rack.id] = ctx
+
+                for device in rack.devices:
+                    idx.devices[device.id] = (device, rack.id)
+                    for inst_name in _expand_instances(device):
+                        idx.instances[inst_name] = InstanceContext(
+                            device=device, rack=rack, room=room, site=site
+                        )
+
+    return idx

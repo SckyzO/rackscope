@@ -7,21 +7,31 @@ Business logic for topology queries and mutations.
 from pathlib import Path
 from typing import Optional
 
-from rackscope.model.domain import Topology, Room, Rack
+from rackscope.model.domain import Topology, Room, Rack, TopologyIndex, RackContext
 from rackscope.model.catalog import Catalog
 from rackscope.model.config import AppConfig
 
 
-def find_rack_by_id(topology: Topology, rack_id: str) -> Optional[Rack]:
-    """Find rack by ID in topology.
+def find_rack_by_id(
+    topology: Topology,
+    rack_id: str,
+    index: Optional[TopologyIndex] = None,
+) -> Optional[Rack]:
+    """Find rack by ID — O(1) with index, O(n) fallback without.
 
     Args:
-        topology: The topology to search
+        topology: The topology to search (used as fallback when index absent)
         rack_id: The rack ID to find
+        index: Optional TopologyIndex for O(1) lookup
 
     Returns:
         The rack if found, None otherwise
     """
+    if index is not None:
+        ctx = index.racks.get(rack_id)
+        return ctx.rack if ctx else None
+
+    # O(n) fallback — used during startup before index is built
     for site in topology.sites:
         for room in site.rooms:
             for aisle in room.aisles:
@@ -34,16 +44,24 @@ def find_rack_by_id(topology: Topology, rack_id: str) -> Optional[Rack]:
     return None
 
 
-def find_room_by_id(topology: Topology, room_id: str) -> Optional[Room]:
-    """Find room by ID in topology.
+def find_room_by_id(
+    topology: Topology,
+    room_id: str,
+    index: Optional[TopologyIndex] = None,
+) -> Optional[Room]:
+    """Find room by ID — O(1) with index, O(n) fallback without.
 
     Args:
-        topology: The topology to search
+        topology: The topology to search (fallback)
         room_id: The room ID to find
+        index: Optional TopologyIndex for O(1) lookup
 
     Returns:
         The room if found, None otherwise
     """
+    if index is not None:
+        return index.rooms.get(room_id)
+
     for site in topology.sites:
         for room in site.rooms:
             if room.id == room_id:
@@ -52,17 +70,26 @@ def find_room_by_id(topology: Topology, room_id: str) -> Optional[Room]:
 
 
 def find_rack_location(
-    rack_id: str, topology: Topology
+    rack_id: str,
+    topology: Topology,
+    index: Optional[TopologyIndex] = None,
 ) -> Optional[tuple[str, str, Optional[str], bool]]:
-    """Find rack location in topology.
+    """Find rack location — O(1) with index, O(n) fallback without.
 
     Args:
         rack_id: The rack ID to find
-        topology: The topology to search
+        topology: The topology to search (fallback)
+        index: Optional TopologyIndex for O(1) lookup
 
     Returns:
         Tuple of (site_id, room_id, aisle_id, is_standalone) if found, None otherwise
     """
+    if index is not None:
+        ctx: Optional[RackContext] = index.racks.get(rack_id)
+        if ctx is None:
+            return None
+        return ctx.site.id, ctx.room.id, ctx.aisle_id, ctx.is_standalone
+
     for site in topology.sites:
         for room in site.rooms:
             for aisle in room.aisles:
