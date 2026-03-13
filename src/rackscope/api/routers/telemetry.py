@@ -15,6 +15,7 @@ from rackscope.model.config import AppConfig
 from rackscope.telemetry.planner import TelemetryPlanner
 from rackscope.services import topology_service
 from rackscope.services.instance_service import expand_device_instances
+from rackscope.services.slurm_service import build_node_context
 from rackscope.api.dependencies import (
     get_topology_optional,
     get_catalog_optional,
@@ -462,3 +463,111 @@ async def get_device_metrics(
     )
 
     return {"device_id": device_id, "rack_id": rack_id, "metrics": device_metrics}
+
+
+@router.get("/api/alerts/active")
+async def get_active_alerts(
+    topology: Annotated[Optional[Topology], Depends(get_topology_optional)],
+    catalog: Annotated[Optional[Catalog], Depends(get_catalog_optional)],
+    checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
+    planner: Annotated[Optional[TelemetryPlanner], Depends(get_planner_optional)],
+    targets_by_check_cached: Annotated[Optional[Dict], Depends(get_targets_by_check_optional)],
+    app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+    topo_index: Annotated[Optional[TopologyIndex], Depends(get_topology_index_optional)],
+    svc_cache: Annotated[ServiceCache, Depends(get_service_cache)],
+):
+    """Return all active WARN/CRIT alerts with full topology context.
+
+    Combines node-level alerts (from PlannerSnapshot.node_alerts) and
+    rack-level alerts (from PlannerSnapshot.rack_alerts), enriched with
+    site/room/rack/device context for display in the alert feed.
+
+    Uses TopologyIndex for O(1) context lookups and ServiceCache for
+    response-level caching.
+    """
+    _cache_key = "alerts:active"
+    _ttl = float(app_config.cache.service_ttl_seconds) if app_config else _DEFAULT_SERVICE_TTL
+    cached = await svc_cache.get(_cache_key)
+    if cached is not None:
+        return cached
+
+    if not topology or not catalog or not checks_library or not planner:
+        return {"alerts": []}
+
+    targets_by_check = targets_by_check_cached or telemetry_service.collect_check_targets(
+        topology, catalog, checks_library
+    )
+    snapshot = await planner.get_snapshot(topology, checks_library, targets_by_check)
+
+    # Build node context — O(1) with index, O(n) fallback
+    node_context = build_node_context(topology, index=topo_index)
+
+    # Build rack context — O(1) from index, O(n) fallback
+    if topo_index is not None:
+        rack_context: Dict[str, Dict[str, str]] = {
+            rack_id: {
+                "site_id": ctx.site.id,
+                "site_name": ctx.site.name,
+                "room_id": ctx.room.id,
+                "room_name": ctx.room.name,
+                "rack_name": ctx.rack.name,
+            }
+            for rack_id, ctx in topo_index.racks.items()
+        }
+    else:
+        rack_context = {}
+        for site in topology.sites:
+            for room in site.rooms:
+                for aisle in room.aisles:
+                    for rack in aisle.racks:
+                        rack_context[rack.id] = {
+                            "site_id": site.id,
+                            "site_name": site.name,
+                            "room_id": room.id,
+                            "room_name": room.name,
+                            "rack_name": rack.name,
+                        }
+                for rack in room.standalone_racks:
+                    rack_context[rack.id] = {
+                        "site_id": site.id,
+                        "site_name": site.name,
+                        "room_id": room.id,
+                        "room_name": room.name,
+                        "rack_name": rack.name,
+                    }
+
+    alerts = []
+
+    # Node-level alerts
+    for node_id, node_checks in snapshot.node_alerts.items():
+        context = node_context.get(node_id)
+        if not context:
+            continue
+        alerts.append(
+            {
+                "type": "node",
+                "node_id": node_id,
+                "state": snapshot.node_states.get(node_id, "UNKNOWN"),
+                "checks": [{"id": cid, "severity": sev} for cid, sev in node_checks.items()],
+                **context,
+            }
+        )
+
+    # Rack-level alerts
+    for rack_id, rack_checks in snapshot.rack_alerts.items():
+        context = rack_context.get(rack_id)
+        if not context:
+            continue
+        alerts.append(
+            {
+                "type": "rack",
+                "rack_id": rack_id,
+                "state": snapshot.rack_states.get(rack_id, "UNKNOWN"),
+                "checks": [{"id": cid, "severity": sev} for cid, sev in rack_checks.items()],
+                **context,
+            }
+        )
+
+    result = {"alerts": alerts}
+    await svc_cache.set(_cache_key, result, ttl=_ttl)
+    return result
