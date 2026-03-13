@@ -197,6 +197,39 @@ Returns `{"alerts": []}` when topology or checks are not loaded.
 
 ## Rooms
 
+### <span className="method-get">GET</span> `/api/rooms/states`
+Returns the health state for **all rooms** in a single request. Used by the dashboard page and the world map to avoid issuing N parallel calls to `/api/rooms/{room_id}/state`.
+
+```bash
+curl http://localhost:8000/api/rooms/states
+```
+
+**Response**
+
+```json
+{
+  "dc1-r001": "OK",
+  "dc1-r002": "WARN",
+  "dc2-r001": "CRIT"
+}
+```
+
+The response is a flat map of `room_id → state`. Each state is one of `OK`, `WARN`, `CRIT`, or `UNKNOWN`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `{room_id}` | string | Health state for that room: `OK`, `WARN`, `CRIT`, or `UNKNOWN` |
+
+**Performance notes**
+
+- One `TelemetryPlanner` snapshot is computed (or reused from cache) for the entire call — the cost is the same as a single `/api/rooms/{room_id}/state` request.
+- The response is cached by `ServiceCache` for `cache.service_ttl_seconds` (configured in `app.yaml`).
+- Use this endpoint on pages that display all rooms simultaneously (dashboard, world map). Use `/api/rooms/{room_id}/state` only when you need the per-rack breakdown for a specific room.
+
+Returns `{}` when topology or the planner is not loaded.
+
+---
+
 ### <span className="method-get">GET</span> `/api/rooms`
 Returns all rooms across all sites with basic metadata and aisle/rack structure. This is the primary endpoint for the room list view.
 

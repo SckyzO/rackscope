@@ -8,7 +8,7 @@ sidebar_position: 3
 
 All Rackscope configuration lives in `config/` as YAML files. The main entry point is `config/app.yaml`.
 
-:::tip Reference file
+:::info Reference file
 `config/app.yaml.reference` contains every available key with its default value and a description. Copy it to `config/app.yaml` as a starting point for your own deployment.
 :::
 
@@ -90,6 +90,15 @@ plugins:
   simulator:
     enabled: false
 ```
+
+Alternatively, use a **profile** to activate a bundled example topology:
+
+```bash
+make use CONFIG=hpc-cluster   # switch to hpc-cluster profile
+make restart                   # apply config changes
+```
+
+See [Examples](/getting-started/examples) for all available profiles.
 
 ---
 

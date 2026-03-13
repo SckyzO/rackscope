@@ -22,16 +22,9 @@ telemetry:
 ```yaml
 telemetry:
   prometheus_url: https://prometheus.example.com
-  auth:
-    type: bearer
-    token: your-prometheus-token
-  # OR basic auth:
-  auth:
-    type: basic
-    username: admin
-    password: secret
-  tls:
-    verify: true   # set false to skip cert verification (not recommended)
+  basic_auth_user: admin          # optional
+  basic_auth_password: secret     # optional
+  tls_verify: false   # only if using self-signed certificates
 ```
 
 ## Health Checks (PromQL)
@@ -105,7 +98,7 @@ tags: [compute, hardware]
 Rackscope uses a **TelemetryPlanner** to avoid per-device query explosion:
 
 - Groups all instances into batch queries (e.g., `up{instance=~"node001|node002|..."}`)
-- Respects `planner.max_ids_per_query` limit (default: 100)
+- Respects `planner.max_ids_per_query` limit (default: 200)
 - Caches results for `planner.cache_ttl_seconds` (default: 30s)
 
 **Never write per-node queries** — use the planner's batch mechanism via check definitions.

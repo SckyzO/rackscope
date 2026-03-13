@@ -33,7 +33,7 @@ Each filterable column header has a filter icon (⊞). Clicking it opens a dropd
 
 For columns with many values (Rack, Location, Checks), a search field appears inside the dropdown.
 
-The **Checks** filter is multi-select: a row matches if any of its failing checks is in the selected set. Slurm rows (which have no checks) are excluded when a check filter is active.
+The **Checks** filter is multi-select: a row matches if it contains at least one of the selected check IDs. Since Slurm rows have no associated checks, they will not appear when a checks filter is active.
 
 ### Active filter chips
 

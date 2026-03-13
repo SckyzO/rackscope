@@ -30,6 +30,9 @@ frontend/src/
 │       ├── ui/                 # UI library showcase pages
 │       ├── charts/
 │       └── tables/
+├── context/                    # Singleton contexts (no 's')
+│   ├── ThemeContext.tsx
+│   └── PluginsMenuContext.tsx
 ├── contexts/
 │   └── AuthContext.tsx         # Authentication context
 └── services/

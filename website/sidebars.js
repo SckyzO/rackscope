@@ -93,7 +93,6 @@ const sidebars = {
         'admin-guide/topology-yaml',
         'admin-guide/templates',
         'admin-guide/prometheus',
-        'admin-guide/importers',
       ],
     },
 
@@ -189,9 +188,19 @@ const sidebars = {
 
   plugins: [
     'plugins/overview',
-    'plugins/simulator',
-    'plugins/slurm',
-    'plugins/writing-plugins',
+
+    // ── Plugin system ─────────────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: 'Plugin system',
+      className: 'sidebar-cat-puzzle',
+      collapsed: false,
+      items: [
+        'plugins/simulator',
+        'plugins/slurm',
+        'plugins/writing-plugins',
+      ],
+    },
   ],
 };
 

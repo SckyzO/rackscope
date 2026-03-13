@@ -111,7 +111,7 @@ States propagate upward through the hierarchy: **Node → Device → Rack → Ro
 
 | Group | Base path | Description |
 |-------|-----------|-------------|
-| [Telemetry](./telemetry) | `/api/` | Health states, alerts, room/rack states, stats |
+| [Telemetry](./telemetry) | `/api/` | Health states, alerts, room/rack states (including bulk), stats |
 | [Topology](./topology) | `/api/topology/` | Sites, rooms, aisles, racks, devices (CRUD) |
 | [Catalog](./topology#catalog) | `/api/catalog/` | Device and rack hardware templates |
 | [Checks](./topology#checks) | `/api/checks/` | Health check library |
@@ -179,6 +179,9 @@ curl http://localhost:8000/healthz
 
 # Global infrastructure summary
 curl http://localhost:8000/api/stats/global
+
+# All room health states in one request (used by dashboard)
+curl http://localhost:8000/api/rooms/states
 
 # All rooms with rack counts
 curl http://localhost:8000/api/rooms

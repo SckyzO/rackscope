@@ -12,6 +12,7 @@ sidebar_position: 3
 src/rackscope/
 ├── api/
 │   ├── app.py              # FastAPI app, global state, lifespan
+│   ├── cache.py            # ServiceCache (response-level TTL cache)
 │   ├── dependencies.py     # FastAPI dependency injection
 │   ├── middleware.py       # Request logging
 │   ├── exceptions.py       # Global exception handlers
@@ -36,8 +37,8 @@ src/rackscope/
 ├── telemetry/
 │   ├── prometheus.py       # Async Prometheus client with cache
 │   └── planner.py          # TelemetryPlanner (batched PromQL)
-├── health/
-│   └── ...                 # Health state calculation engine
+├── health/                 # Health state calculation engine
+├── logging_config.py       # Structured JSON logging setup
 ├── services/
 │   ├── topology_service.py
 │   ├── telemetry_service.py

@@ -6,6 +6,21 @@ sidebar_position: 1
 
 # Deployment
 
+## Development mode vs production mode
+
+Rackscope ships two Docker Compose configurations serving different purposes. **Development mode** (`docker-compose.dev.yml`, started with `make up`) runs the Vite dev server with hot module replacement, uvicorn with `--reload`, and the simulator enabled by default. Ports are exposed directly on the host and auth is off — it is designed for iterating on configuration and code, not for exposing to a network.
+
+**Production mode** (`docker-compose.prod.yml`) uses pre-built images from GHCR, serves the frontend as static files behind nginx, and removes Vite HMR entirely. Auth should be enabled for any deployment reachable outside localhost.
+
+| Aspect | Development | Production |
+|---|---|---|
+| Frontend | Vite dev server (HMR, hot reload) | Pre-built static files served by nginx |
+| Backend | `uvicorn --reload` | `uvicorn` (no reload) |
+| Images | Built locally from source | Pulled from `ghcr.io/sckyzO/rackscope-*` |
+| Auth default | Disabled | Disabled — **enable it before exposing to a network** |
+
+---
+
 ## Development Stack
 
 ```bash

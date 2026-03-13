@@ -115,7 +115,7 @@ cache:
 
 | Key | Type | Default | Min | Description |
 |-----|------|---------|-----|-------------|
-| `ttl_seconds` | integer | `30` | 1 | Generic cache TTL. Used for queries that do not fall into the categories below. Kept for backward compatibility |
+| `ttl_seconds` | integer | `30` | 1 | Generic cache TTL. **Deprecated** — kept for backward compatibility with pre-v1.0 configs. Use `health_checks_ttl_seconds` instead |
 | `health_checks_ttl_seconds` | integer | `30` | 1 | TTL for health check query results. Shorter = more responsive to failures |
 | `metrics_ttl_seconds` | integer | `120` | 1 | TTL for detailed metric queries (temperature, power, PDU). Longer = fewer heavy Prometheus calls |
 | `service_ttl_seconds` | integer | `5` | 1 | TTL for the **ServiceCache** — the response-level cache above the planner. Caches fully assembled JSON responses (room state, rack state, global stats). Lower = more responsive but more Planner calls |
@@ -176,6 +176,7 @@ Mismatched labels cause all devices to show UNKNOWN state.
 |-----|------|---------|-----|-------------|
 | `prometheus_heartbeat_seconds` | integer | `30` | 10 | Interval in seconds for the background Prometheus reachability probe. Shown in the connection status indicator |
 | `prometheus_latency_window` | integer | `20` | 1 | Number of samples used to compute the rolling average query latency shown in diagnostics |
+| `prometheus_timeout_seconds` | float | `5.0` | 0 | Timeout in seconds for each Prometheus HTTP request. Increase if your Prometheus is slow to respond on large clusters. Maximum: 60 |
 | `debug_stats` | boolean | `false` | — | When `true`, logs per-query timing and cache hit/miss statistics to the backend log. Useful for diagnosing slow views |
 
 ### Basic authentication
@@ -230,7 +231,7 @@ planner:
 | `max_ids_per_query` | integer | `200` | Maximum number of IDs packed into a single PromQL regex match. Prevents URL length limits from being hit with very large clusters |
 
 :::note Tuning `max_ids_per_query`
-At the default of `300`, a topology with 1 000 nodes produces approximately 4 batched
+At the default of `200`, a topology with 1 000 nodes produces approximately 5 batched
 queries instead of 1 000 individual ones. Reduce this value if Prometheus returns
 `URI Too Long` errors (typically at 500+ IDs depending on ID length).
 :::
@@ -320,7 +321,7 @@ Defaults for the World Map view. These control the initial viewport when the map
 ```yaml
 map:
   default_view: world
-  default_zoom: 3
+  default_zoom: null
   min_zoom: 2
   max_zoom: 7
   zoom_controls: true
@@ -488,7 +489,7 @@ auth:
 # ── World map defaults ────────────────────────────────────────────────────────
 map:
   default_view: world
-  default_zoom: 3
+  default_zoom: null
   min_zoom: 2
   max_zoom: 7
   zoom_controls: true

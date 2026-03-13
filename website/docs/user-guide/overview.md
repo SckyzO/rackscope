@@ -61,4 +61,5 @@ Each level shows the aggregated health of everything below it.
 | Room | `/views/room/:id` | Floor plan with rack grid |
 | Rack | `/views/rack/:id` | Front/rear rack views |
 | Device | `/views/device/:rackId/:deviceId` | Instance-level detail |
+| Datacenter | `/views/site/:siteId` | Site-level overview with room cards and mini rack grids |
 | Cluster | `/views/cluster` | Cluster overview |

@@ -180,7 +180,14 @@ When `enabled: false` (or the key is absent), `_plugin_enabled()` returns `False
 
 ### Dedicated config file
 
-Plugins should load their settings from a dedicated file: `config/plugins/{plugin_id}/config/plugin.yaml`.
+Plugins load their settings from a dedicated YAML file under `config/plugins/`. Two path conventions are used in the built-in plugins — either is valid; pick one and document it consistently for your plugin:
+
+| Convention | Example path | Used by |
+|---|---|---|
+| Nested (`config/plugin.yaml`) | `config/plugins/simulator/config/plugin.yaml` | Simulator plugin |
+| Flat (`config.yml`) | `config/plugins/slurm/config.yml` | Slurm plugin |
+
+The recommended convention for new plugins is the **nested** form: `config/plugins/{plugin_id}/config/plugin.yaml`.
 
 **Step 1: Create a config model**
 
@@ -206,7 +213,9 @@ from plugins.myplugin.backend.config import MyPluginConfig
 def _load_config(self, app_config=None) -> MyPluginConfig:
     raw: dict = {}
     # 1. Dedicated file (recommended — overrides everything)
-    path = self.config_file_path()  # "config/plugins/myplugin/config.yml"
+    #    Nested convention:  config/plugins/myplugin/config/plugin.yaml
+    #    Flat convention:    config/plugins/myplugin/config.yml
+    path = self.config_file_path()
     if os.path.exists(path):
         raw = yaml.safe_load(open(path)) or {}
     # 2. app.yaml → plugins.myplugin section
@@ -220,10 +229,13 @@ def _load_config(self, app_config=None) -> MyPluginConfig:
 
 **Step 3: Use `config_file_path()`**
 
+Override `config_file_path()` to point at your chosen path:
+
 ```python
 def config_file_path(self, base_dir: str = "config/plugins") -> str:
-    # Returns "config/plugins/myplugin/config.yml"
-    return super().config_file_path(base_dir)
+    # Nested convention (recommended):
+    # Returns "config/plugins/myplugin/config/plugin.yaml"
+    return os.path.join(base_dir, self.plugin_id, "config", "plugin.yaml")
 ```
 
 ### Conditional Menu Sections

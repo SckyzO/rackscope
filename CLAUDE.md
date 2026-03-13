@@ -718,7 +718,7 @@ Target audience: NOC operators, N1/N2 sysadmins, MCO teams.
 | 9 | Documentation & Cleanup | ✅ COMPLETE |
 
 **Current metrics** (v1.0-beta):
-- ✅ **852 tests passing**
+- ✅ **910 tests passing**
 - ✅ **0 mypy type errors**
 - ✅ **0 ESLint errors/warnings** (ruff, eslint, stylelint, prettier)
 - ✅ frontend/src/app/ (migration from cosmos/ complete)
@@ -1077,7 +1077,7 @@ Rackscope follows a phased development plan:
   - Settings UI redesign: FormRow, ToggleSwitch, AlertBanner, StepperInput from design system
   - Tooltip style in Appearance tab, per-card StatusPill preview
   - All plugins conditionally loaded (`_plugin_enabled()` in `app.py`)
-  - 852 tests passing, 0 ESLint warnings
+  - 910 tests passing, 0 ESLint warnings
 
 ## Code Quality Tools
 
