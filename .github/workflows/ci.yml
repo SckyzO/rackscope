@@ -63,8 +63,10 @@ jobs:
             --cov-report=json:coverage.json \
             2>&1 | tee test_output.txt || true
 
-          PASSED=$(grep -oP '\d+ passed' test_output.txt | grep -oP '\d+' | head -1 || echo 0)
-          FAILED=$(grep -oP '\d+ failed' test_output.txt | grep -oP '\d+' | head -1 || echo 0)
+          PASSED=$(grep -oP '\d+ passed' test_output.txt | grep -oP '\d+' | head -1)
+          PASSED="${PASSED:-0}"
+          FAILED=$(grep -oP '\d+ failed' test_output.txt | grep -oP '\d+' | head -1)
+          FAILED="${FAILED:-0}"
           COVERAGE=$(python3 -c "
           import json
           d = json.load(open('coverage.json'))
