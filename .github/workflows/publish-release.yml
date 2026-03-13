@@ -3,12 +3,11 @@ name: Publish Release to rackscope
 # Triggered by an annotated tag push from rackscope_dev.
 # The tag annotation message becomes the commit message on SckyzO/rackscope.
 #
-# Usage from rackscope_dev:
-#   git tag -a v1.0.0-beta1 -m "First beta release"
-#   git push origin v1.0.0-beta1
+# Usage:
+#   git tag -a v1.0.0 -m "Release message"
+#   git push origin v1.0.0
 #
-# Required secret (rackscope_dev Settings -> Secrets):
-#   PUBLIC_REPO_TOKEN: fine-grained PAT with Contents+Pages write on SckyzO/rackscope
+# Required secret: PUBLIC_REPO_TOKEN (Contents+Pages write on SckyzO/rackscope)
 
 on:
   push:
@@ -33,16 +32,16 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          MSG=$(git tag -l --format='%(contents)' "${TAG}")
-          # Multiline values require heredoc syntax in GITHUB_OUTPUT
+          # git for-each-ref reliably returns annotated tag body
+          MSG=$(git for-each-ref --format='%(contents)' "refs/tags/${TAG}")
           echo "message<<RELEASE_EOF" >> $GITHUB_OUTPUT
           echo "${MSG:-Release ${TAG}}" >> $GITHUB_OUTPUT
           echo "RELEASE_EOF" >> $GITHUB_OUTPUT
 
       - name: Export clean archive (respects .gitattributes export-ignore)
         run: |
-          mkdir /tmp/release
-          git archive HEAD | tar -x -C /tmp/release
+          mkdir /tmp/archive
+          git archive HEAD | tar -x -C /tmp/archive
 
       - name: Push orphan release commit to rackscope
         env:
@@ -50,11 +49,13 @@ jobs:
           TAG: ${{ github.ref_name }}
           MSG: ${{ steps.tag_msg.outputs.message }}
         run: |
-          cd /tmp/release
+          # Separate publish dir from archive dir to avoid cp src=dst issues
+          mkdir /tmp/publish
+          cd /tmp/publish
+
           git init
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-
           git remote add public \
             https://x-access-token:${PUBLIC_REPO_TOKEN}@github.com/SckyzO/rackscope.git
 
@@ -63,9 +64,9 @@ jobs:
             git checkout -b main public/main 2>/dev/null || \
             git checkout --orphan main
 
-          # Replace all content with clean archive
+          # Replace content with clean archive
           git rm -rf . --quiet 2>/dev/null || true
-          cp -r /tmp/release/. .
+          cp -r /tmp/archive/. .
 
           git add .
           git commit --allow-empty -m "${MSG}"
