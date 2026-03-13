@@ -14,29 +14,35 @@ Rackscope follows a clean separation of concerns:
 │  topology/ + templates/ + checks/ + metrics/            │
 └─────────────────────┬───────────────────────────────────┘
                       │ loaded at startup + on API writes
-         ┌────────────▼────────────┐
-         │    Backend (FastAPI)     │  :8000
-         │  - Topology API         │
-         │  - Health engine        │
-         │  - Telemetry planner    │  ← batches PromQL
-         │  - Plugin registry      │
-         └────────────┬────────────┘
-                      │ PromQL queries (batched)
-         ┌────────────▼────────────┐
-         │    Prometheus (:9090)   │
-         └────────────┬────────────┘
-                      │ scrapes
-         ┌────────────▼────────────┐
-         │  Simulator (:9000)      │  or real exporters
-         │  OR real infrastructure │
-         └─────────────────────────┘
-                      ▲
-         ┌────────────┴────────────┐
-         │   Frontend (Vite :5173) │  React 19 + Tailwind v4
-         │  - Physical views       │
-         │  - Visual editors       │
-         │  - Plugin menu          │
-         └─────────────────────────┘
+         ┌────────────▼──────────────────────────────┐
+         │         Backend (FastAPI :8000)             │
+         │                                            │
+         │  ┌─────────────────────────────────────┐  │
+         │  │  TopologyIndex (O(1) dict lookups)  │  │  ← built on load
+         │  └─────────────────────────────────────┘  │
+         │  ┌─────────────────────────────────────┐  │
+         │  │  ServiceCache        (5s TTL)        │  │  ← response cache
+         │  └──────────────┬──────────────────────┘  │
+         │  ┌──────────────▼──────────────────────┐  │
+         │  │  TelemetryPlanner    (60s TTL)       │  │  ← batches PromQL
+         │  └──────────────┬──────────────────────┘  │
+         │  ┌──────────────▼──────────────────────┐  │
+         │  │  PrometheusClient    (60/120s TTL)   │  │  ← in-flight dedup
+         │  └──────────────┬──────────────────────┘  │
+         └─────────────────┼──────────────────────────┘
+                           │ PromQL (batched)
+         ┌─────────────────▼──────────┐
+         │    Prometheus (:9090)       │
+         └─────────────────┬──────────┘
+                           │ scrapes
+         ┌─────────────────▼──────────┐
+         │  Simulator (:9000)          │  or real exporters
+         └─────────────────────────────┘
+                           ▲
+         ┌─────────────────┴──────────────────────────┐
+         │   Frontend (Vite :5173)                     │
+         │   fetchWithCache (localStorage, 5s TTL)     │
+         └─────────────────────────────────────────────┘
 ```
 
 ## Design Principles

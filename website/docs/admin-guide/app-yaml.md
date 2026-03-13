@@ -109,7 +109,8 @@ from expensive metric queries.
 cache:
   ttl_seconds: 60               # Generic cache (backward compatibility)
   health_checks_ttl_seconds: 30 # Health check queries
-  metrics_ttl_seconds: 120      # Detailed metrics
+  metrics_ttl_seconds: 120      # Detailed metrics (include_metrics=true)
+  service_ttl_seconds: 5        # Response-level ServiceCache
 ```
 
 | Key | Type | Default | Min | Description |
@@ -117,11 +118,16 @@ cache:
 | `ttl_seconds` | integer | `30` | 1 | Generic cache TTL. Used for queries that do not fall into the categories below. Kept for backward compatibility |
 | `health_checks_ttl_seconds` | integer | `30` | 1 | TTL for health check query results. Shorter = more responsive to failures |
 | `metrics_ttl_seconds` | integer | `120` | 1 | TTL for detailed metric queries (temperature, power, PDU). Longer = fewer heavy Prometheus calls |
+| `service_ttl_seconds` | integer | `5` | 1 | TTL for the **ServiceCache** — the response-level cache above the planner. Caches fully assembled JSON responses (room state, rack state, global stats). Lower = more responsive but more Planner calls |
 
 :::note Choosing TTL values
 - `health_checks_ttl_seconds: 30` is a good balance — failures appear within 30 s.
 - `metrics_ttl_seconds: 120` is intentional: metric charts are expensive and do not need
   sub-minute refresh. Reduce only if users need near-realtime metric graphs.
+- `service_ttl_seconds: 5` is a short cache above everything. Increase to `10-15` on large
+  deployments where many users refresh the same views simultaneously.
+
+See [Performance & Caching](/architecture/performance-and-caching) for the full cache layer diagram.
 :::
 
 ---
@@ -431,6 +437,7 @@ cache:
   ttl_seconds: 60
   health_checks_ttl_seconds: 30
   metrics_ttl_seconds: 120
+  service_ttl_seconds: 5
 
 # ── Prometheus connection ─────────────────────────────────────────────────────
 telemetry:

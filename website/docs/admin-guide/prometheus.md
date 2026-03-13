@@ -109,3 +109,27 @@ Rackscope uses a **TelemetryPlanner** to avoid per-device query explosion:
 - Caches results for `planner.cache_ttl_seconds` (default: 30s)
 
 **Never write per-node queries** — use the planner's batch mechanism via check definitions.
+
+## Query Caching Strategy
+
+Prometheus queries are cached at three independent levels:
+
+| Layer | Config key | Default | What it caches |
+|-------|-----------|---------|----------------|
+| **ServiceCache** | `cache.service_ttl_seconds` | 5s | Fully assembled JSON responses (room state, rack state) |
+| **Planner snapshot** | `planner.cache_ttl_seconds` | 60s | All node/rack health states in one snapshot |
+| **Health query cache** | `cache.health_checks_ttl_seconds` | 30s | Raw PromQL results for health checks |
+| **Metrics query cache** | `cache.metrics_ttl_seconds` | 120s | Raw PromQL results for detailed metrics |
+
+On a cache hit, **zero Prometheus queries** are fired. A request only reaches Prometheus when all upstream caches are expired simultaneously.
+
+To monitor cache effectiveness:
+
+```bash
+curl http://localhost:8000/api/stats/telemetry
+# Returns: cache_hits, cache_misses, in_flight, query_count, avg_latency_ms
+```
+
+A healthy deployment shows `cache_hits / (cache_hits + cache_misses) > 95%` under normal load.
+
+See [Performance & Caching](/architecture/performance-and-caching) for the full architecture diagram.

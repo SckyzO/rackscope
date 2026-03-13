@@ -58,14 +58,16 @@ The backend maintains global state loaded at startup:
 
 ```python
 TOPOLOGY: Optional[Topology]
+TOPOLOGY_INDEX: Optional[TopologyIndex]  # O(1) lookup index, rebuilt on every reload
 CATALOG: Optional[Catalog]
 CHECKS_LIBRARY: Optional[ChecksLibrary]
 METRICS_LIBRARY: Optional[MetricsLibrary]
 APP_CONFIG: Optional[AppConfig]
 PLANNER: Optional[TelemetryPlanner]
+SERVICE_CACHE: ServiceCache              # Response-level cache, always available
 ```
 
-State is reloaded when files change (via PUT endpoints).
+State is reloaded when files change (via PUT endpoints). `SERVICE_CACHE` is invalidated on every topology reload.
 
 ## Telemetry Planner
 
@@ -101,7 +103,36 @@ check = CheckDefinition(
 # Planner creates: da01-r02-01.1, da01-r02-01.2, ..., da01-r02-01.60
 ```
 
-## Performance: Conditional Metrics
+## Performance Architecture
+
+### Four-layer cache stack
+
+```
+Frontend fetchWithCache    (localStorage, 5s TTL per endpoint)
+  ServiceCache             (backend RAM, 5s TTL, invalidated on reload)
+    TelemetryPlanner       (backend RAM, 60s TTL, asyncio.Lock)
+      PrometheusClient     (backend RAM, 60/120s TTL, in-flight dedup)
+        Prometheus HTTP
+```
+
+See [Performance & Caching](/architecture/performance-and-caching) for the full reference.
+
+### TopologyIndex
+
+`build_topology_index(topology)` builds six O(1) dicts in a single traversal:
+
+| Dict | Key | Value |
+|------|-----|-------|
+| `racks` | `rack_id` | `RackContext` (rack + site + room + aisle) |
+| `rooms` | `room_id` | `Room` |
+| `sites` | `site_id` | `Site` |
+| `aisles` | `aisle_id` | `Aisle` |
+| `devices` | `device_id` | `(Device, rack_id)` |
+| `instances` | `instance_name` | `InstanceContext` (device + rack + room + site) |
+
+Built once on `apply_config()`, used everywhere via `Depends(get_topology_index_optional)`.
+
+### Conditional Metrics
 
 The `/api/racks/{id}/state` endpoint defaults to health-only (fast):
 

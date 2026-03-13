@@ -96,6 +96,17 @@ const sidebars = {
         'admin-guide/importers',
       ],
     },
+
+    // ── Operations ────────────────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: 'Operations',
+      className: 'sidebar-cat-bolt',
+      collapsed: false,
+      items: [
+        'admin-guide/performance-tuning',
+      ],
+    },
   ],
 
   apiReference: [
@@ -152,11 +163,24 @@ const sidebars = {
         'architecture/dashboard-widgets',
       ],
     },
+
+    // ── Performance ───────────────────────────────────────────────────────────
+    {
+      type: 'category',
+      label: 'Performance',
+      className: 'sidebar-cat-bolt',
+      collapsed: false,
+      items: [
+        'architecture/performance-and-caching',
+      ],
+    },
   ],
 
   development: [
     'development/testing',
     'development/security',
+    // ── Internals ──────────────────────────────────────────────────────────────
+    'development/telemetry-planner',
   ],
 
   designSystem: [
