@@ -146,11 +146,11 @@ class TelemetryPlanner:
             node_ids_set, chassis_ids_set, rack_ids_set, _ = _collect_topology_ids(topology)
             valid_keys: set[str] = set()
             for check in checks.checks:
-                scope_ids = {
+                scope_ids: list[str] = {
                     "node": node_ids_set,
                     "chassis": chassis_ids_set,
                     "rack": rack_ids_set,
-                }.get(check.scope, set())
+                }.get(check.scope, [])
                 for id_ in scope_ids:
                     valid_keys.add(f"{check.id}:{id_}")
             stale = [
