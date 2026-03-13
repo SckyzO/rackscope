@@ -15,8 +15,12 @@ from rackscope.api.dependencies import (
     get_catalog_optional,
     get_checks_library_optional,
     get_planner_optional,
+    get_service_cache,
+    get_topology_index_optional,
     get_topology_optional,
 )
+from rackscope.api.cache import ServiceCache
+from rackscope.model.domain import build_topology_index
 from rackscope.model.catalog import Catalog, DeviceTemplate, LayoutConfig
 from rackscope.model.checks import CheckDefinition, CheckRule, ChecksLibrary
 from rackscope.model.config import AppConfig, PathsConfig, TelemetryConfig
@@ -670,5 +674,72 @@ async def test_get_active_alerts_no_alerts(mock_topology, mock_catalog, mock_che
 
     assert response.status_code == 200
     assert response.json() == {"alerts": []}
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_get_active_alerts_cache_hit(mock_topology, mock_catalog, mock_checks_library):
+    """ServiceCache hit returns cached response without calling planner."""
+    planner = Mock()
+    planner.get_snapshot = AsyncMock()
+
+    cached_result = {"alerts": [{"type": "node", "node_id": "node01", "state": "CRIT"}]}
+    svc_cache = ServiceCache()
+    await svc_cache.set("alerts:active", cached_result, ttl=60.0)
+
+    app.dependency_overrides[get_topology_optional] = override_topology(mock_topology)
+    app.dependency_overrides[get_catalog_optional] = override_catalog(mock_catalog)
+    app.dependency_overrides[get_checks_library_optional] = override_checks_library(
+        mock_checks_library
+    )
+    app.dependency_overrides[get_planner_optional] = override_planner(planner)
+    app.dependency_overrides[get_service_cache] = lambda: svc_cache
+
+    response = client.get("/api/alerts/active")
+
+    assert response.status_code == 200
+    assert response.json() == cached_result
+    planner.get_snapshot.assert_not_called()
+
+    app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_get_active_alerts_with_topology_index(
+    mock_topology, mock_catalog, mock_checks_library
+):
+    """TopologyIndex O(1) path produces the same context as the O(n) fallback."""
+    planner = Mock()
+    planner.get_snapshot = AsyncMock(
+        return_value=PlannerSnapshot(
+            generated_at=1000000.0,
+            rack_states={"rack01": "WARN"},
+            node_states={"node01": "WARN"},
+            node_alerts={"node01": {"node_up": "WARN"}},
+            rack_alerts={},
+        )
+    )
+    topo_index = build_topology_index(mock_topology)
+
+    app.dependency_overrides[get_topology_optional] = override_topology(mock_topology)
+    app.dependency_overrides[get_catalog_optional] = override_catalog(mock_catalog)
+    app.dependency_overrides[get_checks_library_optional] = override_checks_library(
+        mock_checks_library
+    )
+    app.dependency_overrides[get_planner_optional] = override_planner(planner)
+    app.dependency_overrides[get_topology_index_optional] = lambda: topo_index
+
+    response = client.get("/api/alerts/active")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["alerts"]) == 1
+    alert = data["alerts"][0]
+    assert alert["node_id"] == "node01"
+    assert alert["site_id"] == "site1"
+    assert alert["room_id"] == "room1"
+    assert alert["rack_id"] == "rack01"
+    assert alert["device_id"] == "dev1"
 
     app.dependency_overrides.clear()
