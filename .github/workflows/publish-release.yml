@@ -4,8 +4,8 @@ name: Publish Release to rackscope
 # The tag annotation message becomes the commit message on SckyzO/rackscope.
 #
 # Usage from rackscope_dev:
-#   git tag -a v1.0.0-beta -m "First beta release"
-#   git push origin v1.0.0-beta
+#   git tag -a v1.0.0-beta1 -m "First beta release"
+#   git push origin v1.0.0-beta1
 #
 # Required secret (rackscope_dev Settings -> Secrets):
 #   PUBLIC_REPO_TOKEN: fine-grained PAT with Contents+Pages write on SckyzO/rackscope
@@ -34,14 +34,17 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           MSG=$(git tag -l --format='%(contents)' "${TAG}")
-          echo "message=${MSG:-Release ${TAG}}" >> $GITHUB_OUTPUT
+          # Multiline values require heredoc syntax in GITHUB_OUTPUT
+          echo "message<<RELEASE_EOF" >> $GITHUB_OUTPUT
+          echo "${MSG:-Release ${TAG}}" >> $GITHUB_OUTPUT
+          echo "RELEASE_EOF" >> $GITHUB_OUTPUT
 
       - name: Export clean archive (respects .gitattributes export-ignore)
         run: |
           mkdir /tmp/release
           git archive HEAD | tar -x -C /tmp/release
 
-      - name: Push release commit to rackscope
+      - name: Push orphan release commit to rackscope
         env:
           PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
           TAG: ${{ github.ref_name }}
@@ -51,23 +54,24 @@ jobs:
           git init
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
+
           git remote add public \
             https://x-access-token:${PUBLIC_REPO_TOKEN}@github.com/SckyzO/rackscope.git
 
           # Fetch existing history to accumulate one commit per release
           git fetch public main --depth=1 2>/dev/null && \
             git checkout -b main public/main 2>/dev/null || \
-            git checkout -b main
+            git checkout --orphan main
 
-          # Wipe and replace with clean archive content
+          # Replace all content with clean archive
           git rm -rf . --quiet 2>/dev/null || true
-          rsync -a /tmp/release/ .
+          cp -r /tmp/release/. .
 
           git add .
-          git commit -m "${MSG}"
+          git commit --allow-empty -m "${MSG}"
           git tag "${TAG}"
-          git push public main
-          git push public "${TAG}"
+          git push public main --force
+          git push public "${TAG}" --force
 
       - name: Configure GitHub Pages on rackscope (idempotent)
         env:
