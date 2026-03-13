@@ -190,3 +190,55 @@ async def test_none_value_stored(cache: ServiceCache):
     # The cache treats None as "not cached" to keep the interface simple.
     result = await cache.get("empty-key")
     assert result is None  # None value is treated as miss (by design)
+
+
+# ── Edge cases added from coverage audit ─────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_stats_zero_accesses_hit_rate(cache: ServiceCache):
+    """hit_rate is 0.0 (not error) when no accesses yet."""
+    s = cache.stats()
+    assert s["hits"] == 0
+    assert s["misses"] == 0
+    assert s["hit_rate"] == 0.0  # max(1, 0+0) guards against div/0
+
+
+@pytest.mark.asyncio
+async def test_none_stored_is_hit_returning_none(cache: ServiceCache):
+    """None stored IS a cache hit — get() returns None, caller cannot distinguish from miss.
+
+    Design decision: the cache transparently stores None.
+    Callers that need to distinguish must use a sentinel value.
+    """
+    await cache.set("key", None, ttl=60.0)
+    result = await cache.get("key")  # HIT — returns None from stored value
+    assert result is None
+    s = cache.stats()
+    assert s["hits"] == 1     # counted as hit (entry exists and is not expired)
+    assert s["misses"] == 0
+
+
+@pytest.mark.asyncio
+async def test_invalidate_prefix_empty_string_clears_all(cache: ServiceCache):
+    """Empty prefix matches every key — clears entire cache."""
+    await cache.set("rack:r1", "a", ttl=60.0)
+    await cache.set("room:r1", "b", ttl=60.0)
+    await cache.set("stats:global", "c", ttl=60.0)
+
+    count = await cache.invalidate_prefix("")
+    assert count == 3
+    assert cache.stats()["size"] == 0
+
+
+@pytest.mark.asyncio
+async def test_invalidate_prefix_partial_overlap(cache: ServiceCache):
+    """Prefix invalidation is startswith — partial overlap included."""
+    await cache.set("rack:r01:state", "a", ttl=60.0)
+    await cache.set("rack:r02:state", "b", ttl=60.0)
+    await cache.set("ra_other:key", "c", ttl=60.0)   # starts with "ra"
+    await cache.set("room:r01:state", "d", ttl=60.0)  # starts with "room"
+
+    count = await cache.invalidate_prefix("ra")
+    assert count == 3  # "rack:r01", "rack:r02", "ra_other" all start with "ra"
+    assert await cache.get("room:r01:state") == "d"   # untouched

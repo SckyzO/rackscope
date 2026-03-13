@@ -177,17 +177,13 @@ async def test_get_global_stats_without_planner(mock_topology):
     app.dependency_overrides[get_checks_library_optional] = override_checks_library(None)
     app.dependency_overrides[get_planner_optional] = override_planner(None)
 
-    with patch("rackscope.telemetry.prometheus.client") as mock_client:
-        mock_client.get_rack_health_summary = AsyncMock(return_value={"rack01": "OK"})
-
-        response = client.get("/api/stats/global")
+    # When planner is None the router returns empty rack_healths — no Prometheus call needed
+    response = client.get("/api/stats/global")
 
     assert response.status_code == 200
     data = response.json()
     assert data["total_racks"] == 1
     assert data["status"] == "OK"
-
-    app.dependency_overrides.clear()
 
 
 @pytest.mark.asyncio
@@ -230,17 +226,12 @@ async def test_get_global_stats_no_topology():
     app.dependency_overrides[get_checks_library_optional] = override_checks_library(None)
     app.dependency_overrides[get_planner_optional] = override_planner(None)
 
-    with patch("rackscope.telemetry.prometheus.client") as mock_client:
-        mock_client.get_rack_health_summary = AsyncMock(return_value={})
-
-        response = client.get("/api/stats/global")
+    response = client.get("/api/stats/global")
 
     assert response.status_code == 200
     data = response.json()
     assert data["total_rooms"] == 0
     assert data["total_racks"] == 0
-
-    app.dependency_overrides.clear()
 
 
 def test_get_prometheus_stats_with_config(mock_app_config):

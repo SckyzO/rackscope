@@ -223,3 +223,65 @@ def test_empty_topology_index():
     assert idx.sites == {}
     assert idx.racks == {}
     assert idx.instances == {}
+
+
+# ── Edge cases added from coverage audit ─────────────────────────────────────
+
+
+def test_duplicate_instances_across_sites():
+    """Duplicate instance name across two sites — last-write-wins, no crash."""
+    d1 = Device(id="dev-1", name="D1", template_id="t", u_position=1, instance="shared-node")
+    r1 = Rack(id="rack-1", name="R1", u_height=42, devices=[d1])
+    a1 = Aisle(id="aisle-1", name="A1", rack_ids=["rack-1"], racks=[r1])
+    room1 = Room(id="room-1", name="Room1", aisles=[a1])
+    site1 = Site(id="site-1", name="Site1", rooms=[room1])
+
+    d2 = Device(id="dev-2", name="D2", template_id="t", u_position=1, instance="shared-node")
+    r2 = Rack(id="rack-2", name="R2", u_height=42, devices=[d2])
+    a2 = Aisle(id="aisle-2", name="A2", rack_ids=["rack-2"], racks=[r2])
+    room2 = Room(id="room-2", name="Room2", aisles=[a2])
+    site2 = Site(id="site-2", name="Site2", rooms=[room2])
+
+    topo = Topology(sites=[site1, site2])
+    idx = build_topology_index(topo)
+
+    # Only one entry for the shared instance name — no crash, no KeyError
+    assert "shared-node" in idx.instances
+    ctx = idx.instances["shared-node"]
+    # Last site wins (site2 is iterated last) — deterministic
+    assert ctx.site.id == "site-2"
+    assert ctx.device.id == "dev-2"
+
+
+def test_find_rack_stale_index_fallback_to_on(simple_topology):
+    """When index is stale (key manually removed), falls through to O(n)."""
+    idx = build_topology_index(simple_topology)
+
+    # Simulate staleness: remove rack-sa from index
+    del idx.racks["rack-sa"]
+    assert "rack-sa" not in idx.racks
+
+    # find_rack_by_id should still find it via O(n) fallback
+    found = find_rack_by_id(simple_topology, "rack-sa", index=idx)
+    assert found is not None
+    assert found.id == "rack-sa"
+
+
+def test_find_room_stale_index_fallback(simple_topology):
+    """find_room_by_id falls through to O(n) when key missing from index."""
+    idx = build_topology_index(simple_topology)
+    del idx.rooms["room-01"]
+
+    found = find_room_by_id(simple_topology, "room-01", index=idx)
+    assert found is not None
+    assert found.id == "room-01"
+
+
+def test_find_rack_location_stale_index_fallback(simple_topology):
+    """find_rack_location falls through to O(n) when key missing from index."""
+    idx = build_topology_index(simple_topology)
+    del idx.racks["rack-01"]
+
+    result = find_rack_location("rack-01", simple_topology, index=idx)
+    assert result is not None
+    assert result == ("site-01", "room-01", "aisle-01", False)
