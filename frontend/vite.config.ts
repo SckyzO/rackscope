@@ -27,8 +27,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Keep Monaco out of the main bundle — it's ~7 MB and only needed in editor pages.
-        manualChunks: {
-          monaco: ['monaco-editor'],
+        manualChunks: (id) => {
+          if (id.includes('monaco-editor')) return 'monaco';
         },
       },
     },

@@ -94,8 +94,8 @@ const DoorMarker = ({ side, position, w, h, showLabel, doorLabel }: DoorMarkerPr
   const LEN = 72;
   const MARGIN = 4;
 
-  let stripStyle: React.CSSProperties = {};
-  let labelClass = '';
+  let stripStyle: React.CSSProperties;
+  let labelClass: string;
 
   if (side === 'west' || side === 'left') {
     const cy = PADDING + iH * position;
