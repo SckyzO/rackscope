@@ -50,6 +50,11 @@ exclude = ["tests*"]
 # Without this, pytest doesn't add the project root to sys.path and
 # `from plugins.simulator.backend import ...` fails even with PYTHONPATH set.
 pythonpath = [".", "src"]
+markers = [
+    "perf: performance benchmarks — run manually with: pytest tests/perf/ -m perf -v -s",
+]
+# Exclude memory-intensive perf benchmarks from regular test runs
+norecursedirs = ["tests/perf", ".git", "node_modules", "__pycache__", ".venv"]
 
 [tool.ruff]
 exclude = ["scripts/"]

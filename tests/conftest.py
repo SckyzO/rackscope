@@ -2,6 +2,10 @@
 Shared pytest fixtures for the Rackscope test suite.
 """
 
+# Exclude memory-intensive perf benchmarks from the regular suite.
+# Run manually: pytest tests/perf/ -m perf -v -s
+collect_ignore_glob = ["tests/perf/*"]
+
 import pytest
 
 
