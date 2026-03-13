@@ -1233,7 +1233,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                           | 'crit'
                           | 'info'
                           | null;
-                        if (status) moveSlurmStatus(status, from || null, sev);
+                        if (status) moveSlurmStatus(status, from ?? null, sev);
                       }}
                     >
                       <div className="flex items-center justify-between">

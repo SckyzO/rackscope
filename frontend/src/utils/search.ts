@@ -2,7 +2,7 @@ export const normalizeQuery = (value: string): string => value.trim().toLowerCas
 
 export const matchesText = (value: string | undefined, query: string): boolean => {
   if (!query) return false;
-  return (value || '').toLowerCase().includes(query);
+  return (value ?? '').toLowerCase().includes(query);
 };
 
 const parseRangePattern = (pattern: string) => {

@@ -26,7 +26,7 @@ const toInfraComponent = (
   ref: RackComponentRef,
   location: InfrastructureComponent['location']
 ): InfrastructureComponent => ({
-  id: `${template.id}:${ref.side || 'center'}:${ref.u_position}`,
+  id: `${template.id}:${ref.side ?? 'center'}:${ref.u_position}`,
   name: template.name,
   type: resolveType(template.type),
   model: template.model,

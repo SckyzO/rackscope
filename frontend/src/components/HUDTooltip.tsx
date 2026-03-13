@@ -343,7 +343,7 @@ const TintedCard = ({
       >
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <div className="text-[8px] font-bold tracking-[0.15em] text-gray-600 uppercase">
-            {subtitle || 'Node'}
+            {subtitle ?? 'Node'}
           </div>
           <div
             className={`rounded-[6px] border px-2 py-[3px] text-[9px] font-black tracking-[0.12em] uppercase ${st.twText}`}
@@ -436,7 +436,7 @@ const TintedCard = ({
             )}
           </div>
         )}
-        {(loc || (checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0)) && (
+        {(loc ?? (checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0)) && (
           <div className="flex items-center justify-between border-t border-white/[0.04] pt-2">
             <span className="font-mono text-[9px] text-gray-600">{loc ?? ''}</span>
             {checkSummary && (
@@ -494,7 +494,7 @@ const CompactCard = ({
             )}
             <div className="min-w-0">
               <div className="text-[8px] font-semibold tracking-[0.18em] text-gray-500 uppercase">
-                {subtitle || 'Node'}
+                {subtitle ?? 'Node'}
               </div>
               <div className="text-[16px] leading-tight font-black tracking-[-0.02em] text-white uppercase">
                 {title}
@@ -554,7 +554,7 @@ const CompactCard = ({
             )}
           </div>
         )}
-        {(loc || (checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0)) && (
+        {(loc ?? (checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0)) && (
           <div className="flex items-center justify-between border-t border-white/[0.05] pt-2">
             <span className="font-mono text-[10px] text-gray-600">{loc ?? ''}</span>
             {checkSummary && (
@@ -721,7 +721,7 @@ const GlassCard = ({
             </div>
           </div>
         )}
-        {(loc || (checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0)) && (
+        {(loc ?? (checkSummary && checkSummary.ok + checkSummary.warn + checkSummary.crit > 0)) && (
           <div className="flex items-center justify-between border-t border-white/[0.05] pt-2.5">
             <span className="font-mono text-[10px] text-gray-600">{loc ?? ''}</span>
             {checkSummary && (
@@ -770,7 +770,7 @@ const SplitCard = ({
         <div className="flex flex-1 flex-col gap-2.5 border-r border-white/[0.05] p-3.5">
           <div>
             <div className="text-[8px] font-bold tracking-[0.2em] text-gray-600 uppercase">
-              {subtitle || 'Node'}
+              {subtitle ?? 'Node'}
             </div>
             <div className="mt-0.5 text-[15px] leading-tight font-black tracking-[-0.02em] text-white uppercase">
               {title}
@@ -885,7 +885,7 @@ const TerminalCard = ({
       {/* Body */}
       <div className="space-y-[3px] p-3 text-[10px] leading-relaxed">
         <div>
-          <span className="text-gray-600"># {subtitle || 'Node'}</span>
+          <span className="text-gray-600"># {subtitle ?? 'Node'}</span>
         </div>
         <div>
           <span className="text-blue-400">node</span>

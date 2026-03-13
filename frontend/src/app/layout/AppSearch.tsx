@@ -241,7 +241,7 @@ function filterResults(index: SearchResult[], query: string): SearchResult[] {
   // Group by category, max 5 per group
   const groups: Partial<Record<Category, SearchResult[]>> = {};
   for (const r of all) {
-    groups[r.category] ||= [];
+    groups[r.category] ??= [];
     if ((groups[r.category] as SearchResult[]).length < 5)
       (groups[r.category] as SearchResult[]).push(r);
   }

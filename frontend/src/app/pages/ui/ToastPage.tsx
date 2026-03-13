@@ -90,7 +90,7 @@ export const ToastPage = () => {
   const positionGroups = (toasts: Toast[]) => {
     const groups: Partial<Record<ToastPos, Toast[]>> = {};
     toasts.forEach((t) => {
-      groups[t.position] ||= [];
+      groups[t.position] ??= [];
       (groups[t.position] as Toast[]).push(t);
     });
     return groups;

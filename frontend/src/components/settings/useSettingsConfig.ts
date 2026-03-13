@@ -132,24 +132,24 @@ export type ConfigDraft = {
 
 const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
   app: {
-    name: config.app?.name || 'Rackscope',
-    description: config.app?.description || 'Datacenter Overview',
+    name: config.app?.name ?? 'Rackscope',
+    description: config.app?.description ?? 'Datacenter Overview',
   },
   map: {
-    default_view: config.map?.default_view || 'world',
+    default_view: config.map?.default_view ?? 'world',
     default_zoom: String(config.map?.default_zoom ?? 4),
     min_zoom: String(config.map?.min_zoom ?? 2),
     max_zoom: String(config.map?.max_zoom ?? 7),
     zoom_controls: config.map?.zoom_controls ?? true,
     center_lat: String(config.map?.center?.lat ?? 20),
     center_lon: String(config.map?.center?.lon ?? 0),
-    style: localStorage.getItem('rackscope.map.style') || config.map?.style || 'minimal',
+    style: localStorage.getItem('rackscope.map.style') ?? config.map?.style ?? 'minimal',
   },
   paths: {
-    topology: config.paths?.topology || '',
-    templates: config.paths?.templates || '',
-    checks: config.paths?.checks || '',
-    metrics: config.paths?.metrics || '',
+    topology: config.paths?.topology ?? '',
+    templates: config.paths?.templates ?? '',
+    checks: config.paths?.checks ?? '',
+    metrics: config.paths?.metrics ?? '',
   },
   refresh: {
     room_state_seconds: String(config.refresh?.room_state_seconds ?? 60),
@@ -162,23 +162,23 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     service_ttl_seconds: String(config.cache?.service_ttl_seconds ?? 5),
   },
   telemetry: {
-    prometheus_url: config.telemetry?.prometheus_url || '',
-    identity_label: config.telemetry?.identity_label || 'instance',
-    rack_label: config.telemetry?.rack_label || 'rack_id',
-    chassis_label: config.telemetry?.chassis_label || 'chassis_id',
-    job_regex: config.telemetry?.job_regex || '.*',
+    prometheus_url: config.telemetry?.prometheus_url ?? '',
+    identity_label: config.telemetry?.identity_label ?? 'instance',
+    rack_label: config.telemetry?.rack_label ?? 'rack_id',
+    chassis_label: config.telemetry?.chassis_label ?? 'chassis_id',
+    job_regex: config.telemetry?.job_regex ?? '.*',
     prometheus_heartbeat_seconds: String(config.telemetry?.prometheus_heartbeat_seconds ?? 30),
     prometheus_latency_window: String(config.telemetry?.prometheus_latency_window ?? 20),
     debug_stats: config.telemetry?.debug_stats ?? false,
-    basic_auth_user: config.telemetry?.basic_auth_user || '',
-    basic_auth_password: config.telemetry?.basic_auth_password || '',
+    basic_auth_user: config.telemetry?.basic_auth_user ?? '',
+    basic_auth_password: config.telemetry?.basic_auth_password ?? '',
     tls_verify: config.telemetry?.tls_verify ?? true,
-    tls_ca_file: config.telemetry?.tls_ca_file || '',
-    tls_cert_file: config.telemetry?.tls_cert_file || '',
-    tls_key_file: config.telemetry?.tls_key_file || '',
+    tls_ca_file: config.telemetry?.tls_ca_file ?? '',
+    tls_cert_file: config.telemetry?.tls_cert_file ?? '',
+    tls_key_file: config.telemetry?.tls_key_file ?? '',
   },
   planner: {
-    unknown_state: config.planner?.unknown_state || 'UNKNOWN',
+    unknown_state: config.planner?.unknown_state ?? 'UNKNOWN',
     cache_ttl_seconds: String(config.planner?.cache_ttl_seconds ?? 60),
     max_ids_per_query: String(config.planner?.max_ids_per_query ?? 200),
   },
@@ -186,7 +186,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     notifications: config.features?.notifications ?? true,
     notifications_max_visible: String(config.features?.notifications_max_visible ?? 10),
     toast_duration_seconds: String(config.features?.toast_duration_seconds ?? 15),
-    toast_position: config.features?.toast_position || 'bottom-right',
+    toast_position: config.features?.toast_position ?? 'bottom-right',
     toast_stack_threshold: String(config.features?.toast_stack_threshold ?? 5),
     worldmap: config.features?.worldmap ?? true,
     aisle_dashboard: config.features?.aisle_dashboard ?? true,
@@ -213,7 +213,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
       enabled: config.plugins?.simulator?.enabled ?? false,
       update_interval_seconds: String(config.plugins?.simulator?.update_interval_seconds ?? 20),
       seed: String(config.plugins?.simulator?.seed ?? ''),
-      incident_mode: config.plugins?.simulator?.incident_mode || 'light',
+      incident_mode: config.plugins?.simulator?.incident_mode ?? 'light',
       changes_per_hour: String(config.plugins?.simulator?.changes_per_hour ?? 2),
       custom_incidents: {
         devices_crit: String(config.plugins?.simulator?.custom_incidents?.devices_crit ?? 0),
@@ -222,49 +222,49 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
         aisles_hot: String(config.plugins?.simulator?.custom_incidents?.aisles_hot ?? 0),
       },
       overrides_path:
-        config.plugins?.simulator?.overrides_path ||
+        config.plugins?.simulator?.overrides_path ??
         'config/plugins/simulator/overrides/overrides.yaml',
       default_ttl_seconds: String(config.plugins?.simulator?.default_ttl_seconds ?? 120),
       metrics_catalog_path:
-        config.plugins?.simulator?.metrics_catalog_path ||
+        config.plugins?.simulator?.metrics_catalog_path ??
         'config/plugins/simulator/metrics/metrics_full.yaml',
-      metrics_catalogs: (config.plugins?.simulator?.metrics_catalogs || []).map((c) => ({
+      metrics_catalogs: (config.plugins?.simulator?.metrics_catalogs ?? []).map((c) => ({
         ...c,
         enabled: c.enabled ?? false,
       })),
       slurm_alloc_percent: (config.plugins?.simulator?.slurm_alloc_percent as number) ?? 80,
       slurm_random_statuses: Object.fromEntries(
         Object.entries(
-          (config.plugins?.simulator?.slurm_random_statuses as Record<string, number>) || {
+          (config.plugins?.simulator?.slurm_random_statuses as Record<string, number>) ?? {
             drain: 1,
             down: 1,
             maint: 1,
           }
         ).map(([k, v]) => [k, String(v)])
       ),
-      slurm_random_match: (config.plugins?.simulator?.slurm_random_match as string[]) || [
+      slurm_random_match: (config.plugins?.simulator?.slurm_random_match as string[]) ?? [
         'compute*',
         'visu*',
       ],
     },
     slurm: {
       enabled: config.plugins?.slurm?.enabled ?? false,
-      metric: config.plugins?.slurm?.metric || 'slurm_node_status',
-      label_node: config.plugins?.slurm?.label_node || 'node',
-      label_status: config.plugins?.slurm?.label_status || 'status',
-      label_partition: config.plugins?.slurm?.label_partition || 'partition',
-      mapping_path: config.plugins?.slurm?.mapping_path || '',
-      roles: config.plugins?.slurm?.roles || [],
+      metric: config.plugins?.slurm?.metric ?? 'slurm_node_status',
+      label_node: config.plugins?.slurm?.label_node ?? 'node',
+      label_status: config.plugins?.slurm?.label_status ?? 'status',
+      label_partition: config.plugins?.slurm?.label_partition ?? 'partition',
+      mapping_path: config.plugins?.slurm?.mapping_path ?? '',
+      roles: config.plugins?.slurm?.roles ?? [],
       include_unlabeled: config.plugins?.slurm?.include_unlabeled ?? false,
       status_map: {
-        ok: config.plugins?.slurm?.status_map?.ok || [
+        ok: config.plugins?.slurm?.status_map?.ok ?? [
           'idle',
           'allocated',
           'alloc',
           'completing',
           'comp',
         ],
-        warn: config.plugins?.slurm?.status_map?.warn || [
+        warn: config.plugins?.slurm?.status_map?.warn ?? [
           'mixed',
           'mix',
           'maint',
@@ -273,7 +273,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
           'reserved',
           'resv',
         ],
-        crit: config.plugins?.slurm?.status_map?.crit || [
+        crit: config.plugins?.slurm?.status_map?.crit ?? [
           'down',
           'drain',
           'drained',
@@ -284,13 +284,13 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
           'failg',
           'error',
         ],
-        info: config.plugins?.slurm?.status_map?.info || [],
+        info: config.plugins?.slurm?.status_map?.info ?? [],
       },
       severity_colors: {
-        ok: config.plugins?.slurm?.severity_colors?.ok || '#22c55e',
-        warn: config.plugins?.slurm?.severity_colors?.warn || '#f59e0b',
-        crit: config.plugins?.slurm?.severity_colors?.crit || '#ef4444',
-        info: config.plugins?.slurm?.severity_colors?.info || '#3b82f6',
+        ok: config.plugins?.slurm?.severity_colors?.ok ?? '#22c55e',
+        warn: config.plugins?.slurm?.severity_colors?.warn ?? '#f59e0b',
+        crit: config.plugins?.slurm?.severity_colors?.crit ?? '#ef4444',
+        info: config.plugins?.slurm?.severity_colors?.info ?? '#3b82f6',
       },
     },
   },

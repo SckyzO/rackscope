@@ -168,7 +168,7 @@ export const DevicePage = () => {
 
   // Active instance is stored in the URL (?instance=...) so the selected tab
   // survives page refresh and can be deep-linked from alerts or external tools.
-  const selectedInstance = searchParams.get('instance') || instances[0] || '';
+  const selectedInstance = searchParams.get('instance') ?? instances[0] ?? '';
   const handleSelect = (inst: string) => setSearchParams({ instance: inst });
 
   const selNode = selectedInstance ? nodes[selectedInstance] : undefined;

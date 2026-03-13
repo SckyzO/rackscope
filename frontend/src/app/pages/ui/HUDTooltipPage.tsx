@@ -191,7 +191,7 @@ const TooltipCard = ({
   const st = STATUS[status];
   const hasAlerts = alerts.length > 0;
   const hasMetrics = temp !== undefined || (power !== undefined && power > 0);
-  const hasFooter = location || (checks && checks.ok + checks.warn + checks.crit > 0);
+  const hasFooter = location ?? (checks && checks.ok + checks.warn + checks.crit > 0);
   const tColor = temp !== undefined && temp > 0 ? tempColor(temp, tempWarn, tempCrit) : null;
   const tLabel =
     temp !== undefined && temp > 0 && tempWarn !== undefined
@@ -223,7 +223,7 @@ const TooltipCard = ({
           )}
           <div className="min-w-0 flex-1">
             <div className="text-[9px] font-semibold tracking-[0.2em] text-gray-500 uppercase">
-              {subtitle || 'Node'}
+              {subtitle ?? 'Node'}
             </div>
             <div className="mt-0.5 text-xl leading-tight font-black tracking-tight text-white uppercase">
               {title}

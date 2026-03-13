@@ -104,7 +104,7 @@ export const RackElevation = ({
           c.location === 'u-mount' && c.u_position !== undefined && c.u_position !== null
       )
       .forEach((c) => {
-        const height = c.u_height || 1;
+        const height = c.u_height ?? 1;
         let hasCollision = false;
         if (!faceAllowOverlap) {
           for (let i = 0; i < height; i++) {
@@ -207,7 +207,7 @@ export const RackElevation = ({
                       <DeviceChassis
                         device={device}
                         template={template}
-                        rackHealth={health || 'UNKNOWN'}
+                        rackHealth={health ?? 'UNKNOWN'}
                         nodesData={nodesData}
                         isRearView={faceRearView}
                         uPosition={u}
@@ -423,18 +423,18 @@ const SideAttachment = ({
           : component.type === 'network'
             ? RouterIcon
             : Box;
-  const pduEntries = component.type === 'power' ? Object.values(pduMetrics || {}) : [];
+  const pduEntries = component.type === 'power' ? Object.values(pduMetrics ?? {}) : [];
   const hasPduMetrics = component.type === 'power' && pduEntries.length > 0;
-  const totalPower = pduEntries.reduce((sum, pdu) => sum + (pdu.activepower_watt || 0), 0);
-  const totalEnergy = pduEntries.reduce((sum, pdu) => sum + (pdu.activeenergy_wh || 0), 0);
-  const maxCurrent = pduEntries.reduce((max, pdu) => Math.max(max, pdu.current_amp || 0), 0);
+  const totalPower = pduEntries.reduce((sum, pdu) => sum + (pdu.activepower_watt ?? 0), 0);
+  const totalEnergy = pduEntries.reduce((sum, pdu) => sum + (pdu.activeenergy_wh ?? 0), 0);
+  const maxCurrent = pduEntries.reduce((max, pdu) => Math.max(max, pdu.current_amp ?? 0), 0);
   return (
     <div
       className={`border bg-[var(--color-node-surface)]/70 ${accent} rounded-[2px] ${layout} flex items-center justify-center px-1 font-mono text-[8px] tracking-widest uppercase shadow-[inset_0_0_12px_rgba(0,0,0,0.25)]`}
       style={style}
       onMouseEnter={(e) => {
         const details = [
-          { label: 'Rack', value: rackName || 'Unknown' },
+          { label: 'Rack', value: rackName ?? 'Unknown' },
           { label: 'Type', value: component.type.toUpperCase() },
           {
             label: 'Location',
@@ -470,7 +470,7 @@ const SideAttachment = ({
           reasons:
             relevantAlerts.length > 0
               ? relevantAlerts.map((a) => ({
-                  label: a.name || a.id.replace(/_/g, ' '),
+                  label: a.name ?? a.id.replace(/_/g, ' '),
                   severity: a.severity,
                 }))
               : checkReasons,
@@ -479,7 +479,7 @@ const SideAttachment = ({
       }}
       onMouseMove={(e) => {
         const details = [
-          { label: 'Rack', value: rackName || 'Unknown' },
+          { label: 'Rack', value: rackName ?? 'Unknown' },
           { label: 'Type', value: component.type.toUpperCase() },
           {
             label: 'Location',
@@ -515,7 +515,7 @@ const SideAttachment = ({
           reasons:
             relevantAlerts.length > 0
               ? relevantAlerts.map((a) => ({
-                  label: a.name || a.id.replace(/_/g, ' '),
+                  label: a.name ?? a.id.replace(/_/g, ' '),
                   severity: a.severity,
                 }))
               : checkReasons,
@@ -615,13 +615,13 @@ export const DeviceChassis = ({
         instanceName = instanceInput[0];
       } else if (instanceInput && typeof instanceInput === 'object') {
         const values = Object.values(instanceInput);
-        instanceName = values[0] || 'unknown';
+        instanceName = values[0] ?? 'unknown';
       } else {
         instanceName = device.id;
       }
 
       // Get disk layout (or fallback to layout)
-      const diskLayout = template.disk_layout || template.layout;
+      const diskLayout = template.disk_layout ?? template.layout;
       if (!diskLayout?.matrix) {
         return { 1: instanceName };
       }
@@ -684,7 +684,7 @@ export const DeviceChassis = ({
         const existing = alertMap.get(alert.id);
         if (!existing || sevOrder(alert.severity) > sevOrder(existing.severity)) {
           alertMap.set(alert.id, {
-            label: alert.name || alert.id.replace(/_/g, ' '),
+            label: alert.name ?? alert.id.replace(/_/g, ' '),
             severity: alert.severity,
           });
         }
@@ -841,10 +841,10 @@ export const DeviceChassis = ({
             <RowSummaryUnit
               key={rIdx}
               rowNodes={row.map((slot) => nodeMap[slot])}
-              nodesData={nodesData || {}}
+              nodesData={nodesData ?? {}}
               label={
                 template.type === 'storage'
-                  ? (frontLayout?.rows || 1) > 1
+                  ? (frontLayout?.rows ?? 1) > 1
                     ? `DRAWER ${rIdx + 1}`
                     : 'STORAGE ARRAY'
                   : template.name
@@ -976,7 +976,7 @@ export const NodeUnit = ({
   hideText?: boolean;
 }) => {
   const Icon = type === 'network' ? RouterIcon : Server;
-  const hideText = hideTextProp !== undefined ? hideTextProp : uHeight === 1;
+  const hideText = hideTextProp ?? uHeight === 1;
 
   const checks = Array.isArray(nodeMetrics?.checks) ? (nodeMetrics.checks) : [];
   const alertList = Array.isArray(nodeMetrics?.alerts) ? (nodeMetrics.alerts) : [];
@@ -987,13 +987,13 @@ export const NodeUnit = ({
   };
   const reasons: TooltipReason[] = alertList
     .map((alert) => ({
-      label: alert?.name || alert?.id?.replace(/_/g, ' ') || '',
+      label: alert?.name ?? alert?.id?.replace(/_/g, ' ') ?? '',
       severity: alert?.severity,
     }))
     .filter((r) => r.label);
 
   const tooltipPayload = (): HUDTooltipProps => ({
-    title: nodeName || 'UNASSIGNED',
+    title: nodeName ?? 'UNASSIGNED',
     subtitle: 'Node',
     status: nodeHealth,
     enclosure: chassisName,

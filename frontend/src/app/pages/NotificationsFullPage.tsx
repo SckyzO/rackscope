@@ -440,8 +440,8 @@ export const NotificationsFullPage = () => {
           return (
             n.node?.toLowerCase().includes(q) ||
             n.status?.toLowerCase().includes(q) ||
-            n.rack_name?.toLowerCase().includes(q) ||
-            n.partitions?.some((p) => p.toLowerCase().includes(q))
+            (n.rack_name?.toLowerCase().includes(q) ??
+            n.partitions?.some((p) => p.toLowerCase().includes(q)))
           );
         }
       });

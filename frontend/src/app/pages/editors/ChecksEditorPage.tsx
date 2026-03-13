@@ -1410,7 +1410,7 @@ export const ChecksEditorPage = () => {
     } catch {
       parsed = { checks: [] };
     }
-    parsed.checks ||= [];
+    parsed.checks ??= [];
     (parsed.checks as Array<unknown>).push(draftToCheck(draft));
     const newContent = jsYaml.dump(parsed, { lineWidth: 120 });
     await api.updateChecksFile(targetFile, newContent);

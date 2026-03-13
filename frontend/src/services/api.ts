@@ -67,11 +67,11 @@ const writeJSON = (key: string, value: unknown) => {
 
 const logClientError = (message: string, context?: string) => {
   const entry = { ts: Date.now(), message, context };
-  const current = readJSON<{ ts: number; message: string; context?: string }[]>(ERROR_KEY) || [];
+  const current = readJSON<{ ts: number; message: string; context?: string }[]>(ERROR_KEY) ?? [];
   const next = [entry, ...current].slice(0, 50);
   writeJSON(ERROR_KEY, next);
   // Also log to console for visibility.
-  console.error('[rackscope]', message, context || '');
+  console.error('[rackscope]', message, context ?? '');
 };
 
 const markSuccess = () => {
@@ -337,21 +337,21 @@ export const api = {
     const params = roomId ? `?room_id=${encodeURIComponent(roomId)}` : '';
     return fetchWithCache<SlurmSummary>(
       `/api/slurm/summary${params}`,
-      `slurm.summary.${roomId || 'all'}`
+      `slurm.summary.${roomId ?? 'all'}`
     );
   },
   getSlurmPartitions: async (roomId?: string): Promise<SlurmPartitionSummary> => {
     const params = roomId ? `?room_id=${encodeURIComponent(roomId)}` : '';
     return fetchWithCache<SlurmPartitionSummary>(
       `/api/slurm/partitions${params}`,
-      `slurm.partitions.${roomId || 'all'}`
+      `slurm.partitions.${roomId ?? 'all'}`
     );
   },
   getSlurmNodes: async (roomId?: string) => {
     const params = roomId ? `?room_id=${encodeURIComponent(roomId)}` : '';
     return fetchWithCache<{ nodes: SlurmNodeEntry[] }>(
       `/api/slurm/nodes${params}`,
-      `slurm.node-list.${roomId || 'all'}`
+      `slurm.node-list.${roomId ?? 'all'}`
     );
   },
   getSlurmMetricsCatalog: async () => {
@@ -463,7 +463,7 @@ export const api = {
             if (Array.isArray(detailObj.errors)) {
               const lines = detailObj.errors.map((entry) => {
                 const id = entry?.id ? ` (${entry.id})` : '';
-                const msg = entry?.errors?.[0]?.msg || 'invalid check';
+                const msg = entry?.errors?.[0]?.msg ?? 'invalid check';
                 return `- check #${entry?.index ?? '?'}${id}: ${msg}`;
               });
               message = `${detailObj.message}\n${lines.join('\n')}`;
@@ -819,14 +819,14 @@ export const api = {
   },
   getLastSuccessTs: () => {
     const meta = readJSON<{ lastSuccess: number }>(META_KEY);
-    return meta?.lastSuccess || null;
+    return meta?.lastSuccess ?? null;
   },
   isStale: () => {
     const ts = api.getLastSuccessTs();
     if (!ts) return true;
     return Date.now() - ts > STALE_THRESHOLD_MS;
   },
-  getErrorLog: () => readJSON(ERROR_KEY) || [],
+  getErrorLog: () => readJSON(ERROR_KEY) ?? [],
   clearErrorLog: () => writeJSON(ERROR_KEY, []),
   // ── Auth ──────────────────────────────────────────────────────────────────
   changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {

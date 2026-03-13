@@ -96,7 +96,7 @@ export const AlertToastContainer = () => {
         const relevantChecks = severity === 'CRIT' ? critChecks : warnChecks;
         const firstCheck = relevantChecks[0];
         // Use human-readable name if available, else format the ID
-        const checkName = firstCheck?.name || firstCheck?.id?.replace(/_/g, ' ') || 'unknown check';
+        const checkName = firstCheck?.name ?? firstCheck?.id?.replace(/_/g, ' ') ?? 'unknown check';
         const extraCount = relevantChecks.length - 1;
 
         newToasts.push({

@@ -104,7 +104,7 @@ export const NodeHeatmapWidget = ({ data }: { data: DashboardData }) => {
           reasons={tooltip.alert.checks
             .filter((c) => c.severity === 'CRIT' || c.severity === 'WARN')
             .slice(0, 4)
-            .map((c) => ({ label: c.name || c.id, severity: c.severity }))}
+            .map((c) => ({ label: c.name ?? c.id, severity: c.severity }))}
           mousePos={{ x: tooltip.x, y: tooltip.y }}
         />
       )}

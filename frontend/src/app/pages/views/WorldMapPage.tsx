@@ -336,8 +336,8 @@ export const WorldMapPage = () => {
   const mapCenterLon = Number(config?.map?.center?.lon ?? 0);
   const mapDefaultZoom = Number(config?.map?.default_zoom ?? 1);
   const mapZoomControl = config?.map?.zoom_controls ?? true;
-  const mapStyle = (localStorage.getItem('rackscope.map.style') ||
-    config?.map?.style ||
+  const mapStyle = (localStorage.getItem('rackscope.map.style') ??
+    config?.map?.style ??
     'minimal') as 'minimal' | 'noc' | 'flat';
 
   const loadData = useCallback(() => {

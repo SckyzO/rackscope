@@ -41,8 +41,8 @@ export const WorldMapWidget = ({
 
   // localStorage overrides the backend config so the user's map-style preference
   // survives page reloads without a round-trip to the API (same as WorldMapPage).
-  const mapStyle = (localStorage.getItem('rackscope.map.style') ||
-    config?.map?.style ||
+  const mapStyle = (localStorage.getItem('rackscope.map.style') ??
+    config?.map?.style ??
     'minimal') as MapStyle;
   const geoSites = data.sites.filter((s) => s.location?.lat != null && s.location?.lon != null);
 
