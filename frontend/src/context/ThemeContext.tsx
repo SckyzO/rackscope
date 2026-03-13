@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
+import { getIconSvgString } from '../app/components/AppIcon';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -562,9 +563,8 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let active = true;
     const accentHex = ACCENT_PALETTES[accent]?.['--color-brand-500'] ?? '#465fff';
-    // Import icon SVG string lazily to avoid circular dep
-    import('../app/components/AppIcon').then(({ getIconSvgString }) => {
-      if (!active) return;
+    // AppIcon only imports `type` from ThemeContext — no circular dep at runtime.
+    if (active) {
       const svgContent = getIconSvgString(iconId, accentHex, iconBg);
       const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgContent);
       let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
@@ -575,7 +575,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
       }
       link.href = dataUrl;
       link.type = 'image/svg+xml';
-    });
+    }
     return () => {
       active = false;
     };

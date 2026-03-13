@@ -24,9 +24,12 @@ export default defineConfig({
     include: ['apexcharts', 'react-apexcharts', 'monaco-editor'],
   },
   build: {
-    rollupOptions: {
+    // rollupOptions renamed to rolldownOptions in Vite 8 (Rolldown engine).
+    rolldownOptions: {
       output: {
         // Keep Monaco out of the main bundle — it's ~7 MB and only needed in editor pages.
+        // manualChunks function form is deprecated in Vite 8; migrate to codeSplitting
+        // config when the Rolldown codeSplitting API stabilises.
         manualChunks: (id) => {
           if (id.includes('monaco-editor')) return 'monaco';
         },
