@@ -242,3 +242,126 @@ async def test_invalidate_prefix_partial_overlap(cache: ServiceCache):
     count = await cache.invalidate_prefix("ra")
     assert count == 3  # "rack:r01", "rack:r02", "ra_other" all start with "ra"
     assert await cache.get("room:r01:state") == "d"   # untouched
+
+
+# ── Singleflight deduplication ────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_singleflight_leader_gets_none(cache: ServiceCache):
+    """First miss on a key returns None (leader) and registers an inflight future."""
+    result = await cache.get("key-sf")
+    assert result is None
+    assert "key-sf" in cache._inflight
+
+
+@pytest.mark.asyncio
+async def test_singleflight_set_resolves_followers(cache: ServiceCache):
+    """Followers waiting on an inflight key receive the value once set() is called."""
+    computed_value = {"state": "OK"}
+
+    async def leader():
+        val = await cache.get("shared-key")
+        assert val is None  # leader
+        # simulate computation delay
+        await asyncio.sleep(0.02)
+        await cache.set("shared-key", computed_value, ttl=60.0)
+
+    async def follower():
+        await asyncio.sleep(0.005)  # ensure leader registers inflight first
+        val = await cache.get("shared-key")
+        return val
+
+    leader_task = asyncio.create_task(leader())
+    follower_result = await follower()
+    await leader_task
+
+    assert follower_result == computed_value
+
+
+@pytest.mark.asyncio
+async def test_singleflight_multiple_followers(cache: ServiceCache):
+    """All followers receive the same value — only leader computes."""
+    compute_count = 0
+
+    async def leader():
+        nonlocal compute_count
+        val = await cache.get("multi-follower")
+        if val is not None:
+            return val
+        await asyncio.sleep(0.02)
+        compute_count += 1
+        result = {"computed": True}
+        await cache.set("multi-follower", result, ttl=60.0)
+        return result
+
+    async def follower():
+        await asyncio.sleep(0.005)
+        return await cache.get("multi-follower")
+
+    tasks = [asyncio.create_task(leader())] + [asyncio.create_task(follower()) for _ in range(4)]
+    results = await asyncio.gather(*tasks)
+
+    assert compute_count == 1  # only one computation happened
+    assert all(r == {"computed": True} for r in results)
+
+
+@pytest.mark.asyncio
+async def test_singleflight_cancel_inflight_unblocks_followers(cache: ServiceCache):
+    """cancel_inflight() resolves followers with None so they can retry."""
+    async def leader():
+        val = await cache.get("cancel-key")
+        assert val is None
+        await asyncio.sleep(0.02)
+        await cache.cancel_inflight("cancel-key")
+
+    async def follower():
+        await asyncio.sleep(0.005)
+        return await cache.get("cancel-key")
+
+    leader_task = asyncio.create_task(leader())
+    follower_result = await follower()
+    await leader_task
+
+    assert follower_result is None
+    assert "cancel-key" not in cache._inflight
+
+
+@pytest.mark.asyncio
+async def test_singleflight_stats_include_inflight(cache: ServiceCache):
+    """stats() reports the number of in-flight keys."""
+    await cache.get("inflight-a")  # leader, registers inflight
+    await cache.get("inflight-b")  # leader, registers inflight
+
+    s = cache.stats()
+    assert s["inflight"] == 2
+
+    await cache.cancel_inflight("inflight-a")
+    await cache.cancel_inflight("inflight-b")
+    assert cache.stats()["inflight"] == 0
+
+
+@pytest.mark.asyncio
+async def test_singleflight_invalidate_all_unblocks_followers(cache: ServiceCache):
+    """invalidate_all() resolves in-flight futures so waiting followers don't hang."""
+    async def leader():
+        await cache.get("inv-key")
+        await asyncio.sleep(10)  # holds the inflight future indefinitely
+
+    async def follower():
+        await asyncio.sleep(0.005)  # ensure leader registers inflight first
+        return await cache.get("inv-key")  # becomes follower, awaits future
+
+    leader_task = asyncio.create_task(leader())
+    follower_task = asyncio.create_task(follower())
+
+    await asyncio.sleep(0.015)  # let both tasks start and follower start waiting
+    await cache.invalidate_all()  # unblocks the follower's future with None
+
+    follower_result = await follower_task
+    leader_task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await leader_task
+
+    assert follower_result is None  # follower unblocked by invalidate_all
+    assert cache.stats()["inflight"] == 0
