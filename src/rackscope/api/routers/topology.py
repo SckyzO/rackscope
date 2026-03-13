@@ -22,7 +22,7 @@ from rackscope.api.dependencies import (
     get_topology_optional,
 )
 from rackscope.services import topology_service
-from rackscope.utils.validation import safe_segment
+from rackscope.utils.validation import safe_segment, assert_safe_id
 from rackscope.api.models import (
     SiteCreate,
     RoomCreate,
@@ -94,6 +94,7 @@ async def create_room(
     site_id: str, payload: RoomCreate, app_config: Annotated[AppConfig, Depends(get_app_config)]
 ):
     """Create a new room under a site."""
+    assert_safe_id(site_id, "site_id")
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
@@ -290,6 +291,7 @@ async def create_room_aisles(
     topology: Annotated[Topology, Depends(get_topology)],
 ):
     """Create new aisles in a room."""
+    assert_safe_id(room_id, "room_id")
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
@@ -350,6 +352,7 @@ async def update_aisle_racks(
     topology: Annotated[Topology, Depends(get_topology)],
 ):
     """Update rack ordering in an aisle."""
+    assert_safe_id(aisle_id, "aisle_id")
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
@@ -377,6 +380,7 @@ async def delete_site(
     app_config: Annotated[AppConfig, Depends(get_app_config)],
 ):
     """Delete a site and all its rooms/aisles/racks."""
+    assert_safe_id(site_id, "site_id")
     from rackscope.api import app as app_module
 
     base_dir = Path(app_config.paths.topology)
@@ -448,6 +452,7 @@ async def delete_aisle(
     topology: Annotated[Topology, Depends(get_topology)],
 ):
     """Delete an aisle and its racks."""
+    assert_safe_id(aisle_id, "aisle_id")
     from rackscope.api import app as app_module
 
     target_site_id = None
@@ -494,6 +499,7 @@ async def create_rack(
     topology: Annotated[Topology, Depends(get_topology)],
 ):
     """Create a new rack inside an aisle."""
+    assert_safe_id(aisle_id, "aisle_id")
     from rackscope.api import app as app_module
 
     name = payload.name.strip()
@@ -629,6 +635,7 @@ async def get_device_details(
     catalog: Annotated[Catalog, Depends(get_catalog)],
 ):
     """Get device details with context."""
+    assert_safe_id(rack_id, "rack_id")
     for site in topology.sites:
         for room in site.rooms:
             for aisle in room.aisles:
@@ -749,6 +756,7 @@ async def update_rack_device(
     topology: Annotated[Topology, Depends(get_topology)],
 ):
     """Update device position in rack."""
+    assert_safe_id(rack_id, "rack_id")
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
@@ -811,6 +819,8 @@ async def delete_rack_device(
     topology: Annotated[Topology, Depends(get_topology)],
 ):
     """Remove device from rack."""
+    assert_safe_id(rack_id, "rack_id")
+    assert_safe_id(device_id, "device_id")
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
@@ -841,7 +851,9 @@ async def replace_rack_devices(
     catalog: Annotated[Catalog, Depends(get_catalog)],
     topology: Annotated[Topology, Depends(get_topology)],
 ):
+    assert_safe_id(rack_id, "rack_id")
     """Replace all devices in a rack."""
+    assert_safe_id(rack_id, "rack_id")
     # Lazy import to avoid circular dependency
     from rackscope.api import app as app_module
 
