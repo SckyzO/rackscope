@@ -651,3 +651,111 @@ class TestChangeUsername:
                 assert data["ok"] is True
                 assert data["username"] == "newuser"
                 mock_update.assert_called_once()
+
+
+# ── Avatar endpoints ──────────────────────────────────────────────────────────
+
+import base64
+from rackscope.api.routers.auth import _validate_avatar_data_url, _avatar_path
+
+
+# Minimal valid JPEG (3-byte magic header + filler)
+_JPEG_MAGIC = b"\xff\xd8\xff" + b"\x00" * 10
+_JPEG_B64 = "data:image/jpeg;base64," + base64.b64encode(_JPEG_MAGIC).decode()
+
+# Minimal valid PNG (8-byte magic + filler)
+_PNG_MAGIC = b"\x89PNG\r\n\x1a\n" + b"\x00" * 10
+_PNG_B64 = "data:image/png;base64," + base64.b64encode(_PNG_MAGIC).decode()
+
+
+class TestValidateAvatarDataUrl:
+    def test_valid_jpeg(self):
+        raw = _validate_avatar_data_url(_JPEG_B64)
+        assert raw == _JPEG_MAGIC
+
+    def test_valid_png(self):
+        raw = _validate_avatar_data_url(_PNG_B64)
+        assert raw == _PNG_MAGIC
+
+    def test_rejects_missing_data_url(self):
+        with pytest.raises(HTTPException) as exc:
+            _validate_avatar_data_url("not-a-data-url")
+        assert exc.value.status_code == 400
+
+    def test_rejects_svg(self):
+        svg_b64 = "data:image/svg+xml;base64," + base64.b64encode(b"<svg/>").decode()
+        with pytest.raises(HTTPException) as exc:
+            _validate_avatar_data_url(svg_b64)
+        assert exc.value.status_code == 400
+        assert "svg" in exc.value.detail.lower()
+
+    def test_rejects_html(self):
+        html_b64 = "data:text/html;base64," + base64.b64encode(b"<html/>").decode()
+        with pytest.raises(HTTPException) as exc:
+            _validate_avatar_data_url(html_b64)
+        assert exc.value.status_code == 400
+
+    def test_rejects_wrong_magic_bytes(self):
+        """MIME says jpeg but content is not a JPEG."""
+        fake = "data:image/jpeg;base64," + base64.b64encode(b"PK\x03\x04" + b"\x00" * 10).decode()
+        with pytest.raises(HTTPException) as exc:
+            _validate_avatar_data_url(fake)
+        assert exc.value.status_code == 400
+        assert "magic" in exc.value.detail.lower()
+
+    def test_rejects_too_large(self):
+        big = b"\xff\xd8\xff" + b"\x00" * (512 * 1024)
+        big_b64 = "data:image/jpeg;base64," + base64.b64encode(big).decode()
+        with pytest.raises(HTTPException) as exc:
+            _validate_avatar_data_url(big_b64)
+        assert exc.value.status_code == 400
+        assert "large" in exc.value.detail.lower()
+
+    def test_rejects_invalid_base64(self):
+        with pytest.raises(HTTPException) as exc:
+            _validate_avatar_data_url("data:image/jpeg;base64,!!!not_valid!!!")
+        assert exc.value.status_code == 400
+
+    def test_rejects_empty_string(self):
+        with pytest.raises(HTTPException) as exc:
+            _validate_avatar_data_url("")
+        assert exc.value.status_code == 400
+
+
+class TestAvatarEndpoints:
+    def test_get_avatar_no_file(self, tmp_path):
+        with patch("rackscope.api.routers.auth._avatar_path", return_value=tmp_path / "avatar.jpeg"):
+            resp = client.get("/api/auth/avatar")
+        assert resp.status_code == 200
+        assert resp.json()["avatar"] is None
+
+    def test_set_and_get_avatar(self, tmp_path):
+        avatar_file = tmp_path / "avatar.jpeg"
+        with patch("rackscope.api.routers.auth._avatar_path", return_value=avatar_file):
+            put_resp = client.put("/api/auth/avatar", json={"avatar": _JPEG_B64})
+            assert put_resp.status_code == 200
+            assert put_resp.json()["ok"] is True
+
+            get_resp = client.get("/api/auth/avatar")
+        assert get_resp.status_code == 200
+        assert get_resp.json()["avatar"] == _JPEG_B64
+
+    def test_delete_avatar(self, tmp_path):
+        avatar_file = tmp_path / "avatar.jpeg"
+        avatar_file.write_bytes(_JPEG_MAGIC)
+        with patch("rackscope.api.routers.auth._avatar_path", return_value=avatar_file):
+            del_resp = client.delete("/api/auth/avatar")
+            assert del_resp.status_code == 200
+            assert not avatar_file.exists()
+
+    def test_put_null_deletes_avatar(self, tmp_path):
+        avatar_file = tmp_path / "avatar.jpeg"
+        avatar_file.write_bytes(_JPEG_MAGIC)
+        with patch("rackscope.api.routers.auth._avatar_path", return_value=avatar_file):
+            resp = client.put("/api/auth/avatar", json={"avatar": None})
+        assert resp.status_code == 200
+        assert not avatar_file.exists()
+
+    def test_put_invalid_rejects(self):
+        resp = client.put("/api/auth/avatar", json={"avatar": "data:image/svg+xml;base64,PHN2Zy8+"})
+        assert resp.status_code == 400

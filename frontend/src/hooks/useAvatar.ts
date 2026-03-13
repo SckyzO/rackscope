@@ -29,35 +29,58 @@ export const resizeAvatar = (file: File, size = 128): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
+const _localSet = (dataUrl: string | null) => {
+  try {
+    if (dataUrl) localStorage.setItem(AVATAR_KEY, dataUrl);
+    else localStorage.removeItem(AVATAR_KEY);
+  } catch { /* ignore */ }
+};
+
 export const useAvatar = () => {
+  // Initialise from localStorage for instant display (optimistic cache)
   const [avatar, setAvatar] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem(AVATAR_KEY);
-    } catch {
-      return null;
-    }
+    try { return localStorage.getItem(AVATAR_KEY); } catch { return null; }
   });
 
+  // On mount: fetch server-side avatar so it survives browser changes
+  useEffect(() => {
+    fetch('/api/auth/avatar')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        const serverAvatar: string | null = data.avatar ?? null;
+        setAvatar(serverAvatar);
+        _localSet(serverAvatar);
+        window.dispatchEvent(new Event(AVATAR_EVENT));
+      })
+      .catch(() => { /* network unavailable — keep localStorage value */ });
+  }, []);
+
+  // Sync across tabs / components within the same browser session
   useEffect(() => {
     const sync = () => {
-      try {
-        setAvatar(localStorage.getItem(AVATAR_KEY));
-      } catch {
-        /* ignore */
-      }
+      try { setAvatar(localStorage.getItem(AVATAR_KEY)); } catch { /* ignore */ }
     };
     window.addEventListener(AVATAR_EVENT, sync);
     return () => window.removeEventListener(AVATAR_EVENT, sync);
   }, []);
 
-  const updateAvatar = (dataUrl: string | null) => {
-    try {
-      if (dataUrl) localStorage.setItem(AVATAR_KEY, dataUrl);
-      else localStorage.removeItem(AVATAR_KEY);
-    } catch {
-      /* ignore */
-    }
+  const updateAvatar = async (dataUrl: string | null): Promise<void> => {
+    // Optimistic local update for instant UI feedback
+    setAvatar(dataUrl);
+    _localSet(dataUrl);
     window.dispatchEvent(new Event(AVATAR_EVENT));
+
+    // Persist to server
+    try {
+      await fetch('/api/auth/avatar', {
+        method: dataUrl ? 'PUT' : 'DELETE',
+        headers: dataUrl ? { 'Content-Type': 'application/json' } : undefined,
+        body: dataUrl ? JSON.stringify({ avatar: dataUrl }) : undefined,
+      });
+    } catch {
+      /* server unavailable — localStorage copy remains as fallback */
+    }
   };
 
   return { avatar, updateAvatar };

@@ -182,7 +182,7 @@ const AvatarSection = ({ username }: { username: string }) => {
     setError(null);
     try {
       const dataUrl = await resizeAvatar(file, 128);
-      updateAvatar(dataUrl);
+      await updateAvatar(dataUrl);
     } catch {
       setError('Failed to process image');
     } finally {

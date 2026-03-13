@@ -7,11 +7,14 @@ Endpoints for authentication: login, session info, credential management.
 from __future__ import annotations
 
 import asyncio
+import base64
 import logging
 import os
+import re
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Optional, Annotated
 
 
@@ -278,6 +281,129 @@ def change_username(
 
     _update_auth_config(app_config, {"username": body.new_username.strip()})
     return {"ok": True, "username": body.new_username.strip()}
+
+
+# ── Avatar endpoints ──────────────────────────────────────────────────────────
+
+# Allowed image MIME types and their magic bytes (first N bytes of the decoded data).
+# SVG and other text-based formats are explicitly excluded — they can contain
+# executable content (<script> tags, external entity injection, etc.).
+_AVATAR_MAX_BYTES = 512 * 1024  # 512 KB — generous for a 128×128 JPEG (~5–15 KB)
+_AVATAR_ALLOWED_MIMES = {"image/jpeg", "image/png", "image/webp"}
+_AVATAR_MAGIC: dict[str, bytes] = {
+    "image/jpeg": b"\xff\xd8\xff",
+    "image/png": b"\x89PNG\r\n\x1a\n",
+    "image/webp": b"RIFF",  # WebP: RIFF....WEBP — checked below
+}
+_DATA_URL_RE = re.compile(r"^data:([^;]+);base64,(.+)$", re.DOTALL)
+
+
+def _avatar_path() -> Path:
+    """Return the path where the avatar file is stored (next to app.yaml)."""
+    config_file = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
+    return Path(config_file).parent / "avatar.jpeg"
+
+
+def _validate_avatar_data_url(data_url: str) -> bytes:
+    """Parse and validate a base64 avatar data URL.
+
+    Checks:
+    - Well-formed  data:<mime>;base64,<data>  format
+    - MIME type is an allowed image type (jpeg/png/webp — no SVG, no HTML, etc.)
+    - Decoded size ≤ 512 KB
+    - Magic bytes match the declared MIME type (prevents disguised executables)
+
+    Returns the decoded raw bytes on success.
+    Raises HTTPException(400) on any validation failure.
+    """
+    m = _DATA_URL_RE.match(data_url or "")
+    if not m:
+        raise HTTPException(status_code=400, detail="Invalid avatar format: expected data URL")
+
+    mime, b64_data = m.group(1).strip().lower(), m.group(2)
+
+    if mime not in _AVATAR_ALLOWED_MIMES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported image type '{mime}'. Allowed: jpeg, png, webp.",
+        )
+
+    try:
+        raw = base64.b64decode(b64_data)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid base64 data in avatar")
+
+    if len(raw) > _AVATAR_MAX_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Avatar too large ({len(raw)} bytes). Maximum is 512 KB.",
+        )
+
+    magic = _AVATAR_MAGIC[mime]
+    if not raw.startswith(magic):
+        raise HTTPException(
+            status_code=400,
+            detail="Avatar content does not match declared image type (magic bytes mismatch).",
+        )
+
+    # Extra WebP check: bytes 8-12 must be 'WEBP'
+    if mime == "image/webp" and raw[8:12] != b"WEBP":
+        raise HTTPException(status_code=400, detail="Invalid WebP file structure.")
+
+    return raw
+
+
+class AvatarUpdate(BaseModel):
+    avatar: Optional[str] = None  # data URL or null (to delete)
+
+
+@router.get("/avatar")
+def get_avatar():
+    """Return the stored avatar as a base64 data URL, or null if none set."""
+    path = _avatar_path()
+    if not path.exists():
+        return {"avatar": None}
+    try:
+        raw = path.read_bytes()
+        data_url = "data:image/jpeg;base64," + base64.b64encode(raw).decode()
+        return {"avatar": data_url}
+    except OSError as e:
+        logger.warning("Failed to read avatar file: %s", e)
+        return {"avatar": None}
+
+
+@router.put("/avatar")
+def set_avatar(body: AvatarUpdate):
+    """Store an avatar image. Validates MIME type, size, and magic bytes."""
+    if not body.avatar:
+        # Treat null / empty as a delete request
+        _delete_avatar_file()
+        return {"ok": True}
+
+    raw = _validate_avatar_data_url(body.avatar)
+    path = _avatar_path()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(raw)
+    except OSError as e:
+        logger.error("Failed to write avatar file: %s", e)
+        raise HTTPException(status_code=500, detail="Could not save avatar")
+    return {"ok": True}
+
+
+@router.delete("/avatar")
+def delete_avatar():
+    """Remove the stored avatar."""
+    _delete_avatar_file()
+    return {"ok": True}
+
+
+def _delete_avatar_file() -> None:
+    path = _avatar_path()
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as e:
+        logger.warning("Failed to delete avatar file: %s", e)
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
