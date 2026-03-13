@@ -2,7 +2,7 @@
 
 # 🔭 Rackscope
 
-**Prometheus-first physical infrastructure monitoring for data centers and HPC environments**
+**Physical infrastructure visibility for data centers and HPC clusters**
 
 [![CI](https://github.com/SckyzO/rackscope/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SckyzO/rackscope/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-1.0.0--beta-blue?style=flat-square)](CHANGELOG.md)

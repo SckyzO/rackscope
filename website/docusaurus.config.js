@@ -4,7 +4,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Rackscope',
-  tagline: 'Prometheus-first physical infrastructure monitoring',
+  tagline: 'Physical infrastructure visibility for data centers and HPC clusters',
   favicon: 'img/favicon.svg',
 
   url: 'https://rackscope.dev',
