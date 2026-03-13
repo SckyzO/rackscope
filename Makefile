@@ -125,6 +125,10 @@ security-deps:
 security: security-backend security-frontend security-deps
 	@echo "🛡️  Full security audit complete!"
 
+## Outdated dependency check (Python + npm versions + CVE scan)
+check-deps:
+	@bash scripts/check-deps.sh
+
 # Development Helpers
 shell-backend:
 	docker compose -f $(COMPOSE_DEV) exec backend bash
