@@ -173,11 +173,12 @@ class SlurmPlugin(RackscopePlugin):
 
             APP_CONFIG = app_module.APP_CONFIG
             TOPOLOGY = app_module.TOPOLOGY
+            TOPOLOGY_INDEX = app_module.TOPOLOGY_INDEX
 
             if not APP_CONFIG or not TOPOLOGY:
                 raise HTTPException(status_code=503, detail="Topology not loaded")
 
-            room = topology_service.find_room_by_id(TOPOLOGY, room_id)
+            room = topology_service.find_room_by_id(TOPOLOGY, room_id, index=TOPOLOGY_INDEX)
             if not room:
                 raise HTTPException(status_code=404, detail="Room not found")
 
@@ -259,13 +260,14 @@ class SlurmPlugin(RackscopePlugin):
 
             APP_CONFIG = app_module.APP_CONFIG
             TOPOLOGY = app_module.TOPOLOGY
+            TOPOLOGY_INDEX = app_module.TOPOLOGY_INDEX
 
             if not APP_CONFIG or not TOPOLOGY:
                 raise HTTPException(status_code=503, detail="Topology not loaded")
 
             allowed_nodes: Optional[set[str]] = None
             if room_id:
-                room = topology_service.find_room_by_id(TOPOLOGY, room_id)
+                room = topology_service.find_room_by_id(TOPOLOGY, room_id, index=TOPOLOGY_INDEX)
                 if not room:
                     raise HTTPException(status_code=404, detail="Room not found")
                 allowed_nodes = slurm_service.collect_room_nodes(room)
@@ -295,13 +297,14 @@ class SlurmPlugin(RackscopePlugin):
 
             APP_CONFIG = app_module.APP_CONFIG
             TOPOLOGY = app_module.TOPOLOGY
+            TOPOLOGY_INDEX = app_module.TOPOLOGY_INDEX
 
             if not APP_CONFIG or not TOPOLOGY:
                 raise HTTPException(status_code=503, detail="Topology not loaded")
 
             allowed_nodes: Optional[set[str]] = None
             if room_id:
-                room = topology_service.find_room_by_id(TOPOLOGY, room_id)
+                room = topology_service.find_room_by_id(TOPOLOGY, room_id, index=TOPOLOGY_INDEX)
                 if not room:
                     raise HTTPException(status_code=404, detail="Room not found")
                 allowed_nodes = slurm_service.collect_room_nodes(room)
@@ -344,20 +347,21 @@ class SlurmPlugin(RackscopePlugin):
 
             APP_CONFIG = app_module.APP_CONFIG
             TOPOLOGY = app_module.TOPOLOGY
+            TOPOLOGY_INDEX = app_module.TOPOLOGY_INDEX
 
             if not APP_CONFIG or not TOPOLOGY:
                 raise HTTPException(status_code=503, detail="Topology not loaded")
 
             allowed_nodes: Optional[set[str]] = None
             if room_id:
-                room = topology_service.find_room_by_id(TOPOLOGY, room_id)
+                room = topology_service.find_room_by_id(TOPOLOGY, room_id, index=TOPOLOGY_INDEX)
                 if not room:
                     raise HTTPException(status_code=404, detail="Room not found")
                 allowed_nodes = slurm_service.collect_room_nodes(room)
 
             slurm_cfg = self._get_config()
             node_states = await slurm_service.build_slurm_states(slurm_cfg, allowed_nodes)
-            context = slurm_service.build_node_context(TOPOLOGY)
+            context = slurm_service.build_node_context(TOPOLOGY, index=TOPOLOGY_INDEX)
 
             payload = []
             for node_id, state in node_states.items():

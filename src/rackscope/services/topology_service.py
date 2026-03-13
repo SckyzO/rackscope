@@ -29,7 +29,9 @@ def find_rack_by_id(
     """
     if index is not None:
         ctx = index.racks.get(rack_id)
-        return ctx.rack if ctx else None
+        if ctx is not None:
+            return ctx.rack
+        # Fall through to O(n) if not in index
 
     # O(n) fallback — used during startup before index is built
     for site in topology.sites:
@@ -60,7 +62,11 @@ def find_room_by_id(
         The room if found, None otherwise
     """
     if index is not None:
-        return index.rooms.get(room_id)
+        result = index.rooms.get(room_id)
+        if result is not None:
+            return result
+        # Fall through to O(n) if not in index — handles tests with mock
+        # topologies that don't rebuild the index, or temporary index staleness.
 
     for site in topology.sites:
         for room in site.rooms:
@@ -86,9 +92,9 @@ def find_rack_location(
     """
     if index is not None:
         ctx: Optional[RackContext] = index.racks.get(rack_id)
-        if ctx is None:
-            return None
-        return ctx.site.id, ctx.room.id, ctx.aisle_id, ctx.is_standalone
+        if ctx is not None:
+            return ctx.site.id, ctx.room.id, ctx.aisle_id, ctx.is_standalone
+        # Fall through to O(n) if not in index
 
     for site in topology.sites:
         for room in site.rooms:

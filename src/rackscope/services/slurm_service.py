@@ -11,7 +11,7 @@ import re
 
 import yaml
 
-from rackscope.model.domain import Room, Rack, Device, Topology
+from rackscope.model.domain import Room, Rack, Device, Topology, TopologyIndex
 from rackscope.utils.aggregation import severity_rank as _severity_rank
 from rackscope.services.instance_service import expand_device_instances as _expand_device_instances
 
@@ -135,15 +135,38 @@ def collect_room_nodes(room: Room) -> Set[str]:
     return nodes
 
 
-def build_node_context(topology: Topology) -> Dict[str, Dict[str, str]]:
+def build_node_context(
+    topology: Topology,
+    index: Optional[TopologyIndex] = None,
+) -> Dict[str, Dict[str, str]]:
     """Build context mapping for all nodes in topology.
 
+    Uses TopologyIndex for O(1) lookups when available — avoids re-expanding
+    instance patterns on every request (critical for 14k-node deployments).
+
     Args:
-        topology: The topology to process
+        topology: The topology to process (O(n) fallback when index absent)
+        index: Optional TopologyIndex for O(n) build from pre-expanded instances
 
     Returns:
-        Dictionary mapping node IDs to their context
+        Dictionary mapping node IDs to their context (site/room/rack/device)
     """
+    if index is not None:
+        return {
+            inst_name: {
+                "site_id": ctx.site.id,
+                "site_name": ctx.site.name,
+                "room_id": ctx.room.id,
+                "room_name": ctx.room.name,
+                "rack_id": ctx.rack.id,
+                "rack_name": ctx.rack.name,
+                "device_id": ctx.device.id,
+                "device_name": ctx.device.name,
+            }
+            for inst_name, ctx in index.instances.items()
+        }
+
+    # O(n) fallback — used when index not yet built (e.g. during startup)
     context: Dict[str, Dict[str, str]] = {}
     for site in topology.sites:
         for room in site.rooms:
