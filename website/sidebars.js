@@ -50,6 +50,7 @@ const sidebars = {
         'user-guide/simulator',
         'user-guide/playlist',
         'user-guide/notifications',
+        'user-guide/logs',
       ],
     },
 
@@ -178,6 +179,7 @@ const sidebars = {
   development: [
     'development/testing',
     'development/security',
+    'development/linting',
     // ── Internals ──────────────────────────────────────────────────────────────
     'development/telemetry-planner',
   ],
