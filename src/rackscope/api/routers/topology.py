@@ -414,6 +414,7 @@ async def delete_room(
     topology: Annotated[Topology, Depends(get_topology)],
 ):
     """Delete a room and its aisles/racks."""
+    assert_safe_id(room_id, "room_id")
     from rackscope.api import app as app_module
 
     target_site_id = None

@@ -24,6 +24,21 @@ from typing import List, Optional, Union, Dict
 
 from pydantic import BaseModel, Field, field_validator
 
+# Pattern shared with utils/validation.py — must start with alphanumeric to
+# prevent ".." traversal and ".hidden" patterns in filesystem operations.
+_TOPOLOGY_ID_PATTERN: re.Pattern = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
+
+
+def _validate_topology_id(v: str, field_name: str = "id") -> str:
+    """Raise ValueError if v is not a safe topology ID (used as path segment)."""
+    if not _TOPOLOGY_ID_PATTERN.match(v or ""):
+        raise ValueError(
+            f"Invalid {field_name}: {v!r}. "
+            "IDs must start with a lowercase letter or digit and contain only "
+            "lowercase letters, digits, dots, hyphens and underscores (max 128 chars)."
+        )
+    return v
+
 
 class Device(BaseModel):
     id: str = Field(..., description="Unique ID of the chassis/device")
@@ -73,11 +88,21 @@ class Rack(BaseModel):
 
     devices: List[Device] = Field(default_factory=list)
 
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v: str) -> str:
+        return _validate_topology_id(v, "rack_id")
+
 
 class Aisle(BaseModel):
     id: str = Field(..., description="Unique identifier for the aisle within the room")
     name: str = Field(..., description="Human-readable name (e.g., 'Aisle 4')")
     racks: List[Rack] = Field(default_factory=list)
+
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v: str) -> str:
+        return _validate_topology_id(v, "aisle_id")
 
 
 class RoomLayoutSize(BaseModel):
@@ -117,6 +142,11 @@ class Room(BaseModel):
     # Support for racks outside aisles if necessary
     standalone_racks: List[Rack] = Field(default_factory=list)
 
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v: str) -> str:
+        return _validate_topology_id(v, "room_id")
+
     @field_validator("aisles")
     @classmethod
     def ensure_unique_aisle_ids(cls, v: List[Aisle]) -> List[Aisle]:
@@ -139,6 +169,11 @@ class Site(BaseModel):
     description: Optional[str] = None
     location: Optional["SiteLocation"] = None
     rooms: List[Room] = Field(default_factory=list)
+
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v: str) -> str:
+        return _validate_topology_id(v, "site_id")
 
     @field_validator("rooms")
     @classmethod
