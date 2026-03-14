@@ -219,3 +219,77 @@ def test_telemetry_config_valid_tls_cert_and_key():
 
     assert config.tls_cert_file == "/path/to/cert.pem"
     assert config.tls_key_file == "/path/to/key.pem"
+
+
+# ── SSRF prometheus_url validation ────────────────────────────────────────────
+
+def test_prometheus_url_valid():
+    """Valid http/https URLs are accepted."""
+    from rackscope.model.config import TelemetryConfig
+    from pydantic import ValidationError
+
+    for url in [
+        "http://prometheus:9090",
+        "https://prometheus.example.com",
+        "http://192.168.1.10:9090",   # private range allowed (internal infra)
+        "http://10.0.0.5:9090",
+        "http://localhost:9090",
+        "http://127.0.0.1:9090",
+    ]:
+        config = TelemetryConfig(prometheus_url=url)
+        assert config.prometheus_url == url
+
+
+def test_prometheus_url_rejects_bad_scheme():
+    """Non-http/https schemes are rejected."""
+    from rackscope.model.config import TelemetryConfig
+    from pydantic import ValidationError
+
+    for url in ["file:///etc/passwd", "ftp://host", "dict://host", "gopher://host"]:
+        with pytest.raises(ValidationError, match="http or https"):
+            TelemetryConfig(prometheus_url=url)
+
+
+def test_prometheus_url_rejects_embedded_credentials():
+    """Embedded credentials are rejected — use basic_auth_user/password fields."""
+    from rackscope.model.config import TelemetryConfig
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="embed credentials"):
+        TelemetryConfig(prometheus_url="http://user:secret@prometheus:9090")
+
+
+def test_prometheus_url_rejects_link_local_range():
+    """169.254.x.x link-local range (cloud metadata) is fully blocked."""
+    from rackscope.model.config import TelemetryConfig
+    from pydantic import ValidationError
+
+    for url in [
+        "http://169.254.169.254",          # AWS/Azure IMDS
+        "http://169.254.169.254/latest",
+        "http://169.254.1.1",              # other link-local (not just .254)
+    ]:
+        with pytest.raises(ValidationError, match="link-local"):
+            TelemetryConfig(prometheus_url=url)
+
+
+def test_prometheus_url_rejects_cloud_metadata_dns():
+    """Cloud metadata DNS names are blocked."""
+    from rackscope.model.config import TelemetryConfig
+    from pydantic import ValidationError
+
+    for url in [
+        "http://metadata.google.internal",
+        "http://100.100.100.200",   # Alibaba IMDS
+    ]:
+        with pytest.raises(ValidationError, match="cloud metadata|link-local"):
+            TelemetryConfig(prometheus_url=url)
+
+
+def test_prometheus_url_rejects_unspecified_address():
+    """0.0.0.0 and :: (unspecified) are rejected."""
+    from rackscope.model.config import TelemetryConfig
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="unspecified"):
+        TelemetryConfig(prometheus_url="http://0.0.0.0:9090")

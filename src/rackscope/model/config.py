@@ -52,24 +52,65 @@ class TelemetryConfig(BaseModel):
     @field_validator("prometheus_url")
     @classmethod
     def validate_prometheus_url(cls, value: Optional[str]) -> Optional[str]:
+        """Validate prometheus_url against SSRF risks.
+
+        Checks (per Context7 / OWASP SSRF prevention):
+        1. Scheme must be http or https — block file://, dict://, etc.
+        2. No embedded credentials — use basic_auth_user/password fields.
+        3. Block cloud metadata DNS names (GCP, Alibaba).
+        4. Block link-local IP range 169.254.0.0/16 (AWS/Azure IMDS, not just .254).
+        5. Block 0.0.0.0 / :: (invalid bind addresses).
+
+        Private ranges (10.x, 192.168.x, 172.16.x) are intentionally NOT blocked
+        because Prometheus is typically on a private network in datacenter deployments.
+        """
         if not value:
             return value
         parsed = urlparse(value)
+
+        # 1. Scheme check
         if parsed.scheme not in ("http", "https"):
-            raise ValueError("prometheus_url must use http or https scheme")
-        host = parsed.hostname or ""
-        # Reject link-local metadata endpoints (AWS/GCP/Azure IMDS)
-        blocked_hosts = {"169.254.169.254", "metadata.google.internal", "100.100.100.200"}
-        if host in blocked_hosts:
-            raise ValueError(f"prometheus_url targets a reserved address: {host}")
-        # Reject IPv6 link-local
+            raise ValueError(
+                f"prometheus_url must use http or https scheme, got: {parsed.scheme!r}"
+            )
+
+        # 2. No embedded credentials
+        if parsed.username or parsed.password:
+            raise ValueError(
+                "prometheus_url must not embed credentials. "
+                "Use basic_auth_user and basic_auth_password fields instead."
+            )
+
+        host = (parsed.hostname or "").lower()
+
+        # 3. Block known cloud metadata DNS names
+        _BLOCKED_METADATA_HOSTS = {
+            "metadata.google.internal",  # GCP metadata
+            "100.100.100.200",           # Alibaba Cloud IMDS
+        }
+        if host in _BLOCKED_METADATA_HOSTS:
+            raise ValueError(
+                f"prometheus_url targets a cloud metadata address: {host!r}"
+            )
+
+        # 4 & 5. Block dangerous IP addresses (link-local range + unspecified)
         try:
             addr = ipaddress.ip_address(host)
             if addr.is_link_local:
-                raise ValueError(f"prometheus_url targets a link-local address: {host}")
+                # Covers full 169.254.0.0/16 (IPv4) and fe80::/10 (IPv6)
+                raise ValueError(
+                    f"prometheus_url targets a link-local address {host!r} "
+                    "(cloud instance metadata range — SSRF risk)"
+                )
+            if addr.is_unspecified:
+                raise ValueError(
+                    f"prometheus_url targets an unspecified address: {host!r}"
+                )
         except ValueError as e:
-            if "link-local" in str(e) or "reserved" in str(e):
+            # Re-raise our own errors; suppress ipaddress parse errors (hostname not an IP)
+            if any(kw in str(e) for kw in ("link-local", "cloud", "unspecified")):
                 raise
+
         return value
 
     @field_validator("job_regex")

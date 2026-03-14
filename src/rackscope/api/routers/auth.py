@@ -183,6 +183,7 @@ def auth_status(app_config: Annotated[Optional[AppConfig], Depends(get_app_confi
 @router.post("/login", response_model=LoginResponse)
 def login(
     body: LoginRequest,
+    request: Request,
     app_config: Annotated[Optional[AppConfig], Depends(get_app_config)],
 ):
     """Validate credentials and return a JWT."""
@@ -190,9 +191,16 @@ def login(
     if not app_config or not app_config.auth.enabled:
         raise HTTPException(status_code=400, detail="Authentication is not enabled")
 
+    client_ip = request.client.host if request.client else "unknown"
     auth = app_config.auth
-    # Username check
+
+    # Username check — log internally but return generic message (prevent enumeration)
     if body.username != auth.username:
+        logger.warning(
+            "Login failed: unknown username %r (ip=%s)",
+            body.username,
+            client_ip,
+        )
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # Password check — empty hash means not yet configured
@@ -200,6 +208,11 @@ def login(
         raise HTTPException(status_code=401, detail="No password configured")
 
     if not _verify_password(body.password, auth.password_hash):
+        logger.warning(
+            "Login failed: wrong password for username %r (ip=%s)",
+            auth.username,
+            client_ip,
+        )
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     secret = _secret_key(app_config)
