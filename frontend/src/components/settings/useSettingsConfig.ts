@@ -62,6 +62,7 @@ export type ConfigDraft = {
     toast_stack_threshold: string;
     worldmap: boolean;
     aisle_dashboard: boolean;
+    show_logs: boolean;
     dev_tools: boolean;
     playlist: boolean;
     offline: boolean;
@@ -190,6 +191,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     toast_stack_threshold: String(config.features?.toast_stack_threshold ?? 5),
     worldmap: config.features?.worldmap ?? true,
     aisle_dashboard: config.features?.aisle_dashboard ?? true,
+    show_logs: config.features?.show_logs !== false,
     dev_tools: config.features?.dev_tools ?? false,
     playlist: config.features?.playlist ?? false,
     offline: config.features?.offline ?? false,
@@ -361,6 +363,7 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
     toast_stack_threshold: parseInt(draft.features.toast_stack_threshold, 10) || 5,
     worldmap: draft.features.worldmap,
     aisle_dashboard: draft.features.aisle_dashboard,
+    show_logs: draft.features.show_logs,
     dev_tools: draft.features.dev_tools,
     playlist: draft.features.playlist,
     offline: draft.features.offline,

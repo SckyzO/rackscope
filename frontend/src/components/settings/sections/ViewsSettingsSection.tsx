@@ -212,6 +212,12 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
                 tooltip: 'Show the Notifications page and the badge in the header.',
               },
               {
+                key: 'show_logs' as const,
+                label: 'Backend Logs',
+                tooltip:
+                  'Show the Backend Logs page in the sidebar. Disable in kiosk or public deployments.',
+              },
+              {
                 key: 'dev_tools' as const,
                 label: 'Dev Tools (UI Library)',
                 tooltip:

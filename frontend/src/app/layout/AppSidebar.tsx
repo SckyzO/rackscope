@@ -865,7 +865,9 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
         )}
         <NavItem to="/profile" icon={User} label="Profile" collapsed={collapsed} />
         <NavItem to="/settings" icon={Settings} label="Settings" collapsed={collapsed} />
-        <NavItem to="/logs" icon={ScrollText} label="Logs" collapsed={collapsed} />
+        {features.show_logs && (
+          <NavItem to="/logs" icon={ScrollText} label="Logs" collapsed={collapsed} />
+        )}
         <NavItem to="/about" icon={GitBranch} label="About" collapsed={collapsed} />
       </div>
     </aside>

@@ -410,6 +410,7 @@ export type AppConfig = {
     playlist?: boolean;
     offline?: boolean;
     worldmap?: boolean;
+    show_logs?: boolean;
     dev_tools?: boolean;
     wizard?: boolean;
   };

@@ -139,6 +139,7 @@ class FeatureConfig(BaseModel):
     wizard: bool = True  # Show setup wizard on first launch; set to false to disable permanently
     # Page visibility
     worldmap: bool = True
+    show_logs: bool = True   # Backend log viewer — hide in kiosk/public deployments
     dev_tools: bool = False  # UI Library, showcase, dev pages (off in prod)
 
 
