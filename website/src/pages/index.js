@@ -356,21 +356,7 @@ function HomeContent() {
         }} />
 
         <div style={{ maxWidth: 860, margin: '0 auto', padding: '88px 24px 80px', position: 'relative', textAlign: 'center' }}>
-          {/* Badge */}
-          <div className="rs-a0" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '5px 14px', background: C.indigoLo, border: `1px solid ${C.indigoBorder}`,
-            borderRadius: 999, marginBottom: 28,
-          }}>
-            <span style={{
-              width: 6, height: 6, borderRadius: '50%', background: C.indigo,
-              boxShadow: `0 0 6px ${C.indigo}`, animation: 'rs-glow-pulse 2s ease infinite',
-              display: 'inline-block', flexShrink: 0,
-            }} />
-            <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:C.indigo, letterSpacing:'0.08em', fontWeight:600 }}>
-              Open Source · AGPL-3.0
-            </span>
-          </div>
+
 
           <h1 className="rs-a1" style={{
             fontSize: 'clamp(2.8rem, 6vw, 4.5rem)', fontWeight: 800, margin: '0 0 16px',
@@ -505,16 +491,28 @@ function HomeContent() {
                         {/* Bell on first node — font-size: 0 when hidden takes no space,
                             transitions to 0.85rem when shown. No layout shift, no blank gap. */}
                         {isFirst && (
-                          <span style={{
-                            display:'inline-block',
-                            fontSize: showBell ? '0.85rem' : '0',
-                            marginRight: showBell ? 2 : 0,
-                            overflow:'hidden',
-                            transition:'font-size 0.35s ease, margin 0.35s ease',
-                            animation: showBell
-                              ? 'rs-bell-ring 0.6s ease 0.1s, rs-glow-pulse 2s ease 0.8s infinite'
-                              : 'none',
-                          }}>🔔</span>
+                          /* SVG icon — fixed 14×14 box, no emoji metric mismatch, zero layout shift */
+                          <svg
+                            width={showBell ? 14 : 0}
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#ef4444"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            style={{
+                              flexShrink:0,
+                              opacity: showBell ? 1 : 0,
+                              marginRight: showBell ? 4 : 0,
+                              transition:'opacity 0.35s ease, width 0.35s ease, margin 0.35s ease',
+                              animation: showBell ? 'rs-bell-ring 0.6s ease 0.1s, rs-glow-pulse 2s ease 0.8s infinite' : 'none',
+                              overflow:'hidden',
+                            }}
+                          >
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                          </svg>
                         )}
                         {name}
                         {/* CRIT dot on last node */}
@@ -803,7 +801,7 @@ function HomeContent() {
           </div>
 
           {/* Bridge diagram */}
-          <div style={{ display:'flex', alignItems:'stretch', gap:0 }}>
+          <div className="rs-bridge-grid" style={{ display:'flex', alignItems:'stretch', gap:0 }}>
             {/* Grafana */}
             <div style={{
               flex:1, padding:'28px 20px',
@@ -908,7 +906,7 @@ function HomeContent() {
           </div>
 
           {/* 4 steps */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:2, marginBottom:64, position:'relative' }}>
+          <div className="rs-steps-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:2, marginBottom:64, position:'relative' }}>
             {[
               { num:'01', icon:'📄', title:'Define your topology', desc:'Write YAML files describing your physical infrastructure — sites, rooms, aisles, racks, devices. Or generate them from NetBox, RacksDB, any script, or the API.', tag:'topology.yaml' },
               { num:'02', icon:'📡', title:'Connect Prometheus', desc:"One URL. Point Rackscope at your existing Prometheus instance. No collector to deploy, no agent to install, nothing to change in your stack.", tag:'prometheus_url:' },
