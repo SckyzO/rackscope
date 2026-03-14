@@ -69,7 +69,7 @@ const config = {
     ({
       // Social sharing & SEO meta tags
       metadata: [
-        { name: 'description',        content: 'Prometheus-first physical infrastructure monitoring dashboard. Maps every alert to its exact physical location — site, datacenter, room, aisle, rack, device, instance.' },
+        { name: 'description',        content: 'Physical infrastructure visibility for data centers and HPC clusters. Maps every Prometheus alert to its exact physical location — site, room, aisle, rack, device, instance.' },
         { property: 'og:type',        content: 'website' },
         { property: 'og:site_name',   content: 'Rackscope' },
         { property: 'og:image',       content: 'https://rackscope.dev/img/og-image.svg' },
