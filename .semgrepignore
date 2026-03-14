@@ -1,0 +1,12 @@
+# Semgrep path exclusions
+# Rule-level false positives are handled via --exclude-rule in security-full.sh
+
+# Third-party and generated code
+node_modules/
+website/node_modules/
+htmlcov/
+dist/
+.git/
+
+# Test fixtures — intentional use of unsafe patterns for testing
+tests/

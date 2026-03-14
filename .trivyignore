@@ -7,3 +7,13 @@
 # No fix available without downgrading monaco-editor (breaking change).
 # Tracked: https://github.com/SckyzO/rackscope/security
 CVE-2024-48910
+
+# serialize-javascript in website/package-lock.json (Docusaurus transitive dep via webpack)
+# Not in production frontend — Docusaurus is a dev-only docs tool.
+GHSA-5c6j-r48x-rmvq
+
+# undici DoS CVEs in website/node_modules (Docusaurus dep, not production)
+# Fixed in undici 7.24.0 — update website deps when Docusaurus releases
+CVE-2026-1526
+CVE-2026-1528
+CVE-2026-2229
