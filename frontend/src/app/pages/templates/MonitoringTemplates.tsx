@@ -348,9 +348,7 @@ export const DeviceViewTemplate = () => {
               <span>U1</span>
             </div>
           </div>
-          <span className={`rounded-lg px-3 py-1 text-sm font-bold ${STATE_PILL.WARN}`}>
-            WARN
-          </span>
+          <span className={`rounded-lg px-3 py-1 text-sm font-bold ${STATE_PILL.WARN}`}>WARN</span>
         </div>
       </div>
 

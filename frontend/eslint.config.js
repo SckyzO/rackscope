@@ -38,12 +38,15 @@ export default defineConfig([
       'no-var': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       // Code quality — new in ESLint 9/10, verified 0 violations on codebase
-      'no-useless-assignment': 'error',       // assignment whose value is never read after
-      'no-object-constructor': 'error',       // new Object() → {}
-      'prefer-object-spread': 'warn',         // Object.assign({}, x) → { ...x }
-      'no-useless-return': 'warn',            // return; at end of void function
-      'logical-assignment-operators': [       // if (!a) a = b → a ||= b
-        'warn', 'always', { enforceForIfStatements: true },
+      'no-useless-assignment': 'error', // assignment whose value is never read after
+      'no-object-constructor': 'error', // new Object() → {}
+      'prefer-object-spread': 'warn', // Object.assign({}, x) → { ...x }
+      'no-useless-return': 'warn', // return; at end of void function
+      'logical-assignment-operators': [
+        // if (!a) a = b → a ||= b
+        'warn',
+        'always',
+        { enforceForIfStatements: true },
       ],
       // TypeScript
       '@typescript-eslint/no-explicit-any': 'warn',
@@ -59,15 +62,16 @@ export default defineConfig([
       '@typescript-eslint/prefer-as-const': 'error', // 'foo' as 'foo' → 'foo' as const
       // ── Type-aware rules (require projectService: true) ──────────────────
       // High-value async safety rules
-      '@typescript-eslint/no-floating-promises': 'error',   // await or .catch() on every Promise
-      '@typescript-eslint/no-misused-promises': [           // async fn where sync is expected
+      '@typescript-eslint/no-floating-promises': 'error', // await or .catch() on every Promise
+      '@typescript-eslint/no-misused-promises': [
+        // async fn where sync is expected
         'error',
-        { checksVoidReturn: { attributes: false } },        // allow onClick={async () => {}} in JSX
+        { checksVoidReturn: { attributes: false } }, // allow onClick={async () => {}} in JSX
       ],
-      '@typescript-eslint/await-thenable': 'error',         // await on non-Promise value
+      '@typescript-eslint/await-thenable': 'error', // await on non-Promise value
       // Prefer modern nullish patterns
-      '@typescript-eslint/prefer-nullish-coalescing': 'warn',  // a || b → a ?? b
-      '@typescript-eslint/prefer-optional-chain': 'warn',      // a && a.b → a?.b
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn', // a || b → a ?? b
+      '@typescript-eslint/prefer-optional-chain': 'warn', // a && a.b → a?.b
       // Disabled: no-unsafe-* fire on API `any` types — too noisy without stricter typing
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',

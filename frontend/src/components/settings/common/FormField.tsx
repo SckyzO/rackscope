@@ -10,7 +10,7 @@ type FormFieldProps = {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-}
+};
 
 export const FormField: React.FC<FormFieldProps> = ({
   label,

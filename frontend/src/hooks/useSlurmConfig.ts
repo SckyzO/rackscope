@@ -6,7 +6,7 @@ type SlurmSeverityColors = {
   warn: string;
   crit: string;
   info: string;
-}
+};
 
 const DEFAULT_STATUS_MAP: Record<string, string> = {
   allocated: 'ok',

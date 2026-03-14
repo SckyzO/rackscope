@@ -4,3 +4,4 @@ ignore:
   - DL3009  # apt-get clean (already handled by Docker layer caching)
   - DL3013  # pip install without --no-cache-dir (already set globally)
   - SC2086  # Double quote to prevent globbing (shellcheck in hadolint)
+  - DL3046  # useradd without -l flag (UID-based image size concern, non-critical for our images)

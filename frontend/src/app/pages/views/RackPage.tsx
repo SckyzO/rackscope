@@ -107,7 +107,7 @@ export const RackPage = () => {
     // Virtual nodes use the key format "instance:labelValue" (e.g. "compute01:slot3").
     // Split on ':' to extract the base instance for tooltip and navigation.
     const matchKey = Object.keys(nodes).find((k) => k.startsWith(device.id.split(':')[0]));
-    const ns = matchKey ? (nodes[matchKey]) : undefined;
+    const ns = matchKey ? nodes[matchKey] : undefined;
     setSelected({
       device,
       state: ns?.state ?? 'UNKNOWN',

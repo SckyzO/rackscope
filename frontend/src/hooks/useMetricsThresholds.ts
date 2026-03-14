@@ -18,7 +18,7 @@ import { useState, useEffect } from 'react';
 export type MetricThresholds = {
   warn?: number;
   crit?: number;
-}
+};
 
 // Module-level cache — shared across all component instances
 let _cache: Record<string, MetricThresholds> | null = null;

@@ -34,7 +34,7 @@ type WallConfig = {
   cardSize: CardSize;
   groupByAisle: boolean;
   autoRefreshMs: number;
-}
+};
 type RackEntry = { rack: Room['aisles'][0]['racks'][0]; roomName: string; aisleName: string };
 type HoverPayload = {
   node: string;

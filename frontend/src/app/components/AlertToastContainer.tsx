@@ -14,7 +14,7 @@ type ToastEntry = {
   severity: string;
   rackId: string;
   rackName: string;
-}
+};
 
 const toastConfig = {
   WARN: {

@@ -4,6 +4,7 @@ Tests for auth router — helper functions and API endpoints.
 Target coverage: 33% → 80%+
 """
 
+import base64
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
@@ -19,6 +20,7 @@ from rackscope.api.routers.auth import (
     _make_token,
     _secret_key,
     _token_expiry,
+    _validate_avatar_data_url,
     _validate_policy,
     _verify_password,
 )
@@ -655,9 +657,6 @@ class TestChangeUsername:
 
 # ── Avatar endpoints ──────────────────────────────────────────────────────────
 
-import base64
-from rackscope.api.routers.auth import _validate_avatar_data_url, _avatar_path
-
 
 # Minimal valid JPEG (3-byte magic header + filler)
 _JPEG_MAGIC = b"\xff\xd8\xff" + b"\x00" * 10
@@ -724,7 +723,9 @@ class TestValidateAvatarDataUrl:
 
 class TestAvatarEndpoints:
     def test_get_avatar_no_file(self, tmp_path):
-        with patch("rackscope.api.routers.auth._avatar_path", return_value=tmp_path / "avatar.jpeg"):
+        with patch(
+            "rackscope.api.routers.auth._avatar_path", return_value=tmp_path / "avatar.jpeg"
+        ):
             resp = client.get("/api/auth/avatar")
         assert resp.status_code == 200
         assert resp.json()["avatar"] is None

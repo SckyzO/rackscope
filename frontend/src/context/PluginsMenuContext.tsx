@@ -8,7 +8,7 @@ type PluginsMenuContextType = {
   loading: boolean;
   isPluginActive: (pluginId: string) => boolean;
   refresh: () => Promise<void>;
-}
+};
 
 const PluginsMenuContext = createContext<PluginsMenuContextType | undefined>(undefined);
 

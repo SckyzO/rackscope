@@ -70,7 +70,7 @@ type AppHeaderProps = {
   toggleDark: () => void;
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
-}
+};
 
 export const AppHeader = ({
   isDark,

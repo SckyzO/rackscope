@@ -242,10 +242,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
           }
         ).map(([k, v]) => [k, String(v)])
       ),
-      slurm_random_match: config.plugins?.simulator?.slurm_random_match ?? [
-        'compute*',
-        'visu*',
-      ],
+      slurm_random_match: config.plugins?.simulator?.slurm_random_match ?? ['compute*', 'visu*'],
     },
     slurm: {
       enabled: config.plugins?.slurm?.enabled ?? false,

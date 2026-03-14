@@ -89,13 +89,13 @@ lint-sh:
 lint-docker:
 	@for f in src/Dockerfile frontend/Dockerfile frontend/Dockerfile.prod website/Dockerfile; do \
 		echo "  hadolint $$f..."; \
-		docker run --rm -v $(PWD)/$$f:/Dockerfile:ro -v $(PWD)/.hadolint.yaml:/root/.config/hadolint.yaml:ro \
-			hadolint/hadolint:latest hadolint /Dockerfile || exit 1; \
+		docker run --rm -v $(PWD)/$$f:/Dockerfile:ro -v $(PWD)/.hadolint.yaml:/etc/hadolint.yaml:ro \
+			hadolint/hadolint:latest hadolint --config /etc/hadolint.yaml /Dockerfile || exit 1; \
 	done
 
 ## GitHub Actions: actionlint via Docker image
 lint-actions:
-	docker run --rm -v $(PWD):/repo rhysd/actionlint:latest -pyflakes= /repo/.github/workflows/
+	docker run --rm -v $(PWD):/repo -w /repo rhysd/actionlint:latest -shellcheck= -pyflakes= .github/workflows/*.yml
 
 ## Full lint suite (all file types)
 lint: lint-python lint-frontend lint-yaml lint-md lint-sh lint-docker lint-actions

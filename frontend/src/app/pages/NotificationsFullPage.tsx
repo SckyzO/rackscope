@@ -441,7 +441,7 @@ export const NotificationsFullPage = () => {
             n.node?.toLowerCase().includes(q) ||
             n.status?.toLowerCase().includes(q) ||
             (n.rack_name?.toLowerCase().includes(q) ??
-            n.partitions?.some((p) => p.toLowerCase().includes(q)))
+              n.partitions?.some((p) => p.toLowerCase().includes(q)))
           );
         }
       });
@@ -958,7 +958,7 @@ export const NotificationsFullPage = () => {
                             : 'border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/5'
                         }`}
                       >
-                        {(p) + 1}
+                        {p + 1}
                       </button>
                     )
                   )}

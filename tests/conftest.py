@@ -1,6 +1,7 @@
 """
 Shared pytest fixtures for the Rackscope test suite.
 """
+
 import pytest
 
 # Exclude memory-intensive perf benchmarks from the regular suite.

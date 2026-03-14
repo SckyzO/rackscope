@@ -9,7 +9,7 @@ import type { ConfigDraft } from '../useSettingsConfig';
 type PlannerSettingsSectionProps = {
   draft: ConfigDraft;
   setDraft: React.Dispatch<React.SetStateAction<ConfigDraft | null>>;
-}
+};
 
 export const PlannerSettingsSection: React.FC<PlannerSettingsSectionProps> = ({
   draft,

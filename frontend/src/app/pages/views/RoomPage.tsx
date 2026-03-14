@@ -76,7 +76,7 @@ type DoorMarkerProps = {
   h: number;
   showLabel: boolean;
   doorLabel?: string | null;
-}
+};
 
 // Pixel inset between the outer canvas edge and the inner dashed room border.
 // All pan/zoom clamping and door/cardinal positioning use this as the wall boundary.
@@ -145,7 +145,7 @@ type RackCellProps = {
   rackStyle: RackStyle;
   catalog?: Record<string, DeviceTemplate>;
   onClick: () => void;
-}
+};
 
 const RackCell = memo(
   ({
@@ -823,7 +823,7 @@ type AisleBandProps = {
   rackAlign: 'left' | 'right';
   rackStyle: RackStyle;
   catalog?: Record<string, DeviceTemplate>;
-}
+};
 
 const AISLE_GAP: Record<RackStyle, string> = {
   dot: 'gap-1.5',
@@ -944,7 +944,7 @@ type DrawerRack = {
   rack: Rack;
   aisle: Aisle;
   state: string;
-}
+};
 
 const RackDrawer = ({
   selected,
@@ -1249,7 +1249,7 @@ type Settings = {
   showRackName: boolean;
   wheelZoomEnabled: boolean;
   hiddenAisles: Set<string>;
-}
+};
 
 const DEFAULT_SETTINGS: Settings = {
   showGrid: false,

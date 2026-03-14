@@ -189,7 +189,7 @@ export const DevicePage = () => {
     u_position: device.u_position,
     instance: (device.instance ?? '') as Record<number, string> | string | string[],
     nodes: device.nodes as Record<number, string> | string | string[] | undefined,
-    labels: (device.labels ?? undefined),
+    labels: device.labels ?? undefined,
   };
 
   return (

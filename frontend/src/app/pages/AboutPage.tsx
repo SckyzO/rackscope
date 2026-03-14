@@ -21,7 +21,7 @@ type Quote = {
   text: string;
   character: string;
   source: string;
-}
+};
 
 // ── "Why I built Rackscope" content ──────────────────────────────────────────
 

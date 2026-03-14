@@ -34,7 +34,7 @@ type NavItemProps = {
   collapsed: boolean;
   end?: boolean;
   depth?: boolean;
-}
+};
 
 // NavItem uses CSS class toggling (not conditional rendering) for active/inactive state.
 // NavLink's className render prop receives isActive at runtime, so both active and
@@ -461,7 +461,7 @@ const HelpTerminalOverlay = ({ onClose }: { onClose: () => void }) => {
 
 type AppSidebarProps = {
   collapsed: boolean;
-}
+};
 
 export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
   const [rooms, setRooms] = useState<RoomSummary[]>([]);

@@ -25,7 +25,7 @@ type RoomEditorCanvasProps = {
   onDirtyChange?: (isDirty: boolean) => void;
   /** Ref that will hold the save function — call from parent Save button */
   saveRef?: React.MutableRefObject<(() => Promise<void>) | undefined>;
-}
+};
 
 // ── Tooltip ──────────────────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ type DeleteConfirmModalProps = {
   entityName: string;
   onConfirm: () => void;
   onCancel: () => void;
-}
+};
 
 const DeleteConfirmModal = ({
   open,
@@ -104,12 +104,12 @@ const DeleteConfirmModal = ({
 type YamlDrawerTarget = {
   type: 'aisle' | 'rack';
   data: Aisle | Rack;
-}
+};
 
 type YamlDrawerProps = {
   target: YamlDrawerTarget;
   onClose: () => void;
-}
+};
 
 const YamlDrawer = ({ target, onClose }: YamlDrawerProps) => {
   const yamlValue = jsYaml.dump(target.data, { lineWidth: 120 });
@@ -190,7 +190,7 @@ type RackCardProps = {
   onDrop: (e: React.DragEvent, targetAisleId: string, afterRackId: string | null) => void;
   onDeleteRack: (aisleId: string, rackId: string) => void;
   onEditYaml: (rack: Rack) => void;
-}
+};
 
 const RackCard = ({
   rack,
@@ -319,7 +319,7 @@ type AddRackFormProps = {
   onAdd: (rack: Rack) => void;
   onAddAndEdit: (rack: Rack) => void;
   onCancel: () => void;
-}
+};
 
 const AddRackForm = ({
   aisleId,
@@ -475,7 +475,7 @@ type AisleBandProps = {
   onDeleteRack: (aisleId: string, rackId: string) => void;
   onEditYamlAisle: (aisle: Aisle) => void;
   onEditYamlRack: (rack: Rack) => void;
-}
+};
 
 const AisleBand = ({
   aisle,

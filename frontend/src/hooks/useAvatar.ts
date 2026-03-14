@@ -33,19 +33,25 @@ const _localSet = (dataUrl: string | null) => {
   try {
     if (dataUrl) localStorage.setItem(AVATAR_KEY, dataUrl);
     else localStorage.removeItem(AVATAR_KEY);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 };
 
 export const useAvatar = () => {
   // Initialise from localStorage for instant display (optimistic cache)
   const [avatar, setAvatar] = useState<string | null>(() => {
-    try { return localStorage.getItem(AVATAR_KEY); } catch { return null; }
+    try {
+      return localStorage.getItem(AVATAR_KEY);
+    } catch {
+      return null;
+    }
   });
 
   // On mount: fetch server-side avatar so it survives browser changes
   useEffect(() => {
     fetch('/api/auth/avatar')
-      .then((r) => r.ok ? r.json() : null)
+      .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data) return;
         const serverAvatar: string | null = data.avatar ?? null;
@@ -53,13 +59,19 @@ export const useAvatar = () => {
         _localSet(serverAvatar);
         window.dispatchEvent(new Event(AVATAR_EVENT));
       })
-      .catch(() => { /* network unavailable — keep localStorage value */ });
+      .catch(() => {
+        /* network unavailable — keep localStorage value */
+      });
   }, []);
 
   // Sync across tabs / components within the same browser session
   useEffect(() => {
     const sync = () => {
-      try { setAvatar(localStorage.getItem(AVATAR_KEY)); } catch { /* ignore */ }
+      try {
+        setAvatar(localStorage.getItem(AVATAR_KEY));
+      } catch {
+        /* ignore */
+      }
     };
     window.addEventListener(AVATAR_EVENT, sync);
     return () => window.removeEventListener(AVATAR_EVENT, sync);

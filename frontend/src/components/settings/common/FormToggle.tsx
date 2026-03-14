@@ -9,7 +9,7 @@ type FormToggleProps = {
   onChange: (checked: boolean) => void;
   disabled?: boolean;
   className?: string;
-}
+};
 
 export const FormToggle: React.FC<FormToggleProps> = ({
   label,

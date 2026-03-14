@@ -25,7 +25,7 @@ export type SiteMarker = {
   lat: number;
   lon: number;
   roomCount?: number;
-}
+};
 
 type OfflineWorldMapProps = {
   sites?: SiteMarker[];
@@ -42,7 +42,7 @@ type OfflineWorldMapProps = {
   /** Called on marker hover — null when mouse leaves */
   onSiteHover?: (site: SiteMarker | null, mousePos?: { x: number; y: number }) => void;
   className?: string;
-}
+};
 
 // ── Style presets ─────────────────────────────────────────────────────────────
 
@@ -57,7 +57,7 @@ type StylePreset = {
   markerPulse: string;
   zoomBtnBg: string;
   zoomBtnText: string;
-}
+};
 
 const STYLES: Record<MapStyle, { dark: StylePreset; light: StylePreset }> = {
   minimal: {

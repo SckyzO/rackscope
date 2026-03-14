@@ -62,8 +62,8 @@ logger = get_logger(__name__)
 
 # Global state
 TOPOLOGY: Optional[Topology] = None
-TOPOLOGY_INDEX: Optional[TopologyIndex] = None   # O(1) lookup index — rebuilt on every reload
-SERVICE_CACHE: ServiceCache = ServiceCache()          # Response-level cache — cleared on topology reload
+TOPOLOGY_INDEX: Optional[TopologyIndex] = None  # O(1) lookup index — rebuilt on every reload
+SERVICE_CACHE: ServiceCache = ServiceCache()  # Response-level cache — cleared on topology reload
 CATALOG: Optional[Catalog] = None
 CHECKS_LIBRARY: Optional[ChecksLibrary] = None
 METRICS_LIBRARY: Optional[MetricsLibrary] = None
@@ -113,7 +113,15 @@ async def _do_apply_config(app_config: AppConfig) -> None:
     All loads are attempted before any global is modified so that a failure
     (e.g. bad topology path) leaves the running state fully intact.
     """
-    global TOPOLOGY, TOPOLOGY_INDEX, CATALOG, CHECKS_LIBRARY, METRICS_LIBRARY, APP_CONFIG, PLANNER, TARGETS_BY_CHECK
+    global \
+        TOPOLOGY, \
+        TOPOLOGY_INDEX, \
+        CATALOG, \
+        CHECKS_LIBRARY, \
+        METRICS_LIBRARY, \
+        APP_CONFIG, \
+        PLANNER, \
+        TARGETS_BY_CHECK
     # Load everything into locals first — if any raises, globals are untouched.
     new_topology = load_topology(app_config.paths.topology)
     new_catalog = load_catalog(app_config.paths.templates)
@@ -123,7 +131,7 @@ async def _do_apply_config(app_config: AppConfig) -> None:
     APP_CONFIG = app_config
     TOPOLOGY = new_topology
     TOPOLOGY_INDEX = build_topology_index(new_topology)
-    await SERVICE_CACHE.invalidate_all()              # topology changed — all cached responses stale
+    await SERVICE_CACHE.invalidate_all()  # topology changed — all cached responses stale
     CATALOG = new_catalog
     CHECKS_LIBRARY = new_checks
     METRICS_LIBRARY = new_metrics
@@ -351,5 +359,3 @@ app.include_router(auth_router.router)
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
-
-

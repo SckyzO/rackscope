@@ -31,17 +31,27 @@ from rackscope.services.topology_service import (
 @pytest.fixture
 def simple_topology() -> Topology:
     """Single site, single room, two aisles, 3 racks total, plus 1 standalone."""
-    device_a = Device(id="dev-a", name="Server A", template_id="t1", u_position=1, instance="node-a")
-    device_b = Device(id="dev-b", name="Server B", template_id="t1", u_position=3, instance=["node-b1", "node-b2"])
-    device_c = Device(id="dev-c", name="Chassis", template_id="t2", u_position=1, instance="compute[001-003]")
-    device_sa = Device(id="dev-sa", name="Standalone", template_id="t1", u_position=1, instance="node-sa")
+    device_a = Device(
+        id="dev-a", name="Server A", template_id="t1", u_position=1, instance="node-a"
+    )
+    device_b = Device(
+        id="dev-b", name="Server B", template_id="t1", u_position=3, instance=["node-b1", "node-b2"]
+    )
+    device_c = Device(
+        id="dev-c", name="Chassis", template_id="t2", u_position=1, instance="compute[001-003]"
+    )
+    device_sa = Device(
+        id="dev-sa", name="Standalone", template_id="t1", u_position=1, instance="node-sa"
+    )
 
     rack1 = Rack(id="rack-01", name="Rack 01", u_height=42, devices=[device_a])
     rack2 = Rack(id="rack-02", name="Rack 02", u_height=42, devices=[device_b])
     rack3 = Rack(id="rack-03", name="Rack 03", u_height=42, devices=[device_c])
     rack_sa = Rack(id="rack-sa", name="Standalone Rack", u_height=42, devices=[device_sa])
 
-    aisle1 = Aisle(id="aisle-01", name="Aisle 01", rack_ids=["rack-01", "rack-02"], racks=[rack1, rack2])
+    aisle1 = Aisle(
+        id="aisle-01", name="Aisle 01", rack_ids=["rack-01", "rack-02"], racks=[rack1, rack2]
+    )
     aisle2 = Aisle(id="aisle-02", name="Aisle 02", rack_ids=["rack-03"], racks=[rack3])
 
     room = Room(

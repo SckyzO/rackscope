@@ -11,14 +11,14 @@ type ComponentEntry = {
   description: string;
   route: string;
   tag?: string; // optional sub-label (e.g. chart type)
-}
+};
 
 type CategorySection = {
   id: string;
   title: string;
   color: string; // accent color for the dot indicator
   items: ComponentEntry[];
-}
+};
 
 // ── Category data ─────────────────────────────────────────────────────────────
 

@@ -49,7 +49,7 @@ export type RegistryPage = {
   dynamic?: 'rooms';
   requiresPlugin?: 'slurm';
   requiresFeature?: 'worldmap' | 'notifications';
-}
+};
 
 export type RegistryCategory = {
   id: string;
@@ -57,7 +57,7 @@ export type RegistryCategory = {
   iconName: string;
   pages: RegistryPage[];
   requiresPlugin?: 'slurm';
-}
+};
 
 export type PlaylistQueueItem = {
   id: string;
@@ -65,7 +65,7 @@ export type PlaylistQueueItem = {
   route: string;
   iconName: string;
   duration: number; // seconds, 0 = use global
-}
+};
 
 // ── Registry definition ───────────────────────────────────────────────────────
 
@@ -158,14 +158,14 @@ type ExpandOptions = {
   rooms: RoomSummary[];
   features: { worldmap: boolean; notifications: boolean };
   pluginSlurm: boolean;
-}
+};
 
 export type ExpandedCategory = {
   id: string;
   label: string;
   iconName: string;
   pages: PlaylistQueueItem[];
-}
+};
 
 export const expandRegistry = (
   registry: RegistryCategory[],

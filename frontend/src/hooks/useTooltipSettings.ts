@@ -23,7 +23,7 @@ export type TooltipStyleMeta = {
   label: string;
   desc: string;
   width: string; // Tailwind width class
-}
+};
 
 export const TOOLTIP_STYLES: TooltipStyleMeta[] = [
   { id: 'tinted', label: 'Tinted', desc: 'Sections colorées — défaut', width: 'w-80' },

@@ -8,7 +8,7 @@ type SettingsLayoutProps = {
   saving: boolean;
   saved: boolean;
   children: React.ReactNode;
-}
+};
 
 export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   activeTab,

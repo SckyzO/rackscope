@@ -159,7 +159,7 @@ export function useRackData(rackId: string | undefined): RackData {
     ...resolved.side,
   ];
 
-  const nodes = (health?.nodes ?? {});
+  const nodes = health?.nodes ?? {};
   const nodeCounts = Object.values(nodes).reduce(
     (acc, n) => {
       const s = n.state ?? 'UNKNOWN';

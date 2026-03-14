@@ -861,10 +861,8 @@ export const DeviceChassis = ({
                 );
               const nodeId = nodeMap[slotNum];
               const nodeHealth =
-                (nodeId && nodesData?.[nodeId] ? nodesData[nodeId].state : undefined) ??
-                'UNKNOWN';
-              const nodeMetrics =
-                nodeId && nodesData?.[nodeId] ? nodesData[nodeId] : undefined;
+                (nodeId && nodesData?.[nodeId] ? nodesData[nodeId].state : undefined) ?? 'UNKNOWN';
+              const nodeMetrics = nodeId && nodesData?.[nodeId] ? nodesData[nodeId] : undefined;
               return (
                 <NodeUnit
                   key={`${rIdx}-${cIdx}`}
@@ -928,13 +926,11 @@ const RowSummaryUnit = ({
         ? 'bg-status-warn'
         : 'bg-status-ok';
   return (
-    <div
-      className="group relative flex h-full min-w-0 cursor-help items-center justify-between overflow-hidden border-b border-[var(--color-border)]/10 bg-[var(--color-node-surface)] px-2 transition-colors last:border-0 hover:bg-[var(--color-accent-primary)]/10"
-    >
+    <div className="group relative flex h-full min-w-0 cursor-help items-center justify-between overflow-hidden border-b border-[var(--color-border)]/10 bg-[var(--color-node-surface)] px-2 transition-colors last:border-0 hover:bg-[var(--color-accent-primary)]/10">
       <div className="flex min-w-0 items-center gap-2">
         <div
           className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor} ${worstState === 'CRIT' ? 'animate-pulse shadow-[0_0_10px_var(--color-status-crit)]' : ''}`}
-         />
+        />
         <span className="min-w-0 truncate font-mono text-[11px] font-black tracking-widest text-[var(--color-text-base)] uppercase opacity-50 group-hover:opacity-100">
           {label}
         </span>
@@ -978,8 +974,8 @@ export const NodeUnit = ({
   const Icon = type === 'network' ? RouterIcon : Server;
   const hideText = hideTextProp ?? uHeight === 1;
 
-  const checks = Array.isArray(nodeMetrics?.checks) ? (nodeMetrics.checks) : [];
-  const alertList = Array.isArray(nodeMetrics?.alerts) ? (nodeMetrics.alerts) : [];
+  const checks = Array.isArray(nodeMetrics?.checks) ? nodeMetrics.checks : [];
+  const alertList = Array.isArray(nodeMetrics?.alerts) ? nodeMetrics.alerts : [];
   const checkSummary = {
     ok: Math.max(0, checks.length - alertList.length),
     warn: alertList.filter((a) => a.severity === 'WARN').length,

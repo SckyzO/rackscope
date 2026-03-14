@@ -173,7 +173,7 @@ class RackContext:
     rack: "Rack"
     site: "Site"
     room: "Room"
-    aisle_id: Optional[str]    # None for standalone racks
+    aisle_id: Optional[str]  # None for standalone racks
     is_standalone: bool
 
 
@@ -202,7 +202,9 @@ class TopologyIndex:
     rooms: Dict[str, "Room"] = field(default_factory=dict)
     aisles: Dict[str, "Aisle"] = field(default_factory=dict)
     racks: Dict[str, RackContext] = field(default_factory=dict)
-    devices: Dict[str, "tuple[Device, str]"] = field(default_factory=dict)     # device_id → (Device, rack_id)
+    devices: Dict[str, "tuple[Device, str]"] = field(
+        default_factory=dict
+    )  # device_id → (Device, rack_id)
     instances: Dict[str, InstanceContext] = field(default_factory=dict)
 
 
@@ -241,8 +243,7 @@ def _expand_instances(device: "Device") -> List[str]:
             )
         width = len(start_s)
         return [
-            f"{prefix}{str(i).zfill(width)}{suffix}"
-            for i in range(int(start_s), int(end_s) + 1)
+            f"{prefix}{str(i).zfill(width)}{suffix}" for i in range(int(start_s), int(end_s) + 1)
         ]
 
     return [inst]
@@ -286,8 +287,11 @@ def build_topology_index(topology: Topology) -> TopologyIndex:
                                 _topo_index_logger.warning(
                                     "Instance name collision: %r already mapped to "
                                     "device=%r rack=%r — overwriting with device=%r rack=%r",
-                                    inst_name, existing.device.id, existing.rack.id,
-                                    device.id, rack.id,
+                                    inst_name,
+                                    existing.device.id,
+                                    existing.rack.id,
+                                    device.id,
+                                    rack.id,
                                 )
                             idx.instances[inst_name] = InstanceContext(
                                 device=device, rack=rack, room=room, site=site
@@ -311,8 +315,11 @@ def build_topology_index(topology: Topology) -> TopologyIndex:
                             _topo_index_logger.warning(
                                 "Instance name collision: %r already mapped to "
                                 "device=%r rack=%r — overwriting with device=%r rack=%r",
-                                inst_name, existing.device.id, existing.rack.id,
-                                device.id, rack.id,
+                                inst_name,
+                                existing.device.id,
+                                existing.rack.id,
+                                device.id,
+                                rack.id,
                             )
                         idx.instances[inst_name] = InstanceContext(
                             device=device, rack=rack, room=room, site=site

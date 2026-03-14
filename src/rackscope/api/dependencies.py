@@ -126,7 +126,6 @@ async def get_topology_index_optional() -> Optional[TopologyIndex]:
     return app_module.TOPOLOGY_INDEX
 
 
-
 async def get_service_cache() -> _SC:
     """Get service-level response cache (always available, never None)."""
     from rackscope.api import app as app_module

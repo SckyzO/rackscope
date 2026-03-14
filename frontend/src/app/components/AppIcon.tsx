@@ -9,7 +9,7 @@ import type { IconId, IconBg } from '@src/context/ThemeContext';
 type AppIconProps = {
   id: IconId;
   className?: string;
-}
+};
 
 // ── SVG path data per icon (viewBox 0 0 20 20, currentColor) ─────────────────
 

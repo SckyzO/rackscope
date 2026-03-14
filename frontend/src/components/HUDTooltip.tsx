@@ -21,7 +21,7 @@ import type { TooltipStyle } from '../hooks/useTooltipSettings';
 export type TooltipReason = {
   label: string;
   severity?: string;
-}
+};
 
 export type HUDTooltipMetrics = {
   temp?: number;
@@ -29,13 +29,13 @@ export type HUDTooltipMetrics = {
   tempCrit?: number;
   power?: number;
   powerMax?: number;
-}
+};
 
 export type HUDTooltipCheckSummary = {
   ok: number;
   warn: number;
   crit: number;
-}
+};
 
 export type HUDTooltipProps = {
   title: string;
@@ -48,7 +48,7 @@ export type HUDTooltipProps = {
   reasons?: TooltipReason[];
   metrics?: HUDTooltipMetrics;
   mousePos: { x: number; y: number };
-}
+};
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -1095,7 +1095,7 @@ type CardProps = {
   style: TooltipStyle;
   aura: boolean;
   mousePos?: { x: number; y: number };
-} & Omit<HUDTooltipProps, 'mousePos'>
+} & Omit<HUDTooltipProps, 'mousePos'>;
 
 export const HUDTooltipCard = ({ style, aura, ...props }: CardProps) => {
   switch (style) {

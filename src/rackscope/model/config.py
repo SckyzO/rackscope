@@ -24,7 +24,7 @@ class CacheConfig(BaseModel):
     ttl_seconds: int = Field(default=30, ge=1)  # Deprecated, kept for backward compatibility
     health_checks_ttl_seconds: int = Field(default=30, ge=1)  # TTL for health checks
     metrics_ttl_seconds: int = Field(default=120, ge=1)  # TTL for detailed metrics
-    service_ttl_seconds: int = Field(default=5, ge=1)   # TTL for service-level response cache
+    service_ttl_seconds: int = Field(default=5, ge=1)  # TTL for service-level response cache
 
 
 class TelemetryConfig(BaseModel):
@@ -260,7 +260,7 @@ class AuthConfig(BaseModel):
     trusted_networks: List[str] = Field(
         default_factory=list,
         description="CIDRs or exact IPs allowed to reach admin endpoints when "
-                    "auth.enabled=false. Empty list = no restriction (default, backward compatible).",
+        "auth.enabled=false. Empty list = no restriction (default, backward compatible).",
     )
 
 

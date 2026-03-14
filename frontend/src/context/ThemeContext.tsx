@@ -41,13 +41,13 @@ export type AccentMeta = {
   id: AccentColor;
   label: string;
   hex: string;
-}
+};
 export type PaletteMeta = {
   id: LightTheme | DarkTheme;
   label: string;
   desc: string;
   preview: { bg: string; surface: string; border: string };
-}
+};
 
 export const ACCENTS: AccentMeta[] = [
   { id: 'indigo', label: 'Indigo', hex: '#465fff' },
@@ -374,7 +374,7 @@ type ThemeContextType = {
   setIconId: (id: IconId) => void;
   setIconBg: (bg: IconBg) => void;
   setDocsIconId: (id: IconId) => void;
-}
+};
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 

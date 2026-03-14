@@ -6,7 +6,7 @@ export type Device = {
   instance: Record<number, string> | string | string[];
   nodes?: Record<number, string> | string | string[];
   labels?: Record<string, string>;
-}
+};
 
 export type Rack = {
   id: string;
@@ -15,13 +15,13 @@ export type Rack = {
   u_height: number;
   aisle_id?: string;
   devices: Device[];
-}
+};
 
 export type Aisle = {
   id: string;
   name: string;
   racks: Rack[];
-}
+};
 
 export type RoomLayout = {
   shape?: 'rectangle' | 'polygon';
@@ -41,7 +41,7 @@ export type RoomLayout = {
     label?: string | null;
     position?: number;
   };
-}
+};
 
 export type Room = {
   id: string;
@@ -50,7 +50,7 @@ export type Room = {
   layout?: RoomLayout | null;
   aisles: Aisle[];
   standalone_racks: Rack[];
-}
+};
 
 export type Site = {
   id: string;
@@ -62,18 +62,18 @@ export type Site = {
     address?: string | null;
   } | null;
   rooms: Room[];
-}
+};
 
 export type RackSummary = {
   id: string;
   name: string;
-}
+};
 
 export type AisleSummary = {
   id: string;
   name: string;
   racks: RackSummary[];
-}
+};
 
 export type RoomSummary = {
   id: string;
@@ -81,7 +81,7 @@ export type RoomSummary = {
   site_id: string;
   aisles?: AisleSummary[];
   standalone_racks?: RackSummary[];
-}
+};
 
 export type DeviceContext = {
   device: Device;
@@ -90,7 +90,7 @@ export type DeviceContext = {
   room: { id: string; name: string };
   site: { id: string; name: string; description?: string };
   aisle?: { id: string; name: string } | null;
-}
+};
 
 // ── Catalog ───────────────────────────────────────────────────────────────────
 
@@ -99,7 +99,7 @@ export type LayoutConfig = {
   rows: number;
   cols: number;
   matrix: number[][];
-}
+};
 
 export type DeviceTemplate = {
   id: string;
@@ -118,7 +118,7 @@ export type DeviceTemplate = {
     temperature?: { warn?: number; crit?: number };
     power?: { warn?: number; crit?: number };
   };
-}
+};
 
 export type DeviceRearComponent = {
   id: string;
@@ -126,7 +126,7 @@ export type DeviceRearComponent = {
   type: 'psu' | 'fan' | 'io' | 'hydraulics' | 'other';
   role?: string;
   checks?: string[];
-}
+};
 
 export type InfrastructureComponent = {
   id: string;
@@ -138,7 +138,7 @@ export type InfrastructureComponent = {
   u_position?: number;
   u_height?: number;
   checks?: string[];
-}
+};
 
 export type RackComponentTemplate = {
   id: string;
@@ -152,14 +152,14 @@ export type RackComponentTemplate = {
   u_height: number;
   checks?: string[];
   metrics?: string[];
-}
+};
 
 export type RackComponentRef = {
   template_id: string;
   u_position: number;
   u_height?: number;
   side?: 'left' | 'right';
-}
+};
 
 export type RackTemplate = {
   id: string;
@@ -174,13 +174,13 @@ export type RackTemplate = {
   };
   checks?: string[];
   metrics?: string[];
-}
+};
 
 export type Catalog = {
   device_templates: DeviceTemplate[];
   rack_templates: RackTemplate[];
   rack_component_templates: RackComponentTemplate[];
-}
+};
 
 export type CheckDefinition = {
   id: string;
@@ -196,11 +196,11 @@ export type CheckDefinition = {
   }[];
   kind?: string;
   for?: string | null;
-}
+};
 
 export type ChecksLibrary = {
   checks: CheckDefinition[];
-}
+};
 
 export type PrometheusStats = {
   last_ms?: number | null;
@@ -208,7 +208,7 @@ export type PrometheusStats = {
   last_ts?: number | null;
   next_ts?: number | null;
   heartbeat_seconds?: number | null;
-}
+};
 
 export type TelemetryStats = {
   query_count: number;
@@ -224,7 +224,7 @@ export type TelemetryStats = {
   last_ms?: number | null;
   avg_ms?: number | null;
   last_ts?: number | null;
-}
+};
 
 export type GlobalStats = {
   total_rooms: number;
@@ -233,13 +233,13 @@ export type GlobalStats = {
   crit_count: number;
   warn_count: number;
   status: string;
-}
+};
 
 export type AlertCheck = {
   id: string;
   name?: string;
   severity: string;
-}
+};
 
 export type ActiveAlert = {
   node_id: string;
@@ -253,7 +253,7 @@ export type ActiveAlert = {
   rack_name: string;
   device_id: string;
   device_name: string;
-}
+};
 
 export type RackNodeState = {
   state?: string;
@@ -261,7 +261,7 @@ export type RackNodeState = {
   power?: number;
   checks?: AlertCheck[];
   alerts?: AlertCheck[];
-}
+};
 
 export type RackState = {
   state?: string;
@@ -298,37 +298,37 @@ export type RackState = {
     >;
   };
   nodes?: Record<string, RackNodeState>;
-}
+};
 
 export type RoomState = {
   room_id?: string;
   state?: string;
   racks?: Record<string, RackState | string>;
-}
+};
 
 export type SlurmNodeState = {
   status: string;
   severity: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
   statuses: string[];
   partitions: string[];
-}
+};
 
 export type SlurmRoomNodes = {
   room_id: string;
   nodes: Record<string, SlurmNodeState>;
-}
+};
 
 export type SlurmSummary = {
   room_id?: string | null;
   total_nodes: number;
   by_status: Record<string, number>;
   by_severity: Record<string, number>;
-}
+};
 
 export type SlurmPartitionSummary = {
   room_id?: string | null;
   partitions: Record<string, Record<string, number>>;
-}
+};
 
 export type SlurmNodeEntry = {
   node: string;
@@ -344,7 +344,7 @@ export type SlurmNodeEntry = {
   rack_name?: string;
   device_id?: string;
   device_name?: string;
-}
+};
 
 export type AppConfig = {
   app?: {
@@ -377,7 +377,7 @@ export type AppConfig = {
     ttl_seconds: number;
     health_checks_ttl_seconds?: number;
     metrics_ttl_seconds?: number;
-  service_ttl_seconds?: number;
+    service_ttl_seconds?: number;
   };
   telemetry: {
     prometheus_url?: string | null;
@@ -520,7 +520,7 @@ export type AppConfig = {
     };
     trusted_networks?: string[];
   };
-}
+};
 
 export type SimulatorOverride = {
   id: string;
@@ -529,14 +529,14 @@ export type SimulatorOverride = {
   metric: string;
   value: number;
   expires_at?: number | null;
-}
+};
 
 export type MenuItem = {
   id: string;
   label: string;
   path: string;
   icon: string;
-}
+};
 
 export type MenuSection = {
   id: string;
@@ -544,8 +544,8 @@ export type MenuSection = {
   icon: string;
   items: MenuItem[];
   order: number;
-}
+};
 
 export type PluginsMenuResponse = {
   sections: MenuSection[];
-}
+};

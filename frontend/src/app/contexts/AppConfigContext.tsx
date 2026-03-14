@@ -15,13 +15,13 @@ type AppFeatures = {
   dev_tools: boolean;
   playlist: boolean;
   wizard: boolean;
-}
+};
 
 // Plugin enabled status
 type AppPlugins = {
   slurm: boolean;
   simulator: boolean;
-}
+};
 
 type AppConfigContextType = {
   config: AppConfig | null;
@@ -32,7 +32,7 @@ type AppConfigContextType = {
   // true when demo mode is enabled but the simulator container is unreachable
   simulatorDown: boolean;
   refresh: () => Promise<void>;
-}
+};
 
 const DEFAULT_FEATURES: AppFeatures = {
   notifications: true,

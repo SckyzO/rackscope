@@ -148,12 +148,12 @@ const PBar = ({ w, max }: { w: number; max: number }) => {
 type Reason = {
   label: string;
   severity?: string;
-}
+};
 type Checks = {
   ok: number;
   warn: number;
   crit: number;
-}
+};
 type Icon = LucideIcon;
 
 type CardProps = {
@@ -171,7 +171,7 @@ type CardProps = {
   power?: number;
   powerMax?: number;
   label?: string; // optional badge label for the card
-}
+};
 
 const TooltipCard = ({
   title,

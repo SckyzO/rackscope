@@ -91,10 +91,11 @@ def test_topology_index_is_rebuilt_after_topology_mutation(tmp_path):
     )
     app_module.APP_CONFIG = cfg
 
-    with patch("rackscope.api.routers.topology.load_topology") as mock_load, \
-         patch("rackscope.api.routers.topology.dump_yaml"), \
-         patch("rackscope.utils.validation.safe_segment", side_effect=lambda p, *a, **kw: p):
-
+    with (
+        patch("rackscope.api.routers.topology.load_topology") as mock_load,
+        patch("rackscope.api.routers.topology.dump_yaml"),
+        patch("rackscope.utils.validation.safe_segment", side_effect=lambda p, *a, **kw: p),
+    ):
         # Mock load_topology to return a topology with the new site
         new_rack = Rack(id="rack-01", name="Rack 01", u_height=42)
         new_aisle = Aisle(id="aisle-01", name="Aisle 01", racks=[new_rack])

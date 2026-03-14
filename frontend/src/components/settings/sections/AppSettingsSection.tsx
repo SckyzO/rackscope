@@ -9,7 +9,7 @@ import type { ConfigDraft } from '../useSettingsConfig';
 type AppSettingsSectionProps = {
   draft: ConfigDraft;
   setDraft: React.Dispatch<React.SetStateAction<ConfigDraft | null>>;
-}
+};
 
 export const AppSettingsSection: React.FC<AppSettingsSectionProps> = ({ draft, setDraft }) => {
   const update = (section: keyof ConfigDraft, field: string, value: string | number | boolean) => {

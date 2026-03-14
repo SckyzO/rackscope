@@ -67,7 +67,7 @@ type PreviewState = {
   styleId: TooltipStyle;
   sampleIdx: number;
   mousePos: { x: number; y: number };
-}
+};
 
 const TooltipPreview = ({ preview }: { preview: PreviewState }) => {
   const { aura } = useTooltipSettings();

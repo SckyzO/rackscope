@@ -33,7 +33,7 @@ type PlaylistContextType = {
   // Derived from queue for backward compatibility with consumers that still read `views`
   views: string[];
   intervalSeconds: number;
-}
+};
 
 const PlaylistContext = createContext<PlaylistContextType | undefined>(undefined);
 

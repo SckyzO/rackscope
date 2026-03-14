@@ -316,10 +316,10 @@ const RackCard = ({
   const { rack, health, catalog } = entry;
   const state = health?.state ?? 'UNKNOWN';
   const stateColor = HC[state] ?? HC.UNKNOWN;
-  const nodes = (health?.nodes ?? {});
+  const nodes = health?.nodes ?? {};
   const pduMetrics = health?.infra_metrics?.pdu;
   const deviceCount = rack.devices?.length ?? 0;
-  const maxUPx = displayConfig.uSize === 'auto' ? undefined : (displayConfig.uSize);
+  const maxUPx = displayConfig.uSize === 'auto' ? undefined : displayConfig.uSize;
 
   return (
     <div

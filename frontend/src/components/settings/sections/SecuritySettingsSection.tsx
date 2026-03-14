@@ -217,9 +217,8 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
             <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-700/40 dark:bg-amber-500/10">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
               <p className="text-sm text-amber-700 dark:text-amber-400">
-                Authentication is disabled. Without trusted networks, admin endpoints are
-                accessible from any IP on your network. Add trusted IPs or CIDRs below to
-                restrict access.
+                Authentication is disabled. Without trusted networks, admin endpoints are accessible
+                from any IP on your network. Add trusted IPs or CIDRs below to restrict access.
               </p>
             </div>
           )}
@@ -236,7 +235,7 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
                   <button
                     type="button"
                     onClick={() => removeNetwork(net)}
-                    className="rounded hover:text-red-500 transition-colors"
+                    className="rounded transition-colors hover:text-red-500"
                     aria-label={`Remove ${net}`}
                   >
                     <X className="h-3 w-3" />
@@ -264,7 +263,7 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
                 }}
                 onKeyDown={(e) => e.key === 'Enter' && addNetwork()}
                 placeholder="e.g. 192.168.1.0/24 or 10.0.0.1"
-                className={`w-full rounded-xl border px-3 py-2 font-mono text-sm outline-none transition-colors dark:bg-gray-800 dark:text-gray-100 ${
+                className={`w-full rounded-xl border px-3 py-2 font-mono text-sm transition-colors outline-none dark:bg-gray-800 dark:text-gray-100 ${
                   networkInputError
                     ? 'border-red-400 focus:border-red-500'
                     : 'border-gray-200 focus:border-blue-400 dark:border-gray-700'
@@ -286,8 +285,8 @@ export const SecuritySettingsSection = ({ draft, setDraft }: Props) => {
 
           <p className="text-xs text-gray-400 dark:text-gray-500">
             Accepts exact IPs (<code className="font-mono">127.0.0.1</code>) or CIDR notation (
-            <code className="font-mono">172.16.0.0/12</code>). Press Enter or click Add.
-            Leave empty to allow all.
+            <code className="font-mono">172.16.0.0/12</code>). Press Enter or click Add. Leave empty
+            to allow all.
           </p>
         </div>
       </FormSection>

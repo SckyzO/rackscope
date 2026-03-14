@@ -45,7 +45,7 @@ async def test_overwrite_key(cache: ServiceCache):
 @pytest.mark.asyncio
 async def test_expired_entry_returns_none(cache: ServiceCache):
     await cache.set("key-ttl", "fresh", ttl=0.01)  # 10ms TTL
-    await asyncio.sleep(0.05)                        # wait 50ms
+    await asyncio.sleep(0.05)  # wait 50ms
     result = await cache.get("key-ttl")
     assert result is None
 
@@ -145,6 +145,7 @@ async def test_stats_active_vs_expired(cache: ServiceCache):
 @pytest.mark.asyncio
 async def test_concurrent_set_get(cache: ServiceCache):
     """Multiple coroutines writing/reading must not corrupt the cache."""
+
     async def writer(i: int) -> None:
         await cache.set(f"key-{i}", i, ttl=60.0)
 
@@ -215,7 +216,7 @@ async def test_none_stored_is_hit_returning_none(cache: ServiceCache):
     result = await cache.get("key")  # HIT — returns None from stored value
     assert result is None
     s = cache.stats()
-    assert s["hits"] == 1     # counted as hit (entry exists and is not expired)
+    assert s["hits"] == 1  # counted as hit (entry exists and is not expired)
     assert s["misses"] == 0
 
 
@@ -236,12 +237,12 @@ async def test_invalidate_prefix_partial_overlap(cache: ServiceCache):
     """Prefix invalidation is startswith — partial overlap included."""
     await cache.set("rack:r01:state", "a", ttl=60.0)
     await cache.set("rack:r02:state", "b", ttl=60.0)
-    await cache.set("ra_other:key", "c", ttl=60.0)   # starts with "ra"
+    await cache.set("ra_other:key", "c", ttl=60.0)  # starts with "ra"
     await cache.set("room:r01:state", "d", ttl=60.0)  # starts with "room"
 
     count = await cache.invalidate_prefix("ra")
     assert count == 3  # "rack:r01", "rack:r02", "ra_other" all start with "ra"
-    assert await cache.get("room:r01:state") == "d"   # untouched
+    assert await cache.get("room:r01:state") == "d"  # untouched
 
 
 # ── Singleflight deduplication ────────────────────────────────────────────────
@@ -309,6 +310,7 @@ async def test_singleflight_multiple_followers(cache: ServiceCache):
 @pytest.mark.asyncio
 async def test_singleflight_cancel_inflight_unblocks_followers(cache: ServiceCache):
     """cancel_inflight() resolves followers with None so they can retry."""
+
     async def leader():
         val = await cache.get("cancel-key")
         assert val is None
@@ -344,6 +346,7 @@ async def test_singleflight_stats_include_inflight(cache: ServiceCache):
 @pytest.mark.asyncio
 async def test_singleflight_invalidate_all_unblocks_followers(cache: ServiceCache):
     """invalidate_all() resolves in-flight futures so waiting followers don't hang."""
+
     async def leader():
         await cache.get("inv-key")
         await asyncio.sleep(10)  # holds the inflight future indefinitely

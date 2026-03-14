@@ -81,13 +81,13 @@ type RackEntry = {
   roomName: string;
   aisleId: string;
   aisleName: string;
-}
+};
 
 type AisleEntry = {
   id: string;
   name: string;
   roomName: string;
-}
+};
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 

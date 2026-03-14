@@ -58,7 +58,7 @@ const FormRows = ({ children }: { children: React.ReactNode }) => (
 type MappingEntry = {
   node: string;
   instance: string;
-}
+};
 
 const SlurmMappingEditor = ({ mappingPath }: { mappingPath?: string }) => {
   const [open, setOpen] = useState(false);
@@ -212,7 +212,7 @@ const SlurmMappingEditor = ({ mappingPath }: { mappingPath?: string }) => {
 type PluginsSettingsSectionProps = {
   draft: ConfigDraft;
   setDraft: React.Dispatch<React.SetStateAction<ConfigDraft | null>>;
-}
+};
 
 export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
   draft,

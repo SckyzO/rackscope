@@ -5,7 +5,7 @@ import { TooltipHelp } from '@app/components/ui/Tooltip';
 type FormSelectOption = {
   value: string;
   label: string;
-}
+};
 
 type FormSelectProps = {
   label: string;
@@ -17,7 +17,7 @@ type FormSelectProps = {
   disabled?: boolean;
   loading?: boolean;
   className?: string;
-}
+};
 
 export const FormSelect: React.FC<FormSelectProps> = ({
   label,

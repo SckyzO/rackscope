@@ -33,7 +33,7 @@ type DatacenterWizardProps = {
   onComplete: (siteId: string) => void;
   /** Called if user explicitly dismisses (only shown when sites already exist) */
   onDismiss?: () => void;
-}
+};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

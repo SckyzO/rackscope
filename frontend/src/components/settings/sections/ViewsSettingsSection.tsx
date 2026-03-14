@@ -50,7 +50,7 @@ const DashboardResetCard = () => {
 type Props = {
   draft: ConfigDraft;
   setDraft: (d: ConfigDraft) => void;
-}
+};
 
 const Toggle = ({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) => (
   <button

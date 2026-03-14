@@ -9,7 +9,7 @@ type FormSectionProps = {
   children: ReactNode;
   className?: string;
   divider?: boolean; // kept for backward compat, no longer used (card handles separation)
-}
+};
 
 /**
  * FormSection — renders as a SectionCard (bordered card with icon + title).

@@ -52,8 +52,8 @@ class TestAssertSafeId:
         for dangerous in [
             "../../../etc/passwd",
             "../../plugins",
-            "..",                    # pure traversal
-            ".hidden",               # starts with dot — not alphanumeric start
+            "..",  # pure traversal
+            ".hidden",  # starts with dot — not alphanumeric start
             "rack/../../../etc",
             "site/../../tmp",
         ]:
@@ -135,36 +135,44 @@ class TestPathTraversalHTTP:
     property is that traversal IDs never reach filesystem operations.
     """
 
-    @pytest.mark.parametrize("traversal_id", [
-        "../../../etc",
-        "../../plugins",
-        "rack%2F..%2F",
-    ])
+    @pytest.mark.parametrize(
+        "traversal_id",
+        [
+            "../../../etc",
+            "../../plugins",
+            "rack%2F..%2F",
+        ],
+    )
     def test_delete_site_blocks_traversal(self, traversal_id):
         """DELETE /api/topology/sites/{site_id} blocks path traversal IDs."""
         response = client.delete(f"/api/topology/sites/{traversal_id}")
         # 400 = our guard caught it; 422 = FastAPI routing rejected it
         # Both prevent the ID from reaching shutil.rmtree()
         assert response.status_code in (400, 404, 405, 422, 503), (
-            f"Expected traversal ID {traversal_id!r} to be blocked, "
-            f"got {response.status_code}"
+            f"Expected traversal ID {traversal_id!r} to be blocked, got {response.status_code}"
         )
         # Specifically, should NOT be 200 (success = ID was used)
         assert response.status_code != 200
 
-    @pytest.mark.parametrize("traversal_id", [
-        "../../../etc",
-        "../../rooms",
-    ])
+    @pytest.mark.parametrize(
+        "traversal_id",
+        [
+            "../../../etc",
+            "../../rooms",
+        ],
+    )
     def test_delete_room_blocks_traversal(self, traversal_id):
         """DELETE /api/topology/rooms/{room_id} blocks path traversal IDs."""
         response = client.delete(f"/api/topology/rooms/{traversal_id}")
         assert response.status_code != 200
 
-    @pytest.mark.parametrize("traversal_id", [
-        "../../../etc",
-        "../../aisles",
-    ])
+    @pytest.mark.parametrize(
+        "traversal_id",
+        [
+            "../../../etc",
+            "../../aisles",
+        ],
+    )
     def test_delete_aisle_blocks_traversal(self, traversal_id):
         """DELETE /api/topology/aisles/{aisle_id} blocks path traversal IDs."""
         response = client.delete(f"/api/topology/aisles/{traversal_id}")

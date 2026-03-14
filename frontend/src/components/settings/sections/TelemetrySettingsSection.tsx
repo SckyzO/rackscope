@@ -10,7 +10,7 @@ import type { ConfigDraft } from '../useSettingsConfig';
 type TelemetrySettingsSectionProps = {
   draft: ConfigDraft;
   setDraft: React.Dispatch<React.SetStateAction<ConfigDraft | null>>;
-}
+};
 
 export const TelemetrySettingsSection: React.FC<TelemetrySettingsSectionProps> = ({
   draft,

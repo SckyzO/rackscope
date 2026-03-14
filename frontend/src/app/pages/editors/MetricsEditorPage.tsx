@@ -68,7 +68,7 @@ type MetricDefinition = {
   };
   category?: string;
   tags?: string[];
-}
+};
 
 type MetricDraft = {
   id: string;
