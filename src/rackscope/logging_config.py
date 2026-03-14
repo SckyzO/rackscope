@@ -31,11 +31,9 @@ class JSONFormatter(logging.Formatter):
             "message": record.getMessage(),
         }
 
-        # Add exception info if present
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)  # pragma: no cover
 
-        # Add extra fields from record
         if hasattr(record, "rack_id"):
             log_data["rack_id"] = record.rack_id  # pragma: no cover
         if hasattr(record, "room_id"):
@@ -52,37 +50,27 @@ class JSONFormatter(logging.Formatter):
 
 def setup_logging() -> None:
     """Setup structured logging for the application."""
-    # Get log level from environment variable
     log_level_str = os.getenv("RACKSCOPE_LOG_LEVEL", "INFO").upper()
     log_level = getattr(logging, log_level_str, logging.INFO)
 
-    # Get root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
-
-    # Remove existing handlers
     root_logger.handlers.clear()
 
-    # Create console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(log_level)
-
-    # Use JSON formatter for structured logs
-    json_formatter = JSONFormatter()
-    console_handler.setFormatter(json_formatter)
-
-    # Add handler to root logger
+    console_handler.setFormatter(JSONFormatter())
     root_logger.addHandler(console_handler)
 
-    # Install in-memory capture handler (feeds /api/logs endpoints)
-    # Deferred import avoids circular dependency at module load time
+    # Install in-memory capture handler — feeds /api/logs endpoints.
+    # Deferred import avoids circular dependency at module load time.
     from rackscope.api.log_buffer import LogCaptureHandler, log_buffer  # noqa: PLC0415
 
     capture_handler = LogCaptureHandler(log_buffer)
     capture_handler.setLevel(log_level)
     root_logger.addHandler(capture_handler)
 
-    # Set level for specific loggers
+    # Quiet noisy uvicorn loggers — access log is INFO-level and very verbose
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("uvicorn.error").setLevel(logging.INFO)
 

@@ -131,15 +131,12 @@ async def query_metric_data(
     if not metrics_library:
         raise HTTPException(status_code=503, detail="Metrics library not loaded")
 
-    # Get metric definition
     metric = metrics_library.get_metric(metric_id)
     if not metric:
         raise HTTPException(status_code=404, detail=f"Metric '{metric_id}' not found")
 
-    # Build Prometheus query with label substitution
+    # Build Prometheus query — replace {instance}, {rack_id} etc. with target_id
     query = metric.metric
-
-    # Create substitution map with all possible placeholders
     substitutions = {
         "{instance}": target_id,
         "{rack_id}": target_id,

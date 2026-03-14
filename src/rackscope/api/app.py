@@ -57,7 +57,6 @@ from rackscope.logging_config import setup_logging, get_logger
 from rackscope.api import exceptions
 from rackscope.api.middleware import AuthMiddleware, RequestLoggingMiddleware
 
-# Setup logging
 setup_logging()
 logger = get_logger(__name__)
 

@@ -445,7 +445,6 @@ async def get_device_metrics(
     if not device:
         return {"device_id": device_id, "rack_id": rack_id, "metrics": {}}
 
-    # Get device template
     template = catalog.get_device_template(device.template_id)
     if not template or not template.metrics:
         return {"device_id": device_id, "rack_id": rack_id, "metrics": {}}
