@@ -28,7 +28,7 @@ import { DrawerHeader } from '@app/components/layout/DrawerHeader';
 type WallView = 'compact' | 'rack' | 'columns';
 type WallLayout = 'scroll' | 'wrap' | 'wrap-auto';
 type CardSize = 'sm' | 'md' | 'lg';
-interface WallConfig {
+type WallConfig = {
   view: WallView;
   layout: WallLayout;
   cardSize: CardSize;
@@ -89,7 +89,7 @@ function saveCfg(c: WallConfig) {
 }
 
 function expand(p: string): string[] {
-  const m = p.match(/^(.*)\[(\d+)-(\d+)\](.*)$/);
+  const m = /^(.*)\[(\d+)-(\d+)\](.*)$/.exec(p);
   if (!m) return [p];
   const [, pre, s, e, suf] = m;
   const w = Math.max(s.length, e.length);

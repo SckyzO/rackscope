@@ -55,7 +55,7 @@ const FormRows = ({ children }: { children: React.ReactNode }) => (
 
 // ── Slurm Node Mapping Editor ──────────────────────────────────────────────
 
-interface MappingEntry {
+type MappingEntry = {
   node: string;
   instance: string;
 }
@@ -209,7 +209,7 @@ const SlurmMappingEditor = ({ mappingPath }: { mappingPath?: string }) => {
 
 // ── Main section ───────────────────────────────────────────────────────────
 
-interface PluginsSettingsSectionProps {
+type PluginsSettingsSectionProps = {
   draft: ConfigDraft;
   setDraft: React.Dispatch<React.SetStateAction<ConfigDraft | null>>;
 }
@@ -227,7 +227,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
     () => localStorage.getItem('rackscope.demo.ribbon') !== 'hidden'
   );
 
-  const [metricsFiles, setMetricsFiles] = useState<Array<{ name: string; path: string }>>([]);
+  const [metricsFiles, setMetricsFiles] = useState<{ name: string; path: string }[]>([]);
   const [metricsFilesLoading, setMetricsFilesLoading] = useState(false);
 
   const [overrides, setOverrides] = useState<SimulatorOverride[]>([]);
@@ -314,7 +314,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
   const updateSimulator = (
     field: string,
-    value: string | boolean | number | Record<string, unknown> | Array<unknown>
+    value: string | boolean | number | Record<string, unknown> | unknown[]
   ) => {
     setDraft((prev) => {
       if (!prev) return prev;
@@ -349,7 +349,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
 
   const updateSlurm = (
     field: string,
-    value: string | boolean | Record<string, string> | Array<unknown>
+    value: string | boolean | Record<string, string> | unknown[]
   ) => {
     setDraft((prev) => {
       if (!prev) return prev;

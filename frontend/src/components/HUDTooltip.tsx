@@ -18,12 +18,12 @@ import type { TooltipStyle } from '../hooks/useTooltipSettings';
 
 // ── Shared types ────────────────────────────────────────────────────────────────
 
-export interface TooltipReason {
+export type TooltipReason = {
   label: string;
   severity?: string;
 }
 
-export interface HUDTooltipMetrics {
+export type HUDTooltipMetrics = {
   temp?: number;
   tempWarn?: number;
   tempCrit?: number;
@@ -31,13 +31,13 @@ export interface HUDTooltipMetrics {
   powerMax?: number;
 }
 
-export interface HUDTooltipCheckSummary {
+export type HUDTooltipCheckSummary = {
   ok: number;
   warn: number;
   crit: number;
 }
 
-export interface HUDTooltipProps {
+export type HUDTooltipProps = {
   title: string;
   subtitle?: string;
   status: string;
@@ -1091,11 +1091,11 @@ const UltraCompactCard = ({
 // Used both by HUDTooltip (portal) and by the settings visual picker
 // ══════════════════════════════════════════════════════════════════════════════
 
-interface CardProps extends Omit<HUDTooltipProps, 'mousePos'> {
+type CardProps = {
   style: TooltipStyle;
   aura: boolean;
   mousePos?: { x: number; y: number };
-}
+} & Omit<HUDTooltipProps, 'mousePos'>
 
 export const HUDTooltipCard = ({ style, aura, ...props }: CardProps) => {
   switch (style) {
@@ -1151,6 +1151,6 @@ export const HUDTooltip = ({ mousePos, ...props }: HUDTooltipProps) => {
     >
       <HUDTooltipCard style={style} aura={aura} {...props} />
     </div>,
-    document.getElementById('tooltip-root') as HTMLElement
+    document.getElementById('tooltip-root')!
   );
 };

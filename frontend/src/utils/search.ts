@@ -6,7 +6,7 @@ export const matchesText = (value: string | undefined, query: string): boolean =
 };
 
 const parseRangePattern = (pattern: string) => {
-  const match = pattern.match(/^(.*)\[(\d+)-(\d+)\](.*)$/);
+  const match = /^(.*)\[(\d+)-(\d+)\](.*)$/.exec(pattern);
   if (!match) return null;
   const [, prefix, startStr, endStr, suffix] = match;
   const start = Number.parseInt(startStr, 10);

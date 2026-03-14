@@ -6,14 +6,14 @@ import { PageHeader, PageBreadcrumb } from './templates/EmptyPage';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface ComponentEntry {
+type ComponentEntry = {
   name: string;
   description: string;
   route: string;
   tag?: string; // optional sub-label (e.g. chart type)
 }
 
-interface CategorySection {
+type CategorySection = {
   id: string;
   title: string;
   color: string; // accent color for the dot indicator

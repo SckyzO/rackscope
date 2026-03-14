@@ -1,0 +1,6 @@
+failure-threshold: error
+ignore:
+  - DL3008  # apt-get without --no-install-recommends (size vs convenience trade-off)
+  - DL3009  # apt-get clean (already handled by Docker layer caching)
+  - DL3013  # pip install without --no-cache-dir (already set globally)
+  - SC2086  # Double quote to prevent globbing (shellcheck in hadolint)

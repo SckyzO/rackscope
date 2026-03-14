@@ -15,6 +15,7 @@ sidebar_position: 2
 Site-level overview showing all rooms with live rack health states.
 
 **Features:**
+
 - **Grid view** — room cards with a mini rack grid (colored squares per rack), health badge, CRIT/WARN counts and ring highlight on critical rooms
 - **List + Detail view** — compact room list on the left, detail panel on the right with rack grid, alert counts, and aisle tags. The detail header shows the room name, health badge, and **View Room →** button on the same line
 - **Config drawer** (`⚙` button) — toggle Grid/List, adjust rack square size (Small/Medium)
@@ -44,10 +45,12 @@ Shows all sites on a world map with health status markers.
 `Minimal` · `Flat` · `NOC` · `Retro` · `Midnight`
 
 **Controls:**
+
 - **Layout toggle**: Stacked (all rooms in a column) or Split (side by side)
 - **Height toggle**: S / M / L — compact to expanded room cards (Stacked only)
 
 **Features:**
+
 - Click a site marker → tooltip shows rooms + rack count + alert state
 - Click a site in the sidebar → detail panel with clickable rooms
 - Stats bar: Sites · Rooms · Racks · CRIT/WARN alert counts (live)
@@ -70,6 +73,7 @@ See **[Room View — detailed guide](room-view)** for the full reference: all 10
 Full physical rack front/rear view with every device at its exact U position.
 
 **Features:**
+
 - Node slots color-coded by health state
 - Rack components (PDUs, HMC) on side rails with WARN/CRIT indicators
 - PDU alerts visible directly on the component
@@ -88,6 +92,7 @@ Device with per-instance tabs showing metrics and health checks.
 Compact rack overview across the entire topology. Useful as a NOC wallboard.
 
 **Features:**
+
 - Drag & drop to reorder racks (edit mode)
 - Add/remove racks from any room/aisle
 - Card size: S / M / L

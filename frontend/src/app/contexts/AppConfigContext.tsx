@@ -4,7 +4,7 @@ import { api } from '@src/services/api';
 import type { AppConfig } from '@src/types';
 
 // Feature flags with safe defaults (fail-open: show everything if config not loaded)
-interface AppFeatures {
+type AppFeatures = {
   notifications: boolean;
   notifications_max_visible: number;
   toast_duration_seconds: number;
@@ -18,12 +18,12 @@ interface AppFeatures {
 }
 
 // Plugin enabled status
-interface AppPlugins {
+type AppPlugins = {
   slurm: boolean;
   simulator: boolean;
 }
 
-interface AppConfigContextType {
+type AppConfigContextType = {
   config: AppConfig | null;
   loading: boolean;
   features: AppFeatures;
@@ -93,7 +93,7 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
 
   // Start polling as soon as config is loaded and demo mode is known
   useEffect(() => {
-    const demoEnabled = config?.plugins?.['simulator']?.enabled === true;
+    const demoEnabled = config?.plugins?.simulator?.enabled === true;
     void checkSimulator(demoEnabled);
     if (!demoEnabled) return;
     // Poll every 30s to detect simulator crashes
@@ -106,7 +106,7 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
     notifications: config?.features?.notifications !== false,
     notifications_max_visible: Number(config?.features?.notifications_max_visible ?? 10),
     toast_duration_seconds: Number(config?.features?.toast_duration_seconds ?? 15),
-    toast_position: (config?.features?.toast_position as string) || 'bottom-right',
+    toast_position: config?.features?.toast_position ?? 'bottom-right',
     toast_stack_threshold: Number(config?.features?.toast_stack_threshold ?? 5),
     worldmap: config?.features?.worldmap !== false,
     aisle_dashboard: config?.features?.aisle_dashboard !== false,
@@ -117,8 +117,8 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
 
   // Derive plugin enabled flags from plugins dict
   const plugins: AppPlugins = {
-    slurm: config?.plugins?.['slurm']?.enabled === true,
-    simulator: config?.plugins?.['simulator']?.enabled === true,
+    slurm: config?.plugins?.slurm?.enabled === true,
+    simulator: config?.plugins?.simulator?.enabled === true,
   };
 
   const playlist = {

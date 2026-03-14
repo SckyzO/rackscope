@@ -13,6 +13,7 @@ cache:
   ttl_seconds: 30
   health_checks_ttl_seconds: 30
   metrics_ttl_seconds: 120
+  service_ttl_seconds: 5
 telemetry:
   prometheus_url: http://prometheus:9090
   prometheus_timeout_seconds: 5.0
@@ -52,6 +53,7 @@ auth:
     max_length: 128
     require_digit: false
     require_symbol: false
+  trusted_networks: []
 map:
   default_view: world
   default_zoom: null

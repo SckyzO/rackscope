@@ -15,7 +15,7 @@ import type { PlaylistMode, PlaylistQueueItem } from '../playlist/PlaylistRegist
 const QUEUE_STORAGE_KEY = 'rackscope.playlist.queue';
 const INTERVAL_STORAGE_KEY = 'rackscope.playlist.interval';
 
-interface PlaylistContextType {
+type PlaylistContextType = {
   enabled: boolean;
   isPlaying: boolean;
   currentIndex: number;

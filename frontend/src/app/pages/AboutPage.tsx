@@ -17,7 +17,7 @@ import { useTheme } from '@src/context/ThemeContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface Quote {
+type Quote = {
   text: string;
   character: string;
   source: string;

@@ -6,7 +6,7 @@ import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage'
 type ToastType = 'success' | 'info' | 'warning' | 'error';
 type ToastPos = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 
-interface Toast {
+type Toast = {
   id: number;
   type: ToastType;
   title: string;
@@ -91,7 +91,7 @@ export const ToastPage = () => {
     const groups: Partial<Record<ToastPos, Toast[]>> = {};
     toasts.forEach((t) => {
       groups[t.position] ??= [];
-      (groups[t.position] as Toast[]).push(t);
+      (groups[t.position]!).push(t);
     });
     return groups;
   };

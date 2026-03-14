@@ -74,7 +74,7 @@ const c = (type: string) => TYPE_COLORS[type] ?? TYPE_COLORS.other;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface RackEntry {
+type RackEntry = {
   id: string;
   name: string;
   roomId: string;
@@ -83,7 +83,7 @@ interface RackEntry {
   aisleName: string;
 }
 
-interface AisleEntry {
+type AisleEntry = {
   id: string;
   name: string;
   roomName: string;

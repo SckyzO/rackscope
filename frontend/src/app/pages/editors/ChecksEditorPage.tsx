@@ -368,7 +368,7 @@ const TestQueryPanel = ({ expr, rules }: { expr: string; rules: RuleDraft[] }) =
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<null | {
     expr: string;
-    rows: Array<{ labels: Record<string, string>; value: number; severity: string }>;
+    rows: { labels: Record<string, string>; value: number; severity: string }[];
   }>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -1331,7 +1331,7 @@ export const ChecksEditorPage = () => {
         contents[name] = data.content;
         try {
           const parsed = jsYaml.load(data.content) as Record<string, unknown>;
-          const checks = (parsed?.checks as Array<{ id: string }>) ?? [];
+          const checks = (parsed?.checks as { id: string }[]) ?? [];
           checks.forEach((c) => {
             if (c.id) manifest[c.id] = name;
           });
@@ -1394,7 +1394,7 @@ export const ChecksEditorPage = () => {
     } catch {
       parsed = { checks: [] };
     }
-    const checks = (parsed.checks as Array<Record<string, unknown>>) ?? [];
+    const checks = (parsed.checks as Record<string, unknown>[]) ?? [];
     parsed.checks = checks.map((c) => (c.id === draft.id ? draftToCheck(draft) : c));
     const newContent = jsYaml.dump(parsed, { lineWidth: 120 });
     await api.updateChecksFile(fileName, newContent);
@@ -1411,7 +1411,7 @@ export const ChecksEditorPage = () => {
       parsed = { checks: [] };
     }
     parsed.checks ??= [];
-    (parsed.checks as Array<unknown>).push(draftToCheck(draft));
+    (parsed.checks as unknown[]).push(draftToCheck(draft));
     const newContent = jsYaml.dump(parsed, { lineWidth: 120 });
     await api.updateChecksFile(targetFile, newContent);
     await loadAll();
@@ -1429,7 +1429,7 @@ export const ChecksEditorPage = () => {
     } catch {
       parsed = { checks: [] };
     }
-    const checks = (parsed.checks as Array<Record<string, unknown>>) ?? [];
+    const checks = (parsed.checks as Record<string, unknown>[]) ?? [];
     parsed.checks = checks.filter((c) => c.id !== checkId);
     const newContent = jsYaml.dump(parsed, { lineWidth: 120 });
     await api.updateChecksFile(fileName, newContent);

@@ -18,7 +18,7 @@ export type TooltipStyle =
   | 'glass' // Glassmorphism + 2 metric cards
   | 'split'; // Split layout — info left, arc right
 
-export interface TooltipStyleMeta {
+export type TooltipStyleMeta = {
   id: TooltipStyle;
   label: string;
   desc: string;

@@ -65,7 +65,7 @@ const SEV_COLOR: Record<string, string> = {
   WARN: '#f59e0b',
 };
 
-interface AppHeaderProps {
+type AppHeaderProps = {
   isDark: boolean;
   toggleDark: () => void;
   sidebarCollapsed: boolean;

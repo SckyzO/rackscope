@@ -35,7 +35,7 @@ type SearchResult = {
 function expandInstances(instance: unknown): string[] {
   if (!instance) return [];
   if (typeof instance === 'string') {
-    const m = instance.match(/^(.*)\[(\d+)-(\d+)\](.*)$/);
+    const m = /^(.*)\[(\d+)-(\d+)\](.*)$/.exec(instance);
     if (m) {
       const [, prefix, start, end, suffix] = m;
       const w = Math.max(start.length, end.length);
@@ -242,8 +242,8 @@ function filterResults(index: SearchResult[], query: string): SearchResult[] {
   const groups: Partial<Record<Category, SearchResult[]>> = {};
   for (const r of all) {
     groups[r.category] ??= [];
-    if ((groups[r.category] as SearchResult[]).length < 5)
-      (groups[r.category] as SearchResult[]).push(r);
+    if ((groups[r.category]!).length < 5)
+      (groups[r.category]!).push(r);
   }
   return CATEGORY_ORDER.flatMap((cat) => groups[cat] ?? []);
 }

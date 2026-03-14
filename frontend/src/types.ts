@@ -1,4 +1,4 @@
-export interface Device {
+export type Device = {
   id: string;
   name: string;
   template_id: string;
@@ -8,7 +8,7 @@ export interface Device {
   labels?: Record<string, string>;
 }
 
-export interface Rack {
+export type Rack = {
   id: string;
   name: string;
   template_id?: string;
@@ -17,13 +17,13 @@ export interface Rack {
   devices: Device[];
 }
 
-export interface Aisle {
+export type Aisle = {
   id: string;
   name: string;
   racks: Rack[];
 }
 
-export interface RoomLayout {
+export type RoomLayout = {
   shape?: 'rectangle' | 'polygon';
   size?: {
     width?: number;
@@ -43,7 +43,7 @@ export interface RoomLayout {
   };
 }
 
-export interface Room {
+export type Room = {
   id: string;
   name: string;
   description?: string;
@@ -52,7 +52,7 @@ export interface Room {
   standalone_racks: Rack[];
 }
 
-export interface Site {
+export type Site = {
   id: string;
   name: string;
   description?: string | null;
@@ -64,18 +64,18 @@ export interface Site {
   rooms: Room[];
 }
 
-export interface RackSummary {
+export type RackSummary = {
   id: string;
   name: string;
 }
 
-export interface AisleSummary {
+export type AisleSummary = {
   id: string;
   name: string;
   racks: RackSummary[];
 }
 
-export interface RoomSummary {
+export type RoomSummary = {
   id: string;
   name: string;
   site_id: string;
@@ -83,7 +83,7 @@ export interface RoomSummary {
   standalone_racks?: RackSummary[];
 }
 
-export interface DeviceContext {
+export type DeviceContext = {
   device: Device;
   template?: DeviceTemplate | null;
   rack: Rack;
@@ -94,14 +94,14 @@ export interface DeviceContext {
 
 // ── Catalog ───────────────────────────────────────────────────────────────────
 
-export interface LayoutConfig {
+export type LayoutConfig = {
   type: 'grid' | 'vertical';
   rows: number;
   cols: number;
   matrix: number[][];
 }
 
-export interface DeviceTemplate {
+export type DeviceTemplate = {
   id: string;
   name: string;
   type: string;
@@ -120,7 +120,7 @@ export interface DeviceTemplate {
   };
 }
 
-export interface DeviceRearComponent {
+export type DeviceRearComponent = {
   id: string;
   name: string;
   type: 'psu' | 'fan' | 'io' | 'hydraulics' | 'other';
@@ -128,7 +128,7 @@ export interface DeviceRearComponent {
   checks?: string[];
 }
 
-export interface InfrastructureComponent {
+export type InfrastructureComponent = {
   id: string;
   name: string;
   type: 'power' | 'cooling' | 'management' | 'network' | 'other';
@@ -140,7 +140,7 @@ export interface InfrastructureComponent {
   checks?: string[];
 }
 
-export interface RackComponentTemplate {
+export type RackComponentTemplate = {
   id: string;
   name: string;
   type: string;
@@ -154,14 +154,14 @@ export interface RackComponentTemplate {
   metrics?: string[];
 }
 
-export interface RackComponentRef {
+export type RackComponentRef = {
   template_id: string;
   u_position: number;
   u_height?: number;
   side?: 'left' | 'right';
 }
 
-export interface RackTemplate {
+export type RackTemplate = {
   id: string;
   name: string;
   u_height: number;
@@ -176,33 +176,33 @@ export interface RackTemplate {
   metrics?: string[];
 }
 
-export interface Catalog {
+export type Catalog = {
   device_templates: DeviceTemplate[];
   rack_templates: RackTemplate[];
   rack_component_templates: RackComponentTemplate[];
 }
 
-export interface CheckDefinition {
+export type CheckDefinition = {
   id: string;
   name: string;
   scope: 'node' | 'chassis' | 'rack';
   expr: string;
   output?: 'bool' | 'numeric';
   selectors?: string[];
-  rules?: Array<{
+  rules?: {
     op: '==' | '!=' | '>' | '>=' | '<' | '<=';
     value: number | string;
     severity: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
-  }>;
+  }[];
   kind?: string;
   for?: string | null;
 }
 
-export interface ChecksLibrary {
+export type ChecksLibrary = {
   checks: CheckDefinition[];
 }
 
-export interface PrometheusStats {
+export type PrometheusStats = {
   last_ms?: number | null;
   avg_ms?: number | null;
   last_ts?: number | null;
@@ -210,7 +210,7 @@ export interface PrometheusStats {
   heartbeat_seconds?: number | null;
 }
 
-export interface TelemetryStats {
+export type TelemetryStats = {
   query_count: number;
   cache_hits: number;
   cache_misses: number;
@@ -226,7 +226,7 @@ export interface TelemetryStats {
   last_ts?: number | null;
 }
 
-export interface GlobalStats {
+export type GlobalStats = {
   total_rooms: number;
   total_racks: number;
   active_alerts: number;
@@ -235,13 +235,13 @@ export interface GlobalStats {
   status: string;
 }
 
-export interface AlertCheck {
+export type AlertCheck = {
   id: string;
   name?: string;
   severity: string;
 }
 
-export interface ActiveAlert {
+export type ActiveAlert = {
   node_id: string;
   state: string;
   checks: AlertCheck[];
@@ -255,7 +255,7 @@ export interface ActiveAlert {
   device_name: string;
 }
 
-export interface RackNodeState {
+export type RackNodeState = {
   state?: string;
   temperature?: number;
   power?: number;
@@ -263,7 +263,7 @@ export interface RackNodeState {
   alerts?: AlertCheck[];
 }
 
-export interface RackState {
+export type RackState = {
   state?: string;
   /** Node health counts returned by GET /api/rooms/{id}/state */
   node_total?: number;
@@ -300,37 +300,37 @@ export interface RackState {
   nodes?: Record<string, RackNodeState>;
 }
 
-export interface RoomState {
+export type RoomState = {
   room_id?: string;
   state?: string;
   racks?: Record<string, RackState | string>;
 }
 
-export interface SlurmNodeState {
+export type SlurmNodeState = {
   status: string;
   severity: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
   statuses: string[];
   partitions: string[];
 }
 
-export interface SlurmRoomNodes {
+export type SlurmRoomNodes = {
   room_id: string;
   nodes: Record<string, SlurmNodeState>;
 }
 
-export interface SlurmSummary {
+export type SlurmSummary = {
   room_id?: string | null;
   total_nodes: number;
   by_status: Record<string, number>;
   by_severity: Record<string, number>;
 }
 
-export interface SlurmPartitionSummary {
+export type SlurmPartitionSummary = {
   room_id?: string | null;
   partitions: Record<string, Record<string, number>>;
 }
 
-export interface SlurmNodeEntry {
+export type SlurmNodeEntry = {
   node: string;
   status: string;
   severity: 'OK' | 'WARN' | 'CRIT' | 'UNKNOWN';
@@ -346,7 +346,7 @@ export interface SlurmNodeEntry {
   device_name?: string;
 }
 
-export interface AppConfig {
+export type AppConfig = {
   app?: {
     name?: string;
     description?: string | null;
@@ -433,11 +433,11 @@ export interface AppConfig {
       overrides_path?: string;
       default_ttl_seconds?: number;
       metrics_catalog_path?: string;
-      metrics_catalogs?: Array<{
+      metrics_catalogs?: {
         id: string;
         path: string;
         enabled?: boolean;
-      }>;
+      }[];
       slurm_alloc_percent?: number;
       slurm_random_statuses?: Record<string, number>;
       slurm_random_match?: string[];
@@ -486,11 +486,11 @@ export interface AppConfig {
     overrides_path?: string;
     default_ttl_seconds?: number;
     metrics_catalog_path?: string;
-    metrics_catalogs?: Array<{
+    metrics_catalogs?: {
       id: string;
       path: string;
       enabled?: boolean;
-    }>;
+    }[];
   };
   slurm?: {
     metric?: string;
@@ -522,7 +522,7 @@ export interface AppConfig {
   };
 }
 
-export interface SimulatorOverride {
+export type SimulatorOverride = {
   id: string;
   instance?: string | null;
   rack_id?: string | null;
@@ -531,14 +531,14 @@ export interface SimulatorOverride {
   expires_at?: number | null;
 }
 
-export interface MenuItem {
+export type MenuItem = {
   id: string;
   label: string;
   path: string;
   icon: string;
 }
 
-export interface MenuSection {
+export type MenuSection = {
   id: string;
   label: string;
   icon: string;
@@ -546,6 +546,6 @@ export interface MenuSection {
   order: number;
 }
 
-export interface PluginsMenuResponse {
+export type PluginsMenuResponse = {
   sections: MenuSection[];
 }

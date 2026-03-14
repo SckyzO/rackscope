@@ -17,7 +17,7 @@ import { api } from '@src/services/api';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface RoomEditorCanvasProps {
+type RoomEditorCanvasProps = {
   room: Room;
   rackTemplates: RackTemplate[];
   onRoomUpdate: (updatedRoom: Room) => void;
@@ -44,7 +44,7 @@ const Tooltip = ({ text, children }: { text: string; children: ReactNode }) => (
 
 // ── DeleteConfirmModal — Default Modal design ─────────────────────────────────
 
-interface DeleteConfirmModalProps {
+type DeleteConfirmModalProps = {
   open: boolean;
   entityType: string;
   entityName: string;
@@ -101,12 +101,12 @@ const DeleteConfirmModal = ({
 
 // ── YamlDrawer ────────────────────────────────────────────────────────────────
 
-interface YamlDrawerTarget {
+type YamlDrawerTarget = {
   type: 'aisle' | 'rack';
   data: Aisle | Rack;
 }
 
-interface YamlDrawerProps {
+type YamlDrawerProps = {
   target: YamlDrawerTarget;
   onClose: () => void;
 }
@@ -178,7 +178,7 @@ const YamlDrawer = ({ target, onClose }: YamlDrawerProps) => {
 
 // ── RackCard ──────────────────────────────────────────────────────────────────
 
-interface RackCardProps {
+type RackCardProps = {
   rack: Rack;
   aisleId: string;
   isDragTarget: boolean;
@@ -311,7 +311,7 @@ const RackCard = ({
 
 // ── AddRackForm ───────────────────────────────────────────────────────────────
 
-interface AddRackFormProps {
+type AddRackFormProps = {
   aisleId: string;
   roomId: string;
   rackTemplates: RackTemplate[];
@@ -450,7 +450,7 @@ const AddRackForm = ({
 
 // ── AisleBand ─────────────────────────────────────────────────────────────────
 
-interface AisleBandProps {
+type AisleBandProps = {
   aisle: Aisle;
   room: Room;
   rackTemplates: RackTemplate[];

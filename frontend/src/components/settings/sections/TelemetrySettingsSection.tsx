@@ -7,7 +7,7 @@ import { StepperInput } from '@app/components/forms/StepperInput';
 import { TooltipHelp } from '@app/components/ui/Tooltip';
 import type { ConfigDraft } from '../useSettingsConfig';
 
-interface TelemetrySettingsSectionProps {
+type TelemetrySettingsSectionProps = {
   draft: ConfigDraft;
   setDraft: React.Dispatch<React.SetStateAction<ConfigDraft | null>>;
 }

@@ -28,7 +28,7 @@ type WizardData = {
   aisle: { enabled: boolean; name: string; id: string };
 };
 
-interface DatacenterWizardProps {
+type DatacenterWizardProps = {
   /** Called with the created siteId on success — parent should reload + drill down */
   onComplete: (siteId: string) => void;
   /** Called if user explicitly dismisses (only shown when sites already exist) */

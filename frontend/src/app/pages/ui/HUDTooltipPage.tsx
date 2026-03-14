@@ -145,18 +145,18 @@ const PBar = ({ w, max }: { w: number; max: number }) => {
 
 // ── Tooltip card ───────────────────────────────────────────────────────────────
 
-interface Reason {
+type Reason = {
   label: string;
   severity?: string;
 }
-interface Checks {
+type Checks = {
   ok: number;
   warn: number;
   crit: number;
 }
 type Icon = LucideIcon;
 
-interface CardProps {
+type CardProps = {
   title: string;
   subtitle?: string;
   status: Status;

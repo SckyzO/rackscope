@@ -163,7 +163,7 @@ def test_summary(hpc, capsys):
     topo, idx, rack_ids, room_ids = hpc
     with capsys.disabled():
         print(f"\n{'='*52}")
-        print(f"  Topology : hpc-cluster")
+        print("  Topology : hpc-cluster")
         print(f"  Sites    : {len(topo.sites)}")
         print(f"  Rooms    : {len(room_ids)}")
         print(f"  Racks    : {len(rack_ids)}")

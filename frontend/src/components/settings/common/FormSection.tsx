@@ -1,6 +1,6 @@
 import type { ReactNode, ElementType } from 'react';
 
-interface FormSectionProps {
+type FormSectionProps = {
   title: string;
   description?: string;
   icon?: ElementType;

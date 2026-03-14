@@ -391,7 +391,7 @@ export const api = {
   getActiveAlerts: async (): Promise<{ alerts: ActiveAlert[] }> => {
     return fetchWithCache('/api/alerts/active', 'alerts.active');
   },
-  getMetricsFiles: async (): Promise<{ files: Array<{ name: string; path: string }> }> => {
+  getMetricsFiles: async (): Promise<{ files: { name: string; path: string }[] }> => {
     return fetchWithCache('/api/metrics/files', 'metrics.files');
   },
   // Metrics library CRUD
@@ -405,7 +405,7 @@ export const api = {
       `metrics.library${params?.category ?? ''}${params?.tag ?? ''}`
     );
   },
-  getMetricsLibraryFiles: async (): Promise<{ files: Array<{ name: string; path: string }> }> => {
+  getMetricsLibraryFiles: async (): Promise<{ files: { name: string; path: string }[] }> => {
     return fetchWithCache('/api/metrics/library/files', 'metrics.library.files');
   },
   getMetricFile: async (name: string): Promise<{ name: string; content: string }> => {
@@ -429,8 +429,8 @@ export const api = {
   getChecks: async (): Promise<ChecksLibrary> => {
     return fetchWithCache('/api/checks', 'checks.library');
   },
-  getChecksFiles: async (): Promise<{ files: Array<{ name: string; path: string }> }> => {
-    return fetchWithCache<{ files: Array<{ name: string; path: string }> }>(
+  getChecksFiles: async (): Promise<{ files: { name: string; path: string }[] }> => {
+    return fetchWithCache<{ files: { name: string; path: string }[] }>(
       '/api/checks/files',
       'checks.files'
     );
@@ -457,7 +457,7 @@ export const api = {
         } else if (detail && typeof detail === 'object') {
           const detailObj = detail as {
             message?: string;
-            errors?: Array<{ index?: number; id?: string; errors?: Array<{ msg?: string }> }>;
+            errors?: { index?: number; id?: string; errors?: { msg?: string }[] }[];
           };
           if (detailObj.message) {
             if (Array.isArray(detailObj.errors)) {
@@ -494,7 +494,7 @@ export const api = {
       status: string;
       data: {
         resultType: string;
-        result: Array<{ metric: Record<string, string>; value: [number, string] }>;
+        result: { metric: Record<string, string>; value: [number, string] }[];
       };
     };
   }> => {
@@ -526,7 +526,7 @@ export const api = {
    *   for temperature/power/PDU (~743ms). Use only on detail views (RackPage,
    *   DevicePage). Default false returns health-only in ~30ms.
    */
-  getRackState: async (rackId: string, includeMetrics: boolean = false): Promise<RackState> => {
+  getRackState: async (rackId: string, includeMetrics = false): Promise<RackState> => {
     const url = `/api/racks/${rackId}/state${includeMetrics ? '?include_metrics=true' : ''}`;
     const cacheKey = `rack.${rackId}.state${includeMetrics ? '.metrics' : ''}`;
     return fetchWithCache(url, cacheKey, 5000);

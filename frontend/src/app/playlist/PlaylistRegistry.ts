@@ -41,7 +41,7 @@ export const getIcon = (name: string): ElementType => ICON_MAP[name] ?? BarChart
 
 export type PlaylistMode = 'normal' | 'focused' | 'kiosk';
 
-export interface RegistryPage {
+export type RegistryPage = {
   id: string;
   title: string;
   iconName: string;
@@ -51,7 +51,7 @@ export interface RegistryPage {
   requiresFeature?: 'worldmap' | 'notifications';
 }
 
-export interface RegistryCategory {
+export type RegistryCategory = {
   id: string;
   label: string;
   iconName: string;
@@ -59,7 +59,7 @@ export interface RegistryCategory {
   requiresPlugin?: 'slurm';
 }
 
-export interface PlaylistQueueItem {
+export type PlaylistQueueItem = {
   id: string;
   title: string;
   route: string;
@@ -154,13 +154,13 @@ export const PLAYLIST_REGISTRY: RegistryCategory[] = [
 
 // ── expandRegistry ─────────────────────────────────────────────────────────────
 
-interface ExpandOptions {
+type ExpandOptions = {
   rooms: RoomSummary[];
   features: { worldmap: boolean; notifications: boolean };
   pluginSlurm: boolean;
 }
 
-export interface ExpandedCategory {
+export type ExpandedCategory = {
   id: string;
   label: string;
   iconName: string;

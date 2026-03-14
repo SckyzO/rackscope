@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@src/services/api';
 
-interface SlurmSeverityColors {
+type SlurmSeverityColors = {
   ok: string;
   warn: string;
   crit: string;

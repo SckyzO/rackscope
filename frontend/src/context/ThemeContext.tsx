@@ -37,12 +37,12 @@ export type IconBg = 'badge' | 'soft' | 'circle' | 'ghost' | 'solo';
 export type LightTheme = 'slate' | 'warm' | 'cool' | 'solarized';
 export type DarkTheme = 'void' | 'navy' | 'forest' | 'matrix';
 
-export interface AccentMeta {
+export type AccentMeta = {
   id: AccentColor;
   label: string;
   hex: string;
 }
-export interface PaletteMeta {
+export type PaletteMeta = {
   id: LightTheme | DarkTheme;
   label: string;
   desc: string;
@@ -359,7 +359,7 @@ const DARK_PALETTES: Record<DarkTheme, Record<string, string>> = {
 
 // ── Context ───────────────────────────────────────────────────────────────────
 
-interface ThemeContextType {
+type ThemeContextType = {
   mode: 'dark' | 'light';
   accent: AccentColor;
   lightTheme: LightTheme;

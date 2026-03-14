@@ -9,7 +9,8 @@ COMPOSE_PROD := docker-compose.prod.yml
 .PHONY: use use-prod which-config list-configs
 .PHONY: use-homelab use-small-cluster use-hpc-cluster use-exascale
 .PHONY: use-prod-homelab use-prod-small-cluster use-prod-hpc-cluster use-prod-exascale
-.PHONY: lint test test-v test-k test-file clean coverage typecheck complexity quality ci
+.PHONY: lint lint-python lint-frontend lint-yaml lint-md lint-sh lint-docker lint-actions
+.PHONY: test test-v test-k test-file clean coverage typecheck complexity quality ci
 .PHONY: shell-backend shell-frontend watch-logs nginx-logs cert
 .PHONY: docs docs-build docs-logs
 .PHONY: security security-backend security-frontend security-deps
@@ -57,13 +58,47 @@ logs-prod:
 build-prod:
 	docker compose -f $(COMPOSE_PROD) build
 
-# Code Quality Tools
-lint:
+# ── Lint targets ─────────────────────────────────────────────────────────────
+
+## Python: ruff check + format (backend container)
+lint-python:
 	docker compose -f $(COMPOSE_DEV) exec backend ruff check .
 	docker compose -f $(COMPOSE_DEV) exec backend ruff format --check .
+
+## Frontend: ESLint + Stylelint + Prettier (frontend container)
+lint-frontend:
 	docker compose -f $(COMPOSE_DEV) exec frontend npm run lint
 	docker compose -f $(COMPOSE_DEV) exec frontend npm run lint:css
 	docker compose -f $(COMPOSE_DEV) exec frontend npm run lint:format
+
+## YAML: yamllint on config files, docker-compose, and GitHub Actions
+lint-yaml:
+	docker run --rm -v $(PWD):/work -w /work cytopia/yamllint:latest \
+		-c .yamllint.yml config/ docker-compose.dev.yml docker-compose.prod.yml .github/
+
+## Markdown: markdownlint-cli2 via Node Docker image (docs only)
+lint-md:
+	docker run --rm -v $(PWD):/work -w /work node:22-alpine \
+		sh -c "npx --yes markdownlint-cli2@0.21.0 'website/docs/**/*.md'"
+
+## Shell scripts: shellcheck via Docker image
+lint-sh:
+	docker run --rm -v $(PWD):/mnt koalaman/shellcheck:stable scripts/*.sh
+
+## Dockerfiles: hadolint via Docker image
+lint-docker:
+	@for f in src/Dockerfile frontend/Dockerfile frontend/Dockerfile.prod website/Dockerfile; do \
+		echo "  hadolint $$f..."; \
+		docker run --rm -v $(PWD)/$$f:/Dockerfile:ro -v $(PWD)/.hadolint.yaml:/root/.config/hadolint.yaml:ro \
+			hadolint/hadolint:latest hadolint /Dockerfile || exit 1; \
+	done
+
+## GitHub Actions: actionlint via Docker image
+lint-actions:
+	docker run --rm -v $(PWD):/repo rhysd/actionlint:latest -pyflakes= /repo/.github/workflows/
+
+## Full lint suite (all file types)
+lint: lint-python lint-frontend lint-yaml lint-md lint-sh lint-docker lint-actions
 
 ## Run all tests (quiet)
 test:

@@ -6,7 +6,7 @@
  */
 import type { IconId, IconBg } from '@src/context/ThemeContext';
 
-interface AppIconProps {
+type AppIconProps = {
   id: IconId;
   className?: string;
 }

@@ -15,7 +15,7 @@
 
 import { useState, useEffect } from 'react';
 
-export interface MetricThresholds {
+export type MetricThresholds = {
   warn?: number;
   crit?: number;
 }

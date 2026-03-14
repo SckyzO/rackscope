@@ -64,10 +64,10 @@ wait_sim_ready() {
 
 run_lint() {
     log "Running linters..."
-    $COMPOSE exec -T backend ruff check . --quiet && ok "ruff check" || { err "ruff check FAILED"; return 1; }
-    $COMPOSE exec -T backend ruff format --check . --quiet && ok "ruff format" || { err "ruff format FAILED"; return 1; }
-    $COMPOSE exec -T frontend npm run lint --silent 2>/dev/null && ok "eslint" || { err "eslint FAILED"; return 1; }
-    $COMPOSE exec -T frontend npm run lint:format --silent 2>/dev/null && ok "prettier" || { err "prettier FAILED"; return 1; }
+    if $COMPOSE exec -T backend ruff check . --quiet; then ok "ruff check"; else err "ruff check FAILED"; return 1; fi
+    if $COMPOSE exec -T backend ruff format --check . --quiet; then ok "ruff format"; else err "ruff format FAILED"; return 1; fi
+    if $COMPOSE exec -T frontend npm run lint --silent 2>/dev/null; then ok "eslint"; else err "eslint FAILED"; return 1; fi
+    if $COMPOSE exec -T frontend npm run lint:format --silent 2>/dev/null; then ok "prettier"; else err "prettier FAILED"; return 1; fi
 }
 
 # ── Validate one example ──────────────────────────────────────────────────────
@@ -81,20 +81,16 @@ validate_example() {
 
     local stats
     stats=$(api "/api/stats/global")
-    local rooms racks alerts crit
+    local rooms racks
     rooms=$(echo "$stats" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('total_rooms',0))" 2>/dev/null || echo 0)
     racks=$(echo "$stats" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('total_racks',0))" 2>/dev/null || echo 0)
-    alerts=$(echo "$stats" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('active_alerts',0))" 2>/dev/null || echo 0)
-    crit=$(echo "$stats" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('crit_count',0))" 2>/dev/null || echo 0)
 
-    local up_nodes temp_nodes power_nodes pdu_racks
+    local up_nodes pdu_racks
     up_nodes=$(prom_count 'up{job="node"}')
-    temp_nodes=$(prom_count 'node_temperature_celsius')
-    power_nodes=$(prom_count 'node_power_watts')
     pdu_racks=$(prom_count 'raritan_pdu_activepower_watt{inletid="I1"}')
 
     # Rack state summary
-    local rack_ok rack_crit rack_unk
+    local rack_ok
     rack_ok=$(api "/api/rooms" | python3 -c "
 import json,sys,subprocess
 rooms = json.load(sys.stdin)
@@ -148,10 +144,12 @@ print(sum(1 for a in d.get('alerts',[]) if a.get('state')=='WARN'))
 
 # ── Main loop ──────────────────────────────────────────────────────────────────
 
-echo "# Rackscope Example Test Results" > "$RESULTS_FILE.tmp"
-echo "" >> "$RESULTS_FILE.tmp"
-echo "> Generated: $TS" >> "$RESULTS_FILE.tmp"
-echo "" >> "$RESULTS_FILE.tmp"
+{
+    echo "# Rackscope Example Test Results"
+    echo ""
+    echo "> Generated: $TS"
+    echo ""
+} > "$RESULTS_FILE.tmp"
 
 # Lint first
 log "=== LINT CHECK ==="
@@ -164,11 +162,13 @@ else
     exit 1
 fi
 
-echo "" >> "$RESULTS_FILE.tmp"
-echo "## Validation Results" >> "$RESULTS_FILE.tmp"
-echo "" >> "$RESULTS_FILE.tmp"
-echo "| Example | Loop | Timestamp | Rooms | Racks | Sim nodes | OK | CRIT | UNKNOWN | PDU | Slurm | Incident test |" >> "$RESULTS_FILE.tmp"
-echo "|---|---|---|---|---|---|---|---|---|---|---|---|" >> "$RESULTS_FILE.tmp"
+{
+    echo ""
+    echo "## Validation Results"
+    echo ""
+    echo "| Example | Loop | Timestamp | Rooms | Racks | Sim nodes | OK | CRIT | UNKNOWN | PDU | Slurm | Incident test |"
+    echo "|---|---|---|---|---|---|---|---|---|---|---|---|"
+} >> "$RESULTS_FILE.tmp"
 
 for ex in "${EXAMPLES[@]}"; do
     log "=== EXAMPLE: $ex ==="

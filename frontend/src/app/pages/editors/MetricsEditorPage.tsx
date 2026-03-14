@@ -50,7 +50,7 @@ import { PageActionButton } from '@app/components/PageActionButton';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface MetricDefinition {
+type MetricDefinition = {
   id: string;
   name: string;
   description?: string;
@@ -491,7 +491,7 @@ const EditorPanel = ({
           {['{instance}', '{rack_id}', '{chassis_id}', '{pduid}'].map((ph) => (
             <span
               key={ph}
-              title={`Placeholder — replaced at query time`}
+              title="Placeholder — replaced at query time"
               className="border-brand-200 bg-brand-50 text-brand-600 dark:border-brand-700/30 dark:bg-brand-500/10 dark:text-brand-400 inline-flex cursor-help items-center gap-1 rounded-lg border px-2 py-0.5 font-mono text-[10px]"
             >
               <Info className="h-2.5 w-2.5" />

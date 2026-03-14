@@ -200,13 +200,13 @@ export const RackPage = () => {
               {
                 icon: XCircle,
                 label: 'CRIT',
-                value: nodeCounts['CRIT'] ?? 0,
+                value: nodeCounts.CRIT ?? 0,
                 color: 'text-red-500',
               },
               {
                 icon: AlertTriangle,
                 label: 'WARN',
-                value: nodeCounts['WARN'] ?? 0,
+                value: nodeCounts.WARN ?? 0,
                 color: 'text-amber-500',
               },
               {
@@ -218,7 +218,7 @@ export const RackPage = () => {
               {
                 icon: Server,
                 label: 'OK',
-                value: nodeCounts['OK'] ?? 0,
+                value: nodeCounts.OK ?? 0,
                 color: 'text-green-500',
               },
             ].map((s) => (

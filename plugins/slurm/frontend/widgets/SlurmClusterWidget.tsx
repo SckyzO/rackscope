@@ -71,9 +71,9 @@ export const SlurmClusterWidget = ({
           <div className="grid grid-cols-4 gap-2">
             {[
               { label: 'Total', value: slurmTotal, color: 'text-gray-500' },
-              { label: 'CRIT', value: slurmSevs['CRIT'] ?? 0, color: 'text-red-500' },
-              { label: 'WARN', value: slurmSevs['WARN'] ?? 0, color: 'text-amber-500' },
-              { label: 'OK', value: slurmSevs['OK'] ?? 0, color: 'text-green-500' },
+              { label: 'CRIT', value: slurmSevs.CRIT ?? 0, color: 'text-red-500' },
+              { label: 'WARN', value: slurmSevs.WARN ?? 0, color: 'text-amber-500' },
+              { label: 'OK', value: slurmSevs.OK ?? 0, color: 'text-green-500' },
             ].map((s) => (
               <div
                 key={s.label}

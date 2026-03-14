@@ -42,7 +42,7 @@ const OTP = ({
         <input
           key={i}
           ref={(el) => {
-            refs.current[i] = el as HTMLInputElement;
+            refs.current[i] = el!;
           }}
           type="text"
           inputMode="numeric"
@@ -153,7 +153,7 @@ export const OtpInputPage = () => {
           <div>
             <OTP
               length={6}
-              value={'123456'}
+              value="123456"
               onChange={() => {
                 /* noop */
               }}

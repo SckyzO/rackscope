@@ -91,7 +91,7 @@ config/plugins/simulator/
 
 The simulator runs a continuous loop. On every tick:
 
-```
+```text
 Every N seconds (update_interval_seconds, default: 20):
 
   1. Reload plugin.yaml
@@ -338,7 +338,7 @@ Patterns follow `fnmatch` syntax:
 Unless `labels_only: true` is set, the simulator automatically adds the
 following topology context labels to every node-scoped metric:
 
-```
+```text
 site_id, room_id, rack_id, chassis_id, node_id, instance, job
 ```
 
@@ -363,7 +363,8 @@ format that does NOT include topology labels. The primary example is
 ```
 
 Real output matches the exporter exactly:
-```
+
+```text
 slurm_node_status{node="compute001",partition="compute",status="idle"} 1
 ```
 

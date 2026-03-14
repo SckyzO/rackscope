@@ -96,11 +96,11 @@ export type ConfigDraft = {
       overrides_path: string;
       default_ttl_seconds: string;
       metrics_catalog_path: string;
-      metrics_catalogs: Array<{
+      metrics_catalogs: {
         id: string;
         path: string;
         enabled: boolean;
-      }>;
+      }[];
       slurm_alloc_percent: number;
       slurm_random_statuses: Record<string, string>;
       slurm_random_match: string[];
@@ -206,7 +206,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     policy_max_length: String(config.auth?.policy?.max_length ?? 128),
     policy_require_digit: config.auth?.policy?.require_digit ?? false,
     policy_require_symbol: config.auth?.policy?.require_symbol ?? false,
-    trusted_networks: (config.auth?.trusted_networks as string[]) ?? [],
+    trusted_networks: config.auth?.trusted_networks ?? [],
   },
   plugins: {
     simulator: {
@@ -232,17 +232,17 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
         ...c,
         enabled: c.enabled ?? false,
       })),
-      slurm_alloc_percent: (config.plugins?.simulator?.slurm_alloc_percent as number) ?? 80,
+      slurm_alloc_percent: config.plugins?.simulator?.slurm_alloc_percent ?? 80,
       slurm_random_statuses: Object.fromEntries(
         Object.entries(
-          (config.plugins?.simulator?.slurm_random_statuses as Record<string, number>) ?? {
+          config.plugins?.simulator?.slurm_random_statuses ?? {
             drain: 1,
             down: 1,
             maint: 1,
           }
         ).map(([k, v]) => [k, String(v)])
       ),
-      slurm_random_match: (config.plugins?.simulator?.slurm_random_match as string[]) ?? [
+      slurm_random_match: config.plugins?.simulator?.slurm_random_match ?? [
         'compute*',
         'visu*',
       ],

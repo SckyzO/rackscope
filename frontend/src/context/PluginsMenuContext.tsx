@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import { api } from '../services/api';
 import type { MenuSection } from '../types';
 
-interface PluginsMenuContextType {
+type PluginsMenuContextType = {
   sections: MenuSection[];
   loading: boolean;
   isPluginActive: (pluginId: string) => boolean;

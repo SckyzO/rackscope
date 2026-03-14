@@ -27,7 +27,7 @@ import {
   MonitorPlay,
 } from 'lucide-react';
 
-interface NavItemProps {
+type NavItemProps = {
   to: string;
   icon: ComponentType<{ className?: string }>;
   label: string;
@@ -459,7 +459,7 @@ const HelpTerminalOverlay = ({ onClose }: { onClose: () => void }) => {
 
 // ── Sidebar ────────────────────────────────────────────────────────────────
 
-interface AppSidebarProps {
+type AppSidebarProps = {
   collapsed: boolean;
 }
 

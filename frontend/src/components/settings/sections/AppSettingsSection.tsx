@@ -6,7 +6,7 @@ import { TooltipHelp } from '@app/components/ui/Tooltip';
 import { StepperInput } from '@app/components/forms/StepperInput';
 import type { ConfigDraft } from '../useSettingsConfig';
 
-interface AppSettingsSectionProps {
+type AppSettingsSectionProps = {
   draft: ConfigDraft;
   setDraft: React.Dispatch<React.SetStateAction<ConfigDraft | null>>;
 }

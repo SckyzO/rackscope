@@ -19,7 +19,7 @@ import worldAtlas from 'world-atlas/countries-110m.json';
 
 export type MapStyle = 'minimal' | 'noc' | 'flat' | 'retro' | 'midnight';
 
-export interface SiteMarker {
+export type SiteMarker = {
   id: string;
   name: string;
   lat: number;
@@ -27,7 +27,7 @@ export interface SiteMarker {
   roomCount?: number;
 }
 
-interface OfflineWorldMapProps {
+type OfflineWorldMapProps = {
   sites?: SiteMarker[];
   isDark?: boolean;
   mapStyle?: MapStyle;
@@ -46,7 +46,7 @@ interface OfflineWorldMapProps {
 
 // ── Style presets ─────────────────────────────────────────────────────────────
 
-interface StylePreset {
+type StylePreset = {
   fill: string;
   stroke: string;
   strokeWidth: number;

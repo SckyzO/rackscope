@@ -2,12 +2,12 @@ import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import { TooltipHelp } from '@app/components/ui/Tooltip';
 
-interface FormSelectOption {
+type FormSelectOption = {
   value: string;
   label: string;
 }
 
-interface FormSelectProps {
+type FormSelectProps = {
   label: string;
   tooltip?: string;
   value: string;

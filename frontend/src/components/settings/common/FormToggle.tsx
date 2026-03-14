@@ -1,7 +1,7 @@
 import React from 'react';
 import { TooltipHelp } from '@app/components/ui/Tooltip';
 
-interface FormToggleProps {
+type FormToggleProps = {
   label: string;
   description?: string;
   tooltip?: string;

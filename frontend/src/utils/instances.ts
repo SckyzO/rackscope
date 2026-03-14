@@ -1,7 +1,7 @@
 export type InstanceInput = string | string[] | Record<number, string> | undefined | null;
 
 const parseRange = (pattern: string) => {
-  const match = pattern.match(/^(.*)\[(\d+)-(\d+)\]$/);
+  const match = /^(.*)\[(\d+)-(\d+)\]$/.exec(pattern);
   if (!match) return null;
   const [, prefix, startStr, endStr] = match;
   const start = Number.parseInt(startStr, 10);

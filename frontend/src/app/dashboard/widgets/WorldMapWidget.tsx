@@ -49,8 +49,8 @@ export const WorldMapWidget = ({
   const markers: SiteMarker[] = geoSites.map((s) => ({
     id: s.id,
     name: s.name,
-    lat: (s.location as NonNullable<typeof s.location>).lat,
-    lon: (s.location as NonNullable<typeof s.location>).lon,
+    lat: (s.location!).lat,
+    lon: (s.location!).lon,
     roomCount: s.rooms?.length ?? 0,
   }));
 

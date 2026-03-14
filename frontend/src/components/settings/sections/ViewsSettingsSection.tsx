@@ -47,7 +47,7 @@ const DashboardResetCard = () => {
   );
 };
 
-interface Props {
+type Props = {
   draft: ConfigDraft;
   setDraft: (d: ConfigDraft) => void;
 }

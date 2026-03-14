@@ -47,7 +47,7 @@ if (import.meta.hot) {
 }
 
 try {
-  createRoot(document.getElementById('root') as HTMLElement).render(
+  createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <ThemeProvider>
         <App />

@@ -51,7 +51,7 @@ prior experience — starts with a shared mental model.
 - A brief description of what Rackscope does (physical monitoring layer over Prometheus)
 - The topology hierarchy at a glance:
 
-  ```
+  ```text
   Site → Room → Aisle → Rack → Device → Instance
   ```
 
@@ -79,7 +79,7 @@ cannot be displayed. This step ensures the connection is valid before you build 
 | Password / Token | Credential (stored in `app.yaml`, never in the browser) | — |
 | TLS Skip Verify | Disable TLS certificate validation (dev/self-signed certs) | Off |
 
-**Test Connection button**
+### Test Connection button
 
 Clicking **Test Connection** sends a probe request to `/api/prometheus/test` which queries
 `up` against your Prometheus. The result is displayed inline:

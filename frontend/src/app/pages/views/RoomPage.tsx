@@ -69,7 +69,7 @@ type RackStyle =
   | 'industrial'
   | 'node';
 
-interface DoorMarkerProps {
+type DoorMarkerProps = {
   side: string;
   position: number;
   w: number;
@@ -133,7 +133,7 @@ const DoorMarker = ({ side, position, w, h, showLabel, doorLabel }: DoorMarkerPr
   );
 };
 
-interface RackCellProps {
+type RackCellProps = {
   rack: Rack;
   state: string;
   nodeCounts?: { total: number; crit: number; warn: number };
@@ -807,7 +807,7 @@ const RackCell = memo(
 
 // ── Aisle band ────────────────────────────────────────────────────────────────
 
-interface AisleBandProps {
+type AisleBandProps = {
   aisle: Aisle;
   rackStates: Record<string, string>;
   rackNodeCounts: Record<string, { total: number; crit: number; warn: number }>;
@@ -940,7 +940,7 @@ const AisleBand = ({
 
 // ── Rack drawer ───────────────────────────────────────────────────────────────
 
-interface DrawerRack {
+type DrawerRack = {
   rack: Rack;
   aisle: Aisle;
   state: string;
@@ -1234,7 +1234,7 @@ const RackDrawer = ({
 
 // ── Customize panel ────────────────────────────────────────────────────────────
 
-interface Settings {
+type Settings = {
   showGrid: boolean;
   showCardinalEdges: boolean;
   showDoor: boolean;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { TooltipHelp } from '@app/components/ui/Tooltip';
 
-interface FormFieldProps {
+type FormFieldProps = {
   label: string;
   tooltip?: string;
   value: string | number;

@@ -234,7 +234,7 @@ export const RackElevation = ({
                   )}
 
                   {!device && (
-                    <div className="h-full w-full bg-[var(--color-empty-slot)] opacity-40"></div>
+                    <div className="h-full w-full bg-[var(--color-empty-slot)] opacity-40" />
                   )}
                 </div>
               </div>
@@ -277,7 +277,7 @@ export const RackElevation = ({
 };
 
 const buildSideLayout = (
-  components: Array<InfrastructureComponent & { slot?: number; span?: number }>,
+  components: (InfrastructureComponent & { slot?: number; span?: number })[],
   slots: number
 ) => {
   const used = new Array(slots + 1).fill(false);
@@ -312,11 +312,11 @@ const SideRail = ({
   pduMetrics,
   rackAlerts = [],
 }: {
-  components: Array<{
+  components: {
     component: InfrastructureComponent & { slot?: number; span?: number };
     slot: number;
     span: number;
-  }>;
+  }[];
   totalU: number;
   align?: 'left' | 'right';
   rackName?: string;
@@ -601,7 +601,7 @@ export const DeviceChassis = ({
   // Template-level thresholds override the metrics library defaults.
   // Allows per-device-type tuning (GPU: warn=52°C, switch: warn=40°C, etc.)
   const tempThresholds =
-    template.display_thresholds?.temperature ?? metricsThresholds['node_temperature'];
+    template.display_thresholds?.temperature ?? metricsThresholds.node_temperature;
 
   const nodeMap = useMemo(() => {
     // For storage devices, create virtual node IDs per slot
@@ -827,7 +827,7 @@ export const DeviceChassis = ({
       }}
     >
       <div className={`h-full w-1.5 ${statusColor} relative shrink-0 opacity-90`}>
-        <div className={`absolute inset-0 blur-[4px] ${statusColor} opacity-40`}></div>
+        <div className={`absolute inset-0 blur-[4px] ${statusColor} opacity-40`} />
       </div>
       <div
         className="grid min-w-0 flex-1 gap-[1px] overflow-hidden bg-[var(--color-border)]/5 p-[1px]"
@@ -898,7 +898,7 @@ const RearModuleUnit = ({ type }: { type: 'psu' | 'fan' }) => {
       ) : (
         <div className="flex flex-col items-center gap-1">
           <Power className="h-4 w-4 text-gray-400" />
-          <div className="bg-status-ok h-2 w-2 rounded-full shadow-[0_0_5px_var(--color-status-ok)]"></div>
+          <div className="bg-status-ok h-2 w-2 rounded-full shadow-[0_0_5px_var(--color-status-ok)]" />
         </div>
       )}
     </div>
@@ -929,12 +929,12 @@ const RowSummaryUnit = ({
         : 'bg-status-ok';
   return (
     <div
-      className={`group relative flex h-full min-w-0 cursor-help items-center justify-between overflow-hidden border-b border-[var(--color-border)]/10 bg-[var(--color-node-surface)] px-2 transition-colors last:border-0 hover:bg-[var(--color-accent-primary)]/10`}
+      className="group relative flex h-full min-w-0 cursor-help items-center justify-between overflow-hidden border-b border-[var(--color-border)]/10 bg-[var(--color-node-surface)] px-2 transition-colors last:border-0 hover:bg-[var(--color-accent-primary)]/10"
     >
       <div className="flex min-w-0 items-center gap-2">
         <div
           className={`h-2.5 w-2.5 shrink-0 rounded-full ${statusColor} ${worstState === 'CRIT' ? 'animate-pulse shadow-[0_0_10px_var(--color-status-crit)]' : ''}`}
-        ></div>
+         />
         <span className="min-w-0 truncate font-mono text-[11px] font-black tracking-widest text-[var(--color-text-base)] uppercase opacity-50 group-hover:opacity-100">
           {label}
         </span>
@@ -1027,7 +1027,7 @@ export const NodeUnit = ({
         onHoverChange?.(false);
         onTooltipChange?.(null);
       }}
-      className={`group relative flex h-full min-w-0 cursor-help items-center justify-center border border-[var(--color-border)]/20 bg-[var(--color-node-surface)] transition-all hover:bg-[var(--color-accent-primary)]/20`}
+      className="group relative flex h-full min-w-0 cursor-help items-center justify-center border border-[var(--color-border)]/20 bg-[var(--color-node-surface)] transition-all hover:bg-[var(--color-accent-primary)]/20"
     >
       {nodeName ? (
         <div className="flex h-full w-full items-center justify-center overflow-hidden px-1">

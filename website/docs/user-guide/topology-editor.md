@@ -33,7 +33,7 @@ For rack-level device placement, a dedicated **Rack Editor** is also available a
 
 Before using the editor, it is important to understand the physical hierarchy that Rackscope models:
 
-```
+```text
 Site
 └── Room
     └── Aisle
@@ -353,6 +353,7 @@ templates:
 The `layout.matrix` controls how slots are arranged in the rack visualizer. For a 1U 2-node chassis, the matrix `[[1, 2]]` places node 1 on the left and node 2 on the right within the same U slot row. For a 2U 4-node chassis, the matrix `[[1, 2], [3, 4]]` places nodes 1–2 in the upper half and nodes 3–4 in the lower half.
 
 To edit a template:
+
 1. Open `/editors/templates`
 2. Select the template from the left panel (filtered by type: Device / Rack / Component)
 3. Edit the YAML in the Monaco editor
@@ -382,6 +383,7 @@ If you need to force an immediate reload (for example after manually editing YAM
 ```bash
 docker compose restart backend
 ```
+
 :::
 
 ---

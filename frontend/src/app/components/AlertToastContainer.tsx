@@ -6,7 +6,7 @@ import { useAppConfigSafe } from '../contexts/AppConfigContext';
 import { loadSoundSettings, playSound } from '../lib/soundAlerts';
 import type { ActiveAlert } from '@src/types';
 
-interface ToastEntry {
+type ToastEntry = {
   id: string;
   alertId: string;
   title: string;

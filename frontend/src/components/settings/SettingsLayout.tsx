@@ -1,7 +1,7 @@
 import React from 'react';
 import { Save, Check } from 'lucide-react';
 
-interface SettingsLayoutProps {
+type SettingsLayoutProps = {
   activeTab: string;
   onTabChange: (tab: string) => void;
   onSave: () => void;

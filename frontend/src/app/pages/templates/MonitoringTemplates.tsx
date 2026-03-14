@@ -263,7 +263,7 @@ export const RackViewTemplate = () => {
               </button>
             </div>
             <span
-              className={`inline-flex rounded-lg px-2 py-0.5 text-xs font-bold ${STATE_PILL['WARN']}`}
+              className={`inline-flex rounded-lg px-2 py-0.5 text-xs font-bold ${STATE_PILL.WARN}`}
             >
               WARN
             </span>
@@ -348,7 +348,7 @@ export const DeviceViewTemplate = () => {
               <span>U1</span>
             </div>
           </div>
-          <span className={`rounded-lg px-3 py-1 text-sm font-bold ${STATE_PILL['WARN']}`}>
+          <span className={`rounded-lg px-3 py-1 text-sm font-bold ${STATE_PILL.WARN}`}>
             WARN
           </span>
         </div>

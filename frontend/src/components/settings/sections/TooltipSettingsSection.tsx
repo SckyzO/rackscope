@@ -63,7 +63,7 @@ const STYLE_WIDTH: Record<TooltipStyle, string> = {
 
 // ── Portal preview ─────────────────────────────────────────────────────────
 
-interface PreviewState {
+type PreviewState = {
   styleId: TooltipStyle;
   sampleIdx: number;
   mousePos: { x: number; y: number };

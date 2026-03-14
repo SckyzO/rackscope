@@ -89,7 +89,7 @@ type NodeState = {
 function expandInstances(instance: unknown): string[] {
   if (!instance) return [];
   if (typeof instance === 'string') {
-    const m = instance.match(/^(.*)\[(\d+)-(\d+)\]$/);
+    const m = /^(.*)\[(\d+)-(\d+)\]$/.exec(instance);
     if (m) {
       const [, prefix, start, end] = m;
       const w = start.length;
