@@ -77,6 +77,7 @@ def setup_logging() -> None:
     # Install in-memory capture handler (feeds /api/logs endpoints)
     # Deferred import avoids circular dependency at module load time
     from rackscope.api.log_buffer import LogCaptureHandler, log_buffer  # noqa: PLC0415
+
     capture_handler = LogCaptureHandler(log_buffer)
     capture_handler.setLevel(log_level)
     root_logger.addHandler(capture_handler)

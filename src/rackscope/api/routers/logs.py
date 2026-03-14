@@ -23,10 +23,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/logs", tags=["logs"])
 
 # SSE constants
-_SSE_POLL_INTERVAL = 0.5      # seconds between buffer polls
+_SSE_POLL_INTERVAL = 0.5  # seconds between buffer polls
 _SSE_HEARTBEAT_INTERVAL = 30  # seconds between keep-alive pings
-_SSE_MAX_DURATION = 600       # max SSE connection lifetime (10 min)
-_SSE_MAX_CONCURRENT = 5       # max simultaneous SSE subscribers
+_SSE_MAX_DURATION = 600  # max SSE connection lifetime (10 min)
+_SSE_MAX_CONCURRENT = 5  # max simultaneous SSE subscribers
 
 
 # Simple semaphore to cap concurrent SSE connections
@@ -88,8 +88,10 @@ async def stream_logs(
         : ping\\n\\n
     """
     if not _sse_semaphore._value:  # noqa: SLF001  — check without acquiring
+
         async def _too_many():
-            yield "data: {\"error\": \"Too many concurrent log streams\"}\n\n"
+            yield 'data: {"error": "Too many concurrent log streams"}\n\n'
+
         return StreamingResponse(_too_many(), media_type="text/event-stream")
 
     async def event_generator():

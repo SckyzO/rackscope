@@ -22,12 +22,15 @@ from typing import Any, Optional
 
 _REDACT_PATTERNS: list[tuple[re.Pattern, str]] = [
     # URL-embedded credentials: http://user:secret@host → http://user:***@host
-    (re.compile(r'(://[^:/@\s]+):([^@\s]+)@'), r'\1:***@'),
+    (re.compile(r"(://[^:/@\s]+):([^@\s]+)@"), r"\1:***@"),
     # key=value patterns for common secret names
-    (re.compile(
-        r'(?i)\b(password|passwd|secret[_-]?key?|token|bearer|api[_-]?key|auth(?:orization)?)'
-        r'\s*[=:]\s*\S+',
-    ), r'\1=***'),
+    (
+        re.compile(
+            r"(?i)\b(password|passwd|secret[_-]?key?|token|bearer|api[_-]?key|auth(?:orization)?)"
+            r"\s*[=:]\s*\S+",
+        ),
+        r"\1=***",
+    ),
 ]
 
 
@@ -106,7 +109,8 @@ class LogBuffer:
         if search:
             s = search.lower()
             records = [
-                r for r in records
+                r
+                for r in records
                 if s in r.get("message", "").lower() or s in r.get("logger", "").lower()
             ]
 

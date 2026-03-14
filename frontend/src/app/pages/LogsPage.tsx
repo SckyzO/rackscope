@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import {
-  Download,
-  Eraser,
-  Pause,
-  Play,
-  RefreshCw,
-  Search,
-} from 'lucide-react';
+import { Download, Eraser, Pause, Play, RefreshCw, Search } from 'lucide-react';
 import { usePageTitle } from '@app/contexts/PageTitleContext';
-import { PageHeader } from './templates/EmptyPage';
+import {
+  PageHeader,
+  PageBreadcrumb,
+  SectionCard,
+  EmptyState,
+  LoadingState,
+  HealthDot,
+} from './templates/EmptyPage';
+import { PageActionButton, PageActionIconButton } from '@app/components/PageActionButton';
 import { useAuth } from '@src/contexts/AuthContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -31,23 +32,23 @@ type LogRecord = {
 
 // ── Level styling ─────────────────────────────────────────────────────────────
 
-const LEVEL_STYLES: Record<string, string> = {
-  DEBUG: 'text-gray-400 dark:text-gray-500',
-  INFO: 'text-blue-500 dark:text-blue-400',
-  WARNING: 'text-amber-500 dark:text-amber-400',
-  ERROR: 'text-red-500 dark:text-red-400',
+const LEVEL_TEXT: Record<string, string> = {
+  DEBUG: 'text-gray-500 dark:text-gray-500',
+  INFO: 'text-blue-600 dark:text-blue-400',
+  WARNING: 'text-amber-600 dark:text-amber-400',
+  ERROR: 'text-red-600 dark:text-red-400',
   CRITICAL: 'text-red-700 dark:text-red-300 font-bold',
 };
 
 const LEVEL_BADGE: Record<string, string> = {
-  DEBUG: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-  INFO: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  WARNING: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-  ERROR: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-  CRITICAL: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200',
+  DEBUG: 'bg-gray-800/60 text-gray-400',
+  INFO: 'bg-blue-950/60 text-blue-400',
+  WARNING: 'bg-amber-950/60 text-amber-400',
+  ERROR: 'bg-red-950/60 text-red-400',
+  CRITICAL: 'bg-red-900/80 text-red-200 font-bold',
 };
 
-// ── Log row component ─────────────────────────────────────────────────────────
+// ── Log row ───────────────────────────────────────────────────────────────────
 
 const LogRow = ({ record }: { record: LogRecord }) => {
   const [expanded, setExpanded] = useState(false);
@@ -64,20 +65,19 @@ const LogRow = ({ record }: { record: LogRecord }) => {
 
   return (
     <div
-      className={`group border-b border-gray-100 px-3 py-1.5 font-mono text-xs dark:border-gray-800/60 ${
-        expanded ? 'bg-gray-50 dark:bg-gray-800/40' : 'hover:bg-gray-50 dark:hover:bg-gray-800/20'
-      }`}
+      className={`border-b border-[#1e2535] font-mono text-xs transition-colors ${
+        expanded ? 'bg-[#141924]' : 'hover:bg-[#141924]/60'
+      } ${hasDetail ? 'cursor-pointer' : ''}`}
+      onClick={() => hasDetail && setExpanded((e) => !e)}
     >
-      <div
-        className="flex cursor-pointer items-start gap-3"
-        onClick={() => hasDetail && setExpanded((e) => !e)}
-      >
+      {/* Main row */}
+      <div className="flex items-baseline gap-0 px-4 py-1.5">
         {/* Timestamp */}
-        <span className="w-[100px] shrink-0 text-gray-400 dark:text-gray-500">{time}</span>
+        <span className="w-[92px] shrink-0 text-[#4a5568] select-none">{time}</span>
 
         {/* Level badge */}
         <span
-          className={`w-16 shrink-0 rounded px-1 py-px text-center text-[10px] font-semibold uppercase ${
+          className={`mr-3 w-[58px] shrink-0 rounded px-1 py-px text-center text-[10px] font-semibold tracking-wide uppercase ${
             LEVEL_BADGE[lvl] ?? LEVEL_BADGE.INFO
           }`}
         >
@@ -85,36 +85,41 @@ const LogRow = ({ record }: { record: LogRecord }) => {
         </span>
 
         {/* Logger */}
-        <span className="w-48 shrink-0 truncate text-gray-400 dark:text-gray-500">
-          {record.logger}
-        </span>
+        <span className="mr-3 w-44 shrink-0 truncate text-[#4a6580]">{record.logger}</span>
 
         {/* Message */}
-        <span className={`flex-1 break-all ${LEVEL_STYLES[lvl] ?? ''}`}>{record.message}</span>
+        <span className={`flex-1 break-all ${LEVEL_TEXT[lvl] ?? 'text-[#c9d1d9]'}`}>
+          {record.message}
+        </span>
 
-        {/* Duration / status */}
-        {record.duration_ms !== undefined && (
-          <span className="ml-2 shrink-0 text-gray-400">{record.duration_ms.toFixed(1)}ms</span>
-        )}
-        {record.status_code !== undefined && (
-          <span
-            className={`ml-1 shrink-0 ${record.status_code >= 400 ? 'text-red-400' : 'text-green-400'}`}
-          >
-            {record.status_code}
-          </span>
-        )}
+        {/* Right meta */}
+        <div className="ml-3 flex shrink-0 items-center gap-2">
+          {record.duration_ms !== undefined && (
+            <span className="text-[#4a5568]">{record.duration_ms.toFixed(1)}ms</span>
+          )}
+          {record.status_code !== undefined && (
+            <span
+              className={`font-semibold ${record.status_code >= 400 ? 'text-red-500' : 'text-emerald-500'}`}
+            >
+              {record.status_code}
+            </span>
+          )}
+          {hasDetail && <span className="text-[10px] text-[#4a5568]">{expanded ? '▲' : '▼'}</span>}
+        </div>
       </div>
 
       {/* Expanded detail */}
       {expanded && hasDetail && (
-        <div className="mt-1.5 space-y-1 pl-[264px]">
+        <div className="space-y-1.5 border-t border-[#1e2535] bg-[#0d1117] px-4 py-2">
           {record.request_id && (
-            <div className="text-gray-400">
-              <span className="text-gray-500">request_id:</span> {record.request_id}
+            <div className="text-[#4a6580]">
+              <span className="text-[#647889]">request_id</span>
+              <span className="text-[#4a5568]"> = </span>
+              <span className="text-[#79c0ff]">{record.request_id}</span>
             </div>
           )}
           {record.exception && (
-            <pre className="overflow-x-auto whitespace-pre-wrap rounded bg-red-50 p-2 text-red-700 dark:bg-red-900/20 dark:text-red-300">
+            <pre className="overflow-x-auto text-[11px] leading-relaxed whitespace-pre-wrap text-red-400">
               {record.exception}
             </pre>
           )}
@@ -123,6 +128,37 @@ const LogRow = ({ record }: { record: LogRecord }) => {
     </div>
   );
 };
+
+// ── Level pill toggle ─────────────────────────────────────────────────────────
+
+const LEVEL_PILL_ACTIVE: Record<LogLevel, string> = {
+  ALL: 'bg-[#1c2b3a] text-[#58a6ff] border-[#1f6feb]/50',
+  DEBUG: 'bg-gray-800 text-gray-300 border-gray-600',
+  INFO: 'bg-blue-900/50 text-blue-300 border-blue-700/50',
+  WARNING: 'bg-amber-900/50 text-amber-300 border-amber-700/50',
+  ERROR: 'bg-red-900/50 text-red-300 border-red-700/50',
+};
+
+const LevelPill = ({
+  label,
+  active,
+  onClick,
+}: {
+  label: LogLevel;
+  active: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className={`rounded-md border px-2.5 py-1 text-[11px] font-semibold tracking-wider uppercase transition-all ${
+      active
+        ? (LEVEL_PILL_ACTIVE[label] ?? 'bg-brand-500/20 text-brand-300 border-brand-500/40')
+        : 'border-gray-200 bg-white text-gray-400 hover:border-gray-300 hover:text-gray-600 dark:border-gray-700 dark:bg-transparent dark:text-gray-500 dark:hover:border-gray-600 dark:hover:text-gray-400'
+    }`}
+  >
+    {label}
+  </button>
+);
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
@@ -135,25 +171,22 @@ export const LogsPage = () => {
   const [search, setSearch] = useState('');
   const [live, setLive] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [, setLastSeq] = useState(0);
+  const [lastSeq, setLastSeq] = useState(0);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const autoScrollRef = useRef(true);
   const esRef = useRef<EventSource | null>(null);
 
-  // Guard — page requires admin when auth is enabled
   const canAccess = !authEnabled || !!user;
 
-  // ── Scroll to bottom when live ────────────────────────────────────────────
-
+  // Scroll to bottom on new records when live
   useEffect(() => {
     if (autoScrollRef.current && live) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [records, live]);
 
-  // ── Fetch historic logs ───────────────────────────────────────────────────
-
+  // Fetch snapshot
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
@@ -170,30 +203,25 @@ export const LogsPage = () => {
     }
   }, [level, search]);
 
-  // ── SSE live stream ───────────────────────────────────────────────────────
-
+  // Start SSE stream
   const startStream = useCallback(() => {
-    if (esRef.current) {
-      esRef.current.close();
-    }
+    esRef.current?.close();
     const params = new URLSearchParams();
     if (level !== 'ALL') params.set('level', level);
     if (search) params.set('search', search);
     const es = new EventSource(`/api/logs/stream?${params}`);
     esRef.current = es;
-
     es.onmessage = (e) => {
       try {
         const record = JSON.parse(e.data) as LogRecord;
         if ('error' in record) return;
         setRecords((prev) => {
           const next = [...prev, record];
-          // Keep max 2000 records in memory
           return next.length > 2000 ? next.slice(-2000) : next;
         });
         setLastSeq(record._seq);
       } catch {
-        /* ignore parse errors */
+        /* ignore */
       }
     };
     es.onerror = () => {
@@ -207,8 +235,7 @@ export const LogsPage = () => {
     esRef.current = null;
   }, []);
 
-  // ── Mount / live toggle ───────────────────────────────────────────────────
-
+  // Mount / toggle live
   useEffect(() => {
     if (!canAccess) return;
     if (live) {
@@ -222,15 +249,11 @@ export const LogsPage = () => {
     };
   }, [live, level, search, canAccess]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Clear logs ────────────────────────────────────────────────────────────
-
   const clearLogs = async () => {
     await fetch('/api/logs', { method: 'DELETE' });
     setRecords([]);
     setLastSeq(0);
   };
-
-  // ── Download as JSON ──────────────────────────────────────────────────────
 
   const downloadLogs = () => {
     const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
@@ -242,132 +265,130 @@ export const LogsPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  // ── UI ─────────────────────────────────────────────────────────────────────
-
   const LEVELS: LogLevel[] = ['ALL', 'DEBUG', 'INFO', 'WARNING', 'ERROR'];
 
   return (
-    <div className="flex h-full flex-col bg-[var(--color-bg-base)] p-6">
+    <div className="space-y-6">
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <PageHeader
         title="Backend Logs"
+        breadcrumb={<PageBreadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Logs' }]} />}
         actions={
-          <div className="flex items-center gap-2">
-          {/* Live / Pause toggle */}
-          <button
-            onClick={() => setLive((l) => !l)}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
-              live
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
-            }`}
-          >
-            {live ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            {live ? 'Live' : 'Paused'}
-          </button>
-
-          {/* Refresh (when paused) */}
-          {!live && (
-            <button
-              onClick={() => void fetchLogs()}
-              disabled={loading}
-              className="flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
+          <>
+            {/* Live / Pause */}
+            <PageActionButton
+              icon={live ? Pause : Play}
+              variant={live ? 'brand-outline' : 'outline'}
+              onClick={() => setLive((l) => !l)}
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-          )}
+              {live ? (
+                <span className="flex items-center gap-1.5">
+                  <HealthDot status="OK" pulse />
+                  Live
+                </span>
+              ) : (
+                'Paused'
+              )}
+            </PageActionButton>
 
-          {/* Download */}
-          <button
-            onClick={downloadLogs}
-            disabled={records.length === 0}
-            className="flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-200 disabled:opacity-40 dark:bg-gray-800 dark:text-gray-300"
-          >
-            <Download className="h-4 w-4" />
-            Export
-          </button>
+            {/* Refresh (paused only) */}
+            {!live && (
+              <PageActionIconButton
+                icon={RefreshCw}
+                title="Refresh snapshot"
+                onClick={() => void fetchLogs()}
+                disabled={loading}
+              />
+            )}
 
-          {/* Clear */}
-          <button
-            onClick={() => void clearLogs()}
-            className="flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-red-100 hover:text-red-600 dark:bg-gray-800 dark:text-gray-300"
-          >
-            <Eraser className="h-4 w-4" />
-            Clear
-          </button>
-          </div>
+            {/* Export */}
+            <PageActionIconButton
+              icon={Download}
+              title="Export as JSON"
+              onClick={downloadLogs}
+              disabled={records.length === 0}
+            />
+
+            {/* Clear */}
+            <PageActionButton
+              icon={Eraser}
+              variant="danger-outline"
+              onClick={() => void clearLogs()}
+            >
+              Clear
+            </PageActionButton>
+          </>
         }
       />
 
-      {/* Access denied */}
+      {/* ── Access denied ───────────────────────────────────────────────────── */}
       {!canAccess && (
-        <div className="flex flex-1 items-center justify-center">
-          <p className="text-gray-500">Authentication required to view logs.</p>
-        </div>
+        <SectionCard title="Access restricted">
+          <EmptyState title="Authentication required" description="Sign in to view backend logs." />
+        </SectionCard>
       )}
 
       {canAccess && (
         <>
-          {/* Filter bar */}
-          <div className="mb-3 flex items-center gap-3">
-            {/* Level filter */}
-            <div className="flex gap-1">
+          {/* ── Filters ───────────────────────────────────────────────────── */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Level pills */}
+            <div className="flex gap-1.5">
               {LEVELS.map((l) => (
-                 
-                <button
-                  key={l}
-                  onClick={() => setLevel(l)}
-                  className={`rounded px-2.5 py-1 text-xs font-semibold uppercase transition ${
-                    level === l
-                      ? 'bg-brand-500 text-white'
-                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
-                  }`}
-                >
-                  {l}
-                </button>
+                <LevelPill key={l} label={l} active={level === l} onClick={() => setLevel(l)} />
               ))}
             </div>
 
             {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <div className="relative min-w-0 flex-1">
+              <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Filter by message or logger…"
-                className="w-full rounded-lg border border-gray-200 py-1.5 pl-8 pr-3 text-sm focus:border-brand-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                className="focus:border-brand-500 w-full rounded-xl border border-gray-200 py-2 pr-3 pl-9 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder-gray-500"
               />
             </div>
 
-            {/* Record count */}
-            <span className="shrink-0 font-mono text-xs text-gray-400">
-              {records.length} lines
+            {/* Entry count */}
+            <span className="shrink-0 font-mono text-xs text-gray-400 tabular-nums">
+              {records.length.toLocaleString()} entries
             </span>
           </div>
 
-          {/* Log output */}
-          <div
-            className="flex-1 overflow-y-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
-            onScroll={(e) => {
-              const el = e.currentTarget;
-              autoScrollRef.current =
-                el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
-            }}
-          >
-            {records.length === 0 ? (
-              <div className="flex h-full items-center justify-center">
-                <p className="font-mono text-sm text-gray-400">No log entries yet.</p>
-              </div>
-            ) : (
-              <>
-                {records.map((r) => (
-                  <LogRow key={r._seq} record={r} />
-                ))}
-                <div ref={bottomRef} />
-              </>
-            )}
-          </div>
+          {/* ── Log terminal ──────────────────────────────────────────────── */}
+          <SectionCard title="Output" desc={`seq ${lastSeq} · ${live ? 'streaming' : 'snapshot'}`}>
+            {/* Terminal viewport — fixed dark background regardless of app theme */}
+            <div
+              className="overflow-y-auto rounded-lg bg-[#0d1117] ring-1 ring-[#1e2535]"
+              style={{ height: '65vh' }}
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                autoScrollRef.current = el.scrollTop + el.clientHeight >= el.scrollHeight - 24;
+              }}
+            >
+              {loading && records.length === 0 ? (
+                <div className="flex h-full items-center justify-center">
+                  <LoadingState message="Fetching logs…" />
+                </div>
+              ) : records.length === 0 ? (
+                <div className="flex h-full items-center justify-center">
+                  <EmptyState
+                    title="No log entries"
+                    description="Logs appear here once the backend generates activity."
+                  />
+                </div>
+              ) : (
+                <>
+                  {records.map((r) => (
+                    <LogRow key={r._seq} record={r} />
+                  ))}
+                  <div ref={bottomRef} className="h-2" />
+                </>
+              )}
+            </div>
+          </SectionCard>
         </>
       )}
     </div>
