@@ -1,0 +1,9 @@
+# Trivy ignore file — CVEs accepted as low-risk or without available fix
+#
+# Format: one CVE-ID per line, with comment explaining the decision.
+
+# dompurify via monaco-editor — moderate severity
+# Only affects the YAML/checks editor, never exposed to untrusted input.
+# No fix available without downgrading monaco-editor (breaking change).
+# Tracked: https://github.com/SckyzO/rackscope/security
+CVE-2024-48910

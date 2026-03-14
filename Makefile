@@ -14,6 +14,7 @@ COMPOSE_PROD := docker-compose.prod.yml
 .PHONY: shell-backend shell-frontend watch-logs nginx-logs cert
 .PHONY: docs docs-build docs-logs
 .PHONY: security security-backend security-frontend security-deps
+.PHONY: security-secrets security-image security-sast security-full
 
 # ── Development ──────────────────────────────────────────────────────────────
 # First time: run `make cert` to generate the self-signed TLS certificate.
@@ -163,6 +164,41 @@ security: security-backend security-frontend security-deps
 ## Outdated dependency check (Python + npm versions + CVE scan)
 check-deps:
 	@bash scripts/check-deps.sh
+
+# ── Extended Security (standalone — no stack required) ────────────────────────
+
+## Secrets scan: gitleaks over git history + working tree
+security-secrets:
+	@echo "Scanning for secrets (gitleaks)..."
+	docker run --rm -v $(PWD):/repo zricethezav/gitleaks:latest detect \
+		--source /repo --config /repo/.gitleaks.toml --redact --exit-code 1
+
+## Filesystem CVE scan: trivy (OS + Python + npm, HIGH/CRITICAL only)
+security-image:
+	@echo "Scanning filesystem for CVEs (trivy)..."
+	docker run --rm \
+		-v $(PWD):/workspace \
+		-v /tmp/trivy-cache:/root/.cache/trivy \
+		aquasec/trivy:latest fs /workspace \
+			--severity HIGH,CRITICAL --exit-code 1 \
+			--skip-dirs node_modules --skip-dirs .git --skip-dirs htmlcov \
+			--ignorefile /workspace/.trivyignore
+
+## SAST: semgrep with Python + TypeScript + FastAPI + OWASP rules
+security-sast:
+	@echo "Running SAST (semgrep)..."
+	docker run --rm -v $(PWD):/src semgrep/semgrep:latest scan \
+		--config p/python \
+		--config p/typescript \
+		--config p/fastapi-security \
+		--config p/owasp-top-ten \
+		--error --quiet \
+		--exclude node_modules --exclude htmlcov --exclude dist \
+		/src
+
+## Full extended security: existing checks + secrets + image CVEs + SAST
+security-full: security
+	@bash scripts/security-full.sh
 
 # Development Helpers
 shell-backend:

@@ -67,3 +67,58 @@ jobs:
         working-directory: frontend
         continue-on-error: true
         run: npm audit --audit-level=critical
+
+  # ── Secrets scanning (gitleaks) ───────────────────────────────────────────
+  gitleaks:
+    name: Secrets scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          fetch-depth: 0  # full history required for git log scanning
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --config .gitleaks.toml --redact --exit-code 1
+
+  # ── Filesystem CVE scan (trivy) ───────────────────────────────────────────
+  trivy:
+    name: CVE scan (trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Run trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          trivyignores: .trivyignore
+          skip-dirs: node_modules,htmlcov,dist,.git
+
+  # ── SAST (semgrep) ────────────────────────────────────────────────────────
+  semgrep:
+    name: SAST (semgrep)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Run semgrep
+        run: |
+          semgrep scan \
+            --config p/python \
+            --config p/typescript \
+            --config p/fastapi-security \
+            --config p/owasp-top-ten \
+            --error --quiet \
+            --exclude node_modules \
+            --exclude htmlcov \
+            --exclude dist \
+            .
