@@ -180,6 +180,7 @@ const sidebars = {
     'development/testing',
     'development/security',
     'development/linting',
+    'development/release-checklist',
     // ── Internals ──────────────────────────────────────────────────────────────
     'development/telemetry-planner',
   ],
