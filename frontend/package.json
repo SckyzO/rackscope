@@ -16,7 +16,7 @@
     "@fontsource/vt323": "^5.2.7",
     "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/vite": "^4.2.1",
-    "apexcharts": "^5.10.3",
+    "apexcharts": "^5.10.4",
     "clsx": "^2.1.1",
     "js-yaml": "^4.1.1",
     "leaflet": "^1.9.4",
