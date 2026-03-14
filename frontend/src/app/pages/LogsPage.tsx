@@ -150,7 +150,7 @@ const LevelPill = ({
 }) => (
   <button
     onClick={onClick}
-    className={`rounded-md border px-2.5 py-1 text-[11px] font-semibold tracking-wider uppercase transition-all ${
+    className={`rounded-xl border px-3 py-2 text-xs font-semibold tracking-wider uppercase transition-all ${
       active
         ? (LEVEL_PILL_ACTIVE[label] ?? 'bg-brand-500/20 text-brand-300 border-brand-500/40')
         : 'border-gray-200 bg-white text-gray-400 hover:border-gray-300 hover:text-gray-600 dark:border-gray-700 dark:bg-transparent dark:text-gray-500 dark:hover:border-gray-600 dark:hover:text-gray-400'
