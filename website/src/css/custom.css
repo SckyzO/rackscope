@@ -65,3 +65,47 @@
   margin-top: 1rem !important;
   margin-bottom: 0.75rem !important;
 }
+
+/* ── Homepage mobile fixes ───────────────────────────────────────────────────
+   Applied via className props in index.js.
+   Uses !important to override inline styles from the React component.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* "Any metric. Any team." — 3-col fixed grid → single column stack on mobile */
+@media (max-width: 680px) {
+  .rs-metrics-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .rs-metrics-center {
+    /* Hide the vertical PromQL divider — it makes no sense in a stacked layout */
+    display: none !important;
+  }
+}
+
+/* "How it works" steps — hide horizontal connectors + fix border-radius */
+@media (max-width: 700px) {
+  .rs-step-arrow {
+    /* Arrows connect horizontally — invisible when cards stack vertically */
+    display: none !important;
+  }
+  .rs-step-card {
+    /* Restore full border-radius on every card (was designed for horizontal strip) */
+    border-radius: 10px !important;
+    border-left: 1px solid var(--ifm-color-emphasis-200) !important;
+  }
+}
+
+/* Drill-down pyramid tooltips — hide on mobile (position: absolute overflow) */
+@media (max-width: 700px) {
+  .rs-drill-tooltip {
+    display: none !important;
+  }
+}
+
+/* Reduce vertical padding on sections on small screens */
+@media (max-width: 600px) {
+  .rs-section-lg {
+    padding-top: 48px !important;
+    padding-bottom: 48px !important;
+  }
+}

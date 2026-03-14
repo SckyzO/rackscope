@@ -61,12 +61,14 @@ function useInView(threshold = 0.12) {
   React.useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') { setVisible(true); return; }
+    // Fallback: reveal after 1.2s max — handles fast scroll, anchor links, programmatic navigation
+    const fallback = setTimeout(() => setVisible(true), 1200);
     const obs = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
       { threshold }
     );
     obs.observe(el);
-    return () => obs.disconnect();
+    return () => { obs.disconnect(); clearTimeout(fallback); };
   }, []);
   return [ref, visible];
 }
@@ -588,7 +590,7 @@ function HomeContent() {
       </div>
 
       {/* ── BLOC 1 : ZOOM IN ─────────────────────────────────────────────── */}
-      <div ref={zoomRef} style={{ background:C.dark2, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
+      <div ref={zoomRef} className="rs-section-lg" style={{ background:C.dark2, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
         <div style={{ maxWidth:900, margin:'0 auto' }}>
           <div style={{ textAlign:'center', marginBottom:56, ...stagger(zoomV, 0) }}>
             <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:C.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
@@ -658,7 +660,7 @@ function HomeContent() {
                     </div>
                     {/* Tooltip */}
                     {hov === i && (
-                      <div style={{
+                      <div className="rs-drill-tooltip" style={{
                         position:'absolute', left:'calc(100% + 12px)', top:'50%',
                         transform:'translateY(-50%)',
                         width:220, padding:'10px 14px',
@@ -685,7 +687,7 @@ function HomeContent() {
       </div>
 
       {/* ── BLOC 2 : ANY METRIC ANY TEAM ────────────────────────────────── */}
-      <div ref={metricsRef} style={{ background:C.dark1, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
+      <div ref={metricsRef} className="rs-section-lg" style={{ background:C.dark1, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
           <div style={{ textAlign:'center', marginBottom:48, ...stagger(metricsV, 0) }}>
             <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:C.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
@@ -699,7 +701,7 @@ function HomeContent() {
             </p>
           </div>
 
-          <div style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', gap:24, alignItems:'start' }}>
+          <div className="rs-metrics-grid" style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', gap:24, alignItems:'start' }}>
             {/* Hardware */}
             <div style={{ padding:'28px', background:C.dark3, border:`1px solid ${C.border}`, borderRadius:12, ...stagger(metricsV, 1, 0.1) }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
@@ -727,7 +729,7 @@ function HomeContent() {
             </div>
 
             {/* Center — PromQL */}
-            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12, paddingTop:32, ...stagger(metricsV, 2, 0.1) }}>
+            <div className="rs-metrics-center" style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:12, paddingTop:32, ...stagger(metricsV, 2, 0.1) }}>
               <div style={{ width:1, flex:1, background:C.border }} />
               <div style={{
                 width:48, height:48, borderRadius:'50%',
@@ -786,7 +788,7 @@ function HomeContent() {
       </div>
 
       {/* ── BLOC 3 : THE MISSING LAYER ───────────────────────────────────── */}
-      <div ref={missingRef} style={{ background:C.dark2, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
+      <div ref={missingRef} className="rs-section-lg" style={{ background:C.dark2, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
         <div style={{ maxWidth:900, margin:'0 auto' }}>
           <div style={{ textAlign:'center', marginBottom:52, ...stagger(missingV, 0) }}>
             <div style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:'0.72rem', color:C.indigo, letterSpacing:'0.12em', fontWeight:600, textTransform:'uppercase', marginBottom:12 }}>
@@ -889,7 +891,7 @@ function HomeContent() {
       </div>
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────────────── */}
-      <div ref={howRef} style={{ background:C.dark1, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
+      <div ref={howRef} className="rs-section-lg" style={{ background:C.dark1, padding:'80px 24px', borderBottom:`1px solid ${C.border}` }}>
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
 
           <div style={{ textAlign:'center', marginBottom:64, ...stagger(howV, 0) }}>
@@ -913,7 +915,7 @@ function HomeContent() {
               { num:'03', icon:'🔗', title:'Map your checks', desc:'Any metric with the right labels becomes a visible health check. IPMI temperature, PDU load, software service status, Slurm node state — anything Prometheus scrapes.', tag:'expr: up{...}' },
               { num:'04', icon:'🔭', title:'See your infrastructure', desc:"Launch and navigate from global to instance level. When something is CRIT, you know exactly which rack, which aisle, which room — not just a hostname in an alert.", tag:'make up' },
             ].map(({ num, icon, title, desc, tag }, i) => (
-              <div key={num} style={{
+              <div key={num} className="rs-step-card" style={{
                 padding:'28px 24px',
                 background:C.dark3,
                 borderRadius: i===0 ? '10px 0 0 10px' : i===3 ? '0 10px 10px 0' : 0,
@@ -949,7 +951,7 @@ function HomeContent() {
                   alignSelf:'flex-start',
                 }}>{tag}</div>
                 {i < 3 && (
-                  <div style={{
+                  <div className="rs-step-arrow" style={{
                     position:'absolute', right:-12, top:'50%',
                     transform:'translateY(-50%)',
                     width:24, height:24,
