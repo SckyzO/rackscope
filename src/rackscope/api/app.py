@@ -50,6 +50,7 @@ from rackscope.api.routers import (
     metrics,
     system,
     auth as auth_router,
+    logs,
 )
 from rackscope.services import telemetry_service
 from rackscope.logging_config import setup_logging, get_logger
@@ -354,6 +355,7 @@ app.include_router(telemetry.router)
 app.include_router(metrics.router)
 app.include_router(plugins.router)
 app.include_router(auth_router.router)
+app.include_router(logs.router)
 
 
 @app.get("/healthz")
