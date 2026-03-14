@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Download, Eraser, Pause, Play, RefreshCw, Search } from 'lucide-react';
+import { ArrowDownUp, Download, Eraser, Pause, Play, RefreshCw, Search } from 'lucide-react';
 import { usePageTitle } from '@app/contexts/PageTitleContext';
 import {
   PageHeader,
@@ -172,19 +172,25 @@ export const LogsPage = () => {
   const [live, setLive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [lastSeq, setLastSeq] = useState(0);
+  const [reversed, setReversed] = useState(false);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const autoScrollRef = useRef(true);
   const esRef = useRef<EventSource | null>(null);
 
   const canAccess = !authEnabled || !!user;
 
-  // Scroll to bottom on new records when live
+  // Auto-scroll: newest-last → scroll to bottom; newest-first → scroll to top
   useEffect(() => {
-    if (autoScrollRef.current && live) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!autoScrollRef.current || !live) return;
+    const el = containerRef.current;
+    if (!el) return;
+    if (reversed) {
+      el.scrollTop = 0;
+    } else {
+      el.scrollTop = el.scrollHeight;
     }
-  }, [records, live]);
+  }, [records, live, reversed]);
 
   // Fetch snapshot
   const fetchLogs = useCallback(async () => {
@@ -301,6 +307,14 @@ export const LogsPage = () => {
               />
             )}
 
+            {/* Reverse order */}
+            <PageActionIconButton
+              icon={ArrowDownUp}
+              title={reversed ? 'Newest last (chronological)' : 'Newest first (reverse)'}
+              variant={reversed ? 'brand-outline' : 'outline'}
+              onClick={() => setReversed((r) => !r)}
+            />
+
             {/* Export */}
             <PageActionIconButton
               icon={Download}
@@ -361,11 +375,18 @@ export const LogsPage = () => {
           <SectionCard title="Output" desc={`seq ${lastSeq} · ${live ? 'streaming' : 'snapshot'}`}>
             {/* Terminal viewport — fixed dark background regardless of app theme */}
             <div
+              ref={containerRef}
               className="overflow-y-auto rounded-lg bg-[#0d1117] ring-1 ring-[#1e2535]"
               style={{ height: '65vh' }}
               onScroll={(e) => {
                 const el = e.currentTarget;
-                autoScrollRef.current = el.scrollTop + el.clientHeight >= el.scrollHeight - 24;
+                // When normal order: auto-scroll enabled when near bottom
+                // When reversed:     auto-scroll enabled when near top
+                if (reversed) {
+                  autoScrollRef.current = el.scrollTop <= 24;
+                } else {
+                  autoScrollRef.current = el.scrollTop + el.clientHeight >= el.scrollHeight - 24;
+                }
               }}
             >
               {loading && records.length === 0 ? (
@@ -380,12 +401,9 @@ export const LogsPage = () => {
                   />
                 </div>
               ) : (
-                <>
-                  {records.map((r) => (
-                    <LogRow key={r._seq} record={r} />
-                  ))}
-                  <div ref={bottomRef} className="h-2" />
-                </>
+                (reversed ? [...records].reverse() : records).map((r) => (
+                  <LogRow key={r._seq} record={r} />
+                ))
               )}
             </div>
           </SectionCard>
