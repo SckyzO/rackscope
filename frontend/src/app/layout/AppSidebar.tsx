@@ -340,6 +340,7 @@ const AsciiBootOverlay = ({ onClose }: { onClose: () => void }) => {
     >
       <div className="max-h-[80vh] w-full max-w-2xl overflow-auto rounded-xl border border-green-800 bg-black p-6 font-mono text-sm leading-relaxed text-green-400 shadow-[0_0_40px_rgba(0,255,0,0.1)]">
         {lines.map((line, idx) => (
+          // eslint-disable-next-line react/no-array-index-key
           <div key={idx} className={line.startsWith('─') ? 'text-green-800' : ''}>
             {line}
           </div>
@@ -434,8 +435,8 @@ const HelpTerminalOverlay = ({ onClose }: { onClose: () => void }) => {
           </p>
           <p className="mb-4 text-gray-500">$ help</p>
           <p className="mb-4 font-bold text-yellow-400">AVAILABLE COMMANDS:</p>
-          {HELP_COMMANDS.slice(0, visible).map((c, i) => (
-            <div key={i} className="mb-2">
+          {HELP_COMMANDS.slice(0, visible).map((c) => (
+            <div key={c.cmd} className="mb-2">
               <p className="text-green-400">
                 <span className="text-gray-600">$ </span>
                 {c.cmd}

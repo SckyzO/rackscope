@@ -557,7 +557,7 @@ export const DatacenterWizard = ({ onComplete, onDismiss }: DatacenterWizardProp
             <div className="mr-2 flex items-center gap-1.5">
               {STEPS.map((_, idx) => (
                 <div
-                  key={idx}
+                  key={idx} // eslint-disable-line react/no-array-index-key
                   className={`h-1.5 rounded-full transition-all ${
                     idx === step
                       ? 'bg-brand-500 w-4'

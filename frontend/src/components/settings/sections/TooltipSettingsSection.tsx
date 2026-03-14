@@ -153,7 +153,7 @@ export const TooltipSettingsSection = () => {
             <div className="flex gap-1.5 pt-0.5">
               {PREVIEW_SAMPLES.map((sample, idx) => (
                 <div
-                  key={idx}
+                  key={idx} // eslint-disable-line react/no-array-index-key
                   onMouseEnter={(e) => showPreview(s.id, idx, e)}
                   onMouseMove={updatePos}
                   onMouseLeave={hidePreview}

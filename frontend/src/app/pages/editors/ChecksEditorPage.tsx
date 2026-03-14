@@ -194,11 +194,11 @@ const RuleVisualizer = ({ check }: { check: CheckDefinition }) => {
               <span>Value</span>
               <span>Severity</span>
             </div>
-            {rules.map((rule, i) => {
+            {rules.map((rule) => {
               const s = SEVERITY_COLORS[rule.severity] ?? SEVERITY_COLORS.UNKNOWN;
               return (
                 <div
-                  key={i}
+                  key={`${rule.op}-${String(rule.value)}-${rule.severity}`}
                   className="grid grid-cols-3 items-center border-b border-gray-50 px-3 py-2.5 last:border-0 dark:border-gray-800/50"
                   style={{ borderLeft: `3px solid ${s.border}` }}
                 >
@@ -249,10 +249,10 @@ const RuleVisualizer = ({ check }: { check: CheckDefinition }) => {
           <div className="space-y-1.5">
             {[...rules]
               .sort((a, b) => Number(a.value) - Number(b.value))
-              .map((r, i) => {
+              .map((r) => {
                 const s = SEVERITY_COLORS[r.severity] ?? SEVERITY_COLORS.UNKNOWN;
                 return (
-                  <div key={i} className="flex items-center gap-2">
+                  <div key={`${r.op}-${String(r.value)}-${r.severity}`} className="flex items-center gap-2">
                     <div
                       className="h-3 w-3 shrink-0 rounded-full"
                       style={{ backgroundColor: s.border }}
@@ -493,7 +493,7 @@ const TestQueryPanel = ({ expr, rules }: { expr: string; rules: RuleDraft[] }) =
             <p className="px-4 pb-3 text-xs text-gray-400 dark:text-gray-600">No data returned</p>
           ) : (
             <div className="max-h-56 overflow-y-auto">
-              {result.rows.map((row, i) => {
+              {result.rows.map((row) => {
                 const s = SEVERITY_COLORS[row.severity] ?? SEVERITY_COLORS.UNKNOWN;
                 // Show the most relevant label (instance, job, rack_id, etc.)
                 const mainLabel =
@@ -507,7 +507,7 @@ const TestQueryPanel = ({ expr, rules }: { expr: string; rules: RuleDraft[] }) =
                 );
                 return (
                   <div
-                    key={i}
+                    key={`${mainLabel}-${row.severity}`}
                     className="flex items-center gap-3 border-t border-gray-100 px-4 py-2 dark:border-gray-800"
                     style={{ borderLeft: `3px solid ${s.border}` }}
                   >
@@ -757,9 +757,9 @@ const EditorPanel = ({
               />
             </div>
             {validationErrors.length > 0 &&
-              validationErrors.map((msg, i) => (
+              validationErrors.map((msg) => (
                 <p
-                  key={i}
+                  key={msg}
                   className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"
                 >
                   <AlertTriangle className="h-3 w-3 shrink-0" /> {msg}
@@ -830,7 +830,7 @@ const EditorPanel = ({
               const s = SEVERITY_COLORS[rule.severity] ?? SEVERITY_COLORS.UNKNOWN;
               return (
                 <div
-                  key={i}
+                  key={`${rule.op}-${String(rule.value)}-${rule.severity}`}
                   className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-800/40"
                   style={{ borderLeft: `3px solid ${s.border}` }}
                 >

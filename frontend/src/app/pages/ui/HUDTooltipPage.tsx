@@ -253,7 +253,7 @@ const TooltipCard = ({
           <div className="space-y-[3px]">
             {alerts.map((r, i) => (
               <div
-                key={i}
+                key={i} // eslint-disable-line react/no-array-index-key
                 className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 ${
                   r.severity === 'CRIT'
                     ? 'bg-red-500/[0.09]'

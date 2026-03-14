@@ -122,6 +122,7 @@ export const NotificationsPage = () => {
                 { name: 'Emily D.', msg: 'mentioned you in a comment', time: '2h ago' },
                 { name: 'James W.', msg: 'reacted to your photo', time: '3h ago' },
               ].map((n, i) => (
+                // eslint-disable-next-line react/no-array-index-key
                 <div key={i} className="flex gap-3 p-4 hover:bg-gray-50 dark:hover:bg-white/5">
                   <div className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold">
                     {n.name[0]}

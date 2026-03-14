@@ -902,9 +902,9 @@ export const DashboardPage = () => {
         {loading ? (
           /* Loading skeleton */
           <div className="grid grid-cols-12 gap-5" style={{ gridAutoRows: `${ROW_PX}px` }}>
-            {[12, 4, 4, 4, 8, 4].map((_, i) => (
+            {[12, 4, 4, 4, 8, 4].map((cols, i) => (
               <div
-                key={i}
+                key={`skeleton-${cols}-${i}`} // eslint-disable-line react/no-array-index-key
                 className="col-span-4 h-32 animate-pulse rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-800"
               />
             ))}

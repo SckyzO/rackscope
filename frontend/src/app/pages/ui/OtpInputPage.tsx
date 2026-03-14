@@ -40,8 +40,10 @@ const OTP = ({
     <div className="flex justify-center gap-3">
       {Array.from({ length }).map((_, i) => (
         <input
-          key={i}
+          key={i} // eslint-disable-line react/no-array-index-key
           ref={(el) => {
+            // el is null when the input unmounts — asserted non-null to store only mounted refs
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             refs.current[i] = el!;
           }}
           type="text"

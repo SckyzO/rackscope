@@ -273,6 +273,7 @@ export const DataTablesPage = () => {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {t1.paginated.map((e, i) => (
+                  // eslint-disable-next-line react/no-array-index-key
                   <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/5">
                     <TD>{e.name}</TD>
                     <TD>{e.position}</TD>
@@ -345,6 +346,7 @@ export const DataTablesPage = () => {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {t2.paginated.map((e, i) => (
+                  // eslint-disable-next-line react/no-array-index-key
                   <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/5">
                     <TD>{e.name}</TD>
                     <TD>{e.position}</TD>
@@ -428,6 +430,7 @@ export const DataTablesPage = () => {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {t3.paginated.map((e, i) => (
+                  // eslint-disable-next-line react/no-array-index-key
                   <tr key={i} className="hover:bg-gray-50 dark:hover:bg-white/5">
                     <td className="px-4 py-3.5">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">

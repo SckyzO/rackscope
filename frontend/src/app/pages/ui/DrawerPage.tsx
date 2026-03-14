@@ -48,7 +48,7 @@ export const DrawerPage = () => {
               <div className="mt-4 space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div
-                    key={i}
+                    key={i} // eslint-disable-line react/no-array-index-key
                     className="rounded-lg border border-gray-200 p-3 dark:border-gray-800"
                   >
                     <div className="h-3 w-3/4 rounded bg-gray-200 dark:bg-gray-700" />

@@ -104,7 +104,7 @@ export const AvatarsPage = () => {
             <div className="flex -space-x-3">
               {colors.map((color, i) => (
                 <div
-                  key={i}
+                  key={i} // eslint-disable-line react/no-array-index-key
                   className={`flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white dark:border-gray-900 ${color}`}
                 >
                   {initials[i]}
@@ -114,7 +114,7 @@ export const AvatarsPage = () => {
             <div className="flex -space-x-3">
               {colors.slice(0, 3).map((color, i) => (
                 <div
-                  key={i}
+                  key={i} // eslint-disable-line react/no-array-index-key
                   className={`flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-xs font-semibold text-white dark:border-gray-900 ${color}`}
                 >
                   {initials[i]}

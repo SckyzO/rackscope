@@ -71,6 +71,7 @@ export const TimelinePage = () => {
           <div className="relative space-y-0">
             <div className="absolute top-2 left-3.5 h-[calc(100%-16px)] w-0.5 bg-gray-200 dark:bg-gray-800" />
             {events.map((ev, i) => (
+              // eslint-disable-next-line react/no-array-index-key
               <div key={i} className="relative flex gap-4 pb-6 last:pb-0">
                 <div className="relative z-10 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-white bg-white dark:border-gray-900 dark:bg-gray-900">
                   <span className="h-3 w-3 rounded-full" style={{ backgroundColor: ev.color }} />
@@ -92,6 +93,7 @@ export const TimelinePage = () => {
           <div className="relative space-y-0">
             <div className="absolute top-2 left-4 h-[calc(100%-16px)] w-0.5 bg-gray-200 dark:bg-gray-800" />
             {events.map((ev, i) => (
+              // eslint-disable-next-line react/no-array-index-key
               <div key={i} className="relative flex gap-4 pb-6 last:pb-0">
                 <div
                   className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${ev.uColor}`}
@@ -114,6 +116,7 @@ export const TimelinePage = () => {
             <div className="absolute top-3.5 right-0 left-0 h-0.5 bg-gray-200 dark:bg-gray-800" />
             <div className="relative flex justify-between">
               {events.map((ev, i) => (
+                // eslint-disable-next-line react/no-array-index-key
                 <div key={i} className="flex flex-col items-center gap-2">
                   <div
                     className="relative z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white dark:border-gray-900"
@@ -133,7 +136,7 @@ export const TimelinePage = () => {
           <div className="space-y-3">
             {events.slice(0, 3).map((ev, i) => (
               <div
-                key={i}
+                key={i} // eslint-disable-line react/no-array-index-key
                 className="flex gap-3 rounded-xl border border-gray-200 p-3 dark:border-gray-800"
                 style={{ borderLeftWidth: 3, borderLeftColor: ev.color }}
               >

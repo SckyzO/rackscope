@@ -71,7 +71,7 @@ export const TagInputPage = () => {
           >
             {basic.map((tag, i) => (
               <span
-                key={i}
+                key={i} // eslint-disable-line react/no-array-index-key
                 className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
               >
                 {tag}
@@ -98,7 +98,7 @@ export const TagInputPage = () => {
             >
               {sTags.map((tag, i) => (
                 <span
-                  key={i}
+                  key={i} // eslint-disable-line react/no-array-index-key
                   className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
                 >
                   {tag}
@@ -154,7 +154,7 @@ export const TagInputPage = () => {
           >
             {colored.map((tag, i) => (
               <span
-                key={i}
+                key={i} // eslint-disable-line react/no-array-index-key
                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${TAG_COLORS[tag.color]}`}
               >
                 {tag.text}
@@ -190,7 +190,7 @@ export const TagInputPage = () => {
           >
             {maxTags.map((tag, i) => (
               <span
-                key={i}
+                key={i} // eslint-disable-line react/no-array-index-key
                 className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
               >
                 {tag}

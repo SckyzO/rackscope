@@ -255,7 +255,7 @@ const StoryModal = ({ onClose }: { onClose: () => void }) => {
           <div className="space-y-4 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
             {story.paragraphs.map((p, i) => (
               <p
-                key={i}
+                key={i} // eslint-disable-line react/no-array-index-key
                 className={
                   i === 0 || i === 3 ? 'font-semibold text-gray-800 dark:text-white/90' : ''
                 }
@@ -390,7 +390,7 @@ const KonamiChallengeModal = ({
                 'border-red-400 bg-red-50 text-red-500 dark:border-red-500/60 dark:bg-red-500/10 dark:text-red-400';
             return (
               <div
-                key={i}
+                key={i} // eslint-disable-line react/no-array-index-key
                 className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 font-mono text-sm font-bold transition-all duration-150 ${cls}`}
               >
                 {i < progress ? char : '?'}
@@ -586,7 +586,7 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
           <div className="pointer-events-none absolute inset-0 opacity-10">
             {Array.from({ length: 5 }).map((_, i) => (
               <div
-                key={i}
+                key={i} // eslint-disable-line react/no-array-index-key
                 className="absolute rounded-full border-2 border-white"
                 style={{
                   width: `${60 + i * 50}px`,
@@ -755,7 +755,7 @@ export const AboutPage = () => {
             <div className="pointer-events-none absolute inset-0 opacity-5">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
-                  key={i}
+                  key={i} // eslint-disable-line react/no-array-index-key
                   className="border-brand-500 absolute rounded-full border-2"
                   style={{
                     width: `${80 + i * 60}px`,

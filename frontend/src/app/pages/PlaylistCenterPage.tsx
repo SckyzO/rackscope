@@ -430,7 +430,7 @@ export const PlaylistCenterPage = () => {
             ) : (
               localQueue.map((item, index) => (
                 <QueueItemRow
-                  key={`${item.id}-${index}`}
+                  key={`${item.id}-${index}`} // eslint-disable-line react/no-array-index-key
                   item={item}
                   index={index}
                   total={localQueue.length}

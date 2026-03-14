@@ -49,7 +49,10 @@ export const WorldMapWidget = ({
   const markers: SiteMarker[] = geoSites.map((s) => ({
     id: s.id,
     name: s.name,
+    // location is guaranteed non-null — geoSites is filtered above to only include sites with lat/lon
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     lat: s.location!.lat,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     lon: s.location!.lon,
     roomCount: s.rooms?.length ?? 0,
   }));

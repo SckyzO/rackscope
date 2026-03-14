@@ -590,6 +590,7 @@ const TopologyWizard = ({ topology, onClose, onDone }: TopologyWizardProps) => {
               <p className="text-xs text-gray-500">In room: {data.roomName}</p>
               <div className="space-y-2">
                 {data.aisles.map((aisle, i) => (
+                  // eslint-disable-next-line react/no-array-index-key
                   <div key={i} className="flex items-center gap-2">
                     <input
                       autoFocus={i === 0}

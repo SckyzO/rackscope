@@ -388,9 +388,9 @@ export const DevicePage = () => {
                   <p className="mb-2 text-xs font-semibold tracking-wider text-gray-400 uppercase">
                     Active Checks ({selNode.checks.length})
                   </p>
-                  {selNode.checks.map((check, i) => (
+                  {selNode.checks.map((check) => (
                     <div
-                      key={i}
+                      key={check.id}
                       className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-2.5 dark:border-gray-800"
                       style={{
                         borderLeftWidth: 3,

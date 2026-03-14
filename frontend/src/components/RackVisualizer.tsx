@@ -839,7 +839,7 @@ export const DeviceChassis = ({
         {layout.matrix.map((row, rIdx) =>
           isHighDensity ? (
             <RowSummaryUnit
-              key={rIdx}
+              key={rIdx} // eslint-disable-line react/no-array-index-key
               rowNodes={row.map((slot) => nodeMap[slot])}
               nodesData={nodesData ?? {}}
               label={
@@ -855,7 +855,7 @@ export const DeviceChassis = ({
               if (isRearView && slotNum > 900)
                 return (
                   <RearModuleUnit
-                    key={`${rIdx}-${cIdx}`}
+                    key={`${rIdx}-${cIdx}`} // eslint-disable-line react/no-array-index-key
                     type={slotNum % 2 === 0 ? 'psu' : 'fan'}
                   />
                 );
@@ -865,7 +865,7 @@ export const DeviceChassis = ({
               const nodeMetrics = nodeId && nodesData?.[nodeId] ? nodesData[nodeId] : undefined;
               return (
                 <NodeUnit
-                  key={`${rIdx}-${cIdx}`}
+                  key={`${rIdx}-${cIdx}`} // eslint-disable-line react/no-array-index-key
                   nodeName={nodeId}
                   slotNum={slotNum}
                   nodeHealth={nodeHealth}

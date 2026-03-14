@@ -374,7 +374,7 @@ const RackCell = memo(
           >
             {Array.from({ length: totalSlots }).map((_, i) => (
               <div
-                key={i}
+                key={i} // eslint-disable-line react/no-array-index-key
                 className="w-full rounded-sm transition-colors"
                 style={{
                   height: 3,
@@ -461,7 +461,7 @@ const RackCell = memo(
             >
               {cellFilled.map((filled, i) => (
                 <div
-                  key={i}
+                  key={i} // eslint-disable-line react/no-array-index-key
                   className="rounded-sm"
                   style={{
                     backgroundColor: filled ? color : undefined,
@@ -524,7 +524,7 @@ const RackCell = memo(
             >
               {Array.from({ length: total }).map((_, i) => (
                 <div
-                  key={i}
+                  key={i} // eslint-disable-line react/no-array-index-key
                   className="rounded-[1px]"
                   style={{ backgroundColor: i >= total - filledCount ? color : `${color}18` }}
                 />

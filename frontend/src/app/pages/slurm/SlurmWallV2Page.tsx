@@ -413,9 +413,9 @@ const CompactCard = ({
       </p>
       <p className="mb-1.5 truncate text-[10px] text-gray-500 dark:text-gray-400">{rack.name}</p>
       <div className="flex flex-wrap gap-0.5">
-        {list.map((n, i) => (
+        {list.map((n) => (
           <div
-            key={i}
+            key={n.name}
             className="h-3.5 w-3.5 cursor-help rounded-sm transition-transform hover:scale-125"
             style={{ backgroundColor: SEV[n.sev] ?? SEV.UNKNOWN }}
             onMouseEnter={(e) =>
@@ -638,7 +638,7 @@ const GridCard = ({
               >
                 {lay.matrix.flat().map((slot, i) => (
                   <NodeDot
-                    key={i}
+                    key={i} // eslint-disable-line react/no-array-index-key
                     slot={slot}
                     sm={sm}
                     nodes={nodes}

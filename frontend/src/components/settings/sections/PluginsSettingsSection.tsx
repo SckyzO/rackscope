@@ -150,7 +150,7 @@ const SlurmMappingEditor = ({ mappingPath }: { mappingPath?: string }) => {
             </span>
           </div>
           {entries.map((e, i) => (
-            <div key={i} className="grid grid-cols-2 gap-2">
+            <div key={i} className="grid grid-cols-2 gap-2"> {/* eslint-disable-line react/no-array-index-key */}
               <input
                 value={e.node}
                 onChange={(ev) => update(i, 'node', ev.target.value)}
@@ -649,7 +649,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                   <div className="space-y-2">
                     {sim.metrics_catalogs.map((catalog, index) => (
                       <div
-                        key={index}
+                        key={index} // eslint-disable-line react/no-array-index-key
                         className="flex items-end gap-3 rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900"
                       >
                         <ToggleSwitch
@@ -737,6 +737,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                   {/* Status → count rows */}
                   <div className="space-y-2">
                     {Object.entries(sim.slurm_random_statuses).map(([statusName, count], idx) => (
+                      // eslint-disable-next-line react/no-array-index-key
                       <div key={idx} className="flex items-center gap-2">
                         <input
                           type="text"
@@ -809,7 +810,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                     <div className="flex flex-wrap gap-2">
                       {sim.slurm_random_match.map((pattern, idx) => (
                         <div
-                          key={idx}
+                          key={idx} // eslint-disable-line react/no-array-index-key
                           className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 font-mono text-xs dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
                         >
                           {pattern}
@@ -1087,7 +1088,7 @@ export const PluginsSettingsSection: React.FC<PluginsSettingsSectionProps> = ({
                 >
                   {draft.plugins.slurm.roles.map((role, idx) => (
                     <span
-                      key={idx}
+                      key={idx} // eslint-disable-line react/no-array-index-key
                       className="bg-brand-50 text-brand-500 dark:bg-brand-500/15 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
                     >
                       {role}

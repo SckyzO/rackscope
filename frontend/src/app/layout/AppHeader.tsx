@@ -239,7 +239,7 @@ export const AppHeader = ({
                       <div className="flex items-center gap-0.5 px-1">
                         {Array.from({ length: total }).map((_, i) => (
                           <span
-                            key={i}
+                            key={i} // eslint-disable-line react/no-array-index-key
                             className={`inline-block rounded-full transition-all ${
                               i === cur
                                 ? 'bg-brand-500 h-2 w-2'
@@ -411,9 +411,9 @@ export const AppHeader = ({
                         </p>
                       </div>
                     ) : (
-                      alerts.slice(0, maxVisible).map((alert, i) => (
+                      alerts.slice(0, maxVisible).map((alert) => (
                         <button
-                          key={i}
+                          key={`${alert.node_id}-${alert.rack_id}`}
                           onClick={() => {
                             setNotifOpen(false);
                             void navigate(`/views/rack/${alert.rack_id}`);

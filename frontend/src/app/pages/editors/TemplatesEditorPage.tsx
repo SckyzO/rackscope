@@ -417,7 +417,7 @@ const MatrixEditor = ({
             const isSel = selected?.[0] === r && selected?.[1] === c2;
             return (
               <button
-                key={`${r}-${c2}`}
+                key={`${r}-${c2}`} // eslint-disable-line react/no-array-index-key
                 onClick={() => handleClick(r, c2)}
                 className="flex items-center justify-center rounded font-mono font-bold transition-all"
                 style={{
@@ -698,9 +698,9 @@ const EditorPanel = ({
               </div>
             )}
             {validationErrors.length > 0 &&
-              validationErrors.map((msg, i) => (
+              validationErrors.map((msg) => (
                 <p
-                  key={i}
+                  key={msg}
                   className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"
                 >
                   <AlertTriangle className="h-3 w-3 shrink-0" /> {msg}

@@ -242,6 +242,8 @@ function filterResults(index: SearchResult[], query: string): SearchResult[] {
   const groups: Partial<Record<Category, SearchResult[]>> = {};
   for (const r of all) {
     groups[r.category] ??= [];
+    // groups[r.category] is guaranteed non-null — it was just initialised above via ??=
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (groups[r.category]!.length < 5) groups[r.category]!.push(r);
   }
   return CATEGORY_ORDER.flatMap((cat) => groups[cat] ?? []);

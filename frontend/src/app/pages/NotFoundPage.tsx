@@ -95,7 +95,7 @@ const FallingRack = () => {
             { w: 20, h: 8, r: '-35deg', left: '32px' },
           ].map((d, i) => (
             <div
-              key={i}
+              key={i} // eslint-disable-line react/no-array-index-key
               className="absolute rounded-sm bg-gray-600 dark:bg-gray-500"
               style={{
                 width: d.w,

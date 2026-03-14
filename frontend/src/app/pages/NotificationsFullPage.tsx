@@ -803,11 +803,11 @@ export const NotificationsFullPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {pageRows.map((row, i) => {
+                {pageRows.map((row) => {
                   if (row.kind === 'infra') {
                     const a = row.data;
                     return (
-                      <tr key={`i-${i}`} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                      <tr key={`infra-${a.node_id}`} className="hover:bg-gray-50 dark:hover:bg-white/5">
                         <td className="px-4 py-3.5">
                           <StatusBadge status={row.sev as 'CRIT' | 'WARN'} size="md" />
                         </td>
@@ -832,9 +832,9 @@ export const NotificationsFullPage = () => {
                         <td className="px-4 py-3.5">
                           {a.checks.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
-                              {a.checks.slice(0, 2).map((c, j) => (
+                              {a.checks.slice(0, 2).map((c) => (
                                 <span
-                                  key={j}
+                                  key={c.id}
                                   className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400"
                                 >
                                   {c.id}
@@ -863,7 +863,7 @@ export const NotificationsFullPage = () => {
                   } else {
                     const n = row.data;
                     return (
-                      <tr key={`s-${i}`} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                      <tr key={`slurm-${n.node}`} className="hover:bg-gray-50 dark:hover:bg-white/5">
                         <td className="px-4 py-3.5">
                           <StatusBadge status={row.sev as 'CRIT' | 'WARN'} size="md" />
                         </td>
@@ -943,7 +943,7 @@ export const NotificationsFullPage = () => {
                   {pageNums.map((p, i) =>
                     p === '...' ? (
                       <span
-                        key={`e-${i}`}
+                        key={`e-${i}`} // eslint-disable-line react/no-array-index-key
                         className="flex h-9 w-9 items-center justify-center text-sm text-gray-400"
                       >
                         …

@@ -357,7 +357,7 @@ export const SlurmNodesPage = () => {
                 {pageNums.map((p, i) =>
                   p === '...' ? (
                     <span
-                      key={`e-${i}`}
+                      key={`e-${i}`} // eslint-disable-line react/no-array-index-key
                       className="flex h-9 w-9 items-center justify-center text-sm text-gray-400"
                     >
                       …

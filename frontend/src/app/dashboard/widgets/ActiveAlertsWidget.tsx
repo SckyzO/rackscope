@@ -142,9 +142,9 @@ export const ActiveAlertsWidget = ({
                 <p className="text-sm text-gray-400">No alerts match the filters</p>
               </div>
             ) : (
-              data.filteredAlerts.map((alert, i) => (
+              data.filteredAlerts.map((alert) => (
                 <AlertRow
-                  key={i}
+                  key={`${alert.node_id}-${alert.rack_id}`}
                   alert={alert}
                   onClick={() => navigate(`/views/rack/${alert.rack_id}`)}
                 />

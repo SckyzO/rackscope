@@ -25,8 +25,8 @@ export const RecentAlertsWidget = ({ data }: { data: DashboardData }) => {
         <p className="text-xs text-green-500">No CRIT alerts</p>
       ) : (
         <div className="space-y-2">
-          {top3.map((a, i) => (
-            <div key={i} className="flex items-center gap-2 text-xs">
+          {top3.map((a) => (
+            <div key={a.node_id} className="flex items-center gap-2 text-xs">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
               <span className="truncate font-mono text-gray-800 dark:text-gray-200">
                 {a.node_id}

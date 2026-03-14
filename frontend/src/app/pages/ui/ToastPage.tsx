@@ -91,6 +91,8 @@ export const ToastPage = () => {
     const groups: Partial<Record<ToastPos, Toast[]>> = {};
     toasts.forEach((t) => {
       groups[t.position] ??= [];
+      // groups[t.position] is guaranteed non-null — it was just initialised above via ??=
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       groups[t.position]!.push(t);
     });
     return groups;

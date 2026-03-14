@@ -201,8 +201,8 @@ export const SeverityDonut = ({
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {paths.map((p, i) => (
-        <path key={i} d={p.d} fill={p.color} />
+      {paths.map((p) => (
+        <path key={p.d} d={p.d} fill={p.color} />
       ))}
       <text
         x={cx}

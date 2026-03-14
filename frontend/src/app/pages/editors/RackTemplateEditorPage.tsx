@@ -276,11 +276,11 @@ const RackPreview = ({
         {/* Left rail */}
         {leftRail.length > 0 && (
           <div className="flex h-full flex-col gap-0.5">
-            {leftRail.map((item, i) => {
+            {leftRail.map((item) => {
               const col = RAIL_COLORS[item.type] ?? RAIL_COLORS.other;
               return (
                 <div
-                  key={i}
+                  key={`${item.type}-${item.name}`}
                   title={item.name}
                   className="flex items-center justify-center rounded-sm"
                   style={{
@@ -362,11 +362,11 @@ const RackPreview = ({
         {/* Right rail */}
         {rightRail.length > 0 && (
           <div className="flex h-full flex-col gap-0.5">
-            {rightRail.map((item, i) => {
+            {rightRail.map((item) => {
               const col = RAIL_COLORS[item.type] ?? RAIL_COLORS.other;
               return (
                 <div
-                  key={i}
+                  key={`${item.type}-${item.name}`}
                   title={item.name}
                   className="flex items-center justify-center rounded-sm"
                   style={{
@@ -602,9 +602,9 @@ const NewTemplateForm = ({
         </div>
         {validationErrors.length > 0 && (
           <div className="space-y-0.5">
-            {validationErrors.map((msg, i) => (
+            {validationErrors.map((msg) => (
               <p
-                key={i}
+                key={msg}
                 className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"
               >
                 <AlertTriangle className="h-3 w-3 shrink-0" />
@@ -862,9 +862,9 @@ const EditorPanel = ({
             </div>
             {validationErrors.length > 0 && (
               <div className="space-y-1">
-                {validationErrors.map((msg, i) => (
+                {validationErrors.map((msg) => (
                   <p
-                    key={i}
+                    key={msg}
                     className="flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"
                   >
                     <AlertTriangle className="h-3 w-3 shrink-0" />
@@ -906,9 +906,9 @@ const EditorPanel = ({
                     Rack Components ({rackComponents.length})
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {rackComponents.map((ref, i) => (
+                    {rackComponents.map((ref) => (
                       <span
-                        key={i}
+                        key={`${ref.template_id}-${ref.u_position}`}
                         className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 font-mono text-[11px] text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
                       >
                         <Tag className="h-3 w-3 shrink-0 opacity-50" />
@@ -1006,7 +1006,7 @@ const EditorPanel = ({
                 const col = RAIL_COLORS[tpl?.type ?? 'other'] ?? RAIL_COLORS.other;
                 return (
                   <div
-                    key={idx}
+                    key={`${ref.template_id}-${ref.u_position}`}
                     className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 p-2.5 dark:border-gray-800 dark:bg-gray-800/40"
                   >
                     <div

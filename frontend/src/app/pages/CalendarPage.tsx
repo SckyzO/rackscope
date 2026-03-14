@@ -111,7 +111,7 @@ export const CalendarPage = () => {
 
             return (
               <div
-                key={idx}
+                key={idx} // eslint-disable-line react/no-array-index-key
                 className={`min-h-[80px] border-r border-b border-gray-100 p-2 last:border-r-0 dark:border-gray-800 ${!cell.current ? 'bg-gray-50/50 dark:bg-gray-800/30' : 'hover:bg-gray-50 dark:hover:bg-white/5'}`}
               >
                 <div
@@ -122,7 +122,7 @@ export const CalendarPage = () => {
                 <div className="space-y-0.5">
                   {dayEvents.map((ev, i) => (
                     <div
-                      key={i}
+                      key={i} // eslint-disable-line react/no-array-index-key
                       className={`truncate rounded px-1.5 py-0.5 text-[10px] font-medium text-white ${ev.color}`}
                     >
                       {ev.label}

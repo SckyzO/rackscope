@@ -242,8 +242,8 @@ const _Footer = ({ details, checkSummary }: Pick<HUDTooltipProps, 'details' | 'c
     <div className="flex items-center justify-between gap-2 border-t border-white/[0.05] pt-2.5">
       {hasDetails && (
         <div className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1">
-          {(details ?? []).map((d, i) => (
-            <span key={i} className={`text-[11px] text-gray-500 ${d.italic ? 'font-mono' : ''}`}>
+          {(details ?? []).map((d) => (
+            <span key={d.value} className={`text-[11px] text-gray-500 ${d.italic ? 'font-mono' : ''}`}>
               {d.value}
             </span>
           ))}
@@ -274,9 +274,9 @@ void _Footer;
 
 const AlertList = ({ reasons }: { reasons: TooltipReason[] }) => (
   <div className="space-y-[3px]">
-    {reasons.map((r, i) => (
+    {reasons.map((r) => (
       <div
-        key={i}
+        key={`${r.severity}-${r.label}`}
         className={`flex items-center gap-2.5 rounded-lg px-2 py-1.5 ${
           r.severity === 'CRIT'
             ? 'bg-status-crit/[0.09]'
@@ -360,9 +360,9 @@ const TintedCard = ({
       <div className="flex flex-col gap-2.5 px-3.5 pb-3.5">
         {(reasons?.length ?? 0) > 0 && (
           <div className="flex flex-col gap-[3px] border-b border-white/[0.04] pb-2.5">
-            {(reasons ?? []).map((r, i) => (
+            {(reasons ?? []).map((r) => (
               <div
-                key={i}
+                key={`${r.severity}-${r.label}`}
                 className={`flex items-center gap-2 rounded-[8px] px-2 py-[5px] ${r.severity === 'CRIT' ? 'bg-status-crit/[0.07]' : 'bg-status-warn/[0.06]'}`}
               >
                 <div
@@ -635,9 +635,9 @@ const GlassCard = ({
       <div className="flex flex-col gap-3 px-3.5 py-3">
         {(reasons?.length ?? 0) > 0 && (
           <div className="flex flex-col gap-1">
-            {(reasons ?? []).map((r, i) => (
+            {(reasons ?? []).map((r) => (
               <div
-                key={i}
+                key={`${r.severity}-${r.label}`}
                 className={`flex items-center gap-2 rounded-[9px] border-l-2 px-2.5 py-1.5 ${r.severity === 'CRIT' ? 'bg-status-crit/[0.07]' : 'bg-status-warn/[0.07]'}`}
                 style={{
                   borderLeftColor:
@@ -786,9 +786,9 @@ const SplitCard = ({
           </div>
           {(reasons?.length ?? 0) > 0 && (
             <div className="flex flex-col gap-1">
-              {(reasons ?? []).map((r, i) => (
+              {(reasons ?? []).map((r) => (
                 <div
-                  key={i}
+                  key={`${r.severity}-${r.label}`}
                   className={`truncate rounded-[6px] px-1.5 py-1 text-[10px] ${r.severity === 'CRIT' ? 'bg-status-crit/[0.08] text-status-crit' : 'bg-status-warn/[0.07] text-status-warn'}`}
                 >
                   {r.label}
@@ -951,8 +951,8 @@ const TerminalCard = ({
             <div className="pt-1">
               <span className="text-gray-600"># Alerts</span>
             </div>
-            {(reasons ?? []).map((r, i) => (
-              <div key={i}>
+            {(reasons ?? []).map((r) => (
+              <div key={`${r.severity}-${r.label}`}>
                 <span className={r.severity === 'CRIT' ? 'text-red-400' : 'text-yellow-400'}>
                   !
                 </span>
@@ -1056,9 +1056,9 @@ const UltraCompactCard = ({
         {/* Alert tags */}
         {(reasons?.length ?? 0) > 0 && (
           <div className="flex flex-wrap gap-1">
-            {(reasons ?? []).slice(0, 2).map((r, i) => (
+            {(reasons ?? []).slice(0, 2).map((r) => (
               <span
-                key={i}
+                key={`${r.severity}-${r.label}`}
                 className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${r.severity === 'CRIT' ? 'bg-status-crit/10 text-status-crit' : 'bg-status-warn/10 text-status-warn'}`}
               >
                 {r.label.split(' ').slice(0, 3).join(' ')}
@@ -1151,6 +1151,7 @@ export const HUDTooltip = ({ mousePos, ...props }: HUDTooltipProps) => {
     >
       <HUDTooltipCard style={style} aura={aura} {...props} />
     </div>,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     document.getElementById('tooltip-root')!
   );
 };

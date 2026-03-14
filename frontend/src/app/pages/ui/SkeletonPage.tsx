@@ -66,19 +66,19 @@ export const SkeletonPage = () => {
             <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800">
               <div className="grid grid-cols-4 gap-4">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Sk key={i} h="h-3" w="w-3/4" />
+                  <Sk key={i} h="h-3" w="w-3/4" /> // eslint-disable-line react/no-array-index-key
                 ))}
               </div>
             </div>
             {Array.from({ length: 4 }).map((_, row) => (
               <div
-                key={row}
+                key={row} // eslint-disable-line react/no-array-index-key
                 className="border-b border-gray-100 px-4 py-3 last:border-0 dark:border-gray-800"
               >
                 <div className="grid grid-cols-4 gap-4">
                   {Array.from({ length: 4 }).map((_, col) => (
                     <Sk
-                      key={col}
+                      key={col} // eslint-disable-line react/no-array-index-key
                       h="h-3"
                       w={col === 0 ? 'w-full' : col === 3 ? 'w-1/2' : 'w-5/6'}
                     />
@@ -92,7 +92,7 @@ export const SkeletonPage = () => {
           <div className="grid grid-cols-2 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div
-                key={i}
+                key={i} // eslint-disable-line react/no-array-index-key
                 className="space-y-3 rounded-xl border border-gray-200 p-4 dark:border-gray-800"
               >
                 <div className="flex items-center justify-between">
@@ -108,6 +108,7 @@ export const SkeletonPage = () => {
         <SectionCard title="Notification Skeleton" desc="Notification feed loading state">
           <div className="space-y-4">
             {Array.from({ length: 4 }).map((_, i) => (
+              // eslint-disable-next-line react/no-array-index-key
               <div key={i} className="flex gap-3">
                 <Sk h="h-10" w="w-10" round="rounded-full" />
                 <div className="flex-1 space-y-2">

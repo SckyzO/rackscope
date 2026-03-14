@@ -79,7 +79,7 @@ export const CarouselPage = () => {
             <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
               {slides.map((_, i) => (
                 <button
-                  key={i}
+                  key={i} // eslint-disable-line react/no-array-index-key
                   onClick={() => c3.setIdx(i)}
                   className={`h-1.5 rounded-full transition-all ${i === c3.idx ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`}
                 />
@@ -108,7 +108,7 @@ export const CarouselPage = () => {
             <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
               {slides.map((_, i) => (
                 <button
-                  key={i}
+                  key={i} // eslint-disable-line react/no-array-index-key
                   onClick={() => c4.setIdx(i)}
                   className={`h-1.5 rounded-full transition-all ${i === c4.idx ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`}
                 />

@@ -80,7 +80,7 @@ export const PaginationPage = () => {
               </NavBtn>
               {pages(p1).map((pg, i) => (
                 <PageBtn
-                  key={i}
+                  key={i} // eslint-disable-line react/no-array-index-key
                   page={pg}
                   active={pg === p1}
                   onClick={typeof pg === 'number' ? () => sp1(pg) : undefined}
@@ -101,7 +101,7 @@ export const PaginationPage = () => {
               </NavBtn>
               {pages(p2).map((pg, i) => (
                 <PageBtn
-                  key={i}
+                  key={i} // eslint-disable-line react/no-array-index-key
                   page={pg}
                   active={pg === p2}
                   onClick={typeof pg === 'number' ? () => sp2(pg) : undefined}
@@ -126,7 +126,7 @@ export const PaginationPage = () => {
               </button>
               {pages(p3).map((pg, i) => (
                 <PageBtn
-                  key={i}
+                  key={i} // eslint-disable-line react/no-array-index-key
                   page={pg}
                   active={pg === p3}
                   onClick={typeof pg === 'number' ? () => sp3(pg) : undefined}
