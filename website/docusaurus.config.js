@@ -67,6 +67,19 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      // Social sharing & SEO meta tags
+      metadata: [
+        { name: 'description',        content: 'Prometheus-first physical infrastructure monitoring dashboard. Maps every alert to its exact physical location — site, datacenter, room, aisle, rack, device, instance.' },
+        { property: 'og:type',        content: 'website' },
+        { property: 'og:site_name',   content: 'Rackscope' },
+        { property: 'og:image',       content: 'https://rackscope.dev/img/og-image.svg' },
+        { property: 'og:image:width', content: '1200' },
+        { property: 'og:image:height',content: '630' },
+        { property: 'og:image:alt',   content: 'Rackscope — Prometheus-first physical infrastructure monitoring' },
+        { name: 'twitter:card',       content: 'summary_large_image' },
+        { name: 'twitter:image',      content: 'https://rackscope.dev/img/og-image.svg' },
+        { name: 'twitter:image:alt',  content: 'Rackscope — physical datacenter monitoring' },
+      ],
       colorMode: {
         defaultMode: 'dark',
         respectPrefersColorScheme: true,
