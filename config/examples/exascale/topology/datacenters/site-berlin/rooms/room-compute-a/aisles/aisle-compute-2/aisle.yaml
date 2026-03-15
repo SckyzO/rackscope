@@ -1,0 +1,14 @@
+id: aisle-compute-2
+name: Aisle Compute 2
+room_id: room-compute-a
+racks:
+- id: rack-ber-c030
+- id: rack-ber-c031
+- id: rack-ber-c032
+- id: rack-ber-c033
+- id: rack-ber-c034
+- id: rack-ber-c035
+- id: rack-ber-c036
+- id: rack-ber-c037
+- id: rack-ber-c038
+- id: rack-ber-c039

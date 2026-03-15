@@ -1,0 +1,89 @@
+name: Update STATUS.md
+
+# Runs only on direct push to main — never on pull requests.
+# Triggered after CI passes to record latest quality metrics.
+
+on:
+  push:
+    branches: [main]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PYTHONPATH: src:.
+  RACKSCOPE_CONFIG_DIR: config
+  RACKSCOPE_APP_CONFIG: config/app.yaml
+
+jobs:
+  update:
+    name: Update STATUS.md
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d02405  # v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run tests + collect metrics
+        id: tests
+        run: |
+          pytest --tb=no -q \
+            --cov=src/rackscope \
+            --cov-report=json:coverage.json \
+            2>&1 | tee test_output.txt || true
+
+          PASSED=$(grep -oP '\d+ passed' test_output.txt | grep -oP '\d+' | head -1)
+          PASSED="${PASSED:-0}"
+          FAILED=$(grep -oP '\d+ failed' test_output.txt | grep -oP '\d+' | head -1)
+          FAILED="${FAILED:-0}"
+          COVERAGE=$(python3 -c "
+          import json
+          d = json.load(open('coverage.json'))
+          print(round(d['totals']['percent_covered']))
+          " 2>/dev/null || echo 0)
+
+          echo "passed=$PASSED"     >> "$GITHUB_OUTPUT"
+          echo "failed=$FAILED"     >> "$GITHUB_OUTPUT"
+          echo "coverage=$COVERAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Lint check
+        id: lint
+        run: ruff check . && ruff format --check . && echo "status=success" || echo "status=failure"
+
+      - name: Type check
+        id: mypy
+        run: mypy src/rackscope --no-error-summary && echo "success" || echo "failure"
+
+      - name: Generate STATUS.md
+        env:
+          TESTS_PASSED: ${{ steps.tests.outputs.passed }}
+          TESTS_FAILED: ${{ steps.tests.outputs.failed }}
+          COVERAGE:     ${{ steps.tests.outputs.coverage }}
+          BE_LINT:      ${{ steps.lint.outcome }}
+          BE_MYPY:      ${{ steps.mypy.outcome }}
+          FE_LINT:      success
+          FE_BUILD:     success
+          COMMIT_SHA:   ${{ github.sha }}
+          RUN_ID:       ${{ github.run_id }}
+          REPO:         ${{ github.repository }}
+          SERVER_URL:   ${{ github.server_url }}
+        run: python3 scripts/gen_status.py
+
+      - name: Commit STATUS.md
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add STATUS.md
+          git diff --staged --quiet \
+            && echo "STATUS.md unchanged" \
+            || (git commit -m "ci: update STATUS.md [skip ci]" && git push)

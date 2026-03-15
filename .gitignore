@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.pyo
+*.pkl
+*.egg-info/
+.venv/
+.uv/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Node / frontend
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.build/
+.next/
+.vite/
+.eslintcache
+
+# Env / Secrets
+.env
+.env.*
+!.env.example
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
+*~
+
+# Project specific
+backup/
+
+# Local tooling artifacts
+tmp/
+node_modules/
+
+# Docusaurus documentation site
+website/node_modules/
+website/build/
+website/.docusaurus/
+
+# Nginx TLS certificates (generated locally via `make cert`)
+nginx/certs/*.pem

@@ -1,0 +1,24 @@
+id: room-infra
+name: Infrastructure
+site_id: site-paris
+description: Infrastructure — Paris — Site Principal
+layout:
+  shape: rectangle
+  size:
+    width: 24
+    height: 36
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+- id: aisle-services
+  name: Aisle Services
+- id: aisle-network
+  name: Aisle Network
+- id: aisle-storage
+  name: Aisle Storage

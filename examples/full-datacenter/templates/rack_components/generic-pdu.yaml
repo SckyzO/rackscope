@@ -1,0 +1,10 @@
+rack_component_templates:
+  - id: generic-pdu-1phase
+    name: "Generic 1-Phase PDU"
+    type: pdu
+    location: side
+    u_height: 1
+    checks:
+      - pdu_load_warn
+      - pdu_load_crit
+      - pdu_current_warn

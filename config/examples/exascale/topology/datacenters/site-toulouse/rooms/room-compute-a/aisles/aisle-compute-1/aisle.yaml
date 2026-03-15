@@ -1,0 +1,14 @@
+id: aisle-compute-1
+name: Aisle Compute 1
+room_id: room-compute-a
+racks:
+- id: rack-tou-c016
+- id: rack-tou-c017
+- id: rack-tou-c018
+- id: rack-tou-c019
+- id: rack-tou-c020
+- id: rack-tou-c021
+- id: rack-tou-c022
+- id: rack-tou-c023
+- id: rack-tou-c024
+- id: rack-tou-c025

@@ -1,0 +1,22 @@
+id: room-compute-a
+name: Compute Room
+site_id: site-berlin
+description: Compute Room — Berlin — DR Site
+layout:
+  shape: rectangle
+  size:
+    width: 36
+    height: 36
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+- id: aisle-compute-1
+  name: Aisle Compute 1
+- id: aisle-compute-2
+  name: Aisle Compute 2

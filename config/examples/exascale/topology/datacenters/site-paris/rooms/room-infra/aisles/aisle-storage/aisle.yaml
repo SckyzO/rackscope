@@ -1,0 +1,5 @@
+id: aisle-storage
+name: Aisle Storage
+room_id: room-infra
+racks:
+- id: rack-par-sto

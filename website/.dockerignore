@@ -1,0 +1,5 @@
+# Exclude local node_modules — installed fresh by npm ci inside the image
+node_modules/
+.docusaurus/
+build/
+.DS_Store

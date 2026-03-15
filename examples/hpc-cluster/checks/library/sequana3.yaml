@@ -1,0 +1,54 @@
+# Sequana3 liquid cooling checks — scope: rack.
+# selectors: ["sequana_rack_id"] tells the planner to use rack_id as the label selector
+# instead of the default instance label.
+checks:
+  - id: sequana3_pressure
+    name: Sequana3 pressure
+    for: "5m"
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: |
+      sequana3_hyc_p_in_kpa{sequana_rack_id=~"$racks"}
+        and on(cluster, env, host, instance, job, mc_type, model, region, sequana_rack_id, sequana_type)
+            sequana3_hyc_state_info{state="standbyspare"}
+    output: numeric
+    rules:
+      - op: "<="
+        value: 170
+        severity: CRIT
+      - op: "<"
+        value: 180
+        severity: WARN
+
+  - id: sequana3_leak
+    name: Sequana3 leak sensor
+    for: null
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: sequana3_hyc_leak_sensor_pump{sequana_rack_id=~"$racks"}
+    output: numeric
+    rules:
+      - op: ">="
+        value: 1.0
+        severity: CRIT
+      - op: ">="
+        value: 0.5
+        severity: WARN
+
+  - id: sequana3_board_temperature
+    name: Sequana3 board temperature
+    for: "5m"
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: sequana3_hyc_tmp_pcb_cel{sequana_rack_id=~"$racks"}
+    output: numeric
+    rules:
+      - op: ">="
+        value: 90
+        severity: CRIT
+      - op: ">="
+        value: 75
+        severity: WARN

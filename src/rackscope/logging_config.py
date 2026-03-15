@@ -1,0 +1,87 @@
+"""
+Logging Configuration
+
+Structured logging setup for rackscope application.
+"""
+
+import logging
+import os
+import sys
+import json
+from datetime import datetime, timezone
+from typing import Any, Dict
+
+
+class JSONFormatter(logging.Formatter):
+    """JSON formatter for structured logging."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        """Format log record as JSON.
+
+        Args:
+            record: The log record to format
+
+        Returns:
+            JSON-formatted log string
+        """
+        log_data: Dict[str, Any] = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)  # pragma: no cover
+
+        if hasattr(record, "rack_id"):
+            log_data["rack_id"] = record.rack_id  # pragma: no cover
+        if hasattr(record, "room_id"):
+            log_data["room_id"] = record.room_id  # pragma: no cover
+        if hasattr(record, "device_id"):
+            log_data["device_id"] = record.device_id  # pragma: no cover
+        if hasattr(record, "request_id"):
+            log_data["request_id"] = record.request_id
+        if hasattr(record, "duration_ms"):
+            log_data["duration_ms"] = record.duration_ms
+
+        return json.dumps(log_data)
+
+
+def setup_logging() -> None:
+    """Setup structured logging for the application."""
+    log_level_str = os.getenv("RACKSCOPE_LOG_LEVEL", "INFO").upper()
+    log_level = getattr(logging, log_level_str, logging.INFO)
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    root_logger.handlers.clear()
+
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(log_level)
+    console_handler.setFormatter(JSONFormatter())
+    root_logger.addHandler(console_handler)
+
+    # Install in-memory capture handler — feeds /api/logs endpoints.
+    # Deferred import avoids circular dependency at module load time.
+    from rackscope.api.log_buffer import LogCaptureHandler, log_buffer  # noqa: PLC0415
+
+    capture_handler = LogCaptureHandler(log_buffer)
+    capture_handler.setLevel(log_level)
+    root_logger.addHandler(capture_handler)
+
+    # Quiet noisy uvicorn loggers — access log is INFO-level and very verbose
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn.error").setLevel(logging.INFO)
+
+
+def get_logger(name: str) -> logging.Logger:
+    """Get a logger instance.
+
+    Args:
+        name: The name of the logger (typically __name__)
+
+    Returns:
+        Configured logger instance
+    """
+    return logging.getLogger(name)

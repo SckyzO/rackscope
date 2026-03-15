@@ -1,0 +1,209 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Simulator Metrics Catalog — metrics_slurm.yaml
+#
+# Slurm metrics matching the SckyzO/slurm_exporter output format exactly.
+# https://github.com/SckyzO/slurm_exporter
+#
+# All metrics use labels_only: true so no BASE_LABELS are added — this matches
+# the real exporter's label set (no rack_id, instance, job, etc.).
+# ─────────────────────────────────────────────────────────────────────────────
+
+metrics:
+
+  # ── Per-node status (node collector) ────────────────────────────────────────
+  # slurm_node_status{node, status, partition} — always 1 for active status
+  - name: slurm_node_status
+    scope: node
+    instances:
+      - compute*
+      - visu*
+      - gpu*
+      - hm*
+    labels_only: true
+    labels:
+      node: $node_id
+      partition: $partition
+      status: $status
+
+  # ── Per-node CPU allocation (node collector) ─────────────────────────────────
+  - name: slurm_node_cpu_alloc
+    scope: node
+    instances:
+      - compute*
+      - visu*
+      - gpu*
+      - hm*
+    labels_only: true
+    labels:
+      node: $node_id
+      partition: $partition
+      status: $status
+
+  - name: slurm_node_cpu_total
+    scope: node
+    instances:
+      - compute*
+      - visu*
+      - gpu*
+      - hm*
+    labels_only: true
+    labels:
+      node: $node_id
+      partition: $partition
+      status: $status
+
+  # ── Per-node memory (node collector) — values in MB ──────────────────────────
+  - name: slurm_node_mem_alloc
+    scope: node
+    instances:
+      - compute*
+      - visu*
+      - gpu*
+      - hm*
+    labels_only: true
+    labels:
+      node: $node_id
+      partition: $partition
+      status: $status
+
+  - name: slurm_node_mem_total
+    scope: node
+    instances:
+      - compute*
+      - visu*
+      - gpu*
+      - hm*
+    labels_only: true
+    labels:
+      node: $node_id
+      partition: $partition
+      status: $status
+
+  # ── Cluster-level CPU aggregates (cpus collector) ────────────────────────────
+  # No labels — single value per metric
+  - name: slurm_cpus_alloc
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}
+
+  - name: slurm_cpus_idle
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}
+
+  - name: slurm_cpus_total
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}
+
+  # ── Cluster-level node aggregates (nodes collector) ──────────────────────────
+  - name: slurm_nodes_alloc
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}
+
+  - name: slurm_nodes_idle
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}
+
+  - name: slurm_nodes_down
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}
+
+  - name: slurm_nodes_drain
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}
+
+  - name: slurm_nodes_total
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}
+
+  # ── Per-partition aggregates (partitions collector) ──────────────────────────
+  - name: slurm_partition_cpus_allocated
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels:
+      partition: $partition
+
+  - name: slurm_partition_cpus_idle
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels:
+      partition: $partition
+
+  - name: slurm_partition_cpus_total
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels:
+      partition: $partition
+
+  - name: slurm_partition_jobs_running
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels:
+      partition: $partition
+
+  - name: slurm_partition_jobs_pending
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels:
+      partition: $partition
+
+  # ── GPU cluster aggregates (gpus collector) ──────────────────────────────────
+  - name: slurm_gpus_alloc
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}
+
+  - name: slurm_gpus_idle
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}
+
+  - name: slurm_gpus_total
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}
+
+  - name: slurm_gpus_utilization
+    scope: rack
+    racks:
+      - "*"
+    labels_only: true
+    labels: {}

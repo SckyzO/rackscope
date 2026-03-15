@@ -1,0 +1,46 @@
+rack_templates:
+- id: rack-42u-air
+  name: Standard 42U Air-Cooled
+  u_height: 42
+  checks:
+  - pdu_load_warn
+  - pdu_load_crit
+  infrastructure:
+    rack_components:
+    - id: pdu-left
+      template_id: pdu-1phase
+      location: left
+    - id: pdu-right
+      template_id: pdu-1phase
+      location: right
+    - id: fan-rear
+      template_id: fan-module
+      location: rear
+    - id: psu-rear
+      template_id: psu-module
+      location: rear
+- id: rack-42u-dcw
+  name: Standard 42U Direct Water-Cooled
+  u_height: 42
+  checks:
+  - pdu_load_warn
+  - pdu_load_crit
+  - pmc_power_warn
+  - hmc_leak
+  infrastructure:
+    rack_components:
+    - id: pdu-left
+      template_id: pdu-1phase
+      location: left
+    - id: pdu-right
+      template_id: pdu-1phase
+      location: right
+    - id: pmc-1
+      template_id: pmc-module
+      location: rear
+    - id: hmc-1
+      template_id: hmc-module
+      location: rear
+    - id: hmc-2
+      template_id: hmc-module
+      location: rear

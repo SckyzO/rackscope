@@ -1,0 +1,36 @@
+checks:
+  - id: pdu_load_warn
+    name: "PDU Load Warning"
+    kind: pdu
+    scope: rack
+    expr: 'pdu_total_load_watts{rack_id=~"$racks"}'
+    output: numeric
+    rules:
+      - op: ">"
+        value: 5000
+        severity: WARN
+
+  - id: pdu_load_crit
+    name: "PDU Load Critical"
+    kind: pdu
+    scope: rack
+    expr: 'pdu_total_load_watts{rack_id=~"$racks"}'
+    output: numeric
+    rules:
+      - op: ">"
+        value: 7000
+        severity: CRIT
+
+  - id: pdu_current_warn
+    name: "PDU Current Warning"
+    kind: pdu
+    scope: rack
+    expr: 'pdu_outlet_current_amperes{rack_id=~"$racks"}'
+    output: numeric
+    rules:
+      - op: ">"
+        value: 14
+        severity: WARN
+      - op: ">"
+        value: 16
+        severity: CRIT

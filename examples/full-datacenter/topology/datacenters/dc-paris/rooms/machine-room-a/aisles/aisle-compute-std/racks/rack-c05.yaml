@@ -1,0 +1,212 @@
+id: rack-c05
+name: "Compute Rack C05"
+u_height: 42
+template_id: standard-42u-air
+
+devices:
+  - id: cc05-01
+    name: "compute321-compute324"
+    template_id: generic-2u-quad
+    u_position: 1
+    face: front
+    instance:
+      1: compute321
+      2: compute322
+      3: compute323
+      4: compute324
+  - id: cc05-02
+    name: "compute325-compute328"
+    template_id: generic-2u-quad
+    u_position: 3
+    face: front
+    instance:
+      1: compute325
+      2: compute326
+      3: compute327
+      4: compute328
+  - id: cc05-03
+    name: "compute329-compute332"
+    template_id: generic-2u-quad
+    u_position: 5
+    face: front
+    instance:
+      1: compute329
+      2: compute330
+      3: compute331
+      4: compute332
+  - id: cc05-04
+    name: "compute333-compute336"
+    template_id: generic-2u-quad
+    u_position: 7
+    face: front
+    instance:
+      1: compute333
+      2: compute334
+      3: compute335
+      4: compute336
+  - id: cc05-05
+    name: "compute337-compute340"
+    template_id: generic-2u-quad
+    u_position: 9
+    face: front
+    instance:
+      1: compute337
+      2: compute338
+      3: compute339
+      4: compute340
+  - id: cc05-06
+    name: "compute341-compute344"
+    template_id: generic-2u-quad
+    u_position: 11
+    face: front
+    instance:
+      1: compute341
+      2: compute342
+      3: compute343
+      4: compute344
+  - id: cc05-07
+    name: "compute345-compute348"
+    template_id: generic-2u-quad
+    u_position: 13
+    face: front
+    instance:
+      1: compute345
+      2: compute346
+      3: compute347
+      4: compute348
+  - id: cc05-08
+    name: "compute349-compute352"
+    template_id: generic-2u-quad
+    u_position: 15
+    face: front
+    instance:
+      1: compute349
+      2: compute350
+      3: compute351
+      4: compute352
+  - id: cc05-09
+    name: "compute353-compute356"
+    template_id: generic-2u-quad
+    u_position: 17
+    face: front
+    instance:
+      1: compute353
+      2: compute354
+      3: compute355
+      4: compute356
+  - id: cc05-10
+    name: "compute357-compute360"
+    template_id: generic-2u-quad
+    u_position: 19
+    face: front
+    instance:
+      1: compute357
+      2: compute358
+      3: compute359
+      4: compute360
+  - id: cc05-11
+    name: "compute361-compute364"
+    template_id: generic-2u-quad
+    u_position: 21
+    face: front
+    instance:
+      1: compute361
+      2: compute362
+      3: compute363
+      4: compute364
+  - id: cc05-12
+    name: "compute365-compute368"
+    template_id: generic-2u-quad
+    u_position: 23
+    face: front
+    instance:
+      1: compute365
+      2: compute366
+      3: compute367
+      4: compute368
+  - id: cc05-13
+    name: "compute369-compute372"
+    template_id: generic-2u-quad
+    u_position: 25
+    face: front
+    instance:
+      1: compute369
+      2: compute370
+      3: compute371
+      4: compute372
+  - id: cc05-14
+    name: "compute373-compute376"
+    template_id: generic-2u-quad
+    u_position: 27
+    face: front
+    instance:
+      1: compute373
+      2: compute374
+      3: compute375
+      4: compute376
+  - id: cc05-15
+    name: "compute377-compute380"
+    template_id: generic-2u-quad
+    u_position: 29
+    face: front
+    instance:
+      1: compute377
+      2: compute378
+      3: compute379
+      4: compute380
+  - id: cc05-16
+    name: "compute381-compute384"
+    template_id: generic-2u-quad
+    u_position: 31
+    face: front
+    instance:
+      1: compute381
+      2: compute382
+      3: compute383
+      4: compute384
+  - id: cc05-17
+    name: "compute385-compute388"
+    template_id: generic-2u-quad
+    u_position: 33
+    face: front
+    instance:
+      1: compute385
+      2: compute386
+      3: compute387
+      4: compute388
+  - id: cc05-18
+    name: "compute389-compute392"
+    template_id: generic-2u-quad
+    u_position: 35
+    face: front
+    instance:
+      1: compute389
+      2: compute390
+      3: compute391
+      4: compute392
+  - id: cc05-19
+    name: "compute393-compute396"
+    template_id: generic-2u-quad
+    u_position: 37
+    face: front
+    instance:
+      1: compute393
+      2: compute394
+      3: compute395
+      4: compute396
+  - id: cc05-20
+    name: "compute397-compute400"
+    template_id: generic-2u-quad
+    u_position: 39
+    face: front
+    instance:
+      1: compute397
+      2: compute398
+      3: compute399
+      4: compute400
+  - id: sw-c05-tor
+    name: "tor-rack-c05"
+    template_id: generic-tor-switch-1u
+    u_position: 42
+    face: front
+    instance: tor-rack-c05

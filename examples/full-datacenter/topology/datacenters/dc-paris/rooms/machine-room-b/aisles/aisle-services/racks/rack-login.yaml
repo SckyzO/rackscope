@@ -1,0 +1,29 @@
+id: rack-login
+name: "Login Nodes Rack"
+u_height: 42
+template_id: standard-42u-air
+devices:
+  - id: login01
+    name: login01
+    template_id: generic-1u-server
+    u_position: 1
+    face: front
+    instance: login01
+  - id: login02
+    name: login02
+    template_id: generic-1u-server
+    u_position: 2
+    face: front
+    instance: login02
+  - id: login03
+    name: login03
+    template_id: generic-1u-server
+    u_position: 3
+    face: front
+    instance: login03
+  - id: login04
+    name: login04
+    template_id: generic-1u-server
+    u_position: 4
+    face: front
+    instance: login04

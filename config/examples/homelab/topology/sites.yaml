@@ -1,0 +1,5 @@
+sites:
+- id: homelab
+  name: Home Lab
+  description: Local home lab
+  rooms_path: datacenters/homelab/rooms

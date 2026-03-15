@@ -1,0 +1,124 @@
+name: Security Audit
+
+# Weekly audit only — not on every push to avoid noise.
+# Run manually via workflow_dispatch if needed.
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # weekly Monday 08:00 UTC
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ── Python SAST (bandit) ──────────────────────────────────────────────────
+  bandit:
+    name: Python SAST (bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
+        with:
+          python-version: '3.12'
+
+      - run: pip install bandit
+
+      - name: Run bandit
+        continue-on-error: true
+        run: bandit -r src/rackscope -ll -f screen
+
+  # ── Python deps (pip-audit) ───────────────────────────────────────────────
+  pip-audit:
+    name: Python deps (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
+        with:
+          python-version: '3.12'
+
+      - run: pip install pip-audit
+
+      - name: Audit Python dependencies
+        continue-on-error: true
+        run: pip-audit
+
+  # ── Frontend deps (npm audit) ─────────────────────────────────────────────
+  npm-audit:
+    name: Frontend deps (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f  # v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Run npm audit
+        working-directory: frontend
+        continue-on-error: true
+        run: npm audit --audit-level=critical
+
+  # ── Secrets scanning (gitleaks) ───────────────────────────────────────────
+  gitleaks:
+    name: Secrets scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+        with:
+          fetch-depth: 0  # full history required for git log scanning
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --config .gitleaks.toml --redact --exit-code 1
+
+  # ── Filesystem CVE scan (trivy) ───────────────────────────────────────────
+  trivy:
+    name: CVE scan (trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Run trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          trivyignores: .trivyignore
+          skip-dirs: node_modules,htmlcov,dist,.git
+
+  # ── SAST (semgrep) ────────────────────────────────────────────────────────
+  semgrep:
+    name: SAST (semgrep)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
+
+      - name: Run semgrep
+        run: |
+          semgrep scan \
+            --config p/python \
+            --config p/typescript \
+            --config p/fastapi-security \
+            --config p/owasp-top-ten \
+            --error --quiet \
+            --exclude node_modules \
+            --exclude htmlcov \
+            --exclude dist \
+            .

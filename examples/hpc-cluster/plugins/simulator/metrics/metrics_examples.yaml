@@ -1,0 +1,88 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Simulator Metrics Catalog — metrics_examples.yaml
+#
+# REFERENCE EXAMPLES — not used in production.
+# This file demonstrates how to write custom metric definitions.
+# Copy patterns from here into your own catalog file.
+#
+# Key differences from metrics_full.yaml:
+#   - Uses explicit instance lists (compute[001-010]) instead of wildcards
+#   - Shows all feature combinations (labels_only, rack vs node scope, etc.)
+#   - Useful as a quick-start template for custom deployments
+# ─────────────────────────────────────────────────────────────────────────────
+
+metrics:
+
+  # ── Node-scoped metric with static labels ─────────────────────────────────
+  # Generates IPMI temperature for a specific subset of nodes + one switch.
+  # The static label `job: node` overrides the default job label.
+  - name: ipmi_temperature_state
+    scope: node
+    instances:
+      - compute[001-010]   # Expands to compute001, compute002, ..., compute010
+      - switch001
+    labels:
+      name: temperature
+      job: node
+
+
+  # ── Node-scoped metric with labels_only (no BASE_LABELS) ──────────────────
+  # Slurm status without instance/rack_id labels — matches real exporter format.
+  # Use labels_only: true when your PromQL queries don't expect BASE_LABELS.
+  - name: slurm_node_status
+    scope: node
+    instances:
+      - compute[001-010]
+    labels_only: true
+    labels:
+      node: $node_id      # $node_id = instance name at runtime
+      partition: $partition
+      status: $status
+
+
+  # ── Node-scoped metric with $status placeholder ────────────────────────────
+  # E-Series storage status — 3 series emitted per node (optimal/degraded/failed)
+  # to prevent stale series when status changes.
+  - name: eseries_storage_system_status
+    scope: node
+    instances:
+      - storage[001-002]  # storage001, storage002
+    labels:
+      status: $status     # $status = "optimal" | "degraded" | "failed"
+
+
+  # ── Rack-scoped metric with explicit rack filter ───────────────────────────
+  # sequana3_hyc_state_info only for rack r01-01 (targeted override demo).
+  # Normally you'd use racks: ["r01-*"] to cover all XH3000 racks.
+  - name: sequana3_hyc_state_info
+    scope: rack
+    racks:
+      - r01-01            # Only rack r01-01, not the whole aisle
+    labels:
+      job: sequana3
+      cluster: demo
+      env: demo
+      host: demo
+      mc_type: xh3000
+      model: xh3000
+      region: demo
+      sequana_rack_id: $rack_id
+      sequana_type: liquid
+      state: $state       # $state = "standbyspare" | "active" | "faulted"
+
+
+  # ── Rack-scoped metric — hydraulic pressure example ───────────────────────
+  - name: sequana3_hyc_p_in_kpa
+    scope: rack
+    racks:
+      - r01-01
+    labels:
+      job: sequana3
+      cluster: demo
+      env: demo
+      host: demo
+      mc_type: xh3000
+      model: xh3000
+      region: demo
+      sequana_rack_id: $rack_id
+      sequana_type: liquid

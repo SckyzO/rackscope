@@ -1,0 +1,172 @@
+id: rack-hm02
+name: "High-Memory Rack HM02"
+u_height: 42
+template_id: standard-42u-air
+
+devices:
+  - id: chm02-01
+    name: "hm041-hm042"
+    template_id: generic-2u-twin
+    u_position: 1
+    face: front
+    instance:
+      1: hm041
+      2: hm042
+  - id: chm02-02
+    name: "hm043-hm044"
+    template_id: generic-2u-twin
+    u_position: 3
+    face: front
+    instance:
+      1: hm043
+      2: hm044
+  - id: chm02-03
+    name: "hm045-hm046"
+    template_id: generic-2u-twin
+    u_position: 5
+    face: front
+    instance:
+      1: hm045
+      2: hm046
+  - id: chm02-04
+    name: "hm047-hm048"
+    template_id: generic-2u-twin
+    u_position: 7
+    face: front
+    instance:
+      1: hm047
+      2: hm048
+  - id: chm02-05
+    name: "hm049-hm050"
+    template_id: generic-2u-twin
+    u_position: 9
+    face: front
+    instance:
+      1: hm049
+      2: hm050
+  - id: chm02-06
+    name: "hm051-hm052"
+    template_id: generic-2u-twin
+    u_position: 11
+    face: front
+    instance:
+      1: hm051
+      2: hm052
+  - id: chm02-07
+    name: "hm053-hm054"
+    template_id: generic-2u-twin
+    u_position: 13
+    face: front
+    instance:
+      1: hm053
+      2: hm054
+  - id: chm02-08
+    name: "hm055-hm056"
+    template_id: generic-2u-twin
+    u_position: 15
+    face: front
+    instance:
+      1: hm055
+      2: hm056
+  - id: chm02-09
+    name: "hm057-hm058"
+    template_id: generic-2u-twin
+    u_position: 17
+    face: front
+    instance:
+      1: hm057
+      2: hm058
+  - id: chm02-10
+    name: "hm059-hm060"
+    template_id: generic-2u-twin
+    u_position: 19
+    face: front
+    instance:
+      1: hm059
+      2: hm060
+  - id: chm02-11
+    name: "hm061-hm062"
+    template_id: generic-2u-twin
+    u_position: 21
+    face: front
+    instance:
+      1: hm061
+      2: hm062
+  - id: chm02-12
+    name: "hm063-hm064"
+    template_id: generic-2u-twin
+    u_position: 23
+    face: front
+    instance:
+      1: hm063
+      2: hm064
+  - id: chm02-13
+    name: "hm065-hm066"
+    template_id: generic-2u-twin
+    u_position: 25
+    face: front
+    instance:
+      1: hm065
+      2: hm066
+  - id: chm02-14
+    name: "hm067-hm068"
+    template_id: generic-2u-twin
+    u_position: 27
+    face: front
+    instance:
+      1: hm067
+      2: hm068
+  - id: chm02-15
+    name: "hm069-hm070"
+    template_id: generic-2u-twin
+    u_position: 29
+    face: front
+    instance:
+      1: hm069
+      2: hm070
+  - id: chm02-16
+    name: "hm071-hm072"
+    template_id: generic-2u-twin
+    u_position: 31
+    face: front
+    instance:
+      1: hm071
+      2: hm072
+  - id: chm02-17
+    name: "hm073-hm074"
+    template_id: generic-2u-twin
+    u_position: 33
+    face: front
+    instance:
+      1: hm073
+      2: hm074
+  - id: chm02-18
+    name: "hm075-hm076"
+    template_id: generic-2u-twin
+    u_position: 35
+    face: front
+    instance:
+      1: hm075
+      2: hm076
+  - id: chm02-19
+    name: "hm077-hm078"
+    template_id: generic-2u-twin
+    u_position: 37
+    face: front
+    instance:
+      1: hm077
+      2: hm078
+  - id: chm02-20
+    name: "hm079-hm080"
+    template_id: generic-2u-twin
+    u_position: 39
+    face: front
+    instance:
+      1: hm079
+      2: hm080
+  - id: sw-hm02-tor
+    name: "tor-rack-hm02"
+    template_id: generic-tor-switch-1u
+    u_position: 42
+    face: front
+    instance: tor-rack-hm02

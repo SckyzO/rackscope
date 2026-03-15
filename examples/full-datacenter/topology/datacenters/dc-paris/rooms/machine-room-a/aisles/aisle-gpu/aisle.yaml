@@ -1,0 +1,9 @@
+id: aisle-gpu
+name: GPU Aisle
+room_id: machine-room-a
+description: "3 racks × 32 GPU nodes (4U quad-GPU chassis) — gpu001 to gpu096"
+
+racks:
+  - id: rack-gpu01
+  - id: rack-gpu02
+  - id: rack-gpu03

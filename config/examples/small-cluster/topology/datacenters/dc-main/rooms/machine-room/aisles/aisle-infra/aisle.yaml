@@ -1,0 +1,7 @@
+id: aisle-infra
+name: Infrastructure Aisle
+room_id: machine-room
+racks:
+- id: rack-login
+- id: rack-storage
+- id: rack-net01

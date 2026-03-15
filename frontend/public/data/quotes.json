@@ -1,0 +1,232 @@
+[
+  {
+    "text": "Do. Or do not. There is no try.",
+    "character": "Yoda",
+    "source": "Star Wars: The Empire Strikes Back"
+  },
+  {
+    "text": "I find your lack of faith disturbing.",
+    "character": "Darth Vader",
+    "source": "Star Wars: A New Hope"
+  },
+  {
+    "text": "May the Force be with you.",
+    "character": "Han Solo",
+    "source": "Star Wars: A New Hope"
+  },
+  {
+    "text": "These aren't the droids you're looking for.",
+    "character": "Obi-Wan Kenobi",
+    "source": "Star Wars: A New Hope"
+  },
+  {
+    "text": "I am your father.",
+    "character": "Darth Vader",
+    "source": "Star Wars: The Empire Strikes Back"
+  },
+  {
+    "text": "There is no spoon.",
+    "character": "Spoon Boy",
+    "source": "The Matrix"
+  },
+  {
+    "text": "I know kung fu.",
+    "character": "Neo",
+    "source": "The Matrix"
+  },
+  {
+    "text": "Welcome to the real world.",
+    "character": "Morpheus",
+    "source": "The Matrix"
+  },
+  {
+    "text": "No one can be told what the Matrix is. You have to see it for yourself.",
+    "character": "Morpheus",
+    "source": "The Matrix"
+  },
+  {
+    "text": "You shall not pass!",
+    "character": "Gandalf",
+    "source": "The Lord of the Rings: The Fellowship of the Ring"
+  },
+  {
+    "text": "One does not simply walk into Mordor.",
+    "character": "Boromir",
+    "source": "The Lord of the Rings: The Fellowship of the Ring"
+  },
+  {
+    "text": "My precious.",
+    "character": "Gollum",
+    "source": "The Lord of the Rings: The Two Towers"
+  },
+  {
+    "text": "All we have to decide is what to do with the time that is given us.",
+    "character": "Gandalf",
+    "source": "The Lord of the Rings: The Fellowship of the Ring"
+  },
+  {
+    "text": "Even the smallest person can change the course of the future.",
+    "character": "Lady Galadriel",
+    "source": "The Lord of the Rings: The Fellowship of the Ring"
+  },
+  {
+    "text": "Roads? Where we're going, we don't need roads.",
+    "character": "Doc Brown",
+    "source": "Back to the Future"
+  },
+  {
+    "text": "1.21 gigawatts! 1.21 gigawatts!",
+    "character": "Doc Brown",
+    "source": "Back to the Future"
+  },
+  {
+    "text": "Great Scott!",
+    "character": "Doc Brown",
+    "source": "Back to the Future"
+  },
+  {
+    "text": "If you put your mind to it, you can accomplish anything.",
+    "character": "Marty McFly",
+    "source": "Back to the Future"
+  },
+  {
+    "text": "I'll be back.",
+    "character": "The Terminator",
+    "source": "The Terminator"
+  },
+  {
+    "text": "Come with me if you want to live.",
+    "character": "Kyle Reese",
+    "source": "The Terminator"
+  },
+  {
+    "text": "Hasta la vista, baby.",
+    "character": "T-800",
+    "source": "Terminator 2: Judgment Day"
+  },
+  {
+    "text": "Judgment Day is inevitable.",
+    "character": "T-800",
+    "source": "Terminator 2: Judgment Day"
+  },
+  {
+    "text": "They drew first blood, not me.",
+    "character": "John Rambo",
+    "source": "First Blood"
+  },
+  {
+    "text": "To survive a war, you gotta become war.",
+    "character": "John Rambo",
+    "source": "Rambo: First Blood Part II"
+  },
+  {
+    "text": "Leeloo Dallas… multipass!",
+    "character": "Leeloo",
+    "source": "The Fifth Element"
+  },
+  {
+    "text": "Everything you create, you use to destroy.",
+    "character": "Leeloo",
+    "source": "The Fifth Element"
+  },
+  {
+    "text": "Zed's dead, baby. Zed's dead.",
+    "character": "Butch",
+    "source": "Pulp Fiction"
+  },
+  {
+    "text": "That is a tasty burger.",
+    "character": "Jules Winnfield",
+    "source": "Pulp Fiction"
+  },
+  {
+    "text": "Royale with cheese.",
+    "character": "Vincent Vega",
+    "source": "Pulp Fiction"
+  },
+  {
+    "text": "E.T. phone home.",
+    "character": "E.T.",
+    "source": "E.T. the Extra-Terrestrial"
+  },
+  {
+    "text": "In space, no one can hear you scream.",
+    "character": "Tagline",
+    "source": "Alien"
+  },
+  {
+    "text": "Get away from her, you bitch!",
+    "character": "Ellen Ripley",
+    "source": "Aliens"
+  },
+  {
+    "text": "I'm sorry, Dave. I'm afraid I can't do that.",
+    "character": "HAL 9000",
+    "source": "2001: A Space Odyssey"
+  },
+  {
+    "text": "Open the pod bay doors, please, HAL.",
+    "character": "Dave Bowman",
+    "source": "2001: A Space Odyssey"
+  },
+  {
+    "text": "Shall we play a game?",
+    "character": "WOPR / Joshua",
+    "source": "WarGames"
+  },
+  {
+    "text": "Hack the planet!",
+    "character": "Cereal Killer",
+    "source": "Hackers"
+  },
+  {
+    "text": "Hello. My name is Inigo Montoya. You killed my father. Prepare to die.",
+    "character": "Inigo Montoya",
+    "source": "The Princess Bride"
+  },
+  {
+    "text": "Inconceivable!",
+    "character": "Vizzini",
+    "source": "The Princess Bride"
+  },
+  {
+    "text": "You're gonna need a bigger boat.",
+    "character": "Chief Brody",
+    "source": "Jaws"
+  },
+  {
+    "text": "Elementary, my dear Watson.",
+    "character": "Sherlock Holmes",
+    "source": "Various Sherlock Holmes adaptations"
+  },
+  {
+    "text": "I am Groot.",
+    "character": "Groot",
+    "source": "Guardians of the Galaxy"
+  },
+  {
+    "text": "I am Iron Man.",
+    "character": "Tony Stark",
+    "source": "Iron Man / Avengers: Endgame"
+  },
+  {
+    "text": "Why so serious?",
+    "character": "The Joker",
+    "source": "The Dark Knight"
+  },
+  {
+    "text": "I volunteer as tribute.",
+    "character": "Katniss Everdeen",
+    "source": "The Hunger Games"
+  },
+  {
+    "text": "Just keep swimming.",
+    "character": "Dory",
+    "source": "Finding Nemo"
+  },
+  {
+    "text": "You can't handle the truth!",
+    "character": "Col. Jessup",
+    "source": "A Few Good Men"
+  }
+]

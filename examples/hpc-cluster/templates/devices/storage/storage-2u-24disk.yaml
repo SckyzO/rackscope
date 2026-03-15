@@ -1,0 +1,50 @@
+templates:
+- id: storage-2u-24disk
+  name: Flash Array 2U (24 SFF)
+  type: storage
+  storage_type: eseries
+  role: stockage
+  u_height: 2
+  disk_layout:
+    type: grid
+    rows: 1
+    cols: 24
+    matrix:
+    - - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+      - 17
+      - 18
+      - 19
+      - 20
+      - 21
+      - 22
+      - 23
+      - 24
+  checks:
+  - node_up
+  - node_recent_reboot
+  - eseries_exporter_collect_error
+  - eseries_storage_system_status
+  - eseries_drive_status
+  - eseries_battery_status
+  - eseries_fan_status
+  - eseries_power_supply_status
+  - eseries_cache_memory_dimm_status
+  - eseries_thermal_sensor_status
+  metrics:
+  - node_temperature
+  - node_power

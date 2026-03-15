@@ -1,0 +1,476 @@
+"""Simulator Plugin - Demo mode for rackscope."""
+
+import time
+from pathlib import Path
+from typing import Annotated, Any, Optional
+import logging
+
+import yaml
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
+
+from rackscope.plugins.base import RackscopePlugin, MenuSection, MenuItem
+from rackscope.api.dependencies import get_app_config_optional
+from rackscope.model.config import AppConfig
+from plugins.simulator.backend.config import SimulatorPluginConfig
+
+logger = logging.getLogger(__name__)
+
+
+class SimulatorPlugin(RackscopePlugin):
+    """
+    Simulator Plugin
+
+    Provides demo/testing capabilities with metric overrides and scenarios.
+    """
+
+    def __init__(self):
+        self._router = APIRouter(prefix="/api/simulator", tags=["simulator"])
+        self.config: Optional[SimulatorPluginConfig] = None
+        self._setup_routes()
+
+    @property
+    def plugin_id(self) -> str:
+        return "simulator"
+
+    @property
+    def plugin_name(self) -> str:
+        return "Simulator"
+
+    def config_file_path(self, base_dir: str = "config/plugins") -> str:
+        """Override: new folder layout stores config in config/plugin.yaml."""
+        return f"{base_dir}/{self.plugin_id}/config/plugin.yaml"
+
+    @property
+    def version(self) -> str:
+        return "1.0.0"
+
+    @property
+    def description(self) -> str:
+        return "Demo mode with metric overrides and test scenarios"
+
+    @property
+    def author(self) -> str:
+        return "Rackscope Team"
+
+    def _load_config(self, app_config: Optional[AppConfig]) -> SimulatorPluginConfig:
+        """
+        Load simulator configuration with priority chain:
+          1. config/plugins/simulator/config/plugin.yaml  (new layout — recommended)
+          2. app.yaml plugins.simulator           (legacy embedded format)
+          3. app.yaml simulator                   (legacy top-level format)
+          4. Pydantic defaults
+
+        The priority chain exists for two reasons:
+        - Hot-reload: the dedicated config file can be edited at runtime and
+          reloaded without touching the central app.yaml, which minimises the
+          blast radius of a config change.
+        - Backward compatibility: deployments that predate the plugin
+          architecture stored simulator settings in app.yaml; those keep
+          working until operators migrate to the dedicated file.
+        """
+        import os
+
+        raw_config: dict = {}
+
+        config_file = self.config_file_path()
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, encoding="utf-8") as f:
+                    file_cfg = yaml.safe_load(f) or {}
+                if isinstance(file_cfg, dict):
+                    raw_config = file_cfg
+                    logger.info("Simulator: loaded config from %s", config_file)
+            except Exception as exc:
+                logger.warning("Simulator: failed to read %s: %s", config_file, exc)
+
+        if not raw_config and app_config:
+            if hasattr(app_config, "plugins") and "simulator" in app_config.plugins:
+                cfg = app_config.plugins["simulator"]
+                raw_config = (
+                    {k: v for k, v in cfg.items() if k != "enabled"}
+                    if isinstance(cfg, dict)
+                    else {}
+                )
+                logger.info("Simulator: loaded config from app.yaml plugins.simulator")
+            elif hasattr(app_config, "simulator") and app_config.simulator:
+                raw_config = app_config.simulator.model_dump()
+                logger.warning("Simulator: legacy config format — migrate to %s", config_file)
+
+        return SimulatorPluginConfig(**raw_config)
+
+    async def on_startup(self) -> None:
+        """Load configuration on startup."""
+        from rackscope.api.app import APP_CONFIG
+
+        self.config = self._load_config(APP_CONFIG)
+        logger.info(
+            f"Simulator plugin started (mode={self.config.incident_mode}, "
+            f"interval={self.config.update_interval_seconds}s)"
+        )
+
+    async def on_config_reload(self, app_config: AppConfig) -> None:
+        """Reload configuration after a config file change."""
+        self.config = self._load_config(app_config)
+        logger.info(
+            f"Simulator plugin configuration reloaded (mode={self.config.incident_mode}, "
+            f"enabled={self.config.enabled})"
+        )
+
+    def _setup_routes(self) -> None:
+        """Register all simulator API routes on the router."""
+
+        @self._router.get("/status")
+        async def get_simulator_status():
+            """Get simulator status and configuration."""
+            import os
+
+            # SIMULATOR_URL defaults to the Docker Compose service name so that
+            # the backend can reach the simulator container without host networking.
+            sim_base = os.getenv("SIMULATOR_URL", "http://simulator:9000")
+            sim_metrics_url = f"{sim_base}/metrics"
+
+            # Check if simulator is running via TCP socket check on port 9000.
+            # HTTP GET on /metrics takes 10+ seconds with large topologies (26k+ metrics)
+            # because the Prometheus Python client generates all metrics before sending.
+            # A TCP connect is near-instant and sufficient to confirm the server is up.
+            running = False
+            try:
+                import asyncio
+                from urllib.parse import urlparse
+
+                parsed = urlparse(sim_base)
+                host = parsed.hostname or "simulator"
+                port = parsed.port or 9000
+                # Try TCP connect with 2s timeout
+                _, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=2.0)
+                writer.close()
+                await writer.wait_closed()
+                running = True
+            except Exception:
+                running = False
+
+            cfg = self.config or self._load_config(None)
+
+            return {
+                "running": running,
+                "endpoint": sim_metrics_url,
+                "update_interval": cfg.update_interval_seconds,
+                "incident_mode": cfg.incident_mode,
+                "changes_per_hour": cfg.changes_per_hour,
+                "overrides_count": len(self._load_overrides(None)),
+            }
+
+        @self._router.get("/metrics")
+        async def get_available_metrics():
+            """Get list of metrics available for override from metrics library."""
+            from rackscope.api import app as app_module
+
+            metrics_library = app_module.METRICS_LIBRARY
+            if not metrics_library:
+                # Metrics library may not be loaded during startup or in tests;
+                # return a minimal hardcoded set so the UI remains functional.
+                return {
+                    "metrics": [
+                        {"id": "up", "name": "Node Up", "unit": "bool", "category": "health"},
+                        {
+                            "id": "node_temperature_celsius",
+                            "name": "Node Temperature",
+                            "unit": "°C",
+                            "category": "temperature",
+                        },
+                        {
+                            "id": "node_power_watts",
+                            "name": "Node Power",
+                            "unit": "W",
+                            "category": "power",
+                        },
+                        {
+                            "id": "node_load_percent",
+                            "name": "Node Load",
+                            "unit": "%",
+                            "category": "performance",
+                        },
+                        {
+                            "id": "node_health_status",
+                            "name": "Node Health Status",
+                            "unit": "enum",
+                            "category": "health",
+                        },
+                    ]
+                }
+
+            return {
+                "metrics": [
+                    {
+                        "id": m.id,
+                        "name": m.name,
+                        "unit": m.display.unit,
+                        "category": m.category,
+                    }
+                    for m in metrics_library.metrics
+                ]
+            }
+
+        @self._router.post("/restart")
+        async def restart_simulator():
+            """Restart the simulator container via its control server (port 9001)."""
+            import os as _os
+            import urllib.parse
+            import httpx
+
+            sim_base = _os.getenv("SIMULATOR_URL", "http://simulator:9000")
+            parsed = urllib.parse.urlparse(sim_base)
+            control_url = f"{parsed.scheme}://{parsed.hostname}:9001/restart"
+
+            try:
+                async with httpx.AsyncClient() as http_client:
+                    response = await http_client.post(control_url, timeout=3.0)
+                    if response.status_code == 200:
+                        return {"status": "restarting"}
+                    raise HTTPException(
+                        status_code=502, detail="Simulator returned unexpected status"
+                    )
+            except httpx.RequestError as exc:
+                raise HTTPException(
+                    status_code=503, detail=f"Could not reach simulator control server: {exc}"
+                )
+
+        @self._router.post("/incidents")
+        async def trigger_incident(
+            payload: dict,
+            app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+        ):
+            """
+            Trigger a simulated incident (rack down, aisle cooling failure).
+
+            Payload:
+            - type: "rack_down" or "aisle_cooling"
+            - target_id: rack_id or aisle_id
+            - duration: Duration in seconds (default: 300)
+            """
+            incident_type = payload.get("type")
+            target_id = payload.get("target_id")
+            duration = payload.get("duration", 300)
+
+            if not incident_type or not target_id:
+                raise HTTPException(status_code=400, detail="type and target_id are required")
+
+            if incident_type not in ["rack_down", "aisle_cooling"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail="type must be 'rack_down' or 'aisle_cooling'",
+                )
+
+            try:
+                duration = int(duration)
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="duration must be integer")
+
+            if duration < 0:
+                raise HTTPException(status_code=400, detail="duration must be non-negative")
+
+            if incident_type == "rack_down":
+                override = {
+                    "id": f"{target_id}-rack_down-{int(time.time())}",
+                    "rack_id": target_id,
+                    "metric": "rack_down",
+                    "value": 1,
+                }
+            else:
+                # Aisle cooling incidents require the simulator to model
+                # temperature propagation across devices; not yet implemented.
+                return {
+                    "status": "not_implemented",
+                    "message": "Aisle cooling incidents not yet supported via API",
+                }
+
+            if duration > 0:
+                override["expires_at"] = int(time.time()) + duration
+
+            overrides = self._load_overrides(app_config)
+            overrides.append(override)
+            self._save_overrides(overrides, app_config)
+
+            return {
+                "status": "triggered",
+                "incident_type": incident_type,
+                "target_id": target_id,
+                "duration": duration,
+                "expires_at": override.get("expires_at"),
+            }
+
+        @self._router.get("/overrides")
+        def get_simulator_overrides(
+            app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+        ):
+            """Get all active simulator overrides."""
+            return {"overrides": self._load_overrides(app_config)}
+
+        @self._router.post("/overrides")
+        def add_simulator_override(
+            payload: dict,
+            app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+        ):
+            """Add a new simulator override."""
+            from rackscope.api import app as app_module
+
+            # Simulator-internal metrics are always valid regardless of library.
+            # rack_down and up are simulation constructs, not display metrics.
+            valid_metrics = {
+                "up",
+                "rack_down",
+                "node_temperature_celsius",
+                "node_power_watts",
+                "node_load_percent",
+                "node_health_status",
+            }
+            metrics_library = app_module.METRICS_LIBRARY
+            if metrics_library:
+                # Also accept any metric whose Prometheus name is in the display library.
+                # m.metric is the raw Prometheus name (e.g. "raritan_pdu_activepower_watt"),
+                # not the library-level ID (e.g. "pdu_active_power").
+                valid_metrics |= {m.metric for m in metrics_library.metrics}
+
+            instance = payload.get("instance")
+            rack_id = payload.get("rack_id")
+            metric = payload.get("metric")
+            value = payload.get("value")
+            ttl = payload.get("ttl_seconds")
+            if not metric:
+                raise HTTPException(status_code=400, detail="metric is required")
+            if metric not in valid_metrics:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unsupported metric. Available: {sorted(valid_metrics)}",
+                )
+            if not instance and not rack_id:
+                raise HTTPException(status_code=400, detail="instance or rack_id is required")
+            # rack_id overrides: allow rack_down (simulation concept) + any rack-scoped metric
+            # (e.g. pdu current, cooling pressure — vendor-agnostic)
+            if rack_id and metric != "rack_down" and metric not in valid_metrics:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unknown metric. Available: {sorted(valid_metrics)}",
+                )
+            if instance and metric == "rack_down":
+                raise HTTPException(status_code=400, detail="rack_down requires rack_id")
+            if value is None:
+                raise HTTPException(status_code=400, detail="value is required")
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="value must be numeric")
+            if metric == "node_health_status" and value not in (0, 1, 2):
+                raise HTTPException(status_code=400, detail="node_health_status must be 0, 1, or 2")
+            if metric == "up" and value not in (0, 1):
+                raise HTTPException(status_code=400, detail="up must be 0 or 1")
+            override_id = (
+                payload.get("id") or f"{(instance or rack_id)}-{metric}-{int(time.time())}"
+            )
+            override = {
+                "id": override_id,
+                "instance": instance,
+                "rack_id": rack_id,
+                "metric": metric,
+                "value": value,
+            }
+            default_ttl = None
+            if app_config and getattr(app_config, "simulator", None):
+                default_ttl = getattr(app_config.simulator, "default_ttl_seconds", None)
+            ttl_val = ttl if ttl is not None else default_ttl
+            if ttl_val is not None:
+                try:
+                    ttl_val = int(ttl_val)
+                except (TypeError, ValueError):
+                    raise HTTPException(status_code=400, detail="ttl_seconds must be int")
+                if ttl_val < 0:
+                    raise HTTPException(status_code=400, detail="ttl_seconds must be >= 0")
+                if ttl_val > 0:
+                    override["expires_at"] = int(time.time()) + ttl_val
+            overrides = self._load_overrides(app_config)
+            overrides.append(override)
+            self._save_overrides(overrides, app_config)
+            return {"overrides": overrides}
+
+        @self._router.delete("/overrides")
+        def clear_simulator_overrides(
+            app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+        ):
+            """Clear all simulator overrides."""
+            self._save_overrides([], app_config)
+            return {"overrides": []}
+
+        @self._router.delete("/overrides/{override_id}")
+        def delete_simulator_override(
+            override_id: str,
+            app_config: Annotated[Optional[AppConfig], Depends(get_app_config_optional)],
+        ):
+            """Delete a specific simulator override."""
+            overrides = self._load_overrides(app_config)
+            next_overrides = [o for o in overrides if o.get("id") != override_id]
+            self._save_overrides(next_overrides, app_config)
+            return {"overrides": next_overrides}
+
+    def _overrides_path(self, app_config: Optional[AppConfig]) -> Path:
+        """Get path to simulator overrides file."""
+        sim_cfg = getattr(app_config, "simulator", None) if app_config else None
+        if sim_cfg and getattr(sim_cfg, "overrides_path", None):
+            return Path(sim_cfg.overrides_path)
+        return Path("config/plugins/simulator/overrides/overrides.yaml")
+
+    def _load_overrides(self, app_config: Optional[AppConfig]) -> list[dict[str, Any]]:
+        """Load simulator overrides from YAML file."""
+        path = self._overrides_path(app_config)
+        if not path.exists():
+            return []
+        try:
+            data = yaml.safe_load(path.read_text()) or {}
+        except yaml.YAMLError as exc:
+            logger.warning(f"Failed to load overrides: {exc}")
+            return []
+        return data.get("overrides", []) if isinstance(data, dict) else []
+
+    def _save_overrides(
+        self, overrides: list[dict[str, Any]], app_config: Optional[AppConfig]
+    ) -> None:
+        """Save simulator overrides to YAML file."""
+        path = self._overrides_path(app_config)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {"overrides": overrides}
+        with path.open("w") as f:
+            yaml.safe_dump(payload, f, sort_keys=False)
+
+    def register_routes(self, app: FastAPI) -> None:
+        """Mount the simulator router onto the application."""
+        app.include_router(self._router)
+
+    def register_menu_sections(self):
+        """Return menu sections only when the plugin is enabled.
+
+        Config is re-read from APP_CONFIG on each call so that toggling the
+        simulator on/off in the settings UI takes effect immediately without
+        requiring a restart.
+        """
+        from rackscope.api.app import APP_CONFIG
+
+        current_config = self._load_config(APP_CONFIG)
+
+        if not current_config.enabled:
+            return []
+
+        return [
+            MenuSection(
+                id="simulator",
+                label="Simulator",
+                icon="Sparkles",
+                order=200,
+                items=[
+                    MenuItem(
+                        id="simulator-control",
+                        label="Control Panel",
+                        path="/simulator",
+                        icon="Sliders",
+                    ),
+                ],
+            )
+        ]

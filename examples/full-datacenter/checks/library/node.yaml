@@ -1,0 +1,47 @@
+checks:
+  - id: node_up
+    name: "Node Up"
+    kind: server
+    scope: node
+    expr: 'up{job=~"node.*", instance=~"$instances"}'
+    output: bool
+    rules:
+      - op: "=="
+        value: 0
+        severity: CRIT
+
+  - id: ipmi_temp_warn
+    name: "IPMI Temperature Warning"
+    kind: server
+    scope: node
+    expr: 'ipmi_temperature_celsius{instance=~"$instances", state="Warning"}'
+    output: bool
+    rules:
+      - op: "=="
+        value: 1
+        severity: WARN
+
+  - id: ipmi_temp_crit
+    name: "IPMI Temperature Critical"
+    kind: server
+    scope: node
+    expr: 'ipmi_temperature_celsius{instance=~"$instances", state="Critical"}'
+    output: bool
+    rules:
+      - op: "=="
+        value: 1
+        severity: CRIT
+
+  - id: ipmi_power_state
+    name: "IPMI Power State"
+    kind: server
+    scope: node
+    expr: 'ipmi_power_watts{instance=~"$instances"}'
+    output: numeric
+    rules:
+      - op: ">"
+        value: 1000
+        severity: WARN
+      - op: ">"
+        value: 1500
+        severity: CRIT

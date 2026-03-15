@@ -1,0 +1,60 @@
+id: r01-06
+name: Rack XH3000 Compute 06
+template_id: bull-xh3000
+aisle_id: aisle-01
+devices:
+- id: r01-06-ib
+  name: IB Switch XH35MQ
+  template_id: bs-xh35mq-ib-1u
+  u_position: 12
+  instance: sw-ib-r01-06
+- id: r01-06-c01
+  name: XH3515 Neba 01
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 1
+  instance: compute[141-142]
+- id: r01-06-c02
+  name: XH3515 Neba 02
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 2
+  instance: compute[143-144]
+- id: r01-06-c03
+  name: XH3515 Neba 03
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 3
+  instance: compute[145-146]
+- id: r01-06-c04
+  name: XH3515 Neba 04
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 4
+  instance: compute[147-148]
+- id: r01-06-c05
+  name: XH3515 Neba 05
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 5
+  instance: compute[149-150]
+- id: r01-06-c06
+  name: XH3515 Neba 06
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 6
+  instance: compute[151-152]
+- id: r01-06-c07
+  name: XH3515 Neba 07
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 7
+  instance: compute[153-154]
+- id: r01-06-c08
+  name: XH3515 Neba 08
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 8
+  instance: compute[155-156]
+- id: r01-06-c09
+  name: XH3515 Neba 09
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 9
+  instance: compute[157-158]
+- id: r01-06-c10
+  name: XH3515 Neba 10
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 10
+  instance: compute[159-160]

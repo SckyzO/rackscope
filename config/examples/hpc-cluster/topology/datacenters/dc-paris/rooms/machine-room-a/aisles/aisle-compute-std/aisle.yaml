@@ -1,0 +1,14 @@
+id: aisle-compute-std
+name: Standard Compute Aisle
+room_id: machine-room-a
+racks:
+- id: rack-c01
+- id: rack-c02
+- id: rack-c03
+- id: rack-c04
+- id: rack-c05
+- id: rack-c06
+- id: rack-c07
+- id: rack-c08
+- id: rack-c09
+- id: rack-c10

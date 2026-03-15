@@ -1,0 +1,60 @@
+id: r01-04
+name: Rack XH3000 Compute 04
+template_id: bull-xh3000
+aisle_id: aisle-01
+devices:
+- id: r01-04-ib
+  name: IB Switch XH35MQ
+  template_id: bs-xh35mq-ib-1u
+  u_position: 12
+  instance: sw-ib-r01-04
+- id: r01-04-c01
+  name: XH3406 Mana 01
+  template_id: bs-xh3406-mana-1u-3n
+  u_position: 1
+  instance: compute[081-083]
+- id: r01-04-c02
+  name: XH3406 Mana 02
+  template_id: bs-xh3406-mana-1u-3n
+  u_position: 2
+  instance: compute[084-086]
+- id: r01-04-c03
+  name: XH3406 Mana 03
+  template_id: bs-xh3406-mana-1u-3n
+  u_position: 3
+  instance: compute[087-089]
+- id: r01-04-c04
+  name: XH3406 Mana 04
+  template_id: bs-xh3406-mana-1u-3n
+  u_position: 4
+  instance: compute[090-092]
+- id: r01-04-c05
+  name: XH3406 Mana 05
+  template_id: bs-xh3406-mana-1u-3n
+  u_position: 5
+  instance: compute[093-095]
+- id: r01-04-c06
+  name: XH3406 Mana 06
+  template_id: bs-xh3406-mana-1u-3n
+  u_position: 6
+  instance: compute[096-098]
+- id: r01-04-c07
+  name: XH3406 Mana 07
+  template_id: bs-xh3406-mana-1u-3n
+  u_position: 7
+  instance: compute[099-101]
+- id: r01-04-c08
+  name: XH3406 Mana 08
+  template_id: bs-xh3406-mana-1u-3n
+  u_position: 8
+  instance: compute[102-104]
+- id: r01-04-c09
+  name: XH3406 Mana 09
+  template_id: bs-xh3406-mana-1u-3n
+  u_position: 9
+  instance: compute[105-107]
+- id: r01-04-c10
+  name: XH3406 Mana 10
+  template_id: bs-xh3406-mana-1u-3n
+  u_position: 10
+  instance: compute[108-110]

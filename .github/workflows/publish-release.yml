@@ -1,0 +1,109 @@
+name: Publish Release to rackscope
+
+# Triggered by an annotated tag push from rackscope_dev.
+# The tag annotation message becomes the commit message on SckyzO/rackscope.
+#
+# Usage:
+#   git tag -a v1.0.0 -m "Release message"
+#   git push origin v1.0.0
+#
+# Required secret: PUBLIC_REPO_TOKEN (Contents+Pages write on SckyzO/rackscope)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    name: Publish clean release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout tagged commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read tag annotation via GitHub API
+        id: tag_msg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Resolve the tag ref to get object type + SHA
+          REF=$(curl -s \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${REPO}/git/refs/tags/${TAG}")
+
+          OBJECT_TYPE=$(echo "$REF" | jq -r '.object.type')
+          OBJECT_SHA=$(echo  "$REF" | jq -r '.object.sha')
+
+          if [ "$OBJECT_TYPE" = "tag" ]; then
+            # Annotated tag: fetch the tag object to get the annotation body
+            MSG=$(curl -s \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${REPO}/git/tags/${OBJECT_SHA}" \
+              | jq -r '.message')
+          else
+            MSG="Release ${TAG}"
+          fi
+
+          echo "message<<RELEASE_EOF" >> $GITHUB_OUTPUT
+          echo "${MSG}" >> $GITHUB_OUTPUT
+          echo "RELEASE_EOF" >> $GITHUB_OUTPUT
+
+      - name: Export clean archive (respects .gitattributes export-ignore)
+        run: |
+          mkdir /tmp/archive
+          git archive HEAD | tar -x -C /tmp/archive
+
+      - name: Push orphan release commit to rackscope
+        env:
+          PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          MSG: ${{ steps.tag_msg.outputs.message }}
+        run: |
+          mkdir /tmp/publish
+          cd /tmp/publish
+
+          git init
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git remote add public \
+            https://x-access-token:${PUBLIC_REPO_TOKEN}@github.com/SckyzO/rackscope.git
+
+          # Fetch existing history to accumulate one commit per release
+          git fetch public main --depth=1 2>/dev/null && \
+            git checkout -b main public/main 2>/dev/null || \
+            git checkout --orphan main
+
+          # Replace content with clean archive
+          git rm -rf . --quiet 2>/dev/null || true
+          cp -r /tmp/archive/. .
+
+          git add .
+          git commit --allow-empty -m "${MSG}"
+          git tag "${TAG}"
+          git push public main --force
+          git push public "${TAG}" --force
+
+      - name: Configure GitHub Pages on rackscope (idempotent)
+        env:
+          PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${PUBLIC_REPO_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/SckyzO/rackscope/pages \
+            -d '{"build_type":"workflow"}' || true
+          curl -s -X PUT \
+            -H "Authorization: Bearer ${PUBLIC_REPO_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/SckyzO/rackscope/pages \
+            -d '{"cname":"rackscope.dev","https_enforced":true}' || true

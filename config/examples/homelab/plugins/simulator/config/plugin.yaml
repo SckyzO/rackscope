@@ -1,0 +1,23 @@
+update_interval_seconds: 20
+seed: null
+incident_mode: light
+changes_per_hour: 4
+custom_incidents:
+  devices_crit: 0
+  devices_warn: 0
+  racks_crit: 0
+  aisles_hot: 0
+overrides_path: config/examples/homelab/plugins/simulator/overrides/overrides.yaml
+default_ttl_seconds: 120
+metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
+metrics_catalogs:
+- id: slurm
+  path: config/plugins/simulator/metrics/metrics_slurm.yaml
+  enabled: false
+slurm_alloc_percent: 80
+slurm_random_statuses:
+  drain: 0
+  down: 0
+  maint: 0
+slurm_random_match:
+- compute*

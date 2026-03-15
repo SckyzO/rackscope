@@ -1,0 +1,25 @@
+templates:
+- id: bs-xh35mq-ib-1u
+  name: BullSequana XH35MQ IB Switch (1U)
+  type: network
+  role: infiniband
+  u_height: 1
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1
+  checks:
+  - switch_up
+  - switch_temp_warn
+  - switch_temp_crit
+  - switch_power_warn
+  - switch_power_crit
+  metrics:
+  - node_temperature
+  - node_power
+  display_thresholds:
+    temperature:
+      warn: 40   # Switches are more temperature-sensitive
+      crit: 50

@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Dot grid texture -->
+    <pattern id="dots" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="16" cy="16" r="1.5" fill="#ffffff" fill-opacity="0.04"/>
+    </pattern>
+    <!-- Indigo glow — bottom right (main) -->
+    <radialGradient id="glow-br" cx="1060" cy="560" r="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#465fff" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#465fff" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Indigo glow — top left (accent) -->
+    <radialGradient id="glow-tl" cx="180" cy="90" r="260" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#465fff" stop-opacity="0.09"/>
+      <stop offset="100%" stop-color="#465fff" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Rack slot highlight gradient -->
+    <linearGradient id="slot-crit" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ef4444" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#ef4444" stop-opacity="0.04"/>
+    </linearGradient>
+    <linearGradient id="slot-warn" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.02"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ── Background stack ──────────────────────────────────────────────── -->
+  <rect width="1200" height="630" fill="#0d1117"/>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+  <rect width="1200" height="630" fill="url(#glow-br)"/>
+  <rect width="1200" height="630" fill="url(#glow-tl)"/>
+
+  <!-- Top accent line -->
+  <rect x="0" y="0" width="1200" height="2" fill="#465fff" fill-opacity="0.6"/>
+
+  <!-- ── Logo (60×60 at 80,215) ────────────────────────────────────────── -->
+  <g transform="translate(80,215)">
+    <rect width="60" height="60" rx="13" fill="#465fff"/>
+    <rect x="8" y="11"  width="40" height="7.5" rx="2" fill="white"/>
+    <rect x="8" y="21"  width="40" height="7.5" rx="2" fill="white" fill-opacity=".75"/>
+    <rect x="8" y="31"  width="40" height="7.5" rx="2" fill="white" fill-opacity=".55"/>
+    <rect x="8" y="41"  width="40" height="7.5" rx="2" fill="white" fill-opacity=".35"/>
+    <circle cx="52" cy="14" r="4.5" fill="#22c55e"/>
+  </g>
+
+  <!-- ── Title ─────────────────────────────────────────────────────────── -->
+  <text
+    x="80" y="340"
+    font-family="'Outfit', system-ui, sans-serif"
+    font-size="74" font-weight="800"
+    fill="#f0f2ff"
+    letter-spacing="-2">Rackscope</text>
+
+  <!-- ── Tagline ───────────────────────────────────────────────────────── -->
+  <text
+    x="80" y="378"
+    font-family="system-ui, sans-serif"
+    font-size="22" font-weight="400"
+    fill="#9ba3c9">Prometheus-first physical infrastructure monitoring</text>
+
+  <!-- ── Separator ─────────────────────────────────────────────────────── -->
+  <line x1="80" y1="422" x2="1120" y2="422" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1"/>
+
+  <!-- ── PATH propagation row (center y=498) ───────────────────────────── -->
+
+  <!-- Site (indigo) x=80, w=68 -->
+  <rect x="80"  y="482" width="68"  height="32" rx="6" fill="#465fff" fill-opacity="0.13" stroke="#465fff" stroke-opacity="0.45" stroke-width="1"/>
+  <text x="114" y="503" font-family="'JetBrains Mono', monospace, system-ui" font-size="13" font-weight="700" fill="#7b9fff" text-anchor="middle">Site</text>
+
+  <!-- → -->
+  <text x="164" y="503" font-family="monospace, system-ui" font-size="13" fill="#3d4860" text-anchor="middle">→</text>
+
+  <!-- Room (indigo) x=180, w=76 -->
+  <rect x="180" y="482" width="76"  height="32" rx="6" fill="#465fff" fill-opacity="0.13" stroke="#465fff" stroke-opacity="0.45" stroke-width="1"/>
+  <text x="218" y="503" font-family="'JetBrains Mono', monospace, system-ui" font-size="13" font-weight="700" fill="#7b9fff" text-anchor="middle">Room</text>
+
+  <!-- → -->
+  <text x="272" y="503" font-family="monospace, system-ui" font-size="13" fill="#3d4860" text-anchor="middle">→</text>
+
+  <!-- Aisle (amber) x=288, w=80 -->
+  <rect x="288" y="482" width="80"  height="32" rx="6" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-opacity="0.45" stroke-width="1"/>
+  <text x="328" y="503" font-family="'JetBrains Mono', monospace, system-ui" font-size="13" font-weight="700" fill="#f59e0b" text-anchor="middle">Aisle</text>
+
+  <!-- → -->
+  <text x="384" y="503" font-family="monospace, system-ui" font-size="13" fill="#5a4a20" text-anchor="middle">→</text>
+
+  <!-- Rack (amber) x=400, w=72 -->
+  <rect x="400" y="482" width="72"  height="32" rx="6" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-opacity="0.45" stroke-width="1"/>
+  <text x="436" y="503" font-family="'JetBrains Mono', monospace, system-ui" font-size="13" font-weight="700" fill="#f59e0b" text-anchor="middle">Rack</text>
+
+  <!-- → -->
+  <text x="488" y="503" font-family="monospace, system-ui" font-size="13" fill="#5a3030" text-anchor="middle">→</text>
+
+  <!-- Device (red) x=504, w=88 -->
+  <rect x="504" y="482" width="88"  height="32" rx="6" fill="#ef4444" fill-opacity="0.12" stroke="#ef4444" stroke-opacity="0.45" stroke-width="1"/>
+  <text x="548" y="503" font-family="'JetBrains Mono', monospace, system-ui" font-size="13" font-weight="700" fill="#ef4444" text-anchor="middle">Device</text>
+
+  <!-- → -->
+  <text x="608" y="503" font-family="monospace, system-ui" font-size="13" fill="#5a3030" text-anchor="middle">→</text>
+
+  <!-- Instance (red + CRIT indicator) x=624, w=172 -->
+  <rect x="624" y="482" width="172" height="32" rx="6" fill="#ef4444" fill-opacity="0.12" stroke="#ef4444" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="642" y="503" font-family="'JetBrains Mono', monospace, system-ui" font-size="13" font-weight="700" fill="#ef4444">Instance</text>
+  <circle cx="740" cy="498" r="4" fill="#ef4444"/>
+  <text x="749" y="503" font-family="'JetBrains Mono', monospace, system-ui" font-size="11" font-weight="800" fill="#ef4444" letter-spacing="0.06em">CRIT</text>
+
+  <!-- ── Bottom metadata strip ─────────────────────────────────────────── -->
+  <!-- Green dot + Open Source -->
+  <circle cx="80"  cy="578" r="4"   fill="#22c55e"/>
+  <text   x="91"  y="583" font-family="'JetBrains Mono', monospace, system-ui" font-size="14" fill="#5a6180">Open Source</text>
+
+  <text   x="207" y="583" font-family="monospace, system-ui" font-size="14" fill="#3a3f52">·</text>
+
+  <!-- Gray dot + AGPL-3.0 -->
+  <circle cx="220" cy="578" r="4"   fill="#3a3f52"/>
+  <text   x="231" y="583" font-family="'JetBrains Mono', monospace, system-ui" font-size="14" fill="#5a6180">AGPL-3.0</text>
+
+  <text   x="335" y="583" font-family="monospace, system-ui" font-size="14" fill="#3a3f52">·</text>
+
+  <!-- rackscope.dev (indigo) -->
+  <text   x="350" y="583" font-family="'JetBrains Mono', monospace, system-ui" font-size="14" font-weight="600" fill="#465fff">rackscope.dev</text>
+
+  <!-- ── Right — Rack unit visualisation ──────────────────────────────── -->
+  <!-- Outer frame -->
+  <rect x="896" y="192" width="248" height="224" rx="5"
+        fill="none" stroke="#ffffff" stroke-opacity="0.07" stroke-width="1.5"/>
+
+  <!-- Left rail — status strip -->
+  <rect x="896" y="192" width="7" height="224" rx="3"
+        fill="#465fff" fill-opacity="0.12"/>
+
+  <!-- U number column -->
+  <rect x="906" y="192" width="22" height="224"
+        fill="#ffffff" fill-opacity="0.025"/>
+
+  <!-- Slot grid dividers -->
+  <line x1="897" y1="220" x2="1143" y2="220" stroke="#ffffff" stroke-opacity="0.04"/>
+  <line x1="897" y1="248" x2="1143" y2="248" stroke="#ffffff" stroke-opacity="0.04"/>
+  <line x1="897" y1="276" x2="1143" y2="276" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1.5"/>
+  <line x1="897" y1="304" x2="1143" y2="304" stroke="#ffffff" stroke-opacity="0.04"/>
+  <line x1="897" y1="332" x2="1143" y2="332" stroke="#ffffff" stroke-opacity="0.04"/>
+  <line x1="897" y1="360" x2="1143" y2="360" stroke="#ffffff" stroke-opacity="0.04"/>
+  <line x1="897" y1="388" x2="1143" y2="388" stroke="#ffffff" stroke-opacity="0.04"/>
+
+  <!-- U numbers -->
+  <text x="917" y="210" font-family="monospace" font-size="9" fill="#ffffff" fill-opacity="0.2" text-anchor="middle">1U</text>
+  <text x="917" y="238" font-family="monospace" font-size="9" fill="#ffffff" fill-opacity="0.2" text-anchor="middle">2U</text>
+  <text x="917" y="266" font-family="monospace" font-size="9" fill="#ffffff" fill-opacity="0.25" text-anchor="middle">3U</text>
+  <text x="917" y="294" font-family="monospace" font-size="9" fill="#ffffff" fill-opacity="0.2" text-anchor="middle">4U</text>
+  <text x="917" y="322" font-family="monospace" font-size="9" fill="#ffffff" fill-opacity="0.2" text-anchor="middle">5U</text>
+  <text x="917" y="350" font-family="monospace" font-size="9" fill="#ffffff" fill-opacity="0.2" text-anchor="middle">6U</text>
+  <text x="917" y="378" font-family="monospace" font-size="9" fill="#ffffff" fill-opacity="0.2" text-anchor="middle">7U</text>
+  <text x="917" y="406" font-family="monospace" font-size="9" fill="#ffffff" fill-opacity="0.2" text-anchor="middle">8U</text>
+
+  <!-- Slot 1 — OK (green) -->
+  <rect x="932" y="194" width="207" height="26" rx="2" fill="#10b981" fill-opacity="0.06"/>
+  <rect x="932" y="196" width="5"   height="22" rx="1.5" fill="#10b981" fill-opacity="0.8"/>
+  <rect x="942" y="200" width="88"  height="5"  rx="1" fill="#ffffff" fill-opacity="0.14"/>
+  <rect x="942" y="208" width="55"  height="4"  rx="1" fill="#ffffff" fill-opacity="0.07"/>
+  <circle cx="1132" cy="207" r="3.5" fill="#10b981" fill-opacity="0.85"/>
+
+  <!-- Slot 2 — OK (green) -->
+  <rect x="932" y="222" width="207" height="26" rx="2" fill="#10b981" fill-opacity="0.04"/>
+  <rect x="932" y="224" width="5"   height="22" rx="1.5" fill="#10b981" fill-opacity="0.65"/>
+  <rect x="942" y="228" width="76"  height="5"  rx="1" fill="#ffffff" fill-opacity="0.11"/>
+  <rect x="942" y="236" width="48"  height="4"  rx="1" fill="#ffffff" fill-opacity="0.06"/>
+  <circle cx="1132" cy="235" r="3.5" fill="#10b981" fill-opacity="0.65"/>
+
+  <!-- Slot 3 — CRIT (red) — the alert slot -->
+  <rect x="932" y="250" width="207" height="26" rx="2" fill="url(#slot-crit)"/>
+  <rect x="932" y="252" width="5"   height="22" rx="1.5" fill="#ef4444"/>
+  <rect x="942" y="256" width="98"  height="5"  rx="1" fill="#ffffff" fill-opacity="0.18"/>
+  <rect x="942" y="264" width="130" height="4"  rx="1" fill="#ef4444" fill-opacity="0.35"/>
+  <!-- CRIT label -->
+  <rect x="1086" y="254" width="44" height="18" rx="3" fill="#ef4444" fill-opacity="0.20" stroke="#ef4444" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="1108" y="267" font-family="monospace" font-size="9" font-weight="800" fill="#ef4444" text-anchor="middle" letter-spacing="0.05em">CRIT</text>
+
+  <!-- Slot 4 — WARN (amber) -->
+  <rect x="932" y="278" width="207" height="26" rx="2" fill="url(#slot-warn)"/>
+  <rect x="932" y="280" width="5"   height="22" rx="1.5" fill="#f59e0b" fill-opacity="0.9"/>
+  <rect x="942" y="284" width="82"  height="5"  rx="1" fill="#ffffff" fill-opacity="0.13"/>
+  <rect x="942" y="292" width="60"  height="4"  rx="1" fill="#f59e0b" fill-opacity="0.22"/>
+  <circle cx="1132" cy="291" r="3.5" fill="#f59e0b" fill-opacity="0.9"/>
+
+  <!-- Slot 5 — OK -->
+  <rect x="932" y="306" width="207" height="26" rx="2" fill="#10b981" fill-opacity="0.03"/>
+  <rect x="932" y="308" width="5"   height="22" rx="1.5" fill="#10b981" fill-opacity="0.55"/>
+  <rect x="942" y="312" width="64"  height="5"  rx="1" fill="#ffffff" fill-opacity="0.09"/>
+  <rect x="942" y="320" width="42"  height="4"  rx="1" fill="#ffffff" fill-opacity="0.05"/>
+  <circle cx="1132" cy="319" r="3.5" fill="#10b981" fill-opacity="0.55"/>
+
+  <!-- Slot 6 — OK -->
+  <rect x="932" y="334" width="207" height="26" rx="2" fill="#10b981" fill-opacity="0.03"/>
+  <rect x="932" y="336" width="5"   height="22" rx="1.5" fill="#10b981" fill-opacity="0.50"/>
+  <rect x="942" y="340" width="70"  height="5"  rx="1" fill="#ffffff" fill-opacity="0.09"/>
+  <circle cx="1132" cy="347" r="3.5" fill="#10b981" fill-opacity="0.50"/>
+
+  <!-- Slot 7 — empty -->
+  <rect x="932" y="362" width="207" height="26" rx="2" fill="#ffffff" fill-opacity="0.01"/>
+  <rect x="932" y="364" width="5"   height="22" rx="1.5" fill="#ffffff" fill-opacity="0.08"/>
+  <rect x="942" y="368" width="44"  height="5"  rx="1" fill="#ffffff" fill-opacity="0.06"/>
+  <circle cx="1132" cy="375" r="3.5" fill="#ffffff" fill-opacity="0.12"/>
+
+  <!-- Slot 8 — empty -->
+  <rect x="932" y="390" width="207" height="24" rx="2" fill="#ffffff" fill-opacity="0.01"/>
+  <rect x="932" y="392" width="5"   height="20" rx="1.5" fill="#ffffff" fill-opacity="0.06"/>
+
+  <!-- Rack label -->
+  <text x="1040" y="425" font-family="monospace" font-size="10" fill="#ffffff" fill-opacity="0.18" text-anchor="middle" letter-spacing="0.08em">RACK-04 · AISLE-A</text>
+
+</svg>

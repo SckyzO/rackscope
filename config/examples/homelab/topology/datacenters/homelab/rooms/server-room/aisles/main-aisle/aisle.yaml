@@ -1,0 +1,7 @@
+id: main-aisle
+name: Main Aisle
+room_id: server-room
+racks:
+- id: rack-01
+- id: rack-02
+- id: rack-03

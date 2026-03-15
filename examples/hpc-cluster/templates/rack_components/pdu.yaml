@@ -1,0 +1,16 @@
+rack_component_templates:
+- id: pdu-raritan-16u
+  name: PDU Raritan
+  type: pdu
+  model: Raritan
+  location: side
+  u_height: 16
+  checks:
+    - pdu_power_present
+    - pdu_current_warn
+    - pdu_current_crit
+  metrics:
+    - pdu_active_power
+    - pdu_current
+    - pdu_energy_total
+    - pdu_voltage

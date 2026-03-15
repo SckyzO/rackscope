@@ -1,0 +1,14 @@
+metrics:
+- id: hmc_coolant_temp
+  name: HMC Coolant Temperature
+  description: Water cooling temperature
+  metric: hmc_coolant_temperature_celsius{rack_id="$rack_id"}
+  display:
+    unit: °C
+    chart_type: line
+    color: '#22d3ee'
+  category: cooling
+  tags:
+  - hmc
+  - dcw
+  - temperature

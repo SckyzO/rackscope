@@ -1,0 +1,523 @@
+"""Slurm Workload Plugin - Job scheduling and monitoring."""
+
+import logging
+import os
+from pathlib import Path
+from typing import Optional, Dict, Any, List
+
+import yaml
+
+from fastapi import APIRouter, FastAPI, HTTPException
+from pydantic import BaseModel
+
+from rackscope.plugins.base import RackscopePlugin, MenuSection, MenuItem
+from rackscope.services import slurm_service, topology_service
+from rackscope.model.config import AppConfig
+from plugins.slurm.backend.config import SlurmPluginConfig
+
+logger = logging.getLogger(__name__)
+
+
+class SlurmPlugin(RackscopePlugin):
+    """
+    Slurm Workload Plugin
+
+    Provides integration with Slurm workload manager for job scheduling
+    and node state monitoring.
+    """
+
+    def __init__(self):
+        self._router = APIRouter(tags=["slurm"])
+        self.config: Optional[SlurmPluginConfig] = None
+        self._metrics_catalog: List[Dict[str, Any]] = []
+        self._setup_routes()
+
+    @property
+    def plugin_id(self) -> str:
+        return "slurm"
+
+    @property
+    def plugin_name(self) -> str:
+        return "Slurm Workload"
+
+    @property
+    def version(self) -> str:
+        return "1.0.0"
+
+    @property
+    def description(self) -> str:
+        return "Job scheduling and node monitoring via Slurm workload manager"
+
+    @property
+    def author(self) -> str:
+        return "Rackscope Team"
+
+    def _load_config(self, app_config: Optional[AppConfig]) -> SlurmPluginConfig:
+        """
+        Load Slurm configuration with priority chain:
+          1. config/plugins/slurm/config.yml  (dedicated file — recommended)
+          2. app.yaml plugins.slurm           (legacy embedded format)
+          3. app.yaml slurm                   (legacy top-level format)
+          4. Pydantic defaults
+        """
+        raw_config: Dict[str, Any] = {}
+
+        # 1. Try dedicated config file first (new architecture)
+        config_file = self.config_file_path()
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, encoding="utf-8") as f:
+                    file_cfg = yaml.safe_load(f) or {}
+                if isinstance(file_cfg, dict):
+                    raw_config = file_cfg
+                    logger.info("Slurm: loaded config from %s", config_file)
+            except Exception as exc:
+                logger.warning("Slurm: failed to read %s: %s", config_file, exc)
+
+        # 2. Fallback: app.yaml plugins.slurm (only enabled flag expected in new arch)
+        if not raw_config and app_config:
+            if hasattr(app_config, "plugins") and "slurm" in app_config.plugins:
+                slurm_cfg = app_config.plugins["slurm"]
+                if hasattr(slurm_cfg, "model_dump"):
+                    raw_config = slurm_cfg.model_dump()
+                elif isinstance(slurm_cfg, dict):
+                    raw_config = {k: v for k, v in slurm_cfg.items() if k != "enabled"}
+                logger.info("Slurm: loaded config from app.yaml plugins.slurm")
+            # 3. Fallback: legacy top-level app.yaml slurm
+            elif hasattr(app_config, "slurm") and app_config.slurm:
+                raw_config = app_config.slurm.model_dump()
+                logger.warning("Slurm: legacy config format — migrate to %s", config_file)
+
+        # Ensure status_map.info exists (for backwards compatibility)
+        if "status_map" in raw_config and isinstance(raw_config["status_map"], dict):
+            if "info" not in raw_config["status_map"]:
+                raw_config["status_map"]["info"] = []
+
+        # Ensure severity_colors exists with defaults
+        if "severity_colors" not in raw_config or raw_config["severity_colors"] is None:
+            raw_config["severity_colors"] = {
+                "ok": "#22c55e",
+                "warn": "#f59e0b",
+                "crit": "#ef4444",
+                "info": "#3b82f6",
+            }
+
+        # Validate and create config with defaults
+        return SlurmPluginConfig(**raw_config)
+
+    def _get_config(self) -> SlurmPluginConfig:
+        """Get current config, loading lazily from APP_CONFIG if not yet initialized."""
+        if self.config is None:
+            from rackscope.api import app as app_module
+
+            self.config = self._load_config(app_module.APP_CONFIG)
+        return self.config
+
+    def _load_metrics_catalog(self) -> List[Dict[str, Any]]:
+        """Load metric definitions from all catalog files in metrics_catalog_dir."""
+        cfg = self._get_config()
+        catalog_dir = Path(cfg.metrics_catalog_dir)
+        all_metrics: List[Dict[str, Any]] = []
+        if not catalog_dir.exists():
+            return all_metrics
+        files_to_load = cfg.metrics_catalogs if cfg.metrics_catalogs else []
+        for fname in files_to_load:
+            fpath = catalog_dir / fname
+            if not fpath.exists():
+                logger.warning(f"Slurm metrics catalog file not found: {fpath}")
+                continue
+            try:
+                raw = yaml.safe_load(fpath.read_text()) or {}
+                metrics = raw.get("metrics", []) if isinstance(raw, dict) else []
+                if isinstance(metrics, list):
+                    all_metrics.extend(metrics)
+                    logger.debug(f"Loaded {len(metrics)} Slurm metrics from {fname}")
+            except Exception as exc:
+                logger.warning(f"Failed to load Slurm metrics from {fpath}: {exc}")
+        return all_metrics
+
+    def _list_catalog_files(self) -> List[str]:
+        """List available .yaml files in the metrics catalog directory."""
+        cfg = self._get_config()
+        d = Path(cfg.metrics_catalog_dir)
+        if not d.exists():
+            return []
+        return sorted(p.name for p in d.glob("*.yaml"))
+
+    async def on_startup(self) -> None:
+        """Initialize Slurm plugin and load configuration."""
+        from rackscope.api.app import APP_CONFIG
+
+        self.config = self._load_config(APP_CONFIG)
+        self._metrics_catalog = self._load_metrics_catalog()
+        logger.info(
+            f"Slurm plugin started (metric={self.config.metric}, roles={self.config.roles}, "
+            f"metrics={len(self._metrics_catalog)})"
+        )
+
+    async def on_config_reload(self, app_config: AppConfig) -> None:
+        """Reload Slurm configuration when app config changes."""
+        self.config = self._load_config(app_config)
+        logger.info(
+            f"Slurm plugin configuration reloaded (metric={self.config.metric}, "
+            f"label_node={self.config.label_node}, enabled={self.config.enabled})"
+        )
+
+    def _setup_routes(self) -> None:
+        """Setup all Slurm routes."""
+
+        @self._router.get("/api/slurm/rooms/{room_id}/nodes")
+        async def get_slurm_room_nodes(room_id: str):
+            """Get Slurm node states for a specific room."""
+            from rackscope.api import app as app_module
+
+            APP_CONFIG = app_module.APP_CONFIG
+            TOPOLOGY = app_module.TOPOLOGY
+            TOPOLOGY_INDEX = app_module.TOPOLOGY_INDEX
+
+            if not APP_CONFIG or not TOPOLOGY:
+                raise HTTPException(status_code=503, detail="Topology not loaded")
+
+            room = topology_service.find_room_by_id(TOPOLOGY, room_id, index=TOPOLOGY_INDEX)
+            if not room:
+                raise HTTPException(status_code=404, detail="Room not found")
+
+            room_nodes: set[str] = set()
+            racks = []
+            for aisle in room.aisles:
+                racks.extend(aisle.racks)
+            racks.extend(room.standalone_racks)
+            for rack in racks:
+                for device in rack.devices:
+                    room_nodes.update(slurm_service.expand_device_instances(device))
+
+            node_states: Dict[str, Dict[str, Any]] = {
+                node: {
+                    "status": "unknown",
+                    "severity": "UNKNOWN",
+                    "statuses": [],
+                    "partitions": [],
+                }
+                for node in room_nodes
+            }
+
+            slurm_cfg = self._get_config()
+            mapping_entries = slurm_service.load_slurm_mapping_raw(slurm_cfg.mapping_path)
+            results = await slurm_service.fetch_slurm_results(slurm_cfg)
+
+            if not results:
+                return {"room_id": room_id, "nodes": node_states}
+
+            for item in results:
+                metric = item.get("metric", {})
+                value = item.get("value", [None, "0"])[1]
+                try:
+                    if float(value) <= 0:
+                        continue
+                except (TypeError, ValueError):
+                    continue
+                node = metric.get(slurm_cfg.label_node)
+                node = (
+                    slurm_service.resolve_slurm_node(str(node), mapping_entries) if node else node
+                )
+                if not node or (room_nodes and node not in room_nodes):
+                    continue
+                raw_status = metric.get(slurm_cfg.label_status, "unknown")
+                partition = metric.get(slurm_cfg.label_partition)
+                normalized_status, has_star = slurm_service.normalize_slurm_status(str(raw_status))
+                severity = slurm_service.calculate_slurm_severity(
+                    normalized_status, has_star, slurm_cfg.status_map
+                )
+
+                state = node_states.setdefault(
+                    node,
+                    {
+                        "status": normalized_status,
+                        "severity": severity,
+                        "statuses": [],
+                        "partitions": [],
+                    },
+                )
+                state["statuses"].append(str(raw_status))
+                if partition:
+                    state["partitions"].append(str(partition))
+                if slurm_service.severity_rank(severity) > slurm_service.severity_rank(
+                    state["severity"]
+                ):
+                    state["severity"] = severity
+                    state["status"] = normalized_status
+
+            for node_id, state in node_states.items():
+                state["statuses"] = sorted(set(state.get("statuses", [])))
+                state["partitions"] = sorted(set(state.get("partitions", [])))
+
+            return {"room_id": room_id, "nodes": node_states}
+
+        @self._router.get("/api/slurm/summary")
+        async def get_slurm_summary(room_id: Optional[str] = None):
+            """Get Slurm status summary."""
+            from rackscope.api import app as app_module
+
+            APP_CONFIG = app_module.APP_CONFIG
+            TOPOLOGY = app_module.TOPOLOGY
+            TOPOLOGY_INDEX = app_module.TOPOLOGY_INDEX
+
+            if not APP_CONFIG or not TOPOLOGY:
+                raise HTTPException(status_code=503, detail="Topology not loaded")
+
+            allowed_nodes: Optional[set[str]] = None
+            if room_id:
+                room = topology_service.find_room_by_id(TOPOLOGY, room_id, index=TOPOLOGY_INDEX)
+                if not room:
+                    raise HTTPException(status_code=404, detail="Room not found")
+                allowed_nodes = slurm_service.collect_room_nodes(room)
+
+            slurm_cfg = self._get_config()
+            node_states = await slurm_service.build_slurm_states(slurm_cfg, allowed_nodes)
+            by_status: Dict[str, int] = {}
+            by_severity: Dict[str, int] = {"OK": 0, "WARN": 0, "CRIT": 0, "UNKNOWN": 0}
+
+            for state in node_states.values():
+                status = state.get("status_all") or state.get("status") or "unknown"
+                severity = state.get("severity_all") or state.get("severity") or "UNKNOWN"
+                by_status[str(status)] = by_status.get(str(status), 0) + 1
+                by_severity[str(severity)] = by_severity.get(str(severity), 0) + 1
+
+            return {
+                "room_id": room_id,
+                "total_nodes": len(node_states),
+                "by_status": by_status,
+                "by_severity": by_severity,
+            }
+
+        @self._router.get("/api/slurm/partitions")
+        async def get_slurm_partitions(room_id: Optional[str] = None):
+            """Get Slurm partition statistics."""
+            from rackscope.api import app as app_module
+
+            APP_CONFIG = app_module.APP_CONFIG
+            TOPOLOGY = app_module.TOPOLOGY
+            TOPOLOGY_INDEX = app_module.TOPOLOGY_INDEX
+
+            if not APP_CONFIG or not TOPOLOGY:
+                raise HTTPException(status_code=503, detail="Topology not loaded")
+
+            allowed_nodes: Optional[set[str]] = None
+            if room_id:
+                room = topology_service.find_room_by_id(TOPOLOGY, room_id, index=TOPOLOGY_INDEX)
+                if not room:
+                    raise HTTPException(status_code=404, detail="Room not found")
+                allowed_nodes = slurm_service.collect_room_nodes(room)
+
+            slurm_cfg = self._get_config()
+            mapping_entries = slurm_service.load_slurm_mapping_raw(slurm_cfg.mapping_path)
+            results = await slurm_service.fetch_slurm_results(slurm_cfg)
+            if not results:
+                return {"room_id": room_id, "partitions": {}}
+
+            partitions: Dict[str, Dict[str, int]] = {}
+            for item in results:
+                metric = item.get("metric", {})
+                value = item.get("value", [None, "0"])[1]
+                try:
+                    if float(value) <= 0:
+                        continue
+                except (TypeError, ValueError):
+                    continue
+                node = metric.get(slurm_cfg.label_node)
+                node = (
+                    slurm_service.resolve_slurm_node(str(node), mapping_entries) if node else node
+                )
+                if not node:
+                    continue
+                if allowed_nodes is not None and node not in allowed_nodes:
+                    continue
+                partition = metric.get(slurm_cfg.label_partition, "unknown")
+                raw_status = metric.get(slurm_cfg.label_status, "unknown")
+                normalized_status, _ = slurm_service.normalize_slurm_status(str(raw_status))
+                part = partitions.setdefault(str(partition), {})
+                part[normalized_status] = part.get(normalized_status, 0) + 1
+
+            return {"room_id": room_id, "partitions": partitions}
+
+        @self._router.get("/api/slurm/nodes")
+        async def get_slurm_nodes(room_id: Optional[str] = None):
+            """Get detailed Slurm node list."""
+            from rackscope.api import app as app_module
+
+            APP_CONFIG = app_module.APP_CONFIG
+            TOPOLOGY = app_module.TOPOLOGY
+            TOPOLOGY_INDEX = app_module.TOPOLOGY_INDEX
+
+            if not APP_CONFIG or not TOPOLOGY:
+                raise HTTPException(status_code=503, detail="Topology not loaded")
+
+            allowed_nodes: Optional[set[str]] = None
+            if room_id:
+                room = topology_service.find_room_by_id(TOPOLOGY, room_id, index=TOPOLOGY_INDEX)
+                if not room:
+                    raise HTTPException(status_code=404, detail="Room not found")
+                allowed_nodes = slurm_service.collect_room_nodes(room)
+
+            slurm_cfg = self._get_config()
+            node_states = await slurm_service.build_slurm_states(slurm_cfg, allowed_nodes)
+            context = slurm_service.build_node_context(TOPOLOGY, index=TOPOLOGY_INDEX)
+
+            payload = []
+            for node_id, state in node_states.items():
+                entry = {
+                    "node": node_id,
+                    "status": state.get("status_all") or state.get("status"),
+                    "severity": state.get("severity_all") or state.get("severity", "UNKNOWN"),
+                    "statuses": state.get("statuses", []),
+                    "partitions": state.get("partitions", []),
+                }
+                entry.update(context.get(node_id, {}))
+                payload.append(entry)
+
+            return {"room_id": room_id, "nodes": payload}
+
+        # ── Node mapping CRUD ───────────────────────────────────────────────────
+
+        class MappingEntry(BaseModel):
+            node: str  # Slurm node name or pattern (e.g. "n*", "n001")
+            instance: str  # Topology instance name or pattern (e.g. "compute*")
+
+        class MappingPayload(BaseModel):
+            entries: List[MappingEntry]
+
+        @self._router.get("/api/slurm/mapping")
+        async def get_slurm_mapping() -> dict:
+            """Return current node mapping entries."""
+            cfg = self._get_config()
+            raw = slurm_service.load_slurm_mapping_raw(cfg.mapping_path)
+            return {"mapping_path": cfg.mapping_path, "entries": raw}
+
+        @self._router.post("/api/slurm/mapping")
+        async def save_slurm_mapping(payload: MappingPayload) -> dict:
+            """Save node mapping entries to file."""
+            cfg = self._get_config()
+            if not cfg.mapping_path:
+                raise HTTPException(status_code=400, detail="mapping_path is not configured")
+            entries = [e.model_dump() for e in payload.entries]
+            slurm_service.save_slurm_mapping(cfg.mapping_path, entries)
+            return {"ok": True, "saved": len(entries)}
+
+        # ── Metrics catalog endpoints ───────────────────────────────────────────
+
+        @self._router.get("/api/slurm/metrics/catalog")
+        async def get_slurm_metrics_catalog() -> dict:
+            """Return all loaded metric definitions + available files."""
+            self._metrics_catalog = self._load_metrics_catalog()
+            return {
+                "metrics": self._metrics_catalog,
+                "loaded_files": self._get_config().metrics_catalogs,
+                "available_files": self._list_catalog_files(),
+            }
+
+        @self._router.post("/api/slurm/metrics/catalog/config")
+        async def update_metrics_catalog_config(payload: dict) -> dict:
+            """Update which metric files to load (saved to plugin config)."""
+            cfg = self._get_config()
+            files = payload.get("metrics_catalogs", cfg.metrics_catalogs)
+            # Persist to the plugin config file
+            config_path = self.config_file_path()
+            if config_path:
+                try:
+                    raw = yaml.safe_load(Path(config_path).read_text()) or {}
+                    raw["metrics_catalogs"] = files
+                    Path(config_path).write_text(
+                        yaml.dump(raw, default_flow_style=False, allow_unicode=True)
+                    )
+                    cfg.metrics_catalogs = files
+                    self._metrics_catalog = self._load_metrics_catalog()
+                except Exception as exc:
+                    raise HTTPException(status_code=500, detail=str(exc)) from exc
+            return {"ok": True, "metrics_catalogs": files}
+
+        @self._router.get("/api/slurm/metrics/data")
+        async def get_slurm_metric_data(
+            metric_id: str,
+            scope: Optional[str] = None,
+        ) -> dict:
+            """Query Prometheus for a specific Slurm metric.
+
+            Returns raw Prometheus result for the metric.
+            The caller is responsible for filtering by node/partition.
+            """
+            from rackscope.telemetry.prometheus import client as prom_client
+
+            metric_def = next((m for m in self._metrics_catalog if m.get("id") == metric_id), None)
+            if not metric_def:
+                raise HTTPException(
+                    status_code=404, detail=f"Metric '{metric_id}' not found in catalog"
+                )
+
+            query = metric_def.get("metric", metric_id)
+            result = await prom_client.query(query, cache_type="health")
+            if result.get("status") != "success":
+                return {"metric_id": metric_id, "data": [], "error": "Prometheus query failed"}
+
+            return {
+                "metric_id": metric_id,
+                "name": metric_def.get("name", metric_id),
+                "unit": metric_def.get("display", {}).get("unit", ""),
+                "scope": metric_def.get("scope", "global"),
+                "data": result.get("data", {}).get("result", []),
+            }
+
+    def register_routes(self, app: FastAPI) -> None:
+        """Register Slurm routes."""
+        app.include_router(self._router)
+
+    def register_menu_sections(self):
+        """Register Slurm menu section."""
+        # Reload config from APP_CONFIG to get latest enabled state
+        from rackscope.api.app import APP_CONFIG
+
+        current_config = self._load_config(APP_CONFIG)
+
+        # Only return menu sections if plugin is enabled
+        if not current_config.enabled:
+            return []
+
+        return [
+            MenuSection(
+                id="workload",
+                label="Workload",
+                icon="Zap",
+                order=50,
+                items=[
+                    MenuItem(
+                        id="slurm-overview",
+                        label="Overview",
+                        path="/slurm/overview",
+                        icon="Activity",
+                    ),
+                    MenuItem(
+                        id="slurm-wallboard",
+                        label="Room Wallboard",
+                        path="/slurm/wallboard",
+                        icon="Columns",
+                    ),
+                    MenuItem(
+                        id="slurm-partitions",
+                        label="Partitions",
+                        path="/slurm/partitions",
+                        icon="Server",
+                    ),
+                    MenuItem(
+                        id="slurm-nodes",
+                        label="Nodes",
+                        path="/slurm/nodes",
+                        icon="HardDrive",
+                    ),
+                    MenuItem(
+                        id="slurm-alerts",
+                        label="Alerts",
+                        path="/slurm/alerts",
+                        icon="AlertTriangle",
+                    ),
+                ],
+            )
+        ]

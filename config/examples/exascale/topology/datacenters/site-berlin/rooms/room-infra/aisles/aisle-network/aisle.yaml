@@ -1,0 +1,5 @@
+id: aisle-network
+name: Aisle Network
+room_id: room-infra
+racks:
+- id: rack-ber-net
