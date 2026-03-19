@@ -1,0 +1,12 @@
+id: aisle-hm
+name: Aisle Hm
+room_id: room-gpu-hm
+racks:
+- id: rack-par-hm000
+- id: rack-par-hm001
+- id: rack-par-hm002
+- id: rack-par-hm003
+- id: rack-par-hm004
+- id: rack-par-hm005
+- id: rack-par-hm006
+- id: rack-par-hm007

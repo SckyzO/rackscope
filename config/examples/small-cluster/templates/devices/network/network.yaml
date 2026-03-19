@@ -1,0 +1,70 @@
+templates:
+- id: generic-tor-eth-1u
+  name: TOR Ethernet Switch 1U
+  type: switch
+  u_height: 1
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1
+  checks:
+  - switch_up
+  - switch_port_err
+  metrics: []
+- id: generic-core-eth-2u
+  name: Core Ethernet Switch 2U
+  type: switch
+  u_height: 2
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1
+  checks:
+  - switch_up
+  - switch_port_err
+  metrics: []
+- id: generic-ib-switch-1u
+  name: InfiniBand Switch L1 1U
+  type: switch
+  u_height: 1
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1
+  checks:
+  - switch_up
+  - ib_port_state
+  metrics: []
+- id: generic-ib-switch-2u
+  name: InfiniBand Switch L2 2U
+  type: switch
+  u_height: 2
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1
+  checks:
+  - switch_up
+  - ib_port_state
+  metrics: []
+- id: generic-mgmt-switch-1u
+  name: Management Switch 1U
+  type: switch
+  u_height: 1
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1
+  checks:
+  - switch_up
+  metrics: []

@@ -1,0 +1,40 @@
+# Gitleaks configuration for Rackscope
+# Extends the default ruleset with project-specific allowlists.
+title = "Rackscope gitleaks config"
+
+[extend]
+# Use upstream default rules as base
+useDefault = true
+
+[[allowlists]]
+description = "Test fixtures — bcrypt hashes used in unit tests are not real secrets"
+regexTarget = "line"
+regexes = [
+  '''\$2b\$12\$X91lqP3eT0gS''',   # test hash in test files
+]
+paths = [
+  "tests/.*",
+]
+
+[[allowlists]]
+description = "AUTH_RUNTIME_SECRET is generated at runtime, never hardcoded"
+regexTarget = "line"
+regexes = [
+  '''AUTH_RUNTIME_SECRET.*secrets\.token_hex''',
+]
+
+[[allowlists]]
+description = "Example config files contain placeholder values only"
+paths = [
+  "config/examples/.*",
+  "config\\.bak/.*",
+]
+
+[[allowlists]]
+description = "Changelog and docs reference CVE IDs, not credentials"
+paths = [
+  "CHANGELOG\\.md",
+  "CHANGELOG",
+  "website/.*\\.md",
+  "security_audit_prompt\\.md",
+]

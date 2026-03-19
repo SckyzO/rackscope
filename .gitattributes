@@ -1,0 +1,4 @@
+# Files excluded from `git archive`
+CLAUDE.md                export-ignore
+ARCHITECTURE/            export-ignore
+notes/                   export-ignore

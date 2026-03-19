@@ -1,0 +1,16 @@
+sites:
+- id: site-paris
+  name: Paris — Site Principal
+  lat: 48.8566
+  lon: 2.3522
+  rooms_path: datacenters/site-paris/rooms
+- id: site-toulouse
+  name: Toulouse — Site Secondaire
+  lat: 43.6047
+  lon: 1.4442
+  rooms_path: datacenters/site-toulouse/rooms
+- id: site-berlin
+  name: Berlin — DR Site
+  lat: 52.52
+  lon: 13.405
+  rooms_path: datacenters/site-berlin/rooms

@@ -1,0 +1,6 @@
+id: aisle-gpu
+name: GPU Aisle
+room_id: machine-room
+racks:
+- id: rack-gpu01
+- id: rack-gpu02

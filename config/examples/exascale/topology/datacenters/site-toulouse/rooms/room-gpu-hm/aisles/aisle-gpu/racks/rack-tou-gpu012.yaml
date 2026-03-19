@@ -1,0 +1,117 @@
+id: rack-tou-gpu012
+name: GPU Rack rack-tou-gpu012
+u_height: 42
+template_id: rack-42u-dcw
+devices:
+- id: ggpu012-01
+  name: gpu481-gpu484
+  template_id: hpc-4u-quad-gpu
+  u_position: 1
+  face: front
+  instance:
+    1: gpu481
+    2: gpu482
+    3: gpu483
+    4: gpu484
+- id: ggpu012-05
+  name: gpu485-gpu488
+  template_id: hpc-4u-quad-gpu
+  u_position: 5
+  face: front
+  instance:
+    1: gpu485
+    2: gpu486
+    3: gpu487
+    4: gpu488
+- id: ggpu012-09
+  name: gpu489-gpu492
+  template_id: hpc-4u-quad-gpu
+  u_position: 9
+  face: front
+  instance:
+    1: gpu489
+    2: gpu490
+    3: gpu491
+    4: gpu492
+- id: ggpu012-13
+  name: gpu493-gpu496
+  template_id: hpc-4u-quad-gpu
+  u_position: 13
+  face: front
+  instance:
+    1: gpu493
+    2: gpu494
+    3: gpu495
+    4: gpu496
+- id: ggpu012-17
+  name: gpu497-gpu500
+  template_id: hpc-4u-quad-gpu
+  u_position: 17
+  face: front
+  instance:
+    1: gpu497
+    2: gpu498
+    3: gpu499
+    4: gpu500
+- id: ggpu012-21
+  name: gpu501-gpu504
+  template_id: hpc-4u-quad-gpu
+  u_position: 21
+  face: front
+  instance:
+    1: gpu501
+    2: gpu502
+    3: gpu503
+    4: gpu504
+- id: ggpu012-25
+  name: gpu505-gpu508
+  template_id: hpc-4u-quad-gpu
+  u_position: 25
+  face: front
+  instance:
+    1: gpu505
+    2: gpu506
+    3: gpu507
+    4: gpu508
+- id: ggpu012-29
+  name: gpu509-gpu512
+  template_id: hpc-4u-quad-gpu
+  u_position: 29
+  face: front
+  instance:
+    1: gpu509
+    2: gpu510
+    3: gpu511
+    4: gpu512
+- id: ggpu012-33
+  name: gpu513-gpu516
+  template_id: hpc-4u-quad-gpu
+  u_position: 33
+  face: front
+  instance:
+    1: gpu513
+    2: gpu514
+    3: gpu515
+    4: gpu516
+- id: ggpu012-37
+  name: gpu517-gpu520
+  template_id: hpc-4u-quad-gpu
+  u_position: 37
+  face: front
+  instance:
+    1: gpu517
+    2: gpu518
+    3: gpu519
+    4: gpu520
+- id: tor-rack-tou-gpu012
+  name: tor-rack-tou-gpu012
+  template_id: generic-tor-eth-1u
+  u_position: 42
+  face: front
+  instance: tor-rack-tou-gpu012
+- id: sw-ib-rack-tou-gpu012
+  name: ib-rack-tou-gpu012
+  template_id: generic-ib-switch-1u
+  u_position: 41
+  face: front
+  instance: ib-rack-tou-gpu012

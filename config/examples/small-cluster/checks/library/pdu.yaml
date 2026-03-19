@@ -1,0 +1,59 @@
+checks:
+- id: pdu_load_warn
+  name: PDU Active Power Warning
+  kind: pdu
+  scope: rack
+  expr: sum by (rack_id) (raritan_pdu_activepower_watt{rack_id=~"$racks",inletid="I1"})
+  output: numeric
+  for: 5m
+  rules:
+  - op: '>'
+    value: 5000
+    severity: WARN
+- id: pdu_load_crit
+  name: PDU Active Power Critical
+  kind: pdu
+  scope: rack
+  expr: sum by (rack_id) (raritan_pdu_activepower_watt{rack_id=~"$racks",inletid="I1"})
+  output: numeric
+  for: 2m
+  rules:
+  - op: '>'
+    value: 7000
+    severity: CRIT
+- id: pdu_current_warn
+  name: PDU Current Warning
+  kind: pdu
+  scope: rack
+  expr: max by (rack_id) (raritan_pdu_current_ampere{rack_id=~"$racks",inletid="I1"})
+  output: numeric
+  for: 5m
+  rules:
+  - op: '>'
+    value: 14
+    severity: WARN
+  - op: '>'
+    value: 16
+    severity: CRIT
+- id: fan_speed_warn
+  name: Rack Fan Speed Abnormal
+  kind: cooling
+  scope: rack
+  expr: rack_fan_speed_state{rack_id=~"$racks"}
+  output: numeric
+  for: 2m
+  rules:
+  - op: '>'
+    value: 0
+    severity: WARN
+- id: psu_status
+  name: PSU Status Abnormal
+  kind: pdu
+  scope: rack
+  expr: rack_psu_status{rack_id=~"$racks"}
+  output: numeric
+  for: 1m
+  rules:
+  - op: '>'
+    value: 0
+    severity: CRIT

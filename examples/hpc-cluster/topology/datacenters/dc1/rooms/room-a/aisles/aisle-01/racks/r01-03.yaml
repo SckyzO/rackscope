@@ -1,0 +1,60 @@
+id: r01-03
+name: Rack XH3000 Compute 03
+template_id: bull-xh3000
+aisle_id: aisle-01
+devices:
+- id: r01-03-ib
+  name: IB Switch XH35MQ
+  template_id: bs-xh35mq-ib-1u
+  u_position: 12
+  instance: sw-ib-r01-03
+- id: r01-03-c01
+  name: XH3150 Tino 01
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 1
+  instance: compute[051-053]
+- id: r01-03-c02
+  name: XH3150 Tino 02
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 2
+  instance: compute[054-056]
+- id: r01-03-c03
+  name: XH3150 Tino 03
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 3
+  instance: compute[057-059]
+- id: r01-03-c04
+  name: XH3150 Tino 04
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 4
+  instance: compute[060-062]
+- id: r01-03-c05
+  name: XH3150 Tino 05
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 5
+  instance: compute[063-065]
+- id: r01-03-c06
+  name: XH3150 Tino 06
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 6
+  instance: compute[066-068]
+- id: r01-03-c07
+  name: XH3150 Tino 07
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 7
+  instance: compute[069-071]
+- id: r01-03-c08
+  name: XH3150 Tino 08
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 8
+  instance: compute[072-074]
+- id: r01-03-c09
+  name: XH3150 Tino 09
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 9
+  instance: compute[075-077]
+- id: r01-03-c10
+  name: XH3150 Tino 10
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 10
+  instance: compute[078-080]

@@ -1,0 +1,6 @@
+# Node mapping for hpc-cluster
+# Format: slurm_pattern: topology_instance_pattern
+mapping:
+  "c[0001-1000]": "compute[0001-1000]"
+  "g[001-200]": "gpu[001-200]"
+  "h[001-200]": "hm[001-200]"

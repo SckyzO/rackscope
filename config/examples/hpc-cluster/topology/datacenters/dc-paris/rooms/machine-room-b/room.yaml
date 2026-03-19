@@ -1,0 +1,20 @@
+id: machine-room-b
+name: Machine Room B — Services
+site_id: dc-paris
+description: Login, management, network
+layout:
+  shape: rectangle
+  size:
+    width: 24
+    height: 24
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+- id: aisle-services
+  name: Aisle Services

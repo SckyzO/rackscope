@@ -1,0 +1,13 @@
+templates:
+  - id: simple-1u-switch
+    name: "Generic 1U Switch"
+    type: switch
+    u_height: 1
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix:
+        - [1]
+    checks:
+      - switch_up

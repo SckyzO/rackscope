@@ -1,0 +1,54 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.pyo
+*.pkl
+*.egg-info/
+.venv/
+.uv/
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage.json
+htmlcov/
+.ipynb_checkpoints/
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+**/node_modules/
+**/dist/
+.eslintcache
+
+# ── Env / Secrets ─────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── OS / Editors ──────────────────────────────────────────────────────────────
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
+*~
+
+# ── Project ───────────────────────────────────────────────────────────────────
+backup/
+tmp/
+*.log
+*.db
+*.sqlite3
+
+# ── Nginx TLS certificates (generated locally via `make cert`) ────────────────
+nginx/certs/*.pem
+
+# ── AI agent guidance & internal prompts — never commit ──────────────────────
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+prompt.md
+old_claude.md
+ARCHITECTURE/
+notes/

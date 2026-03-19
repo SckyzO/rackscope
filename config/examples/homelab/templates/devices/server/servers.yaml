@@ -1,0 +1,156 @@
+templates:
+- id: generic-1u-server
+  name: Generic 1U Server
+  type: server
+  u_height: 1
+  role: compute
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1
+  checks: &id001
+  - node_up
+  - node_temp_warn
+  - ipmi_temp_state
+  - node_power_warn
+  - ipmi_power_state
+  - ipmi_fan_state
+  metrics:
+  - node_temperature
+  - node_power
+- id: generic-2u-twin
+  name: Generic 2U Twin (2 nodes)
+  type: server
+  u_height: 2
+  role: compute
+  layout:
+    type: grid
+    rows: 1
+    cols: 2
+    matrix:
+    - - 1
+      - 2
+  checks: *id001
+  metrics:
+  - node_temperature
+  - node_power
+- id: generic-2u-quad
+  name: Generic 2U Quad (4 nodes)
+  type: server
+  u_height: 2
+  role: compute
+  layout:
+    type: grid
+    rows: 2
+    cols: 2
+    matrix:
+    - - 1
+      - 2
+    - - 3
+      - 4
+  checks: *id001
+  metrics:
+  - node_temperature
+  - node_power
+- id: hpc-1u-3node
+  name: HPC 1U 3-node (DCW)
+  type: server
+  u_height: 1
+  role: compute
+  layout:
+    type: grid
+    rows: 1
+    cols: 3
+    matrix:
+    - - 1
+      - 2
+      - 3
+  checks: &id002
+  - node_up
+  - node_temp_warn
+  - ipmi_temp_state
+  - node_power_warn
+  - ipmi_power_state
+  metrics:
+  - node_temperature
+  - node_power
+- id: hpc-1u-2node-hm
+  name: HPC 1U 2-node High-Memory (DCW)
+  type: server
+  u_height: 1
+  role: highmem
+  layout:
+    type: grid
+    rows: 1
+    cols: 2
+    matrix:
+    - - 1
+      - 2
+  checks: *id002
+  metrics:
+  - node_temperature
+  - node_power
+- id: hpc-4u-quad-gpu
+  name: HPC 4U GPU Quad (4 nodes, DCW)
+  type: server
+  u_height: 4
+  role: gpu
+  layout:
+    type: grid
+    rows: 2
+    cols: 2
+    matrix:
+    - - 1
+      - 2
+    - - 3
+      - 4
+  checks: *id002
+  metrics:
+  - node_temperature
+  - node_power
+- id: generic-1u-login
+  name: Login Node 1U
+  type: server
+  u_height: 1
+  role: login
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1
+  checks: *id001
+  metrics:
+  - node_temperature
+  - node_power
+- id: generic-2u-visu
+  name: Visualization Node 2U
+  type: server
+  u_height: 2
+  role: visu
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1
+  checks: *id001
+  metrics:
+  - node_temperature
+  - node_power
+- id: generic-1u-mgmt
+  name: Management Server 1U
+  type: server
+  u_height: 1
+  role: management
+  layout:
+    type: grid
+    rows: 1
+    cols: 1
+    matrix:
+    - - 1
+  checks: *id001
+  metrics:
+  - node_power

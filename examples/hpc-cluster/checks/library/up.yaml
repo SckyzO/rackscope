@@ -1,0 +1,26 @@
+# Core availability checks — applies to all compute nodes via the 'core' kind.
+# Referenced by default in most device templates.
+checks:
+  - id: node_up
+    name: Node up
+    for: null
+    scope: node
+    kind: core
+    expr: up{job=~"$jobs",instance=~"$instances"}
+    output: bool
+    rules:
+      - op: "=="
+        value: 0
+        severity: CRIT
+
+  - id: node_recent_reboot
+    name: Node recent reboot
+    for: null
+    scope: node
+    kind: core
+    expr: time() - node_boot_time_seconds{instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: "<"
+        value: 600
+        severity: WARN

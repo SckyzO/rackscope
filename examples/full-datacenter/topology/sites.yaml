@@ -1,0 +1,14 @@
+sites:
+  - id: dc-paris
+    name: Paris HPC Datacenter
+    description: Main HPC compute site — Île-de-France
+    lat: 48.8566
+    lon: 2.3522
+    rooms_path: datacenters/dc-paris/rooms
+
+  - id: dc-lyon
+    name: Lyon DR Site
+    description: Disaster recovery site — Auvergne-Rhône-Alpes
+    lat: 45.7640
+    lon: 4.8357
+    rooms_path: datacenters/dc-lyon/rooms

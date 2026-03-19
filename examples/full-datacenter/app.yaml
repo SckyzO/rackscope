@@ -1,0 +1,52 @@
+# Rackscope — app.yaml (full-datacenter example)
+# 2 sites, 4 rooms, mixed compute/GPU/storage/network
+
+app:
+  name: Rackscope
+  description: Datacenter Monitoring
+
+paths:
+  topology: config/topology
+  templates: config/templates
+  checks: config/checks/library
+  metrics: config/metrics/library
+
+refresh:
+  room_state_seconds: 60
+  rack_state_seconds: 60
+
+cache:
+  ttl_seconds: 60
+  health_checks_ttl_seconds: 30
+  metrics_ttl_seconds: 120
+
+telemetry:
+  prometheus_url: http://prometheus:9090
+  identity_label: instance
+  rack_label: rack_id
+  job_regex: "node|rackscope-simulator"
+
+planner:
+  unknown_state: UNKNOWN
+  cache_ttl_seconds: 60
+  max_ids_per_query: 300
+
+features:
+  notifications: true
+  playlist: true
+  offline: true
+  wizard: false
+  worldmap: true
+
+auth:
+  enabled: false
+  username: admin
+  password_hash: ""
+  session_duration: 24h
+
+plugins:
+  simulator:
+    enabled: true
+    # Behaviour settings live in config/plugins/simulator/config/plugin.yaml
+  slurm:
+    enabled: false

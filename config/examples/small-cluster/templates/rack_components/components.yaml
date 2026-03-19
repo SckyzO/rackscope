@@ -1,0 +1,52 @@
+rack_component_templates:
+- id: pdu-1phase
+  name: PDU 1-Phase
+  type: pdu
+  location: side
+  u_height: 1
+  checks:
+  - pdu_load_warn
+  - pdu_load_crit
+  - pdu_current_warn
+  metrics:
+  - pdu_active_power
+  - pdu_current
+- id: fan-module
+  name: Fan Module
+  type: cooling
+  location: rear
+  u_height: 1
+  checks:
+  - fan_speed_warn
+  metrics: []
+- id: psu-module
+  name: PSU Module
+  type: pdu
+  location: rear
+  u_height: 2
+  checks:
+  - psu_status
+  metrics:
+  - node_power
+- id: pmc-module
+  name: PMC Power Module
+  type: pdu
+  location: rear
+  u_height: 1
+  checks:
+  - pmc_power_warn
+  - pmc_power_crit
+  metrics:
+  - pmc_power
+- id: hmc-module
+  name: HMC Hydraulic Module
+  type: cooling
+  location: rear
+  u_height: 1
+  checks:
+  - hmc_temp_warn
+  - hmc_temp_crit
+  - hmc_flow_warn
+  - hmc_leak
+  metrics:
+  - hmc_coolant_temp

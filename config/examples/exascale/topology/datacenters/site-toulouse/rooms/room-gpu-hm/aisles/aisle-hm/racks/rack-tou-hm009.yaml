@@ -1,0 +1,337 @@
+id: rack-tou-hm009
+name: HM Rack rack-tou-hm009
+u_height: 42
+template_id: rack-42u-dcw
+devices:
+- id: hhm009-01
+  name: hm721-hm722
+  template_id: hpc-1u-2node-hm
+  u_position: 1
+  face: front
+  instance:
+    1: hm721
+    2: hm722
+- id: hhm009-02
+  name: hm723-hm724
+  template_id: hpc-1u-2node-hm
+  u_position: 2
+  face: front
+  instance:
+    1: hm723
+    2: hm724
+- id: hhm009-03
+  name: hm725-hm726
+  template_id: hpc-1u-2node-hm
+  u_position: 3
+  face: front
+  instance:
+    1: hm725
+    2: hm726
+- id: hhm009-04
+  name: hm727-hm728
+  template_id: hpc-1u-2node-hm
+  u_position: 4
+  face: front
+  instance:
+    1: hm727
+    2: hm728
+- id: hhm009-05
+  name: hm729-hm730
+  template_id: hpc-1u-2node-hm
+  u_position: 5
+  face: front
+  instance:
+    1: hm729
+    2: hm730
+- id: hhm009-06
+  name: hm731-hm732
+  template_id: hpc-1u-2node-hm
+  u_position: 6
+  face: front
+  instance:
+    1: hm731
+    2: hm732
+- id: hhm009-07
+  name: hm733-hm734
+  template_id: hpc-1u-2node-hm
+  u_position: 7
+  face: front
+  instance:
+    1: hm733
+    2: hm734
+- id: hhm009-08
+  name: hm735-hm736
+  template_id: hpc-1u-2node-hm
+  u_position: 8
+  face: front
+  instance:
+    1: hm735
+    2: hm736
+- id: hhm009-09
+  name: hm737-hm738
+  template_id: hpc-1u-2node-hm
+  u_position: 9
+  face: front
+  instance:
+    1: hm737
+    2: hm738
+- id: hhm009-10
+  name: hm739-hm740
+  template_id: hpc-1u-2node-hm
+  u_position: 10
+  face: front
+  instance:
+    1: hm739
+    2: hm740
+- id: hhm009-11
+  name: hm741-hm742
+  template_id: hpc-1u-2node-hm
+  u_position: 11
+  face: front
+  instance:
+    1: hm741
+    2: hm742
+- id: hhm009-12
+  name: hm743-hm744
+  template_id: hpc-1u-2node-hm
+  u_position: 12
+  face: front
+  instance:
+    1: hm743
+    2: hm744
+- id: hhm009-13
+  name: hm745-hm746
+  template_id: hpc-1u-2node-hm
+  u_position: 13
+  face: front
+  instance:
+    1: hm745
+    2: hm746
+- id: hhm009-14
+  name: hm747-hm748
+  template_id: hpc-1u-2node-hm
+  u_position: 14
+  face: front
+  instance:
+    1: hm747
+    2: hm748
+- id: hhm009-15
+  name: hm749-hm750
+  template_id: hpc-1u-2node-hm
+  u_position: 15
+  face: front
+  instance:
+    1: hm749
+    2: hm750
+- id: hhm009-16
+  name: hm751-hm752
+  template_id: hpc-1u-2node-hm
+  u_position: 16
+  face: front
+  instance:
+    1: hm751
+    2: hm752
+- id: hhm009-17
+  name: hm753-hm754
+  template_id: hpc-1u-2node-hm
+  u_position: 17
+  face: front
+  instance:
+    1: hm753
+    2: hm754
+- id: hhm009-18
+  name: hm755-hm756
+  template_id: hpc-1u-2node-hm
+  u_position: 18
+  face: front
+  instance:
+    1: hm755
+    2: hm756
+- id: hhm009-19
+  name: hm757-hm758
+  template_id: hpc-1u-2node-hm
+  u_position: 19
+  face: front
+  instance:
+    1: hm757
+    2: hm758
+- id: hhm009-20
+  name: hm759-hm760
+  template_id: hpc-1u-2node-hm
+  u_position: 20
+  face: front
+  instance:
+    1: hm759
+    2: hm760
+- id: hhm009-21
+  name: hm761-hm762
+  template_id: hpc-1u-2node-hm
+  u_position: 21
+  face: front
+  instance:
+    1: hm761
+    2: hm762
+- id: hhm009-22
+  name: hm763-hm764
+  template_id: hpc-1u-2node-hm
+  u_position: 22
+  face: front
+  instance:
+    1: hm763
+    2: hm764
+- id: hhm009-23
+  name: hm765-hm766
+  template_id: hpc-1u-2node-hm
+  u_position: 23
+  face: front
+  instance:
+    1: hm765
+    2: hm766
+- id: hhm009-24
+  name: hm767-hm768
+  template_id: hpc-1u-2node-hm
+  u_position: 24
+  face: front
+  instance:
+    1: hm767
+    2: hm768
+- id: hhm009-25
+  name: hm769-hm770
+  template_id: hpc-1u-2node-hm
+  u_position: 25
+  face: front
+  instance:
+    1: hm769
+    2: hm770
+- id: hhm009-26
+  name: hm771-hm772
+  template_id: hpc-1u-2node-hm
+  u_position: 26
+  face: front
+  instance:
+    1: hm771
+    2: hm772
+- id: hhm009-27
+  name: hm773-hm774
+  template_id: hpc-1u-2node-hm
+  u_position: 27
+  face: front
+  instance:
+    1: hm773
+    2: hm774
+- id: hhm009-28
+  name: hm775-hm776
+  template_id: hpc-1u-2node-hm
+  u_position: 28
+  face: front
+  instance:
+    1: hm775
+    2: hm776
+- id: hhm009-29
+  name: hm777-hm778
+  template_id: hpc-1u-2node-hm
+  u_position: 29
+  face: front
+  instance:
+    1: hm777
+    2: hm778
+- id: hhm009-30
+  name: hm779-hm780
+  template_id: hpc-1u-2node-hm
+  u_position: 30
+  face: front
+  instance:
+    1: hm779
+    2: hm780
+- id: hhm009-31
+  name: hm781-hm782
+  template_id: hpc-1u-2node-hm
+  u_position: 31
+  face: front
+  instance:
+    1: hm781
+    2: hm782
+- id: hhm009-32
+  name: hm783-hm784
+  template_id: hpc-1u-2node-hm
+  u_position: 32
+  face: front
+  instance:
+    1: hm783
+    2: hm784
+- id: hhm009-33
+  name: hm785-hm786
+  template_id: hpc-1u-2node-hm
+  u_position: 33
+  face: front
+  instance:
+    1: hm785
+    2: hm786
+- id: hhm009-34
+  name: hm787-hm788
+  template_id: hpc-1u-2node-hm
+  u_position: 34
+  face: front
+  instance:
+    1: hm787
+    2: hm788
+- id: hhm009-35
+  name: hm789-hm790
+  template_id: hpc-1u-2node-hm
+  u_position: 35
+  face: front
+  instance:
+    1: hm789
+    2: hm790
+- id: hhm009-36
+  name: hm791-hm792
+  template_id: hpc-1u-2node-hm
+  u_position: 36
+  face: front
+  instance:
+    1: hm791
+    2: hm792
+- id: hhm009-37
+  name: hm793-hm794
+  template_id: hpc-1u-2node-hm
+  u_position: 37
+  face: front
+  instance:
+    1: hm793
+    2: hm794
+- id: hhm009-38
+  name: hm795-hm796
+  template_id: hpc-1u-2node-hm
+  u_position: 38
+  face: front
+  instance:
+    1: hm795
+    2: hm796
+- id: hhm009-39
+  name: hm797-hm798
+  template_id: hpc-1u-2node-hm
+  u_position: 39
+  face: front
+  instance:
+    1: hm797
+    2: hm798
+- id: hhm009-40
+  name: hm799-hm800
+  template_id: hpc-1u-2node-hm
+  u_position: 40
+  face: front
+  instance:
+    1: hm799
+    2: hm800
+- id: tor-rack-tou-hm009
+  name: tor-rack-tou-hm009
+  template_id: generic-tor-eth-1u
+  u_position: 42
+  face: front
+  instance: tor-rack-tou-hm009
+- id: sw-ib-rack-tou-hm009
+  name: ib-rack-tou-hm009
+  template_id: generic-ib-switch-1u
+  u_position: 41
+  face: front
+  instance: ib-rack-tou-hm009

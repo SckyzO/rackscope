@@ -1,0 +1,20 @@
+id: server-room
+name: Server Room
+site_id: homelab
+description: Main server room
+layout:
+  shape: rectangle
+  size:
+    width: 24
+    height: 24
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+- id: main-aisle
+  name: Main Aisle
