@@ -33,17 +33,17 @@ World Map → Room → Rack → Device → Instance
 
 ## How it works
 
-**① Define your templates**
-Describe your hardware once — servers, switches, storage arrays, PDUs. Each model defines the physical form, layout, and associated metrics. YAML or visual editor.
+1. **Define your templates**
+   Describe your hardware once — servers, switches, storage arrays, PDUs. Each model defines the physical form, layout, and associated metrics. YAML or visual editor.
 
-**② Create your checks and assign them**
-Define PromQL health rules and assign them to device or rack templates. Checks use the standard Prometheus HTTP API — compatible with Thanos, Grafana Mimir, Cortex, VictoriaMetrics, and any backend exposing `/api/v1/query`.
+2. **Create your checks and assign them**
+   Define PromQL health rules and assign them to device or rack templates. Checks use the standard Prometheus HTTP API — compatible with Thanos, Grafana Mimir, Cortex, VictoriaMetrics, and any backend exposing `/api/v1/query`.
 
-**③ Build your topology**
-Map your physical infrastructure: datacenters, rooms, aisles, racks, devices. YAML or visual editor — no database, no agent to deploy.
+3. **Build your topology**
+   Map your physical infrastructure: datacenters, rooms, aisles, racks, devices. YAML or visual editor — no database, no agent to deploy.
 
-**④ Visualize and locate**
-Rackscope displays the health of every piece of equipment in real time. When a node goes down, an alert appears in the notification panel — and is also reflected visually in the dashboards. The rack containing the faulty equipment changes color to match the alert severity, making it immediately visible at a glance. This propagates up through multi-room and multi-datacenter views, giving you a complete, at-a-glance visual overview of your entire infrastructure.
+4. **Visualize and locate**
+   Rackscope displays the health of every piece of equipment in real time. When a node goes down, an alert appears in the notification panel — and is also reflected visually in the dashboards. The rack containing the faulty equipment changes color to match the alert severity, making it immediately visible at a glance. This propagates up through multi-room and multi-datacenter views, giving you a complete, at-a-glance visual overview of your entire infrastructure.
 
 > An interactive, real-time view of your entire physical infrastructure — every level visible, every alert instantly locatable.
 
