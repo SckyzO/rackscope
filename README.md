@@ -33,24 +33,42 @@ World Map → Room → Rack → Device → Instance
 
 ## How it works
 
-```
-① Templates      ② Checks         ③ Topology        → Views
-  Rack models      PromQL rules      YAML or UI         World map · Room plan
-  Device models    Per type or       Sites, rooms        Rack elevation · Device
-                   per rack          racks, slots        NOC wallboard
-```
+**① Define your templates**
+Describe your hardware once — servers, switches, storage arrays, PDUs. Each model defines the physical form, layout, and associated metrics. YAML or visual editor.
 
-No code, no database — define once in YAML, reuse everywhere.
+**② Create your checks and assign them**
+Define PromQL health rules and assign them to device or rack templates. Checks use the standard Prometheus HTTP API — compatible with Thanos, Grafana Mimir, Cortex, VictoriaMetrics, and any backend exposing `/api/v1/query`.
+
+**③ Build your topology**
+Map your physical infrastructure: datacenters, rooms, aisles, racks, devices. YAML or visual editor — no database, no agent to deploy.
+
+**④ Visualize and locate**
+Rackscope displays the health of every piece of equipment in real time. When a node goes down, an alert appears in the notification panel — and is also reflected visually in the dashboards. The rack containing the faulty equipment changes color to match the alert severity, making it immediately visible at a glance. This propagates up through multi-room and multi-datacenter views, giving you a complete, at-a-glance visual overview of your entire infrastructure.
+
+> An interactive, real-time view of your entire physical infrastructure — every level visible, every alert instantly locatable.
 
 ---
 
 ## ✨ Features
 
-**🗺️ Physical views** — World map · Room floor plan (10 styles) · Front/rear rack · Device drill-down · NOC wallboard · HPC cluster view
+**🗺️ Physical views**
+- World map with site markers
+- Room floor plan — 10 styles
+- Front/rear rack elevation
+- Device drill-down & metrics
+- NOC wallboard · HPC cluster view
 
-**⚡ Health** — PromQL checks · node→rack→room→site propagation · WARN/CRIT/UNKNOWN · per-component (`expand_by_label`) · toast alerts
+**⚡ Health**
+- PromQL checks — node → rack → room → site propagation
+- WARN / CRIT / UNKNOWN states
+- Per-component monitoring (`expand_by_label`)
+- Toast + sound alerts
 
-**🛠️ Editors** — Topology · Rack (drag & drop) · Templates (Monaco) · Checks library · Settings UI — all without touching YAML
+**🛠️ Editors**
+- Topology editor (sites, rooms, aisles, racks)
+- Rack editor (drag & drop)
+- Templates editor (Monaco)
+- Checks library · Settings UI — no YAML required
 
 ![Rackscope Dashboard](https://rackscope.dev/img/screenshots/rackscope-dashboard-overview.png)
 
