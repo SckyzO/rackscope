@@ -29,6 +29,22 @@ class CheckTestRequest(BaseModel):
 router = APIRouter(prefix="/api/checks", tags=["checks"])
 
 
+def _validate_safe_path(name: str, base_dir: Path) -> Path:
+    """Validate that a user-supplied filename stays within base_dir.
+
+    Raises HTTPException 400 if name contains traversal sequences.
+    Raises HTTPException 403 if the resolved path escapes base_dir.
+    """
+    if not name or ".." in name or name.startswith("/") or name.startswith("\\"):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    target = (base_dir / name).resolve()
+    try:
+        target.relative_to(base_dir.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return target
+
+
 @router.get("")
 def get_checks_library(
     checks_library: Annotated[Optional[ChecksLibrary], Depends(get_checks_library_optional)],
@@ -69,7 +85,7 @@ def read_checks_file(
     """Read a checks YAML file."""
     base_dir = Path(app_config.paths.checks)
     if base_dir.is_dir():
-        target = base_dir / name
+        target = _validate_safe_path(name, base_dir)
     else:
         target = base_dir
     if not target.exists():
@@ -90,7 +106,7 @@ def write_checks_file(
     base_dir = Path(app_config.paths.checks)
     if base_dir.is_dir():
         base_dir.mkdir(parents=True, exist_ok=True)
-        target = base_dir / name
+        target = _validate_safe_path(name, base_dir)
     else:
         target = base_dir
 

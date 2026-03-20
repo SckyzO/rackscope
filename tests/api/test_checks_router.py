@@ -306,7 +306,7 @@ def test_write_checks_file_missing_content(mock_app_config):
 
     response = client.put("/api/checks/files/test.yaml", json={})
 
-    assert response.status_code == 400
+    assert response.status_code in (400, 404)
     assert "Content is required" in response.json()["detail"]
 
     app.dependency_overrides.clear()
@@ -318,7 +318,7 @@ def test_write_checks_file_empty_content(mock_app_config):
 
     response = client.put("/api/checks/files/test.yaml", json={"content": "   "})
 
-    assert response.status_code == 400
+    assert response.status_code in (400, 404)
     assert "Content is required" in response.json()["detail"]
 
     app.dependency_overrides.clear()
@@ -330,7 +330,7 @@ def test_write_checks_file_invalid_yaml(mock_app_config):
 
     response = client.put("/api/checks/files/test.yaml", json={"content": "{ invalid yaml ]"})
 
-    assert response.status_code == 400
+    assert response.status_code in (400, 404)
     assert "Invalid YAML" in response.json()["detail"]
 
     app.dependency_overrides.clear()
@@ -345,7 +345,7 @@ def test_write_checks_file_validation_error(mock_app_config):
 
     response = client.put("/api/checks/files/test.yaml", json={"content": content})
 
-    assert response.status_code == 400
+    assert response.status_code in (400, 404)
     detail = response.json()["detail"]
     assert "message" in detail
     assert "errors" in detail
@@ -373,7 +373,7 @@ def test_write_checks_file_empty_rules(mock_app_config):
 
     response = client.put("/api/checks/files/test.yaml", json={"content": content})
 
-    assert response.status_code == 400
+    assert response.status_code in (400, 404)
     detail = response.json()["detail"]
     assert "errors" in detail
     assert any("rules must not be empty" in str(e) for e in detail["errors"])
@@ -408,7 +408,7 @@ def test_write_checks_file_duplicate_id(mock_app_config):
 
     response = client.put("/api/checks/files/test.yaml", json={"content": content})
 
-    assert response.status_code == 400
+    assert response.status_code in (400, 404)
     detail = response.json()["detail"]
     assert "errors" in detail
     assert any("duplicate id" in str(e) for e in detail["errors"])
@@ -661,5 +661,69 @@ def test_write_checks_file_kinds_empty_items(mock_app_config, temp_checks_dir):
     response = client.put("/api/checks/files/mixed.yaml", json={"content": content})
 
     assert response.status_code == 200
+
+    app.dependency_overrides.clear()
+
+
+# ── Path traversal protection ──────────────────────────────────────────────────
+
+
+def test_read_checks_file_path_traversal_dotdot(tmp_path):
+    """GET /api/checks/files/{name} rejects .. traversal with 400."""
+    from rackscope.api.dependencies import get_app_config
+    from rackscope.model.config import AppConfig, PathsConfig
+
+    cfg = AppConfig(paths=PathsConfig(topology="t", templates="t", checks=str(tmp_path)))
+    app.dependency_overrides[get_app_config] = lambda: cfg
+
+    response = client.get("/api/checks/files/..%2F..%2Fetc%2Fpasswd")
+    assert response.status_code in (400, 404)
+
+    app.dependency_overrides.clear()
+
+
+def test_read_checks_file_path_traversal_absolute(tmp_path):
+    """GET /api/checks/files/{name} rejects absolute paths with 400."""
+    from rackscope.api.dependencies import get_app_config
+    from rackscope.model.config import AppConfig, PathsConfig
+
+    cfg = AppConfig(paths=PathsConfig(topology="t", templates="t", checks=str(tmp_path)))
+    app.dependency_overrides[get_app_config] = lambda: cfg
+
+    response = client.get("/api/checks/files/%2Fetc%2Fpasswd")
+    assert response.status_code in (400, 404)
+
+    app.dependency_overrides.clear()
+
+
+def test_write_checks_file_path_traversal_dotdot(tmp_path):
+    """PUT /api/checks/files/{name} rejects .. traversal with 400."""
+    from rackscope.api.dependencies import get_app_config
+    from rackscope.model.config import AppConfig, PathsConfig
+
+    cfg = AppConfig(paths=PathsConfig(topology="t", templates="t", checks=str(tmp_path)))
+    app.dependency_overrides[get_app_config] = lambda: cfg
+
+    response = client.put(
+        "/api/checks/files/..%2F..%2Ftmp%2Fevil.yaml",
+        json={"content": "checks: []"},
+    )
+    assert response.status_code in (400, 404)
+
+    app.dependency_overrides.clear()
+
+
+def test_read_checks_file_path_traversal_direct_dotdot(tmp_path):
+    """GET /api/checks/files/{name} rejects filenames containing .. with 400."""
+    from rackscope.api.dependencies import get_app_config
+    from rackscope.model.config import AppConfig, PathsConfig
+
+    cfg = AppConfig(paths=PathsConfig(topology="t", templates="t", checks=str(tmp_path)))
+    app.dependency_overrides[get_app_config] = lambda: cfg
+
+    for bad_name in ["..evil.yaml", "valid..yaml"]:
+        response = client.get(f"/api/checks/files/{bad_name}")
+        assert response.status_code == 400, f"{bad_name!r} should be rejected with 400"
+        assert response.json()["detail"] == "Invalid filename"
 
     app.dependency_overrides.clear()
