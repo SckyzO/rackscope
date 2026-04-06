@@ -2,7 +2,7 @@ metrics:
   - id: pdu_current
     name: PDU Current
     description: Current per PDU outlet
-    metric: pdu_outlet_current_amperes{rack_id="$rack_id"}
+    metric: raritan_pdu_current_ampere{rack_id="$rack_id"}
     display:
       unit: A
       chart_type: line

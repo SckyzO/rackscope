@@ -50,10 +50,12 @@ def resolve_metric_query(
         return f'{metric_id}{{rack_id="{rack_id}"}}'
 
     expr = metric_def.metric
-    # Substitute placeholders
+    # Substitute placeholders — support both $var and {var} styles
+    expr = expr.replace('$rack_id', rack_id)
     expr = expr.replace('"{rack_id}"', f'"{rack_id}"')
     expr = expr.replace("{rack_id}", rack_id)
     if instance:
+        expr = expr.replace('$instance', instance)
         expr = expr.replace('"{instance}"', f'"{instance}"')
         expr = expr.replace("{instance}", instance)
     return expr
@@ -305,10 +307,11 @@ async def collect_device_metrics(
             key = base_name.group(1) if base_name else metric_id
             # Substitute $instance placeholder with the actual instance filter
             if len(instances) == 1:
-                instance_val = instances[0]
-                expr = metric_def.metric.replace('$instance', instance_val)
-                # Replace instance="$instance" → instance="val"
-                query = re.sub(r'instance="\$instance"', f'instance="{instance_val}"', expr)
+                query = re.sub(
+                    r'instance="\$instance"',
+                    f'instance="{instances[0]}"',
+                    metric_def.metric,
+                )
             else:
                 instance_pattern = "|".join(instances)
                 query = re.sub(
