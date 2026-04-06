@@ -66,68 +66,8 @@ playlist:
   - /views/worldmap
   - /slurm/overview
 plugins:
+  # Only 'enabled' here — behaviour in plugins/
   simulator:
     enabled: true
-    update_interval_seconds: 20
-    seed: null
-    incident_mode: light
-    changes_per_hour: 2
-    custom_incidents:
-      devices_crit: 0
-      devices_warn: 0
-      racks_crit: 0
-      aisles_hot: 0
-    overrides_path: config/plugins/simulator/overrides/overrides.yaml
-    default_ttl_seconds: 120
-    metrics_catalog_path: config/plugins/simulator/metrics/metrics_full.yaml
-    metrics_catalogs: []
-    slurm_alloc_percent: 80
-    slurm_random_statuses:
-      drain: 1
-      down: 1
-      maint: 1
-    slurm_random_match:
-    - compute*
-    - visu*
   slurm:
     enabled: true
-    metric: slurm_node_status
-    label_node: node
-    label_status: status
-    label_partition: partition
-    mapping_path: ''
-    roles: []
-    include_unlabeled: false
-    status_map:
-      ok:
-      - idle
-      - allocated
-      - alloc
-      - completing
-      - comp
-      warn:
-      - mixed
-      - mix
-      - maint
-      - planned
-      - plnd
-      - reserved
-      - resv
-      crit:
-      - down
-      - drain
-      - drained
-      - draining
-      - drng
-      - fail
-      - failing
-      - failg
-      - error
-      info: []
-    severity_colors:
-      ok: '#22c55e'
-      warn: '#f59e0b'
-      crit: '#ef4444'
-      info: '#3b82f6'
-simulator: null
-slurm: null
