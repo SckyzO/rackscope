@@ -1,0 +1,5 @@
+id: aisle-gpu
+name: Aisle GPU — XH3000 DLC
+room_id: machine-room-a
+racks:
+  - id: rack-par-gpu01

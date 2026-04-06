@@ -1,0 +1,78 @@
+app:
+  name: "Rackscope \u2014 Bull Demo"
+  description: "BullSequana HPC Cluster \u2014 3 sites (Toulouse, Bruy\xE8res, Berlin)"
+paths:
+  topology: config/examples/bull/topology
+  templates: config/examples/bull/templates
+  checks: config/examples/bull/checks/library
+  metrics: config/examples/bull/metrics/library
+refresh:
+  room_state_seconds: 30
+  rack_state_seconds: 30
+cache:
+  ttl_seconds: 30
+  health_checks_ttl_seconds: 30
+  metrics_ttl_seconds: 120
+  service_ttl_seconds: 5
+telemetry:
+  prometheus_url: http://prometheus:9090
+  prometheus_timeout_seconds: 5.0
+  identity_label: instance
+  rack_label: rack_id
+  chassis_label: chassis_id
+  job_regex: node|rackscope-simulator
+  prometheus_heartbeat_seconds: 30
+  prometheus_latency_window: 20
+  debug_stats: false
+  basic_auth_user: null
+  basic_auth_password: null
+  tls_verify: true
+  tls_ca_file: null
+  tls_cert_file: null
+  tls_key_file: null
+planner:
+  unknown_state: UNKNOWN
+  cache_ttl_seconds: 30
+  max_ids_per_query: 300
+features:
+  notifications: true
+  notifications_max_visible: 10
+  playlist: true
+  offline: false
+  wizard: true
+  worldmap: true
+  show_logs: true
+  dev_tools: true
+auth:
+  enabled: false
+  username: admin
+  password_hash: ''
+  secret_key: ''
+  session_duration: 24h
+  policy:
+    min_length: 6
+    max_length: 128
+    require_digit: false
+    require_symbol: false
+  trusted_networks: []
+map:
+  default_view: world
+  default_zoom: 4
+  min_zoom: 2
+  max_zoom: 7
+  zoom_controls: true
+  center:
+    lat: 46.0
+    lon: 5.0
+playlist:
+  interval_seconds: 30
+  views:
+  - /views/worldmap
+  - /slurm/overview
+plugins:
+  simulator:
+    enabled: true
+  slurm:
+    enabled: true
+simulator: null
+slurm: null

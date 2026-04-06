@@ -1,0 +1,26 @@
+id: machine-room-a
+name: Machine Room A — Compute Floor
+site_id: bull-toulouse
+description: Compute floor — BullSequana XH3000 DLC racks
+layout:
+  shape: rectangle
+  size:
+    width: 60
+    height: 48
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+  - id: aisle-compute
+    name: Aisle Compute
+  - id: aisle-highmem
+    name: Aisle High-Memory
+  - id: aisle-gpu
+    name: Aisle GPU
+  - id: aisle-storage
+    name: Aisle Storage

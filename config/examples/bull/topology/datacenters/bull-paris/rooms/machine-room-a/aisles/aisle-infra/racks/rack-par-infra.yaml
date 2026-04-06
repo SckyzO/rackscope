@@ -1,0 +1,41 @@
+id: rack-par-infra
+name: Infrastructure Rack BRY
+u_height: 42
+template_id: standard-42u-air
+devices:
+- id: login-par-01
+  name: login-par-01
+  template_id: bs-x430-service-2u
+  u_position: 1
+  face: front
+  instance: login-par-01
+- id: visu-par-01
+  name: visu-par-01
+  template_id: bs-x450-visu-4u
+  u_position: 3
+  face: front
+  instance: visu-par-01
+- id: mgmt-par-01
+  name: mgmt-par-01
+  template_id: srv-1u-mgmt
+  u_position: 8
+  face: front
+  instance: mgmt-par-01
+- id: mgmt-par-02
+  name: mgmt-par-02
+  template_id: srv-1u-mgmt
+  u_position: 9
+  face: front
+  instance: mgmt-par-02
+- id: sw-eth-par-infra
+  name: sw-eth-par-infra
+  template_id: eth-switch-tor
+  u_position: 12
+  face: front
+  instance: sw-eth-par-infra
+- id: sto-par-01
+  name: sto-par-01
+  template_id: generic-1u-storage-head
+  u_position: 14
+  face: front
+  instance: sto-par-01

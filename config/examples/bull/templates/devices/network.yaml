@@ -1,0 +1,124 @@
+templates:
+  - id: eth-switch-tor
+    name: Ethernet Mgmt Switch
+    type: network
+    role: ethernet
+    u_height: 1
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix:
+        - - 1
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 2
+      matrix:
+        - - 901
+          - 902
+    checks:
+      - node_up
+      - switch_up
+      - switch_temp_warn
+      - switch_temp_crit
+      - switch_power_warn
+      - switch_power_crit
+    metrics:
+      - node_temperature
+      - node_power
+    display_thresholds:
+      temperature:
+        warn: 40
+        crit: 50
+
+  - id: bs-xh35mq-ib-1u
+    name: BullSequana XH35MQ IB Switch (1U)
+    type: network
+    role: infiniband
+    u_height: 1
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix:
+        - - 1
+    checks:
+      - switch_up
+      - switch_temp_warn
+      - switch_temp_crit
+      - switch_power_warn
+      - switch_power_crit
+    metrics:
+      - node_temperature
+      - node_power
+    display_thresholds:
+      temperature:
+        warn: 40
+        crit: 50
+
+  - id: ib-switch-l1
+    name: InfiniBand L1 (NDR 40p)
+    type: network
+    role: infiniband
+    u_height: 1
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix:
+        - - 1
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 2
+      matrix:
+        - - 901
+          - 902
+    checks:
+      - switch_up
+      - switch_temp_warn
+      - switch_temp_crit
+      - switch_power_warn
+      - switch_power_crit
+    metrics:
+      - node_temperature
+      - node_power
+    display_thresholds:
+      temperature:
+        warn: 40
+        crit: 50
+
+  - id: ib-switch-l2
+    name: InfiniBand L2 (Director 2U)
+    type: network
+    role: infiniband
+    u_height: 2
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix:
+        - - 1
+    rear_layout:
+      type: grid
+      rows: 1
+      cols: 4
+      matrix:
+        - - 901
+          - 902
+          - 903
+          - 904
+    checks:
+      - switch_up
+      - switch_temp_warn
+      - switch_temp_crit
+      - switch_power_warn
+      - switch_power_crit
+    metrics:
+      - node_temperature
+      - node_power
+    display_thresholds:
+      temperature:
+        warn: 40
+        crit: 50

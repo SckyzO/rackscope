@@ -1,0 +1,23 @@
+id: machine-room
+name: Machine Room
+site_id: bull-berlin
+description: Compute cluster + management and storage infrastructure
+layout:
+  shape: rectangle
+  size:
+    width: 24
+    height: 20
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+  - id: aisle-compute
+    name: Aisle Compute
+standalone_racks:
+  - id: rack-ber-mgmt
+  - id: rack-ber-sto

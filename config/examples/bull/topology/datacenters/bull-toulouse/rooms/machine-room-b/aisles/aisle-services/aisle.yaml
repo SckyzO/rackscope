@@ -1,0 +1,5 @@
+id: aisle-services
+name: Aisle Services
+room_id: machine-room-b
+racks:
+  - id: rack-tls-srv01

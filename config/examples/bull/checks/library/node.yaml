@@ -1,0 +1,136 @@
+# Core availability and IPMI hardware checks for BullSequana nodes.
+checks:
+  - id: node_up
+    name: Node up
+    for: null
+    scope: node
+    kind: core
+    expr: up{job=~"$jobs",instance=~"$instances"}
+    output: bool
+    rules:
+      - op: "=="
+        value: 0
+        severity: CRIT
+
+  - id: node_recent_reboot
+    name: Node recent reboot
+    for: null
+    scope: node
+    kind: core
+    expr: time() - node_boot_time_seconds{instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: "<"
+        value: 600
+        severity: WARN
+
+  - id: ipmi_up
+    name: IPMI exporter up
+    for: null
+    scope: node
+    kind: ipmi
+    expr: ipmi_up{instance=~"$instances"}
+    output: bool
+    rules:
+      - op: "=="
+        value: 0
+        severity: CRIT
+
+  - id: ipmi_fan_speed_state
+    name: IPMI fan speed state
+    for: "1m"
+    scope: node
+    kind: ipmi
+    expr: ipmi_fan_speed_state{instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: "=="
+        value: 1
+        severity: WARN
+      - op: "=="
+        value: 2
+        severity: CRIT
+
+  - id: ipmi_power_state
+    name: IPMI power state
+    for: "1m"
+    scope: node
+    kind: ipmi
+    expr: ipmi_power_state{instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: "=="
+        value: 1
+        severity: WARN
+      - op: "=="
+        value: 2
+        severity: CRIT
+
+  - id: ipmi_sensor_state
+    name: IPMI sensor state
+    for: "1m"
+    scope: node
+    kind: ipmi
+    expr: ipmi_sensor_state{name!~"Low Security Jmp|Phy Presence Jmp|Dongle Cable",instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: "=="
+        value: 1
+        severity: WARN
+      - op: "=="
+        value: 2
+        severity: CRIT
+
+  - id: ipmi_temperature_state
+    name: IPMI temperature state
+    for: "5m"
+    scope: node
+    kind: ipmi
+    expr: ipmi_temperature_state{instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: "=="
+        value: 1
+        severity: WARN
+      - op: "=="
+        value: 2
+        severity: CRIT
+
+  - id: ipmi_voltage_state
+    name: IPMI voltage state
+    for: "1m"
+    scope: node
+    kind: ipmi
+    expr: ipmi_voltage_state{instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: "=="
+        value: 1
+        severity: WARN
+      - op: "=="
+        value: 2
+        severity: CRIT
+
+  - id: node_temp_warn
+    name: Node temperature high (warn)
+    for: "5m"
+    scope: node
+    kind: core
+    expr: node_temperature_celsius{instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: ">="
+        value: 40
+        severity: WARN
+
+  - id: node_temp_crit
+    name: Node temperature high (crit)
+    for: "5m"
+    scope: node
+    kind: core
+    expr: node_temperature_celsius{instance=~"$instances"}
+    output: numeric
+    rules:
+      - op: ">="
+        value: 50
+        severity: CRIT

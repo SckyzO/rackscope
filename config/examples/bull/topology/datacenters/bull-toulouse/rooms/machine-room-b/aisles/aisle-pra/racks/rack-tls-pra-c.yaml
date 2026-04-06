@@ -1,0 +1,191 @@
+id: rack-tls-pra-c
+name: PRA Compute Rack TLS
+u_height: 42
+template_id: bull-xh3000
+devices:
+- id: hpc-tls-pra-c-01
+  name: tls-pra-compute001-tls-pra-compute003
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 1
+  face: front
+  instance:
+    1: tls-pra-compute001
+    2: tls-pra-compute002
+    3: tls-pra-compute003
+- id: hpc-tls-pra-c-02
+  name: tls-pra-compute004-tls-pra-compute006
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 2
+  face: front
+  instance:
+    1: tls-pra-compute004
+    2: tls-pra-compute005
+    3: tls-pra-compute006
+- id: hpc-tls-pra-c-03
+  name: tls-pra-compute007-tls-pra-compute009
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 3
+  face: front
+  instance:
+    1: tls-pra-compute007
+    2: tls-pra-compute008
+    3: tls-pra-compute009
+- id: hpc-tls-pra-c-04
+  name: tls-pra-compute010-tls-pra-compute012
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 4
+  face: front
+  instance:
+    1: tls-pra-compute010
+    2: tls-pra-compute011
+    3: tls-pra-compute012
+- id: hpc-tls-pra-c-05
+  name: tls-pra-compute013-tls-pra-compute015
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 5
+  face: front
+  instance:
+    1: tls-pra-compute013
+    2: tls-pra-compute014
+    3: tls-pra-compute015
+- id: hpc-tls-pra-c-06
+  name: tls-pra-compute016-tls-pra-compute018
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 6
+  face: front
+  instance:
+    1: tls-pra-compute016
+    2: tls-pra-compute017
+    3: tls-pra-compute018
+- id: hpc-tls-pra-c-07
+  name: tls-pra-compute019-tls-pra-compute021
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 7
+  face: front
+  instance:
+    1: tls-pra-compute019
+    2: tls-pra-compute020
+    3: tls-pra-compute021
+- id: hpc-tls-pra-c-08
+  name: tls-pra-compute022-tls-pra-compute024
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 8
+  face: front
+  instance:
+    1: tls-pra-compute022
+    2: tls-pra-compute023
+    3: tls-pra-compute024
+- id: hpc-tls-pra-c-09
+  name: tls-pra-compute025-tls-pra-compute027
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 9
+  face: front
+  instance:
+    1: tls-pra-compute025
+    2: tls-pra-compute026
+    3: tls-pra-compute027
+- id: hpc-tls-pra-c-10
+  name: tls-pra-compute028-tls-pra-compute030
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 10
+  face: front
+  instance:
+    1: tls-pra-compute028
+    2: tls-pra-compute029
+    3: tls-pra-compute030
+- id: hpc-tls-pra-c-11
+  name: tls-pra-compute031-tls-pra-compute033
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 11
+  face: front
+  instance:
+    1: tls-pra-compute031
+    2: tls-pra-compute032
+    3: tls-pra-compute033
+- id: hpc-tls-pra-c-12
+  name: tls-pra-compute034-tls-pra-compute036
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 12
+  face: front
+  instance:
+    1: tls-pra-compute034
+    2: tls-pra-compute035
+    3: tls-pra-compute036
+- id: hpc-tls-pra-c-13
+  name: tls-pra-compute037-tls-pra-compute039
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 13
+  face: front
+  instance:
+    1: tls-pra-compute037
+    2: tls-pra-compute038
+    3: tls-pra-compute039
+- id: hpc-tls-pra-c-14
+  name: tls-pra-compute040-tls-pra-compute042
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 14
+  face: front
+  instance:
+    1: tls-pra-compute040
+    2: tls-pra-compute041
+    3: tls-pra-compute042
+- id: hpc-tls-pra-c-15
+  name: tls-pra-compute043-tls-pra-compute045
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 15
+  face: front
+  instance:
+    1: tls-pra-compute043
+    2: tls-pra-compute044
+    3: tls-pra-compute045
+- id: hpc-tls-pra-c-16
+  name: tls-pra-compute046-tls-pra-compute048
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 16
+  face: front
+  instance:
+    1: tls-pra-compute046
+    2: tls-pra-compute047
+    3: tls-pra-compute048
+- id: hpc-tls-pra-c-17
+  name: tls-pra-compute049-tls-pra-compute051
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 17
+  face: front
+  instance:
+    1: tls-pra-compute049
+    2: tls-pra-compute050
+    3: tls-pra-compute051
+- id: hpc-tls-pra-c-18
+  name: tls-pra-compute052-tls-pra-compute054
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 18
+  face: front
+  instance:
+    1: tls-pra-compute052
+    2: tls-pra-compute053
+    3: tls-pra-compute054
+- id: hpc-tls-pra-c-19
+  name: tls-pra-compute055-tls-pra-compute057
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 19
+  face: front
+  instance:
+    1: tls-pra-compute055
+    2: tls-pra-compute056
+    3: tls-pra-compute057
+- id: hpc-tls-pra-c-20
+  name: tls-pra-compute058-tls-pra-compute060
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 20
+  face: front
+  instance:
+    1: tls-pra-compute058
+    2: tls-pra-compute059
+    3: tls-pra-compute060
+- id: sw-ib-tls-pra-c
+  name: sw-ib-tls-pra-c
+  template_id: bs-xh35mq-ib-1u
+  u_position: 38
+  face: front
+  instance: sw-ib-tls-pra-c

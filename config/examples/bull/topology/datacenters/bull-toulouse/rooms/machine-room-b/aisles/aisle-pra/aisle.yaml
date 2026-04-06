@@ -1,0 +1,6 @@
+id: aisle-pra
+name: Aisle PRA — Business Continuity
+room_id: machine-room-b
+racks:
+  - id: rack-tls-pra-c
+  - id: rack-tls-pra-gpu

@@ -1,0 +1,22 @@
+id: machine-room-b
+name: Machine Room B — Services & PRA
+site_id: bull-toulouse
+description: Services, login nodes, visualization and PRA racks
+layout:
+  shape: rectangle
+  size:
+    width: 30
+    height: 24
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+  - id: aisle-services
+    name: Aisle Services
+  - id: aisle-pra
+    name: Aisle PRA
