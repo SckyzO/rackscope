@@ -154,37 +154,37 @@ metrics:
 
   - name: ipmi_fan_speed_state
     scope: node
-    instances: ["compute*", "visu*", "srv*", "service*"]
+    instances: ["compute*", "visu*", "srv*", "service*", "tls-compute*", "par-compute*", "ber-compute*", "tls-gpu*", "par-gpu*", "tls-hm*", "login*", "mgmt*"]
     labels:
       name: fan
 
   - name: ipmi_power_state
     scope: node
-    instances: ["compute*", "visu*", "srv*", "service*"]
+    instances: ["compute*", "visu*", "srv*", "service*", "tls-compute*", "par-compute*", "ber-compute*", "tls-gpu*", "par-gpu*", "tls-hm*", "login*", "mgmt*"]
     labels:
       name: power
 
   - name: ipmi_sensor_state
     scope: node
-    instances: ["compute*", "visu*", "srv*", "service*"]
+    instances: ["compute*", "visu*", "srv*", "service*", "tls-compute*", "par-compute*", "ber-compute*", "tls-gpu*", "par-gpu*", "tls-hm*", "login*", "mgmt*"]
     labels:
       name: sensor
 
   - name: ipmi_temperature_state
     scope: node
-    instances: ["compute*", "visu*", "srv*", "service*"]
+    instances: ["compute*", "visu*", "srv*", "service*", "tls-compute*", "par-compute*", "ber-compute*", "tls-gpu*", "par-gpu*", "tls-hm*", "login*", "mgmt*"]
     labels:
       name: temperature
 
   - name: ipmi_voltage_state
     scope: node
-    instances: ["compute*", "visu*", "srv*", "service*"]
+    instances: ["compute*", "visu*", "srv*", "service*", "tls-compute*", "par-compute*", "ber-compute*", "tls-gpu*", "par-gpu*", "tls-hm*", "login*", "mgmt*"]
     labels:
       name: voltage
 
   - name: ipmi_up
     scope: node
-    instances: ["compute*", "visu*", "srv*", "service*"]
+    instances: ["compute*", "visu*", "srv*", "service*", "tls-compute*", "par-compute*", "ber-compute*", "tls-gpu*", "par-gpu*", "tls-hm*", "login*", "mgmt*"]
     # 1 = IPMI reachable, 0 = BMC unreachable (implies node is down)
 
 
@@ -223,6 +223,13 @@ metrics:
     instances:
       - compute*
       - visu*
+      - tls-compute*
+      - par-compute*
+      - ber-compute*
+      - tls-gpu*
+      - par-gpu*
+      - tls-hm*
+      - visu-*
     labels_only: true
     labels:
       node: $node_id
@@ -320,7 +327,7 @@ metrics:
 
   - name: sequana3_hyc_state_info
     scope: rack
-    racks: ["r01-*"]
+    racks: ["r01-*", "rack-tls-*", "rack-par-*", "rack-ber-*"]
     labels:
       job: sequana3
       cluster: demo
@@ -336,7 +343,7 @@ metrics:
 
   - name: sequana3_hyc_p_in_kpa
     scope: rack
-    racks: ["r01-*"]
+    racks: ["r01-*", "rack-tls-*", "rack-par-*", "rack-ber-*"]
     labels:
       job: sequana3
       cluster: demo
@@ -351,7 +358,7 @@ metrics:
 
   - name: sequana3_hyc_leak_sensor_pump
     scope: rack
-    racks: ["r01-*"]
+    racks: ["r01-*", "rack-tls-*", "rack-par-*", "rack-ber-*"]
     labels:
       job: sequana3
       cluster: demo
@@ -366,7 +373,7 @@ metrics:
 
   - name: sequana3_hyc_tmp_pcb_cel
     scope: rack
-    racks: ["r01-*"]
+    racks: ["r01-*", "rack-tls-*", "rack-par-*", "rack-ber-*"]
     labels:
       job: sequana3
       cluster: demo
@@ -386,7 +393,7 @@ metrics:
 
   - name: sequana3_pmc_total_watt
     scope: rack
-    racks: ["r01-*"]
+    racks: ["r01-*", "rack-tls-*", "rack-par-*", "rack-ber-*"]
     labels:
       job: sequana3
       cluster: demo
