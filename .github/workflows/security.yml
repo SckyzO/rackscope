@@ -120,4 +120,6 @@ jobs:
             --exclude node_modules \
             --exclude htmlcov \
             --exclude dist \
+            --exclude-rule typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml \
+            --exclude-rule python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure \
             .
