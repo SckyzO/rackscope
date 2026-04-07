@@ -25,6 +25,9 @@ htmlcov/
 .env.*
 !.env.example
 
+# ── Active profile working copy (populated by make use / make use-prod) ───────
+config/active/
+
 # ── OS / Editors ──────────────────────────────────────────────────────────────
 .DS_Store
 .idea/

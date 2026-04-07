@@ -8,10 +8,25 @@ import os
 
 import yaml
 
-SIMULATOR_CONFIG_PATH = os.getenv(
-    "SIMULATOR_CONFIG", "/app/config/plugins/simulator/config/plugin.yaml"
-)
 APP_CONFIG_PATH = os.getenv("SIMULATOR_APP_CONFIG", "/app/config/app.yaml")
+
+
+# Resolve simulator plugin config path:
+# 1. Explicit SIMULATOR_CONFIG env var (set by docker-compose for legacy deployments)
+# 2. {profile_dir}/plugins/simulator/config/plugin.yaml  (profile-scoped)
+# 3. Global fallback
+def _resolve_simulator_config_path() -> str:
+    explicit = os.getenv("SIMULATOR_CONFIG")
+    if explicit:
+        return explicit
+    profile_dir = os.path.dirname(os.path.abspath(APP_CONFIG_PATH))
+    profile_path = os.path.join(profile_dir, "plugins", "simulator", "config", "plugin.yaml")
+    if os.path.isfile(profile_path):
+        return profile_path
+    return "/app/config/plugins/simulator/config/plugin.yaml"
+
+
+SIMULATOR_CONFIG_PATH = _resolve_simulator_config_path()
 
 
 def load_yaml(path):

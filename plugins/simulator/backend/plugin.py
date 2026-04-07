@@ -37,7 +37,25 @@ class SimulatorPlugin(RackscopePlugin):
         return "Simulator"
 
     def config_file_path(self, base_dir: str = "config/plugins") -> str:
-        """Override: new folder layout stores config in config/plugin.yaml."""
+        """
+        When called with the default base_dir, looks in the active profile
+        directory first, then falls back to the global path.
+        An explicit base_dir bypasses profile lookup (used in tests / direct calls).
+
+        Resolution order (default base_dir only):
+          1. {profile_dir}/plugins/simulator/config/plugin.yaml
+          2. config/plugins/simulator/config/plugin.yaml  (global fallback)
+        """
+        import os
+
+        if base_dir == "config/plugins":
+            app_cfg = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
+            profile_dir = os.path.dirname(os.path.abspath(app_cfg))
+            profile_path = os.path.join(
+                profile_dir, "plugins", self.plugin_id, "config", "plugin.yaml"
+            )
+            if os.path.isfile(profile_path):
+                return profile_path
         return f"{base_dir}/{self.plugin_id}/config/plugin.yaml"
 
     @property

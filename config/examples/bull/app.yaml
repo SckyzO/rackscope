@@ -1,11 +1,11 @@
 app:
-  name: "Rackscope \u2014 Bull Demo"
-  description: "BullSequana HPC Cluster \u2014 3 sites (Toulouse, Bruy\xE8res, Berlin)"
+  name: Rackscope — Bull Demo
+  description: Multi-site Bull HPC cluster demo
 paths:
-  topology: config/examples/bull/topology
-  templates: config/examples/bull/templates
-  checks: config/examples/bull/checks/library
-  metrics: config/examples/bull/metrics/library
+  topology: topology
+  templates: templates
+  checks: checks/library
+  metrics: metrics/library
 refresh:
   room_state_seconds: 30
   rack_state_seconds: 30
@@ -37,12 +37,12 @@ planner:
 features:
   notifications: true
   notifications_max_visible: 10
-  playlist: true
+  playlist: false
   offline: false
   wizard: true
   worldmap: true
   show_logs: true
-  dev_tools: true
+  dev_tools: false
 auth:
   enabled: false
   username: admin
@@ -57,13 +57,13 @@ auth:
   trusted_networks: []
 map:
   default_view: world
-  default_zoom: 4
+  default_zoom: null
   min_zoom: 2
   max_zoom: 7
   zoom_controls: true
   center:
-    lat: 46.0
-    lon: 5.0
+    lat: 20
+    lon: 0
 playlist:
   interval_seconds: 30
   views:
