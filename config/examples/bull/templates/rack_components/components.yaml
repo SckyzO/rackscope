@@ -1,0 +1,87 @@
+rack_component_templates:
+  - id: xh-p3sm
+    name: P3SM [1,2]
+    type: power
+    model: P3SM
+    location: front
+    u_height: 3
+    checks: []
+    metrics: []
+
+  - id: xh-pmc
+    name: PMC
+    type: power
+    model: PMC
+    location: front
+    u_height: 1
+    checks: []
+    metrics:
+      - pmc_power
+
+  - id: xh-h3e
+    name: H3E
+    type: cooling
+    model: H3E
+    location: rear
+    u_height: 11
+    checks: []
+    metrics: []
+
+  - id: xh-h3p0
+    name: H3P0
+    type: cooling
+    model: H3P0
+    location: rear
+    u_height: 10
+    checks: []
+    metrics: []
+
+  - id: xh-h3p1
+    name: H3P1
+    type: cooling
+    model: H3P1
+    location: rear
+    u_height: 10
+    checks: []
+    metrics: []
+
+  - id: xh-w3am2
+    name: W3AM2
+    type: management
+    model: W3AM2
+    location: rear
+    u_height: 1
+    checks: []
+    metrics: []
+
+  - id: xh-w3am1
+    name: W3AM1
+    type: management
+    model: W3AM1
+    location: rear
+    u_height: 1
+    checks: []
+    metrics: []
+
+  - id: xh-w3am0
+    name: W3AM0
+    type: management
+    model: W3AM0
+    location: rear
+    u_height: 1
+    checks: []
+    metrics: []
+
+  - id: pdu-raritan-16u
+    name: PDU Raritan
+    type: pdu
+    model: Raritan
+    location: side
+    u_height: 16
+    checks:
+      - pdu_power_present
+      - pdu_current_warn
+      - pdu_current_crit
+    metrics:
+      - pdu_active_power
+      - pdu_current

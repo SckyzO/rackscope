@@ -1,0 +1,19 @@
+mappings:
+  - node: tls-compute*
+    instance: tls-compute*
+  - node: tls-hm*
+    instance: tls-hm*
+  - node: tls-gpu*
+    instance: tls-gpu*
+  - node: tls-pra-compute*
+    instance: tls-pra-compute*
+  - node: tls-pra-gpu*
+    instance: tls-pra-gpu*
+  - node: visu-tls-*
+    instance: visu-tls-*
+  - node: par-compute*
+    instance: par-compute*
+  - node: par-gpu*
+    instance: par-gpu*
+  - node: ber-compute*
+    instance: ber-compute*

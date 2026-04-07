@@ -1,38 +1,55 @@
 # Slurm Plugin Configuration — managed by Settings UI
 
-metric: slurm_node_status
+include_unlabeled: false
 label_node: node
-label_status: status
 label_partition: partition
-mapping_path: plugins/slurm/node_mapping.yaml
+label_status: status
+mapping_path: config/examples/bull/plugins/slurm/node_mapping.yaml
+metric: slurm_node_status
 roles:
 - compute
 - gpu
-include_unlabeled: false
+- highmem
+- visu
+severity_colors:
+  crit: '#ef4444'
+  info: '#3b82f6'
+  ok: '#22c55e'
+  warn: '#f59e0b'
 status_map:
+  crit:
+  - down
+  - drain
+  - drained
+  - draining
+  - drng
+  - fail
+  - failing
+  - failg
+  - error
+  - unknown
+  - unk
+  - noresp
+  - inval
+  info:
+  - idle
   ok:
   - allocated
   - alloc
   - completing
+  - comp
   - mixed
-  - idle
+  - mix
   warn:
-  - drain
-  - draining
-  - drained
   - maint
+  - planned
+  - plnd
   - reserved
-  crit:
-  - down
-  - fail
-  - error
-  - unknown
-  info: []
-severity_colors:
-  ok: '#22c55e'
-  warn: '#f59e0b'
-  crit: '#ef4444'
-  info: '#3b82f6'
-metrics_catalog_dir: config/plugins/slurm/metrics
-metrics_catalogs:
-- metrics.yaml
+  - resv
+  - blocked
+  - power_down
+  - power_up
+  - powering_up
+  - powered_down
+  - reboot_issued
+  - reboot_req

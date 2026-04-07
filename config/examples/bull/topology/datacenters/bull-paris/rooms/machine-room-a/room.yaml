@@ -1,0 +1,24 @@
+id: machine-room-a
+name: Machine Room A
+site_id: bull-paris
+description: Compute floor — BullSequana XH3000 DLC + infrastructure
+layout:
+  shape: rectangle
+  size:
+    width: 36
+    height: 24
+  orientation:
+    north: top
+  grid:
+    enabled: true
+    cell: 28
+  door:
+    side: south
+    label: Entrance
+aisles:
+  - id: aisle-compute
+    name: Aisle Compute
+  - id: aisle-gpu
+    name: Aisle GPU
+  - id: aisle-infra
+    name: Aisle Infrastructure

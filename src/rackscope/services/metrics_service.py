@@ -10,6 +10,7 @@ the metric list from the template and issues PromQL queries at runtime.
 
 import asyncio
 import logging
+import re
 from typing import Dict, Optional, List
 
 from rackscope.model.catalog import Catalog, RackComponentRef, RackComponentTemplate, DeviceTemplate
@@ -49,10 +50,12 @@ def resolve_metric_query(
         return f'{metric_id}{{rack_id="{rack_id}"}}'
 
     expr = metric_def.metric
-    # Substitute placeholders
+    # Substitute placeholders — support both $var and {var} styles
+    expr = expr.replace("$rack_id", rack_id)
     expr = expr.replace('"{rack_id}"', f'"{rack_id}"')
     expr = expr.replace("{rack_id}", rack_id)
     if instance:
+        expr = expr.replace("$instance", instance)
         expr = expr.replace('"{instance}"', f'"{instance}"')
         expr = expr.replace("{instance}", instance)
     return expr
@@ -288,21 +291,43 @@ async def collect_device_metrics(
 
     instances = expand_device_instances(device)
 
-    # Map prometheus_name → query. Use the Prometheus metric name as key so that
-    # results are stored under the real metric name (e.g. "node_temperature_celsius")
-    # rather than the library ID ("node_temperature"), matching what collect_rack_state
-    # expects when it reads m.get("node_temperature_celsius").
+    # Map base_metric_name → query.
+    # When a library entry exists, its .metric field is a full PromQL expression
+    # (e.g. "node_temperature_celsius{instance=\"$instance\", name=~\"CPU.*\"}").
+    # We substitute $instance with the actual instance regex and use the base
+    # metric name (before the first '{') as the storage key — this lets each
+    # profile/exporter define its own PromQL while keeping the lookup in
+    # collect_rack_state generic (m.get("node_temperature_celsius")).
     queries: Dict[str, str] = {}
     for metric_id in template.metrics:
         metric_def = library.get_metric(metric_id) if library else None
-        prometheus_name = metric_def.metric if metric_def else metric_id
-        query = build_device_metric_query(
-            metric_name=prometheus_name,
-            rack_id=rack_id,
-            instances=instances,
-        )
-        if query:
-            queries[prometheus_name] = query
+        if metric_def:
+            # Extract base name for use as storage key (exporter-agnostic)
+            base_name = re.match(r"^([a-zA-Z_:][a-zA-Z0-9_:]*)", metric_def.metric)
+            key = base_name.group(1) if base_name else metric_id
+            # Substitute $instance placeholder with the actual instance filter
+            if len(instances) == 1:
+                query = re.sub(
+                    r'instance="\$instance"',
+                    f'instance="{instances[0]}"',
+                    metric_def.metric,
+                )
+            else:
+                instance_pattern = "|".join(instances)
+                query = re.sub(
+                    r'instance="\$instance"',
+                    f'instance=~"{instance_pattern}"',
+                    metric_def.metric,
+                )
+            queries[key] = query
+        else:
+            fallback = build_device_metric_query(
+                metric_name=metric_id,
+                rack_id=rack_id,
+                instances=instances,
+            )
+            if fallback:
+                queries[metric_id] = fallback
 
     all_instances_metrics: Dict[str, Dict[str, float]] = {}
     try:

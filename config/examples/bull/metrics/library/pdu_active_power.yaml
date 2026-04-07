@@ -1,0 +1,13 @@
+metrics:
+  - id: pdu_active_power
+    name: PDU Active Power
+    description: Total active power on PDU
+    metric: raritan_pdu_activepower_watt{rack_id="$rack_id"}
+    display:
+      unit: W
+      chart_type: line
+      color: '#8b5cf6'
+    category: power
+    tags:
+      - pdu
+      - power

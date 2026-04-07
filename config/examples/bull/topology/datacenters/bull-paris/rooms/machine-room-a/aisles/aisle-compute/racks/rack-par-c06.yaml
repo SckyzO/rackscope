@@ -1,0 +1,344 @@
+id: rack-par-c06
+name: Compute Rack BRY C06
+u_height: 42
+template_id: bull-xh3000
+devices:
+- id: hpc-par-c06-01
+  name: par-compute0601-par-compute0603
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 1
+  face: front
+  instance:
+    1: par-compute0601
+    2: par-compute0602
+    3: par-compute0603
+- id: hpc-par-c06-02
+  name: par-compute0604-par-compute0606
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 2
+  face: front
+  instance:
+    1: par-compute0604
+    2: par-compute0605
+    3: par-compute0606
+- id: hpc-par-c06-03
+  name: par-compute0607-par-compute0609
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 3
+  face: front
+  instance:
+    1: par-compute0607
+    2: par-compute0608
+    3: par-compute0609
+- id: hpc-par-c06-04
+  name: par-compute0610-par-compute0612
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 4
+  face: front
+  instance:
+    1: par-compute0610
+    2: par-compute0611
+    3: par-compute0612
+- id: hpc-par-c06-05
+  name: par-compute0613-par-compute0615
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 5
+  face: front
+  instance:
+    1: par-compute0613
+    2: par-compute0614
+    3: par-compute0615
+- id: hpc-par-c06-06
+  name: par-compute0616-par-compute0618
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 6
+  face: front
+  instance:
+    1: par-compute0616
+    2: par-compute0617
+    3: par-compute0618
+- id: hpc-par-c06-07
+  name: par-compute0619-par-compute0621
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 7
+  face: front
+  instance:
+    1: par-compute0619
+    2: par-compute0620
+    3: par-compute0621
+- id: hpc-par-c06-08
+  name: par-compute0622-par-compute0624
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 8
+  face: front
+  instance:
+    1: par-compute0622
+    2: par-compute0623
+    3: par-compute0624
+- id: hpc-par-c06-09
+  name: par-compute0625-par-compute0627
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 9
+  face: front
+  instance:
+    1: par-compute0625
+    2: par-compute0626
+    3: par-compute0627
+- id: hpc-par-c06-10
+  name: par-compute0628-par-compute0630
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 10
+  face: front
+  instance:
+    1: par-compute0628
+    2: par-compute0629
+    3: par-compute0630
+- id: hpc-par-c06-11
+  name: par-compute0631-par-compute0633
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 11
+  face: front
+  instance:
+    1: par-compute0631
+    2: par-compute0632
+    3: par-compute0633
+- id: hpc-par-c06-12
+  name: par-compute0634-par-compute0636
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 12
+  face: front
+  instance:
+    1: par-compute0634
+    2: par-compute0635
+    3: par-compute0636
+- id: hpc-par-c06-13
+  name: par-compute0637-par-compute0639
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 13
+  face: front
+  instance:
+    1: par-compute0637
+    2: par-compute0638
+    3: par-compute0639
+- id: hpc-par-c06-14
+  name: par-compute0640-par-compute0642
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 14
+  face: front
+  instance:
+    1: par-compute0640
+    2: par-compute0641
+    3: par-compute0642
+- id: hpc-par-c06-15
+  name: par-compute0643-par-compute0645
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 15
+  face: front
+  instance:
+    1: par-compute0643
+    2: par-compute0644
+    3: par-compute0645
+- id: hpc-par-c06-16
+  name: par-compute0646-par-compute0648
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 16
+  face: front
+  instance:
+    1: par-compute0646
+    2: par-compute0647
+    3: par-compute0648
+- id: hpc-par-c06-17
+  name: par-compute0649-par-compute0651
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 17
+  face: front
+  instance:
+    1: par-compute0649
+    2: par-compute0650
+    3: par-compute0651
+- id: hpc-par-c06-18
+  name: par-compute0652-par-compute0654
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 18
+  face: front
+  instance:
+    1: par-compute0652
+    2: par-compute0653
+    3: par-compute0654
+- id: hpc-par-c06-19
+  name: par-compute0655-par-compute0657
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 19
+  face: front
+  instance:
+    1: par-compute0655
+    2: par-compute0656
+    3: par-compute0657
+- id: hpc-par-c06-20
+  name: par-compute0658-par-compute0660
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 20
+  face: front
+  instance:
+    1: par-compute0658
+    2: par-compute0659
+    3: par-compute0660
+- id: hpc-par-c06-21
+  name: par-compute0661-par-compute0663
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 21
+  face: front
+  instance:
+    1: par-compute0661
+    2: par-compute0662
+    3: par-compute0663
+- id: hpc-par-c06-22
+  name: par-compute0664-par-compute0666
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 22
+  face: front
+  instance:
+    1: par-compute0664
+    2: par-compute0665
+    3: par-compute0666
+- id: hpc-par-c06-23
+  name: par-compute0667-par-compute0669
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 23
+  face: front
+  instance:
+    1: par-compute0667
+    2: par-compute0668
+    3: par-compute0669
+- id: hpc-par-c06-24
+  name: par-compute0670-par-compute0672
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 24
+  face: front
+  instance:
+    1: par-compute0670
+    2: par-compute0671
+    3: par-compute0672
+- id: hpc-par-c06-25
+  name: par-compute0673-par-compute0675
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 25
+  face: front
+  instance:
+    1: par-compute0673
+    2: par-compute0674
+    3: par-compute0675
+- id: hpc-par-c06-26
+  name: par-compute0676-par-compute0678
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 26
+  face: front
+  instance:
+    1: par-compute0676
+    2: par-compute0677
+    3: par-compute0678
+- id: hpc-par-c06-27
+  name: par-compute0679-par-compute0681
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 27
+  face: front
+  instance:
+    1: par-compute0679
+    2: par-compute0680
+    3: par-compute0681
+- id: hpc-par-c06-28
+  name: par-compute0682-par-compute0684
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 28
+  face: front
+  instance:
+    1: par-compute0682
+    2: par-compute0683
+    3: par-compute0684
+- id: hpc-par-c06-29
+  name: par-compute0685-par-compute0687
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 29
+  face: front
+  instance:
+    1: par-compute0685
+    2: par-compute0686
+    3: par-compute0687
+- id: hpc-par-c06-30
+  name: par-compute0688-par-compute0690
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 30
+  face: front
+  instance:
+    1: par-compute0688
+    2: par-compute0689
+    3: par-compute0690
+- id: hpc-par-c06-31
+  name: par-compute0691-par-compute0693
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 31
+  face: front
+  instance:
+    1: par-compute0691
+    2: par-compute0692
+    3: par-compute0693
+- id: hpc-par-c06-32
+  name: par-compute0694-par-compute0696
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 32
+  face: front
+  instance:
+    1: par-compute0694
+    2: par-compute0695
+    3: par-compute0696
+- id: hpc-par-c06-33
+  name: par-compute0697-par-compute0699
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 33
+  face: front
+  instance:
+    1: par-compute0697
+    2: par-compute0698
+    3: par-compute0699
+- id: hpc-par-c06-34
+  name: par-compute0700-par-compute0702
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 34
+  face: front
+  instance:
+    1: par-compute0700
+    2: par-compute0701
+    3: par-compute0702
+- id: hpc-par-c06-35
+  name: par-compute0703-par-compute0705
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 35
+  face: front
+  instance:
+    1: par-compute0703
+    2: par-compute0704
+    3: par-compute0705
+- id: hpc-par-c06-36
+  name: par-compute0706-par-compute0708
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 36
+  face: front
+  instance:
+    1: par-compute0706
+    2: par-compute0707
+    3: par-compute0708
+- id: hpc-par-c06-37
+  name: par-compute0709-par-compute0711
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 37
+  face: front
+  instance:
+    1: par-compute0709
+    2: par-compute0710
+    3: par-compute0711
+- id: sw-ib-par-c06
+  name: sw-ib-par-c06
+  template_id: bs-xh35mq-ib-1u
+  u_position: 38
+  face: front
+  instance: sw-ib-par-c06

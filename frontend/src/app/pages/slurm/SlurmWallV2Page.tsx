@@ -51,6 +51,7 @@ const SEV: Record<string, string> = {
   OK: '#22c55e',
   WARN: '#f59e0b',
   CRIT: '#ef4444',
+  INFO: '#3b82f6',
   UNKNOWN: '#374151',
 };
 const CARD_W: Record<CardSize, number> = { sm: 180, md: 260, lg: 340 };

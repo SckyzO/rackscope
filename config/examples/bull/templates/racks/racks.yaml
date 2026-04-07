@@ -1,0 +1,46 @@
+rack_templates:
+  - id: bull-xh3000
+    name: BullSequana XH3000 DLC
+    u_height: 42
+    infrastructure:
+      rack_components:
+        - template_id: xh-p3sm
+          u_position: 39
+        - template_id: xh-pmc
+          u_position: 42
+        - template_id: xh-h3e
+          u_position: 1
+        - template_id: xh-h3p0
+          u_position: 12
+        - template_id: xh-h3p1
+          u_position: 22
+        - template_id: xh-w3am2
+          u_position: 32
+        - template_id: xh-w3am1
+          u_position: 33
+        - template_id: xh-w3am0
+          u_position: 34
+    checks:
+      - sequana3_pressure
+      - sequana3_leak
+      - sequana3_board_temperature
+
+  - id: standard-42u-air
+    name: Standard 42U Air Cooled
+    u_height: 42
+    infrastructure:
+      rack_components:
+        - template_id: pdu-raritan-16u
+          side: left
+          u_position: 1
+        - template_id: pdu-raritan-16u
+          side: left
+          u_position: 17
+        - template_id: pdu-raritan-16u
+          side: right
+          u_position: 1
+        - template_id: pdu-raritan-16u
+          side: right
+          u_position: 17
+      rear_components: []
+    checks: []

@@ -258,8 +258,11 @@ endif
 		echo "❌ '$(CONFIG)' not found in config/profiles/ or config/examples/"; \
 		echo "   Run 'make list-configs' to see available options."; exit 1; \
 	fi
-	@echo "APP_CONFIG=$(_cfg)" > .env
-	@echo "→ [dev] Switching to: $(CONFIG)  ($(_cfg))"
+	$(eval _src := config/$(patsubst %/app.yaml,%,$(_cfg)))
+	@rm -rf config/active
+	@cp -r $(_src)/. config/active
+	@echo "APP_CONFIG=active/app.yaml" > .env
+	@echo "→ [dev] Switching to: $(CONFIG)  (copied to config/active/)"
 	docker compose -f $(COMPOSE_DEV) up -d --force-recreate --no-deps backend simulator
 	@echo "✅ Dev stack running with: $(CONFIG)"
 
@@ -271,8 +274,11 @@ endif
 	@if [ -z "$(_cfg)" ]; then \
 		echo "❌ '$(CONFIG)' not found"; exit 1; \
 	fi
-	@echo "APP_CONFIG=$(_cfg)" > .env
-	@echo "→ [prod] Switching to: $(CONFIG)  ($(_cfg))"
+	$(eval _src := config/$(patsubst %/app.yaml,%,$(_cfg)))
+	@rm -rf config/active
+	@cp -r $(_src)/. config/active
+	@echo "APP_CONFIG=active/app.yaml" > .env
+	@echo "→ [prod] Switching to: $(CONFIG)  (copied to config/active/)"
 	docker compose -f $(COMPOSE_PROD) up -d --force-recreate --no-deps backend
 	@echo "✅ Prod stack running with: $(CONFIG)"
 

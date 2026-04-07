@@ -214,16 +214,22 @@ class RackscopePlugin(ABC):
         """
         Returns the path to this plugin's dedicated config file.
 
-        Convention: config/plugins/{plugin_id}/config.yml
-        This file holds all plugin-specific settings (separate from app.yaml).
-        app.yaml only contains: plugins.{id}.enabled (bool)
+        When called with the default base_dir, looks in the active profile
+        directory first, then falls back to the global config/plugins/ path.
+        An explicit base_dir bypasses profile lookup (used in tests / direct calls).
 
-        Args:
-            base_dir: Base directory for plugin configs (default: config/plugins)
-
-        Returns:
-            Path to the plugin's config file
+        Resolution order (default base_dir only):
+          1. {profile_dir}/plugins/{plugin_id}/config.yml
+          2. config/plugins/{plugin_id}/config.yml  (global fallback)
         """
+        import os
+
+        if base_dir == "config/plugins":
+            app_cfg = os.getenv("RACKSCOPE_APP_CONFIG", "config/app.yaml")
+            profile_dir = os.path.dirname(os.path.abspath(app_cfg))
+            profile_path = os.path.join(profile_dir, "plugins", self.plugin_id, "config.yml")
+            if os.path.isfile(profile_path):
+                return profile_path
         return f"{base_dir}/{self.plugin_id}/config.yml"
 
     def to_dict(self) -> Dict[str, Any]:

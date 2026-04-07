@@ -1,0 +1,7 @@
+id: aisle-highmem
+name: Aisle High-Memory — XH3000 DLC
+room_id: machine-room-a
+racks:
+  - id: rack-tls-hm01
+  - id: rack-tls-hm02
+  - id: rack-tls-hm03

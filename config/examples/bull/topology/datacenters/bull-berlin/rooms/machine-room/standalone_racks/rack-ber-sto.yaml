@@ -1,0 +1,23 @@
+id: rack-ber-sto
+name: Storage Rack BER
+u_height: 42
+template_id: standard-42u-air
+devices:
+- id: sto-ber-01
+  name: sto-ber-01
+  template_id: generic-1u-storage-head
+  u_position: 1
+  face: front
+  instance: sto-ber-01
+- id: sto-ber-jbod01
+  name: sto-ber-jbod01
+  template_id: generic-2u-jbod
+  u_position: 2
+  face: front
+  instance: sto-ber-jbod01
+- id: sto-ber-jbod02
+  name: sto-ber-jbod02
+  template_id: generic-2u-jbod
+  u_position: 4
+  face: front
+  instance: sto-ber-jbod02

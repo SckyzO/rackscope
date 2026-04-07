@@ -1,0 +1,5 @@
+id: aisle-infra
+name: Aisle Infrastructure — Air Cooled
+room_id: machine-room-a
+racks:
+  - id: rack-par-infra

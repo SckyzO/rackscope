@@ -1,0 +1,6 @@
+id: aisle-storage
+name: Aisle Storage — Air Cooled
+room_id: machine-room-a
+racks:
+  - id: rack-tls-sto01
+  - id: rack-tls-sto02

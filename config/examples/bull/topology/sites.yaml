@@ -1,0 +1,35 @@
+sites:
+  - id: bull-toulouse
+    name: Bull HPC Toulouse
+    description: Site principal HPC — BullSequana XH3000 DLC
+    location:
+      lat: 43.6047
+      lon: 1.4442
+      address: Toulouse, FR
+    rooms:
+      - id: machine-room-a
+        name: Machine Room A — Compute Floor
+      - id: machine-room-b
+        name: Machine Room B — Services & PRA
+
+  - id: bull-paris
+    name: Bull HPC Paris
+    description: Site secondaire — cluster de backup
+    location:
+      lat: 48.8566
+      lon: 2.3522
+      address: Paris, FR
+    rooms:
+      - id: machine-room-a
+        name: Machine Room A
+
+  - id: bull-berlin
+    name: Bull HPC Berlin
+    description: Petit site European — compute + services
+    location:
+      lat: 52.5200
+      lon: 13.4050
+      address: Berlin, DE
+    rooms:
+      - id: machine-room
+        name: Machine Room

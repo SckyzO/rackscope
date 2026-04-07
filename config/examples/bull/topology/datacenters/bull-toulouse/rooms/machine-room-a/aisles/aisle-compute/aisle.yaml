@@ -1,0 +1,16 @@
+id: aisle-compute
+name: Aisle Compute — XH3000 DLC
+room_id: machine-room-a
+racks:
+  - id: rack-tls-c01
+  - id: rack-tls-c02
+  - id: rack-tls-c03
+  - id: rack-tls-c04
+  - id: rack-tls-c05
+  - id: rack-tls-c06
+  - id: rack-tls-c07
+  - id: rack-tls-c08
+  - id: rack-tls-c09
+  - id: rack-tls-c10
+  - id: rack-tls-c11
+  - id: rack-tls-c12

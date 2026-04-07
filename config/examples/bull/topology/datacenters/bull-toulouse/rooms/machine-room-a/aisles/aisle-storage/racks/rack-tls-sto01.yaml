@@ -1,0 +1,29 @@
+id: rack-tls-sto01
+name: Storage Rack TLS STO01
+u_height: 42
+template_id: standard-42u-air
+devices:
+- id: sto-tls-head01
+  name: sto-tls-head01
+  template_id: generic-1u-storage-head
+  u_position: 1
+  face: front
+  instance: sto-tls-head01
+- id: sto-tls-jbod01
+  name: sto-tls-jbod01
+  template_id: generic-2u-jbod
+  u_position: 2
+  face: front
+  instance: sto-tls-jbod01
+- id: sto-tls-jbod02
+  name: sto-tls-jbod02
+  template_id: generic-2u-jbod
+  u_position: 4
+  face: front
+  instance: sto-tls-jbod02
+- id: sw-eth-tls-sto01
+  name: sw-eth-tls-sto01
+  template_id: eth-switch-tor
+  u_position: 6
+  face: front
+  instance: sw-eth-tls-sto01

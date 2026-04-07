@@ -19,6 +19,15 @@ metrics:
       - visu*
       - gpu*
       - hm*
+      - tls-compute*
+      - tls-gpu*
+      - tls-hm*
+      - tls-pra-compute*
+      - tls-pra-gpu*
+      - par-compute*
+      - par-gpu*
+      - ber-compute*
+      - visu-*
     labels_only: true
     labels:
       node: $node_id
@@ -33,6 +42,15 @@ metrics:
       - visu*
       - gpu*
       - hm*
+      - tls-compute*
+      - tls-gpu*
+      - tls-hm*
+      - tls-pra-compute*
+      - tls-pra-gpu*
+      - par-compute*
+      - par-gpu*
+      - ber-compute*
+      - visu-*
     labels_only: true
     labels:
       node: $node_id
@@ -46,6 +64,15 @@ metrics:
       - visu*
       - gpu*
       - hm*
+      - tls-compute*
+      - tls-gpu*
+      - tls-hm*
+      - tls-pra-compute*
+      - tls-pra-gpu*
+      - par-compute*
+      - par-gpu*
+      - ber-compute*
+      - visu-*
     labels_only: true
     labels:
       node: $node_id
@@ -60,6 +87,15 @@ metrics:
       - visu*
       - gpu*
       - hm*
+      - tls-compute*
+      - tls-gpu*
+      - tls-hm*
+      - tls-pra-compute*
+      - tls-pra-gpu*
+      - par-compute*
+      - par-gpu*
+      - ber-compute*
+      - visu-*
     labels_only: true
     labels:
       node: $node_id
@@ -73,6 +109,15 @@ metrics:
       - visu*
       - gpu*
       - hm*
+      - tls-compute*
+      - tls-gpu*
+      - tls-hm*
+      - tls-pra-compute*
+      - tls-pra-gpu*
+      - par-compute*
+      - par-gpu*
+      - ber-compute*
+      - visu-*
     labels_only: true
     labels:
       node: $node_id

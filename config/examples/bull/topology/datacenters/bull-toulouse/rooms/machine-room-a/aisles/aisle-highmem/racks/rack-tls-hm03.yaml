@@ -1,0 +1,307 @@
+id: rack-tls-hm03
+name: High-Memory Rack TLS HM03
+u_height: 42
+template_id: bull-xh3000
+devices:
+- id: hpc-tls-hm03-01
+  name: tls-hm153-tls-hm154
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 1
+  face: front
+  instance:
+    1: tls-hm153
+    2: tls-hm154
+- id: hpc-tls-hm03-02
+  name: tls-hm155-tls-hm156
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 2
+  face: front
+  instance:
+    1: tls-hm155
+    2: tls-hm156
+- id: hpc-tls-hm03-03
+  name: tls-hm157-tls-hm158
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 3
+  face: front
+  instance:
+    1: tls-hm157
+    2: tls-hm158
+- id: hpc-tls-hm03-04
+  name: tls-hm159-tls-hm160
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 4
+  face: front
+  instance:
+    1: tls-hm159
+    2: tls-hm160
+- id: hpc-tls-hm03-05
+  name: tls-hm161-tls-hm162
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 5
+  face: front
+  instance:
+    1: tls-hm161
+    2: tls-hm162
+- id: hpc-tls-hm03-06
+  name: tls-hm163-tls-hm164
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 6
+  face: front
+  instance:
+    1: tls-hm163
+    2: tls-hm164
+- id: hpc-tls-hm03-07
+  name: tls-hm165-tls-hm166
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 7
+  face: front
+  instance:
+    1: tls-hm165
+    2: tls-hm166
+- id: hpc-tls-hm03-08
+  name: tls-hm167-tls-hm168
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 8
+  face: front
+  instance:
+    1: tls-hm167
+    2: tls-hm168
+- id: hpc-tls-hm03-09
+  name: tls-hm169-tls-hm170
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 9
+  face: front
+  instance:
+    1: tls-hm169
+    2: tls-hm170
+- id: hpc-tls-hm03-10
+  name: tls-hm171-tls-hm172
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 10
+  face: front
+  instance:
+    1: tls-hm171
+    2: tls-hm172
+- id: hpc-tls-hm03-11
+  name: tls-hm173-tls-hm174
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 11
+  face: front
+  instance:
+    1: tls-hm173
+    2: tls-hm174
+- id: hpc-tls-hm03-12
+  name: tls-hm175-tls-hm176
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 12
+  face: front
+  instance:
+    1: tls-hm175
+    2: tls-hm176
+- id: hpc-tls-hm03-13
+  name: tls-hm177-tls-hm178
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 13
+  face: front
+  instance:
+    1: tls-hm177
+    2: tls-hm178
+- id: hpc-tls-hm03-14
+  name: tls-hm179-tls-hm180
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 14
+  face: front
+  instance:
+    1: tls-hm179
+    2: tls-hm180
+- id: hpc-tls-hm03-15
+  name: tls-hm181-tls-hm182
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 15
+  face: front
+  instance:
+    1: tls-hm181
+    2: tls-hm182
+- id: hpc-tls-hm03-16
+  name: tls-hm183-tls-hm184
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 16
+  face: front
+  instance:
+    1: tls-hm183
+    2: tls-hm184
+- id: hpc-tls-hm03-17
+  name: tls-hm185-tls-hm186
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 17
+  face: front
+  instance:
+    1: tls-hm185
+    2: tls-hm186
+- id: hpc-tls-hm03-18
+  name: tls-hm187-tls-hm188
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 18
+  face: front
+  instance:
+    1: tls-hm187
+    2: tls-hm188
+- id: hpc-tls-hm03-19
+  name: tls-hm189-tls-hm190
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 19
+  face: front
+  instance:
+    1: tls-hm189
+    2: tls-hm190
+- id: hpc-tls-hm03-20
+  name: tls-hm191-tls-hm192
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 20
+  face: front
+  instance:
+    1: tls-hm191
+    2: tls-hm192
+- id: hpc-tls-hm03-21
+  name: tls-hm193-tls-hm194
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 21
+  face: front
+  instance:
+    1: tls-hm193
+    2: tls-hm194
+- id: hpc-tls-hm03-22
+  name: tls-hm195-tls-hm196
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 22
+  face: front
+  instance:
+    1: tls-hm195
+    2: tls-hm196
+- id: hpc-tls-hm03-23
+  name: tls-hm197-tls-hm198
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 23
+  face: front
+  instance:
+    1: tls-hm197
+    2: tls-hm198
+- id: hpc-tls-hm03-24
+  name: tls-hm199-tls-hm200
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 24
+  face: front
+  instance:
+    1: tls-hm199
+    2: tls-hm200
+- id: hpc-tls-hm03-25
+  name: tls-hm201-tls-hm202
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 25
+  face: front
+  instance:
+    1: tls-hm201
+    2: tls-hm202
+- id: hpc-tls-hm03-26
+  name: tls-hm203-tls-hm204
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 26
+  face: front
+  instance:
+    1: tls-hm203
+    2: tls-hm204
+- id: hpc-tls-hm03-27
+  name: tls-hm205-tls-hm206
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 27
+  face: front
+  instance:
+    1: tls-hm205
+    2: tls-hm206
+- id: hpc-tls-hm03-28
+  name: tls-hm207-tls-hm208
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 28
+  face: front
+  instance:
+    1: tls-hm207
+    2: tls-hm208
+- id: hpc-tls-hm03-29
+  name: tls-hm209-tls-hm210
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 29
+  face: front
+  instance:
+    1: tls-hm209
+    2: tls-hm210
+- id: hpc-tls-hm03-30
+  name: tls-hm211-tls-hm212
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 30
+  face: front
+  instance:
+    1: tls-hm211
+    2: tls-hm212
+- id: hpc-tls-hm03-31
+  name: tls-hm213-tls-hm214
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 31
+  face: front
+  instance:
+    1: tls-hm213
+    2: tls-hm214
+- id: hpc-tls-hm03-32
+  name: tls-hm215-tls-hm216
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 32
+  face: front
+  instance:
+    1: tls-hm215
+    2: tls-hm216
+- id: hpc-tls-hm03-33
+  name: tls-hm217-tls-hm218
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 33
+  face: front
+  instance:
+    1: tls-hm217
+    2: tls-hm218
+- id: hpc-tls-hm03-34
+  name: tls-hm219-tls-hm220
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 34
+  face: front
+  instance:
+    1: tls-hm219
+    2: tls-hm220
+- id: hpc-tls-hm03-35
+  name: tls-hm221-tls-hm222
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 35
+  face: front
+  instance:
+    1: tls-hm221
+    2: tls-hm222
+- id: hpc-tls-hm03-36
+  name: tls-hm223-tls-hm224
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 36
+  face: front
+  instance:
+    1: tls-hm223
+    2: tls-hm224
+- id: hpc-tls-hm03-37
+  name: tls-hm225-tls-hm226
+  template_id: bs-xh3145-tiya-1u-2n
+  u_position: 37
+  face: front
+  instance:
+    1: tls-hm225
+    2: tls-hm226
+- id: sw-ib-tls-hm03
+  name: sw-ib-tls-hm03
+  template_id: bs-xh35mq-ib-1u
+  u_position: 38
+  face: front
+  instance: sw-ib-tls-hm03

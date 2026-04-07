@@ -1,0 +1,13 @@
+metrics:
+  - id: node_temperature
+    name: CPU Temperature
+    description: CPU temperature from IPMI/BMC
+    metric: node_temperature_celsius{instance="$instance"}
+    display:
+      unit: °C
+      chart_type: line
+      color: '#ef4444'
+    category: hardware
+    tags:
+      - ipmi
+      - temperature

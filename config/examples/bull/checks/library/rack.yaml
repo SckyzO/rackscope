@@ -1,0 +1,156 @@
+# Rack-level checks: Sequana3 liquid cooling (XH3000) and PDU power (standard-42u-air).
+checks:
+  - id: sequana3_pressure
+    name: Sequana3 pressure
+    for: "5m"
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: |
+      sequana3_hyc_p_in_kpa{sequana_rack_id=~"$racks"}
+        and on(cluster, env, host, instance, job, mc_type, model, region, sequana_rack_id, sequana_type)
+            sequana3_hyc_state_info{state="standbyspare"}
+    output: numeric
+    rules:
+      - op: "<="
+        value: 170
+        severity: CRIT
+      - op: "<"
+        value: 180
+        severity: WARN
+
+  - id: sequana3_leak
+    name: Sequana3 leak sensor
+    for: null
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: sequana3_hyc_leak_sensor_pump{sequana_rack_id=~"$racks"}
+    output: numeric
+    rules:
+      - op: ">="
+        value: 1.0
+        severity: CRIT
+      - op: ">="
+        value: 0.5
+        severity: WARN
+
+  - id: sequana3_board_temperature
+    name: Sequana3 board temperature
+    for: "5m"
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: sequana3_hyc_tmp_pcb_cel{sequana_rack_id=~"$racks"}
+    output: numeric
+    rules:
+      - op: ">="
+        value: 90
+        severity: CRIT
+      - op: ">="
+        value: 75
+        severity: WARN
+
+  - id: pdu_power_present
+    name: PDU power present
+    for: null
+    scope: rack
+    kind: power
+    expr: sum by (rack_id) (raritan_pdu_activepower_watt{rack_id=~"$racks", inletid="I1"}) or on() vector(0)
+    output: numeric
+    rules:
+      - severity: WARN
+        op: "=="
+        value: 0
+
+  - id: pdu_current_warn
+    name: PDU current high (warn)
+    for: "5m"
+    scope: rack
+    kind: power
+    expr: max by (rack_id) (raritan_pdu_current_ampere{rack_id=~"$racks", inletid="I1"})
+    output: numeric
+    rules:
+      - severity: WARN
+        op: ">"
+        value: 16
+
+  - id: pdu_current_crit
+    name: PDU current high (crit)
+    for: "1m"
+    scope: rack
+    kind: power
+    expr: max by (rack_id) (raritan_pdu_current_ampere{rack_id=~"$racks", inletid="I1"})
+    output: numeric
+    rules:
+      - severity: CRIT
+        op: ">"
+        value: 20
+
+  - id: pmc_power_warn
+    name: PMC total power high (warn)
+    for: "5m"
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: sequana3_pmc_total_watt{sequana_rack_id=~"$racks"}
+    output: numeric
+    rules:
+      - severity: WARN
+        op: ">"
+        value: 40000
+
+  - id: pmc_power_crit
+    name: PMC total power high (crit)
+    for: "1m"
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: sequana3_pmc_total_watt{sequana_rack_id=~"$racks"}
+    output: numeric
+    rules:
+      - severity: CRIT
+        op: ">"
+        value: 50000
+
+  - id: hmc_temp_warn
+    name: Sequana3 board temperature high (warn)
+    for: "5m"
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: sequana3_hyc_tmp_pcb_cel{sequana_rack_id=~"$racks"}
+    output: numeric
+    rules:
+      - severity: WARN
+        op: ">="
+        value: 75
+
+  - id: hmc_temp_crit
+    name: Sequana3 board temperature high (crit)
+    for: "1m"
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: sequana3_hyc_tmp_pcb_cel{sequana_rack_id=~"$racks"}
+    output: numeric
+    rules:
+      - severity: CRIT
+        op: ">="
+        value: 90
+
+  - id: hmc_leak
+    name: Sequana3 leak detected
+    for: null
+    scope: rack
+    kind: sequana3
+    selectors: ["sequana_rack_id"]
+    expr: sequana3_hyc_leak_sensor_pump{sequana_rack_id=~"$racks"}
+    output: numeric
+    rules:
+      - severity: CRIT
+        op: ">="
+        value: 1.0
+      - severity: WARN
+        op: ">="
+        value: 0.5

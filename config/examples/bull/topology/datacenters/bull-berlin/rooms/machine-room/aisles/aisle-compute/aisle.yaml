@@ -1,0 +1,9 @@
+id: aisle-compute
+name: Aisle Compute — XH3000 DLC
+room_id: machine-room
+racks:
+  - id: rack-ber-c01
+  - id: rack-ber-c02
+  - id: rack-ber-c03
+  - id: rack-ber-c04
+  - id: rack-ber-c05

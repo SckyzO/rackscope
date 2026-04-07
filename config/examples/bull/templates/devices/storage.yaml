@@ -1,0 +1,28 @@
+templates:
+  - id: generic-1u-storage-head
+    name: Storage Head 1U
+    type: server
+    role: storage
+    u_height: 1
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix:
+        - - 1
+    checks:
+      - node_up
+    metrics: []
+
+  - id: generic-2u-jbod
+    name: JBOD Expansion 2U
+    type: storage
+    u_height: 2
+    layout:
+      type: grid
+      rows: 1
+      cols: 1
+      matrix:
+        - - 1
+    checks: []
+    metrics: []

@@ -118,8 +118,19 @@ async def update_app_config(
     await apply_config(payload)
 
     # Validation passed — write the file.
+    # app.yaml only stores 'enabled' per plugin; full plugin config lives in
+    # dedicated files (plugins/{id}/config.yml) written below.
+    slim_plugins = {
+        pid: {
+            "enabled": bool(pcfg.get("enabled", False))
+            if isinstance(pcfg, dict)
+            else bool(getattr(pcfg, "enabled", False))
+        }
+        for pid, pcfg in (payload.plugins or {}).items()
+    }
+    slim_payload = payload.model_copy(update={"plugins": slim_plugins})
     with config_path.open("w") as f:
-        yaml.safe_dump(payload.model_dump(), f, sort_keys=False)
+        yaml.safe_dump(slim_payload.model_dump(), f, sort_keys=False)
 
     # Plugin config files are resolved relative to the active profile's directory
     # (= config_path.parent) so that each profile keeps its own plugin state.

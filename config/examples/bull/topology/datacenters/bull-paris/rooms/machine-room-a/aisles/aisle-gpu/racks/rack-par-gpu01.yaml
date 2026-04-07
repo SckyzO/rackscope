@@ -1,0 +1,171 @@
+id: rack-par-gpu01
+name: GPU Rack BRY GPU01
+u_height: 42
+template_id: bull-xh3000
+devices:
+- id: hpc-par-gpu01-01
+  name: par-gpu001-par-gpu002
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 1
+  face: front
+  instance:
+    1: par-gpu001
+    2: par-gpu002
+- id: hpc-par-gpu01-02
+  name: par-gpu003-par-gpu004
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 2
+  face: front
+  instance:
+    1: par-gpu003
+    2: par-gpu004
+- id: hpc-par-gpu01-03
+  name: par-gpu005-par-gpu006
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 3
+  face: front
+  instance:
+    1: par-gpu005
+    2: par-gpu006
+- id: hpc-par-gpu01-04
+  name: par-gpu007-par-gpu008
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 4
+  face: front
+  instance:
+    1: par-gpu007
+    2: par-gpu008
+- id: hpc-par-gpu01-05
+  name: par-gpu009-par-gpu010
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 5
+  face: front
+  instance:
+    1: par-gpu009
+    2: par-gpu010
+- id: hpc-par-gpu01-06
+  name: par-gpu011-par-gpu012
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 6
+  face: front
+  instance:
+    1: par-gpu011
+    2: par-gpu012
+- id: hpc-par-gpu01-07
+  name: par-gpu013-par-gpu014
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 7
+  face: front
+  instance:
+    1: par-gpu013
+    2: par-gpu014
+- id: hpc-par-gpu01-08
+  name: par-gpu015-par-gpu016
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 8
+  face: front
+  instance:
+    1: par-gpu015
+    2: par-gpu016
+- id: hpc-par-gpu01-09
+  name: par-gpu017-par-gpu018
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 9
+  face: front
+  instance:
+    1: par-gpu017
+    2: par-gpu018
+- id: hpc-par-gpu01-10
+  name: par-gpu019-par-gpu020
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 10
+  face: front
+  instance:
+    1: par-gpu019
+    2: par-gpu020
+- id: hpc-par-gpu01-11
+  name: par-gpu021-par-gpu022
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 11
+  face: front
+  instance:
+    1: par-gpu021
+    2: par-gpu022
+- id: hpc-par-gpu01-12
+  name: par-gpu023-par-gpu024
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 12
+  face: front
+  instance:
+    1: par-gpu023
+    2: par-gpu024
+- id: hpc-par-gpu01-13
+  name: par-gpu025-par-gpu026
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 13
+  face: front
+  instance:
+    1: par-gpu025
+    2: par-gpu026
+- id: hpc-par-gpu01-14
+  name: par-gpu027-par-gpu028
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 14
+  face: front
+  instance:
+    1: par-gpu027
+    2: par-gpu028
+- id: hpc-par-gpu01-15
+  name: par-gpu029-par-gpu030
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 15
+  face: front
+  instance:
+    1: par-gpu029
+    2: par-gpu030
+- id: hpc-par-gpu01-16
+  name: par-gpu031-par-gpu032
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 16
+  face: front
+  instance:
+    1: par-gpu031
+    2: par-gpu032
+- id: hpc-par-gpu01-17
+  name: par-gpu033-par-gpu034
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 17
+  face: front
+  instance:
+    1: par-gpu033
+    2: par-gpu034
+- id: hpc-par-gpu01-18
+  name: par-gpu035-par-gpu036
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 18
+  face: front
+  instance:
+    1: par-gpu035
+    2: par-gpu036
+- id: hpc-par-gpu01-19
+  name: par-gpu037-par-gpu038
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 19
+  face: front
+  instance:
+    1: par-gpu037
+    2: par-gpu038
+- id: hpc-par-gpu01-20
+  name: par-gpu039-par-gpu040
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 20
+  face: front
+  instance:
+    1: par-gpu039
+    2: par-gpu040
+- id: sw-ib-par-gpu01
+  name: sw-ib-par-gpu01
+  template_id: bs-xh35mq-ib-1u
+  u_position: 38
+  face: front
+  instance: sw-ib-par-gpu01

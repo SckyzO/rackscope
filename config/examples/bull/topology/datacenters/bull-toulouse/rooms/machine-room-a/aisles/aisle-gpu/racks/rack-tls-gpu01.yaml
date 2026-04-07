@@ -1,0 +1,171 @@
+id: rack-tls-gpu01
+name: GPU Rack TLS GPU01
+u_height: 42
+template_id: bull-xh3000
+devices:
+- id: hpc-tls-gpu01-01
+  name: tls-gpu001-tls-gpu002
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 1
+  face: front
+  instance:
+    1: tls-gpu001
+    2: tls-gpu002
+- id: hpc-tls-gpu01-02
+  name: tls-gpu003-tls-gpu004
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 2
+  face: front
+  instance:
+    1: tls-gpu003
+    2: tls-gpu004
+- id: hpc-tls-gpu01-03
+  name: tls-gpu005-tls-gpu006
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 3
+  face: front
+  instance:
+    1: tls-gpu005
+    2: tls-gpu006
+- id: hpc-tls-gpu01-04
+  name: tls-gpu007-tls-gpu008
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 4
+  face: front
+  instance:
+    1: tls-gpu007
+    2: tls-gpu008
+- id: hpc-tls-gpu01-05
+  name: tls-gpu009-tls-gpu010
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 5
+  face: front
+  instance:
+    1: tls-gpu009
+    2: tls-gpu010
+- id: hpc-tls-gpu01-06
+  name: tls-gpu011-tls-gpu012
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 6
+  face: front
+  instance:
+    1: tls-gpu011
+    2: tls-gpu012
+- id: hpc-tls-gpu01-07
+  name: tls-gpu013-tls-gpu014
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 7
+  face: front
+  instance:
+    1: tls-gpu013
+    2: tls-gpu014
+- id: hpc-tls-gpu01-08
+  name: tls-gpu015-tls-gpu016
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 8
+  face: front
+  instance:
+    1: tls-gpu015
+    2: tls-gpu016
+- id: hpc-tls-gpu01-09
+  name: tls-gpu017-tls-gpu018
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 9
+  face: front
+  instance:
+    1: tls-gpu017
+    2: tls-gpu018
+- id: hpc-tls-gpu01-10
+  name: tls-gpu019-tls-gpu020
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 10
+  face: front
+  instance:
+    1: tls-gpu019
+    2: tls-gpu020
+- id: hpc-tls-gpu01-11
+  name: tls-gpu021-tls-gpu022
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 11
+  face: front
+  instance:
+    1: tls-gpu021
+    2: tls-gpu022
+- id: hpc-tls-gpu01-12
+  name: tls-gpu023-tls-gpu024
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 12
+  face: front
+  instance:
+    1: tls-gpu023
+    2: tls-gpu024
+- id: hpc-tls-gpu01-13
+  name: tls-gpu025-tls-gpu026
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 13
+  face: front
+  instance:
+    1: tls-gpu025
+    2: tls-gpu026
+- id: hpc-tls-gpu01-14
+  name: tls-gpu027-tls-gpu028
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 14
+  face: front
+  instance:
+    1: tls-gpu027
+    2: tls-gpu028
+- id: hpc-tls-gpu01-15
+  name: tls-gpu029-tls-gpu030
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 15
+  face: front
+  instance:
+    1: tls-gpu029
+    2: tls-gpu030
+- id: hpc-tls-gpu01-16
+  name: tls-gpu031-tls-gpu032
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 16
+  face: front
+  instance:
+    1: tls-gpu031
+    2: tls-gpu032
+- id: hpc-tls-gpu01-17
+  name: tls-gpu033-tls-gpu034
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 17
+  face: front
+  instance:
+    1: tls-gpu033
+    2: tls-gpu034
+- id: hpc-tls-gpu01-18
+  name: tls-gpu035-tls-gpu036
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 18
+  face: front
+  instance:
+    1: tls-gpu035
+    2: tls-gpu036
+- id: hpc-tls-gpu01-19
+  name: tls-gpu037-tls-gpu038
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 19
+  face: front
+  instance:
+    1: tls-gpu037
+    2: tls-gpu038
+- id: hpc-tls-gpu01-20
+  name: tls-gpu039-tls-gpu040
+  template_id: bs-xh3515-neba-1u-2n
+  u_position: 20
+  face: front
+  instance:
+    1: tls-gpu039
+    2: tls-gpu040
+- id: sw-ib-tls-gpu01
+  name: sw-ib-tls-gpu01
+  template_id: bs-xh35mq-ib-1u
+  u_position: 38
+  face: front
+  instance: sw-ib-tls-gpu01

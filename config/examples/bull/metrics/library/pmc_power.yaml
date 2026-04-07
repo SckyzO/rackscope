@@ -1,0 +1,14 @@
+metrics:
+  - id: pmc_power
+    name: PMC Total Power (DCW)
+    description: Total power from PMC module
+    metric: sequana3_pmc_total_watt{sequana_rack_id="$rack_id"}
+    display:
+      unit: W
+      chart_type: line
+      color: '#a855f7'
+    category: power
+    tags:
+      - pmc
+      - dcw
+      - power

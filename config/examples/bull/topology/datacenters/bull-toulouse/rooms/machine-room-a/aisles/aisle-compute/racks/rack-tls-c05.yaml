@@ -1,0 +1,344 @@
+id: rack-tls-c05
+name: Compute Rack TLS C05
+u_height: 42
+template_id: bull-xh3000
+devices:
+- id: hpc-tls-c05-01
+  name: tls-compute0481-tls-compute0483
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 1
+  face: front
+  instance:
+    1: tls-compute0481
+    2: tls-compute0482
+    3: tls-compute0483
+- id: hpc-tls-c05-02
+  name: tls-compute0484-tls-compute0486
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 2
+  face: front
+  instance:
+    1: tls-compute0484
+    2: tls-compute0485
+    3: tls-compute0486
+- id: hpc-tls-c05-03
+  name: tls-compute0487-tls-compute0489
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 3
+  face: front
+  instance:
+    1: tls-compute0487
+    2: tls-compute0488
+    3: tls-compute0489
+- id: hpc-tls-c05-04
+  name: tls-compute0490-tls-compute0492
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 4
+  face: front
+  instance:
+    1: tls-compute0490
+    2: tls-compute0491
+    3: tls-compute0492
+- id: hpc-tls-c05-05
+  name: tls-compute0493-tls-compute0495
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 5
+  face: front
+  instance:
+    1: tls-compute0493
+    2: tls-compute0494
+    3: tls-compute0495
+- id: hpc-tls-c05-06
+  name: tls-compute0496-tls-compute0498
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 6
+  face: front
+  instance:
+    1: tls-compute0496
+    2: tls-compute0497
+    3: tls-compute0498
+- id: hpc-tls-c05-07
+  name: tls-compute0499-tls-compute0501
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 7
+  face: front
+  instance:
+    1: tls-compute0499
+    2: tls-compute0500
+    3: tls-compute0501
+- id: hpc-tls-c05-08
+  name: tls-compute0502-tls-compute0504
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 8
+  face: front
+  instance:
+    1: tls-compute0502
+    2: tls-compute0503
+    3: tls-compute0504
+- id: hpc-tls-c05-09
+  name: tls-compute0505-tls-compute0507
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 9
+  face: front
+  instance:
+    1: tls-compute0505
+    2: tls-compute0506
+    3: tls-compute0507
+- id: hpc-tls-c05-10
+  name: tls-compute0508-tls-compute0510
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 10
+  face: front
+  instance:
+    1: tls-compute0508
+    2: tls-compute0509
+    3: tls-compute0510
+- id: hpc-tls-c05-11
+  name: tls-compute0511-tls-compute0513
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 11
+  face: front
+  instance:
+    1: tls-compute0511
+    2: tls-compute0512
+    3: tls-compute0513
+- id: hpc-tls-c05-12
+  name: tls-compute0514-tls-compute0516
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 12
+  face: front
+  instance:
+    1: tls-compute0514
+    2: tls-compute0515
+    3: tls-compute0516
+- id: hpc-tls-c05-13
+  name: tls-compute0517-tls-compute0519
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 13
+  face: front
+  instance:
+    1: tls-compute0517
+    2: tls-compute0518
+    3: tls-compute0519
+- id: hpc-tls-c05-14
+  name: tls-compute0520-tls-compute0522
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 14
+  face: front
+  instance:
+    1: tls-compute0520
+    2: tls-compute0521
+    3: tls-compute0522
+- id: hpc-tls-c05-15
+  name: tls-compute0523-tls-compute0525
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 15
+  face: front
+  instance:
+    1: tls-compute0523
+    2: tls-compute0524
+    3: tls-compute0525
+- id: hpc-tls-c05-16
+  name: tls-compute0526-tls-compute0528
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 16
+  face: front
+  instance:
+    1: tls-compute0526
+    2: tls-compute0527
+    3: tls-compute0528
+- id: hpc-tls-c05-17
+  name: tls-compute0529-tls-compute0531
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 17
+  face: front
+  instance:
+    1: tls-compute0529
+    2: tls-compute0530
+    3: tls-compute0531
+- id: hpc-tls-c05-18
+  name: tls-compute0532-tls-compute0534
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 18
+  face: front
+  instance:
+    1: tls-compute0532
+    2: tls-compute0533
+    3: tls-compute0534
+- id: hpc-tls-c05-19
+  name: tls-compute0535-tls-compute0537
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 19
+  face: front
+  instance:
+    1: tls-compute0535
+    2: tls-compute0536
+    3: tls-compute0537
+- id: hpc-tls-c05-20
+  name: tls-compute0538-tls-compute0540
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 20
+  face: front
+  instance:
+    1: tls-compute0538
+    2: tls-compute0539
+    3: tls-compute0540
+- id: hpc-tls-c05-21
+  name: tls-compute0541-tls-compute0543
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 21
+  face: front
+  instance:
+    1: tls-compute0541
+    2: tls-compute0542
+    3: tls-compute0543
+- id: hpc-tls-c05-22
+  name: tls-compute0544-tls-compute0546
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 22
+  face: front
+  instance:
+    1: tls-compute0544
+    2: tls-compute0545
+    3: tls-compute0546
+- id: hpc-tls-c05-23
+  name: tls-compute0547-tls-compute0549
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 23
+  face: front
+  instance:
+    1: tls-compute0547
+    2: tls-compute0548
+    3: tls-compute0549
+- id: hpc-tls-c05-24
+  name: tls-compute0550-tls-compute0552
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 24
+  face: front
+  instance:
+    1: tls-compute0550
+    2: tls-compute0551
+    3: tls-compute0552
+- id: hpc-tls-c05-25
+  name: tls-compute0553-tls-compute0555
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 25
+  face: front
+  instance:
+    1: tls-compute0553
+    2: tls-compute0554
+    3: tls-compute0555
+- id: hpc-tls-c05-26
+  name: tls-compute0556-tls-compute0558
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 26
+  face: front
+  instance:
+    1: tls-compute0556
+    2: tls-compute0557
+    3: tls-compute0558
+- id: hpc-tls-c05-27
+  name: tls-compute0559-tls-compute0561
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 27
+  face: front
+  instance:
+    1: tls-compute0559
+    2: tls-compute0560
+    3: tls-compute0561
+- id: hpc-tls-c05-28
+  name: tls-compute0562-tls-compute0564
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 28
+  face: front
+  instance:
+    1: tls-compute0562
+    2: tls-compute0563
+    3: tls-compute0564
+- id: hpc-tls-c05-29
+  name: tls-compute0565-tls-compute0567
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 29
+  face: front
+  instance:
+    1: tls-compute0565
+    2: tls-compute0566
+    3: tls-compute0567
+- id: hpc-tls-c05-30
+  name: tls-compute0568-tls-compute0570
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 30
+  face: front
+  instance:
+    1: tls-compute0568
+    2: tls-compute0569
+    3: tls-compute0570
+- id: hpc-tls-c05-31
+  name: tls-compute0571-tls-compute0573
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 31
+  face: front
+  instance:
+    1: tls-compute0571
+    2: tls-compute0572
+    3: tls-compute0573
+- id: hpc-tls-c05-32
+  name: tls-compute0574-tls-compute0576
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 32
+  face: front
+  instance:
+    1: tls-compute0574
+    2: tls-compute0575
+    3: tls-compute0576
+- id: hpc-tls-c05-33
+  name: tls-compute0577-tls-compute0579
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 33
+  face: front
+  instance:
+    1: tls-compute0577
+    2: tls-compute0578
+    3: tls-compute0579
+- id: hpc-tls-c05-34
+  name: tls-compute0580-tls-compute0582
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 34
+  face: front
+  instance:
+    1: tls-compute0580
+    2: tls-compute0581
+    3: tls-compute0582
+- id: hpc-tls-c05-35
+  name: tls-compute0583-tls-compute0585
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 35
+  face: front
+  instance:
+    1: tls-compute0583
+    2: tls-compute0584
+    3: tls-compute0585
+- id: hpc-tls-c05-36
+  name: tls-compute0586-tls-compute0588
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 36
+  face: front
+  instance:
+    1: tls-compute0586
+    2: tls-compute0587
+    3: tls-compute0588
+- id: hpc-tls-c05-37
+  name: tls-compute0589-tls-compute0591
+  template_id: bs-xh3150-tino-1u-3n
+  u_position: 37
+  face: front
+  instance:
+    1: tls-compute0589
+    2: tls-compute0590
+    3: tls-compute0591
+- id: sw-ib-tls-c05
+  name: sw-ib-tls-c05
+  template_id: bs-xh35mq-ib-1u
+  u_position: 38
+  face: front
+  instance: sw-ib-tls-c05

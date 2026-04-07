@@ -1,0 +1,13 @@
+metrics:
+  - id: node_power
+    name: Node Power Consumption
+    description: Power draw from IPMI/BMC
+    metric: node_power_watts{instance="$instance"}
+    display:
+      unit: W
+      chart_type: line
+      color: '#f59e0b'
+    category: hardware
+    tags:
+      - ipmi
+      - power
