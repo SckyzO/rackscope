@@ -58,10 +58,14 @@ def _verify_password(password: str, hashed: str) -> bool:
     try:
         return _bcrypt.checkpw(password.encode(), hashed.encode())
     except (ValueError, UnicodeDecodeError) as e:
-        logger.warning("Password verification error (corrupted hash?): %s", e)  # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
+        logger.warning(
+            "Password verification error (corrupted hash?): %s", e
+        )  # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
         return False
     except Exception as e:
-        logger.error("Unexpected error in password verification: %s", e)  # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
+        logger.error(
+            "Unexpected error in password verification: %s", e
+        )  # nosemgrep: python.lang.security.audit.logging.logger-credential-leak.python-logger-credential-disclosure
         return False
 
 

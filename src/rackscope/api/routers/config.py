@@ -121,7 +121,11 @@ async def update_app_config(
     # app.yaml only stores 'enabled' per plugin; full plugin config lives in
     # dedicated files (plugins/{id}/config.yml) written below.
     slim_plugins = {
-        pid: {"enabled": bool(pcfg.get("enabled", False)) if isinstance(pcfg, dict) else bool(getattr(pcfg, "enabled", False))}
+        pid: {
+            "enabled": bool(pcfg.get("enabled", False))
+            if isinstance(pcfg, dict)
+            else bool(getattr(pcfg, "enabled", False))
+        }
         for pid, pcfg in (payload.plugins or {}).items()
     }
     slim_payload = payload.model_copy(update={"plugins": slim_plugins})

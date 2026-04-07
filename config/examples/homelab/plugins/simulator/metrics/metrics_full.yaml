@@ -44,40 +44,30 @@
 metrics:
 
   # ── Simulator-specific synthetic metrics ────────────────────────────────────
-  # These are NOT real node_exporter metrics. The simulator generates them
-  # directly from its behavioral model (profiles, incidents, overrides).
 
   - name: up
     scope: node
     instances: ["*"]
-    # 1 = reachable, 0 = down (node micro-failure or rack incident)
 
   - name: node_temperature_celsius
     scope: node
     instances: ["*"]
-    # Simulated from behavioral profile (base_temp + load * temp_range).
-    # Spikes +25°C during micro-failures, +12°C during aisle cooling failures.
 
   - name: node_power_watts
     scope: node
     instances: ["*"]
-    # ~50W when down, profile-based when up (compute: ~300-450W, GPU: ~600-900W)
 
   - name: node_load_percent
     scope: node
     instances: ["*"]
-    # Sinusoidal pattern for compute, random for GPU/service, fixed for network.
 
   - name: node_health_status
     scope: node
     instances: ["*"]
     # Synthetic health roll-up: 0=OK, 1=WARN (temp>38°C), 2=CRIT (temp>45°C or down)
-    # In production this would come from a dedicated health exporter.
 
 
   # ── Node Exporter — CPU ──────────────────────────────────────────────────────
-  # Monotonic counter (idle mode only). Combined with load_percent to approximate
-  # CPU utilisation without needing all per-mode counters.
 
   - name: node_cpu_seconds_total
     scope: node
@@ -87,20 +77,14 @@ metrics:
       cpu: $cpu
 
 
-  # ── Node Exporter — Memory ───────────────────────────────────────────────────
-
   - name: node_memory_MemTotal_bytes
     scope: node
     instances: ["*"]
-    # Fixed per device profile (compute: 256 GB, GPU: 512 GB, service: 64 GB)
 
   - name: node_memory_MemAvailable_bytes
     scope: node
     instances: ["*"]
-    # Varies with load_percent: available = total * (1 - load/100)
 
-
-  # ── Node Exporter — Filesystem ───────────────────────────────────────────────
 
   - name: node_filesystem_size_bytes
     scope: node
@@ -117,8 +101,6 @@ metrics:
       fstype: ext4
 
 
-  # ── Node Exporter — Disk I/O ─────────────────────────────────────────────────
-
   - name: node_disk_read_bytes_total
     scope: node
     instances: ["*"]
@@ -131,8 +113,6 @@ metrics:
     labels:
       device: sda
 
-
-  # ── Node Exporter — Network ──────────────────────────────────────────────────
 
   - name: node_network_receive_bytes_total
     scope: node
@@ -149,8 +129,6 @@ metrics:
 
   # ── IPMI Exporter ────────────────────────────────────────────────────────────
   # In-Band Management Controller metrics. Scoped to server nodes only
-  # (compute*, visu*, srv*, service*) — switches and storage arrays don't
-  # expose BMC/IPMI metrics via this exporter.
 
   - name: ipmi_fan_speed_state
     scope: node
@@ -185,20 +163,16 @@ metrics:
   - name: ipmi_up
     scope: node
     instances: ["compute*", "visu*", "srv*", "service*"]
-    # 1 = IPMI reachable, 0 = BMC unreachable (implies node is down)
 
 
   # ── Network Switches ─────────────────────────────────────────────────────────
   # Pattern *isw* matches IB switches (e.g. sw-ib-r01-01).
-  # Pattern *esw* matches Ethernet switches (e.g. sw-eth-r02-01).
-  # Port count: 40-48 ports per switch (determined in main.py).
 
   - name: switch_port_oper_status
     scope: node
     instances: ["*isw*", "*esw*", "sw-*"]
     labels:
       port: $port
-    # 1 = up, 2 = down
 
   - name: switch_port_in_octets
     scope: node
@@ -215,8 +189,6 @@ metrics:
 
   # ── Slurm Workload Manager ───────────────────────────────────────────────────
   # Only emitted for compute and visualisation nodes (nodes with Slurm-managed roles).
-  # labels_only: omits BASE_LABELS so only node/partition/status are present —
-  # matches real slurm_exporter output format.
 
   - name: slurm_node_status
     scope: node
@@ -239,8 +211,6 @@ metrics:
   #
   # ⚠️  TOPOLOGY-SPECIFIC: update this pattern if E-Series are in different racks.
   #
-  # Status values emitted: optimal, degraded, failed (all 3 per tick to prevent
-  # Prometheus from dropping stale series when status changes).
 
   - name: eseries_exporter_collect_error
     scope: node
@@ -315,8 +285,6 @@ metrics:
   # ── BullSequana XH3000 — Liquid Cooling (HYC) ────────────────────────────────
   # Hydraulic Cooling (HYC) metrics from sequana3_exporter.
   # Specific to XH3000 racks (Aisle 01: r01-01 to r01-07) — NOT air-cooled racks.
-  # sequana_rack_id matches the Rackscope rack ID for correlation.
-  # All share the same vendor label set (job, mc_type, model, etc.).
 
   - name: sequana3_hyc_state_info
     scope: rack
@@ -332,7 +300,6 @@ metrics:
       sequana_rack_id: $rack_id
       sequana_type: liquid
       state: $state
-    # state: standbyspare | active | faulted | ...
 
   - name: sequana3_hyc_p_in_kpa
     scope: rack
@@ -347,7 +314,6 @@ metrics:
       region: demo
       sequana_rack_id: $rack_id
       sequana_type: liquid
-    # Hydraulic pressure at inlet (kPa). Nominal ~200 kPa, drops during cooling failure.
 
   - name: sequana3_hyc_leak_sensor_pump
     scope: rack
@@ -362,7 +328,6 @@ metrics:
       region: demo
       sequana_rack_id: $rack_id
       sequana_type: liquid
-    # Leak sensor state: 0.0 = no leak, 1.0 = leak detected (CRIT)
 
   - name: sequana3_hyc_tmp_pcb_cel
     scope: rack
@@ -377,12 +342,9 @@ metrics:
       region: demo
       sequana_rack_id: $rack_id
       sequana_type: liquid
-    # HYC PCB temperature (°C). Spikes during aisle cooling failure.
 
 
   # ── BullSequana XH3000 — PMC (Power Management Controller) ───────────────────
-  # PMC aggregates total rack power consumption across all blades.
-  # Scoped to r01-* (XH3000 racks only). Other racks use Raritan PDU power.
 
   - name: sequana3_pmc_total_watt
     scope: rack
@@ -397,7 +359,6 @@ metrics:
       region: demo
       sequana_rack_id: $rack_id
       sequana_type: liquid
-    # Nominal ~5.5 kW/rack, ~7.2 kW during aisle overheating, 0 W when rack is down.
 
 
   # ── Raritan PDU (Power Distribution Unit) ────────────────────────────────────
@@ -405,8 +366,6 @@ metrics:
   # Each PDU has 2 inlets (A/B for redundancy) and 8-16 outlets.
   # Metrics with inletid=I1,I2 are inlet-level (power budget per phase).
   # Metrics with outletid=1..16 are per-outlet (per-device power).
-  # In Rackscope metrics_service, inletid!="" filters to inlet-level rows only
-  # so that rack total power = sum(inlets) rather than sum(inlets + outlets).
 
   - name: raritan_pdu_activeenergy_watthour_total
     scope: rack
@@ -419,7 +378,6 @@ metrics:
       inletname: $inletname
       outletid: $outletid
       outletname: $outletname
-    # Cumulative Wh counter — resets on PDU reboot.
 
   - name: raritan_pdu_activepower_watt
     scope: rack
@@ -432,7 +390,6 @@ metrics:
       inletname: $inletname
       outletid: $outletid
       outletname: $outletname
-    # Instantaneous active power (W). Primary metric for rack power dashboards.
 
   - name: raritan_pdu_apparentpower_voltampere
     scope: rack
@@ -443,7 +400,6 @@ metrics:
       pduname: $pduname
       inletid: $inletid
       inletname: $inletname
-    # Apparent power (VA) — inlet-level only (no outlet-level apparent power).
 
   - name: raritan_pdu_current_ampere
     scope: rack
@@ -454,7 +410,6 @@ metrics:
       pduname: $pduname
       inletid: $inletid
       inletname: $inletname
-    # RMS current per inlet (A). Alert threshold typically 16A (80% of 20A circuit).
 
   - name: raritan_pdu_inletrating
     scope: rack
@@ -465,7 +420,6 @@ metrics:
       pduname: $pduname
       inletid: $inletid
       inletname: $inletname
-    # Rated maximum current (A). Static: 16A (PX3-1717U) or 32A (PX3-5190CR).
 
   - name: raritan_pdu_voltage_volt
     scope: rack
@@ -476,4 +430,3 @@ metrics:
       pduname: $pduname
       inletid: $inletid
       inletname: $inletname
-    # RMS voltage per inlet (V). Nominal 230V (EU) or 120V (US).

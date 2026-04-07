@@ -51,11 +51,11 @@ def resolve_metric_query(
 
     expr = metric_def.metric
     # Substitute placeholders — support both $var and {var} styles
-    expr = expr.replace('$rack_id', rack_id)
+    expr = expr.replace("$rack_id", rack_id)
     expr = expr.replace('"{rack_id}"', f'"{rack_id}"')
     expr = expr.replace("{rack_id}", rack_id)
     if instance:
-        expr = expr.replace('$instance', instance)
+        expr = expr.replace("$instance", instance)
         expr = expr.replace('"{instance}"', f'"{instance}"')
         expr = expr.replace("{instance}", instance)
     return expr
@@ -303,7 +303,7 @@ async def collect_device_metrics(
         metric_def = library.get_metric(metric_id) if library else None
         if metric_def:
             # Extract base name for use as storage key (exporter-agnostic)
-            base_name = re.match(r'^([a-zA-Z_:][a-zA-Z0-9_:]*)', metric_def.metric)
+            base_name = re.match(r"^([a-zA-Z_:][a-zA-Z0-9_:]*)", metric_def.metric)
             key = base_name.group(1) if base_name else metric_id
             # Substitute $instance placeholder with the actual instance filter
             if len(instances) == 1:
@@ -321,13 +321,13 @@ async def collect_device_metrics(
                 )
             queries[key] = query
         else:
-            query = build_device_metric_query(
+            fallback = build_device_metric_query(
                 metric_name=metric_id,
                 rack_id=rack_id,
                 instances=instances,
             )
-            if query:
-                queries[metric_id] = query
+            if fallback:
+                queries[metric_id] = fallback
 
     all_instances_metrics: Dict[str, Dict[str, float]] = {}
     try:
