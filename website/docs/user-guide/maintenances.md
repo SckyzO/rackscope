@@ -42,6 +42,14 @@ The target type and target ID cannot be changed after creation.
 Click **Stop** on any **ACTIVE** maintenance to end it immediately.
 The maintenance moves to **EXPIRED** status and its alerts resume normally.
 
+### Reactivating a maintenance
+
+Click **Reactivate** on any **EXPIRED** maintenance that was stopped manually
+to bring it back to **ACTIVE** status. This clears the `ended_at` timestamp.
+
+> If the maintenance had an `expires_at` in the past it will immediately
+> expire again — use **Edit** to extend the expiry first.
+
 ### Deleting a maintenance
 
 Click the red delete button to permanently remove a maintenance entry from the history.
@@ -81,4 +89,5 @@ The backend API remains available regardless of this setting.
 | `POST` | `/api/maintenances` | Create a new maintenance |
 | `PUT` | `/api/maintenances/{id}` | Update reason, effect, or expiry |
 | `POST` | `/api/maintenances/{id}/stop` | Manually end an active maintenance |
+| `POST` | `/api/maintenances/{id}/reactivate` | Reactivate a stopped maintenance |
 | `DELETE` | `/api/maintenances/{id}` | Delete a maintenance entry |

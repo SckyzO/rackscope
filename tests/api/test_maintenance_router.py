@@ -202,6 +202,57 @@ def test_update_nonexistent_returns_404():
     assert response.status_code == 404
 
 
+# ── Reactivate ────────────────────────────────────────────────────────────────
+
+
+def test_reactivate_stopped_maintenance():
+    create_resp = client.post(
+        "/api/maintenances",
+        json={"target_type": "rack", "target_id": "rack-react", "reason": "Test"},
+    )
+    maintenance_id = create_resp.json()["id"]
+    client.post(f"/api/maintenances/{maintenance_id}/stop")
+
+    react_resp = client.post(f"/api/maintenances/{maintenance_id}/reactivate")
+    assert react_resp.status_code == 200
+    assert react_resp.json()["status"] == "ACTIVE"
+    assert react_resp.json()["ended_at"] is None
+
+
+def test_reactivate_not_ended_returns_400():
+    create_resp = client.post(
+        "/api/maintenances",
+        json={"target_type": "rack", "target_id": "rack-active", "reason": "Test"},
+    )
+    maintenance_id = create_resp.json()["id"]
+    response = client.post(f"/api/maintenances/{maintenance_id}/reactivate")
+    assert response.status_code == 400
+    assert "not ended" in response.json()["detail"]
+
+
+def test_reactivate_nonexistent_returns_404():
+    response = client.post("/api/maintenances/doesnotexist/reactivate")
+    assert response.status_code == 404
+
+
+def test_update_clear_expires_at():
+    create_resp = client.post(
+        "/api/maintenances",
+        json={
+            "target_type": "rack",
+            "target_id": "rack-exp",
+            "reason": "Test",
+            "expires_at": "2099-12-31T23:59:00Z",
+        },
+    )
+    maintenance_id = create_resp.json()["id"]
+    assert create_resp.json()["expires_at"] is not None
+
+    update_resp = client.put(f"/api/maintenances/{maintenance_id}", json={"expires_at": None})
+    assert update_resp.status_code == 200
+    assert update_resp.json()["expires_at"] is None
+
+
 # ── List after operations ─────────────────────────────────────────────────────
 
 

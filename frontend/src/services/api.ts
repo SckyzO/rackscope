@@ -905,6 +905,14 @@ export const api = {
     }
     return res.json() as Promise<MaintenanceEntry>;
   },
+  reactivateMaintenance: async (id: string): Promise<MaintenanceEntry> => {
+    const res = await apiFetch(`/api/maintenances/${id}/reactivate`, { method: 'POST' });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { detail?: string }).detail ?? `Request failed: ${res.status}`);
+    }
+    return res.json() as Promise<MaintenanceEntry>;
+  },
   stopMaintenance: async (id: string): Promise<MaintenanceEntry> => {
     const res = await apiFetch(`/api/maintenances/${id}/stop`, { method: 'POST' });
     if (!res.ok) {

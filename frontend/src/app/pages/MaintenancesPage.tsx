@@ -18,6 +18,7 @@ import {
   Eye,
   Filter,
   Pencil,
+  RotateCcw,
 } from 'lucide-react';
 import { usePageTitle } from '@app/contexts/PageTitleContext';
 
@@ -292,11 +293,13 @@ function MaintenanceFormModal({
 function MaintenanceRow({
   entry,
   onStop,
+  onReactivate,
   onEdit,
   onDelete,
 }: {
   entry: MaintenanceEntry;
   onStop: (id: string) => void;
+  onReactivate: (id: string) => void;
   onEdit: (entry: MaintenanceEntry) => void;
   onDelete: (id: string) => void;
 }) {
@@ -353,6 +356,16 @@ function MaintenanceRow({
             Stop
           </PageActionButton>
         )}
+        {entry.status === 'EXPIRED' && entry.ended_at && (
+          <PageActionButton
+            icon={RotateCcw}
+            variant="brand-outline"
+            onClick={() => onReactivate(entry.id)}
+            title="Reactivate"
+          >
+            Reactivate
+          </PageActionButton>
+        )}
         <PageActionButton icon={Pencil} onClick={() => onEdit(entry)} title="Edit">
           Edit
         </PageActionButton>
@@ -407,6 +420,15 @@ export function MaintenancesPage() {
   const handleStop = async (id: string) => {
     try {
       await api.stopMaintenance(id);
+      await fetchData();
+    } catch {
+      // silently ignore — user can retry
+    }
+  };
+
+  const handleReactivate = async (id: string) => {
+    try {
+      await api.reactivateMaintenance(id);
       await fetchData();
     } catch {
       // silently ignore — user can retry
@@ -487,6 +509,7 @@ export function MaintenancesPage() {
                 key={entry.id}
                 entry={entry}
                 onStop={handleStop}
+                onReactivate={handleReactivate}
                 onEdit={setEditEntry}
                 onDelete={handleDelete}
               />

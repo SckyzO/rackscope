@@ -73,20 +73,25 @@ def create_maintenance(payload: MaintenanceCreate) -> dict:
 
 @router.put("/{maintenance_id}")
 def update_maintenance(maintenance_id: str, payload: MaintenanceUpdate) -> dict:
-    """Update editable fields of a maintenance entry."""
+    """Update editable fields of a maintenance entry.
+
+    Only fields present in the request body are updated (partial update).
+    Pass ``expires_at: null`` to remove an existing expiry.
+    """
     entries = maintenance_service.load_maintenances()
     for entry in entries:
         if entry.id == maintenance_id:
-            if payload.reason is not None:
-                stripped = payload.reason.strip()
+            provided = payload.model_fields_set
+            if "reason" in provided:
+                stripped = (payload.reason or "").strip()
                 if not stripped:
                     raise HTTPException(status_code=400, detail="reason cannot be empty")
                 entry.reason = stripped
-            if payload.effect is not None:
+            if "effect" in provided and payload.effect is not None:
                 entry.effect = payload.effect
-            if payload.starts_at is not None:
+            if "starts_at" in provided:
                 entry.starts_at = payload.starts_at
-            if payload.expires_at is not None:
+            if "expires_at" in provided:
                 entry.expires_at = payload.expires_at
             maintenance_service.save_maintenances(entries)
             _invalidate_alerts_cache()
@@ -104,6 +109,22 @@ def stop_maintenance(maintenance_id: str) -> dict:
             if entry.ended_at:
                 raise HTTPException(status_code=400, detail="Maintenance already ended")
             entry.ended_at = datetime.now(timezone.utc)
+            maintenance_service.save_maintenances(entries)
+            _invalidate_alerts_cache()
+            now = datetime.now(timezone.utc)
+            return _with_status(entry, now)
+    raise HTTPException(status_code=404, detail="Maintenance not found")
+
+
+@router.post("/{maintenance_id}/reactivate")
+def reactivate_maintenance(maintenance_id: str) -> dict:
+    """Reactivate an ended maintenance by clearing ended_at."""
+    entries = maintenance_service.load_maintenances()
+    for entry in entries:
+        if entry.id == maintenance_id:
+            if not entry.ended_at:
+                raise HTTPException(status_code=400, detail="Maintenance is not ended")
+            entry.ended_at = None
             maintenance_service.save_maintenances(entries)
             _invalidate_alerts_cache()
             now = datetime.now(timezone.utc)
