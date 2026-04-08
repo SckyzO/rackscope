@@ -28,6 +28,7 @@ from rackscope.api.dependencies import (
 )
 from rackscope.api.cache import ServiceCache
 from rackscope.utils.aggregation import aggregate_states
+from rackscope.services import maintenance_service
 from rackscope.services import telemetry_service
 
 # Default TTL fallbacks when AppConfig is not yet loaded (startup race)
@@ -530,35 +531,63 @@ async def get_active_alerts(
                             "rack_name": rack.name,
                         }
 
+        from datetime import datetime, timezone
+
+        maintenances = maintenance_service.load_maintenances()
+        now_utc = datetime.now(timezone.utc)
+
         alerts = []
 
         for node_id, node_checks in snapshot.node_alerts.items():
             context = node_context.get(node_id)
             if not context:
                 continue
-            alerts.append(
-                {
-                    "type": "node",
-                    "node_id": node_id,
-                    "state": snapshot.node_states.get(node_id, "UNKNOWN"),
-                    "checks": [{"id": cid, "severity": sev} for cid, sev in node_checks.items()],
-                    **context,
-                }
+            maint = maintenance_service.is_in_maintenance(
+                "device",
+                node_id,
+                site_id=context.get("site_id"),
+                room_id=context.get("room_id"),
+                rack_id=context.get("rack_id"),
+                maintenances=maintenances,
+                now=now_utc,
             )
+            if maint is not None and maint.effect == "hide":
+                continue
+            entry: Dict = {
+                "type": "node",
+                "node_id": node_id,
+                "state": snapshot.node_states.get(node_id, "UNKNOWN"),
+                "checks": [{"id": cid, "severity": sev} for cid, sev in node_checks.items()],
+                **context,
+            }
+            if maint is not None:
+                entry["maintenance"] = {"id": maint.id, "reason": maint.reason}
+            alerts.append(entry)
 
         for rack_id, rack_checks in snapshot.rack_alerts.items():
             context = rack_context.get(rack_id)
             if not context:
                 continue
-            alerts.append(
-                {
-                    "type": "rack",
-                    "rack_id": rack_id,
-                    "state": snapshot.rack_states.get(rack_id, "UNKNOWN"),
-                    "checks": [{"id": cid, "severity": sev} for cid, sev in rack_checks.items()],
-                    **context,
-                }
+            maint = maintenance_service.is_in_maintenance(
+                "rack",
+                rack_id,
+                site_id=context.get("site_id"),
+                room_id=context.get("room_id"),
+                maintenances=maintenances,
+                now=now_utc,
             )
+            if maint is not None and maint.effect == "hide":
+                continue
+            entry = {
+                "type": "rack",
+                "rack_id": rack_id,
+                "state": snapshot.rack_states.get(rack_id, "UNKNOWN"),
+                "checks": [{"id": cid, "severity": sev} for cid, sev in rack_checks.items()],
+                **context,
+            }
+            if maint is not None:
+                entry["maintenance"] = {"id": maint.id, "reason": maint.reason}
+            alerts.append(entry)
 
         result = {"alerts": alerts}
         await svc_cache.set(_cache_key, result, ttl=_ttl)
