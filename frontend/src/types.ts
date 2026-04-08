@@ -413,6 +413,7 @@ export type AppConfig = {
     show_logs?: boolean;
     dev_tools?: boolean;
     wizard?: boolean;
+    maintenances?: boolean;
   };
   playlist?: {
     interval_seconds?: number;
