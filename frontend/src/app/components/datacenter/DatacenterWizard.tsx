@@ -17,12 +17,14 @@ import {
   AlertTriangle,
   ChevronRight,
   X,
+  FolderOpen,
 } from 'lucide-react';
 import { api } from '@src/services/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type WizardData = {
+  profile: { name: string; id: string };
   site: { name: string; id: string };
   room: { name: string; id: string; description: string };
   aisle: { enabled: boolean; name: string; id: string };
@@ -105,9 +107,73 @@ const Field = ({
   </div>
 );
 
+// ── Step 0 — Profile ─────────────────────────────────────────────────────────
+
+const StepProfile = ({
+  data,
+  onChange,
+}: {
+  data: WizardData['profile'];
+  onChange: (d: WizardData['profile']) => void;
+}) => {
+  const [idManual, setIdManual] = useState(false);
+
+  const handleName = (name: string) => {
+    onChange({ name, id: idManual ? data.id : slugify(name) });
+  };
+  const handleId = (id: string) => {
+    setIdManual(true);
+    onChange({ ...data, id });
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3 rounded-2xl border border-purple-100 bg-purple-50 px-4 py-3 dark:border-purple-700/30 dark:bg-purple-500/10">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-500/20">
+          <FolderOpen className="h-4.5 w-4.5 text-purple-600 dark:text-purple-400" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+            Create a configuration profile
+          </p>
+          <p className="text-xs text-purple-600/70 dark:text-purple-400/70">
+            A profile is an isolated set of config files saved under{' '}
+            <code className="font-mono">config/profiles/&lt;id&gt;/</code>
+          </p>
+        </div>
+      </div>
+
+      <Field label="Profile Name" required hint="e.g. My Datacenter, Production, Lab">
+        <input
+          autoFocus
+          type="text"
+          placeholder="My Datacenter"
+          value={data.name}
+          onChange={(e) => handleName(e.target.value)}
+          className={inputCls}
+        />
+      </Field>
+
+      <Field
+        label="Profile ID"
+        hint="Auto-generated. Used as directory name — lowercase letters, numbers and dashes only."
+      >
+        <input
+          type="text"
+          placeholder="my-datacenter"
+          value={data.id}
+          onChange={(e) => handleId(e.target.value)}
+          className={`${inputCls} font-mono text-xs`}
+        />
+      </Field>
+    </div>
+  );
+};
+
 // ── Step definitions ──────────────────────────────────────────────────────────
 
 const STEPS = [
+  { label: 'Profile', desc: 'Name your config profile' },
   { label: 'Site', desc: 'Define your datacenter' },
   { label: 'Room', desc: 'Add the first room' },
   { label: 'Aisle', desc: 'Add the first aisle' },
@@ -336,6 +402,22 @@ const StepSummary = ({ data, error }: { data: WizardData; error: string | null }
     </p>
 
     <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5 dark:border-gray-700 dark:bg-gray-800/50">
+      {/* Profile */}
+      <div className="mb-3 flex items-start gap-3 border-b border-gray-200 pb-3 dark:border-gray-700">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 dark:bg-purple-500/10">
+          <FolderOpen className="h-4 w-4 text-purple-500" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-bold text-gray-900 dark:text-white">{data.profile.name}</p>
+          <p className="font-mono text-[11px] text-gray-400 dark:text-gray-500">
+            config/profiles/{data.profile.id}/
+          </p>
+        </div>
+        <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-600 dark:bg-purple-500/10 dark:text-purple-400">
+          profile
+        </span>
+      </div>
+
       {/* Site */}
       <div className="flex items-start gap-3">
         <div className="bg-brand-50 dark:bg-brand-500/10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
@@ -413,6 +495,7 @@ export const DatacenterWizard = ({ onComplete, onDismiss }: DatacenterWizardProp
   const [error, setError] = useState<string | null>(null);
 
   const [data, setData] = useState<WizardData>({
+    profile: { name: '', id: '' },
     site: { name: '', id: '' },
     room: { name: '', id: '', description: '' },
     aisle: { enabled: true, name: '', id: '' },
@@ -425,9 +508,10 @@ export const DatacenterWizard = ({ onComplete, onDismiss }: DatacenterWizardProp
 
   // ── Validation per step
   const canAdvance = () => {
-    if (step === 0) return data.site.name.trim() !== '' && data.site.id.trim() !== '';
-    if (step === 1) return data.room.name.trim() !== '' && data.room.id.trim() !== '';
-    if (step === 2) return !data.aisle.enabled || data.aisle.name.trim() !== '';
+    if (step === 0) return data.profile.name.trim() !== '' && data.profile.id.trim() !== '';
+    if (step === 1) return data.site.name.trim() !== '' && data.site.id.trim() !== '';
+    if (step === 2) return data.room.name.trim() !== '' && data.room.id.trim() !== '';
+    if (step === 3) return !data.aisle.enabled || data.aisle.name.trim() !== '';
     return true;
   };
 
@@ -444,6 +528,12 @@ export const DatacenterWizard = ({ onComplete, onDismiss }: DatacenterWizardProp
     setSubmitting(true);
     setError(null);
     try {
+      // 0. Create and switch to new profile
+      await api.wizardInitProfile({
+        name: data.profile.name.trim(),
+        id: data.profile.id.trim(),
+      });
+
       // 1. Create site
       await api.createSite({ name: data.site.name.trim(), id: data.site.id.trim() });
 
@@ -531,15 +621,21 @@ export const DatacenterWizard = ({ onComplete, onDismiss }: DatacenterWizardProp
         {/* Step content */}
         <div className="px-8 py-7">
           {step === 0 && (
-            <StepSite data={data.site} onChange={(site) => setData((d) => ({ ...d, site }))} />
+            <StepProfile
+              data={data.profile}
+              onChange={(profile) => setData((d) => ({ ...d, profile }))}
+            />
           )}
           {step === 1 && (
-            <StepRoom data={data.room} onChange={(room) => setData((d) => ({ ...d, room }))} />
+            <StepSite data={data.site} onChange={(site) => setData((d) => ({ ...d, site }))} />
           )}
           {step === 2 && (
+            <StepRoom data={data.room} onChange={(room) => setData((d) => ({ ...d, room }))} />
+          )}
+          {step === 3 && (
             <StepAisle data={data.aisle} onChange={(aisle) => setData((d) => ({ ...d, aisle }))} />
           )}
-          {step === 3 && <StepSummary data={data} error={error} />}
+          {step === 4 && <StepSummary data={data} error={error} />}
         </div>
 
         {/* Footer navigation */}

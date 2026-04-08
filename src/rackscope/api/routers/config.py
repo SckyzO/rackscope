@@ -9,10 +9,11 @@ from pathlib import Path
 from typing import Annotated, Dict, Any
 
 import yaml
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from rackscope.api.dependencies import get_app_config_optional, require_admin
 from rackscope.model.config import AppConfig
+from rackscope.api.models import ProfileCreate
 
 router = APIRouter(prefix="/api", tags=["config"])
 
@@ -219,6 +220,66 @@ def get_env() -> Dict[str, Any]:
         "PROMETHEUS_CACHE_TTL",
     ]
     return {key: os.getenv(key) for key in keys}
+
+
+@router.post("/setup/wizard/init-profile")
+async def wizard_init_profile(payload: ProfileCreate) -> dict:
+    """Create a new empty profile and switch the backend to use it.
+
+    Creates config/profiles/<id>/ with a minimal app.yaml and an empty
+    topology/sites.yaml, then reloads the backend configuration.
+
+    The switch persists in the running process. To survive a container
+    restart, run `make use CONFIG=<id>` on the host after the wizard completes.
+    """
+    from rackscope.api.app import apply_config
+    from rackscope.model.loader import load_app_config, dump_yaml
+    from rackscope.utils.validation import safe_segment, assert_safe_id
+
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Profile name is required")
+
+    profile_id = safe_segment(payload.id or name, "profile")
+    assert_safe_id(profile_id, "profile_id")
+
+    profile_dir = Path("config/profiles") / profile_id
+    if profile_dir.exists():
+        raise HTTPException(status_code=409, detail=f"Profile '{profile_id}' already exists")
+
+    topo_dir = profile_dir / "topology"
+    topo_dir.mkdir(parents=True)
+    (topo_dir / "sites.yaml").write_text(dump_yaml({"sites": []}))
+
+    app_yaml_data = {
+        "app": {"name": name, "description": ""},
+        "paths": {
+            "topology": "topology",
+            "templates": "templates",
+            "checks": "checks/library",
+            "metrics": "metrics/library",
+        },
+        "features": {
+            "wizard": False,
+            "notifications": True,
+            "notifications_max_visible": 10,
+            "playlist": False,
+            "offline": False,
+            "worldmap": True,
+            "show_logs": True,
+            "dev_tools": False,
+        },
+    }
+    app_yaml_path = profile_dir / "app.yaml"
+    with app_yaml_path.open("w") as f:
+        yaml.safe_dump(app_yaml_data, f, sort_keys=False)
+
+    resolved_path = app_yaml_path.resolve()
+    os.environ["RACKSCOPE_APP_CONFIG"] = str(resolved_path)
+    new_config = load_app_config(resolved_path)
+    await apply_config(new_config)
+
+    return {"profile_id": profile_id, "profile_path": str(profile_dir)}
 
 
 @router.post("/setup/wizard/disable")

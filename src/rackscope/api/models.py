@@ -22,6 +22,13 @@ class TemplateWriteRequest(BaseModel):
     template: Dict[str, Any]
 
 
+class ProfileCreate(BaseModel):
+    """Request model for wizard profile initialization."""
+
+    id: Optional[str] = None
+    name: str
+
+
 class SiteCreate(BaseModel):
     """Request model for creating a site."""
 
