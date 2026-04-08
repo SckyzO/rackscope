@@ -855,4 +855,21 @@ export const api = {
   disableSetupWizard: async (): Promise<void> => {
     await apiFetch('/api/setup/wizard/disable', { method: 'POST' });
   },
+  wizardInitProfile: async (payload: {
+    name: string;
+    id?: string;
+  }): Promise<{ profile_id: string; profile_path: string }> => {
+    const res = await apiFetch('/api/setup/wizard/init-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(
+        (body as { detail?: string }).detail ?? `Request failed: ${res.status}`
+      );
+    }
+    return res.json() as Promise<{ profile_id: string; profile_path: string }>;
+  },
 };

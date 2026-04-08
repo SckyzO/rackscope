@@ -1,11 +1,31 @@
 """Tests for Config Router."""
 
+import os
+import shutil
+from pathlib import Path
+from unittest.mock import AsyncMock, patch
+
 import pytest
+import yaml
 from fastapi.testclient import TestClient
 
 from rackscope.api.app import app
 
 client = TestClient(app)
+
+
+@pytest.fixture()
+def clean_test_profile():
+    """Remove the test profile dir after each test and restore RACKSCOPE_APP_CONFIG."""
+    original_env = os.environ.get("RACKSCOPE_APP_CONFIG")
+    profile_dir = Path("config/profiles/test-wizard-profile")
+    yield profile_dir
+    if profile_dir.exists():
+        shutil.rmtree(profile_dir)
+    if original_env is None:
+        os.environ.pop("RACKSCOPE_APP_CONFIG", None)
+    else:
+        os.environ["RACKSCOPE_APP_CONFIG"] = original_env
 
 
 @pytest.fixture()
@@ -136,3 +156,79 @@ def test_put_config_preserves_auth_credentials(protect_app_yaml):
     current_config = response.json()
     response = client.put("/api/config", json=current_config)
     assert response.status_code in (200, 422, 500)
+
+
+# ── wizard/init-profile ───────────────────────────────────────────────────────
+
+
+def test_wizard_init_profile_creates_files(clean_test_profile):
+    """POST /api/setup/wizard/init-profile creates profile dir and topology/sites.yaml."""
+    with patch("rackscope.api.app.apply_config", new_callable=AsyncMock):
+        response = client.post(
+            "/api/setup/wizard/init-profile",
+            json={"name": "Test Wizard Profile", "id": "test-wizard-profile"},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["profile_id"] == "test-wizard-profile"
+
+    profile_dir = Path("config/profiles/test-wizard-profile")
+    assert profile_dir.exists()
+    assert (profile_dir / "app.yaml").exists()
+    assert (profile_dir / "topology" / "sites.yaml").exists()
+
+    sites = yaml.safe_load((profile_dir / "topology" / "sites.yaml").read_text())
+    assert sites == {"sites": []}
+
+    app_cfg = yaml.safe_load((profile_dir / "app.yaml").read_text())
+    assert app_cfg["app"]["name"] == "Test Wizard Profile"
+    assert app_cfg["paths"]["topology"] == "topology"
+    assert app_cfg["features"]["wizard"] is False
+
+
+def test_wizard_init_profile_auto_slugifies_id(clean_test_profile):
+    """Profile ID is auto-generated from name when not provided."""
+    with patch("rackscope.api.app.apply_config", new_callable=AsyncMock):
+        response = client.post(
+            "/api/setup/wizard/init-profile",
+            json={"name": "Test Wizard Profile"},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["profile_id"] == "test-wizard-profile"
+
+
+def test_wizard_init_profile_duplicate_returns_409(clean_test_profile):
+    """Creating a profile with an existing ID returns 409."""
+    with patch("rackscope.api.app.apply_config", new_callable=AsyncMock):
+        client.post(
+            "/api/setup/wizard/init-profile",
+            json={"name": "Test Wizard Profile", "id": "test-wizard-profile"},
+        )
+        response = client.post(
+            "/api/setup/wizard/init-profile",
+            json={"name": "Test Wizard Profile", "id": "test-wizard-profile"},
+        )
+    assert response.status_code == 409
+    assert "already exists" in response.json()["detail"]
+
+
+def test_wizard_init_profile_empty_name_returns_400():
+    """Empty profile name returns 400."""
+    response = client.post(
+        "/api/setup/wizard/init-profile",
+        json={"name": "   ", "id": "some-id"},
+    )
+    assert response.status_code == 400
+    assert "required" in response.json()["detail"].lower()
+
+
+def test_wizard_init_profile_updates_env(clean_test_profile):
+    """RACKSCOPE_APP_CONFIG env var is updated to the new profile path."""
+    with patch("rackscope.api.app.apply_config", new_callable=AsyncMock):
+        response = client.post(
+            "/api/setup/wizard/init-profile",
+            json={"name": "Test Wizard Profile", "id": "test-wizard-profile"},
+        )
+    assert response.status_code == 200
+    assert "test-wizard-profile" in os.environ.get("RACKSCOPE_APP_CONFIG", "")
