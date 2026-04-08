@@ -27,7 +27,7 @@ import { AlertBanner } from '@app/components/ui/AlertBanner';
 import { FilterPills } from '@app/components/forms/FilterPills';
 
 // Feedback
-import { LoadingState } from '@app/components/feedback/LoadingState';
+import { SkeletonList } from '@app/components/ui/Skeleton';
 import { EmptyState } from '@app/components/feedback/EmptyState';
 import { ErrorState } from '@app/components/feedback/ErrorState';
 
@@ -387,7 +387,9 @@ export function MaintenancesPage() {
         </div>
 
         {loading ? (
-          <LoadingState message="Loading maintenances…" />
+          <div className="-mx-6 -mb-6">
+            <SkeletonList rows={3} />
+          </div>
         ) : error ? (
           <ErrorState message={error} onRetry={fetchData} />
         ) : filtered.length === 0 ? (

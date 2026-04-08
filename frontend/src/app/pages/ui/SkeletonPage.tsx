@@ -1,15 +1,6 @@
 import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
-
-const Sk = ({
-  h = 'h-4',
-  w = 'w-full',
-  round = 'rounded',
-}: {
-  h?: string;
-  w?: string;
-  round?: string;
-}) => <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 ${h} ${w} ${round}`} />;
+import { Sk, SkeletonText, SkeletonTable, SkeletonList } from '@app/components/ui/Skeleton';
 
 export const SkeletonPage = () => {
   usePageTitle('Skeleton');
@@ -29,16 +20,11 @@ export const SkeletonPage = () => {
         }
       />
       <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title="Text Skeleton" desc="Placeholder for text content">
-          <div className="space-y-3">
-            <Sk h="h-5" w="w-3/4" />
-            <Sk h="h-4" />
-            <Sk h="h-4" w="w-5/6" />
-            <Sk h="h-4" w="w-4/6" />
-            <Sk h="h-4" w="w-2/3" />
-          </div>
+        <SectionCard title="Text Skeleton" desc="SkeletonText — paragraph placeholder">
+          <SkeletonText lines={5} />
         </SectionCard>
-        <SectionCard title="Card Skeleton" desc="Full card with image and text placeholders">
+
+        <SectionCard title="Card Skeleton" desc="Sk primitive — composable blocks">
           <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
             <Sk h="h-40" round="rounded-none" />
             <div className="space-y-3 p-4">
@@ -49,7 +35,8 @@ export const SkeletonPage = () => {
             </div>
           </div>
         </SectionCard>
-        <SectionCard title="Profile Skeleton" desc="User profile loading state">
+
+        <SectionCard title="Profile Skeleton" desc="Sk primitive — avatar + text">
           <div className="flex items-start gap-4">
             <Sk h="h-14" w="w-14" round="rounded-full" />
             <div className="flex-1 space-y-2.5">
@@ -61,34 +48,18 @@ export const SkeletonPage = () => {
             </div>
           </div>
         </SectionCard>
-        <SectionCard title="Table Skeleton" desc="Data table row placeholders">
-          <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-            <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800">
-              <div className="grid grid-cols-4 gap-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Sk key={i} h="h-3" w="w-3/4" /> // eslint-disable-line react/no-array-index-key
-                ))}
-              </div>
-            </div>
-            {Array.from({ length: 4 }).map((_, row) => (
-              <div
-                key={row} // eslint-disable-line react/no-array-index-key
-                className="border-b border-gray-100 px-4 py-3 last:border-0 dark:border-gray-800"
-              >
-                <div className="grid grid-cols-4 gap-4">
-                  {Array.from({ length: 4 }).map((_, col) => (
-                    <Sk
-                      key={col} // eslint-disable-line react/no-array-index-key
-                      h="h-3"
-                      w={col === 0 ? 'w-full' : col === 3 ? 'w-1/2' : 'w-5/6'}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
+
+        <SectionCard title="Table Skeleton" desc="SkeletonTable — data table rows">
+          <SkeletonTable rows={4} cols={4} />
+        </SectionCard>
+
+        <SectionCard title="List Skeleton" desc="SkeletonList — icon + content + action rows">
+          <div className="-mx-6 -mb-6">
+            <SkeletonList rows={4} />
           </div>
         </SectionCard>
-        <SectionCard title="Dashboard Skeleton" desc="Grid of stat card placeholders">
+
+        <SectionCard title="Dashboard Skeleton" desc="Sk primitive — stat cards grid">
           <div className="grid grid-cols-2 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div
@@ -101,24 +72,6 @@ export const SkeletonPage = () => {
                 </div>
                 <Sk h="h-7" w="w-1/3" />
                 <Sk h="h-3" w="w-2/3" />
-              </div>
-            ))}
-          </div>
-        </SectionCard>
-        <SectionCard title="Notification Skeleton" desc="Notification feed loading state">
-          <div className="space-y-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              // eslint-disable-next-line react/no-array-index-key
-              <div key={i} className="flex gap-3">
-                <Sk h="h-10" w="w-10" round="rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <div className="flex justify-between">
-                    <Sk h="h-4" w="w-2/5" />
-                    <Sk h="h-3" w="w-16" />
-                  </div>
-                  <Sk h="h-3" />
-                  <Sk h="h-3" w="w-3/4" />
-                </div>
               </div>
             ))}
           </div>

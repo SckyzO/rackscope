@@ -23,6 +23,9 @@ import {
   Settings,
   Bell,
 } from 'lucide-react';
+import { MiniCalendar } from '@app/components/data/MiniCalendar';
+import { Timeline, type TimelineItem } from '@app/components/data/Timeline';
+import { Sk, SkeletonText, SkeletonTable, SkeletonList } from '@app/components/ui/Skeleton';
 import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
@@ -115,6 +118,51 @@ export const TemplateDefaultPage = () => {
       setTimeout(() => setSaveState('idle'), 2000);
     }, 1500);
   };
+
+  // Timeline demo data (defined outside component to avoid re-creation, but kept here for colocation)
+  const timelineItems: TimelineItem[] = [
+    {
+      id: 't1',
+      title: 'Rack racked-01 added',
+      description: 'Topology updated with new rack.',
+      time: '10 min ago',
+      dotColor: '#465fff',
+      avatar: { initials: 'AJ', bg: 'bg-brand-500' },
+    },
+    {
+      id: 't2',
+      title: 'Alert resolved',
+      description: 'node_up check back to OK on r01-01.',
+      time: '1 hour ago',
+      dotColor: '#12b76a',
+      avatar: { initials: 'SY', bg: 'bg-green-500' },
+    },
+    {
+      id: 't3',
+      title: 'Maintenance started',
+      description: 'Rack rack-03 placed in maintenance mode.',
+      time: '2 hours ago',
+      dotColor: '#f59e0b',
+      avatar: { initials: 'MC', bg: 'bg-amber-500' },
+    },
+    {
+      id: 't4',
+      title: 'CRIT alert triggered',
+      description: 'Temperature exceeded threshold on node n-04.',
+      time: '4 hours ago',
+      dotColor: '#ef4444',
+      avatar: { initials: 'SY', bg: 'bg-red-500' },
+    },
+  ];
+
+  // Calendar demo
+  const calToday = new Date();
+  const [calSelected, setCalSelected] = useState(calToday);
+  const calEventDays = new Set([
+    `${calToday.getFullYear()}-${String(calToday.getMonth() + 1).padStart(2, '0')}-${String(calToday.getDate() + 2).padStart(2, '0')}`,
+    `${calToday.getFullYear()}-${String(calToday.getMonth() + 1).padStart(2, '0')}-${String(calToday.getDate() + 7).padStart(2, '0')}`,
+    `${calToday.getFullYear()}-${String(calToday.getMonth() + 1).padStart(2, '0')}-${String(calToday.getDate() + 14).padStart(2, '0')}`,
+  ]);
 
   // FormRow demo
   const [formToggle, setFormToggle] = useState(true);
@@ -584,6 +632,100 @@ export const TemplateDefaultPage = () => {
             <PageActionButton icon={Plus} variant="primary" onClick={() => setModalOpen(true)}>
               Open Modal
             </PageActionButton>
+          </Row>
+        </div>
+      </SectionCard>
+
+      {/* ── 8. Calendar ── */}
+      <SectionCard
+        title="8 · Calendar"
+        desc="data/MiniCalendar — compact ISO-week date picker with event dots"
+      >
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+          <div className="w-full sm:w-64 sm:shrink-0">
+            <MiniCalendar
+              today={calToday}
+              selected={calSelected}
+              onSelect={setCalSelected}
+              eventDays={calEventDays}
+            />
+          </div>
+          <div className="space-y-2 text-sm text-gray-500 dark:text-gray-400">
+            <p>
+              Selected:{' '}
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {calSelected.toLocaleDateString(undefined, {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </span>
+            </p>
+            <p className="text-xs">
+              Props: <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">today</code>{' '}
+              <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">selected</code>{' '}
+              <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">onSelect</code>{' '}
+              <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">eventDays?</code>
+            </p>
+            <p className="text-xs">
+              Event dots are shown for dates in the{' '}
+              <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">eventDays</code> Set (ISO
+              strings). Click the month title to jump back to today&apos;s month.
+            </p>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* ── 9. Timeline ── */}
+      <SectionCard title="9 · Timeline" desc="data/Timeline — dot / avatar / card variants">
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div>
+            <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">variant=&quot;dot&quot;</p>
+            <Timeline items={timelineItems} variant="dot" />
+          </div>
+          <div>
+            <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
+              variant=&quot;avatar&quot;
+            </p>
+            <Timeline items={timelineItems} variant="avatar" />
+          </div>
+          <div>
+            <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
+              variant=&quot;card&quot;
+            </p>
+            <Timeline items={timelineItems.slice(0, 3)} variant="card" />
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* ── 10. Skeleton ── */}
+      <SectionCard
+        title="10 · Skeleton"
+        desc="ui/Skeleton — Sk primitive · SkeletonText · SkeletonTable · SkeletonList"
+      >
+        <div className="space-y-6">
+          <Row label="Sk primitive — h / w / round props">
+            <div className="w-full space-y-2">
+              <Sk h="h-5" w="w-3/4" />
+              <Sk h="h-4" />
+              <Sk h="h-4" w="w-5/6" />
+            </div>
+          </Row>
+          <Row label="SkeletonText — paragraph placeholder">
+            <div className="w-64">
+              <SkeletonText lines={4} />
+            </div>
+          </Row>
+          <Row label="SkeletonTable — data table (rows=3 cols=4)">
+            <div className="w-full">
+              <SkeletonTable rows={3} cols={4} />
+            </div>
+          </Row>
+          <Row label="SkeletonList — list rows matching the MaintenancesPage layout">
+            <div className="w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+              <SkeletonList rows={3} />
+            </div>
           </Row>
         </div>
       </SectionCard>
