@@ -144,6 +144,64 @@ def test_delete_nonexistent_returns_404():
     assert response.status_code == 404
 
 
+# ── Update ────────────────────────────────────────────────────────────────────
+
+
+def test_update_maintenance_reason_and_effect():
+    create_resp = client.post(
+        "/api/maintenances",
+        json={"target_type": "rack", "target_id": "rack-upd", "reason": "Original reason"},
+    )
+    assert create_resp.status_code == 201
+    maintenance_id = create_resp.json()["id"]
+
+    update_resp = client.put(
+        f"/api/maintenances/{maintenance_id}",
+        json={"reason": "Updated reason", "effect": "hide"},
+    )
+    assert update_resp.status_code == 200
+    data = update_resp.json()
+    assert data["reason"] == "Updated reason"
+    assert data["effect"] == "hide"
+    assert data["target_id"] == "rack-upd"  # unchanged
+
+
+def test_update_maintenance_partial():
+    create_resp = client.post(
+        "/api/maintenances",
+        json={
+            "target_type": "rack",
+            "target_id": "rack-partial",
+            "reason": "Original",
+            "effect": "hide",
+        },
+    )
+    maintenance_id = create_resp.json()["id"]
+
+    update_resp = client.put(f"/api/maintenances/{maintenance_id}", json={"reason": "New reason"})
+    assert update_resp.status_code == 200
+    data = update_resp.json()
+    assert data["reason"] == "New reason"
+    assert data["effect"] == "hide"  # unchanged
+
+
+def test_update_maintenance_empty_reason_returns_400():
+    create_resp = client.post(
+        "/api/maintenances",
+        json={"target_type": "rack", "target_id": "rack-bad", "reason": "Original"},
+    )
+    maintenance_id = create_resp.json()["id"]
+
+    response = client.put(f"/api/maintenances/{maintenance_id}", json={"reason": "   "})
+    assert response.status_code == 400
+    assert "reason" in response.json()["detail"]
+
+
+def test_update_nonexistent_returns_404():
+    response = client.put("/api/maintenances/doesnotexist", json={"reason": "Test"})
+    assert response.status_code == 404
+
+
 # ── List after operations ─────────────────────────────────────────────────────
 
 

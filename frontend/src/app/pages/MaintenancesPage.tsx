@@ -7,7 +7,18 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Wrench, Plus, Square, Trash2, Calendar, Clock, EyeOff, Eye, Filter } from 'lucide-react';
+import {
+  Wrench,
+  Plus,
+  Square,
+  Trash2,
+  Calendar,
+  Clock,
+  EyeOff,
+  Eye,
+  Filter,
+  Pencil,
+} from 'lucide-react';
 import { usePageTitle } from '@app/contexts/PageTitleContext';
 
 // Layout
@@ -80,7 +91,7 @@ const fmt = (iso: string | null): string => {
 
 // ── Create form ────────────────────────────────────────────────────────────────
 
-type CreateFormState = {
+type FormState = {
   target_type: MaintenanceTargetType;
   target_id: string;
   reason: string;
@@ -88,7 +99,7 @@ type CreateFormState = {
   expires_at: string;
 };
 
-const EMPTY_FORM: CreateFormState = {
+const EMPTY_FORM: FormState = {
   target_type: 'rack',
   target_id: '',
   reason: '',
@@ -96,14 +107,37 @@ const EMPTY_FORM: CreateFormState = {
   expires_at: '',
 };
 
-function CreateMaintenanceModal({
+function toLocalDatetimeValue(iso: string | null): string {
+  if (!iso) return '';
+  // Trim seconds and timezone for datetime-local input
+  return iso.slice(0, 16);
+}
+
+/**
+ * Shared modal for create and edit.
+ * Pass `entry` to open in edit mode (target_type / target_id are read-only).
+ */
+function MaintenanceFormModal({
+  entry,
   onClose,
-  onCreated,
+  onSaved,
 }: {
+  entry?: MaintenanceEntry;
   onClose: () => void;
-  onCreated: () => void;
+  onSaved: () => void;
 }) {
-  const [form, setForm] = useState<CreateFormState>(EMPTY_FORM);
+  const isEdit = entry !== undefined;
+  const [form, setForm] = useState<FormState>(
+    entry
+      ? {
+          target_type: entry.target_type,
+          target_id: entry.target_id,
+          reason: entry.reason,
+          effect: entry.effect,
+          expires_at: toLocalDatetimeValue(entry.expires_at),
+        }
+      : EMPTY_FORM
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,16 +146,30 @@ function CreateMaintenanceModal({
     setError(null);
     setLoading(true);
     try {
-      await api.createMaintenance({
-        target_type: form.target_type,
-        target_id: form.target_id.trim(),
-        reason: form.reason.trim(),
-        effect: form.effect,
-        expires_at: form.expires_at ? form.expires_at : null,
-      });
-      onCreated();
+      if (isEdit && entry) {
+        await api.updateMaintenance(entry.id, {
+          reason: form.reason.trim(),
+          effect: form.effect,
+          expires_at: form.expires_at ? form.expires_at : null,
+        });
+      } else {
+        await api.createMaintenance({
+          target_type: form.target_type,
+          target_id: form.target_id.trim(),
+          reason: form.reason.trim(),
+          effect: form.effect,
+          expires_at: form.expires_at ? form.expires_at : null,
+        });
+      }
+      onSaved();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create maintenance');
+      setError(
+        err instanceof Error
+          ? err.message
+          : isEdit
+            ? 'Failed to update maintenance'
+            : 'Failed to create maintenance'
+      );
     } finally {
       setLoading(false);
     }
@@ -129,7 +177,7 @@ function CreateMaintenanceModal({
 
   return (
     <Modal open onClose={onClose} maxWidth={480}>
-      <ModalHeader title="New Maintenance" onClose={onClose} />
+      <ModalHeader title={isEdit ? 'Edit Maintenance' : 'New Maintenance'} onClose={onClose} />
       <form onSubmit={handleSubmit}>
         <div className="space-y-4 p-6">
           {error && <AlertBanner variant="error">{error}</AlertBanner>}
@@ -139,19 +187,25 @@ function CreateMaintenanceModal({
               <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
                 Target Type
               </label>
-              <SelectInput
-                value={form.target_type}
-                onChange={(v) =>
-                  setForm((f) => ({ ...f, target_type: v as MaintenanceTargetType }))
-                }
-                options={[
-                  { label: 'Rack', value: 'rack' },
-                  { label: 'Device', value: 'device' },
-                  { label: 'Room', value: 'room' },
-                  { label: 'Site', value: 'site' },
-                ]}
-                className="w-full"
-              />
+              {isEdit ? (
+                <p className="flex h-9 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
+                  {form.target_type}
+                </p>
+              ) : (
+                <SelectInput
+                  value={form.target_type}
+                  onChange={(v) =>
+                    setForm((f) => ({ ...f, target_type: v as MaintenanceTargetType }))
+                  }
+                  options={[
+                    { label: 'Rack', value: 'rack' },
+                    { label: 'Device', value: 'device' },
+                    { label: 'Room', value: 'room' },
+                    { label: 'Site', value: 'site' },
+                  ]}
+                  className="w-full"
+                />
+              )}
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
@@ -173,14 +227,20 @@ function CreateMaintenanceModal({
             <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
               Target ID
             </label>
-            <input
-              type="text"
-              value={form.target_id}
-              onChange={(e) => setForm((f) => ({ ...f, target_id: e.target.value }))}
-              placeholder="e.g. rack-01, node-42"
-              className={inputCls}
-              required
-            />
+            {isEdit ? (
+              <p className="flex h-9 items-center rounded-lg border border-gray-200 bg-gray-50 px-3 font-mono text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
+                {form.target_id}
+              </p>
+            ) : (
+              <input
+                type="text"
+                value={form.target_id}
+                onChange={(e) => setForm((f) => ({ ...f, target_id: e.target.value }))}
+                placeholder="e.g. rack-01, node-42"
+                className={inputCls}
+                required
+              />
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -213,8 +273,13 @@ function CreateMaintenanceModal({
 
         <ModalFooter>
           <PageActionButton onClick={onClose}>Cancel</PageActionButton>
-          <PageActionButton type="submit" variant="primary" icon={Plus} disabled={loading}>
-            {loading ? 'Creating…' : 'Create'}
+          <PageActionButton
+            type="submit"
+            variant="primary"
+            icon={isEdit ? Pencil : Plus}
+            disabled={loading}
+          >
+            {loading ? (isEdit ? 'Saving…' : 'Creating…') : isEdit ? 'Save' : 'Create'}
           </PageActionButton>
         </ModalFooter>
       </form>
@@ -227,10 +292,12 @@ function CreateMaintenanceModal({
 function MaintenanceRow({
   entry,
   onStop,
+  onEdit,
   onDelete,
 }: {
   entry: MaintenanceEntry;
   onStop: (id: string) => void;
+  onEdit: (entry: MaintenanceEntry) => void;
   onDelete: (id: string) => void;
 }) {
   return (
@@ -286,6 +353,9 @@ function MaintenanceRow({
             Stop
           </PageActionButton>
         )}
+        <PageActionButton icon={Pencil} onClick={() => onEdit(entry)} title="Edit">
+          Edit
+        </PageActionButton>
         <PageActionButton
           icon={Trash2}
           variant="danger-outline"
@@ -314,6 +384,7 @@ export function MaintenancesPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
+  const [editEntry, setEditEntry] = useState<MaintenanceEntry | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -416,6 +487,7 @@ export function MaintenancesPage() {
                 key={entry.id}
                 entry={entry}
                 onStop={handleStop}
+                onEdit={setEditEntry}
                 onDelete={handleDelete}
               />
             ))}
@@ -424,10 +496,21 @@ export function MaintenancesPage() {
       </SectionCard>
 
       {modalOpen && (
-        <CreateMaintenanceModal
+        <MaintenanceFormModal
           onClose={() => setModalOpen(false)}
-          onCreated={() => {
+          onSaved={() => {
             setModalOpen(false);
+            void fetchData();
+          }}
+        />
+      )}
+
+      {editEntry && (
+        <MaintenanceFormModal
+          entry={editEntry}
+          onClose={() => setEditEntry(null)}
+          onSaved={() => {
+            setEditEntry(null);
             void fetchData();
           }}
         />

@@ -25,6 +25,13 @@ class MaintenanceCreate(BaseModel):
     expires_at: Optional[datetime] = None
 
 
+class MaintenanceUpdate(BaseModel):
+    reason: Optional[str] = None
+    effect: Optional[MaintenanceEffect] = None
+    starts_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+
+
 def _with_status(entry: MaintenanceEntry, now: datetime) -> dict:
     return {**entry.model_dump(mode="json"), "status": entry.status(now)}
 
@@ -62,6 +69,30 @@ def create_maintenance(payload: MaintenanceCreate) -> dict:
     _invalidate_alerts_cache()
     now = datetime.now(timezone.utc)
     return _with_status(entry, now)
+
+
+@router.put("/{maintenance_id}")
+def update_maintenance(maintenance_id: str, payload: MaintenanceUpdate) -> dict:
+    """Update editable fields of a maintenance entry."""
+    entries = maintenance_service.load_maintenances()
+    for entry in entries:
+        if entry.id == maintenance_id:
+            if payload.reason is not None:
+                stripped = payload.reason.strip()
+                if not stripped:
+                    raise HTTPException(status_code=400, detail="reason cannot be empty")
+                entry.reason = stripped
+            if payload.effect is not None:
+                entry.effect = payload.effect
+            if payload.starts_at is not None:
+                entry.starts_at = payload.starts_at
+            if payload.expires_at is not None:
+                entry.expires_at = payload.expires_at
+            maintenance_service.save_maintenances(entries)
+            _invalidate_alerts_cache()
+            now = datetime.now(timezone.utc)
+            return _with_status(entry, now)
+    raise HTTPException(status_code=404, detail="Maintenance not found")
 
 
 @router.post("/{maintenance_id}/stop")

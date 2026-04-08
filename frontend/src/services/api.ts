@@ -890,6 +890,21 @@ export const api = {
     }
     return res.json() as Promise<MaintenanceEntry>;
   },
+  updateMaintenance: async (
+    id: string,
+    payload: Partial<Pick<MaintenanceCreate, 'reason' | 'effect' | 'starts_at' | 'expires_at'>>
+  ): Promise<MaintenanceEntry> => {
+    const res = await apiFetch(`/api/maintenances/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { detail?: string }).detail ?? `Request failed: ${res.status}`);
+    }
+    return res.json() as Promise<MaintenanceEntry>;
+  },
   stopMaintenance: async (id: string): Promise<MaintenanceEntry> => {
     const res = await apiFetch(`/api/maintenances/${id}/stop`, { method: 'POST' });
     if (!res.ok) {
