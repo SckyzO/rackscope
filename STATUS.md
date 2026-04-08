@@ -1,12 +1,12 @@
 # Rackscope — Status
 
-> Updated: 2026-04-07 21:20 UTC · Commit: [ebba5a4](https://github.com/SckyzO/rackscope/commit/ebba5a41156cff3c4275f186a61e56c7680b11d1) · [View run](https://github.com/SckyzO/rackscope/actions/runs/24104948351)
+> Updated: 2026-04-08 08:46 UTC · Commit: [7e1c7e5](https://github.com/SckyzO/rackscope/commit/7e1c7e513de7c2a87c79c0d3497c6e24e80644c3) · [View run](https://github.com/SckyzO/rackscope/actions/runs/24126430140)
 
 ## Summary
 
 | Check | Status | Detail |
 |---|---|---|
-| 🧪 **Tests** | ✅ 1043 passed | 0 failed · 89% coverage |
+| 🧪 **Tests** | ✅ 1048 passed | 0 failed · 90% coverage |
 | 🔍 **Python lint** | ✅ success | ruff check + ruff format |
 | 📐 **Python types** | ✅ success | mypy |
 | 🎨 **Frontend lint** | ✅ success | eslint · prettier · stylelint |
