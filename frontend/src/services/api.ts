@@ -866,9 +866,7 @@ export const api = {
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(
-        (body as { detail?: string }).detail ?? `Request failed: ${res.status}`
-      );
+      throw new Error((body as { detail?: string }).detail ?? `Request failed: ${res.status}`);
     }
     return res.json() as Promise<{ profile_id: string; profile_path: string }>;
   },
