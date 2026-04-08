@@ -1,87 +1,84 @@
 /**
  * MaintenancesPage — Silence / Maintenance mode management
  *
- * Lists all maintenances (active, scheduled, expired) with filters.
- * Allows creating, stopping, and deleting maintenance entries.
+ * Route: /maintenances
+ *
+ * Built using the component system from /templates/default as reference.
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import {
-  Wrench,
-  Plus,
-  Square,
-  Trash2,
-  Calendar,
-  Clock,
-  Eye,
-  EyeOff,
-  X,
-  AlertCircle,
-} from 'lucide-react';
+import { Wrench, Plus, Square, Trash2, Calendar, Clock, EyeOff, Eye, Filter } from 'lucide-react';
 import { usePageTitle } from '@app/contexts/PageTitleContext';
-import {
-  PageHeader,
-  PageBreadcrumb,
-  SectionCard,
-  LoadingState,
-  EmptyState,
-  ErrorState,
-} from '@app/pages/templates/EmptyPage';
-import { PageActionButton } from '@app/components/PageActionButton';
+
+// Layout
+import { PageHeader, PageBreadcrumb, SectionCard } from '@app/pages/templates/EmptyPage';
+import { Modal, ModalHeader, ModalFooter } from '@app/components/layout/Modal';
+
+// Actions
 import { RefreshButton, useAutoRefresh } from '@app/components/RefreshButton';
+import { PageActionButton } from '@app/components/PageActionButton';
+
+// UI primitives
+import { IconBox } from '@app/components/ui/IconBox';
+import { SelectInput } from '@app/components/ui/SelectInput';
+import { AlertBanner } from '@app/components/ui/AlertBanner';
+
+// Forms
+import { FilterPills } from '@app/components/forms/FilterPills';
+
+// Feedback
+import { LoadingState } from '@app/components/feedback/LoadingState';
+import { EmptyState } from '@app/components/feedback/EmptyState';
+import { ErrorState } from '@app/components/feedback/ErrorState';
+
 import { api } from '@src/services/api';
 import type { MaintenanceEntry, MaintenanceStatus, MaintenanceTargetType } from '@src/types';
 
-// ── Status badge ──────────────────────────────────────────────────────────────
+// ── Input style (matches SearchInput pattern from the design system) ───────────
 
-const STATUS_STYLES: Record<MaintenanceStatus, string> = {
-  ACTIVE: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-  SCHEDULED: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+const inputCls =
+  'focus:border-brand-500 h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500';
+
+// ── Maintenance-specific status pill (ACTIVE / SCHEDULED / EXPIRED) ───────────
+// These statuses are not health statuses — they don't map to StatusPill.
+
+const MAINT_STATUS_CLS: Record<MaintenanceStatus, string> = {
+  ACTIVE: 'bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400',
+  SCHEDULED: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
   EXPIRED: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
 };
 
-const StatusPill = ({ status }: { status: MaintenanceStatus }) => (
+const MaintenanceStatusPill = ({ status }: { status: MaintenanceStatus }) => (
   <span
-    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_STYLES[status]}`}
+    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold ${MAINT_STATUS_CLS[status]}`}
   >
     {status}
   </span>
 );
 
+// ── Effect pill (hide / badge) ─────────────────────────────────────────────────
+
 const EffectPill = ({ effect }: { effect: 'hide' | 'badge' }) =>
   effect === 'hide' ? (
-    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-600 dark:bg-red-900/40 dark:text-red-300">
+    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-500/15 dark:text-red-400">
       <EyeOff className="h-3 w-3" />
       hide
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">
+    <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-600 dark:bg-blue-500/15 dark:text-blue-400">
       <Eye className="h-3 w-3" />
       badge
     </span>
   );
 
-// ── Date formatting ───────────────────────────────────────────────────────────
+// ── Date formatting ────────────────────────────────────────────────────────────
 
 const fmt = (iso: string | null): string => {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString(undefined, {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  });
+  return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' });
 };
 
-// ── Tab filter ────────────────────────────────────────────────────────────────
-
-type TabFilter = 'all' | MaintenanceStatus;
-const TABS: { key: TabFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'ACTIVE', label: 'Active' },
-  { key: 'SCHEDULED', label: 'Scheduled' },
-  { key: 'EXPIRED', label: 'Expired' },
-];
-
-// ── Create modal ──────────────────────────────────────────────────────────────
+// ── Create form ────────────────────────────────────────────────────────────────
 
 type CreateFormState = {
   target_type: MaintenanceTargetType;
@@ -130,73 +127,52 @@ function CreateMaintenanceModal({
     }
   };
 
-  const inputCls =
-    'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:border-violet-500';
-  const labelCls = 'mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400';
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="mx-4 w-full max-w-md rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-gray-800">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/40">
-              <Wrench className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-            </div>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              New Maintenance
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+    <Modal open onClose={onClose} maxWidth={480}>
+      <ModalHeader title="New Maintenance" onClose={onClose} />
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-4 p-6">
+          {error && <AlertBanner variant="error">{error}</AlertBanner>}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
-          {error && (
-            <div className="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              {error}
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelCls}>Target Type</label>
-              <select
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                Target Type
+              </label>
+              <SelectInput
                 value={form.target_type}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, target_type: e.target.value as MaintenanceTargetType }))
+                onChange={(v) =>
+                  setForm((f) => ({ ...f, target_type: v as MaintenanceTargetType }))
                 }
-                className={inputCls}
-              >
-                <option value="rack">Rack</option>
-                <option value="device">Device</option>
-                <option value="room">Room</option>
-                <option value="site">Site</option>
-              </select>
+                options={[
+                  { label: 'Rack', value: 'rack' },
+                  { label: 'Device', value: 'device' },
+                  { label: 'Room', value: 'room' },
+                  { label: 'Site', value: 'site' },
+                ]}
+                className="w-full"
+              />
             </div>
-            <div>
-              <label className={labelCls}>Effect</label>
-              <select
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                Effect
+              </label>
+              <SelectInput
                 value={form.effect}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, effect: e.target.value as 'hide' | 'badge' }))
-                }
-                className={inputCls}
-              >
-                <option value="badge">Badge — alerts visible but tagged</option>
-                <option value="hide">Hide — alerts suppressed</option>
-              </select>
+                onChange={(v) => setForm((f) => ({ ...f, effect: v as 'hide' | 'badge' }))}
+                options={[
+                  { label: 'Badge — visible, tagged', value: 'badge' },
+                  { label: 'Hide — suppressed', value: 'hide' },
+                ]}
+                className="w-full"
+              />
             </div>
           </div>
 
-          <div>
-            <label className={labelCls}>Target ID</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+              Target ID
+            </label>
             <input
               type="text"
               value={form.target_id}
@@ -207,8 +183,8 @@ function CreateMaintenanceModal({
             />
           </div>
 
-          <div>
-            <label className={labelCls}>Reason</label>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">Reason</label>
             <input
               type="text"
               value={form.reason}
@@ -219,10 +195,10 @@ function CreateMaintenanceModal({
             />
           </div>
 
-          <div>
-            <label className={labelCls}>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
               Expires At{' '}
-              <span className="font-normal text-gray-400">
+              <span className="font-normal text-gray-400 dark:text-gray-500">
                 (optional — leave blank for manual stop)
               </span>
             </label>
@@ -233,31 +209,16 @@ function CreateMaintenanceModal({
               className={inputCls}
             />
           </div>
+        </div>
 
-          <div className="flex justify-end gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:opacity-50"
-            >
-              {loading ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : (
-                <Plus className="h-4 w-4" />
-              )}
-              Create
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <ModalFooter>
+          <PageActionButton onClick={onClose}>Cancel</PageActionButton>
+          <PageActionButton type="submit" variant="primary" icon={Plus} disabled={loading}>
+            {loading ? 'Creating…' : 'Create'}
+          </PageActionButton>
+        </ModalFooter>
+      </form>
+    </Modal>
   );
 }
 
@@ -273,20 +234,23 @@ function MaintenanceRow({
   onDelete: (id: string) => void;
 }) {
   return (
-    <div className="flex items-start gap-4 border-b border-gray-100 px-4 py-3.5 last:border-0 dark:border-gray-800">
-      {/* Icon */}
-      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/30">
-        <Wrench className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-      </div>
+    <div className="flex items-start gap-3 border-b border-gray-100 px-4 py-3.5 last:border-0 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5">
+      <IconBox
+        icon={Wrench}
+        size="md"
+        bg="bg-brand-50 dark:bg-brand-500/10"
+        color="text-brand-500"
+      />
 
-      {/* Main content */}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
             {entry.target_type}
           </span>
-          <span className="font-medium text-gray-900 dark:text-white">{entry.target_id}</span>
-          <StatusPill status={entry.status} />
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+            {entry.target_id}
+          </span>
+          <MaintenanceStatusPill status={entry.status} />
           <EffectPill effect={entry.effect} />
         </div>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{entry.reason}</p>
@@ -316,31 +280,31 @@ function MaintenanceRow({
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex shrink-0 items-center gap-2">
         {entry.status === 'ACTIVE' && (
-          <button
-            onClick={() => onStop(entry.id)}
-            title="Stop maintenance"
-            className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-400 dark:hover:bg-amber-900/40"
-          >
-            <Square className="h-3.5 w-3.5" />
+          <PageActionButton icon={Square} onClick={() => onStop(entry.id)} title="Stop maintenance">
             Stop
-          </button>
+          </PageActionButton>
         )}
-        <button
+        <PageActionButton
+          icon={Trash2}
+          variant="danger-outline"
           onClick={() => onDelete(entry.id)}
-          title="Delete maintenance"
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+          title="Delete"
+        />
       </div>
     </div>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Page ───────────────────────────────────────────────────────────────────────
+
+const FILTER_OPTIONS = [
+  { label: 'All', value: 'all' },
+  { label: 'Active', value: 'ACTIVE' },
+  { label: 'Scheduled', value: 'SCHEDULED' },
+  { label: 'Expired', value: 'EXPIRED' },
+];
 
 export function MaintenancesPage() {
   usePageTitle('Maintenances');
@@ -348,7 +312,7 @@ export function MaintenancesPage() {
   const [maintenances, setMaintenances] = useState<MaintenanceEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<TabFilter>('all');
+  const [filter, setFilter] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -387,7 +351,8 @@ export function MaintenancesPage() {
     }
   };
 
-  const filtered = tab === 'all' ? maintenances : maintenances.filter((m) => m.status === tab);
+  const filtered =
+    filter === 'all' ? maintenances : maintenances.filter((m) => m.status === filter);
 
   return (
     <div className="space-y-6">
@@ -404,11 +369,9 @@ export function MaintenancesPage() {
               autoRefreshMs={autoRefreshMs}
               onIntervalChange={onIntervalChange}
             />
-            <PageActionButton
-              icon={Plus}
-              label="New Maintenance"
-              onClick={() => setModalOpen(true)}
-            />
+            <PageActionButton icon={Plus} variant="primary" onClick={() => setModalOpen(true)}>
+              New Maintenance
+            </PageActionButton>
           </>
         }
       />
@@ -416,45 +379,13 @@ export function MaintenancesPage() {
       <SectionCard
         title="Maintenance Windows"
         icon={Wrench}
-        iconColor="text-violet-600 dark:text-violet-400"
-        iconBg="bg-violet-100 dark:bg-violet-900/30"
+        iconColor="text-brand-500"
+        iconBg="bg-brand-50 dark:bg-brand-500/10"
       >
-        {/* Tabs */}
-        <div className="-mt-1 mb-4 flex flex-wrap gap-1 border-b border-gray-100 pb-3 dark:border-gray-800">
-          {TABS.map(({ key, label }) => {
-            const count =
-              key === 'all'
-                ? maintenances.length
-                : maintenances.filter((m) => m.status === key).length;
-            const active = tab === key;
-            return (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  active
-                    ? 'bg-violet-600 text-white'
-                    : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-                }`}
-              >
-                {label}
-                {count > 0 && (
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                      active
-                        ? 'bg-white/20 text-white'
-                        : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        <div className="mb-4">
+          <FilterPills options={FILTER_OPTIONS} value={filter} onChange={setFilter} icon={Filter} />
         </div>
 
-        {/* Content */}
         {loading ? (
           <LoadingState message="Loading maintenances…" />
         ) : error ? (
@@ -463,19 +394,16 @@ export function MaintenancesPage() {
           <EmptyState
             title="No maintenances"
             description={
-              tab === 'all'
+              filter === 'all'
                 ? 'Create a maintenance window to silence or tag alerts during planned work.'
-                : `No ${tab.toLowerCase()} maintenances.`
+                : `No ${filter.toLowerCase()} maintenances.`
             }
+            icon={Wrench}
             action={
-              tab === 'all' ? (
-                <button
-                  onClick={() => setModalOpen(true)}
-                  className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-700"
-                >
-                  <Plus className="h-4 w-4" />
+              filter === 'all' ? (
+                <PageActionButton icon={Plus} variant="primary" onClick={() => setModalOpen(true)}>
                   New Maintenance
-                </button>
+                </PageActionButton>
               ) : undefined
             }
           />
