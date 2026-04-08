@@ -5,7 +5,7 @@
  * Allows creating, stopping, and deleting maintenance entries.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Wrench,
   Plus,
@@ -363,7 +363,11 @@ export function MaintenancesPage() {
     }
   }, []);
 
-  useAutoRefresh(fetchData, 15);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  const { autoRefreshMs, onIntervalChange } = useAutoRefresh('maintenances', fetchData);
 
   const handleStop = async (id: string) => {
     try {
@@ -395,7 +399,11 @@ export function MaintenancesPage() {
         }
         actions={
           <>
-            <RefreshButton onRefresh={fetchData} />
+            <RefreshButton
+              onRefresh={fetchData}
+              autoRefreshMs={autoRefreshMs}
+              onIntervalChange={onIntervalChange}
+            />
             <PageActionButton
               icon={Plus}
               label="New Maintenance"
