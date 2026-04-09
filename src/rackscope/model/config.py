@@ -178,6 +178,7 @@ class FeatureConfig(BaseModel):
     worldmap: bool = True
     show_logs: bool = True  # Backend log viewer — hide in kiosk/public deployments
     dev_tools: bool = False  # UI Library, showcase, dev pages (off in prod)
+    maintenances: bool = True  # Maintenance/silence mode page
 
 
 class SimulatorMetricsCatalog(BaseModel):

@@ -66,6 +66,7 @@ export type ConfigDraft = {
     dev_tools: boolean;
     playlist: boolean;
     offline: boolean;
+    maintenances: boolean;
   };
   playlist: {
     interval_seconds: string;
@@ -195,6 +196,7 @@ const buildDraftFromConfig = (config: AppConfig): ConfigDraft => ({
     dev_tools: config.features?.dev_tools ?? false,
     playlist: config.features?.playlist ?? false,
     offline: config.features?.offline ?? false,
+    maintenances: config.features?.maintenances !== false,
   },
   playlist: {
     interval_seconds: String(config.playlist?.interval_seconds ?? 30),
@@ -367,6 +369,7 @@ const buildConfigFromDraft = (draft: ConfigDraft): Partial<AppConfig> => ({
     dev_tools: draft.features.dev_tools,
     playlist: draft.features.playlist,
     offline: draft.features.offline,
+    maintenances: draft.features.maintenances,
   },
   playlist: {
     interval_seconds: parseInt(draft.playlist.interval_seconds, 10) || 30,

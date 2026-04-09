@@ -41,6 +41,8 @@ import type {
   SlurmPartitionSummary,
   SlurmNodeEntry,
   PluginsMenuResponse,
+  MaintenanceEntry,
+  MaintenanceCreate,
 } from '../types';
 
 const CACHE_PREFIX = 'rackscope.cache.';
@@ -869,5 +871,61 @@ export const api = {
       throw new Error((body as { detail?: string }).detail ?? `Request failed: ${res.status}`);
     }
     return res.json() as Promise<{ profile_id: string; profile_path: string }>;
+  },
+  // ── Maintenances ─────────────────────────────────────────────────────────
+  getMaintenances: async (): Promise<{ maintenances: MaintenanceEntry[] }> => {
+    const res = await apiFetch('/api/maintenances');
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+    return res.json() as Promise<{ maintenances: MaintenanceEntry[] }>;
+  },
+  createMaintenance: async (payload: MaintenanceCreate): Promise<MaintenanceEntry> => {
+    const res = await apiFetch('/api/maintenances', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { detail?: string }).detail ?? `Request failed: ${res.status}`);
+    }
+    return res.json() as Promise<MaintenanceEntry>;
+  },
+  updateMaintenance: async (
+    id: string,
+    payload: Partial<Pick<MaintenanceCreate, 'reason' | 'effect' | 'starts_at' | 'expires_at'>>
+  ): Promise<MaintenanceEntry> => {
+    const res = await apiFetch(`/api/maintenances/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { detail?: string }).detail ?? `Request failed: ${res.status}`);
+    }
+    return res.json() as Promise<MaintenanceEntry>;
+  },
+  reactivateMaintenance: async (id: string): Promise<MaintenanceEntry> => {
+    const res = await apiFetch(`/api/maintenances/${id}/reactivate`, { method: 'POST' });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { detail?: string }).detail ?? `Request failed: ${res.status}`);
+    }
+    return res.json() as Promise<MaintenanceEntry>;
+  },
+  stopMaintenance: async (id: string): Promise<MaintenanceEntry> => {
+    const res = await apiFetch(`/api/maintenances/${id}/stop`, { method: 'POST' });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { detail?: string }).detail ?? `Request failed: ${res.status}`);
+    }
+    return res.json() as Promise<MaintenanceEntry>;
+  },
+  deleteMaintenance: async (id: string): Promise<void> => {
+    const res = await apiFetch(`/api/maintenances/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { detail?: string }).detail ?? `Request failed: ${res.status}`);
+    }
   },
 };

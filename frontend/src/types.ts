@@ -413,6 +413,7 @@ export type AppConfig = {
     show_logs?: boolean;
     dev_tools?: boolean;
     wizard?: boolean;
+    maintenances?: boolean;
   };
   playlist?: {
     interval_seconds?: number;
@@ -549,4 +550,30 @@ export type MenuSection = {
 
 export type PluginsMenuResponse = {
   sections: MenuSection[];
+};
+
+export type MaintenanceEffect = 'hide' | 'badge';
+export type MaintenanceStatus = 'ACTIVE' | 'SCHEDULED' | 'EXPIRED';
+export type MaintenanceTargetType = 'site' | 'room' | 'rack' | 'device';
+
+export type MaintenanceEntry = {
+  id: string;
+  target_type: MaintenanceTargetType;
+  target_id: string;
+  reason: string;
+  effect: MaintenanceEffect;
+  created_at: string;
+  starts_at: string | null;
+  expires_at: string | null;
+  ended_at: string | null;
+  status: MaintenanceStatus;
+};
+
+export type MaintenanceCreate = {
+  target_type: MaintenanceTargetType;
+  target_id: string;
+  reason: string;
+  effect?: MaintenanceEffect;
+  starts_at?: string | null;
+  expires_at?: string | null;
 };

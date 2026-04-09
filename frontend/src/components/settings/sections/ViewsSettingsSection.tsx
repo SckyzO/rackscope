@@ -212,6 +212,12 @@ export const ViewsSettingsSection = ({ draft, setDraft }: Props) => {
                 tooltip: 'Show the Notifications page and the badge in the header.',
               },
               {
+                key: 'maintenances' as const,
+                label: 'Maintenances',
+                tooltip:
+                  'Show the Maintenance/Silence mode page in the sidebar. Allows creating maintenance windows to mute or tag alerts.',
+              },
+              {
                 key: 'show_logs' as const,
                 label: 'Backend Logs',
                 tooltip:

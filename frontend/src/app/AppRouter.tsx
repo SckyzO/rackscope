@@ -59,6 +59,7 @@ import { CalendarPage } from './pages/CalendarPage';
 import { NotificationsFullPage } from './pages/NotificationsFullPage';
 
 import { LogsPage } from './pages/LogsPage';
+import { MaintenancesPage } from './pages/MaintenancesPage';
 
 // Monitoring Views (connected to real API)
 import { WorldMapPage } from './pages/views/WorldMapPage';
@@ -210,6 +211,7 @@ const AppRoutes = () => (
       <Route path="editors/settings" element={<SettingsPage />} />
       <Route path="settings" element={<SettingsPage />} />
       <Route path="logs" element={<LogsPage />} />
+      <Route path="maintenances" element={<MaintenancesPage />} />
       <Route path="editors/checks" element={<ChecksEditorPage />} />
       <Route path="editors/metrics" element={<MetricsEditorPage />} />
       <Route path="editors/topology" element={<DatacenterEditorPage />} />

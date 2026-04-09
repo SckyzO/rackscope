@@ -26,6 +26,7 @@ import {
   ChevronDown,
   MonitorPlay,
   ScrollText,
+  Wrench,
 } from 'lucide-react';
 
 type NavItemProps = {
@@ -619,6 +620,9 @@ export const AppSidebar = ({ collapsed }: AppSidebarProps) => {
         )}
         {features.notifications && (
           <NavItem to="/notifications" icon={Bell} label="Notifications" collapsed={collapsed} />
+        )}
+        {features.maintenances !== false && (
+          <NavItem to="/maintenances" icon={Wrench} label="Maintenances" collapsed={collapsed} />
         )}
         {features.aisle_dashboard && (
           <NavItem
