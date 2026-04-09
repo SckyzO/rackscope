@@ -16,6 +16,7 @@ type AppFeatures = {
   dev_tools: boolean;
   playlist: boolean;
   wizard: boolean;
+  maintenances: boolean;
 };
 
 // Plugin enabled status
@@ -47,6 +48,7 @@ const DEFAULT_FEATURES: AppFeatures = {
   dev_tools: false,
   playlist: false,
   wizard: true,
+  maintenances: true,
 };
 
 const DEFAULT_PLUGINS: AppPlugins = {
@@ -116,6 +118,7 @@ export const AppConfigProvider = ({ children }: { children: ReactNode }) => {
     dev_tools: config?.features?.dev_tools === true,
     playlist: config?.features?.playlist === true,
     wizard: config?.features?.wizard !== false,
+    maintenances: config?.features?.maintenances !== false,
   };
 
   // Derive plugin enabled flags from plugins dict
