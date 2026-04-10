@@ -33,11 +33,15 @@ jobs:
     steps:
       - name: Resolve tag and version
         id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ github.event.inputs.tag }}"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="$INPUT_TAG"
           else
-            TAG="${{ github.ref_name }}"
+            TAG="$REF_NAME"
           fi
           VERSION="${TAG#v}"
           echo "tag=$TAG"         >> "$GITHUB_OUTPUT"
@@ -60,7 +64,9 @@ jobs:
 
       - name: Sanitize owner (lowercase for GHCR)
         id: owner
-        run: echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: echo "name=$(echo "$REPO_OWNER" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
       # ── Backend ─────────────────────────────────────────────────────────────
       - name: Backend metadata
@@ -134,10 +140,12 @@ jobs:
           VERSION: ${{ needs.build-images.outputs.version }}
 
       - name: Append Docker install instructions
+        env:
+          VERSION: ${{ needs.build-images.outputs.version }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REGISTRY: ${{ env.REGISTRY }}
         run: |
-          VERSION="${{ needs.build-images.outputs.version }}"
-          OWNER="${{ github.repository_owner }}"
-          OWNER_LC=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
+          OWNER_LC=$(echo "$REPO_OWNER" | tr '[:upper:]' '[:lower:]')
           cat >> release_notes.md << NOTES
 
           ---
@@ -145,8 +153,8 @@ jobs:
           ## Docker images
 
           \`\`\`bash
-          docker pull ${{ env.REGISTRY }}/${OWNER_LC}/rackscope-backend:${VERSION}
-          docker pull ${{ env.REGISTRY }}/${OWNER_LC}/rackscope-frontend:${VERSION}
+          docker pull ${REGISTRY}/${OWNER_LC}/rackscope-backend:${VERSION}
+          docker pull ${REGISTRY}/${OWNER_LC}/rackscope-frontend:${VERSION}
           \`\`\`
 
           ## Quick start (docker compose)
