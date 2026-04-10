@@ -14,6 +14,7 @@ COMPOSE_PROD := docker-compose.prod.yml
 .PHONY: shell-backend shell-frontend watch-logs nginx-logs cert
 .PHONY: security security-backend security-frontend security-deps
 .PHONY: security-secrets security-image security-sast security-full
+.PHONY: deps-table
 
 # ── Development ──────────────────────────────────────────────────────────────
 # First time: run `make cert` to generate the self-signed TLS certificate.
@@ -162,6 +163,15 @@ security: security-backend security-frontend security-deps
 ## Outdated dependency check (Python + npm versions + CVE scan)
 check-deps:
 	@bash scripts/check-deps.sh
+
+## Dependency update table (PyPI + npm + GitHub Actions) — no stack required
+deps-table:
+	@docker run --rm \
+	  -v "$(PWD):/repo" \
+	  -w /repo \
+	  -e GITHUB_TOKEN="$(shell gh auth token 2>/dev/null || echo '')" \
+	  python:3.12-slim \
+	  python3 scripts/deps-table.py
 
 # ── Extended Security (standalone — no stack required) ────────────────────────
 
