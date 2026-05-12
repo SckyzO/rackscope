@@ -1,6 +1,8 @@
 sites:
 - id: dc-paris
   name: Paris HPC Datacenter
-  lat: 48.8566
-  lon: 2.3522
+  location:
+    lat: 48.8566
+    lon: 2.3522
+    address: Paris, FR
   rooms_path: datacenters/dc-paris/rooms
