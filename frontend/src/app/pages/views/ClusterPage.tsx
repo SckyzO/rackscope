@@ -1281,7 +1281,7 @@ export const ClusterPage = () => {
             <div
               ref={scrollRef}
               onScroll={updateScrollArrows}
-              className="flex h-full w-full snap-x snap-proximity items-center overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex h-full w-full snap-x snap-proximity [scrollbar-width:none] items-center overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden"
             >
               <div
                 className="flex min-h-0 gap-5 p-5"
