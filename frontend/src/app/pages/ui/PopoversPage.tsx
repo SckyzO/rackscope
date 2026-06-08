@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { MapPin, Link as LinkIcon, Twitter, Github } from 'lucide-react';
+import { MapPin, Link as LinkIcon } from 'lucide-react';
+import { GithubIcon, XIcon } from '@app/components/icons/BrandIcons';
 import { usePageTitle } from '@app/contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from '../templates/EmptyPage';
 
@@ -56,13 +57,13 @@ const PopoverContent = () => (
           href="#"
           className="hover:text-brand-500 flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 dark:border-gray-700 dark:text-gray-400"
         >
-          <Twitter className="h-3.5 w-3.5" />
+          <XIcon className="h-3.5 w-3.5" />
         </a>
         <a
           href="#"
           className="hover:text-brand-500 flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 dark:border-gray-700 dark:text-gray-400"
         >
-          <Github className="h-3.5 w-3.5" />
+          <GithubIcon className="h-3.5 w-3.5" />
         </a>
       </div>
     </div>

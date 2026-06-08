@@ -1,15 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  Github,
-  BookOpen,
-  ExternalLink,
-  Code2,
-  RefreshCw,
-  X,
-  Heart,
-  Coffee,
-  Bot,
-} from 'lucide-react';
+import { BookOpen, ExternalLink, Code2, RefreshCw, X, Heart, Coffee, Bot } from 'lucide-react';
+import { GithubIcon } from '@app/components/icons/BrandIcons';
 import { usePageTitle } from '../contexts/PageTitleContext';
 import { PageHeader, PageBreadcrumb, SectionCard } from './templates/EmptyPage';
 import { AppIcon, getIconContainerClass, getIconSize } from '../components/AppIcon';
@@ -633,7 +624,7 @@ const DeveloperCardModal = ({ onClose }: { onClose: () => void }) => {
               rel="noopener noreferrer"
               className="text-brand-500 flex items-center gap-1.5 text-sm hover:underline"
             >
-              <Github className="h-4 w-4" />
+              <GithubIcon className="h-4 w-4" />
               github.com/SckyzO
             </a>
             <button
@@ -861,7 +852,7 @@ export const AboutPage = () => {
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <SectionCard title="Links" desc="Source code and documentation">
             <div className="space-y-2">
-              <ExtLink href="https://github.com/SckyzO/rackscope" icon={Github}>
+              <ExtLink href="https://github.com/SckyzO/rackscope" icon={GithubIcon}>
                 GitHub — SckyzO/rackscope
               </ExtLink>
               <ExtLink href="https://www.rackscope.dev" icon={BookOpen}>
@@ -904,7 +895,7 @@ export const AboutPage = () => {
                   rel="noopener noreferrer"
                   className="text-brand-500 mt-1 flex items-center gap-1 text-xs hover:underline"
                 >
-                  <Github className="h-3 w-3" />
+                  <GithubIcon className="h-3 w-3" />
                   github.com/SckyzO
                 </a>
               </div>
